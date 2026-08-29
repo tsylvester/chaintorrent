@@ -4,7 +4,9 @@
 
 Deliver a working `torrent install` path for JavaScript dependencies that survives registry outages, serves popular packages from a peer swarm, and exercises the full identity/entitlement/encryption pipeline end to end — with all monetization set to $0.00.
 
-This MVP validates **distribution and identity**. It deliberately does not validate willingness to pay or seeder compensation. See [Known Risks and Open Criticisms](#known-risks-and-open-criticisms).
+This MVP validates **distribution and identity**. It deliberately does not validate willingness to pay or seeder compensation.
+
+This document states the boundary of the work. Undetermined decisions — including the evidence path for monetization, the first-user value proposition, ingestion consent, and whether this increment is correctly sized — are held in the To-Do list of [ChainTorrent MVP.md](workplans/current/ChainTorrent%20MVP.md).
 
 ---
 
@@ -29,9 +31,11 @@ This MVP validates **distribution and identity**. It deliberately does not valid
 * Smart contract that registers `(PackageIdentityHash, NpmIntegrityHash, CanInfohash, OwnerIdentifierHash)`.
 * Mints $0.00 access tokens to requesting user wallets as transferable bearer assets.
 * If a package is ingested via NPM fallback ("First Finder"), the contract creates an escrow record tagged with the maintainer's public NPM email hash.
+* **Per-identity binding record.** The contract stores the bound handshake public key and its scheme on-chain — the fields on-chain logic must read — plus an anchor hash committing to the full DID Document, which resolves off-chain. Contracts cannot read an off-chain document without an oracle or a proof system, so the fields consulted during escrow claim verification and authorization checks are not among the anchored ones. See [cryptography.md §2 Binding Schema](cryptography.md).
 
 5. **Gas Relayer / Dev Grant Pool**:
 * A dead-simple backend relayer (or Paymaster) funded by a developer grant that signs $0.00 key mint transactions on behalf of newly generated user wallets. No user-funded gas, no fiat deposits, no friction.
+* **One binding attestation transaction per new wallet.** At wallet creation the relayer pays for a single transaction registering the identity's handshake public key, signed by the chain identity. It runs once per wallet, never per install, and is invisible to the user.
 * This is acknowledged scaffolding: it is a centralized chokepoint inside a decentralization thesis, and it is an unmetered subsidy. It exists to remove first-run friction, and it is expected to be replaced.
 
 6. **Cost Instrumentation**:
@@ -113,37 +117,3 @@ When a developer runs `torrent install lodash`:
               Save to CAS & Seed Swarm
 
 ```
-
----
-
-# Known Risks and Open Criticisms
-
-These are recorded rather than resolved. They are not hidden because they are real, and a reader who spots them independently should find them already acknowledged here.
-
-### The MVP defers the riskiest business assumption
-
-Ranked by what kills the product if false, the assumptions are: (1) will anyone pay for a transferable access right, and will anyone seed for compensation; (2) will developers adopt an alternative installer at all; (3) can the crypto/distribution pipeline be built.
-
-This MVP explicitly defers (1), largely assumes (2), and spends most of its effort on (3) — which is the assumption nearest to already-proven. Deferring monetization for regulatory reasons is a deliberate and defensible trade, but the consequence must be stated plainly: **a fully successful MVP tells us very little about whether the business works.** Evidence for (1) needs to be gathered in parallel by other means.
-
-### The first-user value proposition is thin
-
-A developer adopting this gets a wallet they did not ask for, a gas relayer they must trust, a DKMN dependency inside their install path, and public on-chain publication of their dependency graph. In exchange they get a global CAS with symlinks into `node_modules` — **which pnpm already provides, for free, with no new concepts.**
-
-What remains as genuine differentiation is resilience (installs survive registry outages) and swarm-accelerated fetches for popular packages. Both are real; both are modest against an incumbent that is faster today and requires no wallet. The honest pitch at $0.00 is resilience, not ownership.
-
-### Encrypting permissively-licensed open source has no user-facing benefit
-
-For MIT-licensed packages, encryption adds latency, cost, and a liveness dependency while conferring nothing on the person installing. Its justification is that it exercises the pipeline the paid tier requires — a project-facing reason, not a user-facing one. A skeptical developer is entitled to read it as overhead.
-
-### First Finder ingests other people's work without consent
-
-Licenses generally permit the redistribution. The exposure is in the framing: encrypting someone else's package, registering it as canonical, and escrowing "master keys" against their email hash reads as an ownership claim over work the protocol does not own. NPM's Terms of Service should be reviewed by counsel before ingesting at scale, and any bulk seeding campaign should be run deliberately and publicly rather than emerging as a side effect of user installs.
-
-### The scope may still be too large for a first increment
-
-An alternative, thinner cut: **canonical identity registry + torrent distribution + CAS/symlink, with encryption behind a flag applied to a small deliberate subset.** This would validate the swarm and identity layer under real load with ordinary failure modes, still exercise the crypto pipeline end to end on a handful of packages, and avoid making DKMN liveness a prerequisite for any developer's install succeeding. Recorded as a live option, not a decision.
-
-### Cross-references
-
-Open **technical** problems — DKMN centralization and liveness, residual traceability gaps, and dependency-graph privacy — are tracked in [cryptography.md §8 Open Problems](cryptography.md).

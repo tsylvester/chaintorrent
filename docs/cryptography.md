@@ -4,16 +4,33 @@
 
 The Transactable Key Protocol provides a decentralized, frictionless architecture for distributing encrypted digital assets and dynamically provisioning access based on blockchain state.
 
+This specification states ratified design. Decisions that remain undetermined are held in the To-Do list of `docs/workplans/current/ChainTorrent MVP.md` rather than here.
+
 ### 1.1 Core Philosophy
 
 This protocol optimizes for **frictionless distribution and access**, not hostile digital rights management (DRM).
 
 * **The Distribution Problem:** Piracy is fundamentally a distribution and friction problem. By making legitimate, highest-quality access seamless and inexpensive, the incentive for piracy is mitigated.
 * **No Hardware Enclaves:** The protocol strictly avoids proprietary Trusted Execution Environments (TEEs) or hardware-level DRM. Such mechanisms introduce platform friction, violate open-source ethos, and create centralized failure points.
-* **The DRM Boundary (Key vs. Plaintext):** The protocol strictly governs the lifecycle of the **Symmetric Content Key (SCK)**. The protocol accepts the "analog hole" and acknowledges that attempting adversarial, OS-level plaintext enforcement on a user-controlled device is hostile and futile.
-* **The Application-Layer Contract:** Enforcement relies on the state transitions of the open-source reference client. When token ownership changes, the client’s contractual obligation is to **destroy the key**, ceasing all further decryption. It explicitly does *not* attempt to track, flush, or purge plaintext that has already been rendered or exported.
+* **The DRM Boundary (Content Key vs. Plaintext):** The protocol strictly governs the lifecycle of the **content key (SCK)**. The protocol accepts the "analog hole" and acknowledges that attempting adversarial, OS-level plaintext enforcement on a user-controlled device is hostile and futile.
+* **The Application-Layer Contract:** Enforcement relies on the state transitions of the open-source reference client. When entitlement ownership changes, the client’s contractual obligation is to **destroy the content key**, ceasing all further decryption. It explicitly does *not* attempt to track, flush, or purge plaintext that has already been rendered or exported.
 * **Anti-Derivability & Random SCKs:** Symmetric Content Keys **must** be generated randomly per asset deployment, never derived deterministically from plaintext payloads. While deterministic key derivation would trivially solve swarm fragmentation, it completely destroys economic enforcement by allowing any possessor of plaintext to independently compute the key and bypass the DKMN escrow. Security and economic viability supersede naive payload deduplication.
 * **Incremental Verification:** The protocol provides incremental, random-access content verification. A client can cryptographically verify an individual chunk using that chunk and its Merkle authentication path, without downloading the remainder of the asset. The Merkle root is independently authenticated by the protocol's content/deployment commitment.
+
+### 1.2 Terminology
+
+The protocol carries several distinct objects that plain English collapses into the single word "key". They are owned by different parties, live for different durations, and fail in different ways, so the unqualified word is not used in this specification.
+
+| Term | What it is | What happens to it |
+| --- | --- | --- |
+| **Entitlement** | the transferable bearer asset recording who currently holds an access right to a deployment | **checked**, on-chain; it signs nothing |
+| **Handshake key** | the private key a party signs with to prove control of the identity that holds an entitlement | **proven**, verified off-chain via the signature adapter |
+| **Content key (SCK)** | the symmetric key that decrypts a deployment's ciphertext | **obtained**, then used locally |
+| **Master key** | the per-asset node of a publisher's derivation hierarchy, from which that asset's deployment content keys derive | **derived**, never transmitted |
+| **Escrowed key** | a content key held on behalf of an absent Web2 maintainer following a First Finder ingest, pending claim | **held**, then claimed |
+| **Variant object key** | the key decrypting a per-entitlement variant object; bound to the entitlement identity, never to the asset | **obtained** with the entitlement |
+
+An entitlement cannot sign, and a key cannot be owned on-chain. A consumer proves control of a **handshake key** to demonstrate that they hold an **entitlement**, in order to obtain a **content key**.
 
 ## 2. Cryptographic Primitives
 
@@ -43,7 +60,7 @@ Critically, the commitment is to the **plaintext, not to the key**. Committing t
 
 **Key Management Network (DKMN):** A decentralized threshold cryptography network (Multi-Party Computation, e.g., Lit Protocol) to lock, escrow, and provision the SCK based on on-chain conditions without ever exposing plaintext keys to blockchain validators.
 
-**Wallet Signatures (Signature Adapter):** proof-of-possession is performed with the wallet's native curve, resolved through an abstract **`ISignatureAdapter`** rather than pinned to any one scheme. The protocol is chain-agnostic by construction; the curve is an implementation detail of the target chain, not a property of the protocol.
+**Wallet Signatures (Signature Adapter):** signatures are produced and verified per layer, each layer resolving an abstract **`ISignatureAdapter`** rather than any one pinned scheme. The chain layer uses the adapter its target chain requires; the handshake and content-signing layers use the protocol's preferred scheme independently of that choice. The curve is an implementation detail of the layer and the chain, not a property of the protocol.
 
 ```
     isValidSignature(pubkey, message, signature) -> bool
@@ -62,6 +79,27 @@ Critically, the commitment is to the **plaintext, not to the key**. Committing t
 * **Binding, not matching:** where two layers use different keys, those keys must be provably the same principal. The Registry holds a binding attestation — the subordinate key signed by the authoritative chain identity — established once and thereafter verifiable by any party. Keys unbound across layers are a protocol violation.
 * **Relationship to `IIdentityAdapter`:** the two are distinct and compose. The signature adapter answers *"is this signature cryptographically valid?"*; the identity adapter answers *"is this validated claimant authorized for this asset?"* Authentication and authorization stay separable, so a new chain requires a new signature adapter without touching authorization logic, and a new authorization model requires no cryptographic changes.
 * Adapter resolution follows the same on-chain patterns as identity adapters — constructor injection via factory, resolved from a governance-controlled `AdapterRegistry`, immutable once bound.
+
+#### Binding Schema
+
+The binding between an identity's per-layer keys is expressed as a **W3C DID Document**. A DID Document already carries a `verificationMethod` set holding multiple keys of different types, and *verification relationships* — `authentication`, `assertionMethod`, `keyAgreement`, `capabilityInvocation` — that state which key serves which purpose. That is per-layer key resolution as a standard, multi-key by construction and chain-agnostic by design, so the binding is not a bespoke registry field and layer selection is a verification relationship rather than an invention of this protocol.
+
+Storage is hybrid, because the binding is consulted from two places with opposite cost profiles:
+
+* **On-chain:** the fields on-chain logic must read — the bound handshake public key and its scheme — are stored on-chain, roughly two storage words. Escrow claim verification (§5.6) and authorization checks run inside contracts, and a contract cannot read an off-chain document without an oracle or a proof system, which would reintroduce the intermediary class this design removes.
+* **Anchored:** the full DID Document is committed by hash on-chain and resolved off-chain. This keeps the schema extensible without contract changes and keeps storage cost at one word.
+
+The chain holds state and pointers to actuals; large objects that are merely *identified* stay off-chain. Off-chain resolution inherits the small-swarm availability characteristics described in §7.3, which is the reason the contract-consulted fields are not among the anchored ones.
+
+Alternatives considered, recorded so the choice can be attacked on review:
+
+| Alternative | Fit | Why not primary |
+| --- | --- | --- |
+| UCAN / ZCAP-LD | capability delegation chains; the chain key delegates handshake authority | closer to the transferable-rights framing, but delegation semantics exceed what a key binding needs |
+| Session keys (AA wallets) | a subordinate key authorized by a master key for a scope and duration | the ergonomics are well-trodden and this is effectively what the handshake key is; lacks a standard document format for multiple simultaneous purposes |
+| Sigstore (Fulcio + Rekor) | ephemeral key bound to an identity, recorded in an append-only transparency log | philosophically close to the append-only registry, and the model the software supply chain is converging on; oriented to short-lived signing identities rather than durable multi-layer bindings |
+| ERC-1271 / ERC-4337 | the chain identity is a contract declaring arbitrary signature validity | solves a different problem — validity rather than binding — and is EVM-specific |
+| X.509 / SSH CA certificates | subordinate key signed by an authority | the structural ancestor of the attestation, but the PKI trust model does not fit a bearer-asset protocol |
 
 ### The Hash-Card (Deployment Descriptor)
 
@@ -282,9 +320,9 @@ When a consumer transfers the token on-chain, their entitlement to decrypt the c
 2. **Key Destruction:** Upon detecting a transfer event where the balance hits zero, the client executes its core contractual obligation: **deleting the SCK from local memory and storage.**
 3. **No More Decryption:** Without the SCK, the client is mathematically incapable of decrypting any further chunks. The application’s access to the encrypted data stream halts.
 4. **Plaintext Agnosticism:** The client does not act as malware. It does not attempt to flush RAM buffers of already-rendered frames, hunt down exported files, or delete user-saved plaintext.
-5. **Continued Network Support:** The user deliberately retains the *encrypted* chunks in their local CAN storage. The client continues to act as a seeder, strengthening the swarm, despite the user no longer possessing the key to read the data themselves.
+5. **Continued Network Support:** The user deliberately retains the *encrypted* chunks in their local CAN storage. The client continues to act as a seeder, strengthening the swarm, despite the user no longer possessing the content key to read the data themselves.
 
-The protocol provides revocation of future key provisioning, not guaranteed revocation of previously provisioned plaintext or secret keys.
+The protocol provides revocation of future content key provisioning, not guaranteed revocation of previously provisioned plaintext or content keys.
 
 Reference-client key destruction is a cooperative enforcement mechanism and is not a cryptographic security boundary against modified clients.
 
@@ -300,9 +338,9 @@ The DKMN handshake relies on timestamped or nonce-based signatures from the cons
 
 ### 5.3 Modified Clients (The "Honesty" Assumption)
 
-A user can theoretically compile a modified version of the open-source client that disables Phase 3's Key Destruction, allowing them to save the SCK to disk indefinitely after selling the token. The protocol accepts this edge case. The system's primary directive is ensuring that *unauthorized wallets cannot obtain the SCK from the network*, and that the path of least resistance for honest users effortlessly honors creator rights without intrusive friction.
+A user can theoretically compile a modified version of the open-source client that disables Phase 3's Key Destruction, allowing them to save the content key to disk indefinitely after selling the entitlement. The protocol accepts this edge case. The system's primary directive is ensuring that *an identity holding no entitlement cannot obtain the content key*, and that the path of least resistance for honest users effortlessly honors creator rights without intrusive friction.
 
-Defeating the unmodified path requires **both** a leaked key and a modified client. Two independent barriers is a meaningfully stronger position than either alone, and it is the intended enforcement posture: honest users are never inconvenienced, and dishonest users must take deliberate, visible steps.
+Defeating the unmodified path requires **both** a leaked content key and a modified client. Two independent barriers is a meaningfully stronger position than either alone, and it is the intended enforcement posture: honest users are never inconvenienced, and dishonest users must take deliberate, visible steps.
 
 ### 5.4 Entitlement Auditability vs. SCK Traceability
 
@@ -311,7 +349,7 @@ These are two different properties and the protocol delivers them to different d
 * **Entitlements are 1:1 and fully auditable.** Every access right is a distinct transferable bearer asset with a unique on-chain owner and a complete transfer history. Accounting, residuals, resale, and audit of *who holds a right* are exact and trivially verifiable. This is a genuine and unusual strength.
 * **The SCK is 1:many and is not, by itself, traceable.** A deployment is encrypted once with one SCK and seeded to the swarm as a single ciphertext (Phase 1.4–1.5). The DKMN provisions *that same SCK* to every wallet that satisfies the access condition (Phase 2.4). Every entitlement holder therefore receives identical key bytes.
 
-The consequence: if a single holder publishes their SCK, those bytes decrypt the universally-distributed swarm copy for everyone, at zero marginal cost — and because many wallets legitimately hold the same value, publication of the key alone does not attribute the leak to any one of them. **On-chain provenance narrows who *requested* a key; it does not narrow who *published* one.**
+The consequence: if a single holder publishes their content key, those bytes decrypt the universally-distributed swarm copy for everyone, at zero marginal cost — and because many entitlement holders legitimately hold the same value, publication of the content key alone does not attribute the leak to any one of them. **On-chain provenance narrows who *obtained* a content key; it does not narrow who *published* one.**
 
 This is materially different from, and worse than, the analog hole. The analog hole leaks a rendering; an SCK leak hands over the canonical asset in perpetuity.
 
@@ -324,6 +362,8 @@ Because SCK derivation is layered and domain-separated per asset and per deploym
 ### 5.6 Escrow Claim Front-Running & Identity Proof Binding
 
 To prevent front-running attacks during escrow settlement (where an attacker intercepts a maintainer's off-chain verification proof and submits it to claim ownership), state transitions on the `Registry` require identity proofs or ZK-nullifiers to be cryptographically bound to the claimant's target wallet address. Any settlement proof generated for `Address_A` will revert on-chain if executed by or directed to `Address_B`.
+
+Because these proofs are verified inside a contract, they are **chain-layer artifacts by definition** and are produced with the chain layer's signature adapter (§2), never with the protocol's preferred scheme. A proof produced under a scheme the target chain has no precompile for is verifiable only at prohibitive cost, so scheme selection for on-chain verification follows the chain rather than the protocol's preference.
 
 ## 6. Deprecation, Advisory Flags, and Content Governance
 
@@ -373,9 +413,17 @@ Jurisdictional obligations for operators of gateways, indexers, and default trus
 
 ### 7.1 MVP Posture: Wrapped Keys
 
-Under the MVP, content is uniform across all holders and the per-identity key is a **wrapped SCK** — the content key encapsulated under the recipient's public key, resolved through the signature adapter. Distinct bytes per identity, unwrapping to a common SCK.
+Under the MVP, content is uniform across all holders and the per-identity key is a **wrapped content key** — the content key encapsulated under the recipient's public key, resolved through the signature adapter. Distinct bytes per identity, unwrapping to a common content key.
 
-This buys a real, cheap barrier: the oracle never emits identical bytes to two identities, and a user who copies and publishes their key file gives away nothing, because no one else can unwrap it. Casual key sharing is eliminated outright. It does **not** buy attribution — a holder who extracts the unwrapped SCK from client memory produces a universal, unattributable key. Defeating the protocol therefore requires a leaked key *and* a modified client, consistent with §5.3.
+**The wrap is produced by the sequencer, at entitlement issuance and at every transfer.** These are moments the sequencer already participates in, so the key handoff carries no event of its own. The wrapped blob is small enough to publish on-chain alongside the entitlement.
+
+The consequence for the read path is the significant one: **once wrapped, a content key requires no network to use, ever again.** Any device holding the wallet's private key unwraps it locally and offline. A second or subsequent device belonging to the same identity fetches the existing blob and unwraps it with the same private key — no re-wrap, no ceremony, no distinction from the first device. Availability is therefore a property of *acquisition* rather than of *reading*: a participant needs the sequencer to buy or transfer, never to install.
+
+**Transfer is atomic.** Settlement does not complete until the wrap for the incoming holder is produced. A ledger write that landed without its wrap would leave a buyer owning an entitlement they cannot read, so the two are one transaction, as with any financial settlement.
+
+This buys a real, cheap barrier: no two identities are ever emitted identical bytes, and a user who copies and publishes their wrapped blob gives away nothing, because no one else can unwrap it. Casual key sharing is eliminated outright. It does **not** buy attribution — a holder who extracts the unwrapped content key from client memory produces a universal, unattributable key. Defeating the protocol therefore requires a leaked content key *and* a modified client, consistent with §5.3.
+
+The architecture of key provisioning — and whether the sequencer is one implementation behind an adapter alongside others — is undetermined and held in the To-Do list of `docs/workplans/current/ChainTorrent MVP.md`.
 
 ### 7.2 Variance Belongs to the Entitlement, Not the Content
 
@@ -395,15 +443,15 @@ The variant set is **not** stored on-chain — at ~1% of a multi-gigabyte asset 
 
 It requires no special transport, but it does require a specific key binding:
 
-* **Encrypted to the entitlement, not to the asset.** The variant object is encrypted under a key bound to the entitlement identity, *not* under the asset's SCK. This is mandatory. If variant objects were readable by any SCK holder, any holder could read another's variant set and assemble a copy carrying someone else's fingerprint — turning a forensic mechanism into a framing weapon. Unilateral framing is a far worse failure than collusion.
+* **Encrypted to the entitlement, not to the asset.** The variant object is encrypted under a **variant object key** bound to the entitlement identity, *not* under the asset's content key. This is mandatory. If variant objects were readable by any content key holder, any holder could read another's variant set and assemble a copy carrying someone else's fingerprint — turning a forensic mechanism into a framing weapon. Unilateral framing is a far worse failure than collusion.
 * **Seeder agnosticism carries over unchanged.** Because the object is opaque to everyone but its entitlement holder, anyone may seed it harmlessly, exactly as with the main asset (§5.1). Sharing the object confers nothing without the corresponding entitlement.
 
-**Multi-device is the motivating case and it resolves cleanly.** One wallet, *n* devices: all *n* resolve to the same entitlement identity, so all *n* unwrap the same variant object. The user's devices form a natural micro-swarm and sync among themselves over ordinary transport, with no per-device key ceremony, no re-minting, and no distinction between a user's second device and any other peer.
+**Multi-device is the motivating case and it resolves cleanly.** One wallet, *n* devices: all *n* resolve to the same entitlement identity, so all *n* unwrap the same variant object. The user's devices form a natural micro-swarm and sync among themselves over ordinary transport, with no per-device handshake key ceremony, no re-minting, and no distinction between a user's second device and any other peer.
 
 Two consequences to plan for:
 
 * **Availability.** A per-entitlement object has a swarm the size of one user's device set. If those devices are offline the object may be unavailable. Either the sequencer pins variant objects, or the variant set is made deterministically regenerable from `(invariant content, entitlement id, publisher secret)` so it can be re-served on demand rather than stored in perpetuity. Regeneration is preferred; it bounds publisher storage to zero. Regeneration inputs **must** be domain-separated with the same discipline as SCK derivation (Phase 1.3), or two entitlements can collide onto the same variant set and attribution silently fails.
-* **Network-level privacy.** Variant object infohashes are per-entitlement, so observing who requests or seeds a given infohash links a network address to a specific entitlement — a correlation surface distinct from, and more immediate than, the on-chain one in §8.3. Tracked there.
+* **Network-level privacy.** Variant object infohashes are per-entitlement, so observing who requests or seeds a given infohash links a network address to a specific entitlement — a correlation surface distinct from, and more immediate than, the on-chain one in §8.1. Tracked there.
 
 ### 7.4 Re-Minting on Transfer
 
@@ -421,39 +469,21 @@ Two or more holders can diff their copies to locate variant positions and splice
 
 The cost is that variant-set size grows with *c* and with the accused-population size, so *c* is an explicit economic parameter — chosen against asset value and expected adversary resources — rather than a fixed constant.
 
+### 7.6 Future Optimization: Partial Encryption
+
+A participant currently stores an asset twice — the ciphertext, retained to keep seeding (Phase 3.5), and the plaintext, retained to use. Roughly 2x local storage per asset held.
+
+Partial encryption would collapse that. If the withheld variant chunks are chosen to be *structurally essential* — headers, codec-critical frames, module entry points — the invariant remainder could be distributed as plaintext, leaving only the small variant object encrypted. The asset stays useless without the withheld piece, the main swarm becomes plaintext with the attendant gains in deduplication and legacy client compatibility, and the key-handling problem shrinks from bulk encryption to small-object delivery.
+
+**This is recorded as a future optimization and is explicitly not a launch capability.** The reason is commercial rather than technical: a distribution model whose plaintext is 99% freely available is not a proposition sophisticated rights holders will entertain before the fully-encrypted model has been proven in production. The technical question — how degraded the content actually is with a strategically chosen fraction withheld — is also asymmetric across content classes, since a package missing its entry point is inert while a film missing 1% of chunks may remain watchable.
+
 ## 8. Open Problems
 
-Unresolved by design rather than by omission. Recorded so they are neither forgotten nor discovered late.
+Protocol properties that are unresolved by design rather than by omission, recorded so they are neither forgotten nor discovered late. Undetermined *authorship and design decisions* are held separately, in the To-Do list of `docs/workplans/current/ChainTorrent MVP.md`.
 
-### 8.1 DKMN Centralization and Liveness
+### 8.1 Dependency Graph Privacy
 
-The threshold key-management network is the protocol's most significant compromise with its own decentralization thesis, and it is an external dependency:
-
-* **Liveness:** if the DKMN is unavailable, nothing decrypts. For a package manager this means CI fails to install — a far lower tolerance for downtime than media playback has.
-* **Collusion:** a colluding threshold of DKMN nodes can recover every SCK ever escrowed.
-* **Trust:** the protocol inherits the security and governance of a network it does not control.
-
-**The desired end state** is to eliminate the intermediary network entirely: derive or release the SCK from proof of wallet-possession-at-a-given-block, with Byzantine fault tolerance supplied by the consensus layer that already exists, rather than by a second overlay network. This is precisely the class of problem distributed consensus was built to solve, and it is the natural home for the guarantee.
-
-No satisfactory construction is known to the authors. The obstacle is that the ledger is public: any value the chain can compute or reveal, every observer can also read, so the chain cannot itself hold a secret that only an entitled wallet can unwrap. Candidate directions worth evaluating — none adopted, none yet demonstrated adequate at this protocol's cost and latency targets:
-
-* Witness/identity-based encryption against a chain-derived witness, where finality itself releases the decryption capability to the entitled party.
-* Threshold or timelock encryption anchored to consensus randomness rather than to a standing key-holding committee.
-* Proxy re-encryption keyed to the entitlement transfer, moving the trust from a persistent network to the transfer event.
-* Trust-minimized fallback: multiple independent DKMN deployments with client-side quorum, treating any single network as replaceable infrastructure rather than a protocol component. This is mitigation, not a solution.
-
-### 8.2 Residual Traceability Gaps
-
-The traceability/swarm-coherence trade is addressed by §7 and is no longer open. What remains:
-
-* **The MVP has no attribution at all.** §7.1's wrapped keys stop casual sharing but not a determined leaker. Anything shipped before §7.2 lands is unattributable by design.
-* **Collusion parameter selection is unresolved.** *c* is an economic choice with no principled default; it needs modelling against asset value, and the variant-size cost curve needs measuring rather than assuming.
-* **Variant object availability** depends on either publisher pinning or deterministic regeneration (§7.3). Regeneration is preferred but unspecified.
-* **Attribution is evidence, not enforcement.** Identifying a leaker does not recall the content. The protocol's response to a traced leak is a governance and legal question (§6), not a cryptographic one.
-
-### 8.3 Dependency Graph Privacy
-
-Every key request is an on-chain record binding a wallet to an asset. In aggregate this publishes a permanent, correlatable map of exactly which software each participant runs, at which version.
+Every entitlement is an on-chain record binding an identity to an asset, and the wrapped content key published alongside it at issuance and at every transfer is a second such record. In aggregate this publishes a permanent, correlatable map of exactly which software each participant runs, at which version. Permanence makes it worse rather than better than a request log: there is no point at which the association ages out, because the record *is* the entitlement.
 
 * For individuals, it is a persistent behavioral profile that pseudonymity weakens only partially — a dependency set is close to a fingerprint, and one deanonymizing transaction retroactively unmasks the entire history.
 * For organizations, it is a public inventory of their internal stack, including versions with known vulnerabilities. This is plausibly a disclosure hazard on its own and is an adoption blocker for most enterprises.
