@@ -39,7 +39,13 @@ This MVP validates **distribution and identity**. It deliberately does not valid
 
 ## Signature Scheme (MVP)
 
-The MVP resolves proof-of-possession through the **`ISignatureAdapter`** abstraction defined in [cryptography.md §2](cryptography.md), and ships exactly one implementation: `Secp256k1Adapter`. A single secp256k1 wallet identity therefore serves both on-chain entitlement ownership and the DKMN handshake, so the key requester and the token owner are provably the same identity without a cross-curve binding step. Additional chains are new adapters, not protocol changes.
+The MVP resolves signatures through the **`ISignatureAdapter`** abstraction defined in [cryptography.md §2](cryptography.md), resolved per layer, and ships two implementations.
+
+**`Ed25519Adapter` is the protocol's preferred scheme** and is used at the DKMN handshake and content-signing layers — the layers where signature volume actually lives, since Phase 2.2 signs aggregate payloads in batches across whole dependency trees. Ed25519 is faster, is highly resistant to side-channel attacks, and is the general preference for new protocols.
+
+**`Secp256k1Adapter` is used at the chain layer only**, because the MVP targets an EVM L2 where the account *is* a secp256k1 keypair and the chain permits no alternative. This is a constraint imposed by the target chain, not a protocol preference.
+
+The two keys are bound rather than matched: the Ed25519 handshake public key is registered in the Registry once at wallet creation, signed by the chain identity, in a relayer-paid attestation that is thereafter verifiable by any party. Additional chains and additional layers are new adapters, not protocol changes.
 
 ---
 

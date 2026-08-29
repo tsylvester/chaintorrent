@@ -53,12 +53,13 @@ Critically, the commitment is to the **plaintext, not to the key**. Committing t
 
 | Adapter | Curve / Scheme | Target |
 | --- | --- | --- |
-| `Secp256k1Adapter` | secp256k1 / ECDSA | EVM chains (MVP target) |
-| `Ed25519Adapter` | Ed25519 / EdDSA | Solana, Near, Cosmos-family |
+| `Secp256k1Adapter` | secp256k1 / ECDSA | EVM chains — chain layer only (MVP) |
+| `Ed25519Adapter` | Ed25519 / EdDSA | protocol-preferred scheme; handshake and content-signing layers (MVP); chain layer on Solana, Near, Cosmos-family |
 | `Secp256r1Adapter` | secp256r1 / P-256 | passkeys, WebAuthn, secure enclaves |
 | `BlsAdapter` | BLS12-381 | aggregate/threshold signatures |
 
-* **Curve-matching invariant:** within a single deployment, the entitlement owner and the key requester **must** resolve to the same identity under the same adapter. A deployment **must not** mix curves between chain identity and handshake identity without an explicit, on-chain binding between the two keys.
+* **Per-layer resolution:** the signature adapter is resolved independently at each layer where a signature is produced or verified. A deployment is not restricted to a single scheme — the chain layer uses whatever the target chain mandates, while the handshake and content-signing layers retain the protocol's preferred scheme regardless of chain.
+* **Binding, not matching:** where two layers use different keys, those keys must be provably the same principal. The Registry holds a binding attestation — the subordinate key signed by the authoritative chain identity — established once and thereafter verifiable by any party. Keys unbound across layers are a protocol violation.
 * **Relationship to `IIdentityAdapter`:** the two are distinct and compose. The signature adapter answers *"is this signature cryptographically valid?"*; the identity adapter answers *"is this validated claimant authorized for this asset?"* Authentication and authorization stay separable, so a new chain requires a new signature adapter without touching authorization logic, and a new authorization model requires no cryptographic changes.
 * Adapter resolution follows the same on-chain patterns as identity adapters — constructor injection via factory, resolved from a governance-controlled `AdapterRegistry`, immutable once bound.
 
