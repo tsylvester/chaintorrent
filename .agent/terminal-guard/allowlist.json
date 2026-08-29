@@ -1,0 +1,11 @@
+{
+  "description": "Read-only static-analysis commands the terminal guard permits. DENY BY DEFAULT: an empty 'allow' blocks every terminal command. Bind YOUR toolchain by copying entries from 'examples' into 'allow'. Each entry is a literal command prefix; a command matches if it equals the entry or begins with the entry followed by a space, and contains no shell metacharacters. Rationale and the two-gate test: docs/agents/terminal-policy.md",
+  "allow": [],
+  "examples": [
+    "deno check",
+    "deno lint",
+    "tsc --noEmit",
+    "eslint",
+    "biome check"
+  ]
+}
