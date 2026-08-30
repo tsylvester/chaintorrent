@@ -6,7 +6,7 @@ Deliver a working `torrent install` path for JavaScript dependencies that surviv
 
 This MVP validates **distribution and identity**. It deliberately does not validate willingness to pay or seeder compensation.
 
-This document states the boundary of the work. Undetermined decisions — including the evidence path for monetization, the first-user value proposition, ingestion consent, and whether this increment is correctly sized — are held in the To-Do list of [ChainTorrent MVP.md](workplans/current/ChainTorrent%20MVP.md).
+This document states the boundary of the work. Undetermined decisions are held in the To-Do list of [ChainTorrent MVP.md](workplans/current/ChainTorrent%20MVP.md).
 
 ---
 
@@ -94,24 +94,26 @@ When a developer runs `torrent install lodash`:
 [2. Swarm Check]  ──> Identity hash on Ledger? ──(Yes)──> Pull ciphertext via Swarm
                           │                             │
                           │ (No - First Finder)         ▼
-                          │                     Verify BLAKE3/Bao root
+                          │                     Verify ciphertext root
                           │                             │
                           ▼                             ▼
-                  Fetch .tgz from NPM             Mint $0.00 Key
+                  Fetch .tgz from NPM             Mint $0.00 Entitlement
+                          │                     + wrapped content key
+                          ▼                             │
+                  Verify NPM integrity                  ▼
+                  (sha512) — abort on mismatch  Request SCK from DKMN
                           │                             │
                           ▼                             ▼
-                  Verify NPM integrity           Request SCK from DKMN
-                  (sha512) — abort on mismatch          │
+                  Encrypt with random          Verify plaintext root
+                  content key                           │
                           │                             ▼
                           ▼                     Decrypt to Local CAS ──> Symlink
-                  Encrypt with random SCK
-                          │
-                          ▼
              Register Identity Hash on Ledger
              (first tx wins; loser discards
               ciphertext and repoints)
-             Escrow SCK (Maintainer Hash)
-             Mint $0.00 Key to User Wallet
+             Escrow content key via threshold
+             network (Maintainer Hash)
+             Mint $0.00 Entitlement to User
                           │
                           ▼
               Save to CAS & Seed Swarm
