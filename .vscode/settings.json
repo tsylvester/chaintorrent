@@ -1,0 +1,13 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "deno check": true,
+    "deno lint": true,
+    "tsc --noEmit": true,
+
+    "/^\\s*(rm|del|rmdir|erase)\\b/": false,
+    "/^\\s*git\\s+(add|commit|push|reset|checkout|clean)\\b/": false,
+    "/^\\s*(npm|pnpm|yarn)\\s+(i|install|add)\\b/": false,
+    "/^\\s*deno\\s+(add|install|task|run|test)\\b/": false,
+    "/[;&|`$()<>]/": false
+  }
+}

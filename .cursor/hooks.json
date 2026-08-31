@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      { "command": "deno run --allow-read .cursor/terminal-guard/guard.ts" }
+    ]
+  }
+}

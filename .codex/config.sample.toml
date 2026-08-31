@@ -1,0 +1,16 @@
+# Codex terminal policy — DECLARATIVE APPROXIMATION of docs/agents/terminal-policy.md
+#
+# Codex has no per-command allowlist hook, so it cannot run the two-gate engine. It
+# enforces posture via sandbox + approval instead. This is a SAMPLE: Codex reads
+# ~/.codex/config.toml (user-global), not a repo file — copy this in, or save it as a
+# named profile (e.g. ~/.codex/strict.config.toml) and run `codex -p strict`.
+#
+# What this can and cannot enforce: .codex/README.md
+
+# Auto-run only commands Codex classifies as known-safe reads; ask you for everything
+# else (this is where your `deno check` / `deno lint` will prompt for approval).
+approval_policy = "untrusted"
+
+# No file writes, no network, no destructive operations. Read-only static analysis that
+# only reads files is permitted to run once approved.
+sandbox_mode = "read-only"
