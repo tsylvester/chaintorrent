@@ -28,9 +28,10 @@ Terminology follows [cryptography.md §1.2](cryptography.md) — entitlement, ha
 * Two nodes ingesting the same unlisted package produce different ciphertext. This is resolved at the identity layer, not the payload layer: **State-Locked Escrow Registration** means the first transaction to land wins, and the losing node discards its local ciphertext and content key and repoints at the winner's infohash.
 
 3. **Per-Window Decryption Authorization**:
-* Before any decryption, the client obtains authorization for a bounded window through the **key provisioning adapter**, evaluated against finalized chain state. An entitlement held for years authorizes nothing until the current window is established.
+* Before any decryption, the client obtains authorization for a bounded window through the **key provisioning adapter**, evaluated against chain state at the deployment's declared settlement tier. An entitlement held for years authorizes nothing until the current window is established.
+* **The MVP declares `INCLUDED`** ([cryptography.md §2 Settlement Adapter](cryptography.md)). Entitlements are $0.00 and packages are permissively licensed, so the value at risk in a reversal is zero, and the exposure it could produce — one window, one package, one identity — is the same bound the protocol already publishes for a seller's retained capacity. Requiring deeper settlement would make `torrent install` wait on chain finality for no benefit; a CI pipeline cannot tolerate that and gains nothing by paying it.
 * **No local keystore.** The content key is held in memory for the window only and is never written to disk. There is no cache of prior authorization results and no exemption for assets decrypted previously.
-* Window bounds are `k` (block-height ceiling) and `M` (volume cap), expiring at whichever is reached first. Both are MVP configuration with published values; see the To-Do list for their selection and the capacity-versus-boundary tradeoff in [cryptography.md §8.1](cryptography.md).
+* Window bounds are `k` (settlement-reference ceiling) and `M` (volume cap), expiring at whichever is reached first. Both are MVP configuration with published values; see the To-Do list for their selection and the capacity-versus-boundary tradeoff in [cryptography.md §8.1](cryptography.md). `M` is client-side and unobservable to the provisioner, so only `k` carries that tradeoff.
 * On expiry the client discards the content key and requests a new window if decryption continues. Renewal is an ordinary authorization request and is refused if the entitlement no longer holds.
 * The DKMN is the MVP implementation of the provisioning layer. It sits behind the adapter and is replaceable by any construction meeting the same two obligations — per-window authorization and no selective withholding.
 
@@ -41,9 +42,10 @@ Terminology follows [cryptography.md §1.2](cryptography.md) — entitlement, ha
 
 5. **$0.00 Entitlement Ledger & Escrow Contract (EVM Testnet / L2)**:
 * Smart contract that registers `(PackageIdentityHash, UpstreamAttestation, CiphertextRoot, PlaintextRoot, CanInfohash, OwnerIdentifierHash)`.
-* **Both content roots are registered, not just the infohash.** The infohash establishes what the swarm carries; the plaintext root establishes what a correct decryption must produce. Without it the `Verify plaintext root` step of the execution trace has nothing to verify against, and a client provisioned an incorrect content key produces garbage that passes every other check the protocol performs — see [cryptography.md §2 Content Commitments](cryptography.md).
+* **Both content roots are registered, not just the infohash, and the plaintext root is registered in Public disclosure mode** ([cryptography.md §2](cryptography.md)). Provenance and independent verifiability are the point of the package path, and NPM plaintext is openly distributed regardless, so there is nothing to mask. The infohash establishes what the swarm carries; the plaintext root establishes what a correct decryption must produce. Without it the `Verify plaintext root` step of the execution trace has nothing to verify against, and a client provisioned an incorrect content key produces garbage that passes every other check the protocol performs — see [cryptography.md §2 Content Commitments](cryptography.md).
 * Mints $0.00 entitlements to requesting identities as transferable bearer assets.
-* Exposes `isAuthorizedBatch([packageHashes], requestingIdentity)` as a multicall view function, evaluated by provisioning nodes at an agreed, recently finalized block height. This is the authorization basis, not merely a concurrency device.
+* Exposes `isAuthorizedBatch([packageHashes], requestingIdentity)` as a multicall view function, evaluated by provisioning nodes at an agreed settlement reference meeting the declared tier. This is the authorization basis, not merely a concurrency device.
+* **The view returns three states** — `AUTHORIZED`, `PENDING_SETTLEMENT`, `DENIED`. Authorization is transactional against evolving state, and during an install the entitlement is minted seconds before it is read, so "not settled yet" and "no" are different answers requiring different client behavior. See [cryptography.md Phase 2.4](cryptography.md).
 * If a package is ingested via First Finder fallback, the contract creates an escrow record tagged with a **salted commitment** to the maintainer's public NPM email, not a bare hash. Email addresses are low-entropy and enumerable, so a bare hash publishes a permanently testable package-to-maintainer mapping — an on-chain disclosure the upstream source itself no longer makes, and [cryptography.md §8.2](cryptography.md)'s concern arriving in a form the MVP actually ships. The salt is held by the claim portal and released to a claimant on successful verification, so the claim flow of deferred item 2 is unchanged.
 * **Per-identity binding record.** The contract stores the bound handshake public key and its scheme on-chain — the fields on-chain logic must read — plus an anchor hash committing to the full DID Document, which resolves off-chain. Contracts cannot read an off-chain document without an oracle or a proof system, so the fields consulted during escrow claim verification and authorization checks are not among the anchored ones. See [cryptography.md §2 Binding Schema](cryptography.md).
 
@@ -144,7 +146,8 @@ When a developer runs `torrent install lodash`:
    — never skipped, never cached
                       │
                       ▼
-   isAuthorizedBatch() at finalized height
+   isAuthorizedBatch() at declared tier
+   AUTHORIZED / PENDING_SETTLEMENT / DENIED
                       │
                       ▼
    Content key provisioned for window

@@ -25,9 +25,9 @@ The Transactable Key Protocol provides a decentralized, frictionless architectur
 
 ### Cryptographic Authorization Invariants: 
 * **Cryptography Serves Economics and Distribution:** The cryptographic mechanisms are subordinate to the protocol's economic and distribution invariants. A cryptographic construction that satisfies confidentiality while violating transactable access, canonical distribution, platform independence, or non-hostile access is non-conforming.
-* **Authorization is Controlled:** Before any decryption may occur, the system cryptographically establishes that the requesting identity currently satisfies the access condition, evaluated against finalized chain state. No decryption occurs that is not covered by a valid, unexpired authorization.
+* **Authorization is Controlled:** Before any decryption may occur, the system cryptographically establishes that the requesting identity currently satisfies the access condition, evaluated against chain state at or above the deployment's declared settlement tier (§2). No decryption occurs that is not covered by a valid, unexpired authorization.
 * **Authorization is Current:** A previous successful authorization, previous entitlement state, previously issued key, cached authorization result beyond its stated window, or prior decryption session does not prove access entitlement is current. An authorization result is current only within the bounded decryption window for which it was issued.
-* **Authorization is Per-Window:** Authorization is established for exactly one bounded decryption window and authorizes no decryption outside it. The window is bounded by a block-height ceiling and a volume cap, expiring at whichever is reached first. The two bounds are enforced differently and the difference is material: the **block-height ceiling is externally determinable**, since the provisioning layer computes it from the finalized height the authorization was established against, while the **volume cap is client-side**, because a provisioner cannot observe how many bytes a client decrypted with material it already holds. The cap therefore bounds keystream exposure per issuance for a conforming client and is not a boundary against a modified one — the same posture as §5.3. Both values are published protocol parameters, not implementation choices, and the security tradeoff of §8.1 attaches to the ceiling alone. Authorization for one window does not authorize any subsequent window.
+* **Authorization is Per-Window:** Authorization is established for exactly one bounded decryption window and authorizes no decryption outside it. The window is bounded by a settlement-reference ceiling and a volume cap, expiring at whichever is reached first. The two bounds are enforced differently and the difference is material: the **reference ceiling is externally determinable**, since the provisioning layer computes it from the settlement reference the authorization was established against, while the **volume cap is client-side**, because a provisioner cannot observe how many bytes a client decrypted with material it already holds. The cap therefore bounds keystream exposure per issuance for a conforming client and is not a boundary against a modified one — the same posture as §5.3. Both values are published protocol parameters, not implementation choices, and the security tradeoff of §8.1 attaches to the ceiling alone. Authorization for one window does not authorize any subsequent window.
 * **Authorization is a Condition of Decryption, Not a Property of the Content Key:** The SCK is the cryptographic material necessary to decrypt the cyphertext, not a user's right to decrypt the cyphertext. Current authorization is a precondition to using the SCK, and a user may decrypt only while holding a valid, unexpired authorization covering that attempt — never on the basis of an expired authorization, an authorization issued for a different window, or possession of the content key itself.
 
 ### Architectural Invariants: 
@@ -141,7 +141,7 @@ An entitlement cannot sign, and a key cannot be owned on-chain. A consumer prove
 | Role | What it does | What it does **not** do |
 | --- | --- | --- |
 | **Transfer sequencer** | orders entitlement transfers so that scarcity is strictly sequenced and double-sale is impossible; maintains the binding between an entitlement and its current variant object | it does not authorize decryption, hold or provision content keys, or participate in any part of the read path |
-| **Provisioning layer** | establishes current authorization against finalized chain state and provisions content keys for one bounded decryption window; holds escrowed keys pending claim | it does not order transfers, hold entitlements, or determine who may hold one |
+| **Provisioning layer** | establishes current authorization against chain state at the deployment's declared settlement tier and provisions content keys for one bounded decryption window; holds escrowed keys pending claim | it does not order transfers, hold entitlements, or determine who may hold one |
 
 These two are separate by design and must not be merged. Ordering scarcity is a write-path concern that touches the ledger; establishing authorization is a read-path concern that touches every decryption. A single component doing both invites the conclusion that authorization can be settled at transfer time and presumed thereafter, which the Cryptographic Authorization Invariants forbid. The DKMN is the current implementation of the provisioning layer, never its definition.
 
@@ -167,11 +167,12 @@ The adapter contract:
 * **Seekable and order-independent.** Any piece decrypts from its index alone, without the preceding stream. This is what makes byte-range seeking and out-of-order swarm delivery possible.
 * **Length-preserving.** Cyphertext length equals plaintext length, with no per-piece expansion. Integrity is supplied by the BLAKE3/Bao layer, so an AEAD tag per piece would be redundant overhead that also breaks the offset arithmetic.
 * **Nonce-invariant per deployment.** One IV per deployment, fixed for its lifetime and published in the clear in the manifest, so the offset arithmetic holds identically for every participant.
+* **Declared addressable extent.** Every adapter publishes `maxAddressableBytes`, the largest object it can encrypt under a single `(key, IV)` pair without exhausting its counter field. This is a property of the construction, not a protocol constant, and it is what the manifest bounds check below is evaluated against.
 
-| Adapter | Construction | Counter layout | Notes |
-| --- | --- | --- | --- |
-| `AesCtrAdapter` | AES-256-CTR | 64-bit IV ‖ 64-bit block counter | MVP implementation |
-| `XChaCha20Adapter` | XChaCha20 | 192-bit nonce ‖ 64-bit block counter | candidate; wider nonce, no hardware dependency |
+| Adapter | Construction | Counter layout | `maxAddressableBytes` | Notes |
+| --- | --- | --- | --- | --- |
+| `AesCtrAdapter` | AES-256-CTR | 64-bit IV ‖ 64-bit block counter | 2⁶⁸ (≈256 EiB) | MVP implementation |
+| `XChaCha20Adapter` | XChaCha20 | 192-bit nonce ‖ 64-bit block counter | 2⁶⁶ (≈64 EiB) | candidate; wider nonce, no hardware dependency |
 
 **MVP implementation (`AesCtrAdapter`).** AES-256-CTR with a randomly generated **64-bit IV** per deployment and a **64-bit block counter**, together forming the 128-bit counter block AES requires. The counter block for a given piece is `(IV << 64) | block_index`, where `block_index = (PieceIndex × PieceSize) / 16`.
 
@@ -182,6 +183,18 @@ The adapter contract:
 * **Payload contents are opaque to this layer, and nesting is permitted.** A deployment's plaintext may itself hold separately encrypted material — an encrypted archive, a file carrying its own protection, or **another ChainTorrent object with its own deployment, content key, and entitlements**. The protocol encrypts a deployment as one contiguous stream and imposes no constraint whatever on structure inside that stream; independent encryption within the payload is not a second IV under this deployment's content key and does not implicate the nonce invariant above. Each nested object is a deployment in its own right, and the invariant applies independently at each layer. The entitlement consequence is the operative one: **an outer entitlement authorizes decryption of the outer cyphertext only.** It neither confers nor implies authorization for anything independently encrypted within, which resolves under its own entitlement or does not resolve at all. A container deployment can therefore be distributed, held, and seeded by parties who cannot read its constituents, and holding the container is not a claim on them.
 * Payload integrity and verification are handled natively by the BLAKE3-Bao Merkle tree layer, removing the need for redundant AEAD tag overhead while allowing instantaneous seek-and-decrypt capabilities.
 
+#### Manifest Bounds Validation
+
+A manifest is untrusted input until it has been authenticated, and its declared geometry drives the block arithmetic above. The client therefore validates it in full **before issuing any authorization request**, and a failure is a hard cryptographic error that halts the operation:
+
+* **Piece geometry.** Piece size is a power of two, at least 16 KiB, and a multiple of the cipher's block size. Declared total size, piece size, and piece count are mutually consistent.
+* **Addressable extent.** The highest block index the object can address — `ceil(total_bytes / 16) - 1` for a 16-byte block cipher — falls within the resolved adapter's `maxAddressableBytes`. A manifest declaring an object the adapter cannot address under one `(key, IV)` pair is rejected outright rather than silently wrapping the counter, which would reuse keystream.
+* **Index range.** Every piece index requested or served is less than the declared piece count. Out-of-range indices are refused at the transport layer, not resolved into offsets.
+
+**The ordering is the security property, not the arithmetic.** Validating before provisioning means a malformed or hostile manifest can never cause a content key to be requested, so no key material is exposed to a session that was going to fail, no authorization traffic is spent on invalid input, and a manifest cannot be used as a probe against the provisioning layer.
+
+Under `AesCtrAdapter` the extent bound is unreachable in practice — 2⁶⁸ bytes exceeds any object that could be assembled, and such a manifest fails on piece count and allocation long before the counter is implicated — so for the MVP this check is dormant. It is specified as an adapter-declared bound rather than a constant because narrower counter fields make it live: a 32-bit counter caps an object at 64 GiB, which feature-length video reaches, and an adapter carrying that layout must fail closed rather than wrap.
+
 **Integrity & Verification:** `BLAKE3` (utilizing a Bao-style verified streaming structure) provides a native Merkle tree for Bao chunk verification. BLAKE3/Bao provides cryptographic integrity proofs for individual Bao chunks and binds those chunks to the authenticated content root, eliminating manual MAC tree management overhead and mapping directly to Merkle DAG structures (e.g., Git repositories).
 
 **Confidentiality & Integrity Separation:** The protocol deliberately separates confidentiality from content integrity. AES-CTR provides encryption; BLAKE3/Bao provides independently verifiable content integrity and random-access authentication proofs.
@@ -189,7 +202,7 @@ The adapter contract:
 **Content Commitments (Ciphertext, Plaintext, and Variant Roots):** The canonical on-chain record commits to **two** BLAKE3/Bao roots, with a **third** added per-entitlement when per-entitlement variance is enabled (§7):
 
 * the **ciphertext root**, which lets seeders and downloaders verify opaque pieces they cannot read;
-* the **plaintext root**, which lets a decrypting client verify that what it produced is the canonical plaintext; and
+* the **plaintext root**, which lets a decrypting client verify that what it produced is the canonical plaintext, published in one of the three disclosure modes below; and
 * the **variant root** (per-entitlement, carried in the entitlement record rather than the asset record), which commits to the recipient's overlay seed. Absent under the MVP's uniform-content posture.
 
 The ciphertext root alone is insufficient. Integrity checking happens entirely at the ciphertext layer, so a client provisioned an incorrect content key — through provisioning fault, compromise, or a substituted response — produces garbage plaintext that passes every check the protocol otherwise performs. The plaintext root closes that gap.
@@ -198,13 +211,55 @@ Critically, the commitment is to the **plaintext, not to the key**. Committing t
 
 Because the swarm object remains complete and canonical under per-entitlement variance (§7.2), the plaintext root commits to the canonical plaintext for every holder. The overlay is applied after verification, so variance does not fork the commitment.
 
-*Caveat:* publishing a plaintext root permits confirmation-of-content attacks against low-entropy or guessable assets — an observer holding a candidate plaintext can confirm it. This is a non-issue for public assets such as NPM packages, whose plaintext is openly distributed regardless, and should be weighed for short or private content.
+#### Plaintext Root Disclosure Modes
+
+Publishing a plaintext root in the clear permits confirmation-of-content attacks against low-entropy or guessable assets: an observer holding a candidate plaintext can confirm it without holding an entitlement. This is a non-issue for public assets such as NPM packages, whose plaintext is openly distributed regardless, and it is a real exposure for short, personal, or private content.
+
+The plaintext root is therefore published in one of three **disclosure modes**, declared in the canonical record. The mode is a property of the deployment, fixed at registration, and its absence is stated explicitly rather than inferred — the same posture the record takes toward a missing upstream attestation (§4, Phase 1.2). A consumer always knows which verification is available to it before it requests anything.
+
+| Mode | Root published as | Who can verify | Confirmation attack |
+| --- | --- | --- | --- |
+| **Public** | bare BLAKE3/Bao root | anyone | possible against guessable plaintext |
+| **Keyed** | BLAKE3 keyed-mode root under `KDF(content_key, "plaintext-root-v1")` | current entitlement holders | not possible without the content key |
+| **Absent** | omitted | no one | not possible |
+
+**Keyed is the recommended default for private content, and it is free.** BLAKE3's native keyed mode requires no additional field, no separate delivery, and no change to provisioning: the verification key is derived from the content key the holder already receives for the window. It concedes nothing, because any party able to compute the keyed root could already decrypt and read the plaintext directly. What it removes is precisely the outsider's ability to test a candidate.
+
+**What lapses under Keyed.** Verification becomes holder-only, so the properties that depend on *third parties* checking equivalence no longer hold: deterministic First Finder race resolution is not externally auditable, re-deployment identity continuity is asserted rather than provable to outsiders, advisories can no longer follow the content across re-encryption by targeting the fingerprint, and the binding to a Web2 source of truth is not independently checkable. Decryption correctness — the property the root primarily exists to deliver — is fully preserved.
+
+**What lapses under Absent.** Everything above, plus decryption correctness itself. A client provisioned an incorrect content key produces garbage that passes every remaining check the protocol performs, exactly the gap this section opens by describing. The trust model shifts to the publisher and the provisioning layer, which is the ordinary expectation for personal cloud storage and is a genuine reduction relative to the rest of this specification. Absent is appropriate where the publisher and the consumer are the same party, or where masking outweighs verification; it should not be selected by default.
+
+**MVP posture:** public registries are Public mode without exception. Provenance and independent verifiability are the entire point of the NPM path, and the plaintext is openly distributed regardless, so there is nothing to mask.
 
 **Key Management Network (DKMN):** A decentralized threshold cryptography network (Multi-Party Computation, e.g., Lit Protocol) to lock, escrow, and provision the content key based on on-chain conditions without ever exposing content keys to blockchain validators. It is expressed behind a key provisioning adapter so that it can be replaced if a non-threshold alternative is ever found, on the same reasoning that governs `ISignatureAdapter` and `IIdentityAdapter`.
 
+**Settlement (Settlement Adapter):** authorization is established against chain state, and *how settled that state must be* is a declared parameter rather than a protocol constant. Confirmation counts are not comparable across chains, so the protocol expresses settlement as a small ordered tier vocabulary that every chain maps onto, resolved through an abstract **`ISettlementAdapter`**.
+
+| Tier | Meaning |
+| --- | --- |
+| `INCLUDED` | in a block at the chain's own tip |
+| `SOFT` | the chain's own liveness commitment — an L2 sequencer commitment, Solana `confirmed`, a committed Tendermint block |
+| `HARD` | the chain's strongest self-guarantee — an EVM finalized checkpoint, Solana `rooted` |
+| `SETTLED` | settled against an external security root, where one exists — an L2's proof or challenge resolution on its L1 |
+
+```
+    currentReferenceAt(tier) -> ref     // most recent reference having attained tier
+    tierOf(ref)              -> tier    // how settled a given reference is now
+```
+
+A **settlement reference** is opaque and orderable — a height, a slot, a checkpoint identifier — and no chain's vocabulary for it appears above this adapter. Chains with instant finality collapse `SOFT`, `HARD`, and `SETTLED` onto one tier, which is the correct answer for such a chain rather than a modelling failure. There is deliberately no tier below `INCLUDED`: nothing authorizes off an unincluded transaction.
+
+**Each deployment declares a `minSettlementTier` in its canonical record**, fixed at registration exactly as the plaintext root disclosure mode is. It is immutable because raising it later would silently degrade the access latency existing holders acquired; changing it means issuing a new deployment, which is how this specification handles every other change to a published object.
+
+**Depth is proportional to value at risk, and the protocol already accepts the failure it admits.** A reversal below `SETTLED` can invalidate an authorization already issued. The resulting exposure is exactly one decryption window, of one deployment, by one identity — the next renewal is evaluated against post-reversal state and refused. That is the *same bounded quantity* §1's Atomic and Bounded invariant already publishes as acceptable when a seller retains capacity after settlement. A shallow tier therefore introduces no new class of risk; it marginally increases the frequency of a failure the protocol already tolerates by design, and the failure is forward-only, non-compounding, and self-healing, because scarcity is ordered by the entitlement ledger and never by an authorization.
+
+The consequence is that a shallow tier is a legitimate choice rather than a concession to impatience. Requiring deep settlement universally would make decryption latency a function of chain finality, which is unusable for the interactive cases this protocol targets — a CI pipeline installing dependencies cannot wait for an L1 challenge period, while a viewer starting a high-value film reasonably can.
+
+---
+
 Any implementation behind the provisioning adapter, threshold or otherwise, is bound by two obligations that are not optional properties of a particular construction:
 
-* **Per-window authorization.** The implementation establishes current authorization against finalized chain state for each decryption window it provisions, and provisions nothing outside a window. Adapters may vary *how* authorization is established; they may never vary *whether* it is. An implementation that provisions once and presumes authorization forward is non-conforming regardless of its other merits.
+* **Per-window authorization.** The implementation establishes current authorization for each decryption window it provisions, and provisions nothing outside a window. Authorization is established at the deployment's declared settlement tier **exactly** — not weaker, which would violate the declaration, and not stronger, because reading deeper for one holder than another is discretion on the read path, which is selective withholding under another name. Adapters may vary *how* authorization is established; they may never vary *whether* it is. An implementation that provisions once and presumes authorization forward is non-conforming regardless of its other merits.
 * **No selective withholding.** The obligation to provision for a valid, unexpired entitlement is non-discretionary and mechanical. No provisioner may decline a particular holder or a particular transfer, which would constitute revocation by inaction.
 
 **Signatures (Signature Adapter):** signatures are produced and verified per layer, each layer resolving an abstract **`ISignatureAdapter`** rather than any one pinned scheme. The chain layer uses the adapter its target chain requires; the handshake and content-signing layers use the protocol's preferred scheme independently of that choice. The curve is an implementation detail of the layer and the chain, not a property of the protocol.
@@ -377,10 +432,11 @@ Peer gives me:
 * Confidentiality — unauthorized parties cannot derive the content key from ciphertext.
 * Incremental integrity — individual Bao chunks can be verified independently without possessing the complete asset.
 * Content authenticity — the expected Merkle root is bound to the canonical deployment identity.
-* Decryption correctness — a client can verify that the plaintext it obtained is the canonical plaintext, independently of which key or key-provisioning path produced it.
+* Decryption correctness — a client can verify that the plaintext it obtained is the canonical plaintext, independently of which key or key-provisioning path produced it. Available under the Public and Keyed plaintext root disclosure modes (§2); forgone under Absent, which is the cost that mode pays for masking.
 * Authorization — only identities satisfying the current identity/ownership policy may obtain **or use** the content key.
 * Per-window authorization — authorization is established for one bounded decryption window and confers no capability outside it; possession of the content key is not authorization.
-* Bounded windows — every authorization carries an explicit expiry, bounded by a block-height ceiling and a volume cap, so the maximum interval between a transfer and the seller's loss of capability is stated and bounded per deployment rather than left as an implementation artifact.
+* Bounded windows — every authorization carries an explicit expiry, bounded by a settlement-reference ceiling and a volume cap, so the maximum interval between a transfer and the seller's loss of capability is stated and bounded per deployment rather than left as an implementation artifact.
+* Bounded reversal exposure — where the declared settlement tier permits reversal, an authorization issued against reverted state exposes at most one window, of one deployment, to one identity, and the next renewal is refused. See §5.2.
 * Transferability — authorization follows the on-chain entitlement rather than a permanently bound identity.
 * Enforced revocation — after entitlement loss the next authorization request fails; revocation is a property of the provisioning boundary, not of client cooperation.
 * Seeder agnosticism — possession of encrypted pieces does not confer content access.
@@ -518,7 +574,17 @@ Access is provisioned dynamically via proof-of-possession, optimized for batch e
 1. **The Download:** The consumer fetches the CAN manifest and begins downloading encrypted pieces, in any order, from available peers.
 2. **Entitlement Acquisition Check:** The client inspects its own **wallet** and filters out every target for which it already holds an entitlement, because those entitlements need not be acquired again. This filter concerns *acquisition only*. It never determines whether decryption may proceed.
 3. **Per-Window Decryption Authorization:** For each decryption window, the client signs an aggregate authorization payload and requests provisioning. There is no local keystore, no cache of prior results, and no exemption for assets decrypted previously — an entitlement held for years authorizes nothing until the current window is established. Batching applies to authorization *requests*; it never substitutes for them. Requests are grouped into sliding-window batches across dependency trees; batch size is negotiated in the handshake against the provisioning implementation's payload and consensus limits rather than fixed by this specification, since those limits are properties of the implementation behind the adapter.
-4. **State Verification & Window Determination:** Provisioning nodes evaluate each batch against the on-chain Identity Registry via an optimized multicall view function (`Registry.isAuthorizedBatch([packageHashes], requestingIdentity)`), at a universally agreed-upon, recently finalized block height. That block height is the basis of the authorization itself, not merely a concurrency device: it fixes the state the authorization was established against, guarantees threshold consensus resolves deterministically without split-brain failures, and anchors the window's block-height ceiling. The window expires at that ceiling or at the volume cap, whichever is reached first.
+4. **State Verification & Window Determination:** Provisioning nodes evaluate each batch against the on-chain Identity Registry via an optimized multicall view function (`Registry.isAuthorizedBatch([packageHashes], requestingIdentity)`), at a universally agreed-upon settlement reference meeting the deployment's declared `minSettlementTier` (§2). That reference is the basis of the authorization itself, not merely a concurrency device: it fixes the state the authorization was established against, guarantees threshold consensus resolves deterministically without split-brain failures, and anchors the window's reference ceiling. The window expires at that ceiling or at the volume cap, whichever is reached first.
+
+The view returns three states because authorization is transactional against evolving state and "not settled yet" is not the same answer as "no". During an install the entitlement is frequently minted seconds before it is read, so the client is reading state it has just written:
+
+| Result | Meaning | Client behavior |
+| --- | --- | --- |
+| `AUTHORIZED` | the entitlement resolves to the requesting identity at the required tier | proceed to provisioning |
+| `PENDING_SETTLEMENT` | the entitlement is visible but has not attained the required tier | retry under defined backoff; not an error |
+| `DENIED` | the entitlement does not resolve to the requesting identity | terminal; no retry |
+
+Collapsing `PENDING_SETTLEMENT` into `DENIED` fails valid installs; collapsing it into `AUTHORIZED` authorizes against state below the declared tier. A client that cannot distinguish them either aborts a legitimate acquisition or retries an invalid one indefinitely.
 5. **Provisioning & Asynchronous Streaming:** As each batch is provisioned, the client unlocks matching local CAN pieces, validates them against the BLAKE3 roots, and feeds them into the local CAS symlink chain concurrently while the next batch resolves. The content key is held in memory for the window only and is never written to disk. Plaintext written to the local CAS persists by design and is outside the authorization boundary (§5.3, §7.6).
 6. **Window Expiry and Renewal:** On expiry the client discards the content key and requests a new window if decryption is to continue. Renewal is an ordinary authorization request and is refused if the entitlement no longer holds.
 
@@ -529,7 +595,7 @@ When a consumer transfers the entitlement on-chain, their capacity to decrypt en
 1. **Enforced at the Boundary:** The former holder's next authorization request is refused because the on-chain entitlement no longer resolves to their identity. Revocation is a property of the provisioning boundary, not of client behavior, and is not detected, negotiated, or self-reported by the client.
 2. **Bounded Lag:** Between settlement and expiry of the seller's outstanding window, the seller retains the capacity to decrypt within that window. This interval is the maximum lag referenced by the Atomic and Bounded invariant (§1). The buyer may authorize immediately on settlement and is not made to wait for the seller's window to lapse.
 
-The lag has two components: the window ceiling, which the protocol sets, and the target chain's finality, which it does not. Finality is a property of the chain the signature and identity adapters resolve to and varies across deployments, so the maximum lag is a **per-deployment observable** rather than a protocol constant. The protocol's obligation is that both components are published and bounded for a given deployment, not that either takes a particular value.
+The lag has two components. The first is the window ceiling. The second is the latency of the deployment's declared `minSettlementTier` (§2) on the chain the adapters resolve to — a parameter the publisher chooses, not a property the protocol merely suffers. Because the tier is declared in the canonical record and the adapter maps it onto that chain, the maximum lag is a **published per-deployment observable** rather than an artifact of whichever chain was used. The protocol's obligation is that both components are published and bounded for a given deployment, not that either takes a particular value.
 3. **Key Discard:** At window expiry the reference client discards the content key from memory. Because the key is never persisted, there is nothing to erase from storage. This is hygiene that narrows the window of exposure to memory extraction; it is not the boundary.
 4. **Optional State Monitoring:** A client may observe entitlement transfers via an RPC node in order to discard early and to present accurate state to the user. This is a user-experience affordance and correctness does not depend on it.
 5. **Plaintext Agnosticism:** The client does not act as malware. It does not attempt to flush RAM buffers of already-rendered frames, hunt down exported files, or delete user-saved plaintext.
@@ -549,7 +615,17 @@ Because payloads are piece-encrypted and bound by a BLAKE3 tree, data at rest is
 
 The provisioning handshake relies on timestamped or nonce-based signatures from the consumer's handshake key to prevent bad actors from intercepting and replaying authorization requests.
 
-Replay protection is load-bearing under per-window authorization rather than merely prudent. Each authorization payload **must** be bound to the specific window it establishes — its finalized block height and its expiry bounds — so that a captured payload cannot be replayed to manufacture a fresh window after the original has lapsed. A replayable authorization is indistinguishable from an unbounded one, and would silently reintroduce the presumption of forward authorization that the invariants forbid.
+Replay protection is load-bearing under per-window authorization rather than merely prudent. Each authorization payload **must** be bound to the specific window it establishes — its settlement reference and its expiry bounds — so that a captured payload cannot be replayed to manufacture a fresh window after the original has lapsed. A replayable authorization is indistinguishable from an unbounded one, and would silently reintroduce the presumption of forward authorization that the invariants forbid.
+
+#### Settlement Reversal Is Not Replay
+
+Two adjacent failures are frequently conflated and must not be. **Replay** is an adversary resubmitting a captured payload to obtain a capability they were never issued, and it is defeated by the binding above. **Settlement reversal** is a reference below `SETTLED` being reverted after an authorization was validly established against it. Nothing is captured and nothing is resubmitted; the authorization was correctly issued against state that subsequently ceased to exist.
+
+The distinction matters because the remedies differ entirely. Tighter payload binding shrinks the replay surface and does nothing whatever to the reversal surface, which is governed only by the declared settlement tier (§2).
+
+Reversal is not recallable — the content key is already in the holder's memory — and the protocol does not attempt to recall it. It is instead bounded: the exposure is one window, of one deployment, to one identity, and every subsequent renewal is evaluated against post-reversal state and refused. This is the identical bound §1's Atomic and Bounded invariant already publishes for a seller's retained capacity after transfer, so a deployment selecting a shallow tier accepts a higher frequency of an already-accepted failure rather than a novel one.
+
+The same reasoning distinguishes reversal from the settlement lag of Phase 3.2, which is likewise not a vulnerability but a published property: in that case the *legitimate prior holder* uses an authorization that has not yet expired. Neither is an attack, and neither belongs in the same class as replay.
 
 ### 5.3 Modified Clients (The "Honesty" Assumption)
 
@@ -565,7 +641,7 @@ The consequence follows directly: because the plaintext is deliberately released
 
 These are two different properties and the protocol delivers them to different degrees. Conflating them overstates the protocol's guarantees.
 
-* **Entitlements are 1:1 and fully auditable.** Every access right is a distinct transferable bearer asset with a unique on-chain owner and a complete transfer history. Accounting, residuals, resale, and audit of *who holds a right* are exact and trivially verifiable. This is a genuine and unusual strength.
+* **Entitlements are 1:1 and fully auditable.** Every access right is a distinct transferable bearer asset with a unique on-chain owner and a complete transfer history. Accounting, residuals, resale, and audit of *who holds a right* are exact and trivially verifiable. This is a genuine and unusual strength. The 1:1 property is a statement about *ownership*, not about instantaneous decryption capacity: because a seller retains capacity until their outstanding window lapses (Phase 3.2) while the buyer authorizes immediately, the number of parties able to decrypt can transiently exceed the number of entitlement holders, bounded by the same published window. The ledger remains exact; the capacity overlap is a settlement property, not an accounting one.
 * **The content key is 1:many.** A deployment is encrypted once with one content key and seeded to the swarm as a single ciphertext (Phase 1.4–1.5). Every entitlement holder is provisioned that same content key, wrapped to their own public key for transport. The wrapping bytes differ per identity and per window; the key inside does not.
 
 Three leak classes with three different outcomes:
@@ -720,9 +796,9 @@ Per-window authorization (§1, §7.1) places the provisioning layer on the read 
 * **Trust:** the protocol inherits the security and governance of a network it does not control.
 * **Load:** in a populated network the provisioning layer fields authorization traffic proportional to decryption activity across the whole swarm.
 
-**Window bounds are a security parameter that happens to govern load, and the two pull in opposite directions.** Widening the block-height ceiling reduces authorization traffic and lengthens the interval during which a seller retains capacity after settlement (§1, Atomic and Bounded); narrowing it tightens the transfer boundary and multiplies provisioning load. They cannot be tuned independently, and load relief is not a free lever: any capacity argument for widening the window is an argument for weakening the transfer boundary, and must be made as such. Calibration is therefore a joint economic and security decision, unresolved, and its value belongs in the To-Do list rather than here.
+**Window bounds are a security parameter that happens to govern load, and the two pull in opposite directions.** Widening the reference ceiling reduces authorization traffic and lengthens the interval during which a seller retains capacity after settlement (§1, Atomic and Bounded); narrowing it tightens the transfer boundary and multiplies provisioning load. They cannot be tuned independently, and load relief is not a free lever: any capacity argument for widening the window is an argument for weakening the transfer boundary, and must be made as such. Calibration is therefore a joint economic and security decision, unresolved, and its value belongs in the To-Do list rather than here.
 
-This is a consequence of an unsatisfied constraint, not a design preference. **The desired end state** is to eliminate the intermediary entirely: derive or release the content key from proof of entitlement-possession-at-a-given-block, with Byzantine fault tolerance supplied by the consensus layer that already exists rather than by a second overlay network. This is precisely the class of problem distributed consensus was built to solve, and it is the natural home for the guarantee.
+This is a consequence of an unsatisfied constraint, not a design preference. **The desired end state** is to eliminate the intermediary entirely: derive or release the content key from proof of entitlement-possession-at-a-given-settlement-reference, with Byzantine fault tolerance supplied by the consensus layer that already exists rather than by a second overlay network. This is precisely the class of problem distributed consensus was built to solve, and it is the natural home for the guarantee.
 
 No satisfactory construction is known to the authors. The obstacle is that the ledger is public: any value the chain can compute or reveal, every observer can also read, so the chain cannot itself hold a secret that only an entitled holder can unwrap. Candidate directions worth evaluating — none adopted, none yet demonstrated adequate at this protocol's cost and latency targets:
 
@@ -777,6 +853,8 @@ If the owner wishes to price the asset >$0.00, they cannot retroactively charge 
 
 ### 8.6 Authorization Height Agreement
 
-Phase 2.4 requires provisioning nodes to evaluate `isAuthorizedBatch` at "a universally agreed-upon, recently finalized block height." That height is load-bearing three times over: it is the state the authorization was established against, it anchors the window's block-height ceiling, and it is bound into the authorization payload as replay protection (§5.2). How the height is selected and agreed is unspecified.
+Phase 2.4 requires provisioning nodes to evaluate `isAuthorizedBatch` at a universally agreed-upon settlement reference. That reference is load-bearing three times over: it is the state the authorization was established against, it anchors the window's reference ceiling, and it is bound into the authorization payload as replay protection (§5.2).
 
-It is likely to fall out of the provisioning implementation's own consensus, since a threshold network must already agree on something to produce a threshold response. But that is an assumption about a particular construction, and the provisioning adapter's two obligations (§2) are stated to be construction-independent. Either height agreement is a third obligation of the adapter contract, or it is an implementation detail and the specification should stop describing it as universal. Unresolved, and recorded here so that a non-threshold construction is not adopted on the assumption that it inherits an agreement mechanism it has no reason to possess. 
+The deployment's declared `minSettlementTier` (§2) resolves *how settled* the reference must be, which was previously unspecified. It does not resolve *which* reference at that tier the nodes use, and that remains open. Two nodes reading at the same tier a second apart may resolve different references, and a threshold response requires them to agree on one.
+
+Agreement is likely to fall out of the provisioning implementation's own consensus, since a threshold network must already agree on something to produce a threshold response. But that is an assumption about a particular construction, and the provisioning adapter's obligations (§2) are stated to be construction-independent. Either reference agreement is a further obligation of the adapter contract, or it is an implementation detail and the specification should stop describing it as universal. Unresolved, and recorded here so that a non-threshold construction is not adopted on the assumption that it inherits an agreement mechanism it has no reason to possess. 
