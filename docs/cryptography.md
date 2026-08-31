@@ -6,29 +6,33 @@ The Transactable Key Protocol provides a decentralized, frictionless architectur
 
 ### Distribution Invariants: 
 * **Swarm Content is Encrypted:** No plaintext objects are exchanged in the swarm. 
-* **Swarm Cyphertext Doesn't Mutate or Splinter for the Same Plaintext Content Version:** No matter what key is used to decrypt the cyphertext, the swarm carries a single copy for that plaintext content version.
+* **Swarm Cyphertext Doesn't Mutate or Splinter Within a Deployment:** A deployment has exactly one cyphertext, byte-identical for every seeder and every entitlement holder, and no participant's authorization state produces a different swarm object. Multiple deployments of the same plaintext content version may coexist — a publisher re-deploying, or claiming an escrowed asset (§8.5), produces new cyphertext under a new content key while the previous deployment remains live. These are distinct swarm objects sharing a plaintext root, which is what proves they carry the same content (§2); they are not a splintering of one object, and the plaintext root is the identifier that survives the distinction.
 * **Access Control is Orthogonal to Distribution and Does Not Alter the Swarm Object:** Authorization determines whether a participant may transfer canonical cyphertext into plaintext, it does not create a different canonical swarm object for that participant. 
-* **Incremental / Random-Access Decryption Does Not Require Reconstructing the Entire Object:** Objects are encrypted per-chunk so that video can be streamed, audio can be seeked, and files can be downloaded in parts. Only a chunk must be completed for that chunk to be verified and decrypted. 
+* **Incremental / Random-Access Decryption Does Not Require Reconstructing the Entire Object:** Objects are encrypted per-piece so that video can be streamed, audio can be seeked, and files can be downloaded in parts. Only a piece must be completed for its Bao chunks to be verified and decrypted. 
 * **Content Identity is Independent of Encryption Identity:** The plaintext content version must remain identifiable as the same content even when publisher identity, publisher authority, encryption keys, and entitlements change, or when deployments are reissued. 
+* **Platform Independence:** No platform, application, publisher, provisioner, indexer, or other intermediary is required to discover, distribute, acquire, transfer, or exercise an entitlement beyond the protocol-defined interfaces and consensus state. Applications may provide discovery, presentation, commerce, or other value-added services, but no application may become authoritative over the underlying content, entitlement, or transfer state.
+* **Intermediary Replaceability:** Any application or service providing discovery, presentation, commerce, indexing, storage, or other value-added functionality may be replaced without invalidating content identity, entitlement ownership, or the ability to obtain authorized content from the protocol.
 
 ### Economic Invariants: 
 * **Access is Transactable:** The publisher mints and transfers access entitlements to users, and users can transfer the access entitlement to other users.
-* **Access Entitlement Transfer is Atomic and Immediate:** The access entitlement transfer is atomic, and once the atomic transaction is completed, the access boundary is immediate and unambiguous for the buyer and seller. 
+* **Access Entitlement Transfer is Atomic and Bounded:** The access entitlement transfer is atomic. On settlement the buyer may authorize immediately, and the seller obtains no further authorization. The seller's capability ends no later than the expiry of their current authorization window, and that maximum lag is published and bounded for the deployment.
 * **Access Entitlement Transfer Does Not Transfer Decryption Capability:** The access entitlement seller's previously acquired decryption capability does not become the buyer's capability, and the seller's retained cryptographic material does not constitute continued authorization. Authorization follows entitlement; cryptographic possession does not. 
 * **Non-Publisher Bootstrap:** Any member of the swarm can discover and provision content they don't own, whose ownership and access control methods are held in escrow for the owner to prove and claim at a later time. 
-* **Non-Publisher Escrow of Rights:** The protocol must be able to populate new content and provision keys into the swarm prior to the owner arriving to claim the content, take control of its keys, and claim its economic rights. 
+* **Non-Publisher Escrow of Rights:** The protocol must be able to populate new content and provision entitlements into the swarm prior to the owner arriving to claim the content, take control of its escrowed content keys, and claim its economic rights. 
 * **Content Bootstrap Does Not Confer Publisher Rights to Content Bootstrapper:** Discovery, encryption, seeding, escrow creation, or maintenance of an unclaimed asset confers neither publisher ownership nor consumer access rights upon the bootstrap participant.
 * **Escrow Must Preserve the Same Rights that Would Exist if the Publisher Had Been Present:** The escrow mechanism must preserve all the same rights and access patterns that would exist if the publisher had been present and in control from the beginning. Escrow is deferred ownership identification, not a substitute for ownership. 
+* **Intermediary Independence:** The protocol must not require an intermediary to control discovery, distribution, access, entitlement transfer, or settlement. Intermediaries may provide value-added services, but those services must remain replaceable without invalidating content identity, access rights, or economic ownership.
 
 ### Cryptographic Authorization Invariants: 
-* **Authorization is Controlled:** Immediately before the decryption operation, the system cryptographically establishes that the requesting wallet currently satisfies the access condition. 
-* **Authorization is Current:** A previous successful authorization, previous entitlement state, previously issued key, cached authorization result, or prior decryption session does not prove access entitlement is current.
-* **Authorization is Per-Decryption:** Authorization established for one decryption operation does not authorize any subsequent decryption operation. 
-* **Authorization is a Condition of Decryption, Not a Property of the Content Key:** The SCK is the cryptographic material necessary to decrypt the cyphertext, not a users' right to decrypt the cyphertext. Current authorization to decrypt the cyphertext is a precondition to using the SCK and a user may decrypt only when that user satisfies the authorization condition at the point of the attempt to decrypt, not some prior point in time. 
+* **Cryptography Serves Economics and Distribution:** The cryptographic mechanisms are subordinate to the protocol's economic and distribution invariants. A cryptographic construction that satisfies confidentiality while violating transactable access, canonical distribution, platform independence, or non-hostile access is non-conforming.
+* **Authorization is Controlled:** Before any decryption may occur, the system cryptographically establishes that the requesting identity currently satisfies the access condition, evaluated against finalized chain state. No decryption occurs that is not covered by a valid, unexpired authorization.
+* **Authorization is Current:** A previous successful authorization, previous entitlement state, previously issued key, cached authorization result beyond its stated window, or prior decryption session does not prove access entitlement is current. An authorization result is current only within the bounded decryption window for which it was issued.
+* **Authorization is Per-Window:** Authorization is established for exactly one bounded decryption window and authorizes no decryption outside it. The window is bounded by a block-height ceiling and a volume cap, expiring at whichever is reached first. The two bounds are enforced differently and the difference is material: the **block-height ceiling is externally determinable**, since the provisioning layer computes it from the finalized height the authorization was established against, while the **volume cap is client-side**, because a provisioner cannot observe how many bytes a client decrypted with material it already holds. The cap therefore bounds keystream exposure per issuance for a conforming client and is not a boundary against a modified one — the same posture as §5.3. Both values are published protocol parameters, not implementation choices, and the security tradeoff of §8.1 attaches to the ceiling alone. Authorization for one window does not authorize any subsequent window.
+* **Authorization is a Condition of Decryption, Not a Property of the Content Key:** The SCK is the cryptographic material necessary to decrypt the cyphertext, not a user's right to decrypt the cyphertext. Current authorization is a precondition to using the SCK, and a user may decrypt only while holding a valid, unexpired authorization covering that attempt — never on the basis of an expired authorization, an authorization issued for a different window, or possession of the content key itself.
 
 ### Architectural Invariants: 
 * **Adapter/Interface Construction:** The protocol can and will support multiple chains, tokens, encryption schema, smart contract controllers, curves, swarm models, and more. Everything is an adapter to an interface, never hard-bound to a specific implementation detail. 
-* **No Publisher or Provisioner May Selectively Withhold an Entitlement Holder's Ability to Decrypt:** Once the publisher mints and transfers a key, the publisher cannot revoke the key, deny its use, or prevent its transfer, and no provisioner may withhold the entitlement holder's ability to decrypt if the holder proves their possession of a valid access entitlement token.
+* **No Publisher or Provisioner May Selectively Withhold an Entitlement Holder's Ability to Decrypt:** Once the publisher mints and transfers an entitlement, the publisher cannot revoke the entitlement, deny its use, or prevent its transfer, and no provisioner may withhold the entitlement holder's ability to decrypt if the holder proves their possession of a valid entitlement.
 * **Publisher Identity/Authority Key Rotation Does Not Version Cyphertext:** Publisher cryptographic identity is not consumer authorization state. When the publisher rotates their key, the swarm cyphertext does not change, and existing access entitlement holders do not lose their entitlement to access. 
 
 Decisions that remain undetermined are held in the To-Do list of `docs/workplans/current/ChainTorrent MVP.md` rather than here.
@@ -40,54 +44,170 @@ This protocol optimizes for **frictionless distribution and access**, not hostil
 * **The Distribution Problem:** Piracy is fundamentally a distribution and friction problem. By making legitimate, highest-quality access seamless and inexpensive, the incentive for piracy is mitigated.
 * **No Hardware Enclaves:** The protocol strictly avoids proprietary Trusted Execution Environments (TEEs) or hardware-level DRM. Such mechanisms introduce platform friction, violate open-source ethos, and create centralized failure points.
 * **The DRM Boundary (Content Key vs. Plaintext):** The protocol strictly governs the lifecycle of the **content key (SCK)**. The protocol accepts the "analog hole" and acknowledges that attempting adversarial, OS-level plaintext enforcement on a user-controlled device is hostile and futile.
-* **The Application-Layer Contract:** Enforcement relies on the state transitions of the open-source reference client. When entitlement ownership changes, the client’s contractual obligation is to **destroy the content key**, ceasing all further decryption. It explicitly does *not* attempt to track, flush, or purge plaintext that has already been rendered or exported.
-* **Anti-Derivability & Random SCKs:** Symmetric Content Keys **must** be generated randomly per asset deployment, never derived deterministically from plaintext payloads. While deterministic key derivation would trivially solve swarm fragmentation, it completely destroys economic enforcement by allowing any possessor of plaintext to independently compute the key and bypass escrow entirely. Security and economic viability supersede naive payload deduplication.
-* **Incremental Verification:** The protocol provides incremental, random-access content verification. A client can cryptographically verify an individual chunk using that chunk and its Merkle authentication path, without downloading the remainder of the asset. The Merkle root is independently authenticated by the protocol's content/deployment commitment.
+* **Retained Plaintext is a Deliverable, Not a Leak:** A user who has decrypted content holds it, keeps it, and uses it in whatever software they choose. This is the protocol's purpose rather than a limit on it — the transient copy that evaporates when a subscription lapses is precisely the platform behavior this design exists to replace. The protocol governs the transition from cyphertext to plaintext and makes no claim over plaintext thereafter, deliberately and permanently.
+* **The Application-Layer Contract:** The authorization boundary is enforced by per-window authorization, not by client behavior: when a window expires, the next window is refused unless the requesting identity still satisfies the access condition. The reference client's obligation is to discard the content key at window expiry and to hold it in memory only, never persisting it. That obligation is hygiene reinforcing the boundary, not the boundary itself. The client explicitly does *not* attempt to track, flush, or purge plaintext that has already been rendered or exported.
+* **Anti-Derivability & Random Content Keys:** Content keys **must** be generated randomly per asset deployment, never derived deterministically from plaintext payloads. While deterministic key derivation would trivially solve swarm fragmentation, it completely destroys economic enforcement by allowing any possessor of plaintext to independently compute the key and bypass escrow entirely. Security and economic viability supersede naive payload deduplication.
+* **Incremental Verification:** The protocol provides incremental, random-access content verification. A client can cryptographically verify an individual Bao chunk using that chunk and its Merkle authentication path, without downloading the remainder of the asset. The Merkle root is independently authenticated by the protocol's content/deployment commitment.
+
+#### Decentralization Is Layer-Specific
+
+"Decentralized" is not a single property of the protocol. It describes the distribution of authority and dependency at a particular layer. A system may be decentralized at one layer while necessarily relying on coordination or service at another. The protocol therefore makes no blanket claim that every function is equally decentralized; each layer has a distinct decentralization requirement.
+
+The protocol defines decentralization across the following layers:
+
+**Content Distribution — Decentralized**
+
+Content distribution is decentralized when no particular server, publisher, platform, or storage provider is required to supply the content. Encrypted swarm objects are replicated among independent participants and may be obtained from any available peers. Any participant may seed an object, and loss or withdrawal of any particular seeder must not invalidate the object's identity or the rights associated with it.
+
+The protocol does not designate an authoritative content host.
+
+**Content Identity — Rights-Holder Asserted**
+
+Content identity is asserted by the party claiming rights over the content. The protocol may incorporate identifiers issued by existing registries, publishers, distributors, standards organizations, or other intermediaries, including identifiers such as ISBN, IMDB identifiers, package names and versions, and similar established references.
+
+Such identifiers are references to an identity assertion, not sources of protocol authority. The continued operation, availability, or agreement of the external registry is not required for the protocol to maintain the content identity once that identity has been established.
+
+Multiple external identifiers may identify the same content, and the protocol may associate those identifiers with a common content identity. Conversely, an external registry's identifier does not by itself establish ownership, entitlement, or authority within the protocol.
+
+The protocol therefore does not attempt to replace or decentralize existing identity registries. It incorporates rights-holder-provided identity into a decentralized content and entitlement system while preserving the independence of the protocol's canonical state from those registries.
+
+**Entitlement Ownership and Transfer — Decentralized**
+
+Entitlement ownership is decentralized when ownership and transfer are determined by the protocol's authoritative consensus state rather than by a platform, publisher, marketplace, or service provider maintaining a private database.
+
+An entitlement may have exactly one current owner, but no intermediary owns the authority to declare who that owner is independently of the consensus state. Transfer must therefore remain valid regardless of which application, marketplace, wallet, or interface initiated or displays it.
+
+**Transaction Ordering — Decentralized**
+
+Transaction ordering is decentralized when no single participant can unilaterally establish the authoritative ordering of conflicting entitlement state transitions. The ordering mechanism must derive its authority from the consensus mechanism of the underlying ledger rather than from an application, marketplace, publisher, or provisioning service.
+
+A sequencer may provide an implementation mechanism for ordering operations, but it must not thereby acquire authority over entitlement ownership or decryption authorization beyond the state transitions explicitly assigned to it by the protocol.
+
+**Decryption Authorization — Decentralization-Targeted**
+
+Decryption authorization is decentralized when the ability to authorize access does not depend permanently upon a single trusted intermediary or a party possessing unilateral authority to grant, deny, or selectively withhold access.
+
+The protocol currently places authorization behind a replaceable provisioning interface. A deployment may therefore use a threshold or other provisioning network to establish authorization, but such a network is infrastructure rather than an authority over entitlement ownership. The desired end state is for authorization to derive directly from the decentralized consensus state and proof of current entitlement, eliminating the additional trusted provisioning intermediary.
+
+Until that construction exists, the protocol must preserve the interface boundary so that the provisioning mechanism can be replaced without changing content identity, entitlement ownership, transfer semantics, or the canonical swarm object.
+
+**Content Governance and Trust — Decentralized**
+
+Content governance is decentralized when no global authority is required to determine whether content is acceptable, safe, deprecated, disputed, or appropriate for a particular user or jurisdiction.
+
+The protocol therefore treats governance assertions as signed, append-only metadata rather than authoritative mutation of canonical content or entitlement state. Clients and organizations may choose which identities they trust and what actions those assertions cause locally.
+
+A trusted signer may therefore influence a participant's behavior without acquiring protocol-level authority over the underlying content or ownership state.
+
+**Discovery and Presentation — Decentralized**
+
+Discovery and presentation are decentralized when no particular application, indexer, marketplace, search engine, or user interface is required to locate, interpret, access, or present protocol content.
+
+Applications may provide discovery, recommendation, search, presentation, analytics, commerce, or other value-added services. These services are intentionally permitted to be centralized businesses. Their decentralization requirement is instead **replaceability**: no such service may become authoritative over the content, entitlement, or transaction state merely by providing an interface to it.
+
+A user must therefore be able to move between independent applications without surrendering the underlying content identity or entitlement.
+
+#### The Decentralization Boundary
+
+These distinctions produce an important rule:
+
+**The protocol does not require every participant or service to be decentralized. It requires that no participant or service become an unavoidable authority over a protocol property that the protocol defines as decentralized.**
+
+A centralized service may therefore exist as a convenience, business, gateway, indexer, storage provider, marketplace, or application. What it may not become is the authority whose continued operation is necessary to establish canonical content identity, entitlement ownership, transaction validity, or the user's underlying rights.
+
+Where the protocol currently requires an intermediary for a function, that dependency is identified explicitly rather than described as decentralized. Where the intermediary is placed behind a replaceable adapter, the dependency is an implementation choice rather than a protocol-level authority.
+
+**Decentralization is therefore measured not by whether individual components have operators, but by whether those operators possess irreplaceable authority over the protocol's canonical state or whether users are forced to depend upon them to exercise rights the protocol itself is intended to provide.**
 
 ### 1.2 Terminology
 
-The protocol carries several distinct objects that plain English collapses into the single word "key". They are owned by different parties, live for different durations, and fail in different ways, so the unqualified word is not used in this specification.
+The protocol carries several distinct objects that plain English collapses into the single word "key", and two distinct roles that plain English collapses into "the network" or "the sequencer". They are owned by different parties, live for different durations, and fail in different ways, so the unqualified words are not used in this specification.
+
+#### Objects
 
 | Term | What it is | What happens to it |
 | --- | --- | --- |
 | **Entitlement** | the transferable bearer asset recording who currently holds an access right to a deployment | **checked**, on-chain; it signs nothing |
 | **Handshake key** | the private key a party signs with to prove control of the identity that holds an entitlement | **proven**, verified off-chain via the signature adapter |
-| **Content key (SCK)** | the symmetric key that decrypts a deployment's ciphertext | **obtained**, then used locally |
+| **Content key (SCK)** | the symmetric key that decrypts a deployment's ciphertext | **obtained** per authorized decryption window; held in memory for that window only, never persisted |
 | **Master key** | the per-asset node of a publisher's derivation hierarchy, from which that asset's deployment content keys derive | **derived**, never transmitted |
 | **Escrowed key** | a content key held on behalf of an absent Web2 maintainer following a First Finder ingest, pending claim | **held**, then claimed |
-| **Variant object key** | the key decrypting a per-entitlement variant object; bound to the entitlement identity, never to the asset | **obtained** with the entitlement |
+| **Variant object key** | the key decrypting a per-entitlement variant object; bound to the entitlement identity, never to the asset | **obtained** per authorized decryption window, under the same authorization as the content key |
 
-An entitlement cannot sign, and a key cannot be owned on-chain. A consumer proves control of a **handshake key** to demonstrate that they hold an **entitlement**, in order to obtain a **content key**.
+An entitlement cannot sign, and a key cannot be owned on-chain. A consumer proves control of a **handshake key** to demonstrate that they hold an **entitlement**, in order to obtain a **content key** for one bounded decryption window.
+
+#### Roles
+
+| Role | What it does | What it does **not** do |
+| --- | --- | --- |
+| **Transfer sequencer** | orders entitlement transfers so that scarcity is strictly sequenced and double-sale is impossible; maintains the binding between an entitlement and its current variant object | it does not authorize decryption, hold or provision content keys, or participate in any part of the read path |
+| **Provisioning layer** | establishes current authorization against finalized chain state and provisions content keys for one bounded decryption window; holds escrowed keys pending claim | it does not order transfers, hold entitlements, or determine who may hold one |
+
+These two are separate by design and must not be merged. Ordering scarcity is a write-path concern that touches the ledger; establishing authorization is a read-path concern that touches every decryption. A single component doing both invites the conclusion that authorization can be settled at transfer time and presumed thereafter, which the Cryptographic Authorization Invariants forbid. The DKMN is the current implementation of the provisioning layer, never its definition.
+
+#### Units
+
+Plain English collapses two different granularities into "chunk". They differ by three orders of magnitude and are set by different layers, so the unqualified word is not used.
+
+| Term | Size | Set by | Role |
+| --- | --- | --- | --- |
+| **Piece** | configurable, power of two, ≥ 16 KiB | the CAN | unit of transport, request, and encryption offset arithmetic |
+| **Bao chunk** | 1 KiB, fixed | BLAKE3/Bao | leaf of the verification tree; the granularity at which an authentication path resolves |
+
+Verification granularity is the Bao chunk; transport and offset granularity is the piece. Claims elsewhere in this specification about verifying "a chunk" without downloading the remainder are claims at Bao granularity, and are satisfied once the containing piece has arrived.
 
 ## 2. Cryptographic Primitives
 
 To ensure high performance, enable out-of-order streaming, and maintain native compatibility with Content-Addressable Networks (CAN) like BitTorrent and IPFS, the protocol utilizes:
 
-**Symmetric Encryption (Payload):** `AES-CTR` utilizing a randomized 96-bit Initialization Vector (IV) per file alongside a 64-bit block counter. To support out-of-order chunk decryption and byte-range seeking without custom nonce hashing, the counter offset for any specific chunk is calculated directly via standard block arithmetic: $\text{Counter}_{\text{offset}} = \text{IV} + \left(\frac{\text{ChunkIndex} \times \text{ChunkSize}}{16}\right)$.
+**Symmetric Encryption (Payload — Cipher Adapter):** payload encryption resolves an abstract **`IPayloadCipherAdapter`** rather than a pinned cipher, on the same reasoning that governs `ISignatureAdapter`. The interface constrains the properties the rest of the protocol depends on; it does not constrain the construction.
 
-* **Chunk Alignment:** The protocol enforces strict Chunk Alignment, mandating that all CAN piece sizes are perfect multiples of the 16-byte AES block size, completely eliminating partial-block padding complexities across chunk boundaries.
-* **Nonce Invariants:** The 96-bit IV is generated randomly once per deployment and stored in the clear within the CAN manifest. This establishes a strict nonce invariant for the lifetime of that specific file, guaranteeing the block arithmetic holds across the swarm.
+The adapter contract:
+
+* **Seekable and order-independent.** Any piece decrypts from its index alone, without the preceding stream. This is what makes byte-range seeking and out-of-order swarm delivery possible.
+* **Length-preserving.** Cyphertext length equals plaintext length, with no per-piece expansion. Integrity is supplied by the BLAKE3/Bao layer, so an AEAD tag per piece would be redundant overhead that also breaks the offset arithmetic.
+* **Nonce-invariant per deployment.** One IV per deployment, fixed for its lifetime and published in the clear in the manifest, so the offset arithmetic holds identically for every participant.
+
+| Adapter | Construction | Counter layout | Notes |
+| --- | --- | --- | --- |
+| `AesCtrAdapter` | AES-256-CTR | 64-bit IV ‖ 64-bit block counter | MVP implementation |
+| `XChaCha20Adapter` | XChaCha20 | 192-bit nonce ‖ 64-bit block counter | candidate; wider nonce, no hardware dependency |
+
+**MVP implementation (`AesCtrAdapter`).** AES-256-CTR with a randomly generated **64-bit IV** per deployment and a **64-bit block counter**, together forming the 128-bit counter block AES requires. The counter block for a given piece is `(IV << 64) | block_index`, where `block_index = (PieceIndex × PieceSize) / 16`.
+
+* **Why 64/64 rather than 96/32.** A 32-bit counter caps a deployment at 2³² blocks — 64 GiB — which is adequate for a package tarball and inadequate for the media classes this protocol targets. A 64-bit counter removes the ceiling at the cost of IV width, which is acceptable because content keys are random per deployment (§1.1): an IV collision across two deployments is harmless when the keys differ, and there is only ever one IV within a deployment.
+* **Fields, not integer addition.** The IV occupies the high 64 bits and the counter the low 64; the block index is written into the counter field and never added to the counter block as a whole. Whole-block addition would carry into the IV field, which is a different construction with different collision behavior.
+* **Piece Alignment.** All CAN piece sizes are multiples of the 16-byte AES block size, which every legal BitTorrent piece size already satisfies. Only the final block of a deployment is partial, and CTR mode handles it by keystream truncation, so no padding exists anywhere in the object.
+* **Nonce Invariants.** The IV is generated randomly **once per deployment**, not per file, and is stored in the clear within the CAN manifest. A deployment containing multiple files is encrypted as a single contiguous byte stream under one `(content key, IV)` pair, so file boundaries have no cryptographic meaning and the block arithmetic is continuous across them. **Per-file IVs under a shared content key are a protocol violation**, and so is any construction deriving a second IV from the first: AES-CTR leaks the XOR of plaintexts under keystream reuse, and a deployment is the unit at which nonce invariance is guaranteed. Where a fresh IV is needed, a fresh deployment is the mechanism (Phase 1.3, `deployment_id`). This rule governs the protocol's own encryption of a deployment and says nothing about what the plaintext contains.
+* **Payload contents are opaque to this layer, and nesting is permitted.** A deployment's plaintext may itself hold separately encrypted material — an encrypted archive, a file carrying its own protection, or **another ChainTorrent object with its own deployment, content key, and entitlements**. The protocol encrypts a deployment as one contiguous stream and imposes no constraint whatever on structure inside that stream; independent encryption within the payload is not a second IV under this deployment's content key and does not implicate the nonce invariant above. Each nested object is a deployment in its own right, and the invariant applies independently at each layer. The entitlement consequence is the operative one: **an outer entitlement authorizes decryption of the outer cyphertext only.** It neither confers nor implies authorization for anything independently encrypted within, which resolves under its own entitlement or does not resolve at all. A container deployment can therefore be distributed, held, and seeded by parties who cannot read its constituents, and holding the container is not a claim on them.
 * Payload integrity and verification are handled natively by the BLAKE3-Bao Merkle tree layer, removing the need for redundant AEAD tag overhead while allowing instantaneous seek-and-decrypt capabilities.
 
-**Integrity & Verification:** `BLAKE3` (utilizing a Bao-style verified streaming structure) provides a native Merkle tree for chunk verification. BLAKE3/Bao provides cryptographic integrity proofs for individual chunks and binds those chunks to the authenticated content root, eliminating manual MAC tree management overhead and mapping directly to Merkle DAG structures (e.g., Git repositories).
+**Integrity & Verification:** `BLAKE3` (utilizing a Bao-style verified streaming structure) provides a native Merkle tree for Bao chunk verification. BLAKE3/Bao provides cryptographic integrity proofs for individual Bao chunks and binds those chunks to the authenticated content root, eliminating manual MAC tree management overhead and mapping directly to Merkle DAG structures (e.g., Git repositories).
 
 **Confidentiality & Integrity Separation:** The protocol deliberately separates confidentiality from content integrity. AES-CTR provides encryption; BLAKE3/Bao provides independently verifiable content integrity and random-access authentication proofs.
 
 **Content Commitments (Ciphertext, Plaintext, and Variant Roots):** The canonical on-chain record commits to **two** BLAKE3/Bao roots, with a **third** added per-entitlement when per-entitlement variance is enabled (§7):
 
-* the **ciphertext root**, which lets seeders and downloaders verify opaque chunks they cannot read;
-* the **plaintext root**, which lets a decrypting client verify that what it produced is the canonical plaintext — computed over the *invariant* portion of the asset when variance is in use; and
-* the **variant root** (per-entitlement, carried in the entitlement record rather than the asset record), which commits to the recipient-specific chunk set. Absent under the MVP's uniform-content posture.
+* the **ciphertext root**, which lets seeders and downloaders verify opaque pieces they cannot read;
+* the **plaintext root**, which lets a decrypting client verify that what it produced is the canonical plaintext; and
+* the **variant root** (per-entitlement, carried in the entitlement record rather than the asset record), which commits to the recipient's overlay seed. Absent under the MVP's uniform-content posture.
 
 The ciphertext root alone is insufficient. Integrity checking happens entirely at the ciphertext layer, so a client provisioned an incorrect content key — through provisioning fault, compromise, or a substituted response — produces garbage plaintext that passes every check the protocol otherwise performs. The plaintext root closes that gap.
 
-Critically, the commitment is to the **plaintext, not to the key**. Committing to a key (e.g. publishing `BLAKE3(SCK)`) would hard-code a single universal content key and foreclose per-identity key provisioning. Committing to the plaintext constrains the *output* rather than the mechanism, so it holds unchanged under wrapped keys, per-identity subkeys, traceable decryption keys, or any future provisioning scheme. It also provides plaintext-side incremental verification that mirrors the ciphertext tree: a single decrypted chunk can be validated against its authentication path without decrypting the remainder of the asset.
+Critically, the commitment is to the **plaintext, not to the key**. Committing to a key (e.g. publishing `BLAKE3(SCK)`) would hard-code a single universal content key and foreclose per-identity key provisioning. Committing to the plaintext constrains the *output* rather than the mechanism, so it holds unchanged under wrapped provisioning responses, per-identity subkeys, traceable decryption keys, or any future provisioning scheme. It also provides plaintext-side incremental verification that mirrors the ciphertext tree: a single decrypted Bao chunk can be validated against its authentication path without decrypting the remainder of the asset.
+
+Because the swarm object remains complete and canonical under per-entitlement variance (§7.2), the plaintext root commits to the canonical plaintext for every holder. The overlay is applied after verification, so variance does not fork the commitment.
 
 *Caveat:* publishing a plaintext root permits confirmation-of-content attacks against low-entropy or guessable assets — an observer holding a candidate plaintext can confirm it. This is a non-issue for public assets such as NPM packages, whose plaintext is openly distributed regardless, and should be weighed for short or private content.
 
-**Key Management Network (DKMN):** A decentralized threshold cryptography network (Multi-Party Computation, e.g., Lit Protocol) to lock, escrow, and provision the SCK based on on-chain conditions without ever exposing plaintext keys to blockchain validators. It is expressed behind a key provisioning adapter so that it can be replaced if an non-threshold alternative is ever found, on the same reasoning that governs `ISignatureAdapter` and `IIdentityAdapter`.
+**Key Management Network (DKMN):** A decentralized threshold cryptography network (Multi-Party Computation, e.g., Lit Protocol) to lock, escrow, and provision the content key based on on-chain conditions without ever exposing content keys to blockchain validators. It is expressed behind a key provisioning adapter so that it can be replaced if a non-threshold alternative is ever found, on the same reasoning that governs `ISignatureAdapter` and `IIdentityAdapter`.
 
-**Wallet Signatures (Signature Adapter):** signatures are produced and verified per layer, each layer resolving an abstract **`ISignatureAdapter`** rather than any one pinned scheme. The chain layer uses the adapter its target chain requires; the handshake and content-signing layers use the protocol's preferred scheme independently of that choice. The curve is an implementation detail of the layer and the chain, not a property of the protocol.
+Any implementation behind the provisioning adapter, threshold or otherwise, is bound by two obligations that are not optional properties of a particular construction:
+
+* **Per-window authorization.** The implementation establishes current authorization against finalized chain state for each decryption window it provisions, and provisions nothing outside a window. Adapters may vary *how* authorization is established; they may never vary *whether* it is. An implementation that provisions once and presumes authorization forward is non-conforming regardless of its other merits.
+* **No selective withholding.** The obligation to provision for a valid, unexpired entitlement is non-discretionary and mechanical. No provisioner may decline a particular holder or a particular transfer, which would constitute revocation by inaction.
+
+**Signatures (Signature Adapter):** signatures are produced and verified per layer, each layer resolving an abstract **`ISignatureAdapter`** rather than any one pinned scheme. The chain layer uses the adapter its target chain requires; the handshake and content-signing layers use the protocol's preferred scheme independently of that choice. The curve is an implementation detail of the layer and the chain, not a property of the protocol.
 
 ```
     isValidSignature(pubkey, message, signature) -> bool
@@ -99,13 +219,27 @@ Critically, the commitment is to the **plaintext, not to the key**. Committing t
 | --- | --- | --- |
 | `Secp256k1Adapter` | secp256k1 / ECDSA | EVM chains — chain layer only (MVP) |
 | `Ed25519Adapter` | Ed25519 / EdDSA | protocol-preferred scheme; handshake and content-signing layers (MVP); chain layer on Solana, Near, Cosmos-family |
-| `Secp256r1Adapter` | secp256r1 / P-256 | passkeys, WebAuthn, secure enclaves |
+| `Secp256r1Adapter` | secp256r1 / P-256 | passkeys, WebAuthn, platform authenticators [^enclave] |
 | `BlsAdapter` | BLS12-381 | aggregate/threshold signatures |
 
 * **Per-layer resolution:** the signature adapter is resolved independently at each layer where a signature is produced or verified. A deployment is not restricted to a single scheme — the chain layer uses whatever the target chain mandates, while the handshake and content-signing layers retain the protocol's preferred scheme regardless of chain.
 * **Binding, not matching:** where two layers use different keys, those keys must be provably the same principal. The Registry holds a binding attestation — the subordinate key signed by the authoritative chain identity — established once and thereafter verifiable by any party. Keys unbound across layers are a protocol violation.
 * **Relationship to `IIdentityAdapter`:** the two are distinct and compose. The signature adapter answers *"is this signature cryptographically valid?"*; the identity adapter answers *"is this validated claimant authorized for this asset?"* Authentication and authorization stay separable, so a new chain requires a new signature adapter without touching authorization logic, and a new authorization model requires no cryptographic changes.
 * Adapter resolution follows the same on-chain patterns as identity adapters — constructor injection via factory, resolved from a governance-controlled `AdapterRegistry`, immutable once bound.
+
+[^enclave]: Using a platform authenticator to hold a signing key is unrelated to §1.1's rejection of hardware DRM. The protocol never requires special hardware to decrypt or render content; where a user's identity key happens to live is their choice and constrains no one else.
+
+**Key Agreement (Key Agreement Adapter):** wrapping a content key to a recipient is an *encryption* operation and resolves an abstract **`IKeyAgreementAdapter`**, never the signature adapter. The two are distinct primitives over distinct keys: a signature key proves authorship and cannot receive a wrapped secret, and treating them as interchangeable is a category error rather than an implementation shortcut. Ed25519 signing keys are not encryption keys; secp256k1 requires an integrated encryption scheme. The binding is already expressed in the Binding Schema below, where a DID Document distinguishes `authentication` from `keyAgreement` — the signature adapter resolves the former, the key agreement adapter the latter.
+
+```
+    wrapTo(recipientPubkey, plaintext)   -> cyphertext
+    unwrap(recipientPrivkey, cyphertext) -> plaintext
+```
+
+| Adapter | Scheme | Paired signature scheme |
+| --- | --- | --- |
+| `X25519Adapter` | X25519 + HKDF + AEAD (HPKE-style) | Ed25519 |
+| `EciesSecp256k1Adapter` | ECIES over secp256k1 | secp256k1 |
 
 #### Binding Schema
 
@@ -116,7 +250,7 @@ Storage is hybrid, because the binding is consulted from two places with opposit
 * **On-chain:** the fields on-chain logic must read — the bound handshake public key and its scheme — are stored on-chain, roughly two storage words. Escrow claim verification (§5.6) and authorization checks run inside contracts, and a contract cannot read an off-chain document without an oracle or a proof system, which would reintroduce the intermediary class this design removes.
 * **Anchored:** the full DID Document is committed by hash on-chain and resolved off-chain. This keeps the schema extensible without contract changes and keeps storage cost at one word.
 
-The chain holds state and pointers to actuals; large objects that are merely *identified* stay off-chain. Off-chain resolution inherits the small-swarm availability characteristics described in §7.3, which is the reason the contract-consulted fields are not among the anchored ones.
+The chain holds state and pointers to actuals; large objects that are merely *identified* stay off-chain.
 
 Alternatives considered, recorded so the choice can be attacked on review:
 
@@ -134,14 +268,16 @@ The content commitments are fields of a larger descriptor. The `.torrent` file i
 
 **Compatibility posture.** Full backwards compatibility with existing BitTorrent clients is a hard MVP requirement, so the canonical on-chain record natively exposes a standardized magnet link and BTIH (see Phase 1.1). Unmodified clients participate in the swarm with no blockchain integration. The hash-card is therefore introduced as a *superset*: everything a `.torrent` carries, plus the fields a legacy format has no place to put. Legacy clients read the subset they understand; protocol clients read the whole card.
 
+**Two integrity structures, one authority.** A legacy client verifies pieces against the BitTorrent v1 SHA-1 piece hashes and cannot join a swarm without them, so a compatible deployment publishes both those hashes and the BLAKE3/Bao tree over the same bytes. The duplication is off-chain and small — twenty bytes per piece in the `.torrent` — and the on-chain record carries only the BTIH. **The protocol does not inherit SHA-1's collision weakness.** The Bao cyphertext root is the sole authority for what the canonical object is; legacy piece hashes are transport-layer compatibility and nothing else. A piece satisfying SHA-1 but failing its Bao authentication path is rejected by every protocol client, so a legacy client can circulate bad bytes but can never establish canonical ones. Alignment imposes no additional constraint, since every legal BitTorrent piece size is already a multiple of the 16-byte cipher block.
+
 | Field | Present in `.torrent`? | Purpose |
 | --- | --- | --- |
 | Identity hash — `BLAKE3(name @ version)` | no | canonical Registry key |
-| Ciphertext Bao root | partly (piece hashes) | verify opaque chunks while seeding |
+| Ciphertext Bao root | partly (piece hashes) | verify opaque pieces while seeding |
 | **Plaintext fingerprint (Bao root)** | **no** | verify decryption; identify content across encryptions |
-| AES-CTR IV, chunk size, alignment | no | deterministic block arithmetic across the swarm |
+| Payload cipher IV, piece size, alignment | no | deterministic block arithmetic across the swarm |
 | Registry pointer / ACC reference | no | where authorization is resolved |
-| Upstream attestation (e.g. NPM sha512) | no | bind to the Web2 source of truth |
+| Upstream attestation (source-dependent) | no | bind to the artifact the ingest source served, where that source provides one |
 | Advisory backlink root | no | entry point for §6 governance metadata |
 | Magnet / BTIH | yes | legacy client interoperability |
 
@@ -149,47 +285,58 @@ The content commitments are fields of a larger descriptor. The `.torrent` file i
 
 The plaintext fingerprint is referenced elsewhere in this specification as a means of proving that ciphertext and plaintext correspond. That is the smallest of its uses. Because it is an identifier for *content* rather than for any particular encryption of that content, it provides:
 
-* **Decryption correctness.** The client can prove it was provisioned the right key and produced canonical output, incrementally and per-chunk (see above).
-* **Encryption-independent content identity.** Two deployments with different SCKs produce entirely different ciphertext but the *same* plaintext root. Identical content is therefore provably identical across independent encryptions.
+* **Decryption correctness.** The client can prove it was provisioned the right key and produced canonical output, incrementally and per Bao chunk (see above).
+* **Encryption-independent content identity.** Two deployments with different content keys produce entirely different ciphertext but the *same* plaintext root. Identical content is therefore provably identical across independent encryptions.
 * **Deterministic resolution of First Finder races.** When two nodes ingest the same asset concurrently, the loser of State-Locked Escrow Registration can *prove* its discarded object was the same content rather than trusting the identity hash alone — and any third party can verify the equivalence.
 * **Re-deployment without loss of identity.** A publisher issuing a new deployment of an asset produces new ciphertext whose plaintext root is unchanged, demonstrating that nothing about the content changed. Because rotation is versioning rather than replacement (Phase 1.3), the previous deployment remains live alongside it, and the shared plaintext root is what proves the two carry the same content. Migration becomes verifiable rather than asserted.
 * **Advisories that follow the content.** A malware or deprecation flag (§6) targeting the plaintext fingerprint remains attached across re-encryptions, re-deployments, and re-uploads under new identities. Flags cannot be shed by repackaging — which is the single most common evasion in existing package ecosystems.
 * **Binding to Web2 sources of truth.** The plaintext root is checkable against the upstream artifact (the NPM `integrity` sha512, an ISBN/DOI record, a publisher's own release hash), anchoring on-chain identity to the artifact the world already recognizes.
-* **Deduplication at the identity layer.** Randomized SCKs make ciphertext deduplication impossible by design (§1.1). Plaintext fingerprints restore the ability to *recognize* duplicate content without weakening key secrecy — dedup of knowledge, not of bytes.
+* **Deduplication at the identity layer.** Randomized content keys make ciphertext deduplication impossible by design (§1.1). Plaintext fingerprints restore the ability to *recognize* duplicate content without weakening key secrecy — dedup of knowledge, not of bytes.
 
 ### Authentication and Verification Tree
 
 ```
-                 BLOCKCHAIN
-                     │
-               authenticates
-                     │
-                     ▼
-        Deployment ID (torrent-style hash)
-                     │
-                     ▼
-                 Merkle Root
-                     │
-           ┌─────────┼─────────┐
-           ▼         ▼         ▼
-         proof     proof     proof
-           │         │         │
-           ▼         ▼         ▼
-        chunk A   chunk B   chunk C
-           │         │         │
-           ▼         ▼         ▼
-        AES-CTR   AES-CTR   AES-CTR
-           │         │         │
-           ▼         ▼         ▼
-        plaintext plaintext plaintext
+                        BLOCKCHAIN
+                            │
+              ┌─────────────┴─────────────┐
+        authenticates                  records
+              │                            │
+              ▼                            ▼
+    Deployment ID (torrent-style)     Entitlement
+              │                            │
+      ┌───────┴───────┐                    ▼
+      ▼               ▼            current authorization
+ CIPHERTEXT root  PLAINTEXT root    for THIS window
+      │               │                    │
+┌─────┼─────┐         │                    │
+▼     ▼     ▼         │                    │
+proof proof proof     │                    │
+│     │     │         │                    │
+▼     ▼     ▼         │                    │
+piece piece piece     │                    │
+A     B     C         │                    │
+│     │     │         │                    │
+└─────┴─────┴─────────┼────────────────────┘
+            │         │
+            ▼         │
+        AES-CTR ◄─────┼──── content key, provisioned
+            │         │      for this window only
+            ▼         │
+        plaintext ────┘
+            │
+            ▼
+    verified against
+     PLAINTEXT root
 
 ```
+
+Two roots and one gate. The ciphertext root authenticates pieces a seeder cannot read; the plaintext root authenticates what a decryption produced. Between them sits current authorization for the window in which the attempt falls — possession of the content key is not a substitute for it (§1).
 
 ```
 Peer gives me:
-    encrypted chunk #N
+    encrypted piece #N
     +
-    proof path for chunk #N
+    proof path for piece #N
     +
     authenticated manifest/root
 
@@ -200,12 +347,17 @@ Peer gives me:
 
                  ↓
 
-       "This chunk belongs to
+       "This piece belongs to
         the canonical object."
 
                  ↓
 
-        decrypt chunk
+        current authorization for
+        this decryption window?
+
+                 ↓
+
+        decrypt piece
 
                  ↓
 
@@ -222,14 +374,16 @@ Peer gives me:
 
 ## 3. Security Considerations
 
-* Confidentiality — unauthorized parties cannot derive the SCK from ciphertext.
-* Incremental integrity — individual chunks can be verified independently without possessing the complete asset.
+* Confidentiality — unauthorized parties cannot derive the content key from ciphertext.
+* Incremental integrity — individual Bao chunks can be verified independently without possessing the complete asset.
 * Content authenticity — the expected Merkle root is bound to the canonical deployment identity.
 * Decryption correctness — a client can verify that the plaintext it obtained is the canonical plaintext, independently of which key or key-provisioning path produced it.
-* Authorization — only identities satisfying the current identity/ownership policy may obtain the content key.
+* Authorization — only identities satisfying the current identity/ownership policy may obtain **or use** the content key.
+* Per-window authorization — authorization is established for one bounded decryption window and confers no capability outside it; possession of the content key is not authorization.
+* Bounded windows — every authorization carries an explicit expiry, bounded by a block-height ceiling and a volume cap, so the maximum interval between a transfer and the seller's loss of capability is stated and bounded per deployment rather than left as an implementation artifact.
 * Transferability — authorization follows the on-chain entitlement rather than a permanently bound identity.
-* Cooperative revocation — the reference client ceases content key use after entitlement loss.
-* Seeder agnosticism — possession of encrypted chunks does not confer content access.
+* Enforced revocation — after entitlement loss the next authorization request fails; revocation is a property of the provisioning boundary, not of client cooperation.
+* Seeder agnosticism — possession of encrypted pieces does not confer content access.
 * Plaintext non-revocability — the protocol makes no claim to erase plaintext already obtained by a user.
 
 ## 4. Protocol Flow
@@ -240,13 +394,37 @@ The protocol supports both explicit content creators (Publishers) and automated,
 
 1. **Canonical Identity Pre-Check:** Before performing any local cryptographic operations, the client queries the on-chain `Registry` using the asset's deterministic Web2 metadata hash.
 
-* **If a record exists:** The client halts the First Finder workflow, fetches the official CAN infohash and SCK access conditions from the ledger, and joins the existing swarm as a standard consumer/seeder. To guarantee interoperability, the canonical on-chain record natively exposes a standardized magnet link (including the exact BTIH), allowing traditional BitTorrent clients to access the package registry and participate in the swarm without requiring custom blockchain integration.
+* **If a record exists:** The client halts the First Finder workflow, fetches the official CAN infohash and content key access conditions from the ledger, and joins the existing swarm as a standard consumer/seeder. To guarantee interoperability, the canonical on-chain record natively exposes a standardized magnet link (including the exact BTIH), allowing traditional BitTorrent clients to access the package registry and participate in the swarm without requiring custom blockchain integration.
 * **If no record exists:** The client proceeds as the authorized First Finder, establishing that this is the network's initial ingestion point for the asset.
 
-2. **Deterministic Normalization (Tarball & Dual-Hash):** For the initial NPM interception and ingestion, the First Finder does not repackage the asset; it fetches and strictly hashes the immutable `.tgz` tarball provided directly by the NPM registry as-is. While this acknowledges that a First Finder bootstrapping event relies on the centralized registry to deliver the initial object, it guarantees deterministic bytes. This canonical archive is run through a dual-hash pipeline: an identity hash (e.g., `BLAKE3(packageName @ version)`) is generated to represent the asset on the Registry, while the primary payload undergoes a separate structural hash to build the CAN streaming manifest.
-3. **SCK Generation:** The symmetric content key generation is bifurcated based on the publisher's role:
+2. **Ingest & Deterministic Normalization (Dual-Hash):** The First Finder acquires the asset through an **ingest source adapter** (`IIngestSourceAdapter`), which resolves where the bytes originate. NPM is the MVP implementation; pnpm, Bun, PyPI, crates.io, a DOI resolver, or a publisher's own release endpoint are peer implementations rather than special cases.
 
-* *First Finders* utilize cryptographically secure, random generation for the SCK, as the object is held in escrow and will be claimed by its rightful Web2 maintainer later.
+The adapter's contract is source-independent, and it is the contract rather than any particular source that the protocol depends on:
+
+* **Immutable, deterministically-hashable bytes.** The First Finder does not repackage the asset; it fetches and strictly hashes the artifact exactly as served. For the NPM implementation that is the immutable `.tgz` tarball, taken as-is.
+* **Upstream integrity attestation, where the source provides one.** NPM's `integrity` sha512 is one instance of this field, not its definition — an ISBN/DOI record, a signed release hash, or a transparency-log entry serve the same role for other sources. Where a source offers none, the canonical record states its absence rather than implying an attestation exists.
+
+A bootstrapping event necessarily originates from some pre-existing source. That is a property of bootstrapping itself, not a dependency on any particular registry, and **once the object is in the swarm its canonical reference is the on-chain record**. The ingest relationship ends at registration and is never consulted again.
+
+The adapter faithfully ingests what the source served. Whether that content is *safe* is an advisory-layer question (§6) and never an ingest-layer one: the attestation binds the canonical record to the artifact the upstream source published, and makes no claim whatever about that artifact's contents. The protocol has no control over what a source publishes and does not pretend otherwise.
+
+#### Ingest Source Eligibility
+
+The adapter interface is source-independent, but the *selection* of sources is not a free choice. Non-Publisher Bootstrap (§1) permits a First Finder to ingest an asset whose owner has not arrived, and Content Bootstrap Does Not Confer Publisher Rights (§1) settles what the bootstrapper gains by doing so — nothing. Neither invariant addresses whether the bootstrapper was entitled to *acquire* the bytes in the first place. Escrow is deferred ownership identification; it is not an acquisition license.
+
+**Until §8.5 is resolved, ingest adapters target archives whose content is already free to use.** This is a constraint on adapter selection, not on adapter design: the interface, the attestation contract, and the as-is hashing rule are unchanged, and a future adapter pointed at a licensed catalog is a policy decision rather than an engineering one.
+
+Two independent reasons hold the line:
+
+* **Exposure concentrates in the acquisition path.** The swarm carries opaque ciphertext (§5.1), entitlements are auditable bearer assets (§5.4), and transfer is ordered and irrevocable — none of these is where a rights holder's claim lands. The claim lands on how the bytes were obtained. This is the distinction courts have already drawn against the machine-learning corpora built over the last decade: transformative *use* of lawfully acquired works has been sustained, while wholesale acquisition from shadow libraries has not. A protocol whose entire ingest surface is one adapter interface should not discover this after the interface has shipped against a paid catalog.
+* **A free archive makes the post-claim pricing paradox inert.** §8.5 turns on a claimant arriving to find their asset already circulating under grandfathered $0.00 entitlements they cannot reprice. Where the content was free to use before ingest, the arriving maintainer was denied no revenue, so the paradox has no economic content and the escrow model can be proven in production without it. Bootstrapping against a permissively-licensed archive is therefore load-bearing rather than incidental to the MVP's choice of NPM.
+
+The reciprocal follows: an adapter aimed at content that is *not* already free to use may not ship until §8.5 has an answer, because such an adapter converts an unresolved economic question into an unbargained taking. The eligibility rule is what keeps that crossing deliberate rather than emergent.
+
+The acquired archive is run through a dual-hash pipeline: an identity hash (e.g., `BLAKE3(packageName @ version)`) is generated to represent the asset on the Registry, while the primary payload undergoes a separate structural hash to build the CAN streaming manifest.
+3. **Content Key Generation:** Content key generation is bifurcated based on the publisher's role:
+
+* *First Finders* utilize cryptographically secure, random generation for the content key, as the object is held in escrow and will be claimed by its rightful Web2 maintainer later.
 * *Explicit Publishers / IP Owners* may derive keys deterministically from their own secure, private seed phrases for simplified key recovery and management. This derivation is **layered and domain-separated by asset**, never a bare seed-to-key mapping:
 
 ```text
@@ -268,36 +446,39 @@ The protocol supports both explicit content creators (Publishers) and automated,
 * **Per-asset isolation:** because `asset_identity_hash` is mixed in, every asset a publisher releases has an independent master key. Compromise of one asset's SCK does not expose any other asset by the same publisher, and does not expose the root.
 * **Nonce-invariant safety (mandatory):** the `deployment_id` layer exists to guarantee the `(SCK, IV)` pair is never reused. AES-CTR catastrophically leaks plaintext XOR under keystream reuse, so a publisher re-encrypting the same asset **must** derive a fresh SCK via a new `deployment_id`, even when the plaintext and identity hash are unchanged. Deriving an SCK from `seed_phrase` alone, or from `seed_phrase` plus identity without a deployment layer, is a protocol violation.
 * **Anti-derivability is preserved:** the derivation inputs are the publisher's private secret and public identifiers — never the plaintext payload. Possession of the plaintext confers no ability to compute the key (see §1.1).
+* **The derivation seed is not the publisher's identity key.** The seed phrase is a local secret that never leaves the client and exists solely to derive content keys; the publisher's chain identity and publishing authority are separate objects held by the identity adapter and transferable independently (Phase 1.6). Rotating the identity or authority key therefore changes nothing about key derivation and does not version cyphertext, which is what the corresponding §1 invariant asserts. The converse is the real constraint: **the seed is a recovery secret, not a rotatable credential.** A publisher who discards a seed loses the ability to re-derive content keys for every asset derived under it, and a publisher adopting a new seed derives future assets only. Neither operation affects existing entitlements, deployments, or swarm objects.
 
-4. **Payload Encryption & Hashing:** The asset is chunked to perfectly align with the CAN piece size and 16-byte block boundaries. Each chunk is encrypted using AES-CTR and structurally hashed using BLAKE3 to build the verified streaming manifest.
-5. **Trustless Seeding:** The encrypted chunks and the manifest are seeded to public, unauthenticated CANs. Seeders host opaque bytes blindly.
-6. **Condition-Locking & Universal Adapter Escrow:** The SCK is encrypted using the DKMN's public key and bound to an Access Control Condition (ACC). To ensure complete transferability of rights, key rotation, identity migration, and future identity resolution upgrades, **all publishers—whether explicit creators or automated First Finders—route authorization through an Abstract Identity Adapter** queried by the on-chain Identity Registry Contract (`Registry.isAuthorized(packageId, requestingWallet)`). This architecture ensures the protocol can seamlessly introduce native protocol-level identity adapters in the future with 100% backwards compatibility.
+4. **Payload Encryption & Hashing:** The asset is divided into pieces aligned to the CAN piece size and 16-byte block boundaries. Each piece is encrypted through the payload cipher adapter (§2) and structurally hashed using BLAKE3 to build the verified streaming manifest.
+5. **Trustless Seeding:** The encrypted pieces and the manifest are seeded to public, unauthenticated CANs. Seeders host opaque bytes blindly.
+6. **Condition-Locking & Universal Adapter Escrow:** The content key is encrypted to the **provisioning adapter's** key-agreement public key, via the key agreement adapter (§2) — the DKMN being the provisioning adapter's current implementation, never its definition — and bound to an Access Control Condition (ACC). To ensure complete transferability of rights, key rotation, identity migration, and future identity resolution upgrades, **all publishers—whether explicit creators or automated First Finders—route authorization through an Abstract Identity Adapter** queried by the on-chain Identity Registry Contract (`Registry.isAuthorized(packageId, requestingIdentity)`). This architecture ensures the protocol can seamlessly introduce native protocol-level identity adapters in the future with 100% backwards compatibility.
 
 * *Explicit Publisher:* Registers via a Publisher Authority Adapter (e.g., a transferable bearer asset/ERC-721 token or cryptographic DID adapter). Copyright and publishing ownership are transferred simply by transferring the underlying authority token or updating identity resolution, without requiring protocol or asset state rewrites.
-* *First Finder Escrow:* Registers via an Escrow Identity Adapter (e.g., `PackageJsonAdapter`). The DKMN holds the SCK in escrow, resolving authorization against the registry until the Web2 maintainer authenticates via the adapter and updates the registry state to claim administrative control or swap to a Publisher Authority Adapter.
+* *First Finder Escrow:* Registers via an Escrow Identity Adapter (e.g., `PackageJsonAdapter`). The provisioning layer holds the escrowed key, resolving authorization against the registry until the Web2 maintainer authenticates via the adapter and updates the registry state to claim administrative control or swap to a Publisher Authority Adapter.
 * **State-Locked Escrow Registration:** If two independent non-owner nodes ("First Finders") attempt to ingest and register the same unlisted package simultaneously, the on-chain `Registry` enforces a strict State-Locked Escrow Registration. The transaction that lands first in the block wins, establishing the official package hash and escrow binding. The losing node's client catches the on-chain revert, discards its locally generated ciphertext/SCK, and automatically switches to pointing its installation pipeline to the winning node's registered CAN infohash.
 
-7. **Minting:** Tokens or access permissions are registered on-chain as standard, transferable bearer assets.
+7. **Minting:** Entitlements are registered on-chain as standard, transferable bearer assets.
+
+**Variant seed authorship is deliberately absent from this phase.** Under per-entitlement variance (§7.2) a deployment would also establish how each holder's variant seed is authored. Who authors it, from what material, and how the escrow case is served when the publisher is absent are unresolved and recorded in §8.3. Nothing in Phase 1 should be read as settling them.
 
 #### Abstract Identity Adapter & Generic Content Identity
 
 To support generic content (movies, ebooks, audio, binaries, software), the identity verification layer is decoupled via an abstract verification interface (`IIdentityAdapter`). This interface normalizes both *authentication mechanisms* (e.g., DNS, Web3 signatures) and *authorization models* (e.g., ERC-721 ownership, Multi-Sig) into a single standard: `isAuthorized(address claimant, bytes context) -> bool`.
 
 ```text
-                                        +------------------------------------------------+
-                                        |            Identity Registry Contract          |
-                                        +------------------------------------------------+
-                                                                |
-                                              Calls IIdentityAdapter.isAuthorized()
-                                                                |
-      +----------------------------+----------------------------+-------------------------------+------------------------------------+
-      |                            |                            |                               |                                    |
-+-----+--------------------+ +-----+--------------------+ +-----+--------------------+ +--------+------------------+ +--------+------------------+
-| Software Package Adapter | |    Web/DNS Adapter       | | Public Key / DID Adapter | | Publisher Rights Adapter  | | Enterprise DID / MultiSig |
-| (NPM/git/package.json)   | | (DNSSEC / ZK-Email)      | | (Web3/Cryptographic ID)  | | (Asset NFT / Bearer Token)| | Adapter (Corporate IP)    |
-+--------------------------+ +--------------------------+ +--------------------------+ +---------------------------+ +---------------------------+
-   Escrow via Package ID          Escrow via Web/Email        Escrow via Blockchain             Explicit Wallet            Corporate Catalog
-         (?)                             (?)                         (?)                   (Owns Publisher ERC-721)    (Governed by Multi-Sig / DNS)
+                                                 +------------------------------------------------+
+                                                 |            Identity Registry Contract          |
+                                                 +------------------------------------------------+
+                                                                          |
+                                                        Calls IIdentityAdapter.isAuthorized()
+                                                                          |
+              +-----------------------------+-----------------------------+-----------------------------+-----------------------------+
+              |                             |                             |                             |                             |
++-----------------------------+ +-----------------------------+ +-----------------------------+ +-----------------------------+ +-----------------------------+
+| Software Package Adapter    | |     Web/DNS Adapter         | | Public Key / DID Adapter    | | Publisher Rights Adapter    | | Enterprise DID / MultiSig   |
+| (NPM/git/package.json)      | | (DNSSEC / ZK-Email)         | | (Web3/Cryptographic ID)     | | (Asset NFT / Bearer Token)  | | Adapter (Corporate IP)      |
++-----------------------------+ +-----------------------------+ +-----------------------------+ +-----------------------------+ +-----------------------------+
+    Escrow via Package ID           Escrow via Web/Email          Escrow via Blockchain              Explicit Identity             Corporate Catalog
+             (?)                             (?)                           (?)                   (Owns Publisher ERC-721)   (Governed by Multi-Sig / DNS)
 
 
 ```
@@ -322,7 +503,7 @@ To ensure security and compatibility within a smart contract environment, popula
 
 #### Identity Resolution Lifecycle
 
-[ First Finder Pushes Package ] ---> [ DKMN Escrows SCK via Escrow Adapter ]
+[ First Finder Pushes Package ] ---> [ Provisioning Layer Escrows Content Key via Escrow Adapter ]
 |
 v
 [ Maintainer Proves Identity (ZK-Email/DNS) ] -> [ Registry Updates Authorization ]
@@ -332,63 +513,80 @@ v
 
 ### Phase 2: Consumption and Decryption
 
-Access is provisioned dynamically via proof-of-possession, optimized for batch execution across complex dependency trees.
+Access is provisioned dynamically via proof-of-possession, optimized for batch execution across complex dependency trees. Two distinct operations run in this phase and must not be conflated: **entitlement acquisition**, which may be skipped when the identity already holds the entitlement, and **decryption authorization**, which may never be skipped, cached, or presumed.
 
-1. **The Download:** The consumer fetches the CAN manifest and begins downloading encrypted chunks, in any order, from available peers.
-2. **The Chunked Batch Handshake:** To respect threshold network payload limits and prevent MPC consensus timeouts over massive dependency trees, the client checks its local keystore first, filters out already-unlocked packages, and groups remaining target hashes into optimized sliding-window batches (e.g., 20–50 items per request). The consumer signs a single aggregate authorization payload for each batch.
-3. **State Verification, Concurrency, & Throttled Fetching:** DKMN nodes process each batch request against the on-chain Identity Registry via an optimized multicall view function (`Registry.isAuthorizedBatch([packageHashes], requestingWallet)`). To prevent **State Concurrency** race conditions (e.g., a user transferring a token while a batch request is inflight), DKMN nodes evaluate the view function at a universally agreed-upon, recently finalized block height. This guarantees that **DKMN Resolution** achieves threshold consensus deterministically without split-brain failures.
-4. **Provisioning & Asynchronous Streaming:** As each batch of SCKs is returned by the DKMN, the client unlocks matching local CAN chunks, validates them against the BLAKE3 root hash, and feeds them into the local CAS symlink chain concurrently while the next batch resolves.
+1. **The Download:** The consumer fetches the CAN manifest and begins downloading encrypted pieces, in any order, from available peers.
+2. **Entitlement Acquisition Check:** The client inspects its own **wallet** and filters out every target for which it already holds an entitlement, because those entitlements need not be acquired again. This filter concerns *acquisition only*. It never determines whether decryption may proceed.
+3. **Per-Window Decryption Authorization:** For each decryption window, the client signs an aggregate authorization payload and requests provisioning. There is no local keystore, no cache of prior results, and no exemption for assets decrypted previously — an entitlement held for years authorizes nothing until the current window is established. Batching applies to authorization *requests*; it never substitutes for them. Requests are grouped into sliding-window batches across dependency trees; batch size is negotiated in the handshake against the provisioning implementation's payload and consensus limits rather than fixed by this specification, since those limits are properties of the implementation behind the adapter.
+4. **State Verification & Window Determination:** Provisioning nodes evaluate each batch against the on-chain Identity Registry via an optimized multicall view function (`Registry.isAuthorizedBatch([packageHashes], requestingIdentity)`), at a universally agreed-upon, recently finalized block height. That block height is the basis of the authorization itself, not merely a concurrency device: it fixes the state the authorization was established against, guarantees threshold consensus resolves deterministically without split-brain failures, and anchors the window's block-height ceiling. The window expires at that ceiling or at the volume cap, whichever is reached first.
+5. **Provisioning & Asynchronous Streaming:** As each batch is provisioned, the client unlocks matching local CAN pieces, validates them against the BLAKE3 roots, and feeds them into the local CAS symlink chain concurrently while the next batch resolves. The content key is held in memory for the window only and is never written to disk. Plaintext written to the local CAS persists by design and is outside the authorization boundary (§5.3, §7.6).
+6. **Window Expiry and Renewal:** On expiry the client discards the content key and requests a new window if decryption is to continue. Renewal is an ordinary authorization request and is refused if the entitlement no longer holds.
 
-### Phase 3: Secondary Transfer and Key Destruction
+### Phase 3: Secondary Transfer and Authorization Expiry
 
-When a consumer transfers the token on-chain, their entitlement to decrypt the content is revoked locally.
+When a consumer transfers the entitlement on-chain, their capacity to decrypt ends at the expiry of their current authorization window. No local action is required for this, and none is relied upon.
 
-1. **State Monitoring:** The open-source client monitors token balances via an RPC node.
-2. **Key Destruction:** Upon detecting a transfer event where the balance hits zero, the client executes its core contractual obligation: **deleting the SCK from local memory and storage.**
-3. **No More Decryption:** Without the SCK, the client is mathematically incapable of decrypting any further chunks. The application’s access to the encrypted data stream halts.
-4. **Plaintext Agnosticism:** The client does not act as malware. It does not attempt to flush RAM buffers of already-rendered frames, hunt down exported files, or delete user-saved plaintext.
-5. **Continued Network Support:** The user deliberately retains the *encrypted* chunks in their local CAN storage. The client continues to act as a seeder, strengthening the swarm, despite the user no longer possessing the content key to read the data themselves.
+1. **Enforced at the Boundary:** The former holder's next authorization request is refused because the on-chain entitlement no longer resolves to their identity. Revocation is a property of the provisioning boundary, not of client behavior, and is not detected, negotiated, or self-reported by the client.
+2. **Bounded Lag:** Between settlement and expiry of the seller's outstanding window, the seller retains the capacity to decrypt within that window. This interval is the maximum lag referenced by the Atomic and Bounded invariant (§1). The buyer may authorize immediately on settlement and is not made to wait for the seller's window to lapse.
 
-The protocol provides revocation of future content key provisioning and future decryption of cyphertext, not guaranteed revocation of previously decrypted plaintext that may be retained by the user.
+The lag has two components: the window ceiling, which the protocol sets, and the target chain's finality, which it does not. Finality is a property of the chain the signature and identity adapters resolve to and varies across deployments, so the maximum lag is a **per-deployment observable** rather than a protocol constant. The protocol's obligation is that both components are published and bounded for a given deployment, not that either takes a particular value.
+3. **Key Discard:** At window expiry the reference client discards the content key from memory. Because the key is never persisted, there is nothing to erase from storage. This is hygiene that narrows the window of exposure to memory extraction; it is not the boundary.
+4. **Optional State Monitoring:** A client may observe entitlement transfers via an RPC node in order to discard early and to present accurate state to the user. This is a user-experience affordance and correctness does not depend on it.
+5. **Plaintext Agnosticism:** The client does not act as malware. It does not attempt to flush RAM buffers of already-rendered frames, hunt down exported files, or delete user-saved plaintext.
+6. **Continued Network Support:** The user deliberately retains the *encrypted* pieces in their local CAN storage. The client continues to act as a seeder, strengthening the swarm, despite the user no longer being able to obtain authorization to read the data themselves.
 
-Reference-client key destruction is a cooperative enforcement mechanism and is not a cryptographic security boundary against modified clients.
+The protocol provides revocation of future content key provisioning and future decryption of cyphertext, bounded by the current window, and makes no claim to revoke previously decrypted plaintext retained by the user.
+
+Reference-client key discard is a cooperative hygiene measure and is not the security boundary; the boundary is the refusal to provision a new window.
 
 ## 5. Security Considerations
 
 ### 5.1 Seeder Agnosticism
 
-Because payloads are chunk-encrypted and bound by a BLAKE3 tree, data at rest is opaque. Seeders (including former token holders) cannot access the content, allowing the encrypted files to scale horizontally as public infrastructure.
+Because payloads are piece-encrypted and bound by a BLAKE3 tree, data at rest is opaque. Seeders (including former entitlement holders) cannot access the content, allowing the encrypted files to scale horizontally as public infrastructure.
 
 ### 5.2 Replay Attacks
 
-The DKMN handshake relies on timestamped or nonce-based signatures from the consumer's wallet to prevent bad actors from intercepting and replaying authorization requests.
+The provisioning handshake relies on timestamped or nonce-based signatures from the consumer's handshake key to prevent bad actors from intercepting and replaying authorization requests.
+
+Replay protection is load-bearing under per-window authorization rather than merely prudent. Each authorization payload **must** be bound to the specific window it establishes — its finalized block height and its expiry bounds — so that a captured payload cannot be replayed to manufacture a fresh window after the original has lapsed. A replayable authorization is indistinguishable from an unbounded one, and would silently reintroduce the presumption of forward authorization that the invariants forbid.
 
 ### 5.3 Modified Clients (The "Honesty" Assumption)
 
-A user can theoretically compile a modified version of the open-source client that disables Phase 3's Key Destruction, allowing them to save the content key to disk indefinitely after selling the entitlement. The protocol accepts this edge case. The system's primary directive is ensuring that *an identity holding no entitlement cannot obtain the content key*, and that the path of least resistance for honest users effortlessly honors creator rights without intrusive friction.
+A user can theoretically compile a modified version of the open-source client that retains the content key past window expiry, allowing them to keep decrypting after selling the entitlement. The protocol accepts this edge case. The system's primary directive is ensuring that *an identity holding no entitlement cannot obtain the content key*, and that the path of least resistance for honest users effortlessly honors creator rights without intrusive friction.
 
 Defeating the unmodified path requires **both** a leaked content key and a modified client. Two independent barriers is a meaningfully stronger position than either alone, and it is the intended enforcement posture: honest users are never inconvenienced, and dishonest users must take deliberate, visible steps.
 
-### 5.4 Entitlement Auditability vs. SCK Traceability
+This scope is a design commitment, not a concession. **Decrypted plaintext must run on any compatible device and its existing software** — a video plays in any player, a package installs with any toolchain, a book opens in any reader. The protocol will not require a bespoke runtime, and §1.1's rejection of hardware enclaves is the same commitment stated at the hardware layer. Content that only functions inside an environment the protocol controls is precisely the walled garden this design exists to dismantle.
+
+The consequence follows directly: because the plaintext is deliberately released into general-purpose software the protocol does not control, the invariants of §1 bind the provisioning layer and conforming clients, and nothing else. They do not bind arbitrary software running on a user-controlled device, and no claim is made that they could.
+
+### 5.4 Entitlement Auditability vs. Content Key Traceability
 
 These are two different properties and the protocol delivers them to different degrees. Conflating them overstates the protocol's guarantees.
 
 * **Entitlements are 1:1 and fully auditable.** Every access right is a distinct transferable bearer asset with a unique on-chain owner and a complete transfer history. Accounting, residuals, resale, and audit of *who holds a right* are exact and trivially verifiable. This is a genuine and unusual strength.
-* **The content key is 1:many and is not, by itself, traceable.** A deployment is encrypted once with one content key and seeded to the swarm as a single ciphertext (Phase 1.4–1.5). Every entitlement holder receives that same content key, wrapped to their own public key (§7.1). The wrapping bytes differ per identity; the key inside does not.
+* **The content key is 1:many.** A deployment is encrypted once with one content key and seeded to the swarm as a single ciphertext (Phase 1.4–1.5). Every entitlement holder is provisioned that same content key, wrapped to their own public key for transport. The wrapping bytes differ per identity and per window; the key inside does not.
 
-The consequence: if a single holder publishes their content key, those bytes decrypt the universally-distributed swarm copy for everyone, at zero marginal cost — and because many entitlement holders legitimately hold the same value, publication of the content key alone does not attribute the leak to any one of them. **On-chain provenance narrows who *obtained* a content key; it does not narrow who *published* one.**
+Three leak classes with three different outcomes:
 
-This is materially different from, and worse than, the analog hole. The analog hole leaks a rendering; an SCK leak hands over the canonical asset in perpetuity.
+| What leaks | Traceable? | Why |
+| --- | --- | --- |
+| A wrapped provisioning response | **Yes** | the wrap is per-identity and per-window, and is useless to anyone else regardless |
+| Assembled plaintext | **Yes, against unmodified clients only** | it carries the overlay fingerprint of the holder at assembly time (§7.2); a modified client can render canonical plaintext instead and carries no fingerprint |
+| A raw content key extracted from memory | **No** | it is the same value for every holder of the deployment |
 
-Genuine traitor tracing requires the rendered plaintext to be recipient-specific. Applying that variation to the distributed asset would fragment the single-swarm model the distribution economics depend on. The protocol resolves this by binding variance to the **entitlement** rather than to the content, leaving the main swarm byte-identical for every holder — see §7.
+The residual gap is therefore narrower than a shared content key alone implies — leaked *plaintext*, which is what actually circulates in practice, is attributable against the honest path — but it is real. If a holder extracts and publishes the raw content key, those bytes decrypt the universally-distributed swarm copy for everyone at zero marginal cost, and because many holders legitimately hold the same value, publication does not attribute the leak to any one of them. **On-chain provenance narrows who *obtained* a content key; it does not narrow who *published* one.**
+
+This is materially different from, and worse than, the analog hole. The analog hole leaks a rendering; a content key leak hands over the canonical asset in perpetuity.
 
 ### 5.5 Blast Radius Containment
 
-Because SCK derivation is layered and domain-separated per asset and per deployment (Phase 1.3), a leaked or compromised SCK exposes exactly one deployment of one asset. It does not expose other versions of the same asset, other assets by the same publisher, the publisher's master key, or the publisher's seed phrase. Leak damage is bounded to the asset, not the catalog.
+Because content key derivation is layered and domain-separated per asset and per deployment (Phase 1.3), a leaked or compromised content key exposes exactly one deployment of one asset. It does not expose other versions of the same asset, other assets by the same publisher, the publisher's master key, or the publisher's seed phrase. Leak damage is bounded to the asset, not the catalog.
 
 ### 5.6 Escrow Claim Front-Running & Identity Proof Binding
 
-To prevent front-running attacks during escrow settlement (where an attacker intercepts a maintainer's off-chain verification proof and submits it to claim ownership), state transitions on the `Registry` require identity proofs or ZK-nullifiers to be cryptographically bound to the claimant's target wallet address. Any settlement proof generated for `Address_A` will revert on-chain if executed by or directed to `Address_B`.
+To prevent front-running attacks during escrow settlement (where an attacker intercepts a maintainer's off-chain verification proof and submits it to claim ownership), state transitions on the `Registry` require identity proofs or ZK-nullifiers to be cryptographically bound to the claimant's target chain identity. Any settlement proof generated for `Address_A` will revert on-chain if executed by or directed to `Address_B`.
 
 Because these proofs are verified inside a contract, they are **chain-layer artifacts by definition** and are produced with the chain layer's signature adapter (§2), never with the protocol's preferred scheme. A proof produced under a scheme the target chain has no precompile for is verifiable only at prohibitive cost, so scheme selection for on-chain verification follows the chain rather than the protocol's preference.
 
@@ -412,7 +610,9 @@ Deprecation notices, malware advisories, license disputes, and content classific
                  ◄──── counter-assertion  { disputes: <advisory_id>, signer, ... }
 ```
 
-Advisory types anticipated: `deprecated`, `superseded-by`, `security-advisory`, `malware`, `license-dispute`, `content-classification`, `disputed`.
+Advisory types anticipated: `deprecated`, `superseded-by`, `security-advisory`, `malware`, `license-dispute`, `content-classification`, `disputed`, `retired`.
+
+The `retired` type covers superseded per-entitlement variant objects (§7.4). When an entitlement transfers, the outgoing holder's variant object is re-minted and the previous one is no longer referenced by any entitlement, but reciprocal seeders holding it have no independent way to learn this. A `retired` advisory against the superseded variant object signals that pruning is recommended. Consistent with the rest of this section, the signal is **advisory and never obligate** — a seeder may prune, retain, or ignore it, and no participant is required to act on any flag.
 
 ### 6.3 Client Resolution
 
@@ -436,87 +636,147 @@ Jurisdictional obligations for operators of gateways, indexers, and default trus
 
 ## 7. Traceability and Per-Entitlement Variance
 
-*Design intent. The MVP ships §7.1 only; §7.2 onward is the V2 path and is architecturally protected by the commitment structure in §2.*
+*The MVP ships §7.1 only. §7.2 onward is the V2 path and is architecturally protected by the commitment structure in §2.*
 
-### 7.1 MVP Posture: Wrapped Keys
+### 7.1 MVP Posture: Per-Window Provisioning
 
-Under the MVP, content is uniform across all holders and the per-identity key is a **wrapped content key** — the content key encapsulated under the recipient's public key, resolved through the signature adapter. Distinct bytes per identity, unwrapping to a common content key.
+Under the MVP, content is uniform across all holders. The content key is provisioned per authorization window through the key provisioning adapter (§2), against the current on-chain entitlement state, and is held in memory for that window only.
 
-**The wrap is produced by the sequencer, at entitlement issuance and at every transfer.** These are moments the sequencer already participates in, so the key handoff carries no event of its own. The wrapped blob is small enough to publish on-chain alongside the entitlement.
+Each provisioning response is **wrapped to the requesting identity's key-agreement public key**, resolved through the key agreement adapter (§2) and bound to the identity by the `keyAgreement` relationship of its DID Document. Wrapping is a transport property of the response, not a grant: it secures delivery to the requester and produces distinct bytes per identity and per window. It is emphatically not a one-time issuance that substitutes for later authorization — a wrap performed once at entitlement issuance and relied upon thereafter would make possession the right, which the invariants of §1 forbid.
 
-The consequence for the read path is the significant one: **once wrapped, a content key requires no network to use, ever again.** Any device holding the wallet's private key unwraps it locally and offline. A second or subsequent device belonging to the same identity fetches the existing blob and unwraps it with the same private key — no re-wrap, no ceremony, no distinction from the first device. Availability is therefore a property of *acquisition* rather than of *reading*: a participant needs the sequencer to buy or transfer, never to install.
+This buys a real, cheap barrier: no two identities are ever emitted identical bytes, and a user who copies and publishes a wrapped response gives away nothing, because no one else can unwrap it and it expires with its window regardless. Casual key sharing is eliminated outright. It does **not** buy attribution — a holder who extracts the unwrapped content key from client memory produces a universal, unattributable key. Defeating the protocol therefore requires a leaked content key *and* a modified client, consistent with §5.3.
 
-**Transfer is atomic, and the wrap is contract-compelled.** Settlement does not complete until the wrap for the incoming holder is produced. A ledger write that landed without its wrap would leave a buyer owning an entitlement they cannot read, so the two are one transaction, as with any financial settlement. Producing the wrap is an obligation enforced by the contract that manages issuance rather than a discretionary act of the sequencer, so atomicity does not become a veto: no party may selectively decline a particular holder's wrap, which would be revocation by inaction. See §7.4.
+Availability is a property of *reading*, because reading is where authorization is established. A participant needs the provisioning layer to decrypt, not merely to purchase. This is the direct cost of per-window authorization and it is the source of the liveness concern recorded in §8.1; it is accepted because transferable access rights cannot be delivered without it.
 
-This buys a real, cheap barrier: no two identities are ever emitted identical bytes, and a user who copies and publishes their wrapped blob gives away nothing, because no one else can unwrap it. Casual key sharing is eliminated outright. It does **not** buy attribution — a holder who extracts the unwrapped content key from client memory produces a universal, unattributable key. Defeating the protocol therefore requires a leaked content key *and* a modified client, consistent with §5.3.
-
-Key provisioning is expressed behind an adapter, so that the wrap model here and the threshold escrow are implementations of one interface rather than competing architectures, and so either can be replaced if a better construction is found. The interface operations are not yet named.
+Multi-device follows without special handling: each of an identity's devices authorizes independently against the same entitlement, and no device is distinguishable from any other.
 
 ### 7.2 Variance Belongs to the Entitlement, Not the Content
 
-Forensic traceability requires that the plaintext a user renders be recipient-specific. The naive construction varies chunks within the distributed asset, which fragments the swarm and destroys the distribution economics the protocol depends on.
+Forensic traceability requires that the plaintext a user renders be recipient-specific. The naive construction varies pieces within the distributed asset, which fragments the swarm and destroys the distribution economics the protocol depends on.
 
-The protocol instead binds variance to the **entitlement layer**, where 1:1 identity already exists by construction:
+The protocol instead binds variance to the **entitlement layer**, where 1:1 identity already exists by construction, and applies it as an **overlay at decryption time**:
 
-* The **main swarm carries exactly one ciphertext with one infohash.** Zero fragmentation. Every seeder in the network serves byte-identical content. The distribution economics are fully preserved.
-* A small **variant set** — on the order of 1% of the asset — is committed to by the entitlement record and delivered as a separate object.
-* The recipient's plaintext is the invariant portion assembled with their variant set. That assembled plaintext carries their fingerprint, so attribution survives redistribution of the plaintext *and* the analog hole.
+* The **swarm object remains complete and canonical.** One ciphertext, one infohash, byte-identical for every seeder, decrypting to the canonical plaintext committed in §2. Zero fragmentation, distribution invariants intact, and unmodified BitTorrent clients continue to retrieve a complete asset.
+* The **variant object is a per-entitlement seed**, referenced by the entitlement and committed to by the variant root. It carries the holder's specific permutation, not a copy of any content.
+* At decryption the holder applies the permutation over the canonical plaintext, producing a rendering that is fingerprinted to them.
 
-Variant chunks are load-bearing: the asset is incomplete without them, so a leaked copy necessarily carries the fingerprint of whoever it came from.
+**The fingerprint is a cooperative mechanism, not a forensic guarantee.** Because the swarm object is complete, a holder whose client omits the overlay can render canonical, unfingerprinted plaintext. Attribution therefore holds against unmodified clients and casual redistribution — which is the great majority of leakage — and does not hold against a deliberately modified client. This is the same posture as §1.1's non-DRM stance and §5.3's honesty assumption, and it is stated here rather than overclaimed: the mechanism raises the cost and traceability of casual violation, and does not attempt to make violation impossible.
 
 ### 7.3 The Variant Object Is an Ordinary Swarm Object
 
-The variant set is **not** stored on-chain — at ~1% of a multi-gigabyte asset it is far too large. The entitlement record commits to it by root and points at it; the bytes are a normal content-addressed torrent object, seeded and fetched like any other.
+The variant object is a seed rather than an enumeration of replacement content. It does not carry a fraction of the asset, and its size is therefore negligible and independent of asset size — which is what makes re-minting on transfer, reciprocal seeding, and per-window delivery cheap enough to be uninteresting.
 
 It requires no special transport, but it does require a specific key binding:
 
-* **Encrypted to the entitlement, not to the asset.** The variant object is encrypted under a **variant object key** bound to the entitlement identity, *not* under the asset's content key. This is mandatory. If variant objects were readable by any content key holder, any holder could read another's variant set and assemble a copy carrying someone else's fingerprint — turning a forensic mechanism into a framing weapon. Unilateral framing is a far worse failure than collusion.
+* **Encrypted to the entitlement, not to the asset.** The variant object is encrypted under a **variant object key** bound to the entitlement identity, *not* under the asset's content key. This is mandatory. If variant objects were readable by any content key holder, any holder could read another's seed and render a copy carrying someone else's fingerprint — turning a forensic mechanism into a framing weapon. Unilateral framing is a far worse failure than collusion.
 * **Seeder agnosticism carries over unchanged.** Because the object is opaque to everyone but its entitlement holder, anyone may seed it harmlessly, exactly as with the main asset (§5.1). Sharing the object confers nothing without the corresponding entitlement.
 
-**Multi-device is the motivating case and it resolves cleanly.** One wallet, *n* devices: all *n* resolve to the same entitlement identity, so all *n* unwrap the same variant object. The user's devices form a natural micro-swarm and sync among themselves over ordinary transport, with no per-device handshake key ceremony, no re-minting, and no distinction between a user's second device and any other peer.
+**Seeding is therefore unrestricted, and availability comes from reciprocity.** There is no reason to confine a variant object to its owner's devices. Each swarm participant sets aside a multiple of their own variant footprint to colocate other participants' variant objects; because greater aggregate colocation means greater resilience of the participant's *own* access, the incentive points toward more colocation rather than less. Reliability is emergent and probabilistic rather than guaranteed — the protocol imposes no contractual obligation on third parties, and offers none.
 
-Two consequences to plan for:
+Reciprocal seeding also **improves** network-level privacy rather than degrading it. Variant object infohashes are per-entitlement, so a small seeder set would link a network address to a specific entitlement. With many peers holding any given object, serving an infohash no longer implies owning the corresponding entitlement, and the seeder set acts as a mixing mechanism. The residual correlation surface is tracked in §8.2.
 
-* **Availability.** A per-entitlement object has a swarm the size of one user's device set. If those devices are offline the object may be unavailable. Either the sequencer pins variant objects, or the variant set is made deterministically regenerable from `(invariant content, entitlement id, publisher secret)` so it can be re-served on demand rather than stored in perpetuity. Regeneration is preferred; it bounds publisher storage to zero. Regeneration inputs **must** be domain-separated with the same discipline as SCK derivation (Phase 1.3), or two entitlements can collide onto the same variant set and attribution silently fails.
-* **Network-level privacy.** Variant object infohashes are per-entitlement, so observing who requests or seeds a given infohash links a network address to a specific entitlement — a correlation surface distinct from, and more immediate than, the on-chain one in §8.1. Tracked there.
+**Multi-device is the motivating case and it resolves cleanly.** One identity, *n* devices: all *n* resolve to the same entitlement, so all *n* obtain the same variant object under their own per-window authorization, with no per-device ceremony and no distinction from any other peer.
+
+Superseded variant objects are flagged `retired` (§6.2) so that reciprocal seeders may prune them. The signal is advisory; nothing obliges a seeder to act on it, and nothing depends on their doing so.
 
 ### 7.4 Re-Minting on Transfer
 
-When an entitlement transfers, the variant set is **re-minted** for the new holder. Without this, a buyer's plaintext would carry the seller's fingerprint and attribution would point at the wrong party.
+When an entitlement transfers, the variant seed is **re-minted** for the new holder. Without this, a buyer's rendering would carry the seller's fingerprint and attribution would point at the wrong party.
 
-This is feasible because transfers are already publisher-sequenced, so the sequencing point can issue a fresh variant set as part of settlement. The concession is that resale is no longer a pure ledger write — the sequencer must serve an object, and settlement is atomic across both, so a transfer does not complete until the variant set and the wrap for the incoming holder are produced.
+This is feasible because transfers are already ordered by the **transfer sequencer**, so a fresh seed is issued as part of settlement. The transfer sequencer maintains the binding between an entitlement and its current variant object — referenced by hash from the entitlement — so that the pairing survives transfer between owners. Note that this sequencer orders transfers and maintains bindings; it has no role in authorization, and provisioning does not pass through it.
 
-That does not hand the publisher a veto. The obligation to produce them is **enforced by the contract that manages issuance**, not left to the sequencer's discretion: it is the contract acting on behalf of holders, and declining is not an available move. Multi-party participation is unavoidable throughout this protocol and is not itself the hazard; the hazard would be a party able to withhold *selectively*, against a particular holder or a particular transfer, which is revocation by inaction and which the contract forecloses.
+That does not hand the publisher a veto. The obligation to produce the seed is **enforced by the contract that manages issuance**, not left to any party's discretion: declining is not an available move. Multi-party participation is unavoidable throughout this protocol and is not itself the hazard; the hazard would be a party able to withhold *selectively*, against a particular holder or a particular transfer, which is revocation by inaction and which the contract forecloses.
 
-The seller retaining their retired variant set is expected and harmless — it is the accepted plaintext-non-revocability case (§1.1), and their fingerprint correctly identifies them.
+The seller retaining their retired seed and any rendering made under it is expected and harmless — it is the accepted plaintext-non-revocability case (§1.1), and their fingerprint correctly identifies them.
 
-*Note on double-sale:* re-minting is not itself a double-sale prevention mechanism — entitlements are single-owner bearer assets and the ledger already prevents double-sale by construction. What re-minting adds is **forensic cleanup**: retired variant sets are bound to a specific ownership interval, so leaked content is attributable not merely to an identity but to *when* that identity held the right.
+*Note on double-sale:* re-minting is not itself a double-sale prevention mechanism — entitlements are single-owner bearer assets and the ledger already prevents double-sale by construction. What re-minting adds is **forensic cleanup**: retired seeds are bound to a specific ownership interval, so leaked content is attributable not merely to an identity but to *when* that identity held the right.
 
 ### 7.5 Collusion Resistance
 
-Two or more holders can diff their copies to locate variant positions and splice a copy whose fingerprint matches neither. Variant sets are therefore assigned using a **collusion-resistant fingerprinting code** (Tardos or equivalent), which provides provable tracing up to a chosen collusion size *c* with a false-accusation probability bounded by a security parameter.
+Two or more holders can diff their renderings to locate variant positions and splice a copy whose fingerprint matches neither. Variant seeds are therefore assigned using a **collusion-resistant fingerprinting code** (Tardos or equivalent), which provides provable tracing up to a chosen collusion size *c* with a false-accusation probability bounded by a security parameter.
 
-The cost is that variant-set size grows with *c* and with the accused-population size, so *c* is an explicit economic parameter — chosen against asset value and expected adversary resources — rather than a fixed constant.
+The cost is that the codeword length grows with *c* and with the accused-population size, so *c* is an explicit economic parameter — chosen against asset value and expected adversary resources — rather than a fixed constant.
 
 ### 7.6 Future Optimization: Partial Encryption
 
-A participant currently stores an asset twice — the ciphertext, retained to keep seeding (Phase 3.5), and the plaintext, retained to use. Roughly 2x local storage per asset held.
+A participant currently stores an asset twice — the ciphertext, retained to keep seeding (Phase 3.6), and the plaintext, retained to use. Roughly 2x local storage per asset held.
 
-Partial encryption would collapse that. If the withheld variant chunks are chosen to be *structurally essential* — headers, codec-critical frames, module entry points — the invariant remainder could be distributed as plaintext, leaving only the small variant object encrypted. The asset stays useless without the withheld piece, the main swarm becomes plaintext with the attendant gains in deduplication and legacy client compatibility, and the key-handling problem shrinks from bulk encryption to small-object delivery.
+Partial encryption would collapse that. If a small set of pieces chosen to be *structurally essential* — headers, codec-critical frames, module entry points — were withheld from the swarm, the remainder could be distributed as plaintext. The asset stays useless without the withheld piece, the main swarm becomes plaintext with the attendant gains in deduplication and legacy client compatibility, and the key-handling problem shrinks from bulk encryption to small-object delivery.
 
-**This is recorded as a future optimization and is explicitly not a launch capability.** The reason is commercial rather than technical: a distribution model whose plaintext is 99% freely available is not a proposition sophisticated rights holders will entertain before the fully-encrypted model has been proven in production. The technical question — how degraded the content actually is with a strategically chosen fraction withheld — is also asymmetric across content classes, since a package missing its entry point is inert while a film missing 1% of chunks may remain watchable.
+This is a **storage and distribution optimization only**. It is unrelated to the per-entitlement variance of §7.2, which operates as an overlay over a complete swarm object and does not withhold anything; the two mechanisms should not be conflated, and adopting one does not imply the other.
+
+**Recorded as a future optimization and explicitly not a launch capability.** The reason is commercial rather than technical: a distribution model whose plaintext is largely freely available is not a proposition sophisticated rights holders will entertain before the fully-encrypted model has been proven in production. The technical question — how degraded the content actually is with a strategically chosen fraction withheld — is also asymmetric across content classes, since a package missing its entry point is inert while a film missing 1% of its pieces may remain watchable.
 
 ## 8. Open Problems
 
 Protocol properties that are unresolved by design rather than by omission, recorded so they are neither forgotten nor discovered late. Undetermined *authorship and design decisions* are held separately, in the To-Do list of `docs/workplans/current/ChainTorrent MVP.md`.
 
-### 8.1 Dependency Graph Privacy
+### 8.1 Provisioning Liveness and Centralization
 
-Every entitlement is an on-chain record binding an identity to an asset, and the wrapped content key published alongside it at issuance and at every transfer is a second such record. In aggregate this publishes a permanent, correlatable map of exactly which software each participant runs, at which version. Permanence makes it worse rather than better than a request log: there is no point at which the association ages out, because the record *is* the entitlement.
+Per-window authorization (§1, §7.1) places the provisioning layer on the read path by construction. This is the direct cost of transferable access rights: an entitlement that can be resold requires that authorization be re-established after the sale, which requires a party able to establish it. The threshold key-management network is the current implementation of that party, and it is the protocol's most significant compromise with its own decentralization thesis:
+
+* **Liveness:** if provisioning is unavailable, nothing decrypts. For a package manager this means CI fails to install — a far lower tolerance for downtime than media playback has.
+* **Centralization:** a colluding threshold of nodes can recover every content key ever escrowed.
+* **Trust:** the protocol inherits the security and governance of a network it does not control.
+* **Load:** in a populated network the provisioning layer fields authorization traffic proportional to decryption activity across the whole swarm.
+
+**Window bounds are a security parameter that happens to govern load, and the two pull in opposite directions.** Widening the block-height ceiling reduces authorization traffic and lengthens the interval during which a seller retains capacity after settlement (§1, Atomic and Bounded); narrowing it tightens the transfer boundary and multiplies provisioning load. They cannot be tuned independently, and load relief is not a free lever: any capacity argument for widening the window is an argument for weakening the transfer boundary, and must be made as such. Calibration is therefore a joint economic and security decision, unresolved, and its value belongs in the To-Do list rather than here.
+
+This is a consequence of an unsatisfied constraint, not a design preference. **The desired end state** is to eliminate the intermediary entirely: derive or release the content key from proof of entitlement-possession-at-a-given-block, with Byzantine fault tolerance supplied by the consensus layer that already exists rather than by a second overlay network. This is precisely the class of problem distributed consensus was built to solve, and it is the natural home for the guarantee.
+
+No satisfactory construction is known to the authors. The obstacle is that the ledger is public: any value the chain can compute or reveal, every observer can also read, so the chain cannot itself hold a secret that only an entitled holder can unwrap. Candidate directions worth evaluating — none adopted, none yet demonstrated adequate at this protocol's cost and latency targets:
+
+* Witness/identity-based encryption against a chain-derived witness, where finality itself releases the decryption capability to the entitled party.
+* Threshold or timelock encryption anchored to consensus randomness rather than to a standing key-holding committee.
+* Proxy re-encryption keyed to the entitlement transfer, moving the trust from a persistent network to the transfer event.
+* Trust-minimized fallback: multiple independent provisioning deployments with client-side quorum, treating any single network as replaceable infrastructure rather than a protocol component. This is mitigation, not a solution.
+
+**The mitigation actually adopted is architectural.** Provisioning is expressed behind an adapter (§2) so that any future construction satisfying the same two obligations — per-window authorization and no selective withholding — can replace the threshold network with backwards compatibility, without changes to identity, registry, entitlement, or content layers.
+
+### 8.2 Dependency Graph Privacy
+
+Every entitlement is an on-chain record binding an identity to an asset. In aggregate this publishes a permanent, correlatable map of exactly which software each participant runs, at which version. Permanence is what makes it serious: there is no point at which the association ages out, because the record *is* the entitlement.
+
+Per-window provisioning changes the shape of the exposure without removing it. There is no permanent on-chain record of content key delivery, since nothing is published at issuance; but authorization requests form a **traffic stream** to the provisioning layer that reveals the same associations to that layer in real time, and reveals decryption *timing* that a static record would not. The permanent record is narrower and the observable behavior is wider.
 
 * For individuals, it is a persistent behavioral profile that pseudonymity weakens only partially — a dependency set is close to a fingerprint, and one deanonymizing transaction retroactively unmasks the entire history.
 * For organizations, it is a public inventory of their internal stack, including versions with known vulnerabilities. This is plausibly a disclosure hazard on its own and is an adoption blocker for most enterprises.
+* Per-entitlement variant object infohashes are a further, network-level correlation surface, substantially mitigated but not eliminated by reciprocal seeding (§7.3).
 
 Note that this cuts against the protocol's own premise: escaping platform surveillance should not mean substituting a permanent public ledger of the same behavior for a private corporate one.
 
-Directions to evaluate, none adopted: per-asset ephemeral wallets; blinded or private-information-retrieval key requests; batching and mixing to break the link between requester and asset; off-chain entitlement proofs that settle on-chain only in aggregate; zero-knowledge proof of entitlement that reveals neither wallet nor asset. The tension with §5.4's auditability is direct — entitlement accounting wants a legible record, and privacy wants an illegible one — and any resolution has to state which property it is sacrificing.
+Directions to evaluate, none adopted: per-asset ephemeral wallets; blinded or private-information-retrieval authorization requests; batching and mixing to break the link between requester and asset; off-chain entitlement proofs that settle on-chain only in aggregate; zero-knowledge proof of entitlement that reveals neither identity nor asset. The tension with §5.4's auditability is direct — entitlement accounting wants a legible record, and privacy wants an illegible one — and any resolution has to state which property it is sacrificing.
+
+### 8.3 Variant Seed Authorship
+
+§7.2 establishes that variance is an overlay seed bound to the entitlement. It does not establish who authors the seed, from what, and under what constraints. Open.
+
+The constraint that shapes the answer is **First Finder escrow**: the publisher is absent by definition in the escrow case, so any scheme requiring the publisher to be online at issuance or transfer fails outright. Whatever is chosen must work identically for an escrowed asset whose maintainer has never appeared, and must not confer publisher rights on the bootstrapper (§1). A First Finder that authors seeds must escrow and discard the authoring material exactly as it does the content key; retaining it would leave a non-owner with permanent framing capability over an asset they do not own.
+
+A second constraint is content validity. **A seed can select among alternatives; it cannot author them.** If both the varied positions and their replacement values are derived from the seed alone, the resulting rendering is a corruption — for a video a glitched frame, for a tarball a syntax error and a package that does not install. Producing renderings that are *semantically valid* requires alternatives authored with knowledge of the content, at which point the seed selects among them rather than generating them. Solutions to this exist and are well understood in forensic watermarking; choosing and specifying one is beyond present scope, and implementation sits behind the variance interface, so the decision can be made later without disturbing the layers around it.
+
+Whoever holds the authoring material can generate any holder's seed and therefore frame any holder. Siting that material with the party that already provisions content keys would add no capability that party does not already have, which is the cheapest available answer but not the only one, and it inherits §8.1's trust concerns wholesale.
+
+### 8.4 Seeder Compensation
+
+The reciprocal colocation of §7.3 and the swarm distribution the protocol depends on both presume that seeding is rewarded. No compensation mechanism is specified. Without one, reciprocal storage degrades into the familiar ratio problem: contribution is voluntary, free-riding is rational, and aggregate resilience decays toward the level sustained by altruism alone.
+
+This is a protocol-level gap rather than an implementation detail, because the incentive structure determines whether the distribution model works at population scale at all. Candidate mechanisms are recorded in the To-Do list rather than here, per this section's scope.
+
+### 8.5 The Post-Claim Pricing Paradox
+
+When a First Finder bootstraps an unlisted object, the Escrow contract unconditionally mints $0.00 entitlements to grow the swarm. When the Web2 owner arrives to claim the asset, they acquire control over future entitlement issuance. 
+
+If the owner wishes to price the asset >$0.00, they cannot retroactively charge or deny existing users who hold the escrow-issued entitlements. The existing entitlements are permanently grandfathered. If the owner imposes a new price on the claimed object, secondary market sellers of the free entitlements can undercut the publisher, establishing a market ceiling.
+
+**Scope of the paradox.** It arises only where the ingested content was not already free to use. Under the ingest source eligibility rule (§4, Phase 1.2), the arriving maintainer of a permissively-licensed asset was denied no revenue by the escrow-issued entitlements, so the question below is deferred rather than encountered. That rule is what permits the escrow model to be exercised in production while this section remains open.
+
+**Resolution Strategy:** To escape the grandfathered entitlements, the publisher halts entitlement issuance on the original claimed object and issues a *new deployment version* derived from their own master key, priced at their discretion. 
+        
+**Open Question (Post-MVP):** How can the protocol abstract early, unclaimed downloads into fair economic value for the claimant once they arrive? If a publisher benefits from waiting for an object to become popular via free entitlements before claiming and versioning it, there must be an equitable mechanism to reward the claimant without enabling retrospective deniability. If the publisher can retroactively impose an arbitrary price and force it on existing entitlement holders, that rewards the publisher for delaying until the object is popular and/or enables deniability for the publisher. If there is no fair economic value, the First Finder and early users benefit from free-riding against an object they don't own or have rights to.
+
+### 8.6 Authorization Height Agreement
+
+Phase 2.4 requires provisioning nodes to evaluate `isAuthorizedBatch` at "a universally agreed-upon, recently finalized block height." That height is load-bearing three times over: it is the state the authorization was established against, it anchors the window's block-height ceiling, and it is bound into the authorization payload as replay protection (§5.2). How the height is selected and agreed is unspecified.
+
+It is likely to fall out of the provisioning implementation's own consensus, since a threshold network must already agree on something to produce a threshold response. But that is an assumption about a particular construction, and the provisioning adapter's two obligations (§2) are stated to be construction-independent. Either height agreement is a third obligation of the adapter contract, or it is an implementation detail and the specification should stop describing it as universal. Unresolved, and recorded here so that a non-threshold construction is not adopted on the assumption that it inherits an agreement mechanism it has no reason to possess. 
