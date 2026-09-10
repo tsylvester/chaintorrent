@@ -2,162 +2,318 @@
 
 ## Objective
 
-Deliver a working `torrent install` path for JavaScript dependencies that survives registry outages, serves popular packages from a peer swarm, and exercises the full identity/entitlement/encryption pipeline end to end — with all monetization set to $0.00.
+Deliver a working install path for JavaScript dependencies that serves popular packages from a peer swarm, reuses across every project on a machine whatever that machine has already fetched, survives an upstream NPM outage for packages already ingested into the swarm, and exercises the full identity, entitlement, threshold-custody, encryption, and provisioning lifecycle end to end.
+
+**The individual developer is the adopting population**, and the benefits above are ordered accordingly. Cross-project reuse and swarm retrieval are what a developer at a terminal experiences; registry-outage survival — the benefit that matters most to CI and to enterprises — stays true without leading, because those populations adopt as a consequence of individual adoption rather than ahead of it.
+
+Monetization is $0.00 throughout, with one deliberate exception described under Transaction Flow Proof, which exists to prove that a nonzero transaction settles rather than to earn anything.
 
 This MVP validates **distribution and identity**. It deliberately does not validate willingness to pay or seeder compensation.
 
 This document states the boundary of the work. Undetermined decisions are held in the To-Do list of [ChainTorrent MVP.md](workplans/current/ChainTorrent%20MVP.md).
 
-Terminology follows [cryptography.md §1.2](cryptography.md) — entitlement, handshake key, content key, master key, escrowed key, transfer sequencer, provisioning layer — and the unqualified words "key" and "token" are not used for any of them.
+Terminology follows [cryptography.md, Terminology](cryptography.md#terminology) — entitlement, handshake key, decryption material, content key, master key, escrowed key, variant seed, transfer sequencer, provisioning layer — and the unqualified words "key" and "token" are not used for any of them. The adapter surfaces this document introduces are named on first use and used consistently thereafter: `ISwarmTransportAdapter`, `IPeerDiscoveryAdapter`, `ISeedHostAdapter`, `IPackageHostAdapter`, `IPublisherProofAdapter`, `IClaimVerifierAdapter`, and `IKeyCustodyAdapter`. They join the surfaces already defined in the specification — `ISignatureAdapter`, `IIdentityAdapter`, `IIngestSourceAdapter`, `IDeploymentEncryptionAdapter`, `IPayloadCipherAdapter`, `IKeyAgreementAdapter`, `ISettlementAdapter`, `IEntitlementStateAdapter`, and the provisioning adapter.
+
+Sections in this document are referenced by name, never by position. The same rule governs [cryptography.md](cryptography.md), and cross-document references link to the named section rather than to a number that moves when anything is inserted.
 
 ---
 
 # In Scope
 
-1. **The CLI & Extension Proxy (`torrent install`)**:
-* Reads `package.json`, builds a local dependency DAG.
-* Checks the local CAS first; if missing, checks the P2P swarm + Ledger; if missing there, falls back to the ingest source.
-* Two operations run in the install path and must not be conflated. **Entitlement acquisition** inspects the wallet and skips targets the identity already holds, because those need not be acquired again. **Decryption authorization** is per window and is never skipped, cached, or presumed.
+## Adapter Composition and Capability Declaration
 
-2. **Canonical Identity & As-Is Ingestion**:
+Protocol layers resolve adapters independently where the layer contract permits it. Independent resolution keeps a chain, a curve, a transport, or a custody implementation from becoming a protocol commitment — and it is also what makes it possible to resolve a pair that cannot compose. A custody implementation that cannot produce what a chain adapter verifies, a transport that cannot carry what a discovery adapter advertises, and a seed host that cannot satisfy a retention obligation are all resolvable and all broken.
+
+**Each adapter interface declares its capabilities**, and capability is part of the interface rather than knowledge a consumer is expected to carry about particular implementations. An implementation states what it can do; a consumer resolves against the declaration, never against an implementation's name.
+
+**Composition is checked at resolution time and fails closed.** An incompatible pair is refused at the point of resolution, before any operation is attempted, in the same posture as the manifest bounds validation of [cryptography.md, Cryptographic Primitives](cryptography.md#cryptographic-primitives): the ordering is the security property. A pair that would fail later is refused now, so no decryption material, no authorization traffic, and no swarm activity is spent on a composition that was never going to resolve.
+
+**The unit of cryptographic composition is an immutable deployment suite.** A deployment's authenticated hash-card fixes the deployment-encryption adapter, payload-cipher adapter and public parameters, provisioning protocol and keyset, decryption-material type, key-agreement and response-authentication contracts, authorization-context version, window policy, settlement tier, content commitments, and transport locators. A client may resolve only implementations declared compatible with every field. Changing an incompatible cryptographic component requires a successor deployment; an interface boundary does not migrate content-key shares or reinterpret existing ciphertext.
+
+Per-layer resolution and the binding-not-matching rule of [cryptography.md, Cryptographic Primitives](cryptography.md#cryptographic-primitives) already dissolve most compositions that would otherwise conflict — two layers using different schemes need only be provably the same principal, not the same key. That is why incompatible pairs are rare rather than absent, and rare-and-unhandled is how a protocol acquires an undocumented compatibility matrix after the fact.
+
+**The boundaries are drawn where they are because of what they are eventually meant to hold.** Chain, tokens, wallet, keystore, and seeder client are one class — third-party implementations now, first-party at maturity. Abstracting them is therefore not generic good practice applied uniformly; it is the specific list of components the protocol intends to supply itself, and each adapter is the seam along which someone else's implementation is later exchanged for the project's own. A layer that will never be replaced does not need an adapter. These will be.
+
+## Swarm Transport and Peer Discovery
+
+**Transport resolves through `ISwarmTransportAdapter`.** BitTorrent compatibility is an available adapter, not a protocol obligation. Pinning one transport while every other layer resolves an adapter would be a commitment the rest of this design does not make, and it forecloses transports whose native verification structure is the one the protocol already specifies.
+
+* **BitTorrent is the compatibility implementation.** Unmodified clients participate in the swarm with no protocol integration, and the canonical record exposes the magnet link and BTIH that adapter contributes. The dual integrity structure that compatibility requires — legacy piece hashes alongside the BLAKE3/Bao tree over the same bytes — is a cost that adapter carries internally, not a property of the protocol.
+* **BLAKE3-native transports are peer implementations, not future work.** A transport whose wire format is already Bao verified streaming carries no duplicate integrity structure at all.
+* **A deployment may be multi-homed across transports simultaneously.** Ciphertext and plaintext roots are transport-independent by construction, so the same bytes served over two transports are one swarm object rather than two. Multi-homing is free rather than a compatibility burden, and no transport's absence invalidates a deployment.
+
+**Peer discovery resolves through `IPeerDiscoveryAdapter`, with multiple adapters active concurrently.** Results are unioned and deduplicated, and no adapter is authoritative — DHT, tracker, PEX, local discovery, and the on-chain seeder map are peers of one another. A participant running none of them can still be served by a locator carried in the canonical record; a participant running all of them is not required to trust any one.
+
+**Seeder maps are safe to publish, and that is a property of the design rather than a concession.** Seeder agnosticism ([cryptography.md, Seeder Agnosticism](cryptography.md#seeder-agnosticism)) means possession of encrypted pieces confers no access, so seeding an object implies nothing whatever about holding an entitlement to it. A public seeder registry is therefore strictly less disclosive than the entitlement ledger the protocol already publishes, and it is the one part of the network graph that can be published without adding to the exposure recorded in [cryptography.md, Dependency Graph Privacy](cryptography.md#dependency-graph-privacy).
+
+## Seed Hosting and the Ciphertext Store
+
+**Seeding is persistent and decoupled from any session.** A seeder that stops when an editor closes is not a seeder. The seed host runs independently of whatever client is using it, and the CLI, the editor extension, and any other consumer attach to it rather than contain it.
+
+**Seed hosting resolves through `ISeedHostAdapter`**, with two MVP implementations:
+
+* **Own daemon** — a machine-level service holding the swarm client, addressed over local IPC, single-instance per machine.
+* **Delegation to an existing BitTorrent client** — driving a client the user already runs through its own API. Existing clients have already solved persistence, resume after crash, bandwidth scheduling, port mapping, and disk management, and their download directory is already a ciphertext store. This is what obligate BitTorrent compatibility was actually buying, and it is available as an adapter without being imposed as a requirement.
+
+**The ciphertext store is an obligation of `ISeedHostAdapter`, not a component of the client.** Under delegation the store is a directory this protocol does not own, with a layout, naming scheme, and retention behavior it does not control, so the store is specified as a contract rather than as a filesystem structure. The adapter answers whether an object is held and served, takes custody of an object, releases one, reports capacity and usage, and enumerates what it believes it is serving.
+
+* **The store is keyed on the ciphertext root, never on a transport identifier.** A multi-homed deployment must share one copy of the bytes across transports rather than storing one copy per transport, and a transport identifier cannot express that. The adapter owns the translation between the ciphertext root and whatever identifiers its implementation uses internally.
+* **A delegated store's accounting is verified, not trusted.** The client cannot rely on an external application's report of what it holds. Verification is a BLAKE3/Bao authentication path over a random Bao chunk against the ciphertext root — the verification structure already exists, so this requires no additional cryptography.
+
+**Two stores, two lifecycles.** The ciphertext store is the seeding substrate and is owned by the seed host. The plaintext CAS is the local reuse cache and is owned by the client. They serve different purposes, are sized independently, and are governed by different retention rules — a participant seeding two hundred gigabytes while caching five gigabytes of plaintext is a coherent configuration.
+
+**The store interface distinguishes objects held under obligation from objects held voluntarily**, from the first implementation, even though the MVP enforces no obligation. Retention duty is assigned by the mechanism described under Provisioning Committee and Retention Obligation below, which requires an identity and stake layer the MVP does not have. Marking the distinction now means enforcement is introduced later rather than retrofitted into a store that never recorded why it held anything.
+
+## Package Manager Integration
+
+**Package managers are extended into the swarm, not replaced.** npm, pnpm, yarn, and bun resolve dependency graphs correctly — including semver resolution, peer dependencies, overrides, workspaces, and lockfile semantics — and reimplementing that would duplicate solved work unrelated to swarm distribution or compensation. What this protocol replaces is not the package manager but the obligate distribution path underneath it.
+
+**Package manager integration resolves through `IPackageHostAdapter`**, which serves an ecosystem's own read protocol from protocol-held content. The npm registry protocol is the MVP implementation, and it is not the definition — the PyPI simple index ([PEP 503](https://peps.python.org/pep-0503/) / [PEP 691](https://peps.python.org/pep-0691/)), the Cargo sparse index, and the Go module proxy protocol are peer implementations behind the same interface. Each maps its ecosystem's coordinates onto the canonical identity hash and serves artifacts from the local CAS.
+
+**The CLI is the consent and control surface.** Redirecting a package manager's registry is an act a user performs deliberately and can see and reverse, never something that happens quietly on their behalf — a toolchain silently rerouted is indistinguishable from a compromised one, and a protocol asking for trust cannot begin by behaving like the thing it warns about. The CLI owns opting in, reporting state, and controlling the seed host. It is not a second client implementation and it does not resolve dependencies.
+
+**Local availability is separated from local installation.** `node_modules` is disposable and re-derivable; the CAS is the durable artifact, held in both forms. Deleting and rebuilding a project's dependency tree touches neither the network nor the provisioning layer, because the plaintext is already local and retained plaintext is outside the authorization boundary ([cryptography.md, Core Philosophy](cryptography.md#core-philosophy)). Two projects on one machine sharing a dependency fetch it once. Only an artifact absent from the CAS establishes a decryption window.
+
+**Resolution order for an artifact the host adapter is asked to serve:** the local plaintext CAS first; then the swarm and the Ledger; then the ingest source as fallback.
+
+**Two operations run in the install path and must not be conflated.** **Entitlement acquisition** inspects the wallet and skips targets the identity already holds, because those need not be acquired again. **Decryption authorization** is per window and is never skipped, cached, or presumed.
+
+## Canonical Identity and As-Is Ingestion
+
 * The **identity hash is deterministic**: `BLAKE3(packageName@version)`. This is what the Registry is keyed on, and it is what guarantees every node resolves the same asset to the same canonical record.
-* The **ciphertext is not deterministic, by design**. Content keys are randomly generated per deployment, per [cryptography.md §1.1 Anti-Derivability](cryptography.md). Deterministic ciphertext would let any holder of the plaintext recompute the content key and bypass escrow entirely — and for public NPM packages, *everyone* holds the plaintext.
-* Ingestion runs through the **`IIngestSourceAdapter`** ([cryptography.md §4 Phase 1.2](cryptography.md)). **NPM is the MVP implementation, not the definition** — pnpm, Bun, PyPI, crates.io, or a publisher's own release endpoint are peer implementations behind the same interface, and none of them is a special case.
-* The First Finder **does not repackage or normalize** the artifact. It fetches the bytes exactly as served and hashes them as-is. For the NPM implementation that is the immutable `.tgz`. Normalization would break the source's own integrity attestation, which is the only defense against a poisoned ingest becoming permanently canonical.
-* The First Finder **must verify** the fetched artifact against the upstream integrity attestation before registering it, and record that attestation on-chain alongside the identity hash. For NPM that attestation is the published `integrity` sha512; the on-chain field is source-dependent, not NPM-shaped.
-* Two nodes ingesting the same unlisted package produce different ciphertext. This is resolved at the identity layer, not the payload layer: **State-Locked Escrow Registration** means the first transaction to land wins, and the losing node discards its local ciphertext and content key and repoints at the winner's infohash.
+* The **ciphertext is not deterministic, by design**. A First Finder generates a cryptographically random content key. An explicit publisher may instead derive a content key from its secret hierarchy and a registry-assigned, globally unique, non-reusable `deployment_id`. Both strategies keep the content key independent of plaintext and cryptographically distinct per deployment, per the Anti-Derivability rule of [cryptography.md, Core Philosophy](cryptography.md#core-philosophy).
+* Ingestion runs through the **`IIngestSourceAdapter`** ([cryptography.md, Ingest and Normalization](cryptography.md#phase-1-encryption-minting-and-seeding)). **NPM is the MVP implementation, not the definition** — pnpm, Bun, PyPI, crates.io, or a publisher's own release endpoint are peer implementations behind the same interface, and none of them is a special case.
+* **MVP ingest eligibility is NPM availability.** The MVP performs no separate licence or use-rights classification: if the supported NPM source adapter can retrieve the version, it is assumed eligible for First Finder ingest.
+* The First Finder **does not repackage or normalize** the artifact. It fetches the bytes exactly as served and hashes them as-is. For the NPM implementation that is the immutable `.tgz`. Normalization would break the source's own integrity attestation.
+* The First Finder **must verify** the fetched artifact against the upstream integrity attestation before registering it, and record that attestation on-chain alongside the identity hash. For NPM that attestation is the published `integrity` sha512; the on-chain field is source-dependent, not NPM-shaped. This proves that the canonical bytes match the upstream release; it does not prove that the package is safe, non-malicious, or free of vulnerable dependencies.
+* Two nodes ingesting the same unlisted package produce different ciphertext. This is resolved at the identity layer, not the payload layer: **State-Locked Escrow Registration** means the first transaction to land wins, and the losing node destroys its local ciphertext, content key, expanded cipher state, and buffered keystream, then resolves the winner's authenticated deployment descriptor and transport locator set.
 
-3. **Per-Window Decryption Authorization**:
-* Before any decryption, the client obtains authorization for a bounded window through the **key provisioning adapter**, evaluated against chain state at the deployment's declared settlement tier. An entitlement held for years authorizes nothing until the current window is established.
-* **The MVP declares `INCLUDED`** ([cryptography.md §2 Settlement Adapter](cryptography.md)). Entitlements are $0.00 and packages are permissively licensed, so the value at risk in a reversal is zero, and the exposure it could produce — one window, one package, one identity — is the same bound the protocol already publishes for a seller's retained capacity. Requiring deeper settlement would make `torrent install` wait on chain finality for no benefit; a CI pipeline cannot tolerate that and gains nothing by paying it.
-* **No local keystore.** The content key is held in memory for the window only and is never written to disk. There is no cache of prior authorization results and no exemption for assets decrypted previously.
-* Window bounds are `k` (settlement-reference ceiling) and `M` (volume cap), expiring at whichever is reached first. Both are MVP configuration with published values; see the To-Do list for their selection and the capacity-versus-boundary tradeoff in [cryptography.md §8.1](cryptography.md). `M` is client-side and unobservable to the provisioner, so only `k` carries that tradeoff.
-* On expiry the client discards the content key and requests a new window if decryption continues. Renewal is an ordinary authorization request and is refused if the entitlement no longer holds.
-* The DKMN is the MVP implementation of the provisioning layer. It sits behind the adapter and is replaceable by any construction meeting the same two obligations — per-window authorization and no selective withholding.
+## MVP Payload Cipher and Manifest Validation
 
-4. **Local Content Addressable Storage (CAS) + Symlinker**:
+**The MVP payload-cipher implementation is `AesCtrAdapter`: AES-256-CTR with a random 64-bit IV and a 64-bit block counter.** The IV is generated once per deployment and authenticated in its hash-card. The deployment is encrypted as one continuous byte stream under one `(content key, IV)` pair; file boundaries do not restart the counter, and a second IV under the same content key is forbidden. For piece index `i`, the starting block index is `(i × piece_size) / 16`. The maximum addressable extent is 2^68 bytes.
+
+Before entitlement acquisition or authorization, the client authenticates the deployment record and hash-card, resolves the immutable suite, and validates all manifest bounds. Piece size must be a power of two, at least 16 KiB, and a multiple of 16 bytes; total size, piece size, and piece count must agree; the highest block index must fit the cipher's declared extent; and every requested piece index must be in range. Any authentication, compatibility, or bounds failure halts before the provisioning layer is contacted.
+
+## Per-Window Decryption Authorization
+
+* Before any decryption, the client obtains authorization for a bounded window through the **provisioning adapter**, evaluated against chain state at the deployment's declared settlement tier. An entitlement held for years authorizes nothing until the current window is established.
+* Every request carries the complete, versioned `AuthorizationContext`: asset identity, deployment identity, entitlement identity, requester identity, recipient key-agreement public key and scheme, settlement reference, settlement tier, window ceiling and volume cap, provisioning protocol/keyset, decryption-material type, nonce/challenge, and expiry. Every signature and aggregate authorization commits to each complete context; omitted fields are a hard failure.
+* The participants in each provisioning handshake agree on one exact qualifying settlement reference. `minSettlementTier` determines how settled that reference must be, not which reference the parties use. The MVP threshold protocol must deterministically reach and authenticate that agreement before evaluating authorization; conflicting references fail closed.
+* Settlement tier is declared per deployment. Public First Finder/NPM deployments use `INCLUDED`, because their entitlement price is $0.00 and their plaintext is already publicly available. The priced explicit-publisher deployment used by Transaction Flow Proof declares and justifies its own tier rather than inheriting that default.
+* Authorization resolves through `IEntitlementStateAdapter.evaluateAuthorization(context)` or a semantics-preserving paginated batch form. Results are `AUTHORIZED`, `PENDING_SETTLEMENT`, or `DENIED`; pending requests wait or retry, denied requests halt, and no batch call may erase the per-context bindings above.
+* An authorized threshold committee returns a fresh, authenticated response envelope wrapped to the requester's declared key-agreement public key for that window. The client verifies the response signature or aggregate commitment, context hash, suite, provisioning keyset, recipient binding, material type, and window bounds before accepting the suite-declared decryption material.
+* Window bounds are `k` (settlement-reference ceiling) and `M` (volume cap), expiring at whichever is reached first. Both are MVP configuration with published values; see the To-Do list for their selection and the capacity-versus-boundary tradeoff in [cryptography.md, Provisioning Liveness](cryptography.md#provisioning-liveness-centralization-and-participation). `M` is client-side and unobservable to the provisioner, so only `k` carries that tradeoff.
+* The wrapped-SCK MVP provisions the deployment's shared content key to each currently authorized recipient. Recipient wrapping protects transport but does not make the content key recipient-specific or revocable: a modified client can retain or redistribute it. The protocol claims bounded operation for the conforming reference client, not hostile DRM.
+* The complete response envelope and every confidential value derived from it are memory-only. At the first window bound, the client destroys the envelope, decryption material, expanded cipher state, derived verification material, buffered keystream, and every live decryption context. Renewal is a new authorization request and is refused if the entitlement no longer holds.
+* The provisioning layer is replaceable only by a construction compatible with the immutable deployment suite and meeting per-window authorization, threshold availability, and non-selective provisioning. An adapter boundary alone does not migrate threshold shares.
+
+## Provisioning Committee and Retention Obligation
+
+**Provisioning participation is an obligation of holding an identity, and the committee is randomly selected and rotated.** A fixed committee is a fixed target; rotation means corrupting the provisioning layer requires corrupting a membership that will not be the same membership next period. Participation is not a voluntary contribution offered by whoever chooses to run infrastructure.
+
+**Participation is scoped per identity, never per device.** Sybil resistance is then inherent in the protocol rather than an overlay some other layer has to manage: one identity is one participant regardless of how many machines it runs, and running more devices buys no additional weight. Deliberate fragmentation of one operator into many identities is a distinct problem and is deferred rather than answered here.
+
+**Retention is the storage half of the same obligation.** Seeding and provisioning are the same class of duty attached to the same identity, assigned by the same random rotation, and audited on the same surface. Three tiers, with different rules:
+
+* **Obligated** — assigned by the protocol, held until reassignment, not selected by the participant and not evicted at the participant's discretion.
+* **Self-interested** — the participant's own dependency closure, held because they use it, governed by nothing but their own choice.
+* **Discretionary** — capacity offered above the floor, which is where compensation attaches once it exists.
+
+**Replication is a construction rather than a hope.** Assigning each deployment to a defined number of identities produces that replication factor directly, instead of leaving aggregate resilience to emerge from voluntary contribution.
+
+**The obligation is attested and audited, not enforced.** A delegated seed host cannot be compelled — a user can delete an object out of a client this protocol does not control — so non-compliance is made visible and costly rather than impossible, which is the same posture as [cryptography.md, Modified Clients](cryptography.md#modified-clients-the-honesty-assumption). The audit is a challenge asking an identity to produce a BLAKE3/Bao authentication path for a random chunk of a deployment it is obligated to hold. The verification structure already exists, so proving retention introduces no new cryptography.
+
+**The committee bootstraps at its own degenerate case rather than being substituted for.** Membership is drawn from the participant set, so a network of one has a committee of one — valid, with the threshold property absent rather than weak. As soon as enough independent participants exist, the deployed threshold must require *t*-of-*n* shares and no single member may reconstruct or selectively provision the content key. **Real threshold custody and proactive resharing ship in the MVP**, including the transition from the bootstrap participant to a larger committee without reconstructing the content key at one node. This is part of the working content lifecycle, not interface-only scaffolding.
+
+The MVP exercises discovery, seeding, leeching, entitlement acquisition and transfer, threshold authorization, provisioning, decryption, and proactive resharing end to end. Stake-conditioned/Sybil-resistant member selection, retention assignment and penalties, mature rotation policy, replication factor, retention floor, and audit challenge frequency remain unenforced or unset and are held in the To-Do list. Those deferred economics do not permit threshold custody or resharing themselves to be mocked.
+
+## Local Content Addressable Storage and Symlinker
+
 * Single global cache directory storing decrypted packages by content hash.
-* Hardlinks/symlinks from global CAS directly into the project's `node_modules`.
-* Plaintext in the CAS **persists by design and is outside the authorization boundary**. This is the retained-plaintext commitment of [cryptography.md §1.1](cryptography.md), not a gap: a developer who installed a package keeps it and uses it with any toolchain.
+* Hardlinks/symlinks from the global CAS directly into the project's `node_modules`.
+* Plaintext in the CAS **persists by design and is outside the authorization boundary**. This is the retained-plaintext commitment of [cryptography.md, Core Philosophy](cryptography.md#core-philosophy), not a gap: a developer who installed a package keeps it and uses it with any toolchain.
+* This store holds plaintext only. The ciphertext the participant seeds is held separately, under the seed host adapter, and the two are sized and retained independently.
+* **Retention here is the user's decision, not the protocol's.** It is their disk. The client defaults to unbounded and exposes a quota; where a quota forces eviction, artifacts currently linked into a live `node_modules` are pinned, and the client warns before evicting anything the identity could not re-authorize. Eviction is not an ordinary cache miss — re-materializing plaintext requires a new decryption window, which can fail if the entitlement has since transferred or the provisioning layer is unavailable, so silent eviction can destroy access the user reasonably believed was permanent.
 
-5. **$0.00 Entitlement Ledger & Escrow Contract (EVM Testnet / L2)**:
-* Smart contract that registers `(PackageIdentityHash, UpstreamAttestation, CiphertextRoot, PlaintextRoot, CanInfohash, OwnerIdentifierHash)`.
-* **Both content roots are registered, not just the infohash, and the plaintext root is registered in Public disclosure mode** ([cryptography.md §2](cryptography.md)). Provenance and independent verifiability are the point of the package path, and NPM plaintext is openly distributed regardless, so there is nothing to mask. The infohash establishes what the swarm carries; the plaintext root establishes what a correct decryption must produce. Without it the `Verify plaintext root` step of the execution trace has nothing to verify against, and a client provisioned an incorrect content key produces garbage that passes every other check the protocol performs — see [cryptography.md §2 Content Commitments](cryptography.md).
-* Mints $0.00 entitlements to requesting identities as transferable bearer assets.
-* Exposes `isAuthorizedBatch([packageHashes], requestingIdentity)` as a multicall view function, evaluated by provisioning nodes at an agreed settlement reference meeting the declared tier. This is the authorization basis, not merely a concurrency device.
-* **The view returns three states** — `AUTHORIZED`, `PENDING_SETTLEMENT`, `DENIED`. Authorization is transactional against evolving state, and during an install the entitlement is minted seconds before it is read, so "not settled yet" and "no" are different answers requiring different client behavior. See [cryptography.md Phase 2.4](cryptography.md).
-* If a package is ingested via First Finder fallback, the contract creates an escrow record tagged with a **salted commitment** to the maintainer's public NPM email, not a bare hash. Email addresses are low-entropy and enumerable, so a bare hash publishes a permanently testable package-to-maintainer mapping — an on-chain disclosure the upstream source itself no longer makes, and [cryptography.md §8.2](cryptography.md)'s concern arriving in a form the MVP actually ships. The salt is held by the claim portal and released to a claimant on successful verification, so the claim flow of deferred item 2 is unchanged.
-* **Per-identity binding record.** The contract stores the bound handshake public key and its scheme on-chain — the fields on-chain logic must read — plus an anchor hash committing to the full DID Document, which resolves off-chain. Contracts cannot read an off-chain document without an oracle or a proof system, so the fields consulted during escrow claim verification and authorization checks are not among the anchored ones. See [cryptography.md §2 Binding Schema](cryptography.md).
+## Entitlement Ledger and Escrow Contract
 
-6. **Gas Relayer / Dev Grant Pool**:
-* A dead-simple backend relayer (or Paymaster) funded by a developer grant that signs $0.00 entitlement mint transactions on behalf of newly generated identities. No user-funded gas, no fiat deposits, no friction.
+Deployed to an EVM testnet or L2. First Finder entitlements are priced at $0.00; the explicit-publisher dogfood asset under Transaction Flow Proof is the sole nonzero-price exception.
+
+* The asset record registers the package identity hash, upstream attestation, publisher or escrow authority, publisher proof class, entitlement adapter, issuance authority, and every live deployment. Each deployment carries an authenticated hash-card containing at least the registry-assigned deployment identity; immutable suite and version; payload cipher and public parameters; piece geometry and total extent; provisioning protocol, keyset, and decryption-material type; authorization-context version, window policy, and settlement tier; ciphertext root; plaintext-root disclosure mode and value or explicit absence; and the transport locator set.
+* **Both content roots are registered, not just a transport locator, and the plaintext root is registered in Public disclosure mode** ([cryptography.md, Cryptographic Primitives](cryptography.md#cryptographic-primitives)). Provenance and independent verifiability are the point of the package path, and NPM plaintext is openly distributed regardless, so there is nothing to mask. The ciphertext root establishes what the swarm carries; the plaintext root establishes what a correct decryption must produce. Without it the `Verify plaintext root` step of the execution trace has nothing to verify against, and a client provisioned an incorrect content key produces garbage that passes every other check the protocol performs — see [cryptography.md, Cryptographic Primitives — Content Commitments](cryptography.md#cryptographic-primitives).
+* **Transport locators are a set, contributed by whichever transport adapters serve the deployment**, rather than a single transport-shaped field. A BitTorrent-served deployment contributes its magnet link and BTIH; a BLAKE3-native transport contributes its own address; a multi-homed deployment carries both and remains one object.
+* Mints asset-bound entitlements to requesting identities as transferable bearer assets whose price is a contract parameter. The MVP implementation is an ERC-721 non-fungible token, so minting, holding, and transfer are ordinary operations with well-understood tooling; the protocol term remains "entitlement" and the token standard is the implementation, not the definition. An entitlement authorizes every live deployment of the asset, and the verified publisher may issue additional entitlements without a protocol-imposed supply ceiling.
+* **Entitlement records are public, and that is a security and economic benefit for public dependencies.** The dependency inventory makes applications using known-vulnerable versions visible and creates pressure to update or remove them. It also makes paid distributions' consumption of open-source packages visible, strengthening the incentive to support the projects whose work they monetize. Private or internal content is a different case and no MVP ingest adapter targets it.
+* Exposes `evaluateAuthorization(context)` and a semantics-preserving `evaluateAuthorizationBatch(contexts)` view through `IEntitlementStateAdapter`, evaluated at the single settlement reference agreed by the provisioning participants. The complete context, three-state result, and client behavior are defined under Per-Window Decryption Authorization.
+* **Batch reads are paginated, with the ceiling advertised by the adapter rather than fixed here.** A dependency closure of a thousand packages is one paginated traversal, not a thousand round trips and not one request the recipient cannot accept. This mirrors the treatment authorization batching already receives in [cryptography.md, Phase 2](cryptography.md#phase-2-consumption-and-decryption), where batch size is negotiated against the implementation's limits because those limits are properties of the implementation.
+* If a package is ingested via First Finder fallback, the contract creates an escrow record tagged with a **salted commitment** to the maintainer's public NPM email, not a bare hash. Email addresses are low-entropy and enumerable, so a bare hash publishes a permanently testable package-to-maintainer mapping — an on-chain disclosure the upstream source itself no longer makes, and the concern of [cryptography.md, Dependency Graph Privacy](cryptography.md#dependency-graph-privacy) arriving in a form the MVP actually ships.
+* **Per-identity binding record.** The contract stores the bound handshake public key and its scheme on-chain — the fields on-chain logic must read — plus an anchor hash committing to the full DID Document, which resolves off-chain. Contracts cannot read an off-chain document without an oracle or a proof system, so the fields consulted during escrow claim verification and authorization checks are not among the anchored ones. See [cryptography.md, Binding Schema](cryptography.md#binding-schema).
+
+## Explicit Publisher Path
+
+A publisher who arrives before a First Finder registers their own asset directly, without an escrow record ever existing.
+
+**This is the First Finder pipeline with three substitutions, not a second implementation.** Ingest, hashing, encryption, manifest construction, registration, and seeding are identical. What differs:
+
+* The content key derives from the publisher's own hierarchy — `seed_phrase → publisher_root → master_key → SCK`, domain-separated by the registry-assigned, globally unique, non-reusable `deployment_id`, per [cryptography.md, Content Key Generation](cryptography.md#phase-1-encryption-minting-and-seeding) — rather than being randomly generated. Publisher authority rotation is separate from the stable derivation seed and does not version ciphertext.
+* A Publisher Authority adapter is bound instead of an Escrow Identity adapter.
+* No escrow record is created and no maintainer commitment is stored.
+
+**Publisher identity proof resolves through `IPublisherProofAdapter` behind `IIdentityAdapter`, ordered by proof strength and resolved per package.** The strongest proof available *for that specific package* is used, and a weaker one is accepted only where the stronger does not apply:
+
+| Priority | Proof | Applies to |
+| --- | --- | --- |
+| First | NPM provenance attestation (Sigstore bundle) verified, repository extracted, repository control proven by GitHub OAuth | packages published with provenance |
+| Second | NPM maintainer OAuth, confirming the claimant is a listed maintainer | any package with a listed maintainer |
+| Framed, not implemented | DNSSEC or DNS TXT proof binding a domain to the publisher identity | generic content; also the entry point for publishing website versions into the swarm |
+
+**The proof class is recorded on-chain per record.** Governance in this protocol is advisory metadata parsed against a local trust set ([cryptography.md, Content Governance](cryptography.md#deprecation-advisory-flags-and-content-governance)), so a consumer able to see that a publisher was verified cryptographically rather than by maintainer email has information they can act on locally. Recording it also stops the weaker fallback from silently laundering into the same apparent authority as the stronger proof.
+
+## Escrow Claim
+
+**Claims are scoped per package *and* per version.** Ownership can differ between versions of one package — a maintainer publishes, the package becomes popular, and the next version is published under a corporate account — so records stay per-`(package, version)` and no claim locks a package name to one owner. Anything else would contradict transferable ownership, which is a founding premise of the protocol rather than a detail of the escrow path.
+
+**A claim applies to a proof-derived set, not to a set the claimant chooses.** The verifier enumerates which records the presented proof actually covers at the moment of verification, commits to that set, and the contract applies one transition across the whole set in a single transaction. A maintainer of ninety versions makes one claim. A package whose later versions moved to a different owner yields two claims under two proofs over two disjoint sets, with no conflict and no adjudication. Different proof classes cover different and potentially non-contiguous version ranges over the same package name, and each claimed record carries the proof class that backed it.
+
+**The claim is bound to the claimant's chain identity.** A proof generated for one address reverts if executed by or directed to another, per [cryptography.md, Escrow Claim Front-Running](cryptography.md#escrow-claim-front-running--identity-proof-binding), which is what prevents an intercepted verification proof from being front-run.
+
+**Claim verification resolves through `IClaimVerifierAdapter` behind `IIdentityAdapter`.** The MVP implementation is an attestor: the verifier authenticates the claimant off-chain, then signs a voucher over the committed claim set, the claimant's address, and an expiry, using a key registered on-chain. A ZK-Email construction, a DNSSEC oracle, or any other verifier is a peer implementation behind the same interface and requires no contract change.
+
+**The salt is held by the provisioning layer**, not by a separate portal. The provisioning layer already holds the escrowed content key and already has to release material to a verified claimant, so siting the salt there removes a component, a key, and a distinct permanent-failure mode without adding a trust assumption the protocol does not already carry. A separate service holding the only copy of every salt would mean that losing it makes every escrowed asset permanently unclaimable.
+
+**A claimant receives complete protocol-level ownership, identical to an original explicit publisher.** Any difference in publishing authority, issuance control, administrative control, provisioning authority, or standing to supersede between a claimed record and a directly published one is a defect. The expected difference is cryptographic history: the existing First Finder deployment retains its random content-key lineage and ciphertext.
+
+**Operational cryptographic custody and custodial authority are distinct.** The First Finder keeps the random content key only until the threshold escrow is durably acknowledged, then destroys every local copy and derivative. The provisioning suite thereafter maintains uninterrupted operational threshold custody of the content key. On a successful claim, custodial authority over that deployment transfers from escrow to the claimant: the committee continues holding and provisioning its shares, now under the claimant's recognized authority. The protocol does not deliver the raw content key to the claimant, and the First Finder never owns the deployment. The claimant may also issue successor deployments whose content keys derive from their own hierarchy. Existing and successor deployments may remain live, and their shared plaintext root proves they carry the same asset.
+
+## Transaction Flow Proof
+
+Entitlements are $0.00 everywhere the protocol ingests content it does not own. That is not a pricing preference but a consequence of Content Bootstrap Does Not Confer Publisher Rights ([cryptography.md, Invariant Requirements](cryptography.md#overview-and-invariant-requirements)): a First Finder cannot price an asset whose publisher has not arrived, because the proceeds would accrue to a party that owns nothing.
+
+**The MVP nonetheless proves that a nonzero transaction settles**, because a transfer path never exercised above zero is a transfer path never exercised at all — the price parameter, the payment leg, and the ordering of settlement against authorization are all untested while every entitlement is free. The proof is confined to the one asset class where nonzero issuance is legitimate: **the packages the project publishes itself**. ChainTorrent publishing ChainTorrent is an explicit publisher pricing an asset it owns, so no escrow record exists, no maintainer is absent, and no grandfathering question arises. The same dogfooding that seeds the swarm with its first content supplies the only assets that may carry a price.
+
+Two legs, both priced trivially above gas:
+
+* **Primary issuance.** The project mints priced entitlements to its own packages through the explicit publisher path, and a consumer acquires one.
+* **Secondary transfer.** A holder resells that entitlement to another identity, and the settlement boundary is asserted: the buyer authorizes immediately, the seller's next renewal is refused, and the seller's outstanding window ends at whichever of its settlement-reference ceiling or volume cap is reached first.
+
+This is a test instrument, not a revenue path. Everything ingested through First Finder stays at $0.00, and general monetization stays deferred under Paid Monetization.
+
+## Key Custody
+
+**Key custody resolves through `IKeyCustodyAdapter`.** Where an identity's keys live is an implementation choice like every other in this protocol, and pinning one store would be the same misstep as pinning one chain or one curve.
+
+**The MVP custody implementation remains an unresolved, blocking selection.** Existing browser password managers and platform authenticators are candidates only if their actual APIs satisfy the required capabilities; browser synchronization, exportability, or key agreement cannot be assumed. The MVP does not select a split browser/local construction merely because a browser can sign.
+
+**The adapter declares its capabilities**, because implementations differ in ways consumers must resolve against rather than assume:
+
+* whether it can hold a signing key;
+* whether it can hold a key-agreement key, which is what unwraps a provisioned content key and is a distinct primitive from signing (see the Key Agreement Adapter in [cryptography.md, Cryptographic Primitives](cryptography.md#cryptographic-primitives));
+* whether it can protect an externally held key without holding it;
+* whether an identity it holds can span devices, which the per-identity scoping of committee participation requires;
+* whether it supports recovery without silently changing the identity; and
+* whether it can protect the stable publisher derivation seed separately from rotatable identity/authority keys.
+
+**This constrains no other layer.** Per-layer signature resolution and the binding-not-matching rule of [cryptography.md, Cryptographic Primitives](cryptography.md#cryptographic-primitives) mean a custody implementation serving the handshake layer imposes nothing on the chain layer, which resolves its own adapter and is bound by attestation rather than by matching. A custody choice is not a chain requirement.
+
+**Identity custody never persists content keys.** A consumer receives suite-declared decryption material in memory for one window and destroys it at expiry. The threshold provisioning suite does persist distributed shares of each content key, including escrow deployments; that operational custody is what makes later provisioning possible. `IKeyCustodyAdapter` holds only the identity's own material — handshake, chain, and key-agreement keys, plus the publisher derivation seed where one exists.
+
+A first-party keystore is a later implementation rather than a later refactor, and it arrives with the rest of its class — chain, tokens, wallet, and seeder client — as described under Adapter Composition and Capability Declaration.
+
+## Gas Relayer and Dev Grant Pool
+
+* A dead-simple backend relayer (or Paymaster) funded by a developer grant that signs free entitlement mint transactions on behalf of newly generated identities, so a first-run user is not blocked on acquiring gas before they can install anything.
+* **The subsidy covers the free path, and does not promise to cover every path.** Paid acquisition requires the buyer to actually pay, which means holding funds, which is a step the relayer cannot remove and should not pretend to — the Transaction Flow Proof accepts that step for the small number of identities exercising it. Real value entering the system is the intended direction of travel and is waiting on the technical elements being proven, not on a commitment to permanent subsidy.
 * **One binding attestation transaction per new identity.** At wallet creation the relayer pays for a single transaction registering the identity's handshake public key, signed by the chain identity. It runs once per identity, never per install, and is invisible to the user.
 * Authorization requests are **not** chain transactions and do not pass through the relayer. They are off-chain requests to the provisioning layer reading an on-chain view function, so per-window authorization adds provisioning traffic rather than gas cost.
 * This is acknowledged scaffolding: it is a centralized chokepoint inside a decentralization thesis, and it is an unmetered subsidy. It exists to remove first-run friction, and it is expected to be replaced.
 
-7. **Cost Instrumentation**:
+## Cost Instrumentation
+
 * Record relayer gas spend and swarm bandwidth per install. Cost-per-install is the first real unit-economics datapoint the project can obtain, and it is nearly free to capture at this stage.
-* Record **authorization request volume and latency** per install, separately from gas. This is the primary load driver on the provisioning layer and the empirical input to the capacity question in [cryptography.md §8.1](cryptography.md); `k` and `M` cannot be calibrated without it.
+* Record **authorization request volume and latency** per install, separately from gas. This is the primary load driver on the provisioning layer and the empirical input to the capacity question in [cryptography.md, Provisioning Liveness](cryptography.md#provisioning-liveness-centralization-and-participation); `k` and `M` cannot be calibrated without it.
+* Record **CAS hit rate and cross-project reuse** — how often an install is served from local plaintext rather than fetched, and how many projects on one machine share a given artifact. This is the benefit the adopting population actually experiences, which makes it the MVP's headline adoption metric rather than a secondary statistic.
+* **The latency budget is declared before the run, and the measurement population is the local developer.** Interactive install wall-clock is the binding constraint, because a developer at a terminal notices a doubled install where a pipeline does not, and because individual developers adopt first. State the fraction of install wall-clock that authorization may acceptably add *before* measuring, so the instrumentation can produce a failure rather than a number. The economic half of the protocol-overhead question — what a single-digit fee would have to cover — is not discoverable at this stage and carries no threshold.
 
-## Signature Scheme (MVP)
+## Signature Scheme
 
-The MVP resolves signatures through the **`ISignatureAdapter`** abstraction defined in [cryptography.md §2](cryptography.md), resolved per layer, and ships two implementations.
+The MVP resolves signatures through the **`ISignatureAdapter`** abstraction defined in [cryptography.md, Cryptographic Primitives](cryptography.md#cryptographic-primitives), resolved per layer, and ships two implementations.
 
-**`Ed25519Adapter` is the protocol's preferred scheme** and is used at the provisioning handshake and content-signing layers — the layers where signature volume actually lives, since Phase 2.3 signs an aggregate authorization payload per window across whole dependency trees. Ed25519 is faster, is highly resistant to side-channel attacks, and is the general preference for new protocols.
+**`Ed25519Adapter` is the protocol's preferred scheme** and is used at the provisioning handshake and content-signing layers — the layers where signature volume actually lives. A batch may use an aggregate signature only when its signed commitment binds every field of every complete `AuthorizationContext`; aggregation never reduces the authorization surface. Ed25519 is faster, is highly resistant to side-channel attacks, and is the general preference for new protocols.
 
-**`Secp256k1Adapter` is used at the chain layer only**, because the MVP targets an EVM L2 where the account *is* a secp256k1 keypair and the chain permits no alternative. This is a constraint imposed by the target chain, not a protocol preference.
+**`Secp256k1Adapter` is shipped for the chain layer**, because an EVM target is the expected launch environment and an EVM account *is* a secp256k1 keypair, permitting no alternative there. That is a constraint a target chain imposes, not a protocol preference and not a selection — the launch chain is not chosen, and the scheme a chain layer uses follows from whichever chain adapter resolves. A non-EVM target ships its own signature adapter and changes nothing above the chain layer.
 
-The two keys are bound rather than matched: the Ed25519 handshake public key is registered in the Registry once at wallet creation, signed by the chain identity, in a relayer-paid attestation that is thereafter verifiable by any party. Additional chains and additional layers are new adapters, not protocol changes.
+The two keys are bound rather than matched: the Ed25519 handshake public key is registered in the Registry once at wallet creation, signed by the chain identity, in a relayer-paid attestation that is thereafter verifiable by any party. Additional chains and additional layers are new adapters, not protocol changes. Which scheme a given layer can use is constrained by the resolved key custody implementation's declared capabilities, and an incompatible pair is refused at resolution time per Adapter Composition and Capability Declaration above.
 
 ## What the MVP Does and Does Not Exercise
 
 Per-window authorization is built in full, but JavaScript dependencies exercise it lightly. A package is decrypted once at install, its plaintext lands in the CAS, and it is used from there indefinitely without further decryption — so the authorization boundary is crossed rarely for this content class. That is the expected behavior of install-once content under the retained-plaintext commitment, not a defect in the mechanism.
 
-The consequence for the MVP is that the *mechanism* is validated while its *load profile* is not. Streaming and large-media content classes, which re-authorize continuously, will exercise it far harder. Authorization instrumentation (item 7) exists so that the MVP still produces a usable baseline rather than none.
+The consequence for the MVP is that the *mechanism* is validated while its *load profile* is not. Streaming and large-media content classes, which re-authorize continuously, will exercise it far harder. Authorization instrumentation exists so that the MVP still produces a usable baseline rather than none.
+
+The provisioning committee is exercised as real threshold custody with proactive resharing. Stake-weighted selection, Sybil resistance, retention assignment, and audit consequences remain deferred, but content discovery, seeding, leeching, entitlement, threshold provisioning, and decryption must function end to end.
+
+**Entitlement transfer is exercised, and it is the hardest thing the MVP proves.** The settlement boundary — buyer authorizing immediately, seller's next renewal refused, seller's outstanding window ending at the first of its settlement-reference ceiling or volume cap — is the specification's most contested invariant and the one whose failure mode is silent, since a wrong answer looks like a working install from the outside. Transaction Flow Proof exercises it end to end while the entitlement graph is two identities, which is the only point at which it is cheap to assert. What is *not* exercised is a market: price discovery, resale volume, and any behavior that emerges from many holders trading remain entirely unobserved.
 
 ---
 
 # Deferred to V2+, but Architecturally Protected
 
-1. **Git Commit Wrapping (`git commit` as torrents)**:
+## Git Commit Wrapping
+
+Wrapping `git commit` output as swarm objects.
+
 * **Why cut:** Git introduces mutable DAGs, branch delta tracking, and merge conflict complexity. Packages are static, immutable tarballs. Master package distribution first; tackle Git after the package network is live.
 
-2. **Active Email Bot for First Finder Escrow**:
-* **Why cut:** Sending automated emails every time an un-registered package is ingested creates spam risks, domain reputation hurdles, and unnecessary backend state.
-* **Architectural protection:** Store a salted commitment to the package maintainer's email from `package.json` in the smart contract state (`escrowOwnerCommitment`), per item 5 of In Scope. When the maintainer eventually shows up on a web portal, they authenticate via OAuth/email magic-link, and the portal releases the salt so they can claim all escrowed content keys matching their commitment in one shot.
+## Active Email Bot for First Finder Escrow
 
-3. **Paid Monetization ($ > $0.00)**:
+* **Why cut:** Sending automated emails every time an un-registered package is ingested creates spam risks, domain reputation hurdles, and unnecessary backend state.
+* **Architectural protection:** Store a salted commitment to the package maintainer's email from `package.json` in the smart contract state (`escrowOwnerCommitment`), per Entitlement Ledger and Escrow Contract in In Scope. When the maintainer eventually shows up, they authenticate through `IPublisherProofAdapter` and the provisioning layer releases the salt, so they can claim every escrowed record their proof covers in one transaction — the claim-set mechanism described under Escrow Claim is unchanged by the absence of an email bot.
+
+## Paid Monetization
+
+General entitlement monetization beyond the narrowly scoped explicit-publisher dogfood transaction in Transaction Flow Proof.
+
 * **Why cut:** Introducing token economics, pricing, or fiat-to-crypto rails introduces immense regulatory and implementation drag.
 * **Architectural protection:** The contract treats entitlements as transferable bearer assets whose price is a parameter. Changing that parameter from `0` to `X` later requires zero client refactoring.
 
-4. **Version Alignment Engine / Dependency Tree Warnings**:
-* **Why cut:** Calculating and warning about multi-version package bloat adds UI/UX complexity to the installer.
-* **Architectural protection:** The DAG parser still resolves exact hash matches; version alignment can be surfaced later as a diagnostic feature (`torrent audit`).
+## Version Alignment Engine
 
-5. **Arbitrary Media & Streaming Engine**:
+Dependency tree warnings and multi-version bloat diagnostics.
+
+* **Why cut:** Calculating and warning about multi-version package bloat adds UI/UX complexity, and dependency resolution belongs to the package manager rather than to this protocol.
+* **Architectural protection:** The host adapter resolves exact hash matches; version alignment can be surfaced later as a diagnostic feature (`torrent audit`).
+
+## Arbitrary Media and Streaming Engine
+
 * **Why cut:** Video byte-range seeking requires a completely different client pipeline. Stay 100% focused on JS developer dependencies.
 
-6. **Content Flagging & Deprecation Surface**:
+## Content Flagging and Deprecation Surface
+
 * **Why cut:** The backlink metadata layer is not built in the MVP.
-* **Architectural protection:** Canonical records are immutable, but *advisory* — see [cryptography.md §6](cryptography.md). Deprecation, malware advisories, and unwanted-content flags are backlink metadata parsed against the client's trust set, not registry mutations. Framing the handler now costs nothing; implementing it can wait.
+* **Architectural protection:** Canonical records are immutable, but *advisory* — see [cryptography.md, Content Governance](cryptography.md#deprecation-advisory-flags-and-content-governance). Deprecation, malware advisories, and unwanted-content flags are backlink metadata parsed against the client's trust set, not registry mutations. Framing the handler now costs nothing; implementing it can wait.
+* **The object model is designed once, not per type.** Advisories, deprecations, stars, comment chains, ratings, and reactions are one append-only backlink construction carrying different payloads. This layer is therefore specified as that construction rather than as a set of features, and the reason it is cut from the MVP is that the construction is its cost — a single advisory type requires the whole spine, which is why it is not the cheap increment it appears to be.
 
-7. **Per-Entitlement Variance & Forensic Attribution**:
-* **Why cut:** Variant seeds, re-minting on transfer, and collusion-resistant fingerprinting are meaningless while entitlements are $0.00 and content is permissively licensed. Seed authorship is itself unresolved ([cryptography.md §8.3](cryptography.md)).
-* **Architectural protection:** The MVP ships **per-window provisioning only** ([cryptography.md §7.1](cryptography.md)) — content uniform across holders, each provisioning response wrapped to the requesting identity for transport. Enabling variance later adds a per-entitlement variant root and variant object and requires no change to the identity, registry, or entitlement layers. Because variance is an overlay over a complete swarm object, it does not alter the ciphertext the MVP distributes. See [cryptography.md §7](cryptography.md).
+## Per-Entitlement Variance and Forensic Attribution
 
-8. **Seeder Compensation**:
-* **Why cut:** Rewarding seeding requires the token economics cut in item 3.
-* **Architectural protection:** Seeding is already the network's distribution mechanism and needs no structural change to become compensated. The problem is recorded in [cryptography.md §8.4](cryptography.md) and candidate mechanisms in the To-Do list.
+* **Why cut:** Variant seeds, seed re-issuance on transfer, and collusion-resistant fingerprinting are meaningless while entitlements are $0.00 and content is permissively licensed. Seed authorship is itself unresolved ([cryptography.md, Variant Seed Authorship](cryptography.md#variant-seed-authorship)).
+* **Architectural protection:** The MVP ships **per-window provisioning only** ([cryptography.md, MVP Posture](cryptography.md#mvp-posture-per-window-provisioning)) — content uniform across holders, each provisioning response wrapped to the requesting identity for transport. Enabling variance later adds a variant root to the entitlement record and confidential auxiliary material to the authenticated response envelope, and requires no change to the identity, registry, or entitlement layers. Because the variant seed is committed to by the entitlement rather than stored in the swarm, and because variance is an overlay applied after verification, it does not alter the ciphertext the MVP distributes and introduces no additional swarm object to store, serve, or locate. See [cryptography.md, The Variant Seed Lives in the Entitlement](cryptography.md#the-variant-seed-lives-in-the-entitlement).
 
----
+## Recipient- and Window-Bound Decryption Credentials
 
-# The MVP Execution Trace
+* **Why cut:** The wrapped-SCK MVP distributes the same deployment content key to every authorized recipient. Constructing credentials whose cryptographic capability itself is bound to one identity and one window remains unresolved.
+* **Architectural protection:** The immutable suite declares its decryption-material type and response contract. A successor suite can introduce recipient/window-bound material without pretending that a new provisioner can reinterpret an existing deployment or without changing the asset-bound entitlement.
 
-When a developer runs `torrent install lodash`:
+## Partial Encryption and Duplicate Storage
 
-```
-[1. Local Check]   ──> Plaintext in CAS? ──(Yes)──> Symlink to node_modules ──> DONE
-                            │ (No)                  (retained plaintext; no
-                            ▼                        authorization required)
-[2. Swarm Check]   ──> Identity hash on Ledger?
-                            │
-              ┌─────────────┴─────────────┐
-           (Yes)                        (No — First Finder)
-              │                                │
-              ▼                                ▼
-     Pull ciphertext via Swarm        Fetch bytes via IIngestSourceAdapter
-              │                                │
-              ▼                                ▼
-     Verify ciphertext root           Verify upstream attestation
-              │                       — abort on mismatch
-              │                                │
-              ▼                                ▼
-[3. Acquisition]                       Encrypt with random content key
-   Entitlement held? ──(Yes)──┐                │
-              │ (No)          │                ▼
-              ▼               │       Register Identity Hash on Ledger
-   Mint $0.00 Entitlement     │       (first tx wins; loser discards
-              │               │        ciphertext and repoints)
-              └───────┬───────┘       Escrow content key (Maintainer Hash)
-                      │               Mint $0.00 Entitlement to Identity
-                      ▼                        │
-[4. Authorization]                             ▼
-   Request decryption window          Save to CAS & Seed Swarm
-   — never skipped, never cached
-                      │
-                      ▼
-   isAuthorizedBatch() at declared tier
-   AUTHORIZED / PENDING_SETTLEMENT / DENIED
-                      │
-                      ▼
-   Content key provisioned for window
-   (memory only, never written to disk)
-                      │
-                      ▼
-[5. Decrypt]  Verify plaintext root ──> CAS ──> Symlink
-                      │
-                      ▼
-[6. Expiry]   Window lapses ──> content key discarded from memory
-              Ciphertext retained ──> keep seeding
+* **Why cut:** Selectively encrypting only high-value regions requires a canonical segmentation policy and complicates random access and verification. The MVP encrypts the entire artifact and accepts the resulting plaintext-CAS plus ciphertext-store duplication.
+* **Architectural protection:** Payload structure is opaque to the transport and entitlement layers. A later suite can declare an authenticated partial-encryption map while preserving the same content commitments and authorization surface.
 
-```
+## Consensus-Native Provisioning
+
+* **Why cut:** Eliminating the standing threshold provisioning intermediary requires a construction that derives fresh, recipient-bound decryption capability directly from consensus state; that construction is not yet specified.
+* **Architectural protection:** Provisioning is a suite-declared interface and authority is derived from entitlement state. Replacement still requires compatible resharing, migration, or a successor deployment rather than an interface-only swap.
+
+## Seeder Compensation
+
+* **Why cut:** Rewarding seeding requires the token economics cut under Paid Monetization, and the Sybil-resistant stake that makes committee assignment enforceable is the same requirement.
+* **Architectural protection:** Seeding is already the network's distribution mechanism and needs no structural change to become compensated. The retention tiers under Provisioning Committee and Retention Obligation name discretionary capacity as the tier compensation attaches to, and the store interface already distinguishes obligated from voluntary holdings. Provisioning decentralization and seeder compensation resolve together rather than separately, because both bottom out in Sybil-resistant stake over the same participant set.
