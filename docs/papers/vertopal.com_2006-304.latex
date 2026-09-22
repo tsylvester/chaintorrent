@@ -1,0 +1,3809 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{multirow}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+An extended abstract of this paper appeared in Michele Bugliesi, Bart
+Preneel, Vladimiro Sassone, and Ingo Wegener, editors, 33rd
+International Colloquium on Automata, Languages and Programming-- ICALP
+2006, volume 4052 of Lecture Notes in Computer Science, Springer-Verlag,
+2006 {[}ACD+06{]}. This is the full version.
+
+Identity-Based Encryption Gone Wild
+
+\begin{quote}
+Michel Abdalla1, Dario Catalano1, Alexander W. Dent2, John Malone-Lee3,
+Gregory Neven1,4, Nigel P. Smart3.
+\end{quote}
+
+December 3, 2006
+
+\begin{quote}
+1 D´epartement d'Informatique, Ecole Normale Sup´erieure, 45 rue d'Ulm,
+75230 Paris Cedex 05, France.
+
+Email: \{Michel.Abdalla,Dario.Catalano,Gregory.Neven\}@ens.fr 2
+Information Security Group,\\
+Royal Holloway, University of London,\\
+Egham, Surrey, TW20 0EX, United Kingdom.
+
+Email: a.dent@rhul.ac.uk\\
+3 Department of Computer Science, University of Bristol, Woodland Road,
+Bristol, BS8 1UB, United Kingdom.
+
+Email: \{malone,nigel\}@cs.bris.ac.uk\\
+4 Department of Electrical Engineering, Katholieke Universiteit Leuven,
+Kasteelpark Arenberg 10, B-3001 Heverlee, Belgium.
+\end{quote}
+
+Email: Gregory.Neven@esat.kuleuven.be
+
+Abstract
+
+\begin{quote}
+In this paper we introduce a new primitive called identity-based
+encryption with wildcards, or WIBE for short. It allows to encrypt
+messages to a whole range of users simultaneously whose identities match
+a certain pattern. This pattern is defined through a sequence of fixed
+strings and wildcards, where any string can take the place of a wildcard
+in a matching identity. Our primitive can be applied to provide an
+intuitive way to send encrypted email to groups of users in a corporate
+hierarchy. We propose a full security notion and give efficient
+implementations meeting this notion under different pairing-related
+assumptions, both in the random oracle model and in the standard model.
+
+Keywords: Identity-based encryption, provable security.
+\end{quote}
+
+i
+
+Contents
+
+1 Introduction 1
+
+2 Basic Definitions 3
+
+3 Identity-Based Encryption with Wildcards 5
+
+4 A Generic Construction 6
+
+5 A Construction from Waters' HIBE Scheme 6
+
+\begin{quote}
+5.1 Waters' HIBE Scheme . . . . . . . . . . . . . . . . . . . . . . . .
+. . . . . . . . . . . . 6
+
+5.2 The \emph{Wa}-\emph{WIBE} Scheme . . . . . . . . . . . . . . . . . .
+. . . . . . . . . . . . . . . . . 7
+\end{quote}
+
+6 More Efficient Constructions in the Random Oracle Model 11
+
+\begin{quote}
+6.1 A Construction from Boneh-Boyen's HIBE Scheme . . . . . . . . . . .
+. . . . . . . . . 11
+
+6.2 A Construction from Boneh-Boyen-Goh's HIBE Scheme . . . . . . . . .
+. . . . . . . . 12
+
+6.3 From Selective-Identity to Full Security . . . . . . . . . . . . . .
+. . . . . . . . . . . . 15
+\end{quote}
+
+7 Chosen-Ciphertext Security 16
+
+Acknowledgements 20
+
+References 20
+
+A The \emph{BB}-\emph{HIBE} Scheme 22
+
+B The \emph{BBG}-\emph{HIBE} Scheme 25
+
+ii
+
+1 Introduction
+
+The concept of identity based cryptography was introduced by Shamir as
+early as in 1984 {[}Sha85{]}. How-ever, it took nearly twenty years for
+an efficient identity based encryption (IBE) scheme to be proposed. In
+2000 and 2001 respectively Sakai, Ohgishi and Kasahara {[}SOK00{]} and
+Boneh and Franklin {[}BF03{]} proposed IBE schemes based on elliptic
+curve pairings. Also, in 2001 Cocks proposed a system based on the
+quadratic residuosity problem {[}Coc01{]}.
+
+One of the main application areas proposed for IBE is that of email
+encryption. In this scenario, given an email address, one can encrypt a
+message to the owner of the email address without needing to obtain an
+authentic copy of the owner's public key first. In order to decrypt the
+email the recipient must authenticate itself to a trusted authority who
+generates a private key corresponding to the email address used to
+encrypt the message.
+
+Identity-based encryption with wildcards. Our work is motivated by the
+fact that many email addresses correspond to groups of users rather than
+single individuals. Consider the scenario where there is some kind of
+organisational hierarchy. Take as an example an organisation called
+ECRYPT which is divided into virtual labs, say AZTEC and STVL. In
+addition, these virtual labs are further subdivided into working groups
+WG1, WG2 and WG3. Finally, each working group may consist of many
+individual members. There are several extensions of the IBE primitive to
+such a hierarchical setting (HIBE) {[}HL02, GS02{]}. The idea is that
+each level can issue keys to users on the level below. For example the
+owner of the ECRYPT key can issue decryption keys for ECRYPT.AZTEC and
+ECRYPT.STVL.
+
+Suppose that we wish to send an email to all the members of the
+AZTEC.WG1 working group, which includes personal addresses
+ECRYPT.AZTEC.WG1.Nigel, ECRYPT.AZTEC.WG1.Dario and
+ECRYPT.AZTEC.WG1.John. Given a standard HIBE one would have to encrypt
+the message to each user individually. To address this limitation we
+introduce the concept of identity based encryption with wildcards
+(WIBE). The way in which decryption keys are issued is exactly as in a
+standard HIBE scheme; what differs is encryption. Our primitive allows
+the encrypter to replace any component of the recipient identity with a
+wildcard so that any identity matching the pattern can decrypt. Denoting
+wildcards by *, in the example above the encrypter would use the
+identity ECRYPT.AZTEC.WG1.* to encrypt to all members of the AZTEC.WG1
+group.
+
+It is often suggested that identity strings should be appended with the
+date so as to add time-liness to the message, and so try to mitigate the
+problems associated with key revocation. Using our technique we can now
+encrypt to a group of users, with a particular date, by encrypting to an
+identity of the form ECRYPT.AZTEC.WG1.*.22Oct2006 for example. Thus any
+individual in ECRYPT.AZTEC.WG1 with a decryption key for 22nd October
+2006 will be able to decrypt.
+
+As another example, take a hierarchy of email addresses at academic
+institutions of the form name@department.university.edu, i.e., the email
+address of John Smith working at the computer science department of Some
+State University would be johnsmith@cs.ssu.edu. Using our primitive, one
+can send encrypted email to everyone in the computer science department
+at SSU by encrypting to identity *@cs.ssu.edu, to everyone at SSU by
+encrypting to *@*.ssu.edu, to all computer scientists at any institution
+by encrypting to *@cs.*.edu, or to all system administrators in the
+university by encrypting to sysadmin@*.ssu.edu.
+
+Our contributions. In this paper, we introduce the primitive of
+identity-based encryption with wildcards, define appropriate security
+notions under chosen-plaintext and chosen-ciphertext attack, and present
+the first instantiations of this primitive. An overview of our schemes
+is given in Figure 1.
+
+We first show a generic construction from any HIBE scheme which has the
+disadvantage that the size of the secret key of a user on level ℓin the
+hierarchy is exponential in ℓ. The scheme clarifies the relationship
+between both primitives and motivates our search for direct schemes with
+efficiency
+
+1
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Scheme
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbar mpk\textbar{}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbar d\textbar{}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbar C\textbar{}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Dec
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Assumption
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+RO
+\end{minipage} \\
+\midrule()
+\endhead
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Generic
+\end{quote}
+\end{minipage}} & \multirow{2}{*}{\textbar mpk\emph{HIBE}\textbar{}} &
+\multirow{2}{*}{2L· \textbar d\emph{HIBE}\textbar{}} &
+\multirow{2}{*}{\textbar C\emph{HIBE}\textbar{}} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Dec\emph{HIBE}
+\end{quote}
+\end{minipage}} & \emph{HIBE} is & \multirow{2}{*}{No} \\
+& & & & & IND-ID-CPA \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{Wa}-\emph{WIBE}
+\end{quote}
+\end{minipage} & (n + 1)L + 3 & L + 1 & (n + 1)L + 2 & L + 1 & BDDH &
+No \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{BB}-\emph{WIBE}
+\end{quote}
+\end{minipage} & 2L + 3 & L + 1 & 2L + 2 & L + 1 & BDDH & Yes \\
+\emph{BBG}-\emph{WIBE} & L + 4 & L + 2 & L + 3 & 2 & L-BDHI & Yes \\
+\bottomrule()
+\end{longtable}
+
+Figure 1: Efficiency and security comparison between the generic scheme
+of Section 4, the \emph{Wa}-\emph{WIBE} scheme of Section 5.2, and the
+\emph{BB}-\emph{WIBE} and \emph{BBG}-\emph{WIBE} schemes presented in
+Section 6.1 and Section 6.2. The schemes are compared in terms of master
+public key size (\textbar mpk\textbar), user secret key size
+(\textbar d\textbar), ciphertext size (\textbar C\textbar), decryption
+time (Dec), the security assumption under which the scheme is proved
+secure, and whether this proof is in the random oracle model or not.
+(The generic construction does not introduce any random oracles, but if
+the security proof of the HIBE scheme is in the random oracle model,
+then the WIBE obviously inherits this property.) Values refer to the
+underlying HIBE scheme for the generic scheme, and to the number of
+group elements (\textbar mpk\textbar, \textbar d\textbar,
+\textbar C\textbar) or pairing computations (Dec) for the other schemes.
+L is the maximal hierarchy depth and n is the bit length of an identity
+string. Figures are worst-case values, usually occurring for identities
+at level L with all-wildcard ciphertexts. L-BDHI refers to the
+decisional bilinear Diffie-Hellman inversion assumption {[}MSK02,
+BB04{]}.
+
+polynomial in all parameters.
+
+The \emph{Wa}-\emph{WIBE} scheme is based on Waters' HIBE scheme
+{[}Wat05{]} and provably secure in the standard (i.e., non-random-oracle
+{[}BR93{]}) model under the bilinear decisional Diffie-Hellman (BDDH)
+assumption. Its efficiency is polynomial in all parameters, but has the
+disadvantage that each wildcard adds n + 1 group elements to the
+ciphertext. In practice, one would typically use the output of a
+collision-resistant hash function as identity strings, so that n ≈160.
+The resulting ciphertexts may be prohibitively long for many
+applications.
+
+Our second direct construction, the \emph{BB}-\emph{WIBE} scheme, is
+based on the Boneh-Boyen HIBE scheme {[}BB04{]}, and adds only two group
+elements to the ciphertext for each wildcard in the re-cipient pattern.
+It is provably secure under the (weaker) selective-identity security
+notion under the BDDH assumption. We extend an observation of {[}BB04,
+BBG05{]} to the case of WIBE schemes and show how to achieve full
+security in the random oracle model.
+
+Lastly, the \emph{BBG}-\emph{WIBE} scheme that we derive from the
+Boneh-Boyen-Goh {[}BBG05{]} HIBE scheme offers more efficient decryption
+(two pairings, versus L + 1 for the other schemes) and even shorter
+ciphertexts if few wildcards are used. (The ciphertext size is not
+constant, however, but depends linearly on the number of wildcards in
+the recipient pattern.) The scheme is provably selective-identity secure
+under the decisional L-bilinear Diffie-Hellman inversion (L-BDHI)
+assumption {[}BBG05{]}, which is a stronger assumption than BDDH.
+
+We note that all of our fully (as opposed to selective-identity) secure
+constructions lose a factor exponential in L in the reduction to the
+underlying assumption. This limits the secure use of our schemes to very
+small hierarchy depths. This (quite severe) restriction is not so
+surprising however, viewing that WIBE schemes are in fact a
+generalization of HIBE schemes, and that the same restriction arises in
+all currently-known HIBE constructions. We therefore leave the
+construction of a truly polynomial (in terms of efficiency and security)
+WIBE scheme as an open problem.
+
+Finally, we show how to achieve chosen ciphertext security in Section 7.
+We adapt the technique of Canetti, Halevi and Katz {[}CHK04{]} and show
+that an L-level CCA-secure WIBE can be built from a (2L + 2)-level
+CPA-secure WIBE and a strongly unforgeable one-time signature scheme.
+
+2
+
+2 Basic Definitions
+
+In this section we introduce some notation, computational problems and
+basic primitives that we will
+
+use throughout the rest of the paper. Let N = \{0, 1, . . .\} be the set
+of natural numbers. Let ε be the
+
+empty string. If n ∈N, then \{0, 1\}ndenotes the set of n-bit strings,
+and \{0, 1\}∗is the set of all bit
+
+strings. More generally, if S is a set, then Snis the set of n-tuples of
+elements of S, S≤nis the set
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+of tuples of length at most n. If S is finite, then x
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+←S denotes the assignment to x of an element
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+chosen uniformly at random from S. If A is an algorithm, then y ←A(x)
+denotes the assignment to
+
+y of the output of A on input x, and if A is randomised, then y an
+execution of A(x) with fresh coins is assigned to y.
+
+\begin{quote}
+\$\\
+←A(x) denotes that the output of
+\end{quote}
+
+Bilinear maps and related assumptions. Let G, GT be multiplicative
+groups of prime order p
+
+with an admissible map ˆe : G × G →GT. By admissible we mean that the
+map is bilinear, non-
+
+degenerate and efficiently computable. Bilinearity means that for all a,
+b ∈Zp and all g ∈G we have
+
+e(ga, gb) = ˆe(g, g)ab. By non-degenerate we mean that ˆe(g, g) = 1 if
+and only if g = 1.
+
+\begin{quote}
+In such a setting we can define a number of computational problems. The
+first we shall be
+\end{quote}
+
+interested in is called the bilinear decisional Diffie-Hellman (BDDH)
+problem: given a tuple (g, A =
+
+ga, B = gb, C = gc, T), the problem is to decide whether T = ˆe(g,
+g)abcor whether it is a random
+
+element of GT. More formally, we define the following game between an
+adversary A and a challenger.
+
+The challenger first chooses a random generator g←G∗, random integers a,
+b, c←Zp, a random
+
+element T←GT and a random bit β. If β = 1 it feeds A as input the tuple
+(g, ga, gb, gc, ˆe(g, g)abc), if
+
+β = 0 it feeds it (g, ga, gb, gc, T). The adversary A must then output
+its guess β′for β. The adversary
+
+has advantage ǫ in solving the BDDH problem if
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+A
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+g, ga, gb, gc, ˆe(g, g)abc
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+= 1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+−Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+A
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+g, ga, gb, gc, T
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+= 1
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+≥2ǫ,
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+where the probabilities are over the choice of g, a, b, c, T and over
+the random coins of A.
+
+Definition 2.1 The (t, ǫ) BDDH assumption holds if no t-time adversary A
+has at least ǫ advantage
+
+in the above game.
+
+We note that throughout this paper we will assume that the time t of an
+adversary includes its code
+
+size, in order to exclude trivial ``lookup'' adversaries.
+
+\begin{quote}
+A second problem we will use in our constructions is the ℓ-bilinear
+Diffie-Hellman Inversion (ℓ-
+\end{quote}
+
+BDHI) problem {[}MSK02, BB04{]}. The problem is to, compute ˆe(g,
+g)1/αfor random g ←G∗and
+
+α←Zp given g, gα, . . . , g(αℓ). The decisional variant of this problem
+is to distinguish ˆe(g, g)1/αfrom
+
+a random element of GT. We say that adversary A has advantage ǫ in
+solving the decisional ℓ-BDHI
+
+problem if
+
+\begin{quote}
+Pr A g, gα, . . . , g(αℓ), ˆe(g, g)1/α = 1 −Pr A g, gα, . . . , g(αℓ), T
+= 1 ≥2ǫ ,
+\end{quote}
+
+where the probability is over the random choice of g←G∗, α←Zp, T ←GT and
+over the coins of
+
+A.
+
+Definition 2.2 The (t, ǫ) decisional ℓ-BDHI assumption holds if no
+t-time adversary A has at least
+
+ǫ advantage in the above game.
+
+Identity-based encryption schemes. An identity-based encryption (IBE)
+scheme is a tuple of
+
+algorithms \emph{IBE} = (Setup, KeyDer, Enc, Dec) providing the
+following functionality. The trusted author-
+
+ity runs Setup to generate a master key pair (mpk, msk). It publishes
+the master public key mpk and
+
+3
+
+keeps the master secret key msk private. When a user with identity ID
+wishes to become part of the \$\\
+system, the trusted authority generates a user decryption key
+dID←KeyDer(msk, ID), and sends this key over a secure and authenticated
+channel to the user. To send an encrypted message m to the user
+
+with identity ID, the sender computes the ciphertext C←Enc(mpk, ID, m),
+which can be decrypted by the user as m ←Dec(dID, C). We refer to
+{[}BF03{]} for details on the security definitions for IBE
+
+schemes.
+
+Hierarchical IBE schemes. In a hierarchical IBE (HIBE) scheme, users are
+organised in a tree of
+
+depth L, with the root being the master trusted authority. The identity
+of a user at level 0 ≤ℓ≤L in the tree is given by a vector ID = (ID1, .
+. . , IDℓ) ∈(\{0, 1\}∗)ℓ. A HIBE scheme is a tuple of algorithms
+\emph{HIBE} = (Setup, KeyDer, Enc, Dec) providing the same functionality
+as in an IBE scheme, except that a
+
+user ID = (ID1, . . . , IDℓ) at level ℓcan use its own secret key dID to
+generate a secret key for any of its \$\\
+children ID′= (ID1, . . . , IDℓ, IDℓ+1) via dID′←KeyDer(dID, IDℓ+1).
+Note that by iteratively applying the KeyDer algorithm, user ID can
+derive secret keys for any of its descendants ID′= (ID1, . . . , IDℓ+δ),
+\$\\
+δ ≥0. We will occasionally use the overloaded notation dID′←KeyDer(dID,
+(IDℓ+1, . . . , IDℓ+δ)) to denote this process. The secret key of the
+root identity at level 0 is dε = msk. Encryption and
+
+decryption are the same as for IBE, but with vectors of bit strings as
+identities instead of ordinary
+
+bit strings. For 1 ≤i ≤ℓand I ⊆\{1, . . . , ℓ\}, we will occasionally
+use the notations ID\textbar≤i to denote the vector (ID1, . . . , IDi),
+ID\textbar\textgreater{} i to denote (IDi+1, . . . , IDℓ), and
+ID\textbar I to denote (IDi1, . . . , IDi\textbar I\textbar) where i1, .
+. . , i\textbar I\textbar{} are the elements of a set I ⊆N in increasing
+order. Also, if S ⊂N, then we define S\textbar≤i = \{j ∈S : j ≤i\} and
+S\textbar\textgreater{} i = \{j ∈S : j \textgreater{} i\}.
+
+\begin{quote}
+The security of a HIBE scheme is defined through the following game. In
+a first phase, the adver-
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+sary is given as input the master public key mpk of a freshly generated
+key pair (mpk, msk)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+←Setup
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+as input. In a chosen-plaintext attack (IND-ID-CPA), the adversary is
+given access to a key derivation
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+oracle that on input of an identity ID = (ID1, . . . , IDℓ), returns the
+secret key dID
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+←KeyDer(msk, ID)
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+corresponding to identity ID. In a chosen-ciphertext attack
+(IND-ID-CCA), the adversary is addi-
+
+tionally given access to a decryption oracle that for a given identity
+ID = (ID1, . . . , IDℓ) and a given ciphertext C returns the decryption
+m ←Dec(KeyDer(msk, ID), C).
+
+At the end of the first phase, the adversary outputs two equal-length
+challenge messages m∗0, m∗1∈\{0, 1\}∗and a challenge identity ID∗=
+(ID∗1, . . . , ID∗ℓ∗), where 0 ≤ℓ∗≤L. The game chooses \$\\
+a random bit b\\
+←\{0, 1\}∗, generates a challenge ciphertext C∗←Enc(mpk, ID∗, m∗b) and
+gives C ∗as input to the adversary for the second phase, during which it
+gets access to the same oracles as during the first phase. The adversary
+wins the game if it outputs a bit b′= b without ever having queried the
+1, . . . , ID∗ℓ) of ID∗, ℓ≤ℓ∗, and, additionally, key derivation oracle
+on any ancestor identity ID = (ID∗\\
+in the IND-ID-CCA case, without ever having queried (ID∗, C∗) to the
+decryption oracle.
+
+Definition 2.3 A HIBE scheme is (t, qK, ǫ) IND-ID-CPA-secure if all
+t-time adversaries making at
+
+most qK queries to the key derivation oracle have at most advantage ǫ in
+winning the IND-ID-CPA game described above. It is said to be (t, qK,
+qD, ǫ) IND-ID-CCA-secure if all such adversaries that
+
+additionally make at most qD queries to the decryption oracle have
+advantage at most ǫ in winning the IND-ID-CCA game described above.
+
+In a selective-identity (sID) attack {[}BB04{]}, the adversary has to
+output the challenge identity ID∗at the very beginning of the game,
+before even seeing the master public key. The definitions
+
+for IND-sID-CPA and IND-sID-CCA security are otherwise identical to
+those above. In the random
+
+oracle model {[}BR94{]}, all algorithms, as well as the adversary, have
+access to a random oracle mapping
+
+arbitrary bit strings onto a range that possibly depends on the master
+public key. All above security
+
+definitions then take an extra parameter qH denoting the adversary's
+maximum number of queries to the random oracle.
+
+4
+
+3 Identity-Based Encryption with Wildcards
+
+Syntax. Identity-based encryption with wildcards (WIBE) schemes are
+essentially a generalisation of HIBE schemes where at the time of
+encryption, the sender can decide to make the ciphertext decryptable by
+a whole range of users whose identities match a certain pattern. Such a
+pattern is described by a vector P = (P1, . . . , Pℓ) ∈(\{0,
+1\}∗∪\{*\})ℓ, where * is a special wildcard symbol. We say that identity
+ID = (ID1, . . . , IDℓ′) matches P, denoted ID ∈* P, if and only if
+ℓ′≤ℓand ∀i = 1 . . . ℓ′: IDi = Pi or Pi = *. Note that under this
+definition, any ancestor of a matching identity is also a matching
+identity. This is reasonable for our purposes because any ancestor can
+derive the secret key of a matching descendant identity anyway.
+
+More formally, a WIBE scheme is a tuple of algorithms \emph{WIBE} =
+(Setup, KeyDer, Enc, Dec) provid-ing the following functionality. The
+Setup and KeyDer algorithms behave exactly as those of a HIBE scheme. To
+create a ciphertext of message m ∈\{0, 1\}∗intended for all identities
+matching pattern P,
+
+the sender computes C ←Enc(mpk, P, m). Any of the intended recipients ID
+∈* P can decrypt the ciphertext using its own decryption key as m
+←Dec(dID, C). Correctness requires that for all key pairs (mpk, msk)
+output by Setup, all messages m ∈\{0, 1\}∗, all 0 ≤ℓ≤L, all patterns P
+∈(\{0, 1\}∗∪\{*\})ℓ, and all identities ID ∈* P, Dec( KeyDer(msk, ID) ,
+Enc(mpk, P, m) ) = m with probability one. Security. We define the
+security of WIBE schemes analogously to that of HIBE schemes, but with
+the adversary choosing a challenge pattern instead of an identity to
+which the challenge ciphertext will be encrypted. To exclude trivial
+attacks, the adversary is not able to query the key derivation oracle on
+any identity that matches the challenge pattern, nor is it able to query
+the decryption oracle on the challenge ciphertext in combination with
+any identity matching the challenge pattern.
+
+\begin{quote}
+More formally, security is defined through the following game with an
+adversary. In the first phase,
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+the adversary is run on input the master public key of a freshly
+generated key pair (mpk, msk)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\$\\
+←\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Setup. In a chosen-plaintext attack (IND-WID-CPA), the adversary is
+given access to a key derivation
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+oracle that on input ID = (ID1, . . . , IDℓ) returns dID
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+←KeyDer(msk, ID). In a chosen-ciphertext
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+attack (IND-WID-CCA), the adversary additionally has access to a
+decryption oracle that on input a ciphertext C and an identity ID =
+(ID1, . . . , IDℓ) returns m ←Dec(KeyDer(msk, ID), C).
+
+At the end of the first phase, the adversary outputs two equal-length
+challenge messages m∗0, m∗and a challenge pattern P∗= (P∗1, . . . , P
+∗ℓ∗) where 0 ≤ℓ∗≤L. The adversary is given a challenge ←Enc(mpk, P∗,
+m∗b) for a randomly chosen bit β, and is given access to the same
+ciphertext C∗\\
+oracles as during the first phase of the attack. The second phase ends
+when the adversary outputs a bit β′. The adversary is said to win the
+IND-WID-CPA game if β′= β and if it never queried the key derivation
+oracle for the keys of any identity that matches the target pattern
+(i.e., any ID such that ID ∈* P∗). Also, in a chosen-ciphertext attack
+(IND-WID-CCA), the adversary cannot query the decryption oracle on C∗in
+combination with any identity ID ∈* P∗matching the challenge pattern.
+
+Definition 3.1 A WIBE scheme is (t, qK, ǫ) IND-WID-CPA-secure if all
+t-time adversaries making at most qK queries to the key derivation
+oracle have at most advantage ǫ in winning the IND-WID-CPA game
+described above. It is said to be (t, qK, qD, ǫ) IND-WID-CCA-secure if
+all such adversaries that additionally make at most qD queries to the
+decryption oracle have advantage at most ǫ in winning the IND-WID-CCA
+game described above.
+
+As for the case of HIBEs, we also define a weaker selective-identity
+(sWID) security notion, in which the adversary commits to the challenge
+pattern at the beginning of the game, before the master public key is
+made available. The notions of IND-sWID-CPA and IND-sWID-CCA security
+are defined analogously to the above. In the random oracle model, the
+additional parameter qH denotes the adversary's maximum number of
+queries to the random oracle, or the total number of queries to all
+random oracles when it has access to multiple ones.
+
+5
+
+4 A Generic Construction
+
+We first point out that a generic construction of a WIBE scheme exists
+based on any HIBE scheme, but with a secret key size that is exponential
+in the depth of the hierarchy tree. Let ``*'' denote a dedicated
+bitstring that cannot occur as a user identity. Then the secret key of a
+user with identity (ID1, . . . , IDℓ) in the WIBE scheme contains the
+HIBE secret keys of all patterns matching this identity. For example,
+the secret key of identity (ID1, ID2) contains four HIBE secret keys,
+namely those corresponding to identities (ID1, ID2), (``*'', ID2), (ID
+1, ``*''), (``*'', ``*''). In general, the secret key of (ID1, . . . ,
+IDℓ) contains the HIBE secret keys of all 2ℓidentities (ID′1, . . . ,
+ID′ℓ) such that ID′i= IDior ID′i= ``*''for all i = 1, . . . , ℓ. To
+encrypt to a pattern (P1, . . . , Pℓ), one uses the HIBE scheme to
+encrypt to the identity obtained by replacing each wildcard in the
+pattern with the ``*'' string, i.e. the identity (ID1, . . . , IDℓ)
+where IDi = ``*'' if Pi = * and IDi = Pi otherwise. Decryption is done
+by selecting the appropriate secret key from the list and using the
+decryption algorithm of the HIBE scheme.
+
+The efficiency of the WIBE scheme thus obtained is roughly the same as
+that of the underlying HIBE scheme, but with the major disadvantage that
+the size of the secret key is 2ℓtimes that of a secret key in the
+underlying HIBE scheme. This is highly undesirable for many
+applications, especially since the secret key may very well be kept on
+an expensive, secure storage device. Moreover, from a theoretical point
+of view, it is interesting to investigate whether WIBE schemes exist
+with overhead polynomial in all parameters. We answer this question in
+the affirmative here by presenting direct schemes with secret key size
+linear in ℓ. Unfortunately, for all of our schemes, this reduction in
+key size comes at the cost of linear-size ciphertexts, while the generic
+scheme can achieve contant-size ciphertexts when underlain by a HIBE
+with constant ciphertext size, e.g. that of {[}BBG05{]}.
+
+Another related primitive is fuzzy identity-based encryption (FIBE)
+{[}SW05{]}, which allows a ci-phertext encrypted to identity ID to be
+decrypted by any identity ID′that is ``close'' to ID according to some
+metric. In the schemes of {[}SW05{]}, an identity is a subset containing
+n elements from a finite universe. Two identities ID and ID′are
+considered ``close'' if \textbar ID ∩ID′\textbar{} ≥d for some parameter
+d. Such a FIBE scheme could be used to construct a limited WIBE scheme
+(without hierarchi-cal key derivation) by letting identity (ID1, . . . ,
+IDn) correspond to the set \{1∥ID1, . . . , ℓ∥IDn\}. To encrypt to a
+pattern P = (P1, . . . , Pn) containing n −d wildcards, one uses the
+FIBE scheme to encrypt to the set \{P′1, . . . , P ′n\} where P ′i= i∥Pi
+if Pi ̸= * and P ′i= i∥``*'' if Pi = *. The schemes of {[}SW05{]}
+require n, d to be fixed beforehand. Variable identity lengths ℓand
+number of wildcards w can be accomodated for by setting n = 2L, d = L
+and by letting the set corresponding to identity (ID1, . . . , IDℓ) be
+\{1∥ID 1, . . . , ℓ∥IDℓ, (ℓ+ 1)∥ε, . . . , L∥ε, 1∥``*'', . . . ,
+L∥``*''\}. One can then encrypt to pattern (P1, . . . , Pℓ) by
+encrypting to the set \{1∥P′1, . . . , ℓ∥P ′ℓ, (ℓ+ 1)∥ε, . . . , 2L∥ε\},
+where the P ′iare defined as above.
+
+5 A Construction from Waters' HIBE Scheme
+
+5.1 Waters' HIBE Scheme
+
+Waters {[}Wat05{]} argued that his IBE scheme can easily be modified
+into a L-level HIBE scheme as per {[}BB04{]}. Here we explicitly present
+this construction, that we refer to as the \emph{Wa}-\emph{HIBE} scheme,
+as it will be useful in the understanding of our first construction of a
+WIBE scheme.
+
+Setup. The trusted authority chooses random generators g1, g2, u1,0, . .
+. , uL,n←G∗and a random
+
+\begin{quote}
+value α ←Zp, where L is the maximum hierarchy depth and n is the length
+of an iden-tity string. Next, it computes h1 ←gα1and h2 ←gα2. The master
+public key is mpk = (g1, g2, h1, u1,0, . . . , uL,n), the corresponding
+master secret key is msk = h2.
+\end{quote}
+
+6
+
+Key Derivation. A user's identity is given by a vector ID = (ID1, . . .
+, IDℓ) where each IDi is a n-bit string, applying a collision-resistant
+hash function if necessary. When we write ``j ∈IDi'', we mean that the
+variable j iterates over all bit positions 1 ≤j ≤n where the j-th bit of
+IDi is one. Using this notation, for i = 1, . . . , L, we define the
+function
+
+\begin{quote}
+Fi(IDi) = ui,0 j∈IDui,j
+
+where the ui,j are the elements in the master public key. To compute the
+decryption key for
+
+identity ID from the master secret key, first random values r1, . . . ,
+rℓ←Zp are chosen, then the private key dID is constructed as
+\end{quote}
+
+ℓ
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+(a0, a1, . . . , aℓ) =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+h2
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Fi(IDi)ri, gr1 1, . . . , grℓ
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+i=1
+
+\begin{quote}
+A secret key for identity ID = (ID1, . . . , IDℓ) can be computed by its
+parent with identity
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(ID1, . . . , IDℓ−1) as follows. Let (a0, a1, . . . , aℓ−1) be the
+parent's secret key. It chooses rℓ
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+and outputs
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+dID = (a0 · Fi(IDi)rℓ, a1, . . . , aℓ−1 , grℓ1) .
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+←Zp
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Encryption. To encrypt a message m ∈GT for identity ID = (ID1, . . . ,
+IDℓ), the sender chooses
+
+\begin{quote}
+t←Zp and computes the ciphertext C = (C1, C2, C3) as
+
+C1 ←gt 1, C2← C2,i = Fi(IDi)t i=1,...,ℓ, C3 ←m · ˆe(h1, g2)t.
+\end{quote}
+
+Decryption. If the receiver is the root authority (i.e., the empty
+identity ID = ε) holding the master key msk = h2, then he can recover
+the message by computing m ←C3/ˆe(C1, h2). Any other receiver with
+identity ID = (ID1, . . . , IDℓ) and decryption key dID = (a0, a1, . . .
+, aℓ) decrypts a ciphertext C = (C1, C2, C3) as follows.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule()
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+C3 ·
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ℓ\\
+i=1ˆe (ai, C2,i)
+\end{quote}\strut
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+m · ˆe(h1, g2)t·
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ℓ\\
+i=1ˆ
+\end{quote}\strut
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gri 1, Fi(IDi)t
+\end{quote}
+\end{minipage}} \\
+& \multirow{5}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+e (C1, a0)
+\end{quote}
+\end{minipage}} & & & \begin{minipage}[b]{\linewidth}\raggedright
+ˆ
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+gt 1, h2
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ℓ\\
+i=1Fi(IDi)ri
+\end{quote}\strut
+\end{minipage}} \\
+& & \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+m · ˆe(h1, g2)t·
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ℓ\\
+i=1ˆ
+\end{quote}\strut
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gri 1, Fi(IDi)t
+\end{quote}
+\end{minipage}} \\
+& & & &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+e (gt 1, h2) · ˆ
+\end{quote}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gt 1,ℓi=1Fi(IDi)ri
+\end{quote}
+\end{minipage}} \\
+& & \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+m ·ˆe(gα
+
+e (gt\\
+1, g2)t
+\end{quote}
+
+1, gα2) ·\strut
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ℓ\\
+i=1ˆ
+\end{quote}\strut
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gri 1, Fi(IDi)t
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+= m
+\end{quote}
+\end{minipage}} \\
+& & & &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.4444} + 6\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ℓi=1ˆe (gt 1, Fi(IDi)ri)
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Waters {[}Wat05{]} informally states that the above HIBE scheme is
+IND-ID-CPA secure under the BDDH
+
+assumption, in the sense that if there exists a (t, qK, ǫ)-adversary
+against the HIBE, then there exists an algorithm solving the BDDH
+problem with advantage ǫ′= O((nqK)Lǫ).
+
+5.2 The \emph{Wa}-\emph{WIBE} Scheme
+
+We first introduce some additional notation. If P = (P1, . . . , Pℓ) is
+a pattern, then let \textbar P\textbar{} = ℓbe the length of P, let W(P)
+be the set containing all wildcard indices in P, i.e. the indices 1 ≤i
+≤ℓsuch
+
+that Pi = *, and let W(P) be the complementary set containing all
+non-wildcard indices. Clearly W(P)∩W(P) = ∅and W(P)∪W(P) = \{1, . . . ,
+ℓ\}. We also extend the notations P\textbar≤i, P\textbar\textgreater{} i
+and P\textbar I that we introduced for identity vectors to patterns in
+the natural way.
+
+7
+
+Intuitively, we adapt the \emph{Wa}-\emph{HIBE} scheme to support
+wildcards by observing that the ciphertext components C2,i are actually
+products of ut i,0and those factors ut i,jfor which the j-th bith of IDi
+is one. If we include these factors separately in the ciphertext,
+instead of their product, then we can postpone the computation of the
+product to decryption time and let each recipient combine the factors
+corresponding to his own identity.
+
+Of course, one still needs to show that giving away these factors in the
+ciphertext does not affect security. We first describe our construction
+in more detail, and subsequently show in Theorem 5.1 that its security
+is implied by that of the \emph{Wa}-\emph{HIBE} scheme. We build a WIBE
+scheme \emph{Wa}-\emph{WIBE} from the \emph{Wa}-\emph{HIBE} scheme with
+Setup and KeyDer algorithms identical to those of the
+\emph{Wa}-\emph{HIBE} scheme, and with encryption and decryption
+algorithms that work as follows.
+
+Encryption. To encrypt a message m ∈GT to all identities matching
+pattern P = (P1, . . . , Pℓ), the
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+sender chooses t
+\end{quote}
+\end{minipage}} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.8333} + 8\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+←Zp and outputs the ciphertext C = (P, C1, C2, C3, C4), where
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+C1 ←gt 1
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+C2 ←
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+C2,i = Fi(Pi)t
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+i∈W(P )
+\end{quote}
+\end{minipage} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+C3 ←m · ˆe(h1, g2)t
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+C4 ←
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+C4,i,j = ut i,j
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+i∈W(P ), j=0,...,n
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Decryption. If the receiver is the root authority (i.e., the empty
+identity ID = ε) holding the master key msk = h2, then it can recover
+the message by computing C3/ˆe(C1, h2). Any other receiver with identity
+ID = (ID1, . . . , IDℓ) matching the pattern P to which the ciphertext
+was created (i.e., ID ∈* P) can decrypt the ciphertext C = (P, C1, C2,
+C3, C4) by computing
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+C′2=
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+C′2,i
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+i=1,...,ℓas
+\end{quote}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+C2,i
+\end{quote}
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+j∈IDiC4,i,j
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+if i ∈W(P)
+\end{quote}
+\end{minipage}} \\
+& & \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+C′2,i= Fi(IDi)t ←
+\end{minipage}} \\
+& & & \begin{minipage}[b]{\linewidth}\raggedright
+C4,i,0 ·
+\end{minipage} & & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+if i ∈W(P)\textbar≤ℓ
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+and by using his secret key to decrypt the ciphertext C′= (C1, C′2, C3)
+via the Dec algorithm of the \emph{Wa}-\emph{HIBE} scheme.
+\end{quote}
+
+The master public key of the \emph{Wa}-\emph{WIBE} scheme contains (n +
+1)L + 3 group elements. Encrypting to a pattern of length ℓcontaining w
+wildcards comes at the cost of ℓ+ nw + 2 exponentiations andℓ+ nw + 2
+group elements in the ciphertext; in the worst case of ℓ= w = L this
+means (n + 1)L + 2 exponentiations and group elements. (The pairing
+ˆe(h1, g2) can be precomputed.) Decryption requires the computation of
+ℓ+ 1 pairings.
+
+In terms of efficiency, the \emph{Wa}-\emph{WIBE} scheme performs well
+enough to be considered for use in practice, but definitely leaves room
+for improvement. The main problem is the dependency of the scheme on n,
+the bit length of identity strings. In practice, one would typically use
+the output of a collision-resistant hash function as identity strings,
+so that n = 160 for a reasonable level of security. We note that the
+techniques of {[}CS06, Nac05{]} could be applied to trade a factor d of
+efficiency against losing a factor 2Ldin the tightness of the reduction.
+
+We now prove the security of the \emph{Wa}-\emph{WIBE} scheme. To make
+the proof more modular, and to avoid repeating the work of {[}Wat05{]},
+we do this by reducing to the security of the \emph{Wa}-\emph{HIBE}
+scheme, rather than to the BDDH problem directly.
+
+Theorem 5.1 If the \emph{Wa}-\emph{HIBE} of depth L is (t, qK, ǫ)
+IND-ID-CPA-secure, then the \emph{Wa}-\emph{WIBE} scheme of depth L is
+(t′, q′K, ǫ′) IND-WID-CPA-secure for all
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+t′≤t −Ln(1 + qK) · texp ,
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+q′K≤qK,
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+and
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ǫ′≥ǫ/2L,
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+and texp is the time it takes to perform an exponentiation in G.
+
+8
+
+Proof: The proof of Theorem 5.1 is by contradiction. That is, we first
+assume that there exists an adversary A that breaks the
+IND-WID-CPA-security of the \emph{Wa}-\emph{WIBE} scheme and then we
+show how to efficiently build another adversary B which uses A to break
+the security of the \emph{Wa}-\emph{HIBE} scheme.
+
+Let mpk H = (g1, g2, h1, u1,0, . . . , uL,n) be the master public key of
+the \emph{Wa}-\emph{HIBE} scheme that adversary B receives as input for
+its first phase. The idea of the proof is that B will guess upfront
+where in the challenge pattern P∗the wildcards are going to be, and
+``project'' the non-wildcard levels of the
+
+identity tree of the WIBE scheme onto the first levels of the HIBE
+scheme. In particular, B will reuse values ui,j from mpk H for the
+non-wildcard levels, and will embed new values u′i,jvalues of which B
+knows the discrete logarithms for wildcard levels.
+
+First, B guesses a random vector ˆP = ( ˆP1, . . . ,ˆPL)
+
+\{1, . . . , L\} →\{0, . . . , L\} such that
+
+\begin{quote}
+\$\\
+←\{ε, *\}L. Define the projection function π :
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+π(i) =
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+0
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+W( ˆP)\textbar≤i
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+if i ∈W( ˆP )
+\end{quote}
+\end{minipage} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+i −
+\end{minipage} & & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+otherwise
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Intuitively, B will ``project'' identities at level i of the WIBE scheme
+onto level π(i) of the HIBE
+
+scheme whenever π(i) ̸= 0. Next, the adversary B runs adversary A
+providing it as input for its first
+
+phase a public-key mpk W = (g1, g2, h1, u′1,0, . . . , u′L,n), where for
+all 1 ≤i ≤L and 0 ≤j ≤n, the
+
+elements u′i,jare generated as u′i,j←gαi,j where αi,j←Zp if i ∈W( ˆP ),
+and u′i,j←uπ(i),jotherwise.
+
+Define functions F′i(ID′i) = u′i,0 j∈ID′iu′i,j. Notice that mpkAis
+distributed exactly as it would be if
+
+produced by the setup algorithm described in Section 5.2.
+
+During the first phase, B has to answer all the key derivation queries
+ID′= (ID′1, . . . , ID′ℓ) that A is
+
+allowed to ask. For that, B first computes the corresponding identity on
+the HIBE tree ID = ID′\textbar W( ˆP ),
+
+which is the identity obtained by removing from ID′all components at
+levels where ˆP contains a
+
+wildcard. That is, the identity ID is obtained from ID′by projecting the
+component at level i of the
+
+WIBE onto level π(i) of the HIBE if π(i) ̸= 0. B then queries its own
+key derivation oracle for the
+
+\emph{Wa}-\emph{HIBE} scheme on input ID to get the key d = (a0, . . . ,
+aπ(ℓ)). From this, it computes the key
+
+d′= (a′0, . . . , a′ℓ) as
+
+\begin{quote}
+a′0← a0 · F′i(ID′i)ri
+\end{quote}
+
+i∈W( ˆP )
+
+\begin{quote}
+a′i←\\
+gri
+
+aπ(i)\\
+1 if i ∈W( ˆ
+
+if i ∈W( ˆ\\
+P )
+\end{quote}
+
+P)
+
+where ri←Zp for all i ∈W( ˆP). At the end of its first phase, A outputs
+the challenge pattern P∗=
+
+(P∗1, . . . , P ∗ℓ∗) and challenge messages m∗0, m∗1. If W(P ∗) ̸= W(
+ˆP) then B aborts. Otherwise, B outputs
+
+the corresponding HIBE identity ID∗= P∗\textbar W(P ∗) together with
+challenge messages m∗0, m∗1. Let
+
+C∗= (C∗1, C ∗2, C ∗3) be the challenge ciphertext that B receives in
+return from its challenger, meaning
+
+that C∗is an encryption of m∗bwith respect to the identity ID∗, where b
+is the secret bit chosen at
+
+random by the challenger. B sets C′∗1←C ∗1, C ′∗2←C ∗2, C ′∗3←C ∗3and C
+′∗4←(C ∗αi,j)i∈W(P ∗), j=0,...,n
+
+and sends to A the ciphertext C′∗= (P∗, C′∗1, C ′∗2, C ′∗3, C ′∗4) as
+the input for its second phase. During
+
+the second phase, A is then allowed to issue more key derivation
+queries, which are answered by B
+
+exactly as in the first phase. When A outputs a bit b′, B outputs b′and
+stops.
+
+In order to analyse the success probability of B, we first need to show
+that the simulation it provides
+
+to A is correct. The secret key d′= (a′0, . . . , a′ℓ) returned for
+identity (ID′1, . . . , ID′ℓ) can be seen to be
+
+9
+
+correctly distributed since if a′i= gri 1for 1 ≤i ≤ℓthen
+
+\begin{quote}
+a′0 = a0 · F′i(ID′i)ri
+\end{quote}
+
+i∈W( ˆP )
+
+\begin{quote}
+= h2 · Fπ(i)(ID′i)ri · F′i(ID′i)ri
+
+i∈W( ˆP) i∈W( ˆP )
+\end{quote}
+
+ri
+
+\begin{quote}
+= h2 ·  uπ(i),j · F′i(ID′i)ri
+
+i∈W( ˆP)uπ(i),0 j∈ID′i i∈W( ˆP )
+
+= h2 · u′i,0 j∈ID′iu′i,j ri ·F′i(ID′i)ri
+
+i∈W( ˆP) i∈W( ˆP )
+\end{quote}
+
+ℓ
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+h2 ·
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+F′i(ID′i)ri
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+i=1
+
+Moreover, the challenge ciphertext C′∗= (P∗, C′∗1, C ′∗2, C ′∗3, C ′∗4)
+sent to A can be seen to be correctly
+
+formed when W(P∗) = W( ˆP) as follows. Consider the ciphertext C∗= (C∗1,
+C ∗2, C ∗3) that B receives
+
+back from the challenger after outputting (ID∗, m∗0, m∗1) where ID∗= P
+∗\textbar W(P∗). We know that, for
+
+unknown values t ∈Zp and b ∈\{0, 1\}, C∗1= gt, C ∗3= m∗b· ˆe(h1, g2)tand
+
+\begin{quote}
+C∗2= C∗2,i= Fi(ID∗i)t i=1,...,π(ℓ∗)= C′∗2,i= F ′i(P ∗i)t i∈W(P∗).
+\end{quote}
+
+Since B sets C′∗1= C ∗1, C ′∗2= C ∗2and C ′∗3= C ∗3, it follows that C
+′∗1, C ′∗2and C ′∗3are of the correct form.
+
+To show that C∗4is correctly formed, notice that u′i,j= gαi,j for
+indices i ∈W(P∗) and j = 0, . . . , n.
+
+Thus, C′∗4,i,j= (C ∗1)αi,j = g1t αi,j = (gαi,j )t= u′i,j t as required.
+
+We also need to argue that B does not query its key derivation oracle on
+any identities that are
+
+considered illegal in the IND-ID-CPA game when its guess for W(P∗) is
+correct. Illegal identities are
+
+the challenge identity ID∗= P∗\textbar W(P ∗) or any ancestors of it,
+i.e. any ID∗\textbar≤ℓfor ℓ≤ℓ∗. Adversary B
+
+only makes such queries when A queries its key derivation oracle on an
+identity ID′= (ID′1, . . . , ID′ℓ′)
+
+such that ℓ′≤ℓ∗and ID′i= P ∗ifor all i ∈W(P ∗)\textbar≤ℓ′. By our
+matching definition, this would mean
+
+that ID′∈* P∗, which is illegal in the IND-WID-CPA game as well. Note
+that, whenever ℓ′\textgreater{} ℓ∗, we
+
+always have that \textbar ID\textbar{} \textgreater{}
+\textbar ID∗\textbar{} since W( ˆP)\textbar\textgreater{} ℓ∗= ∅.
+
+To conclude the proof, we notice that the success probability of B is at
+least that of A when its guess
+
+for W(P∗) is correct. Let ǫ be the probability that A wins the
+IND-WID-CPA game. Thus, it follows
+
+that the overall success probability of B winning the IND-ID-CPA game is
+at least ǫ′≥ǫ/2L.
+
+Note that the proof above loses a factor of 2Lin the security reduction.
+This limits the secure use of
+
+the scheme in practice to very small (logarithmic) hierarchy depths, but
+this was already the case for
+
+the \emph{Wa}-\emph{HIBE} scheme as well which loses a factor (nqK)Lin
+its reduction to the BDDH problem. In
+
+addition, we only lose an additional factor of L2when allowing only
+patterns with a single sequence
+
+of consecutive wildcards, for example (ID1, *, *, *, ID5) or (ID1, *,
+*). In the selective-identity notion,
+
+there is no need to guess the challenge pattern, so we do not lose any
+tightness with respect to the
+
+\emph{Wa}-\emph{HIBE} scheme.
+
+10
+
+6 More Efficient Constructions in the Random Oracle Model
+
+In this section, we present two alternative schemes based on the
+Boneh-Boyen {[}BB04{]} and Boneh-Boyen-Goh {[}BBG05{]} HIBE schemes that
+perform better in terms of efficiency. In particular, unlike the
+\emph{Wa}-\emph{WIBE} scheme, their efficiency is independent of the bit
+length n of identity strings: adding a wildcard to the recipient pattern
+only requires two extra exponentiations and two extra group elements in
+the ciphertext, as opposed to n + 1 of these in the
+\emph{Wa}-\emph{WIBE} scheme. Just like their underlying HIBE schemes
+however, they can be proved secure only in the weaker selective-identity
+setting. As observed for the case of IBE and HIBE schemes by Boneh,
+Boyen and Goh {[}BB04, BBG05{]}, these schemes can be made fully secure
+in the random oracle model (but losing a factor exponential in L in
+tightness) by applying a hash function to the identity strings. We first
+present the two alternative WIBE schemes, and for completeness prove the
+generic transformation from selective-identity to full security for the
+case of WIBE schemes in Section 6.3.
+
+6.1 A Construction from Boneh-Boyen's HIBE Scheme
+
+Our first construction in the random oracle model is based on a slight
+variant of the Boneh-Boyen HIBE scheme {[}BB04{]} that we refer to as
+the \emph{BB}-\emph{HIBE} scheme. It is presented in detail and proved
+secure in Appendix A. The \emph{BB}-\emph{WIBE} scheme that we derive
+from it works as follows.
+
+Setup. The trusted authority chooses random generators g1, g2 from G∗, a
+random α ∈Zp and sets h1 ←gα1. Next, it picks random elements u1,0, . .
+. , uL,0, u1,1, . . . , uL,1 from G∗and sets h2 ←gα2. The master public
+key is mpk = (g1, h1, g2, u1,0, . . . , uL,0, u1,1, . . . , uL,1). The
+corresponding master secret key is msk = h2.
+
+Key Derivation. A user's identity is given by a vector ID = (ID1, . . .
+, IDℓ) where each IDi is an element in Zp. To compute the decryption key
+for identity ID from the master secret key, first
+
+\begin{quote}
+one chooses random values ri←Zp for i = 1, . . . , ℓ, then the private
+key dID is constructed as
+
+ℓ ri\\
+(a0, a1, . . . , aℓ) = h2 ui,0 · uIDi , gr1 1, . . . , grℓ .
+\end{quote}
+
+i=1
+
+\begin{quote}
+Notice that, as required, the secret key for identity ID = (ID1, . . . ,
+IDℓ) can be computed from
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.8571} + 10\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+the secret key (a0, a1, . . . , aℓ−1) of the parent (ID1, . . . , IDℓ−1)
+by choosing a random rℓ
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+←Zp
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+and outputting
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+dID =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+a0 ·
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+uℓ,0 · uIDℓℓ,1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+rℓ
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+, a1 , . . . , aℓ−1 , grℓ
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Encryption. To create a ciphertext of message m ∈GT intended for all
+identities matching pattern P = (P1, . . . , Pℓ), where 1 ≤ℓ≤L, the
+sender chooses t←Zp and outputs the ciphertext C = (P, C1, C2, C3),
+where
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+C1 ←gt 1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+C2 ←
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.4000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+C2,i = (ui,0 · uIDi i,1)t
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+i∈W(P )
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+C3 ←m · ˆe(h1, g2)t & C4 ← & C4,i,j = ut i,j &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.4000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+i∈W(P ), j=0,1
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+Decryption. If the receiver is the root authority (i.e., the empty
+identity ID = ε) holding the master key msk = h2, then he can recover
+the message by computing C3/ˆe(C1, h2). Any other receiver with identity
+ID = (ID1, . . . , IDℓ) matching the pattern P to which the ciphertext
+was created (i.e., ID ∈* P) can decrypt the ciphertext C = (P, C1, C2,
+C3, C4) as follows. Let dID = (a0,
+
+11
+
+\begin{quote}
+a1, . . . , aℓ) be the decryption key for the receiver with identity ID.
+He recovers the message by computing
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+C′2,i
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+C2,i
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.5000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+if i ∈W(P)
+\end{minipage}} \\
+& &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+C4,i,0 · CIDi 4,i,1
+\end{quote}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+if i ∈W(P)\textbar≤ℓ
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multirow{2}{*}{m} & \multirow{2}{*}{←} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+C3 ·
+\end{quote}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+ℓi=1ˆe(ai, C′2,i)} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+.
+\end{quote}
+\end{minipage}} \\
+& & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+e(C1, a0)
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+In terms of efficiency, the \emph{BB}-\emph{WIBE} scheme easily
+outperforms the \emph{Wa}-\emph{WIBE} scheme: the master public key
+contains 2L + 3 group elements. Encryption to a recipient pattern of
+length ℓand w
+
+wildcards involves ℓ+ w + 2 (multi-)exponentiations and produces
+ciphertexts containing ℓ+ w + 2 group elements, or 2L + 2 of each of
+these in the worst case that ℓ= w = L. Decryption requires the
+computation of ℓ+ 1 pairings, just like the \emph{Wa}-\emph{WIBE}
+scheme.
+
+\begin{quote}
+The \emph{BB}-\emph{WIBE} scheme can actually be seen as a close
+relative to the \emph{Wa}-\emph{WIBE} scheme, with the
+\end{quote}
+
+functions Fi(IDi) being defined as
+
+\begin{quote}
+Fi(IDi) = ui,0 · uIDi i,1.
+\end{quote}
+
+Its security properties are different though: the \emph{BB}-\emph{WIBE}
+scheme can be proved secure in the selective-identity model only. We
+reduce its security to that of the \emph{BB}-\emph{HIBE} scheme, which
+on its turn is proved IND-sID-CPA-secure under the BDDH assumption in
+Appendix A. The proof of the theorem below is very analagous to that of
+Theorem 5.1, and hence omitted. One important difference with Theorem
+5.1 is that the reduction from the \emph{BB}-\emph{HIBE} scheme is
+tight: because we prove security in the selective-identity model, we do
+not lose a factor 2Ldue to having to guess the challenge pattern
+upfront.
+
+Theorem 6.1 If the \emph{BB}-\emph{HIBE} scheme with hierarchy depth L
+is (t, qK, ǫ) IND-sID-CPA-secure, then the \emph{BB}-\emph{WIBE} scheme
+of depth L is (t′, q′K, ǫ′) IND-sWID-CPA-secure for all
+
+\begin{quote}
+t′≤t −2L(1 + qK) · texp , q′K≤qK and ǫ′≥ǫ ,
+\end{quote}
+
+where texp is the time required to compute an exponentiation in G.
+
+6.2 A Construction from Boneh-Boyen-Goh's HIBE Scheme
+
+In this section we describe a WIBE scheme with shorter ciphertexts,
+especially when the recipient pat-tern contains few wildcards. When
+encrypting to a pattern of length ℓwith w wildcards, a ciphertext of the
+\emph{BB}-\emph{WIBE} scheme contains ℓ+ w + 2 group elements. The HIBE
+scheme of Boneh-Boyen-Goh {[}BBG05{]} offers constant-size ciphertexts
+(i.e, independent of the level ℓof the recipient identity) at the cost
+of being secure only under the stronger decisional L-BDHI assumption.
+Based on this scheme, we build the \emph{BBG}-\emph{WIBE} scheme that
+offers ciphertexts of length w + 3 group elements and is secure under
+the same decisional L-BDHI assumption. The scheme is the following:
+
+Setup. The trusted authority chooses random generators g1, g2, u0, . . .
+, uL from G∗, a random α ∈Zp and sets h1 ←gαand h2 ←gα2. The master
+public key is mpk = (g1, g2, h1, u0, . . . , uL). The corresponding
+master secret key is msk = h2.
+
+Key Derivation. The scheme assumes that a user's identity is given by a
+vector ID = (ID1, . . . , IDℓ) of elements in Z∗p.1. To compute the
+decryption key for identity ID from the master secret
+
+1This can be easily generalised to the case on which the identities are
+vectors of n bit strings by first hashing each component IDi ∈Z∗pusing a
+collision resistant hash function H : \{0, 1\}∗→Z∗
+
+12
+
+\begin{quote}
+key, first a random r←Zp is chosen, then the private key is constructed
+as
+
+ℓ r\\
+dID = (a0, aℓ+1, . . . , aL, aL+1) = h2 u0 uIDi i , urℓ+1, . . . , ur L,
+gr i=1
+
+The secret key for identity ID = (ID1, . . . , IDℓ) can be computed from
+the secret key (a0, aℓ, . . . , aL+1) of its parent (ID1, . . . , IDℓ−1)
+by choosing a random r′←Zp and outputting
+
+ℓ r′\\
+dID = a0 · aIDℓℓ· u0 uIDi i , aℓ+1 · ur′ℓ+1, . . . , aL· ur′L, aL+1· gr′
+i=1
+\end{quote}
+
+Encryption. To create a ciphertext of message m ∈GT intended for all
+identities matching pattern P = (P1, . . . , Pℓ), where ℓ≤L, the sender
+chooses t←Zp and outputs the ciphertext C = (P, C1, C2, C3, C4), where
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+C1 ←gt 1
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+C2 ←
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.6000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+t
+\end{minipage}} \\
+& & \begin{minipage}[b]{\linewidth}\raggedright
+u0
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.4000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+i∈W(P )uPi
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+C3 ←m · ˆe(h1, g2)t & C4 ← &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.4000} + 2\tabcolsep}}{%
+C4,i = ut i} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+i∈W(P ).
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+Decryption. If the receiver is the root authority (i.e., the empty
+identity ID = ε) holding the master key msk = h2, then he can recover
+the message by computing C3/ˆe(C1, h2). Any other receiver with identity
+ID = (ID1, . . . , IDℓ) matching the pattern P to which the ciphertext
+was created (i.e., ID ∈* P) can decrypt the ciphertext C = (P, C1, C2,
+C3, C4) as follows. Let dID = (a0, . . . , aL+1) be the decryption key
+for the receiver with identity ID. He recovers the message by computing
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+C′2
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+C2 ·
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+CPi 4,i
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+i∈W(P )\textbar≤ℓ
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+m
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+C3 ·ˆe(C′2, aL+1)
+
+e(C1, a0)
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+The fact that decryption works can be seen as follows. Since ID ∈* P, we
+have that Pi = IDi for all i ∈W(P). We then have that:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+e(C′2, aL+1)
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+ˆ
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+C2 ·
+\end{minipage} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3077} + 6\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+i∈W(P )\textbar≤ℓC IDi
+\end{quote}
+\end{minipage}} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3846} + 8\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+, gr 1
+\end{quote}
+\end{minipage}} \\
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+e(C1, a0)
+\end{minipage}} & & \begin{minipage}[b]{\linewidth}\raggedright
+ˆ
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.1538} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gt 1, h2(u0
+\end{quote}
+\end{minipage}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3077} + 6\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+i=1uIDi
+\end{minipage}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3077} + 6\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+r\\
+)
+\end{quote}\strut
+\end{minipage}} \\
+& \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+ˆ
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(u0
+\end{minipage} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3077} + 6\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+i∈W(P )uPi i) t ·
+\end{quote}
+\end{minipage}} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3846} + 8\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+i∈W(P )\textbar≤ℓ(ut i)IDi , gr
+\end{minipage}} \\
+& &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3077} + 6\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+e (gt 1, h2) · ˆ
+\end{minipage}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3077} + 6\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+gt 1, (u0
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.1538} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+i=1uIDi
+\end{quote}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+r\\
+)
+\end{quote}\strut
+\end{minipage} \\
+& \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.1538} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+ˆ
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(u0
+\end{quote}
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.1538} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+i=1uIDi
+\end{minipage}} &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.4615} + 10\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+) t , gr 1
+\end{quote}
+\end{minipage}} \\
+& &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.2308} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+e (gt 1, h2) · ˆ
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.2308} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gt 1, (u0
+\end{quote}
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.2308} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+i=1uIDi
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.1538} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+r\\
+)
+\end{quote}\strut
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} &
+\multicolumn{11}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.8462} + 20\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1\\
+e (h1, g2)t .
+\end{quote}\strut
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+13
+
+\begin{quote}
+The \emph{BBG}-\emph{WIBE} scheme is significantly more efficient than
+the \emph{Wa}-\emph{WIBE} and \emph{BB}-\emph{WIBE} schemes
+\end{quote}
+
+in terms of decryption, and also offers more efficient encryption and
+shorter ciphertexts when the
+
+recipient pattern contains few wildcards. More precisely, the master
+public key contains L + 4 group
+
+elements. Encryption to a recipient pattern of length ℓwith w wildcards
+involves w + 3 (multi-
+
+)exponentiations and w + 3 group elements in the ciphertext, or L + 3 of
+these in the worst case
+
+that ℓ= w = L. Decryption requires the computation of two pairings, as
+opposed to ℓ+ 1 of these
+
+for the \emph{Wa}-\emph{WIBE} and \emph{BB}-\emph{WIBE} schemes. We
+prove the security of the \emph{BBG}-\emph{WIBE} scheme in
+
+the selective-identity model by reducing to the security of the
+\emph{BBG}-\emph{HIBE} scheme that is recalled in
+
+Appendix B, rather than to the underlying decisional L-BDHI assumption
+directly.
+
+Theorem 6.2 If the \emph{BBG}-\emph{HIBE} scheme is (t, qK, ǫ)
+IND-sID-CPA-secure, then the \emph{BBG}-\emph{WIBE}
+
+scheme presented above is (t′, q′K, ǫ′) IND-sWID-CPA-secure for all
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+t′≤t −L(1 + 2qK) · texp ,
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+q′K≤qK,
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+and ǫ′≥ǫ ,
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+where texp is the time it takes to perform an exponentiation in G.
+
+Proof: The proof of Theorem 6.2 is almost identical to the proof given
+for Theorem 5.1. We present it
+
+here for completeness. As before we assume that there exist an adversary
+A that breaks the IND-sWID-
+
+CPA-security of the \emph{BBG}-\emph{WIBE} scheme and then we show how
+to efficiently build another adversary
+
+B that, using A as a black box, manages to break the IND-sID-CPAsecurity
+of the \emph{BBG}-\emph{HIBE} scheme.
+
+Algorithm B begins by running A to obtain a challenge pattern P∗= (P∗1,
+. . . , P ∗ℓ∗). Define a projection
+
+function π : \{1, . . . , L\} →\{0, . . . , L\} where
+
+\begin{quote}
+π(i) = 0 if i ∈W(P∗)
+
+= i −\textbar W(P∗)\textbar≤i\textbar{} otherwise .
+\end{quote}
+
+The projection function is such that identities at level i ∈W(P∗) in the
+WIBE tree will be mapped
+
+onto level π(i) in the HIBE tree. B outputs ID∗= P∗\textbar i∈W(P ∗) as
+its own challenge identity and gets
+
+a master public key mpk H = (g1, g2, h1, u0, . . . , uL) for the
+\emph{BBG}-\emph{HIBE} scheme in return. It runs
+
+adversary A on master public key mpk W = (g1, g2, h1, u0, u′1, . . . ,
+u′L), where for all 1 ≤i ≤L, the
+
+values u′iare generated as:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+u′i
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gαi 1
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+if i ∈W( ˆP ), where αi
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+←Zp
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+uπ(i)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+otherwise.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Notice that mpk W is distributed exactly as it would be if produced by
+the real Setup algorithm of the
+
+\emph{BBG}-\emph{WIBE} scheme.
+
+During the first phase, B has to answer all the key derivation queries
+ID = (ID1, . . . , IDℓ) that A is
+
+allowed to ask. For that, B queries its own key derivation oracle on
+identity ID′= ID\textbar i∈W(P ∗)\textbar≤ℓ
+
+to get the key d′ID′ = (a′0, a′ℓ′+1. . . , a′L+1) where ℓ′ =
+\textbar ID′\textbar. Next, B computes the key dID =
+
+(a0, aℓ+1, . . . , aL+1) as
+
+\begin{quote}
+a0 ← a′0·(a′L+1)αi·IDi
+\end{quote}
+
+i∈W(P∗)\textbar≤ℓ
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+ai
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(a′L+1)αi
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+if i ∈W(P∗)\textbar\textgreater{} ℓ
+\end{minipage} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+for i = ℓ+ 1, . . . , L
+\end{quote}
+\end{minipage}} \\
+& & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+a′π(i)
+\end{quote}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+otherwise
+\end{quote}
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+a′L+1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+aL+1 .
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+14
+
+When at the end of its first phase A outputs challenge messages m∗0,
+m∗1, B also ends its first phase with
+
+the same messages. Let C′∗= (C′∗1, C ′∗2, C ′∗3) be the challenge
+ciphertext that B receives in return
+
+from its challenger, meaning that C′∗is an encryption of m∗bwith respect
+to the identity ID∗, where
+
+b is the secret bit chosen at random by the challenger. B sets C∗1←C
+′∗1, C ∗2←C ′∗2, C ∗3←C ′∗3and
+
+C∗4← C∗4,i= (C ∗1)αi i∈W(P∗), and feeds the ciphertext C ∗= (P ∗, C ∗1,
+C ∗2, C ∗3, C ∗4) to A as the input
+
+for its second phase. During the second phase, A is then allowed to
+issue more key derivation queries,
+
+which are answered by B exactly as in the first phase. When A outputs a
+bit b′, B outputs the same
+
+bit b′and stops.
+
+By arguments similar to those given in the proof of Theorem 5.1, one can
+see that B provides a
+
+perfectly simulated environment for A and that B does not query for the
+key of the challenge identity
+
+ID∗or any of its parents. Hence, B wins the game whenever A does. The
+running time of B is that
+
+of A plus the time needed for at most 2L exponentiations for each key
+derivation query and at most
+
+L exponentiations to compute the challenge ciphertext.
+
+6.3 From Selective-Identity to Full Security
+
+As observed by Boneh-Boyen {[}BB04{]} for the case of IBE schemes and by
+Boneh-Boyen-Goh {[}BBG05{]}
+
+for the case of HIBE schemes, any HIBE scheme \emph{HIBE} that is
+selective-identity secure can be trans-
+
+formed into a HIBE scheme \emph{HIBE}′that is IND-sID-CPA-secure in the
+random oracle model. The
+
+transformation only works for small hierarchy depths though, since the
+proof loses a factor O(qL H) in
+
+reduction tightness. We show here that the same transformation works for
+the case of WIBE schemes
+
+at the cost of a factor (qH + 1)Lin reduction tightness.
+
+\begin{quote}
+Let \emph{WIBE} be a WIBE scheme with maximum hierarchy depth L. The
+idea of the transformation
+\end{quote}
+
+is to replace every pattern (or identity) P = (P1, . . . , Pℓ) at key
+derivation or encryption with the
+
+pattern P′= (P′1, . . . , P ′ℓ) where
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+P′i
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Hi(Pi)
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+if Pi ̸= *
+\end{quote}
+\end{minipage} \\
+& & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+*
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+otherwise,
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+where Hi, 1 ≤i ≤L are independent random oracles mapping arbitrary bit
+strings into an appropriate
+
+range \emph{ID} corresponding to the identity space of \emph{WIBE}.
+(These L independent random oracles are
+
+easily constructed from a single random oracle H(·), e.g. by setting
+Hi(·) = H(i∥·).) We refer to the
+
+scheme thus obtained as \emph{WIBE}H and prove the following statement
+about its security.
+
+Theorem 6.3 If \emph{WIBE} is a (t, qK, ǫ) IND-sWID-CPA-secure WIBE
+scheme of depth L with identity
+
+space \emph{ID}, then the \emph{WIBE}H scheme described above is (t′,
+q′K, q′H, ǫ′) IND-WID-CPA-secure in the
+
+random oracle model for all
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+t′≤t ,
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+q′K≤qK
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2 and ǫ′≥(L + 1)(q′H+ 1)L · ǫ + q′\textbar{}\emph{ID}\textbar. H
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Proof: Assume there is an adversary A breaking the full security of the
+\emph{WIBE}H scheme, we present
+
+an adversary B that uses A as a black box and breaks the selective-ID
+security of the underlying
+
+\emph{WIBE} scheme.
+
+In a preliminary phase, B guesses ˆ←\{0, . . . , L\} and \$
+
+\begin{quote}
+ctriˆ ←\{0, . . . , q′ \$
+\end{quote}
+
+H\} for all 1 ≤i ≤ˆℓ. It then
+
+chooses a pattern ˆP′= ( ˆP′1, . . . , ˆP′ℓ) by setting ˆP′i←* if ˆctri
+= 0 and choosing ˆP′i←\emph{ID} otherwise. B \$
+
+outputs ˆP′as its challenge pattern, and gets public key mpk in return.
+It runs A on the same public
+
+key mpk and responds to its oracle queries as follows:
+
+15
+
+\begin{quote}
+• Hi(IDi): B keeps initially empty associative arrays Ti{[}·{]} and
+counters ctri that are initialized to zero for 1 ≤i ≤L. If Ti{[}IDi{]}
+is undefined, B increases ctri. If ctri = ctri, it sets ˆPi ←IDi
+
+and Ti{[}IDi{]} ←ˆP′i; otherwise, it chooses Ti{[}IDi{]}
+
+response to A.
+
+\$\\
+←\emph{ID}. B returns Ti{[}IDi{]} as the random oracle
+
+• KeyDer(ID = (ID1, . . . , IDℓ)): B simulates additional random oracle
+queries ID′i←Hi(IDi) for 1 ≤i ≤ℓand lets ID′= (ID′1, . . . , ID′ℓ). If
+ID′ ∈* ˆP then B aborts. If Hi(IDi) = ˆP′iwhile IDi ̸= ˆPi for some 1 ≤i
+≤ℓ, then B also aborts. Otherwise, it queries ID′from its own key
+derivation oracle and forwards the resulting key to A.
+\end{quote}
+
+Eventually, A outputs its challenge pattern P∗= (P∗1, . . . , P ∗ℓ∗) and
+challenge messages m∗0, m∗1. B performs additional random oracle queries
+Hi(P∗i) for all i ∈W(P ∗). If ℓ∗̸= ˆℓ, W(P∗) ̸= W( ˆP) or H(P∗i) ̸= ˆPi
+for some i ∈W(P∗), then B aborts. Otherwise, it submits m∗0, m∗1as its
+own challenge messages and forwards the challenge ciphertext C∗that it
+gets in return to A. During the second phase, B responds to A's oracle
+queries exactly as during the first phase. When A outputs a bit b′, B
+outputs the same bit b′.
+
+It is easy to see that B's simulation of A's environment is perfect as
+long as it doesn't abort and
+
+that B wins the game whenever A does. The probability that B aborts
+during one of A's decryption
+
+queries is bounded by the probability that A manages to find a collision
+in one of the random oracles Hi, which is at most
+q′H(q′H−1)/(2\textbar{}\emph{ID}\textbar) ≤q′H
+2/\textbar{}\emph{ID}\textbar. The probability that B does not abort in
+the final stage of the game is at least 1/(L + 1)(qH + 1)Ldue to the
+random guesses of ˆℓfrom \{0, . . . , L\} and of ˆctri from \{0, . . . ,
+q′H\}. Therefore B's advantage in winning the game is at least
+
+\begin{quote}
+ǫ ≥(L + 1)(q′ ǫ′ H+ 1)L −q′\textbar{}\emph{ID}\textbar, H 2
+\end{quote}
+
+from which the theorem follows.
+
+7 Chosen-Ciphertext Security
+
+In this section, for completeness, and to avoid making any
+unsubstantiated claims, we present an
+
+adaptation of the result of Canetti-Halevi-Katz {[}CHK04{]} to obtain
+chosen-ciphertext security for
+
+WIBE schemes. We show that we may use a IND-WID-CPA-secure WIBE of depth
+2L + 2 and
+
+a strongly unforgeable signature scheme (SigGen, Sign, Verify) to
+construct an IND-WID-CCA-secure
+
+WIBE of depth L.
+
+Definition 7.1 A signature scheme is a triple of algorithms (SigGen,
+Sign, Verify) where
+
+\begin{quote}
+• SigGen takes no input (except for an implicit security parameter) and
+outputs a signing key sk
+
+and a verification key vk;
+
+• Sign takes as input a signing key sk and a message m ∈\{0, 1\}∗and
+outputs a signature σ ∈\{0, 1\}∗;
+
+• and Verify takes as input a verification key vk, a message m ∈\{0,
+1\}∗and a signature σ ∈\{0, 1\}∗
+
+and outputs either valid or invalid.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+For correctness we require that for all (sk, vk)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+←SigGen, for all m ∈\{0, 1\}∗and σ
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+←Sign(sk, m), we
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+have that Verify(vk, m, σ) = valid with probability one.
+
+16
+
+Definition 7.2 A signature scheme (SigGen, Sign, Verify) is (t, ǫ)
+strongly one-time secure, if no prob-abilistic adversary A running in
+time at most t wins the following game with probability more thanǫ:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1. The challenger generates a key pair (sk∗, vk∗)
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+←SigGen.
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+2. The attacker executes A on input vk∗until it outputs a message m∗.
+
+3. The challenger computes σ∗ pair (m, σ).
+
+\$\\
+←Sign(sk, m∗) and returns σ∗to A. A terminates by outputting a
+\end{quote}
+
+The attacker wins the game if Verify(vk, m, σ) = valid and (m, σ) ̸=
+(m∗, σ∗).
+
+\begin{quote}
+We will also make liberal use of an `encoding function' Encode. For a
+WIBE scheme with identity
+\end{quote}
+
+space \emph{ID}L, this function will have different actions depending on
+its input. We assume that \emph{ID}
+
+contains at least two different elements; for simplicity we assume that
+\{0, 1\} ⊆\emph{ID}. For any identity
+
+ID = (ID1, . . . , IDℓ) ∈\emph{ID}≤L, we define
+
+Encode(ID) = (0, ID1, . . . , 0, ID ℓ) .
+
+We will also use this encoding function with two arguments to denote
+
+Encode(ID, vk) = (0, ID1, . . . , 0, ID k, 1, vk) .
+
+Given a WIBE scheme \emph{WIBE} = (Setup, KeyDer, Enc, Dec) of depth 2L
++ 2 with identity space \emph{ID}≤L,
+
+consider the following WIBE scheme \emph{WIBE}′= (Setup, KeyDer′, Enc′,
+Dec′) of depth L.
+
+Key Derivation. The secret key of identity ID = (ID1, . . . , IDℓ) under
+\emph{WIBE}′is the secret key
+
+\begin{quote}
+corresponding to identity Encode(ID) = (0, ID1, . . . , 0, ID ℓ) under
+\emph{WIBE}.
+\end{quote}
+
+Encryption. To encrypt a message m under a pattern P and using a master
+public key mpk, the
+
+\$
+
+\begin{quote}
+following steps are performed: First, we generate a signature key pair
+(sk, vk)←SigGen. Then
+
+\$ \$
+
+we compute C←Enc(mpk, Encode(P, vk), m) and σ←Sign(sk, C). The final
+ciphertext is the
+
+tuple (vk, C, σ).
+\end{quote}
+
+Decryption. To decrypt a ciphertext (vk, C, σ) using a private key dID
+for an identity ID, first check
+
+\begin{quote}
+that Verify(vk, C, σ) = valid. If not, output ⊥. Otherwise, compute d =
+KeyDer(dID, (1, vk))
+
+and output Dec(d, C). Note that in this case d is the decryption for the
+identity Encode(ID, vk)
+
+in \emph{WIBE}.
+\end{quote}
+
+Theorem 7.3 If \emph{WIBE} is (t, qK, ǫ) IND-WID-CPA-secure and (SigGen,
+Sign, Verify) is (ts, ǫs) strongly
+
+one-time secure, then \emph{WIBE}′is (t′, q′K, q′D, ǫ′)
+IND-WID-CCA-secure for all
+
+\begin{quote}
+t′ ≤min(t, ts) −q′K· tKeyDer−q′D· (tKeyDer+ tVerify+ tDec)
+
+q′K ≤qK −q′D
+
+ǫ′ ≥ǫ + ǫs
+\end{quote}
+
+where tKeyDer, tDec and tVerify are the running times of the KeyDer, Dec
+and Verify algorithms, respec-
+
+tively.
+
+17
+
+Proof: The proof closely follows that of {[}CHK04{]}. Let A be an
+IND-WID-CCA adversary against the \emph{WIBE}′scheme. Suppose P∗is the
+challenge pattern that A chooses and (vk∗, C∗, σ∗) is the challenge
+ciphertext that A receives during an execution of the attack game. Let
+Forge be the event that at some point during its execution A queries the
+decryption oracle on an identity ID ∈* P∗and a ciphertext of the form
+(vk∗, C, σ) such that Verify(vk∗, C, σ) = valid. Then we have that A's
+advantage is
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr {[} A wins {]} −1/2
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+≤Pr {[} Forge {]} +
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pr {[} A wins : ¬Forge {]} −1/2
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+.
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(1)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Claim 1 Pr {[} Forge {]} ≤ǫs.
+
+Claim 2 Pr {[} A wins : ¬Forge {]} −1/2≤ǫ.
+
+Proof of Claim 1: We prove the first claim by demonstrating an attacker
+B that breaks the one-time security of the signature scheme whenever the
+event Forge occurs. In the first phase, B
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+receives a verification key vk∗from the challenger. It generates (mpk,
+msk)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+←Setup and executes
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+A on input mpk, responding to its key derivation and decryption queries
+using the real KeyDer′and Dec′algorithms, which it can do because it
+knows msk. It keeps a list of A's decryption queries (ID, (vk, C, σ))
+for later reference. When A outputs challenge pattern P∗and challenge
+messages m∗0, m∗1, B chooses a random bit b ←\{0, 1\}, computes C∗
+←Enc(mpk, Encode(P∗, vk∗), m∗b) and requests a signature σ∗on message
+C∗from its own challenger. Algorithm B then runs A on input (vk∗, C∗,
+σ∗) until it halts, responding to A's oracle queries as before.
+
+At the end of A's execution, B checks whether the list of A's decryption
+queries contains an entry (ID, (vk, C, σ)) such that ID ∈* P∗, vk =
+vk∗and Verify(vk, C, σ) = valid, or in other words, checks whether the
+event Forge occurred. Note that in this case (C, σ) ̸= (C∗, σ∗) because
+A is not allowed to query the decryption oracle on the challenge
+ciphertext with an identity ID ∈* P∗. B outputs (C∗, σ∗) as its forgery
+and wins the game. The running time of B is that of A plus the time
+needed for q′K+ q′Dapplications of the KeyDer algorithm, q′Kapplications
+of the Verify algorithm and q′K applications of the Dec algorithm.
+
+Proof of Claim 2: To prove the second claim, we show that there exists
+an IND-WID-CPA attacker C against \emph{WIBE} that uses A as a
+subroutine and that has advantage ǫ of winning the game whenever the
+event Forge does not occur. Algorithm C, on input a master public key
+mpk, runs A on input mpk, answering its oracle queries as follows:
+
+\begin{quote}
+• If A queries the key extraction oracle on the identity ID, then C
+queries its key extraction oracle on the identity Encode(ID) and returns
+the resulting key to A.
+
+• If A queries the decryption oracle on the identity ID and ciphertext
+(vk, C, σ), then C checks that Verify(vk, C, σ) = valid. If not, then C
+returns ⊥to A. If the signature is valid, C queries its key extraction
+oracle on the identity Encode(ID, vk) to receive the decryption key d
+and returns the output of Dec(d, C) to A.
+\end{quote}
+
+When A outputs challenge pattern P∗and challenge messages m∗0, m∗1, C
+generates a fresh key pair (sk∗, vk∗)←SigGen and outputs Encode(P∗, vk∗)
+and m∗0, m∗1as its own challenge pattern and mes- \$\\
+sages. In return, it gets a challenge ciphertext C∗from its challenger.
+C computes σ∗←Sign(sk, C∗)
+
+18
+
+and feeds (vk∗, C∗, σ∗) to A, answering its oracle queries exactly as
+before. When A outputs a bit b′, C outputs the same bit b′.
+
+It is not hard to see that C's simulation of A's environment is perfect
+and that C wins the game
+
+whenever A does as long as C does not make any illegal key derivation
+queries. We have left to argue
+
+why the latter fact is true. First consider the queries that C makes to
+respond to A's key derivation query ID. Let ID′= Encode(ID) and let P′∗=
+Encode(P∗, vk∗). If \textbar ID′\textbar{} \textgreater{}
+\textbar P′∗\textbar{} then ID′can never match P′∗. If
+\textbar ID′\textbar{} = \textbar P′∗\textbar{} then still ID′̸∈*
+P′∗because ID′and P′∗are different on the next to last level
+(ID′contains a zero there, while P′∗contains a one). If
+\textbar ID′\textbar{} \textless{} \textbar P′∗\textbar{} then the only
+way to have ID′∈* P′∗is if also ID ∈* P∗, which are illegal queries in
+A's game as well.
+
+Second, consider the key derivation queries that C makes in order to
+respond to A's decryption queries. If A makes decryption query (ID, (vk,
+C, σ)), then C makes a key derivation query for ID′= Encode(ID, vk). Let
+P′∗= Encode(P∗, vk∗). If vk ̸= vk∗then definitely ID′̸∈* P′∗: either
+ID′has a zero where P′∗has a one, or they differ on the last level. So
+let's focus on the case that vk = vk∗. If \textbar ID′\textbar{}
+\textgreater{} \textbar P′∗\textbar{} then ID′can never match P′∗. If
+\textbar ID′\textbar{} \textless{} \textbar P′∗\textbar{} then the next
+to last level of ID′contains a one while P′∗contains a zero there, so
+also in that case ID′̸∈* P′∗. If \textbar ID′\textbar{} =
+\textbar P′∗\textbar, then the only way to have ID′̸∈* P′∗is if also ID
+∈* P∗, but this case is excluded by the event ¬Forge.
+
+The running time of C is that of A plus the time needed to compute
+q′Dapplications of the Verify and Dec algorithms and one application of
+the Sign algorithm. It also performs qK = q′K+ q′Dqueries to its key
+derivation oracle.
+
+The bound on ǫ′in the statement of Theorem 7.3 follows directly from
+Equation (1) and the two claims above. The bound on the number of key
+derivation queries q′Kis due to the proof of Claim 2 above. For the
+bound on t′we have to take into account the running times of both
+algorithms B and
+
+C in the proofs of Claims 1 and 2. From the proof of Claim 1 we have
+that
+
+t′≤t1 = t −(q′K+ q′D) · tKeyDer−q′D· tVerify−q′D· tDec
+
+and from the proof of Claim 2 we have that
+
+t′≤t2 = ts −q′D· tVerify−q′D· tDec.
+
+To simultaneously satisfy both equations, we need to upper-bound t′by
+
+min(t1, t2) ≥min(t, ts) −q′K· tKeyDer−q′D· (tKeyDer+ tVerify+ tDec) ,
+
+where we use that min(x −z, y −z) ≥min(x, y) −z and min(x −w, y −z)
+≥min(x, y) −w −z.
+
+\begin{quote}
+One may wonder why we require a (2L+2)-level IND-WID-CPA-secure WIBE in
+order to construct
+\end{quote}
+
+an L-level IND-WID-CCA-secure WIBE when the original result of
+Canetti-Halevi-Katz {[}CHK04{]} only
+
+required an (L+1)-level IND-ID-CPA-secure HIBE to construct an L-level
+IND-ID-CCA-secure HIBE.
+
+The construction of {[}CHK04{]} encodes every identity string ID as
+0\textbar\textbar ID and every verification key vk
+
+as 1\textbar\textbar vk. For a HIBE, the different form of the two types
+of binary string means that when we use the
+
+key extraction oracle to decrypt a ciphertext, we never query the key
+extraction oracle on an ancestor
+
+of the challenge identity. However, if we try and use the same trick to
+construct a chosen-ciphertext
+
+secure WIBE, then it is possible that we will query the key extraction
+oracle on an identity that
+
+matches the challenge pattern because both 0\textbar\textbar ID and
+1\textbar\textbar vk match the pattern string *. Hence, we
+
+are forced to place the single bits that identify whether the following
+binary string is an identity or a
+
+verification key into their own levels on the WIBE.
+
+19
+
+Applying the transformation to \emph{Wa}-\emph{WIBE}. If we apply the
+above transformation to the (IND-WID-CPA-secure) \emph{Wa}-\emph{WIBE}
+scheme described in Section 5 and prove the security of the scheme
+directly, rather than by applying Theorems 5.1 and 7.3, then we may
+achieve some small efficiency gains. In particular, if we wish to
+construct an L-level CCA-secure WIBE scheme, then a naive application of
+the theorems suggests that we have to start from a (2L + 2)-level
+\emph{Wa}-\emph{WIBE} scheme, meaning that the public parameters for the
+WIBE consist of (2L + 2)(n + 1) + 3 group elements, and that we lose a
+factor of 22L+2in the security reduction from the \emph{Wa}-\emph{WIBE}
+to the \emph{Wa}-\emph{HIBE} scheme.
+
+However, if we look at the proof techniques used in the theorems, then
+we can make some efficiency gains. In particular,
+
+\begin{quote}
+• L + 1 levels of the WIBE are only used to encode either a zero or a
+one. This means that the public parameters do not require the n+1 group
+elements required to represent an n-bit identity at those levels; they
+only require the two group elements that are required to encode a
+single-bit identity. Hence, the public parameters only require (L + 1)(n
++ 3) + 3 group elements.
+
+• the reduction from the CPA-secure WIBE to the CPA-secure HIBE loses a
+factor of 22L+2 because we need to guess the positions of the wildcards
+in the challenge identity. However, in this construction, the wildcards
+can only occur at L different positions, instead of all 2L + 2
+positions. Hence, we actually only lose a factor of 2Lin this reduction.
+\end{quote}
+
+Unfortunately, we still do require a (2L + 2)-level instantiation of the
+\emph{Wa}-\emph{WIBE} scheme. This implies an important security loss
+because the proof of security for the \emph{Wa}-\emph{HIBE} loses a
+factor of O((nqK)2L+2) in the reduction to the BDDH assumption.
+
+Versions of this Paper
+
+An extended abstract of this paper appeared at ICALP 2006 {[}ACD+06{]}.
+The first full version was posted on the IACR ePrint archive in
+September 2006. This is an updated version of December 2006 that
+corrects a minor mistake in the proof of Theorem 6.3.
+
+Acknowledgments
+
+We would like to thank James Birkett, Jacob Schuldt, Brent Waters and
+the anonymous referees of ICALP 2006 for their valuable input. We also
+thank Mihir Bellare for pointing out the relation between WIBE and fuzzy
+identity-based encryption. This work was supported in part by the
+European Commission through the IST Programme under Contract
+IST-2002-507932 ECRYPT. The information in this document reflects only
+the author's views, is provided as is and no guarantee or warranty is
+given that the information is fit for any particular purpose. The user
+thereof uses the information at its sole risk and liability. The first
+two authors were supported in part by France Telecom R\&D as part of the
+contract CIDRE, between France Telecom R\&D and ´\\
+Ecole normale sup´erieure. The fifth author is a Postdoctoral Fellow of
+the Research Foundation -- Flanders (FWO-Vlaanderen), and was supported
+in part by the Concerted Research Action (GOA) Ambiorics 2005/11 of the
+Flemish Government.
+
+References
+
+{[}ACD+06{]} Michel Abdalla, Dario Catalano, Alex Dent, John Malone-Lee,
+Gregory Neven, and Nigel Smart. Identity-based encryption gone wild. In
+Michele Bugliesi, Bart Preneel, Vladimiro
+
+20
+
+\begin{quote}
+Sassone, and Ingo Wegener, editors, ICALP 2006: 33rd International
+Colloquium on Au-tomata, Languages and Programming, Part II, volume 4052
+of Lecture Notes in Computer Science, pages 300--311. Springer-Verlag,
+Berlin, Germany, July 9--16, 2006. (Cited on pages i
+
+and 20.)
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}BB04{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Dan Boneh and Xavier Boyen.
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Efficient selective-ID secure identity based encryption
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+without random oracles. In Christian Cachin and Jan Camenisch, editors,
+Advances in Cryptology -- EUROCRYPT 2004, volume 3027 of Lecture Notes
+in Computer Science, pages 223--238, Interlaken, Switzerland, May 2--6,
+2004. Springer-Verlag, Berlin, Germany.
+\end{quote}
+
+(Cited on pages 2, 3, 4, 6, 11, 15, 22 and 23.)\\
+{[}BBG05{]} Dan Boneh, Xavier Boyen, and Eu-Jin Goh. Hierarchical
+identity based encryption with constant size ciphertext. In Ronald
+Cramer, editor, Advances in Cryptology -- EURO- CRYPT 2005, volume 3494
+of Lecture Notes in Computer Science, pages 440--456, Aarhus, Denmark,
+May 22--26, 2005. Springer-Verlag, Berlin, Germany. (Cited on pages 2,
+6, 11, 12,
+
+15 and 25.)\\
+{[}BF03{]} Dan Boneh and Matthew K. Franklin. Identity based encryption
+from the Weil pairing.
+
+SIAM Journal on Computing, 32(3):586--615, 2003. (Cited on pages 1 and
+4.)\\
+{[}BR93{]} Mihir Bellare and Phillip Rogaway. Random oracles are
+practical: A paradigm for designing efficient protocols. In ACM CCS 93:
+1st Conference on Computer and Communications Security, pages 62--73,
+Fairfax, Virginia, USA, November 3--5, 1993. ACM Press. (Cited on
+
+page 2.)\\
+{[}BR94{]} Mihir Bellare and Phillip Rogaway. Entity authentication and
+key distribution. In Dou- glas R. Stinson, editor, Advances in
+Cryptology -- CRYPTO'93, volume 773 of Lecture Notes in Computer
+Science, pages 232--249, Santa Barbara, CA, USA, August 22--26, 1994.
+
+Springer-Verlag, Berlin, Germany. (Cited on page 4.)\\
+Ran Canetti, Shai Halevi, and Jonathan Katz. Chosen-ciphertext security
+from identity-{[}CHK04{]}\\
+based encryption. In Christian Cachin and Jan Camenisch, editors,
+Advances in Cryptology -- EUROCRYPT 2004, volume 3027 of Lecture Notes
+in Computer Science, pages 207--222, Interlaken, Switzerland, May 2--6,
+2004. Springer-Verlag, Berlin, Germany. (Cited on pages 2,
+
+\begin{quote}
+16, 18 and 19.)
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}Coc01{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Clifford Cocks.
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+An identity based encryption scheme based on quadratic residues.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+In
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Bahram Honary, editor, Cryptography and Coding, 8th IMA International
+Conference, volume 2260 of Lecture Notes in Computer Science, pages
+360--363, Cirencester, UK, De- cember 17--19, 2001. Springer-Verlag,
+Berlin, Germany. (Cited on page 1.)\\
+{[}CS06{]} Sanjit Chatterjee and Palash Sarkar. Trading time for space:
+Towards an efficient IBE scheme with short(er) public parameters in the
+standard model. In Dongho Won and Seungjoo Kim, editors, Information
+Security and Cryptology -- ICISC 2005, volume 3935 of Lecture Notes in
+Computer Science, pages 424--440. Springer-Verlag, Berlin, Germany,
+2006. (Cited on page 8.)\\
+{[}GS02{]} Craig Gentry and Alice Silverberg. Hierarchical ID-based
+cryptography. In Yuliang Zheng, editor, Advances in Cryptology --
+ASIACRYPT 2002, volume 2501 of Lecture Notes in Com- puter Science,
+pages 548--566, Queenstown, New Zealand, December 1--5, 2002. Springer-
+Verlag, Berlin, Germany. (Cited on page 1.)\\
+{[}HL02{]} Jeremy Horwitz and Ben Lynn. Toward hierarchical
+identity-based encryption. In Lars R.
+
+\begin{quote}
+Knudsen, editor, Advances in Cryptology -- EUROCRYPT 2002, volume 2332
+of Lecture Notes in Computer Science, pages 466--481, Amsterdam, The
+Netherlands, April 28 --
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+{[}MSK02{]}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+May 2, 2002. Springer-Verlag, Berlin, Germany.
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.4000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(Cited on page 1.)
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+IEICE
+\end{quote}
+\end{minipage}} \\
+&
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.4000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+Shigeo Mitsunari, Ryuichi Saka, and Masao Kasahara.
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+A new traitor tracing.
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Transactions, E85-A(2):481--484, February 2002.
+\end{quote}
+
+21
+
+\begin{quote}
+(Cited on pages 2 and 3.)
+\end{quote}
+
+{[}Nac05{]} David Naccache. Secure and practical identity-based
+encryption. Cryptology ePrint Archive, Report 2005/369, 2005.. (Cited on
+page 8.)\\
+{[}Sha85{]} Adi Shamir. Identity-based cryptosystems and signature
+schemes. In G. R. Blakley and David Chaum, editors, Advances in
+Cryptology -- CRYPTO'84, volume 196 of Lecture Notes in Computer
+Science, pages 47--53, Santa Barbara, CA, USA, August 19--23, 1985.
+
+Springer-Verlag, Berlin, Germany. (Cited on page 1.)\\
+{[}SOK00{]} Ryuichi Sakai, Kiyoshi Ohgishi, and Masao Kasahara.
+Cryptosystems based on pairing. In SCIS 2000, Okinawa, Japan, January
+2000. (Cited on page 1.)\\
+{[}SW05{]} Amit Sahai and Brent R. Waters. Fuzzy identity-based
+encryption. In Ronald Cramer, editor, Advances in Cryptology --
+EUROCRYPT 2005, volume 3494 of Lecture Notes in Computer Science, pages
+457--473, Aarhus, Denmark, May 22--26, 2005. Springer-Verlag, Berlin,
+Germany. (Cited on page 6.)\\
+{[}Wat05{]} Brent R. Waters. Efficient identity-based encryption without
+random oracles. In Ronald Cramer, editor, Advances in Cryptology --
+EUROCRYPT 2005, volume 3494 of Lecture Notes in Computer Science, pages
+114--127, Aarhus, Denmark, May 22--26, 2005. Springer- Verlag, Berlin,
+Germany. (Cited on pages 2, 6, 7 and 8.)
+
+A The \emph{BB}-\emph{HIBE} Scheme
+
+In this section, we present a variant of the HIBE scheme by Boneh and
+Boyen in Eurocrypt 2004 {[}BB04{]}.
+
+Setup. The trusted authority chooses random generators g1, g2 from G∗, a
+random α ∈Zp and sets h1 ←gα1. Next, it picks random elements u1,0, . .
+. , uL,0, u1,1, . . . , uL,1 from G∗and sets h2 ←gα2. The master public
+key is mpk = (g1, h1, g2, u1,0, . . . , uL,0, u1,1, . . . , uL,1). The
+corresponding master secret key is msk = h2.
+
+Key Derivation. A user's identity is given by a vector ID = (ID1, . . .
+, IDℓ) where each IDi is an element in Zp. To compute the decryption key
+for identity ID from the master secret key, first
+
+\begin{quote}
+one chooses random values ri←Zp for i = 1, . . . , ℓ, then the private
+key dID is constructed as
+
+ℓ ri\\
+(a0, a1, . . . , aℓ) = h2 ui,0 · uIDi i,1 , gr1 1, . . . , grℓ .
+\end{quote}
+
+i=1
+
+\begin{quote}
+Notice that, as required, the secret key for identity ID = (ID1, . . . ,
+IDℓ) can be computed from
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.8571} + 10\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+the secret key (a0, a1, . . . , aℓ−1) of the parent (ID1, . . . , IDℓ−1)
+by choosing a random rℓ
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+←Zp
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+and outputting
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+dID =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+a0 ·
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+uℓ,0 · uIDℓℓ,1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+rℓ
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+, a1 , . . . , aℓ−1 , grℓ
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Encryption. To encrypt a message m ∈GT for an identity ID = (ID1, . . .
+, IDℓ), the sender first
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+chooses t
+\end{quote}
+\end{minipage}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.8000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+←Zp and outputs the ciphertext C = (C1, C2, C3), where
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+C1 = gt 1
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+C2 =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+C2,i = (ui,0 · uIDi i,1)t
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+C3 = m · ˆe(h1, g2)t
+\end{quote}
+\end{minipage} \\
+&
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.8000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+i=1,...,ℓ
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Decryption. If the receiver is the root authority holding the master key
+msk, then he can recover the message by computing C3/ˆe(C1, msk). Any
+other receiver with identity ID = (ID1, . . . , IDℓ)
+
+22
+
+\begin{quote}
+and decryption key dID = (a0, a1, . . . , aℓ) decrypts a ciphertext C =
+(C1, (C2,i)i=1,...,ℓ, C3) by
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+computing
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+m ←C3 ·
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ℓ\\
+i=1ˆe(ai, Ci)
+\end{quote}\strut
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+.
+\end{quote}
+\end{minipage}} \\
+& & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+e(C1, a0)
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+The fact that decryption works can be seen as follows.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ℓ\\
+i=1ˆe(ai, Ci)
+\end{quote}\strut
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.2857} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ℓ\\
+i=1ˆ
+\end{quote}\strut
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.4286} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gri 1, (ui,0 · uIDi i,1)t
+\end{quote}
+\end{minipage}} \\
+& & \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+ˆ
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.2857} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+gt 1, h2
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.2857} + 2\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+i=1(ui,0 · uIDi i,1)ri
+\end{quote}
+\end{minipage}}} \\
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+e(C1, a0)
+\end{minipage}} \\
+& \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.5714} + 6\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ℓ\\
+i=1ˆ
+\end{quote}\strut
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gt 1, (ui,0 · uIDi i,1)ri
+\end{quote}
+\end{minipage} \\
+& &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.5714} + 6\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+e(gt 1, h2) · ˆ
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gt 1,ℓi=1(ui,0 · uIDi i,1)ri
+\end{quote}
+\end{minipage} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.5714} + 6\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1\\
+e(g1, h2)t =
+\end{quote}\strut
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+1\\
+e(h1, g2)t\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+The main difference between the original HIBE scheme of {[}BB04{]} and
+our variant above is that our scheme uses a different value ui,1 for
+each level, while the original scheme uses the same value u1 for all
+levels. Adding wildcard functionality to the original scheme would
+require us to include ut 1in the ciphertext, but this ruins security as
+it can be used to change the recipient identity for non-wildcard levels
+as well.
+
+Theorem A.1 If the (t, ǫ) BDDH assumption holds in G, then the
+\emph{BB}-\emph{HIBE} scheme with hierarchy depth L is (t′, qK, ǫ)
+IND-sID-CPA-secure, where t′= t −Θ(L · qK · texp) and texp is the
+maximum time for an exponentiation in G.
+
+Proof: The present proof follows very closely the proof of security for
+the original scheme in {[}BB04{]}. As before, we assume that there exist
+an adversary A that breaks the IND-sID-CPA-security of the HIBE scheme
+\emph{BB}-\emph{HIBE} and then we show how to efficiently build another
+adversary B that, using A as a black box, manages to solve the BDDH
+problem in G.
+
+Algorithm B first receives as input a random tuple (g, A = ga, B = gb, C
+= gc, Z) and its goal is to determine whether Z = ˆe(g, g)abcor ˆe(g,
+g)zfor a random element z in Zp. Algorithm B should output 1 if Z =
+ˆe(g, g)abcand 0, otherwise. Algorithm B works as follows.
+
+Initialisation. Algorithm B starts interacting with A in the IND-sID-CPA
+game. Let ID∗= (ID∗1, . . . , ID∗ℓ∗), where 0 ≤ℓ∗≤L be the challenge
+identity outputted by A. If necessary, B appends random elements in Zp
+to ID∗so that ID∗is a vector of length L.
+
+Setup. To generate the systems parameters, B first sets g1 ←g, h1 ←A,
+and g2 ←B. Algorithm B then chooses α1,0, . . . , αL,0, α1,1, . . . ,
+αL,1←Z∗pat random and sets ui,0←gαi,0· h−ID∗1 iαi,1 and ui,1 ←hαi,1 for
+i = 1, . . . , L. Next, B gives to A as the master public key the value
+mpk ←(g1, h1, g2, u1,0, . . . , uL,0, u1,1, . . . , uL,1). Note that the
+corresponding master secret key msk = ga 2is unknown to B.
+
+Key Derivation queries. During the phases of its attack against the
+IND-sID-CPA-security of \emph{BB}-\emph{HIBE}, A can query up to qK
+queries to its key derivation oracle. Let ID = (ID1, . . . , IDℓ), where
+IDi ∈Zp and ℓ≤L, be one such query. Thus, ID cannot be a prefix of ID∗.
+Let j be
+
+23
+
+\begin{quote}
+the smallest index such that IDj ̸= ID∗j. It follows necessarily that 1
+≤j ≤ℓ. To reply to this
+
+query, B first computes the key for identity ID\textbar≤j = (ID1, . . .
+, IDj) and then derive the key
+
+for ID as in the key derivation algorithm. To derive the key for
+identity ID\textbar≤j, B chooses the
+
+values r1, . . . , rj←Zp at random and sets
+
+dID\textbar≤j = (a0, a1, . . . , aj)
+
+−αj,0 1
+
+= g2αj,1(IDj−ID∗j)·j i=1 ui,0 · uIDi i,1 ri , gr1 1, . . . , grj−1 ,
+g2αj,1(IDj−ID∗j)grj 1 .
+
+To see why (a0, a1, . . . , aj) is a valid random private key for
+identity ID\textbar≤j, let ˜rj = rj −
+
+b
+
+αj,1(IDj−ID∗j) mod p. Then, we have that
+
+−αj,0 −αj,0 b
+
+g2αj,1(IDj−ID∗j)· (uj,0 · uIDj j,1)rj = g2αj,1(IDj −ID∗j)· (uj,0 · uIDj
+j,1) rj+αj,1(IDj −ID∗j)
+
+−αj,0 b
+
+= g2αj,1(IDj−ID∗j)· (gαj,0 1 · h αj,1(IDj−ID∗
+
+1\\
+j)
+\end{quote}
+
+)αj,1(IDj −ID∗j)· (uj,0 · uIDj j,1) rj
+
+rj
+
+\begin{quote}
+= hb 1· (uj,0 · uIDj j,1)
+
+= ga 2· (uj,0 · uIDj j,1) rj .
+
+From the above, it follows that
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+a0 = ga 2(uj,0· uIDj j,1)˜rj
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+j−1
+\end{quote}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+a1 = gr1 1, . . . , aj−1 = grj−1
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+,
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+aj = g˜1, rj
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(ui,0 · uIDi i,1)ri,
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+i=1
+
+\begin{quote}
+where r1, . . . , rj−1, ˜rj are uniformly distributed over Zp. From (a0,
+a1, . . . , aj), algorithm B can
+
+derive the key for ID as in the key derivation algorithm.
+\end{quote}
+
+Challenge. Let (m∗0, m∗1) be the pair of messages that A outputs at the
+end of the first phase of the
+
+\begin{quote}
+IND-sID-CPA game. Algorithm B then chooses a random bit b ∈\{0, 1\} and
+sends C∗= (C,
+
+m∗b· Z, Cα1,0, . . . , Cαℓ∗,0) to A as the challenge ciphertext. Since
+ui,0 · uID∗= gαi,0 1 for all i, we
+
+have that
+\end{quote}
+
+ID∗
+
+\begin{quote}
+C∗= (gc 1, m∗b· Z, (u1,0 · uID∗ℓ∗,1)c).
+
+As a result, when Z = ˆe(g, g)abc= ˆe(h1, g2)c, C∗is a valid encryption
+of message m∗bfor the
+
+challenge identity ID∗= (ID∗1, . . . , ID∗ℓ∗). On the other hand, when Z
+= ˆe(g, g)zfor a random
+
+value z ∈Zp, then the challenge ciphertext is independent of b from the
+view point of the ad-
+
+versary.
+\end{quote}
+
+Guess. Let b′be the output of A at the end of the second phase of the
+IND-sID-CPA game. If b = b′,
+
+\begin{quote}
+then algorithm B outputs 1, guessing that Z = ˆe(g, g)abc. Otherwise, B
+outputs 0.
+\end{quote}
+
+Clearly, when Z = ˆe(g, g)abc, the view of A is identical to its view in
+a real attack and, thus, the
+
+probability that b = b′is exactly the probability that A wins the
+IND-sID-CPA game. On the other
+
+hand, when Z is a random group element in GT, then the probability that
+b = b′is exactly 1/2. From
+
+the above, the result announced in Theorem A.1 follows immediately.
+
+24
+
+B The \emph{BBG}-\emph{HIBE} Scheme
+
+In this section we present the HIBE scheme due to Boneh, Boyen and Goh
+{[}BBG05{]}, referred to as the \emph{BBG}-\emph{HIBE} scheme here. The
+Setup and KeyDer algorithms are exactly as in the \emph{BBG}-\emph{WIBE}
+scheme presented in Section 6.2. Encryption and decryption work as
+follows.
+
+Encryption. To encrypt a message m ∈GT for an identity ID = (ID1, . . .
+, IDℓ), the sender first
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+chooses t
+\end{quote}
+\end{minipage}} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.8333} + 8\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+←Zp and outputs the ciphertext C = (C1, C2, C3) ∈G × G × GT, where
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+C1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.5000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+gt 1,
+\end{quote}
+\end{minipage}} \\
+&
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.5000} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+ℓ
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+t
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+C2
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+u0
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+uIDi i
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+,
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+i=1
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+C3
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+m · ˆe(h1, g2)t.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Decryption. If the receiver is the root authority holding the master key
+msk = h2, then he can recover the message by computing C3/ˆe(C1, h2).
+Any other receiver with identity ID = (ID1, . . . , IDℓ) and decryption
+key dID = (a0, aℓ+1, , . . . , aL+1) decrypts a ciphertext C = (C1, C2,
+C3) as follows.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule()
+\multirow{5}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+m
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+←
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+C3 ·ˆe(C2, aL+1)
+
+e(C1, a0)
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+i=1uIDi
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+, g1
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+rt
+\end{quote}
+\end{minipage}} &
+\multirow{5}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+rt
+\end{quote}
+\end{minipage}} \\
+& \multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+C3 ·
+\end{quote}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+ˆ
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+u0
+\end{quote}
+\end{minipage} \\
+& & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+e(g1, h2)t· ˆ
+\end{minipage}}} & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}}{%
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+i=1uIDi
+\end{minipage}}} \\
+& & & & & \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+g1, u0
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+m .
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+The following theorem about the security of the scheme was proved in
+(the full version of) {[}BBG05{]}.
+
+Theorem B.1 If the (t, ǫ) decisional L-BDHI assumption holds in G, then
+the \emph{BBG}-\emph{HIBE} scheme with hierarchy depth L is (t′, q′K,
+ǫ′) IND-sID-CPA-secure for arbitrary q′Kand for all
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+t′≤t −O(Lq′K· texp)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+and
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+ǫ′≥ǫ ,
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+where texp is the time for an exponentiation in G.
+
+25
+
+\end{document}

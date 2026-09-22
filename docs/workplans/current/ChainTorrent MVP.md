@@ -13,6 +13,8 @@ The sequence matters to this workplan because it determines what the MVP measure
 
 The design is specified in `docs/cryptography.md` and bounded in `docs/MVP Scope.md`, but several decisions that the build depends on are not yet determined. Those undetermined items are held in the To-Do list below rather than in either specification, because a specification states what is and a scope states where the boundary sits — neither can carry an argument that is still running.
 
+The cryptographic construction is specified; its research record is `docs/cryptography-research-notebook.md`, with the current statement in `docs/cryptography-critical-path.md`. A validation harness on the resolved pairing curve produces the sizes, timings, and gas that fix the piece-group size, and no node that encrypts is scoped ahead of it.
+
 ## Objectives
 
 Deliver an install path for JavaScript dependencies that survives registry outages, serves popular packages from a peer swarm, and exercises the identity and entitlement pipeline end to end.
@@ -129,7 +131,7 @@ These bottom out in the same prerequisite: identity that carries stake, over a p
 
 **What was found.** The swarm distribution the protocol depends on presumes that seeding is rewarded, and no mechanism is specified. Without one, contribution is voluntary, free-riding is rational, and aggregate resilience decays toward whatever altruism sustains.
 
-**This is one problem with provisioning decentralization, not two adjacent ones.** Both bottom out in Sybil-resistant stake over the same participant set: a design answering who may be rewarded for storing is most of a design for who may be selected to provision, and the reverse holds as well. A proposal addressing one and not the other is incomplete rather than partial, and the two are resolved together or not at all.
+**This is one problem with retention assignment, not two adjacent ones.** Both bottom out in Sybil-resistant stake over the same participant set: a design answering who may be rewarded for storing is most of a design for who may be assigned to store, and the reverse holds as well. A proposal addressing one and not the other is incomplete rather than partial, and the two are resolved together or not at all.
 
 The candidate mechanism is a reciprocal token pair in which one participant's upload token is another participant's download token, with a participant's ratio serving as the translation between them. This is out of MVP bounds because it depends on the token economics deferred alongside monetization, but it is a protocol-level gap rather than an implementation detail: the incentive structure determines whether the distribution model works at population scale at all.
 
@@ -137,30 +139,20 @@ The candidate mechanism is a reciprocal token pair in which one participant's up
 
 **What resolving it would take.** Specifying the token pair and the ratio translation, then deciding whether the mechanism is enforced or emergent. The specification now assigns retention by obligation and audits it rather than leaving it to goodwill, so the open question has narrowed: compensation is what makes the discretionary tier worth offering, while the obligated tier does not depend on it. Which tier a token accounting system is meant to drive needs to be a decision rather than a side effect.
 
-### Retention and committee parameters
+### Retention parameters
 
-**What was found.** This entry supersedes the colocation multiplier it previously held, which asked what multiple of their own footprint a participant should set aside for other participants' variant objects. That question no longer exists in that form: variant seeds are carried by the entitlement and are neither stored nor served, so nothing is colocated on their account. What survives is the general case — retention of swarm ciphertext is the storage half of the participation obligation attached to every identity, assigned by the same random rotation that selects the provisioning committee and audited on the same surface. The multiplier's successor is therefore the retention floor over ciphertext, and it is one of four coupled parameters rather than a standalone question. What was previously conceded as emergent and probabilistic availability is now a constructed replication factor, which is what makes a number necessary rather than merely desirable.
+**What was found.** This entry supersedes the colocation multiplier it previously held, which asked what multiple of their own footprint a participant should set aside for other participants' variant objects. That question no longer exists in that form: variant seeds are carried by the entitlement and are neither stored nor served, so nothing is colocated on their account. What survives is the general case — retention of swarm ciphertext and header sidecars is the participation obligation attached to every identity, assigned by random rotation over the participant set and audited on one surface; the provisioning committee that once shared that rotation no longer exists. The multiplier's successor is therefore the retention floor over ciphertext, and it is one of four coupled parameters rather than a standalone question. What was previously conceded as emergent and probabilistic availability is now a constructed replication factor, which is what makes a number necessary rather than merely desirable.
 
-Four values are undetermined and none can be chosen independently of the others. The **rotation period** trades capture resistance against reassignment churn, since a membership that rotates faster is harder to corrupt and more expensive to keep synchronized. The **replication factor** sets how many identities each object is assigned to, and is what converts availability from an emergent property into a constructed one. The **retention floor** is the ciphertext storage each identity carries to remain in good standing, and it is the multiplier's successor. The **audit challenge frequency** determines how quickly a non-compliant holder is detected, and costs bandwidth on every participant to raise.
+Four values are undetermined and none can be chosen independently of the others. The **rotation period** trades capture resistance against reassignment churn, since an assignment that rotates faster is harder to game and more expensive to keep synchronized. The **replication factor** sets how many identities each object is assigned to, and is what converts availability from an emergent property into a constructed one. The **retention floor** is the ciphertext storage each identity carries to remain in good standing, and it is the multiplier's successor. The **audit challenge frequency** determines how quickly a non-compliant holder is detected, and costs bandwidth on every participant to raise.
 
-**Where.** [`docs/cryptography.md`, Provisioning Liveness](../../cryptography.md#provisioning-liveness-centralization-and-participation); [`docs/MVP Scope.md`, Provisioning Committee and Retention Obligation](../../MVP%20Scope.md#provisioning-committee-and-retention-obligation) and [Seed Hosting and the Ciphertext Store](../../MVP%20Scope.md#seed-hosting-and-the-ciphertext-store).
+**Where.** [`docs/cryptography.md`, Provisioning Liveness](../../cryptography.md#provisioning-liveness-centralization-and-participation), whose surviving content is the participation obligation; [`docs/MVP Scope.md`, Retention Obligation](../../MVP%20Scope.md#retention-obligation) and [Seed Hosting and the Ciphertext Store](../../MVP%20Scope.md#seed-hosting-and-the-ciphertext-store).
 
 **What resolving it would take.** Choosing the four jointly against a stated availability target and a stated storage cost per participant. None of them is enforceable before the identity and stake layer exists, so values can be selected during the MVP but not exercised by it.
-
-### The end-state provisioning construction
-
-**What was found.** Per-window authorization places the provisioning layer on the read path by construction, which is the direct cost of transferable access rights: an entitlement that can be resold requires authorization to be re-established after the sale, which requires a party able to establish it. This is the protocol's most significant compromise with its own decentralization thesis, and the obstacle is structural rather than incidental — the ledger is public, so any value the chain can compute every observer can also read, and the chain cannot itself hold a secret only an entitled holder can unwrap.
-
-The MVP does not substitute for the target construction; it runs it at its degenerate case, with a committee drawn from whoever is present, resharing from the first day, and Sybil resistance deliberately absent while nothing is at risk. What remains undetermined is the construction that removes the standing intermediary altogether.
-
-**Where.** [`docs/cryptography.md`, Provisioning Liveness](../../cryptography.md#provisioning-liveness-centralization-and-participation); [`docs/MVP Scope.md`, Provisioning Committee and Retention Obligation](../../MVP%20Scope.md#provisioning-committee-and-retention-obligation).
-
-**What resolving it would take.** Demonstrating one of the recorded candidates adequate at this protocol's cost and latency targets — witness or identity-based encryption against a chain-derived witness, threshold or timelock encryption anchored to consensus randomness rather than a standing committee, or proxy re-encryption keyed to the transfer event. None is adopted. Client-side quorum across independent provisioning deployments is mitigation rather than resolution and should not be recorded as an answer.
 
 ### Boundary decisions under this gate
 
 * **Paid monetization** — general pricing above nominal, and the fiat and token rails it requires. Deferred in [`docs/MVP Scope.md`, Paid Monetization](../../MVP%20Scope.md#paid-monetization). Note that [Transaction Flow Proof](../../MVP%20Scope.md#transaction-flow-proof) does not release this: that path is a test instrument on assets the project publishes itself, touching no third-party publisher's revenue.
-* **Enforcement of committee assignment and retention obligation** — the shape ships in the MVP and nothing is enforced. Specified in [`docs/MVP Scope.md`, Provisioning Committee and Retention Obligation](../../MVP%20Scope.md#provisioning-committee-and-retention-obligation).
+* **Enforcement of retention assignment and obligation** — the shape ships in the MVP and nothing is enforced. Specified in [`docs/MVP Scope.md`, Retention Obligation](../../MVP%20Scope.md#retention-obligation).
 * **The first-party component class** — own chain, tokens, wallet, keystore, and seeder client, each arriving behind the adapter that currently holds a third-party implementation. Specified in [`docs/MVP Scope.md`, Adapter Composition and Capability Declaration](../../MVP%20Scope.md#adapter-composition-and-capability-declaration).
 
 ## Releases when a content class needs it
@@ -185,32 +177,29 @@ Three related properties are settled rather than open, and are stated in the spe
 * **Arbitrary media and streaming engine** — a different client pipeline, and the content class that would genuinely exercise per-window authorization. Deferred in [`docs/MVP Scope.md`, Arbitrary Media and Streaming Engine](../../MVP%20Scope.md#arbitrary-media-and-streaming-engine).
 * **Content flagging and the metadata backlink layer** — cut because the construction is the cost, not because one advisory type is hard. Deferred in [`docs/MVP Scope.md`, Content Flagging and Deprecation Surface](../../MVP%20Scope.md#content-flagging-and-deprecation-surface).
 * **Partial encryption** — held for a commercial reason rather than a technical one. Specified in [`docs/cryptography.md`, Partial Encryption](../../cryptography.md#future-optimization-partial-encryption).
+* **Composable container objects** — reference nesting with per-member roots in the manner of BitTorrent v2, so that seeding a collection seeds its members; noted, not designed. Deferred in [`docs/MVP Scope.md`, Composable Container Objects](../../MVP%20Scope.md#composable-container-objects).
 
 ## Releases when a design question is answered
 
 Arguments still running. Each blocks work that cannot be authored around it.
 
-### Key provisioning adapter
+### Escrow salt custodian
 
-**What was found.** Key provisioning is to be expressed as an adapter so that the DKMN implementation is an interface rather than an implementation detail that binds a specific architecture. This follows the reasoning behind the signature and identity adapters: the protocol intends its own chain and tokens eventually, with cross-chain and cross-token support, so every chain, curve, token, and provisioning touchpoint is abstracted from the start rather than retrofitted once a second implementation appears.
+**What was found.** The escrow record binds the absent maintainer through a salted commitment to the `package.json` email, so that an enumerable address is not published as a testable mapping, and the salt was to be held by the provisioning layer, which already held the escrowed content key. The provisioning layer no longer exists. Every candidate custodian has a cost: the First Finder already holds the escrow master scalar but must not become a dependency at claim, since a claim is designed to complete without it; the claim verifier already authenticates the claimant but would turn a lost salt into a permanently unclaimable record; and dropping the on-chain commitment altogether, with the verifier establishing the claim set from upstream metadata at verification time, publishes no maintainer linkage and leaves nothing to lose but removes a binding the record was designed to carry.
 
-The adapter is now declared, and two obligations bind any implementation behind it rather than being properties of a particular construction: authorization is established per decryption window against finalized chain state, and provisioning for a valid unexpired entitlement is non-discretionary. Adapters may vary how authorization is established; they may never vary whether it is. What remains undetermined is the operation set itself, which the window model now largely determines — a request carrying an aggregate authorization payload, a response carrying a content key wrapped to the requesting identity and bounded by the window it was issued for.
+**Where.** [`docs/MVP Scope.md`, Escrow Claim](../../MVP%20Scope.md#escrow-claim) and [Active Email Bot for First Finder Escrow](../../MVP%20Scope.md#active-email-bot-for-first-finder-escrow); [`docs/MVP Application Requirements.md`, PC-02 and PC-04](../../MVP%20Application%20Requirements.md#publishing-and-claims).
 
-**Where.** [`docs/cryptography.md`, Cryptographic Primitives](../../cryptography.md#cryptographic-primitives), alongside `ISignatureAdapter`, `IIdentityAdapter`, and `IIngestSourceAdapter`.
+**What resolving it would take.** A decision among the three, made against the rule that claim-set verification must not depend on any party that can be unavailable at claim. This is a design choice with no determinant in the existing materials, and it blocks the escrow-claim contract surface.
 
-**What resolving it would take.** Naming the interface operations against the window model, then documenting a DKMN implementation as the MVP path.
+### Attempt-rule parameters and piece-group size
 
-### Window bounds
+**What was found.** The attempt rule replaces the former decryption windows. A conforming client reads a state view at the deployment's declared tier no older than `τ_soft` before every piece-group key derivation, renews its wallet-control assertion every `τ_wallet`, and destroys decrypt-capable material only when a transfer out reaches `HARD`. The piece-group size fixes how many pieces one capsule covers: smaller groups bound what one leaked key unlocks, larger groups bound the pairing work per byte. All three are published per deployment and none has a value.
 
-**What was found.** Authorization is established for one bounded decryption window, expiring at a settlement-reference ceiling `k` or a volume cap `M`, whichever is reached first. Both are published parameters and neither has a value.
+Unlike the window bounds they replace, they carry no security-versus-load tradeoff against the transfer boundary: the seller's loss of capability is fixed at `HARD` regardless of their values. What they need is measurement, because the acceptable `τ_soft` depends on how much a state read adds to install time, and the piece-group size depends on decapsulation cost per group on the resolved curve.
 
-They cannot be chosen independently of one another or of the transfer boundary. Widening `k` reduces provisioning load and lengthens the interval during which a seller retains capacity after settlement, so any capacity argument for widening the window is an argument for weakening the transfer boundary and has to be made as one. The load side is also unmeasured: authorization traffic scales with decryption activity across the whole swarm, and no baseline exists because nothing has run.
+**Where.** [`docs/cryptography.md`, Invariant Requirements](../../cryptography.md#overview-and-invariant-requirements) (Authorization is Per-Attempt), [Phase 2](../../cryptography.md#phase-2-consumption-and-decryption), and [Authorization Height Agreement](../../cryptography.md#authorization-height-agreement); [`docs/MVP Scope.md`, Native Credentials and Per-Attempt Authorization](../../MVP%20Scope.md#native-credentials-and-per-attempt-authorization) and [Cost Instrumentation](../../MVP%20Scope.md#cost-instrumentation); [`docs/MVP Application Requirements.md`, CD-07](../../MVP%20Application%20Requirements.md#credential-delivery).
 
-One related property is settled rather than open and is stated in the specification: the maximum transfer lag has two components, the window ceiling that the protocol sets and the target chain's finality that it does not, which makes the lag a per-deployment observable rather than a protocol constant.
-
-**Where.** [`docs/cryptography.md`, Invariant Requirements](../../cryptography.md#overview-and-invariant-requirements) (Atomic and Bounded; Authorization is Per-Window), [Security Properties](../../cryptography.md#security-properties), [Bounded Lag](../../cryptography.md#phase-3-secondary-transfer-and-authorization-expiry), and [Provisioning Liveness](../../cryptography.md#provisioning-liveness-centralization-and-participation); [`docs/MVP Scope.md`, Per-Window Decryption Authorization](../../MVP%20Scope.md#per-window-decryption-authorization) and [Cost Instrumentation](../../MVP%20Scope.md#cost-instrumentation).
-
-**What resolving it would take.** Instrumenting authorization request volume and latency during the MVP to obtain a load baseline, then choosing `k` and `M` jointly against that baseline and against a stated maximum acceptable seller-retention interval. The economic side has no principled default and needs a declared tolerance rather than a derived number.
+**What resolving it would take.** Running the cryptographic validation harness on the resolved pairing curve to obtain capsule, envelope, and proof sizes, decapsulation time per group, proof generation and verification time, and delivery-verification gas, then choosing the piece-group size from those numbers against a declared latency budget; and instrumenting state-read latency during the MVP to choose `τ_soft` and `τ_wallet`. The harness is the first cryptographic thing built and is gated on the launch chain only for its curve; it runs on BN254 until the chain is chosen.
 
 ### Variant seed authorship
 
@@ -218,21 +207,11 @@ One related property is settled rather than open and is stated in the specificat
 
 Two constraints shape any answer. First Finder escrow means the publisher is absent by definition, so no scheme requiring the publisher online at issuance or transfer can work at all; and a First Finder that authors seeds must escrow and discard the authoring material exactly as it does the content key, or a non-owner retains permanent framing capability over an asset they do not own. Separately, a seed can select among alternatives but cannot author them — if both the varied positions and their replacement values derive from the seed alone, the rendering is a corruption rather than a variant: a glitched frame, or a tarball that no longer installs. Semantically valid renderings require alternatives authored with knowledge of the content.
 
-Whoever holds the authoring material can generate any holder's seed and therefore frame any holder. Siting that material with the party that already provisions content keys would add no capability that party does not already have, which is the cheapest available answer but inherits the provisioning trust concerns wholesale.
+Whoever holds the authoring material can generate any holder's seed and therefore frame any holder. Siting that material with the credential author — the issuer at mint and the seller at sale, who already post the envelope the seed would ride in — is the cheapest available answer, but it would let a seller frame its buyer, which the framing rule forbids. Delivery itself is solved: the seed rides the credential envelope.
 
 **Where.** [`docs/cryptography.md`, Variance Belongs to the Entitlement](../../cryptography.md#variance-belongs-to-the-entitlement-not-the-content), [The Variant Seed Lives in the Entitlement](../../cryptography.md#the-variant-seed-lives-in-the-entitlement), and [Variant Seed Authorship](../../cryptography.md#variant-seed-authorship); [`docs/MVP Scope.md`, Per-Entitlement Variance and Forensic Attribution](../../MVP%20Scope.md#per-entitlement-variance-and-forensic-attribution).
 
 **What resolving it would take.** Choosing an authorship mechanism and specifying it behind the variance interface. Solutions exist in forensic watermarking; selecting one is beyond present scope, and because the implementation sits behind an interface the decision can be made later without disturbing the layers around it.
-
-### Authorization reference agreement
-
-**What was found.** Provisioning nodes evaluate authorization at a universally agreed settlement reference, which is load-bearing three times over: it is the state the authorization was established against, it anchors the window's reference ceiling, and it is bound into the authorization payload as replay protection.
-
-The deployment's declared settlement tier resolves *how settled* the reference must be. It does not resolve *which* reference at that tier the nodes use, and two nodes reading at the same tier a second apart may resolve different references while a threshold response requires them to agree on one.
-
-**Where.** [`docs/cryptography.md`, Authorization Height Agreement](../../cryptography.md#authorization-height-agreement).
-
-**What resolving it would take.** Deciding whether reference agreement is a further obligation of the provisioning adapter contract, or an implementation detail the specification should stop describing as universal. Agreement plausibly falls out of a threshold implementation's own consensus, but the adapter's obligations are stated to be construction-independent, so a non-threshold construction must not be adopted on the assumption that it inherits a mechanism it has no reason to possess.
 
 ### The post-claim pricing paradox
 
@@ -254,7 +233,7 @@ The paradox arises only where the ingested content was not already free to use, 
 
 ### Scope of the authorization invariants
 
-**What was found.** The Cryptographic Authorization Invariants are written as unconditional statements, but they bind the provisioning layer and conforming clients only. They cannot bind arbitrary software on a user-controlled device, and the protocol deliberately commits to plaintext running in any compatible software, which guarantees such software exists.
+**What was found.** The Cryptographic Authorization Invariants are written as unconditional statements, but they bind the settlement contract, credential authors, and conforming clients only. They cannot bind arbitrary software on a user-controlled device, and the protocol deliberately commits to plaintext running in any compatible software, which guarantees such software exists.
 
 That scope is currently stated under Modified Clients as a security consideration rather than among the invariants where they are declared, so a reader taking the invariant list on its own would overread its guarantees.
 
@@ -276,9 +255,17 @@ Two crossings are held behind separate answers: an adapter aimed at licensed con
 
 **What resolving it would take.** Answering the gating item for the crossing in question, then making the adapter selection a recorded policy decision rather than an engineering convenience.
 
+### Distribution and client license
+
+**What was found.** The software must permit forking and modification while making a non-conforming client a license violation, and each asset record must carry the rights-holder's content terms, with the project's own packages obligating an entitlement for use and a license per copy sold or bundled. A conformance clause makes the software license source-available rather than OSI-open, and it binds forks of the code, not a clean-room client written from the specification.
+
+**Where.** [`docs/MVP Scope.md`, Distribution and Client License](../../MVP%20Scope.md#distribution-and-client-license); [`docs/MVP Application Requirements.md`, LI-01](../../MVP%20Application%20Requirements.md#licensing); [`docs/cryptography.md`, Core Philosophy](../../cryptography.md#core-philosophy).
+
+**What resolving it would take.** Legal drafting of the license text; a decision on the OSI question against Core Philosophy, including whether the protocol libraries and the reference client carry different licenses; and the record field for content terms.
+
 ### Intentional identity fragmentation
 
-**What was found.** Committee participation and retention obligation are scoped per identity so that Sybil resistance is inherent rather than an overlay. One operator deliberately splitting into many identities to dilute that obligation is a distinct problem, and the specification explicitly declines to answer it.
+**What was found.** The retention obligation is scoped per identity so that Sybil resistance is inherent rather than an overlay. One operator deliberately splitting into many identities to dilute that obligation is a distinct problem, and the specification explicitly declines to answer it.
 
 **Where.** [`docs/cryptography.md`, Provisioning Liveness](../../cryptography.md#provisioning-liveness-centralization-and-participation).
 
@@ -290,11 +277,11 @@ Nothing is unresolved here. These wait for their turn.
 
 ### Launch chain selection
 
-**What was found.** The chain sits behind an adapter and no launch chain is selected. This is deliberate rather than pending: the protocol intends its own chain eventually, and the adapter is the seam. What the MVP has settled is narrower — an EVM target is the expected launch environment, which is why a secp256k1 chain-layer adapter ships, and that is an expectation rather than a selection.
+**What was found.** Ethereum is the launch ecosystem, because ERC-721 entitlements and Solidity contracts are its native objects; the chain sits behind an adapter and the protocol intends its own chain eventually. Which Ethereum network is not selected. An L2 keeps delivery verification cheap on BN254; mainnet has the BLS12-381 precompiles that remove pairings from verification but makes each relayer-paid mint expensive.
 
-**Where.** [`docs/MVP Scope.md`, Signature Scheme](../../MVP%20Scope.md#signature-scheme) and [Entitlement Ledger and Escrow Contract](../../MVP%20Scope.md#entitlement-ledger-and-escrow-contract).
+**Where.** [`docs/MVP Scope.md`, Signature Scheme](../../MVP%20Scope.md#signature-scheme), [Entitlement Ledger and Escrow Contract](../../MVP%20Scope.md#entitlement-ledger-and-escrow-contract), and [Key Custody](../../MVP%20Scope.md#key-custody).
 
-**What resolving it would take.** A chain whose settlement tier mapping, view-call batching, and relayer or paymaster support are adequate. Nothing currently identified makes the choice material before the contract surface is stable, so it is held rather than open.
+**What resolving it would take.** A network whose settlement tier mapping, view-call batching, ERC-4337 paymaster support, and pairing precompiles are adequate, chosen against the measured delivery-verification gas from the validation harness. The network fixes the pairing curve through `IPairingAdapter`; the harness runs on BN254 meanwhile.
 
 ### Boundary decisions under this gate
 
@@ -308,13 +295,14 @@ Nothing is unresolved here. These wait for their turn.
 
 **What was proposed.** An authoring order for the Work Breakdown Structure, derived from what depends on what rather than from what is most interesting to build. Recorded here as a proposal, not a decision — no node has been authored against it.
 
-* **Decisions before nodes.** Provisioning implementation, key custody, host adapter approach, and claim granularity are settled; launch chain is held and does not block contract surface work.
-* **Swarm transport, seed host, and the ciphertext store.** Everything downstream needs bytes to move, and this is provable end to end with no chain and no cryptography: seed an object, fetch it elsewhere, verify Bao paths.
-* **Registry contract**, carrying batch resolve, batch authorize, pagination, and the per-`(package, version)` claim-set state layout.
-* **First Finder ingest** — fetch, verify attestation, encrypt, register, seed. This is the spine both publisher paths reuse.
+* **Decisions before nodes.** The credential construction, key custody, host adapter approach, and claim granularity are settled; Ethereum is the launch ecosystem and the network is held; the escrow salt custodian and the license are not settled, and the salt blocks the escrow-claim surface.
+* **Cryptographic validation harness.** The credential KEM, envelope, and delivery proof on the resolved pairing adapter, with the verifier deployed to a test chain, producing the measurements that fix the piece-group size. This precedes any node that encrypts, because piece geometry is a suite parameter every later deployment carries.
+* **Swarm transport, seed host, and the ciphertext store.** Everything downstream needs bytes to move, and this is provable end to end with no chain and no cryptography: seed an object and its sidecar, fetch them elsewhere, verify Bao paths.
+* **Registry contract**, carrying batch resolve, batch authorize, pagination, envelope-key registration, the parameter-set registry with the sidecar-coverage rule, per-entitlement interval state, delivery verification through the precompiles, and the per-`(package, version)` claim-set state layout.
+* **First Finder ingest** — fetch, verify attestation, generate the parameter set, encrypt per group, build the sidecar, register, seed. This is the spine both publisher paths reuse.
 * **Package host adapter**, at which point an ordinary `npm install` resolves against the swarm and the MVP has something to demonstrate.
-* **Provisioning and per-window authorization**, closing the read path.
-* **Explicit publisher path** as branches off First Finder, then **transaction flow proof**, then **escrow claim** last, since nothing else depends on it.
+* **Credential delivery and per-attempt authorization**, closing the read path: mint delivery through the relayer, local decryption under the attempt rule, interval-end destruction.
+* **Explicit publisher path** as branches off First Finder, then **transaction flow proof**, which is where transfer delivery is first exercised, then **escrow claim** last, since nothing else depends on it and the salt decision gates it.
 
 **Where.** No node exists. The Work Breakdown Structure above is empty.
 

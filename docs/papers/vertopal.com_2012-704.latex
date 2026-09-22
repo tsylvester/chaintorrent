@@ -1,0 +1,3616 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{multirow}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage[normalem]{ulem}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+An extended abstract of this paper is published in the proceedings of
+the 13th International Conference on Cryptology in India {[}21{]} --
+Indocrypt 2012. This is the full version.
+
+On the Non-malleability of the
+
+Fiat-Shamir Transform
+
+Sebastian Faust1, Markulf Kohlweiss2, Giorgia Azzurra Marson3, and
+Daniele Venturi1
+
+\begin{quote}
+1\emph{Aarhus University}\\
+2\emph{Microsoft Cambridge}\\
+3\emph{Technische Universit¨at Darmstadt}
+\end{quote}
+
+\textbf{Abstract}
+
+\begin{quote}
+The Fiat-Shamir transform is a well studied paradigm for removing
+interaction from public-coin protocols. We investigate whether the
+resulting non-interactive zero-knowledge (NIZK) proof systems also
+exhibit non-malleability properties that have up to now only been
+studied for NIZK proof systems in the common reference string model:
+first, we formally define simulation soundness and a weak form of
+simulation extraction in the random oracle model (ROM). Second, we show
+that in the ROM the Fiat-Shamir transform meets these properties under
+lenient conditions. A consequence of our result is that, in the ROM, we
+obtain truly efficient non malleable NIZK proof systems essentially for
+free. Our definitions are sufficient for instantiating the Naor-Yung
+paradigm for CCA2-secure encryption, as well as a generic construction
+for signature schemes from hard relations and simulation-extractable
+NIZK proof systems. These two constructions are interesting as the
+former preserves both the leakage resilience and key-dependent message
+security of the underlying CPA-secure encryption scheme, while the
+latter lifts the leakage resilience of the hard relation to the leakage
+resilience of the resulting signature scheme.
+\end{quote}
+
+1
+
+\textbf{Contents}
+
+\textbf{1} \textbf{Introduction} \textbf{3}
+
+\textbf{2} \textbf{Preliminaries} \textbf{4}
+
+\textbf{3} \textbf{Properties of NIZKs in the Random Oracle Model}
+\textbf{7}
+
+\textbf{4} \textbf{On the Non-malleability of the Fiat-Shamir Transform}
+\textbf{10}
+
+\begin{quote}
+4.1 Simulation Soundness . . . . . . . . . . . . . . . . . . . . . . . .
+. . . . . . . . . 10
+
+4.2 Weak Simulation Extractability . . . . . . . . . . . . . . . . . . .
+. . . . . . . . . 13
+\end{quote}
+
+\textbf{5} \textbf{Applications} \textbf{14}
+
+\begin{quote}
+5.1 Leakage Resilience . . . . . . . . . . . . . . . . . . . . . . . . .
+. . . . . . . . . . 14
+
+5.2 Key-Dependent Message Security . . . . . . . . . . . . . . . . . . .
+. . . . . . . . 16
+\end{quote}
+
+\textbf{A Defining Proofs of Knowledge} \textbf{21}
+
+\textbf{B Honest-verifier zero-knowledge and neighborhood} \textbf{21}
+
+\textbf{C Proof of Proposition 1} \textbf{22}
+
+\textbf{D Details Omitted from Applications} \textbf{24}
+
+\begin{quote}
+D.1 Definitions of Leakage-Resilient Primitives . . . . . . . . . . . .
+. . . . . . . . . . 24
+
+D.2 Proof of Theorem 4 . . . . . . . . . . . . . . . . . . . . . . . . .
+. . . . . . . . . . 25
+
+D.3 Revisiting Naor-Segev in the ROM . . . . . . . . . . . . . . . . . .
+. . . . . . . . 26
+
+D.4 Σ-Protocol for BHHO . . . . . . . . . . . . . . . . . . . . . . . .
+. . . . . . . . . 29
+
+D.5 Revisiting Camenisch-Chandran-Shoup in the ROM . . . . . . . . . . .
+. . . . . 30
+\end{quote}
+
+2
+
+\begin{quote}
+\textbf{1} \textbf{Introduction}
+
+Zero-knowledge proof systems {[}27{]} are a powerful tool for designing
+cryptographic primitives and protocols. They force malicious parties to
+behave according to specification while allow-ing honest parties to
+protect their secrets. Non-interactive zero-knowledge (NIZK) proofs
+{[}11{]} consist of a single proof message passed from the prover to the
+verifier. They are particularly useful for designing public-key
+encryption and signature schemes as the proof can be added to the
+ciphertext and signature respectively. Understanding the most efficient
+NIZK proofs that are sufficiently strong, i.e., sufficiently
+non-malleable, for building signature and encryption schemes with strong
+security properties is thus of fundamental importance in cryptography.
+It was shown by Goldreich and Oren {[}26{]} that NIZK proofs are
+unattainable in the standard model. To avoid this impossibility result,
+one must rely on additional assumptions, such as common reference
+strings {[}10{]} (CRS model) or idealizations of hash functions {[}8{]}
+(random oracle model, ROM).
+
+With the aim of finding the ``right'' definition in the non-interactive
+case, several flavors of non-malleability {[}20{]} have been introduced
+for NIZK in the CRS model {[}39, 40, 25, 32{]}. The notion of
+\emph{simulation soundness}, which bridges soundness and zero knowledge,
+guarantees that soundness holds even after seeing accepting proofs, for
+both true and \emph{false} statements, produced by the simulator. This
+strengthened soundness notion was first proposed by Sahai in {[}39{]},
+and later improved by De Santis et al. {[}40{]}. The notion of
+simulation extraction {[}40, 29{]} in addition requires that accepting
+proofs allow to extract witnesses. Different variants of simulation
+extraction have been proposed by {[}16, 19{]}.
+\end{quote}
+
+Until recently, zero-knowledge in general and NIZK in particular were
+considered to be primarily of theoretical interest. Significant
+exceptions being efficient Σ-protocols {[}17, 18{]} and A Σ-protocol
+their non-interactive relatives based on the Fiat-Shamir (FS) transform
+{[}22{]}.
+
+\begin{quote}
+is a three-move interactive scheme where the prover sends the first
+message and the verifier sends a random challenge as the second message.
+In a nutshell, the Fiat-Shamir transform removes the interaction by
+computing the challenge as the hash value of the first message and the
+theorem that is being proven. Σ-protocols and the Fiat-Shamir transform
+are widely used in the construction of efficient identification
+{[}22{]}, anonymous credential {[}15{]}, signature {[}37, 1{]}, e-voting
+schemes {[}9{]}, and many other cryptographic constructions {[}12, 6,
+24{]}.
+
+Most work on the provable security of zero-knowledge has, however, been
+conducted either on interactive proof systems in the plain model or on
+NIZK in the CRS model, while practitioners often preferred Fiat-Shamir
+based NIZK proofs for their simplicity and efficiency. The use of the
+Fiat-Shamir transform was most thoroughly explored in the security
+proofs of signature schemes in the random oracle model {[}37, 1{]}, but
+was otherwise often used heuristically. The question thus arises whether
+one can lay sound foundations for the FS transform in the light of
+recent research on CRS-based NIZKs. To this end, we provide
+non-malleability definitions for NIZK in the random oracle model that
+closely follow the established CRS-based definitions {[}29{]}. An
+earlier result oriented in the same direction, but concerning a
+Σ-protocol for a \emph{specific} language,1 was given by Fouque and
+Pointcheval {[}24{]}. Their proof strategy relies on the forking lemma
+{[}37{]} and (implicitly) on the fact that the Σ-protocol they consider
+has a particular property called \emph{strong special honest-verifier
+zero-knowledge} (SS-HVZK). Since there exist Σ-protocols that do not
+satisfy the SS-HVZK property, Fouque and Pointcheval's proof cannot be
+immediately extended to the general case. Moreover, we make the random
+oracle explicit in our definition, which is crucial as definitions in
+the random oracle model can be brittle {[}42{]}.
+
+Our first observation is that much less is required to show simulation
+soundness for any FS-NIZK proof. Namely, in the random oracle model,
+simulation soundness simply follows from
+
+1This is the language used in the Naor-Yung transform when the
+underlying encryption is the ElGamal scheme.
+\end{quote}
+
+3
+
+\begin{quote}
+the soundness and the HVZK properties of the underlying interactive
+protocol. In particular, it is neither necessary to rely on the forking
+lemma, nor on the strong2property of SS-HVZK. We also show that the
+proof strategy of {[}24{]}, when generalized properly to any Σ-protocol,
+yields something more than just simulation soundness. In fact, one gets
+some form of simula-tion extractability, which we call \emph{weak
+simulation extractability}. In a nutshell, \emph{full simulation
+extractability} requires that even after seeing many simulated proofs,
+whenever an adversary outputs a new accepted proof, we can build an
+algorithm to extract a valid witness. Sometimes, such a strong
+extraction property is called \emph{online} extraction {[}23{]} because
+the extractor outputs a witness directly after receiving the adversary's
+proof. In comparison, our notion is weaker in that it allows the
+extractor to fully control the adversary (i.e., rewind it).
+
+\textbf{Our contribution.} Our contributions are threefold. First, we
+formally define the notions of zero-knowledge (which holds trivially for
+the Fiat-Shamir transform), simulation soundness, and simulation
+extractability for NIZKs in the random oracle model. Second, we show
+that simulation soundness and a weak form of simulation extractability
+come for free if one uses the FS-transform for turning Σ-protocols into
+NIZK proof systems. Third, we investigate the con-sequences of this
+result by showing that our definitions are sufficient for instantiating
+the Naor-Yung paradigm for constructing CCA2-secure encryption schemes,
+and generic construction for signature schemes from hard relations and
+simulation-extractable NIZK proof systems {[}19{]}. These two
+constructions are particularly interesting as the former preserves both
+leakage re-silience and key-dependent message security of the underlying
+CPA-secure encryption scheme, while the latter lifts the leakage
+resilience of the hard relation to the leakage resilience of the
+resulting signature scheme. To our knowledge, these are the most
+efficient schemes having such properties, if one is willing to rely on
+the ROM.3
+
+\textbf{Related work.} The only other efficient transform for
+Σ-protocols yielding simulation sound-ness (again in the random oracle
+model) is Fischlin's transform {[}23{]} which is designed with the
+purpose of online extraction and is less efficient than the classical
+Fiat-Shamir transform. Therefore, it would be interesting to investigate
+whether Fischlin's transform achieves a stronger form of simulation
+extractability. We notice that in the interactive case, a general
+transform from any Σ-protocol to an (unbounded) simulation-sound
+Σ-protocol using one-time signatures has been proposed {[}25{]}. In the
+common reference string model the most efficient simulation-sound or
+simulation extractable NIZK proof system are based on Groth-Sahai proofs
+{[}30{]}. One has however to pay the price of proving a
+structure-preserving CCA secure encryption {[}19{]} (for true-simulation
+extraction) or a structure-preserving signature scheme {[}3{]} (for full
+simulation extraction).
+
+\textbf{2} \textbf{Preliminaries}
+
+\textbf{Notation.} Let \emph{k} be a security parameter. A function
+\emph{ν} is called \emph{negligible} if \emph{ν}(\emph{k})
+\emph{≤k−c}for any \emph{c \textgreater{}} 0 and sufficiently large
+\emph{k}. Given two functions \emph{f, g}, we write \emph{f ≈g} if there
+exists a negligible function \emph{ν} such that
+\emph{\textbar f}(\emph{k}) \emph{−g}(\emph{k})\emph{\textbar{}
+\textless{} ν}(\emph{k}). Given an algorithm \emph{A}, \emph{y
+←A}(\emph{x}) means that \emph{y} is the output of \emph{A} on input
+\emph{x}; when \emph{A} is randomized, then \emph{y} is a random
+variable. We write \emph{\uline{A}H}to denote the fact that
+\emph{\uline{A}} has oracle access to some function \emph{H}. PPT stands
+for 2In Appendix B, we show a separation between the two notions of
+special HVZK {[}17{]} (S-HVZK) and SS-HVZK, by showing that any S-HVZK
+Σ-protocol can be turned into another Σ-protocol which is still S-HVZK
+but not SS-HVZK, assuming that one-way functions exist.
+
+3In particular we obtain as a special case the Alwen et al. {[}4{]}
+leakage-resilient signature scheme based on the Okamoto identification
+scheme.
+\end{quote}
+
+4
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Prover \emph{P}(\emph{x, w}; 1\emph{k})
+\end{quote}
+
+\emph{α ←P}0(\emph{x, w}; \emph{ρ})
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{α}
+
+\emph{−β→}
+
+\emph{←−}
+
+\emph{−→}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Verifier
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{V}(\emph{x}; 1\emph{k})
+\end{quote}
+\end{minipage} \\
+& &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+\emph{β←V}0(\emph{x, α})\\
+Accept iff \emph{V}1(\emph{x, α, β, γ}) = 1
+\end{quote}\strut
+\end{minipage}}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{γ ←P}1(\emph{α, β, x, w}; \emph{ρ})
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Figure 1: A Σ-protocol for a language \emph{L}.
+
+probabilistic-polynomial time. A \emph{decision problem} related to a
+language \emph{L ⊆\{}0\emph{,} 1\emph{\}∗}consists in determining
+whether a string \emph{x} is in \emph{L} or not. Given an instance
+\emph{x}, we say that \emph{A} decides (or recognizes) \emph{L} if,
+after a finite number of steps, the algorithm halts and outputs
+\emph{A}(\emph{x}) = 1 if \emph{x ∈L}, otherwise \emph{A}(\emph{x}) = 0.
+(Sometimes, we may call ``theorem'' a string belonging to the language
+at hand.) We can associate to any NP-language \emph{L} a polynomial-time
+recognizable relation \emph{RL} defining \emph{L} itself, that is
+\emph{L} = \emph{\{x} : \emph{∃w} s.t. (\emph{x, w}) \emph{∈RL\}}, where
+\emph{\textbar w\textbar{} ≤poly}(\emph{\textbar x\textbar{}}). The
+string \emph{w} is called a \emph{witness} or \emph{certificate} for
+membership of \emph{x ∈L}. For NP, \emph{w} corresponds to the
+non-deterministic choices made by \emph{A}.
+
+\textbf{Interactive protocols.} An interactive proof system (IPS) for
+membership in \emph{L} is a two-party protocol, where a prover wants to
+convince an efficient verifier that a string \emph{x} belongs to
+\emph{L}. In a zero-knowledge interactive proof system, a prover
+\emph{P} can convince a verifier \emph{V} that \emph{x ∈L} without
+revealing anything beyond the fact that the statement is indeed true.
+Informally, this means
+
+that \emph{V} cannot exploit the interaction with \emph{P} for gaining
+extra-knowledge. Such a property is formalized by requiring the
+existence of an efficient algorithm \emph{S}, the \emph{zero-knowledge
+simulator}, which produces messages indistinguishable from conversations
+between an honest prover \emph{P} and a malicious verifier \emph{V∗}.
+Besides the zero-knowledge property, any proof system satisfies two
+standard requirements: proving true statements is always possible, while
+it should be infeasible
+
+to convince the verifier to accept a false statement as correct. These
+two conditions are called
+
+\emph{completeness} and \emph{soundness} respectively. Related to the
+concept of interactive proof systems,
+
+but even more subtle, is the notion of \emph{proof of knowledge}. In a
+proof of knowledge (PoK), \emph{P} wants to convince \emph{V} that he
+\emph{knows} a secret witness which implies the validity of some
+assertion, and not merely that the assertion is true. To formalize the
+fact that a prover actually ``knows
+
+something'', we require that there exists an efficient algorithm
+\emph{E}, called \emph{knowledge extractor}, that when given complete
+access to the program of the prover can extract the witness.
+
+\begin{quote}
+An IPS or an interactive PoK is called \emph{public-coin} when the
+verifier's moves consist merely
+\end{quote}
+
+of tossing coins and sending their outcomes to the prover. (In contrast,
+in a \emph{private-coin} IPS
+
+the verifier does not need to show the outcome of the coins to the
+prover {[}28{]}.) We are mainly
+
+interested in a specific class of public-coin interactive PoK systems
+for NP-languages, called Σ-
+
+protocols. Here, the parties involved share a string \emph{x} belonging
+to a language \emph{L ∈}NP and the prover also holds a witness \emph{w}
+for membership of \emph{x ∈L}. Thus, the prover \emph{P} wants to
+convince the verifier \emph{V} that it ``knows'' a witness \emph{w} for
+\emph{x}, i.e. that \emph{x} is in the language, without revealing the
+witness itself. Σ-protocols have a 3-move shape where the first message
+\emph{α}, called \emph{commitment},
+
+is sent by the prover and then, alternatively, the parties exchange the
+other messages \emph{β} and \emph{γ},
+
+called (respectively) \emph{challenge} and \emph{response}. The
+interaction is depicted in Figure 1. Besides
+
+the standard properties held by any IPS, Σ-protocols satisfy a flavour
+of zero-knowledge ---
+
+called \emph{honest-verifier zero knowledge} (HVZK) --- saying that an
+\emph{honest} verifier taking part in
+
+the protocol does not learn anything beyond the validity of the theorem
+being proven.
+
+\textbf{Definition 1} (Σ-protocols)\textbf{.} \emph{A} Σ\emph{-protocol}
+Σ = (\emph{P, V}) \emph{for an} NP\emph{-language L is a three-round
+public-coin IPS where P} = (\emph{P}0\emph{, P}1) \emph{and V} =
+(\emph{V}0\emph{, V}1) \emph{are PPT algorithms, with the following}
+
+5
+
+\begin{quote}
+\emph{additional proprieties:}
+
+\emph{\textbf{Completeness.} If x ∈L, any proper execution of the
+protocol between P and V ends with the verifier accepting P's proof.}
+
+\textbf{\emph{Honest-verifier zero knowledge (}HVZK\emph{).}}
+\emph{There exists an efficient algorithm S, called zero-knowledge
+simulator, such that for any PPT distinguisher D} = (\emph{D}0\emph{,
+D}1) \emph{and for any} (\emph{x, w}) \emph{∈RL, the view of the
+following two experiments, real and simulated, are com-putationally
+indistinguishable:}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Experiment} ExprealΣ\emph{,D}(1\emph{k})
+\end{quote}
+
+(\emph{x, w, δ}) \emph{←D}0(1\emph{k})
+
+\emph{π ←⟨P}(\emph{x, w}; 1\emph{k})\emph{, V}(\emph{x};
+1\emph{k})\emph{⟩}
+
+\emph{Output D}1(\emph{π, δ})
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Experiment} ExpsimΣ\emph{,D}(\emph{S,} 1\emph{k})
+
+(\emph{x, w, δ}) \emph{←D}0(1\emph{k})
+
+\emph{π ←S}(\emph{x,} 1\emph{k})
+
+\emph{Output D}1(\emph{π, δ})
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\emph{where ⟨P}(\emph{x, w})\emph{, V}(\emph{x})\emph{⟩denotes the
+verdict returned at the end of the interaction between P and V on common
+input x and private input w.}
+
+\emph{\textbf{Soundness.} If x /∈L then any malicious (even unbounded)
+prover P∗is accepted only with negligible probability.}
+
+\emph{\textbf{Special soundness.} There exists an efficient algorithm E,
+called special extractor, such that given two accepting conversations}
+(\emph{α, β, γ}) \emph{and} (\emph{α, β′, γ′}) \emph{for a string x,
+where β ̸}= \emph{β′, then w ←E}(\emph{α, β, γ, β′, γ′, x}) \emph{is
+such that} (\emph{x, w}) \emph{∈RL.}
+\end{quote}
+
+The special soundness property is strong enough to imply both soundness
+and that Σ-protocols
+
+\begin{quote}
+are PoK {[}18{]}. Sometimes Σ-protocols are required to meet stronger
+notions of HVZK.4
+
+A non-standard condition that many Σ-protocols satisfy, introduced by
+Fischlin in {[}23{]},
+\end{quote}
+
+requires that responses are quasi unique, i.e. given an accepting proof
+it should be infeasible to
+
+\begin{quote}
+find a new valid response for that proof.
+\end{quote}
+
+\textbf{Definition 2} (Quasi unique responses)\textbf{.} \emph{A}
+Σ\emph{-protocol has} quasi unique responses \emph{if for any}
+
+\begin{quote}
+\emph{PPT A and for any security parameter k it holds:}
+\end{quote}
+
+Prob{[}(\emph{x, α, β, γ, γ′}) \emph{←A}(1\emph{k}) : \emph{V}(\emph{x,
+α, β, γ}) = \emph{V}(\emph{x, α, β, γ′}) = 1 \emph{∧γ ̸}= \emph{γ′}{]}
+\emph{≈}0\emph{.}
+
+\begin{quote}
+A Σ-protocol has \emph{unique responses} if the probability above is
+zero. The latter condition,
+
+defined by Unruh in {[}41{]}, is also known as \emph{strict soundness}.
+
+\textbf{Min-entropy of commitments.} Following {[}1, 2{]}, we use the
+concept of min-entropy to
+
+measure how likely it is for a commitment to collide with a fixed value.
+
+\textbf{Definition 3} (Min-entropy of commitment)\textbf{.} \emph{Let k
+be a security parameter and L be an} NP\emph{-language with relation RL.
+Consider a pair} (\emph{x, w}) \emph{∈RL and let} (\emph{P, V}) \emph{be
+an arbitrary three-round IPS. Denote with} Coins(\emph{k}) \emph{the set
+of coins used by the prover and consider the}
+
+\emph{set A}(\emph{x, w}) = \emph{\{P}0(\emph{x, w}; \emph{ρ}) : \emph{ρ
+←}Coins(\emph{k}))\emph{\} of all possible commitments associated to w.
+The min-entropy function associated to} (\emph{P, V}) \emph{is defined
+as ε}(\emph{k}) = min(\emph{x,w})(\emph{−}log2 \emph{µ}(\emph{x,
+w}))\emph{,where the minimum is taken over all possible} (\emph{x, w})
+\emph{drawn from RL and µ}(\emph{x, w}) \emph{is the maximum probability
+that a commitment takes on a particular value, i.e., µ}(\emph{x, w}) =
+max\emph{α∈A}(\emph{x,w})(\emph{Prob}{[}\emph{P}0(\emph{x, w}; \emph{ρ})
+=\emph{α} : \emph{ρ ←}Coins(\emph{k})){]})\emph{.}
+
+4We discuss these notions and implications and non implications between
+them in the Appendix B.
+\end{quote}
+
+6
+
+We say that (\emph{P, V}) is \emph{non-trivial} if \emph{ε}(\emph{k}) =
+\emph{ω}(log(\emph{k})) is super-logarithmic in \emph{k}. Often, the
+commitment is drawn uniformly from some set. In order for (\emph{P, V})
+to be non-trivial, this set must have size exponential in \emph{k}.
+Notice that most of natural Σ-protocols meet such a condition and, in
+fact, non-triviality is quite easy to achieve, e.g. by appending
+redundant random bits to the commitment.
+
+\textbf{Forking lemma.} To prove our second main result, we make use of
+the following version of the forking lemma, which appeared in {[}6{]}.
+
+\textbf{Lemma 1} (General forking lemma)\textbf{.} \emph{Fix an integer
+Q and a set H of size h ≥}2\emph{. Let} P \emph{be a randomized program
+that on input y, h}1\emph{, . . . , hQ returns a pair, the first element
+of which is an integer in the range} 0\emph{, . . . , Q and the second
+element of which we refer to as a} side output\emph{. Let} IG \emph{be a
+randomized algorithm that we call the input generator. The accepting
+probability of} P\emph{, denoted} acc\emph{, is defined as the
+probability that J ≥}1 \emph{in the experiment y ←}IG; \emph{h}1\emph{,
+. . . , hQ ←H}; (\emph{J, s}) \emph{←}P(\emph{y, h}1\emph{, . . . ,
+hQ})\emph{.}
+
+\emph{The forking algorithm} FP \emph{associated to} P \emph{is the
+randomized algorithm that on input y proceeds as follows.}
+
+\emph{Algorithm} FP(\emph{y})\\
+\emph{Pick coins ρ for} P \emph{at random}\\
+\emph{h}1\emph{, . . . , hQ ←H}\\
+(\emph{I, s}) \emph{←}P(\emph{y, h}1\emph{, . . . , hQ}; \emph{ρ})\\
+\emph{If I} = 0 \emph{return} (0\emph{, ⊥, ⊥}) \emph{h′I, . . . ,
+h′Q←H}\\
+(\emph{I′, s′}) \emph{←}P(\emph{y, h}1\emph{, . . . , hI−}1\emph{, h′I,
+. . . , h′Q}; \emph{ρ})\\
+\emph{If} (\emph{I} = \emph{I′}) \emph{∧}(\emph{hI ̸}= \emph{h′I})
+\emph{return} (1\emph{, s, s′}) \emph{else return} (0\emph{, ⊥, ⊥})
+
+\emph{Let} ext = Prob{[}\emph{b} = 1 : \emph{y ←}IG; (\emph{b, s, s′})
+\emph{←}FP(\emph{y}){]}\emph{, then} ext \emph{≥}acc \uline{acc}
+\emph{Q−}\uline{1} \emph{.}
+
+\textbf{3} \textbf{Properties of NIZKs in the Random Oracle Model}
+
+\textbf{Removing interaction.} The Fiat-Shamir transform was originally
+designed to turn three-round identification schemes into efficient
+signature schemes. As Σ-protocols are an extension of three-round
+identification schemes, it is not surprising that they can be considered
+as a starting point for the Fiat-Shamir transform. The Fiat-Shamir
+paradigm applies to any Σ-protocol (and more generally to any
+three-round public-coin proof system): We start from an interactive
+protocol (\emph{P, V}) and remove the interaction between \emph{P} and
+\emph{V} by replacing the challenge, chosen at random by the verifier,
+with a hash value \emph{H}(\emph{α, x}) computed by the prover, where
+\emph{H} is a hash function modeled as a random oracle. Thus, the
+interactive protocol (\emph{P, V}) is turned into a non-interactive one:
+The resulting protocol, denoted (\emph{PH, VH}), is called
+\emph{Fiat-Shamir proof system}.
+
+Throughout this paper, we refer to the so called \emph{explicitly
+programmable} random oracle model {[}42{]} (EPROM) where the simulator
+is allowed to program the random oracle explicitly. We model this by
+defining the zero-knowledge simulator \emph{S} of a non-interactive
+zero-knowledge proof system as a stateful algorithm that can operate in
+two modes: (\emph{hi, st}) \emph{←S}(1\emph{, st, qi}) takes care of
+answering random oracle queries (usually by lazy sampling) while
+(\emph{π, st}) \emph{←S}(2\emph{, st, x}) simulates the actual proof.
+Note that calls to \emph{S}(1\emph{, · · ·} ) and \emph{S}(2\emph{, · ·
+·} ) share the common state \emph{st} that is updated after each
+operation.
+
+7
+
+\textbf{Definition 4} (Unbounded non-interactive zero
+knowledge)\textbf{.} \emph{Let L be a language in} NP\emph{. Denote
+with} (\emph{S}1\emph{, S}2) \emph{the oracles such that S}1(\emph{qi})
+\emph{returns the first output of} (\emph{hi, st}) \emph{←S}(1\emph{,
+st, qi}) \emph{and S}2(\emph{x, w}) \emph{returns the first output of}
+(\emph{π, st}) \emph{←S}(2\emph{, st, x}) \emph{if} (\emph{x, w})
+\emph{∈RL. We say a protocol} (\emph{PH, VH}) \emph{is a NIZK proof for
+language L in the random oracle model, if there exists a PPT simulator S
+such that for all PPT distinguishers D we have}
+
+Prob{[}\emph{DH}(\emph{·})\emph{,PH}(\emph{·,·})(1\emph{k}) = 1{]}
+\emph{≈}Prob{[}\emph{DS}1(\emph{·})\emph{,S}2(\emph{·,·})(1\emph{k}) =
+1{]}\emph{,}
+
+\emph{where both P and S}2 \emph{oracles output ⊥if} (\emph{x, w})
+\emph{/∈RL.}
+
+\begin{quote}
+A well known fact is that, in the random oracle model, the Fiat-Shamir
+transform allows to
+\end{quote}
+
+efficiently design digital signature schemes {[}22{]} and
+non-interactive zero-knowledge protocols.
+
+In fact, an appealing characteristic of this transform is that many
+properties of the starting
+
+protocol are still valid after applying it. In particular, it has been
+proven that the Fiat-Shamir
+
+transform turns any three-round public-coin zero-knowledge interactive
+proof system into a
+
+NIZK proof system {[}8{]}. It is straightforward to prove that the same
+holds when the starting
+
+protocol is ZK only with respect to a honest verifier, as stated in the
+following Theorem.
+
+\textbf{Theorem 1} (Fiat-Shamir NIZKs)\textbf{.} \emph{Let k be a
+security parameter. Consider a non-trivial three-}
+
+\emph{round public-coin honest-verifier zero-knowledge interactive proof
+system} (\emph{P, V}) \emph{for a language L ∈}NP\emph{. Let H be a
+function with range equal to the space of the verifier's coins. In the
+random oracle model the proof system} (\emph{PH, VH})\emph{, derived
+from} (\emph{P, V}) \emph{by applying the Fiat-Shamir transform, is
+unbounded non-interactive zero-knowledge.}
+
+\emph{sketch.} To prove that the proof system (\emph{PH, VH}) is
+non-interactive zero-knowledge it is sufficient to show that there
+exists a simulator \emph{S} as required in Definition 4. This can be
+done by invoking the HVZK simulator associated with the underlying
+interactive proof system. In particular, \emph{S} works as follows:
+
+\begin{quote}
+\emph{•} To answer query \emph{q} = (\emph{x, α}) to \emph{S}1,
+\emph{S}(1\emph{, st, q}) lazily samples a lookup table \emph{TH} kept
+in state \emph{st}. It checks whether \emph{TH}(\emph{q}) is already
+defined. If this is the case, it returns the previously assigned value;
+otherwise it returns and sets a fresh random value (of the appropriate
+
+length).
+
+\emph{•} To answer query \emph{x} to \emph{S}2 (respectively
+\emph{S′}2), \emph{S}(2\emph{, st, x}) calls the HVZK simulator of
+(\emph{P, V}) on input \emph{x} to obtain a proof (\emph{α, β, γ}).
+Then, it updates \emph{TH} in such a way that \emph{β} =
+\emph{TH}(\emph{x, α}). If \emph{TH} happens to be already defined on
+this input, \emph{S} returns failure and aborts.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+We call this simulator \emph{canonical}.
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+The main result of Fiat-Shamir {[}22{]} (expressed for their
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+particular identification protocol) is that \emph{S} is a ``good'' NIZK
+simulator. The crucial step in the proof is that the starting protocol
+(\emph{P, V}) is non-trivial (cf. Definition 3), thus the probability of
+failure in each of the queries to \emph{S′}in \emph{k}. 2is
+upper-bounded by Prob{[}failure{]} \emph{≤}2\emph{−ε}(\emph{k})\emph{,}
+which is negligible
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage}} \\
+\textbf{Simulation soundness.} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+The soundness property of a proof system ensures that no malicious
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+prover can come up with an accepting proof for a string that does not
+belong to the language
+
+in question (i.e., for a false theorem). However, it is not clear
+whether this condition still holds
+
+\emph{after} the attacker observes valid proofs for adaptively chosen
+(true or false) statements. The
+
+notion of \emph{simulation soundness} deals with this case.
+
+\textbf{Definition 5} (Unbounded simulation soundness)\textbf{.}
+\emph{Let L be a language in} NP\emph{. Consider a proof system}
+(\emph{PH, VH}) \emph{for L, with zero-knowledge simulator S. Denote
+with} (\emph{S}1\emph{, S′}2) \emph{the oracles such}
+
+8
+
+\emph{that S}1(\emph{qi}) \emph{returns the first output of} (\emph{hi,
+st}) \emph{←S}(1\emph{, st, qi}) \emph{and S′}2(\emph{x}) \emph{returns
+the first output of}
+
+(\emph{π, st}) \emph{←S}(2\emph{, st, x})\emph{. We say that} (\emph{PH,
+VH}) \emph{is simulation sound with respect to S in the random}
+
+\emph{oracle model, if for all PPT adversaries A the following holds:}
+
+\begin{quote}
+Prob{[}(\emph{x⋆, π⋆}) \emph{←AS}1(\emph{·})\emph{,S′}2(\emph{·}):
+(\emph{x⋆, π⋆}) \emph{/∈T}
+
+\emph{∧x⋆/∈L ∧VS}1(\emph{x⋆, π⋆}) = 1{]} \emph{≈}0\emph{,}
+\end{quote}
+
+\emph{where T is the list of pairs} (\emph{xi, πi})\emph{, i.e.,
+respectively queries asked to and proofs returned by the simulator.}
+
+We stress that the above definition relies crucially on the
+zero-knowledge property of (\emph{PH, VH}), as we use a probability
+experiment that defines a property of \emph{S} to define a property
+about (\emph{PH, VH}). In particular the definition is most meaningful
+for a simulator \emph{S} for which the sim-ulation of the random oracle
+of \emph{S}1 is consistent with a truly random oracle \emph{H}. Also
+note that \emph{S′}2allows \emph{A} to ask for simulated proofs of false
+statements.
+
+\begin{quote}
+The possibility to request proofs of false statements has an interesting
+consequence: simu-
+\end{quote}
+
+lation soundness holds only with respect to specific simulators and not
+in general for all NIZK
+
+simulators. In particular, one can construct a NIZK proof system
+(\emph{PH, VH}) that is simulation sound with respect to a simulator
+\emph{S} but for which there exists a valid NIZK simulator ˆ\emph{S},
+such that (\emph{PH, VH}) cannot be simulation sound with respect to
+ˆaccepts all proofs if \emph{H}(0) = 0. ˆ
+
+of a false statement (one of which could be hard-coded in ˆ\emph{S}
+simulates a consistent random oracle until it receives a proof \emph{S}
+or easy to recognize) at which point \emph{S}. To see this, consider a
+\emph{VH}that
+
+it sets \emph{TH}(0) = 0. Note that a similar counterexample exists for
+CRS-based NIZK {[}29{]}: ˆ\emph{S}2 can simply return the simulation
+trapdoor when queried on a false statement.
+
+\textbf{Simulation extractability.} Combining simulation soundness and
+knowledge extraction, we
+
+may require that even after seeing (polynomially) many simulated proofs,
+whenever \emph{A} makes a new proof it is possible to extract a witness.
+This property is called simulation extractability,
+
+and implies simulation soundness. Indeed, if we can extract a witness
+from the adversary's
+
+proof even with small probability, then obviously the statement must
+belong to the language
+
+in question. We introduce a weaker flavor of simulation extractability
+which we call \emph{weak}
+
+\emph{simulation extractability}. The main difference with full
+simulation extractability is that the
+
+extractor \emph{EA} is now given complete control over the adversary
+\emph{A}, meaning that it is allowed to rewind \emph{A} and gets to see
+the answers of (\emph{S}1\emph{, S′}2). Moreover, we require that if
+\emph{A} outputs an accepting proof with some probability, then
+\emph{EA} can extract with almost the same probability.
+
+\textbf{Definition 6} (Weak simulation extractability)\textbf{.}
+\emph{Let L be a language in} NP\emph{. Consider a NIZK proof system}
+(\emph{PH, VH}) \emph{for L with zero-knowledge simulator S. Let}
+(\emph{S}1\emph{, S′}2) \emph{be oracles returning}
+
+\emph{the first output of} (\emph{hi, st}) \emph{←S}(1\emph{, st, qi})
+\emph{and} (\emph{π, st}) \emph{←S}(2\emph{, st, x})
+\emph{respectively.} \emph{We say that}
+
+(\emph{PH, VH}) \emph{is} weakly simulation-extractable \emph{with}
+extraction error \emph{ν and with respect to S in the random oracle
+model, if for all PPT adversaries A there exists an efficient algorithm
+EA with access to the answers TH, T of} (\emph{S}1\emph{, S′}2)
+\emph{respectively such that the following holds. Let:}
+
+\begin{quote}
+acc = Prob (\emph{x⋆, π⋆})
+\emph{←AS}1(\emph{·})\emph{,S′}2(\emph{·})(1\emph{k}; \emph{ρ}) :
+(\emph{x⋆, π⋆}) \emph{̸∈T} ; \emph{VS}1(\emph{x⋆, π⋆}) = 1
+
+ext = Prob (\emph{x⋆, π⋆})
+\emph{←AS}1(\emph{·})\emph{,S′}2(\emph{·})(1\emph{k}; \emph{ρ});
+
+\emph{w⋆←EA}(\emph{x⋆, π⋆}; \emph{ρ, TH, T} ) : (\emph{x⋆, π⋆})
+\emph{̸∈T} ; (\emph{x⋆, w⋆}) \emph{∈RL} \emph{,}
+\end{quote}
+
+\emph{where the probability space in both cases is over the random
+choices of S and the adversary's random tape ρ. Then, there exist a
+constant d \textgreater{}} 0 \emph{and a polynomial p such that
+whenever}
+
+acc \emph{≥ν, we have} ext \emph{≥}\uline{1} \emph{p}(acc
+\emph{−ν})\emph{d.}
+
+9
+
+The above definition is inspired by similar notions in the context of
+proofs of knowledge {[}5, 31, 41{]}. The value \emph{ν} is called
+\emph{extraction error} of the proof system. We omit for better
+readability that values acc\emph{,} ext\emph{, p, ν} all depend on the
+security parameter \emph{k}. Note that a non-negligible extractor error
+can be made exponentially small by sequential repetitions (see Appendix
+C for a proof).
+
+\textbf{Proposition 1} (Extraction error amplification)\textbf{.}
+\emph{Let} (\emph{PH, VH}) \emph{be a weakly simulation ex-tractable
+NIZK proof system with extraction error ν. Then, the proof system}
+(\emph{P′H, V′H}) \emph{ob-tained by repeating sequentially} (\emph{PH,
+VH}) \emph{for a number n of times yields a weakly simulation
+extractable NIZK proof system with extraction error νn.}
+
+It is useful to look at the relation between weak simulation
+extractability and the following stronger property modeling
+online-extraction.
+
+\textbf{Definition 7} (Full Simulation extractability)\textbf{.}
+\emph{Let L be a language in} NP\emph{. Consider a NIZK proof system}
+(\emph{PH, VH}) \emph{for L with simulator S. Let} (\emph{S}1\emph{,
+S′}2) \emph{be oracles returning the first output of} (\emph{hi, st})
+\emph{←S}(1\emph{, st, qi}) \emph{and} (\emph{π, st}) \emph{←S}(2\emph{,
+st, x}) \emph{respectively. We say that} (\emph{PH, VH}) \emph{is}
+strongly simulation extractable \emph{with respect to S in the random
+oracle model, if there exists an efficient algorithm E such that for all
+PPT adversaries A the following holds. Let:}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Prob
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{w⋆←E}(\emph{st, x⋆, π⋆}) : (\emph{x⋆, π⋆})
+\emph{←AS}1(\emph{·})\emph{,S′}2(\emph{·})(1\emph{k}; \emph{ρ});
+
+\begin{quote}
+(\emph{x⋆, π⋆}) \emph{̸∈T} ; \emph{VS}1(\emph{x⋆, π⋆}) = 1; (\emph{x⋆,
+w⋆}) \emph{/∈RL}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{≈}0
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\emph{where T is the list of transcripts} (\emph{xi, πi}) \emph{returned
+by the simulator and the probability space is over the random choices of
+S and the adversary's randomness ρ.}
+
+Note that both our unbounded simulation soundness and our full
+simulation extractability definitions can be instantiated by common
+reference string based schemes. \emph{H} turns into a random constant
+function that always returns the reference string, and the state
+\emph{st} consists of the simulation and extraction trapdoors.
+
+\textbf{4} \textbf{On the Non-malleability of the Fiat-Shamir Transform}
+
+\textbf{4.1} \textbf{Simulation Soundness}
+
+We now show that NIZK proofs obtained via the Fiat-Shamir transform from
+any IPS of the public-coin type additionally satisfying the HVZK
+property are simulation sound. Since Σ-protocols are a special class of
+HVZK public-coin IPSs, we get as a corollary that Fiat-Shamir NIZK
+proofs obtained from Σ-protocols are simulation-sound.
+
+\textbf{Theorem 2} (Simulation soundness of the Fiat-Shamir
+transform)\textbf{.} \emph{Consider a} non-trivial \emph{three-round
+public-coin HVZK interactive proof system} (\emph{P, V}) \emph{for a
+language L ∈}NP\emph{, with quasi unique responses. In the random oracle
+model, the proof system} (\emph{PH, VH}) \emph{derived from} (\emph{P,
+V}) \emph{via the Fiat-Shamir transform is a} simulation-sound
+\emph{NIZK with respect to its canonical simu-lator S.}
+
+\emph{Proof.} We assume that (\emph{PH, VH}) is a non-interactive
+zero-knowledge proof system with the sim-ulator \emph{S} described in
+the proof of Theorem 1, and show that (\emph{PH, VH}) is simulation
+sound. We proceed by contradiction. Suppose there exists a PPT adversary
+\emph{A} that breaks the simulation soundness of the non-interactive
+protocol with non-negligible probability
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{ϵ} := Prob
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(\emph{x⋆, π⋆}) \emph{←AS}1(\emph{·})\emph{,S′}2(\emph{·}): (\emph{x⋆,
+π⋆}) \emph{/∈T}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{∧x⋆/∈L ∧VS}1(\emph{x⋆, π⋆}) = 1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+10
+
+In such a case, we are able to build two reductions ˆ\emph{P} and
+\emph{P∗}which, by using \emph{A} as a black-box, violate either the
+quasi unique response or the soundness properties of the underlying
+interactive
+
+protocol (\emph{P, V}) respectively, contradicting our hypothesis.
+Recall that \emph{S}1 simulates answers to the RO, while
+\emph{S′}2replies with an accepting proof \emph{π}. Without loss of
+generality we assume that
+
+whenever adversary \emph{A} succeeds and outputs an accepting proof
+(\emph{α⋆, γ⋆}), she has previously queried the oracle \emph{S}1 on
+input (\emph{x⋆, α⋆}). The argument for this is that it is
+straightforward to transform any adversary that violates this condition
+into an adversary that makes one additional
+
+query to \emph{S}1 and wins with the same probability.
+
+A simple but crucial observation is that adversary \emph{A} may have
+learned \emph{α⋆}by querying the oracle \emph{S′}2on input \emph{x⋆}or
+might have computed it itself. We denote the first by the event proof,
+
+the second by the event proof. As these events are mutually exclusive
+and exhaustive, we have:
+
+Prob{[}\emph{A} wins{]} = Prob{[}\emph{A} wins \emph{∧}proof{]} +
+Prob{[}\emph{A} wins \emph{∧}proof{]}\emph{.}
+
+Now we have two different cases to analyze, each of them corresponding
+to the probability in
+
+the expression above.
+
+\begin{quote}
+In the first case (when proof happens), we assume that \emph{x⋆}is asked
+to \emph{S′}2and the answer
+\end{quote}
+
+is a proof of the type (\emph{α⋆, −}). We show how to use an adversary
+\emph{A} that makes use of (\emph{x⋆, α⋆}) in its fake proof to build a
+reduction ˆ
+
+probability that ˆ\emph{P} wins in breaking the quasi unique response
+property. First, observe that if \emph{A P}. In this way we bound
+Prob{[}\emph{A} wins \emph{∧}proof{]} by the
+
+wins with a proof (\emph{α⋆, −}) and makes the query \emph{x⋆}to
+\emph{S′}2, she implicitly has to set also the value
+
+\emph{S}1(\emph{x⋆, α⋆}) := \emph{β} such that \emph{H}(\emph{α⋆, x⋆}) =
+\emph{β}. This forces her to use such values for producing a proof
+\emph{x⋆, π⋆}. Thus, the fake proof she outputs must be of the type
+\emph{π⋆}= (\emph{α⋆, −}) for \emph{x⋆}such that \emph{H}(\emph{x⋆, α⋆})
+= \emph{β}. On the other hand, such a proof cannot be the same returned
+by the simulator,
+
+since a forgery cannot appear in the list \emph{T} . This means that a
+fake proof for \emph{x⋆}produced by \emph{A} must have the first
+argument equal to \emph{α⋆}, gives by the simulator \emph{S′}is accepted
+the responses must be different, and so ˆ\emph{P} must be successful in
+breaking the quasi 2. But as the proof of \emph{A}
+
+unique response property. This intuition can be formalized by giving an
+explicit reduction from
+
+\emph{A} to ˆConsider an algorithm ˆ\emph{P}. \emph{P} which runs
+\emph{A} internally as a black-box. Thus, ˆ\emph{P} sees all queries
+\emph{A} makes to the oracles \emph{S}1 and \emph{S′}2and produces their
+answers. The internal description of ˆ\emph{P} follows:
+
+\begin{quote}
+\emph{•}ˆ\emph{P} answers \emph{S}1 and \emph{S′}2and keeps lists
+\emph{TH} and \emph{T} respectively as the real simulator \emph{S}
+would.
+
+\emph{•} When \emph{A} outputs a fake proof (\emph{α⋆, γ⋆}) for
+\emph{x⋆}, ˆfinds (\emph{x⋆,} (\emph{α⋆, γ})) and ((\emph{x⋆,
+α⋆})\emph{, β}) respectively; \emph{P} looks through its lists \emph{T}
+and \emph{TH} until it
+
+\emph{•} It returns (\emph{x⋆, α⋆, β, γ⋆, γ}).
+\end{quote}
+
+We claim that algorithm ˆ\emph{P} breaks the quasi unique response
+property. Indeed, the proof
+
+produced by \emph{A} is accepting by \emph{VH}on common input \emph{x⋆}.
+(\emph{α⋆, γ}) is given by the simulator, therefore it must be accepting
+for \emph{x⋆}. Given this, it holds On the other hand, the proof
+
+\emph{VH}(\emph{x⋆, α⋆, γ⋆}) = \emph{VH}(\emph{x⋆, α⋆, γ}) = 1, that
+means
+
+\emph{V}(\emph{x⋆, α⋆, H}(\emph{x⋆, α⋆})\emph{, γ⋆}) =
+\emph{V}(\emph{x⋆, α⋆, H}(\emph{x⋆, α⋆})\emph{, γ}) = 1\emph{,}
+
+where \emph{H}(\emph{x⋆, α⋆}) = \emph{β}. The conclusion is that either
+\emph{γ} = \emph{γ⋆}, that is excluded since \emph{A} cannot win by
+printing a simulated proof, or algorithm ˆ\emph{P} succeeds in breaking
+the quasi unique response property. We obtain:
+
+Prob{[}\emph{A} wins \emph{∧}proof{]} = Prob{[} ˆ\emph{P} wins{]}
+\emph{≤negl}(\emph{k})\emph{.}
+
+11
+
+\begin{quote}
+In case proof does not happen, we can use adversary\emph{A} that does
+not query \emph{S′}2with input \emph{x⋆}
+\end{quote}
+
+to build a reduction \emph{P∗}and bound Prob{[}\emph{A} wins
+\emph{∧}proof{]} by the probability Prob{[}\emph{P∗}wins{]}\emph{·Q} of
+breaking the soundness of the underlying interactive scheme.
+\emph{P∗}runs \emph{A} as a black-box and has to simulate its
+environment by answering the queries to \emph{S}1 and \emph{S′}2in a
+consistent way. More
+
+precisely, \emph{P∗}works as follows. It guesses uniformly at random an
+index \emph{j ∈}{[}\emph{Q}{]} and replies to queries to \emph{S}1 and
+\emph{S′}2in the following way:
+
+\begin{quote}
+1. Answer query (\emph{xi, αi}) to \emph{S}1:
+
+(a) Query 1 \emph{\sout{≤}i \sout{≤}j \sout{−}}1: Returns
+\emph{H}(\emph{xi, αi}) if it is already defined; otherwise it samples
+
+a random value \emph{βi} and sets \emph{H}(\emph{xi, αi}) := \emph{βi}.
+
+(b) Query \emph{j}: Runs the protocol with the honest verifier \emph{V}
+for statement \emph{xj}, using as a
+
+commitment the value \emph{αj}. Obtains challenge \emph{βj} from
+\emph{V} and program the oracle as
+
+\emph{H}(\emph{xj, αj}) := \emph{βj}. The answer to \emph{A}'s query is
+\emph{βj}.
+
+(c) Query \emph{j} + 1 \emph{\sout{≤}i \sout{≤}Q}: Proceed as in Step
+1a.
+
+2. Answer query \emph{x} to \emph{S′}2: Run the HVZK simulator of the
+interactive protocol on input
+
+\emph{x} to obtain an accepting proof (\emph{α, β, γ}), and program the
+oracle \emph{H} in such a way that
+
+\emph{H}(\emph{x, α}) := \emph{β}. If the NIZK simulator returns
+failure, which happens when \emph{H}(\emph{x, α}) is
+
+already defined, output failure and abort, otherwise output (\emph{α,
+γ}).
+
+3. Answer \emph{V}'s challenge: Let \emph{x⋆,} (\emph{α⋆, γ⋆}) be the
+instance and the proof output by \emph{A}. Return \emph{γ⋆}to \emph{V}
+as the response to challenge \emph{βj} in step 1b.
+\end{quote}
+
+We need to estimate the probability that \emph{P∗}succeeds in breaking
+the soundness of the interactive scheme (\emph{P, V}) in terms of the
+probability that \emph{A} outputs an accepting proof (\emph{α⋆, γ⋆}) for
+a false statement \emph{x⋆}. Suppose that (\emph{x⋆, α⋆}) has been asked
+to the random oracle as the \emph{j⋆}-th query
+
+and we have \emph{j} = \emph{j⋆}, i.e., \emph{P∗}guesses the correct
+index for which \emph{A} outputs an accepting proof for a false
+statement \emph{x⋆}. In such a case, \emph{P∗}breaks the soundness of
+(\emph{P, V}). Hence, we get:
+
+\begin{quote}
+Prob{[}\emph{P∗}wins{]} = Prob{[}\emph{A} wins \emph{∧j} =
+\emph{j⋆∧}proof{]}
+\end{quote}
+
+= Prob{[}\emph{A} wins \emph{∧}proof{]} \emph{·} Prob{[}\emph{j} =
+\emph{j⋆}{]}\emph{,}
+
+where the second equality comes from the fact that \emph{P∗}guesses
+\emph{j⋆}correctly indipendently of the
+
+event that \emph{A} is successful and proof happens. Since the index
+\emph{j} is chosen at random in {[}\emph{Q}{]}, we have
+Prob{[}\emph{P∗}wins{]} = \emph{Q·}Prob{[}\emph{A} wins
+\emph{∧}proof{]}. Whenever \emph{P∗}wins, it breaks the soundness of
+
+the interactive scheme: by hypothesis, this happens only with negligible
+probability. Therefore:
+
+Prob{[}\emph{A} wins \emph{∧}proof{]} = \emph{Q ·}
+Prob{[}\emph{P∗}wins{]} \emph{≤negl}(\emph{k})\emph{.}
+
+Now we can bound the probability that \emph{A} succeeds. As we assume,
+\emph{A} breaks the simulation
+
+soundness of the scheme with non-negligible probability \emph{ϵ}:
+
+Prob{[}\emph{A} wins{]} \emph{≤}Prob{[}\emph{A} wins \emph{∧}proof{]} +
+Prob{[}\emph{A} wins \emph{∧}proof{]} \emph{≤negl}(\emph{k})\emph{,}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+thus \emph{ϵ ≤negl}(\emph{k}), that is a contradiction.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\textbf{On the quasi-unique responses condition.} We remark that
+assuming (\emph{P, V}) has quasi-
+
+unique responses is not an artifact of the proof. In fact, without this
+property, proofs would be} \\
+\bottomrule()
+\end{longtable}
+
+malleable and breaking the simulation soundness would be an easy task.
+Consider a FS-NIZK
+
+proof system for which responses are not quasi-unique. An efficient
+adversary \emph{A} can always query the simulator on input a false
+statement \emph{x⋆}, obtaining a simulated proof \emph{S′}2(\emph{x⋆})
+\emph{→π⋆}= (\emph{α⋆, β⋆, γ⋆}). Given \emph{π⋆}, \emph{A} might be able
+to find, with non-negligible probability, a new response\emph{γ⋆⋆̸}=
+\emph{γ⋆}such that (\emph{α⋆, β⋆, γ⋆⋆}) is also accepting. Hence, the
+scheme cannot be simulation
+
+sound.
+
+12
+
+\textbf{4.2} \textbf{Weak Simulation Extractability}
+
+The argument Fouque and Pointcheval use in {[}24{]} to show that the
+proof system they consider
+
+is simulation sound is roughly as follows. Assume there exists an
+adversary \emph{A} which outputs a pair (\emph{x⋆, π⋆}) breaking the
+simulation soundness, as in the experiment of Definition 5. Then,
+
+one can invoke a suitable version of the forking lemma to show that it
+is possible to ``extract'' a
+
+witness \emph{w⋆}for \emph{x⋆}from such an adversary, contradicting the
+fact that \emph{x⋆}is false. The reduction
+
+simulates the list \emph{T} for \emph{A} in the simulation soundness
+experiment, in particular one needs to fake
+
+accepting proofs for (adaptively chosen and potentially false) theorems
+selected by the attacker.
+
+In order to do so, Fouque and Pointcheval (implicitly) rely on the
+SS-HVZK property. The
+
+next theorem is a generalization of the above strategy which does not
+rely on the SS-HVZK
+
+property and indeed applies to arbitrary languages. Moreover, we are
+able to prove a stronger
+
+statement, namely that Fiat-Shamir proofs satisfy weak simulation
+extractability (and not only
+
+simulation soundness). For simplicity the following theorem assumes
+(perfect) unique responses,
+
+but could be generalized using the same reduction as for Theorem 2.
+
+\textbf{Theorem 3} (Weak simulation extractability of the Fiat-Shamir
+transform)\textbf{.} \emph{Let} Σ = (\emph{P, V}) \emph{be}
+
+\emph{a} non-trivial Σ\emph{-protocol with unique responses for a
+language L ∈}NP\emph{. In the random oracle model, the} NIZK \emph{proof
+system} Σ\emph{FS} = (\emph{PH, VH}) \emph{resulting by applying the
+Fiat-Shamir transform to} Σ \emph{is weakly simulation extractable with}
+extraction error \emph{ν} =\emph{Q hfor the canonical simulator S.}
+
+\emph{Here, Q is the number of random oracle queries and h is the number
+of elements in the range}
+
+\emph{of H. Furthermore, the extractor EA needs to run
+AS}1(\emph{·})\emph{,S′}2(\emph{·})\emph{twice, where A and EA are both}
+
+\emph{defined in Definition 6.}
+
+\emph{Proof.} Let \emph{S} be the canonical zero-knowledge simulator
+described in the proof of Theorem 2. Denote with (\emph{x⋆, α⋆, γ⋆}) the
+pair statement/proof returned by
+\emph{AS}1(\emph{·})\emph{,S′}2(\emph{·}); we describe an ex-
+
+tractor \emph{EA}, able to compute a witness \emph{w⋆}by rewinding
+\emph{A} once.
+
+\begin{quote}
+We want to exploit the general forking lemma1. In order to do so, we
+define program
+\end{quote}
+
+P(1\emph{k, h}1\emph{, . . . , hQ}; \emph{ρ}P) as follows: P virtually
+splits \emph{ρ}P into two random tapes \emph{ρ} and \emph{ρS} (e.g. by
+using even bits for \emph{ρ} and odd bits for \emph{ρS}) and runs
+internally \emph{AS}1(\emph{·})\emph{,S′}2(\emph{·})with randomness
+
+\emph{ρ}. P uses values (\emph{h}1\emph{, . . . , hQ}) to simulate fresh
+answers of \emph{S}1, and \emph{ρS} to simulate answers
+
+of \emph{S}2. If \emph{AS}1(\emph{·})\emph{,S′}2(\emph{·})outputs
+(\emph{x⋆,} (\emph{α⋆, γ⋆})), P checks that it is a valid proof and not
+in \emph{T} (otherwise it returns (0\emph{, ⊥})). Then, because of the
+unique response property, (\emph{x⋆, α⋆}) must correspond to some fresh
+query to \emph{S}1 and P outputs (\emph{J,} (\emph{x⋆, α⋆, γ⋆})), where
+\emph{J \textgreater{}} 0 is the index corresponding to the random
+oracle query (\emph{x⋆, α⋆}). We say that P is successful whenever
+
+\emph{J ≥}1, and we denote with acc the corresponding probability. Given
+program P, we consider
+
+two related runs of P with the same random tape but different hash
+values, as specified by
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+the forking algorithm FP of Lemma 1. Denote with (\emph{I,} (\emph{x⋆,
+α⋆, γ⋆})) \emph{←}P(1\emph{k, h}1\emph{, . . . , hQ}; \emph{ρ}) and
+(\emph{I′,} (\emph{x⋆⋆, α⋆⋆, γ⋆⋆})) \emph{←}P(1\emph{k, h}1\emph{, . . .
+, hI−}1\emph{, h′I, . . . , h′Q}; \emph{ρ}) the two outputs of \emph{A}
+in these runs. By
+
+the forking lemma we know that with probability ext
+\emph{≥}acc(acc\emph{/Q−}1\emph{/h}) the forking algorithm will return
+indexes \emph{I, I′}such that \emph{I} = \emph{I′}, \emph{I ≥}1 and
+\emph{hI ̸}= \emph{h′}Notice that since FP's forgeries are relative to
+the \emph{same} random oracle query \emph{I} = \emph{I′}, we \emph{I}.
+
+must have \emph{x⋆}= \emph{x⋆⋆}and \emph{α⋆}= \emph{α⋆⋆}; on the other
+hand we have \emph{hI ̸}= \emph{h′I}. We are thus in
+
+a position to invoke the special extractor \emph{E} for the underlying
+proof system, yielding a valid witness \emph{w⋆←E}(\emph{α⋆, hI, γ⋆,
+h′I, γ⋆⋆, x⋆}) such that (\emph{x⋆, w⋆}) \emph{∈RL}.
+
+Assume now that acc \emph{≥ν}. By applying the general forking lemma1 we
+obtain that ext \emph{≥}acc2\emph{/Q −}acc\emph{/h}. Since \emph{Q} is
+polynomial while \emph{h} is exponentially large in the security
+parameter, for sure\emph{Q h\textless{}} 1 (in particular, it is
+negligible in \emph{k}). As \emph{ν} := \emph{Q h}, we have:
+\end{minipage}} \\
+\midrule()
+\endhead
+acc2 & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+acc
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+= 1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(acc2acc \emph{ν})\emph{.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\emph{Q} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{−}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{h}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{Q − ·}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+13
+
+\begin{quote}
+Now, since acc \emph{≥ν}, we have acc \emph{· ν ≥ν}2, that is
+\emph{ν}2\emph{−}acc \emph{· ν ≤}0. Hence,
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{Q}(acc2 \emph{−}acc \emph{· ν}) \emph{≥}1 \emph{Q}(acc2
+\emph{−}2acc \emph{· ν} + \emph{ν}2) = 1 \emph{Q}(acc
+\emph{−ν})2\emph{.}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+The previous inequality matches the definition of weak extractability
+with values \emph{p} = \emph{Q} and \emph{d} = 2.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{5}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Applications}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+In the literature there is a large number of applications for
+simulation-sound or extractable NIZKs. One of the first request for
+simulation soundness comes from the setting of public key encryption,
+for the design of encryption schemes with \emph{chosen-ciphertext
+security} using the Naor-Yung (NY) paradigm {[}36{]}. At a high level,
+the NY works as follows: given two key pairs (\emph{sk, pk}) and
+(\emph{sk′, pk′}) for CPA-secure encryption schemes Π and
+Π\emph{′}respectively, a ciphertext consists of two encryptions \emph{c,
+c′}of the same message \emph{m}, under different keys \emph{pk, pk′},
+and a NIZK proof \emph{π}that both \emph{c} and \emph{c′}encrypt
+\emph{m}. In order to achieve security against \emph{adaptive}
+chosen-ciphertext at-tacks (CCA2), the underlying NIZK must be
+simulation-sound. While achieving CCA2 security is probably one of the
+most prominent application of simulation soundness, simulation-sound or
+extractable proofs have been used, e.g., to build also leakage-resilient
+signatures or KDM secure encryption. In this section, we review some
+important applications of such proof systems and show how our result
+provides more efficient constructions in the ROM or generalizes earlier
+results that use the Fiat-Shamir transform.
+
+\textbf{5.1} \textbf{Leakage Resilience}
+
+Simulation-sound and simulation-extractable NIZK proofs have been very
+useful in constructing leakage-resilient encryption and signature
+schemes {[}19, 33, 35{]}. Here, we consider these works and show that
+our result immediately yields efficient leakage-resilient schemes in the
+random oracle model.
+
+\textbf{Leakage-resilient signatures.} A signature scheme is leakage
+resilient if it is hard to forge a signature even given (bounded)
+leakage from the signing key. Obviously, this requires that the amount
+of leakage given to the adversary has to be smaller than the length of
+the secret key, as otherwise the leakage may just reveal such a key,
+trivially breaking the security of the signature scheme.
+
+We instantiate the generic construction of leakage-resilient signatures
+based on leakage-resilient hard relations and simulation-extractable
+NIZKs of {[}19{]} using the Fiat-Shamir trans-form. Let \emph{R} be a
+\emph{λ}-leakage-resilient hard relation with sampling algorithm
+Gen\emph{R} (for detailed definitions, see Definition 9 and Definition
+10 in Appendix D.1). Let (\emph{PH, VH}) be a NIZK argu-ment5for
+relation \emph{R′}defined by \emph{R′}((\emph{pk, m})\emph{, sk})
+\emph{⇔R}(\emph{pk, sk}). Consider the following signature scheme:
+
+KeyGen(1\emph{k}) : Calls (\emph{pk, sk}) \emph{←}Gen\emph{R}(1\emph{k})
+and returns the same output.
+
+Sign(\emph{sk, m}) : Outputs \emph{σ ←PH}((\emph{pk, m})\emph{, sk}).6\\
+5As opposed to a proof system where soundness needs to hold
+unconditionally, in an \emph{argument} system it is sufficient that
+soundness holds with respect to a computationally bounded adversary.
+
+6Note that \emph{m} is part of the instance being proven.
+\end{quote}
+
+14
+
+\begin{quote}
+Vrf(\emph{pk, m, σ}): Verifies the signature by invoking
+\emph{VH}((\emph{pk, m})\emph{, σ}).
+
+Notice that \emph{σ ←PH}((\emph{pk, m})\emph{, sk}) is a NIZK proof for
+the hard relation obtained by applying the Fiat-Shamir transform.
+
+We chose to state the theorem below using an argument system as this is
+the minimal requirement under which leakage resilience of the scheme can
+be proven. Since our FS-based protocols are weakly
+simulation-extractable NIZK \emph{proof} systems, they automatically
+satisfy the hypothesis of Theorem 4.
+
+\textbf{Theorem 4.} \emph{If R is a} 2\emph{λ-leakage-resilient hard
+relation and} (\emph{PH, VH}) \emph{is a weakly simulation-extractable
+NIZK argument with negligible extraction error for relation
+R′}((\emph{pk, m})\emph{, sk}) \emph{⇔R}(\emph{pk, sk})\emph{, then the
+above scheme is a λ-leakage-resilient signature scheme in the random
+oracle model.}
+
+The proof of the theorem from above follows the one of Theorem 4.3 in
+{[}19{]}. A couple of subtleties arise, though. The main idea of the
+proof is to build a reduction from an adversary \emph{A} breaking
+\emph{λ}-leakage resilience of the signature scheme to an adversary
+\emph{B} breaking the hardness of the 2\emph{λ}-leakage-resilient hard
+relation \emph{R}. Roughly speaking, in the reduction \emph{B} is given
+some instance \emph{pk} and simulates the signing queries of \emph{A} by
+using the zero-knowledge simulator of the NIZK, and the leakage queries
+by using the leakage oracle for the relation \emph{R}. At some point
+\emph{A} outputs a forgery \emph{σ⋆}and \emph{B} invokes the extractor
+of Theorem 3 to get \emph{sk⋆←EA}(\emph{pk, σ⋆}). The first issue is
+that we are only guaranteed \emph{weak} simulation-extractability,
+whereas the proof of {[}19{]} relies on full
+simulation-extractability.7However, this is not a problem because we
+just need to show that \emph{B} outputs a valid witness with
+non-negligible probability. A second issue involves the extractor of
+Theorem 3, which needs to rewind \emph{A} once and, thus, to simulate
+twice its environment (including the leakage queries). This causes the
+loss of a factor 2 in the total amount of tolerated leakage. We refer
+the reader to Appendix D.2 for the details.
+
+We emphasize that the leakage-resilient signature scheme of Alwen et al.
+{[}4{]}, obtained by applying the Fiat-Shamir transform to the Okamoto
+identification scheme, follows essentially the above paradigm. Here, one
+may view the public and secret keys of the Okamoto ID scheme as forming
+an instance of a leakage-resilient hard relation, while the NIZK proof
+corresponds to the Fiat-Shamir transform applied to the Okamoto
+identification protocol.
+
+\textbf{Naor-Yung with leakage.} The definition of IND-CPA and IND-CCA
+security of an en-cryption scheme can be extended to the leakage setting
+by giving the adversary access to a leakage oracle. Naor and Segev
+{[}35{]} show that the Naor-Yung paradigm instantiated with a
+simulation-sound NIZK allows to leverage CPA-security to CCA-security
+even in the presence of leakage. In other words, if Π is CPA-secure
+against \emph{λ}-key-leakage attacks, the encryption scheme obtained by
+applying the Naor-Yung paradigm to (Π\emph{,} Π), using a
+simulation-sound NIZK, is CCA2-secure against \emph{λ}-key-leakage
+attacks. In Appendix D.3 we revisit their proof in the ROM, dealing with
+the issue that the leakage queries can potentially depend on \emph{H}.
+We stress that for the proof only \emph{simulation soundness} is needed
+(i.e., our result from Theorem 2) and not weak simulation
+extractability.
+\end{quote}
+
+In what follows, we propose a concrete instantiation of the result
+above, relying on the
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+BHHO encryption scheme from {[}13{]}. Let G be a group of prime-order
+\emph{q}. For randomly selected
+
+generators \emph{g}1\emph{, . . . , gℓ←}G, the public key is a tuple
+\emph{pk} = (\emph{g}1\emph{, . . . , gℓ, h}), where \emph{h}
+=\emph{ℓi}=1\emph{gzi}
+
+\$\\
+\emph{i}for
+
+a secret key \emph{sk} = (\emph{z}1\emph{, . . . , zℓ})
+\emph{∈}Z\emph{ℓ}output \emph{c} = (\emph{c}1\emph{, . . . , cℓ}+1) =
+(\emph{gr} 1\emph{, . . . , gr q}. To encrypt a message \emph{m ∈}G,
+choose a random \emph{rℓ, m · hr}). The message \emph{m} can be
+recovered by computing\emph{←}Z\emph{q} and
+
+\emph{m} = \emph{cℓ}+1 \emph{·} (\emph{ℓi}=1\emph{czi i})\emph{−}1.
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+7Actually, they rely on a weaker property called \emph{true}
+simulation-extractability {[}19{]}.
+\end{quote}
+
+15
+
+Assuming that the DDH problem is hard in G, Naor and Segev {[}35{]}
+showed that the BHHO encryption scheme is CPA-secure against
+\emph{λ}-key-leakage attacks for any \emph{ℓ}= 2+\emph{λ}+\emph{ω}(log
+\emph{k}) log \emph{q} , where \emph{k} is the security parameter.
+Applying the Naor-Yung paradigm, consider the language:
+
+\begin{quote}
+\emph{L} = (\emph{c, pk, c′, pk′}) : \emph{∃r, r′∈}Z\emph{q, m ∈}G s.t.
+
+\emph{c} = (\emph{gr} 1\emph{, . . . , grℓ, hr · m})\emph{, c′} =
+(\emph{gr′}1\emph{, . . . , gr′ℓ, h′r′ · m}) \emph{,}
+\end{quote}
+
+where \emph{c} = (\emph{c}1\emph{, . . . , cℓ}+1) and \emph{c′}=
+(\emph{c′}1\emph{, . . . , c′ℓ}+1) are BHHO encryptions with randomness
+\emph{r} and \emph{r′}, using public keys \emph{pk} = (\emph{g}1\emph{,
+. . . , gℓ, h}) and \emph{pk′}= (\emph{g}1\emph{, . . . , gℓ, h′})
+respectively. The pair \emph{w} = (\emph{r, r′}) is a witness for a
+string \emph{x} = (\emph{c, pk, c′, pk′}) \emph{∈L}. Consider the
+following interactive protocol Σ = (\emph{P, V}) for the above
+language:\\
+1. \emph{P} chooses \emph{s, s′}at random from Z\emph{q} and computes
+the commitment:
+
+\begin{quote}
+\emph{α} = ((\emph{α}1\emph{, ..., αℓ})\emph{,} (\emph{α′}1\emph{, ...,
+α′ℓ})\emph{, α′′}) = ((\emph{gs} 1\emph{, ..., gsℓ})\emph{,}
+(\emph{gs′}1\emph{, ..., gs′ℓ})\emph{, hs ·}
+(\emph{h′})\emph{s′})\emph{.}
+
+\$ 2. The verifier \emph{V} chooses a random challenge
+\emph{β←}Z\emph{q}.
+
+3. The prover computes the response \emph{⃗γ} = (\emph{γ, γ′}) =
+(\emph{s −β · r, s′}+ \emph{β · r′}).
+
+4. Given a proof \emph{π} = (\emph{⃗α, β,⃗γ}), the verifier \emph{V}
+checks that:\\
+(\emph{α}1\emph{, . . . , αℓ}) = (\emph{gγ}1\emph{· cβ}1\emph{, . . . ,
+gγℓ· cβℓ})\\
+(\emph{α′}1\emph{, . . . , α′ℓ}) = (\emph{gγ′}1\emph{·}
+(\emph{c′}1)\emph{−β, . . . , gγ′ℓ·} (\emph{c′ℓ})\emph{−β}) \emph{α′′}=
+\emph{hγ·} (\emph{h′})\emph{γ′·} (\emph{cℓ}+1 \emph{·}
+(\emph{c′ℓ}+1)\emph{−}1)\emph{β.}
+\end{quote}
+
+In Appendix D.4 we prove that the above protocol is a Σ-protocol for the
+language \emph{L}. With the Naor-Yung paradigm applied to the BHHO
+encryption scheme we get a ciphertext (\emph{c, c′, π}) consisting of
+4\emph{ℓ}+ 3 elements in G plus 2 elements in Z\emph{q}. Moreover, the
+fact that the BHHO encryption scheme is CPA-secure against key leakage
+together with the result of Naor-, show that the above instantiation is
+CCA-secure against key-leakage attacks.
+
+\textbf{Corollary 1.} \emph{Let k be a security parameter. Assuming that
+the DDH problem is hard in} G\emph{, the Naor-Yung paradigm applied to
+the BHHO encryption scheme yields an encryption scheme that}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{is CCA-secure against λ-key-leakage attacks in the random oracle
+model for λ} = \emph{ℓ}log \emph{q}(1 \emph{−}\uline{2}\emph{ω}(log
+\emph{k}) \emph{ℓ−}
+
+\emph{ℓ}log \emph{q}) = \emph{L}(1 \emph{−o}(1))\emph{, where L is the
+length of the secret key. An encryption consists of} 4\emph{ℓ}+ 3
+\emph{elements in} G \emph{plus} 2 \emph{elements in} Z\emph{q.}
+\end{minipage}} \\
+\midrule()
+\endhead
+\textbf{5.2} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Key-Dependent Message Security}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+Key-dependent message (KDM) security of a public-key encryption scheme
+requires that the scheme remains secure even against attackers allowed
+to see encryptions of the value \emph{f}(\emph{sk}), where \emph{f ∈F}
+for some class of functions \emph{F}.
+
+Camenisch, Chandran and Shoup {[}14{]} show that a variation of the
+Naor-Yung paradigm instantiated with a simulation-sound NIZK can still
+leverage CPA-security to CCA-security, even in the context of KDM
+security. We revisit their proof in the random oracle model in Appendix
+D.5. Also in this case, only \emph{simulation soundness} is needed for
+the proof.
+
+the scheme Π\emph{′′}obtained by applying the Naor-Yung paradigm to
+(Π\emph{,} Π\emph{′}) --- i.e., an encryption Roughly, for some function
+family \emph{F}, if Π is KDM{[}\emph{F}{]}-CPA secure and Π\emph{′}is
+CPA-secure,
+
+of \emph{m ∈M} is a tuple \emph{c′′}= (\emph{c, c′, π}) where \emph{c}
+encrypts \emph{m} under Π, \emph{c′}encrypts \emph{m} under Π\emph{′}and
+\emph{π}
+
+16
+
+is a simulation-sound NIZK proof that \emph{c} and \emph{c′}encrypt the
+same message --- is KDM{[}\emph{F}{]}-CCA secure.
+
+Let \emph{ski}{[}\emph{j}{]} denote the \emph{j}-th bit of \emph{ski}.
+The BHHO encryption scheme was the first KDM-CPA secure encryption
+scheme, with respect to the class of all projection functions \emph{F↓}=
+\emph{F}read \emph{∪F}flip, where
+
+\begin{quote}
+\emph{F}read = \emph{fi,j} :\emph{⃗sk →ski}{[}\emph{j}{]} \emph{i,j}and
+\emph{F}flip = \emph{fi,j} :\emph{⃗sk →}1 \emph{−ski}{[}\emph{j}{]}
+\emph{i,j.}
+\end{quote}
+
+More generally, when the message space is a linear space over Z\emph{q},
+we define the function class \emph{PJ} (\emph{F↓}) as the class of all
+affine combinations of elements in \emph{F↓}.
+
+Now we can instantiate the general transform of {[}14{]} as follows. We
+choose Π to be BHHO,Π\emph{′}to be ElGamal (say with \emph{pk′}=
+\emph{h′}= \emph{gz′}1) and we build a Σ-protocol Σ\emph{′} for the
+Naor-Yung language relative to Π and Π\emph{′}. Protocol Σ\emph{′}can be
+easily derived from protocol Σ of the last section, by just compressing
+the commitment as in \emph{⃗α} = ((\emph{gs} 1\emph{, . . . ,
+gsℓ})\emph{, gs′}1\emph{, hs ·} (\emph{h′})\emph{s′}) (and simplifying
+the verification procedure accordingly). Hence, Theorem 2 yields the
+following result.
+
+\textbf{Corollary 2.} \emph{Assuming that the DDH problem is hard in}
+G\emph{, the Naor-Yung paradigm in-stantiated with BHHO and ElGamal
+encryption schemes yields a} KDM{[}\emph{PJ} (\emph{F↓}){]}-CCA
+\emph{secure encryption scheme in the random oracle model. An encryption
+consists of ℓ}+ 3 \emph{elements in} G \emph{plus} 3 \emph{elements in}
+Z\emph{q.}
+
+\textbf{Beyond Naor-Yung.} Another paradigm that yields
+chosen-ciphertext security from NIZKs, based on \emph{proving knowledge
+of the plaintext}, was suggested by Rackoff and Simon {[}38{]}. Such a
+construction is somewhat more natural and more efficient than the
+twin-encryption paradigm: a message \emph{m} is encrypted (only once)
+under a CPA-secure encryption scheme, and a NIZK proof of knowledge of
+the plaintext is attached to the ciphertext. However, (to the best of
+our knowledge) truly efficient constructions for sufficiently strong
+NIZK proofs of knowledge are not available even using random oracles.
+One can hope that using the weaker from of extractability afforded by
+the Fiat-Shamir transform one could at least obtain NM-CPA secure
+encyption, and this is indeed what is aimed at in the ongoing work of
+{[}9{]}.
+
+\textbf{Acknowledgments}
+
+We thank Marc Fischlin and Ivan Damg˚ard for the useful feedbacks
+provided on earlier ver-sions of the paper. Sebastian Faust and Daniele
+Venturi acknowledge support from the Danish National Research Foundation
+and The National Science Foundation of China (under the grant
+61061130540) for the Sino-Danish Center for the Theory of Interactive
+Computation, and also from the CFEM research center (supported by the
+Danish Strategic Research Council) within which part of this work was
+performed.
+
+\textbf{References}
+
+\begin{quote}
+{[}1{]} Michel Abdalla, Jee Hea An, Mihir Bellare, and Chanathip
+Namprempre. From identifi-cation to signatures via the Fiat-Shamir
+transform: Minimizing assumptions for security and forward-security. In
+\emph{EUROCRYPT}, pages 418--433, 2002.
+
+{[}2{]} Michel Abdalla, Jee Hea An, Mihir Bellare, and Chanathip
+Namprempre. From identifi-cation to signatures via the Fiat-Shamir
+transform: Necessary and sufficient conditions for security and
+forward-security. \emph{IEEE Transactions on Information Theory},
+54(8):3631--3646, 2008.
+\end{quote}
+
+17
+
+\begin{quote}
+{[}3{]} Masayuki Abe, Georg Fuchsbauer, Jens Groth, Kristian
+Haralambiev, and Miyako Ohkubo. Structure-preserving signatures and
+commitments to group elements. In \emph{Advances in Cryp-tology - CRYPTO
+'10}, pages 209--237, 2010.
+
+{[}4{]} Jo¨el Alwen, Yevgeniy Dodis, and Daniel Wichs. Leakage-resilient
+public-key cryptography in the bounded-retrieval model. In
+\emph{CRYPTO}, pages 36--54, 2009.
+
+{[}5{]} Mihir Bellare and Oded Goldreich. On defining proofs of
+knowledge. In \emph{CRYPTO}, pages 390--420, 1992.
+
+{[}6{]} Mihir Bellare and Gregory Neven. Multi-signatures in the plain
+public-key model and a general forking lemma. In \emph{ACM Conference on
+Computer and Communications Security}, pages 390--399, 2006.
+
+{[}7{]} Mihir Bellare and Todor Ristov. Hash functions from sigma
+protocols and improvements to VSH. In \emph{ASIACRYPT}, pages 125--142,
+2008.
+
+{[}8{]} Mihir Bellare and Phillip Rogaway. Random oracles are practical:
+A paradigm for designing efficient protocols. In \emph{ACM Conference on
+Computer and Communications Security}, pages 62--73, 1993.
+
+{[}9{]} David Bernhard, Olivier Pereira, and Bogdan Warinschi. On
+necessary and sufficient con-ditions for private ballot submission.
+Cryptology ePrint Archive, Report 2012/236, 2012. .
+\end{quote}
+
+{[}10{]} Manuel Blum, Paul Feldman, and Silvio Micali. Non-interactive
+zero-knowledge and its applications (extended abstract). In \emph{STOC},
+pages 103--112, 1988.
+
+{[}11{]} Manuel Blum, Alfredo De Santis, Silvio Micali, and Giuseppe
+Persiano. Noninteractive zero-knowledge. \emph{SIAM J. Comput.},
+20(6):1084--1118, 1991.
+
+{[}12{]} Dan Boneh, Xavier Boyen, and Hovav Shacham. Short group
+signatures. In \emph{CRYPTO}, pages 41--55, 2004.
+
+{[}13{]} Dan Boneh, Shai Halevi, Michael Hamburg, and Rafail Ostrovsky.
+Circular-secure encryp- tion from decision Diffie-Hellman. In
+\emph{CRYPTO}, pages 108--125, 2008.
+
+{[}14{]} Jan Camenisch, Nishanth Chandran, and Victor Shoup. A public
+key encryption scheme secure against key dependent chosen plaintext and
+adaptive chosen ciphertext attacks. In \emph{EUROCRYPT}, pages 351--368,
+2009.
+
+{[}15{]} Jan Camenisch and Anna Lysyanskaya. An efficient system for
+non-transferable anonymous credentials with optional anonymity
+revocation. In \emph{Proceedings of Eurocrypt 2001}, volume 2045, pages
+93--118. Springer-Verlag, 2001.
+
+{[}16{]} Melissa Chase and Anna Lysyanskaya. On signatures of knowledge.
+In Cynthia Dwork, ed-itor, \emph{CRYPTO}, volume 4117 of \emph{Lecture
+Notes in Computer Science}, pages 78--96. Springer, 2006.
+
+{[}17{]} Ronald Cramer, Ivan Damg˚ard, and Berry Schoenmakers. Proofs of
+partial knowledge and simplified design of witness hiding protocols. In
+\emph{CRYPTO}, pages 174--187, 1994.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}18{]} Ivan Damg˚ard.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+On Σ-protocols, 2002.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Available at http://www.daimi.au.dk/\textasciitilde ivan/
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+.
+\end{quote}
+
+18
+
+{[}19{]} Yevgeniy Dodis, Kristiyan Haralambiev, Adriana L´opez-Alt, and
+Daniel Wichs. Efficient public-key cryptography in the presence of key
+leakage. In \emph{ASIACRYPT}, pages 613--631, 2010.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}20{]} Danny Dolev, Cynthia Dwork, and Moni Naor.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Nonmalleable cryptography.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{SIAM J.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\emph{Comput.}, 30(2):391--437, 2000.
+\end{quote}
+
+{[}21{]} Sebastian Faust, Markulf Kohlweiss, Giorgia Azzurra Marson, and
+Daniele Venturi. On the non-malleability of the Fiat-Shamir transform.
+In \emph{INDOCRYPT}, pages 60 -- 79, 2012. {[}22{]} Amos Fiat and Adi
+Shamir. How to prove yourself: Practical solutions to identification and
+signature problems. In \emph{CRYPTO}, pages 186--194, 1986.
+
+{[}23{]} Marc Fischlin. Communication-efficient non-interactive proofs
+of knowledge with online extractors. In \emph{CRYPTO}, pages 152--168,
+2005.
+
+Threshold cryptosystems secure against {[}24{]} Pierre-Alain Fouque and
+David Pointcheval.
+
+\begin{quote}
+chosen-ciphertext attacks. In \emph{ASIACRYPT}, pages 351--368, 2001.
+\end{quote}
+
+{[}25{]} Juan A. Garay, Philip D. MacKenzie, and Ke Yang. Strengthening
+zero-knowledge proto- cols using signatures. \emph{J. Cryptology},
+19(2):169--209, 2006.
+
+{[}26{]} Oded Goldreich and Yair Oren. Definitions and properties of
+zero-knowledge proof systems. \emph{J. Cryptology}, 7(1):1--32, 1994.
+
+{[}27{]} Shafi Goldwasser, Silvio Micali, and Charles Rackoff. The
+knowledge complexity of inter- active proof systems. \emph{SIAM J.
+Comput.}, 18(1):186--208, 1989.
+
+{[}28{]} Shafi Goldwasser and Michael Sipser. Private coins versus
+public coins in interactive proof systems. In \emph{STOC}, pages 59--68,
+1986.
+
+{[}29{]} Jens Groth. Simulation-sound NIZK proofs for a practical
+language and constant size group signatures. In \emph{Proceedings of
+Asiacrypt 2006}, volume 4284, pages 444--459. Springer-Verlag, 2006.
+
+{[}30{]} Jens Groth and Amit Sahai. Efficient non-interactive proof
+systems for bilinear groups. In \emph{EUROCRYPT}, pages 415--432, 2008.
+
+{[}31{]} Shai Halevi and Silvio Micali. More on proofs of knowledge.
+Cryptology ePrint Archive, Report 1998/015, 1998..
+
+{[}32{]} Abhishek Jain and Omkant Pandey. Non-malleable zero knowledge:
+Black-box construc-tions and definitional relationships. Cryptology
+ePrint Archive, Report 2011/513, 2011. .
+
+{[}33{]} Jonathan Katz and Vinod Vaikuntanathan. Signature schemes with
+bounded leakage re- silience. In \emph{ASIACRYPT}, pages 703--720, 2009.
+
+{[}34{]} Yehuda Lindell. A simpler construction of CCA2-secure
+public-key encryption under gen- eral assumptions. \emph{J. Cryptology},
+19(3):359--377, 2006.
+
+{[}35{]} Moni Naor and Gil Segev. Public-key cryptosystems resilient to
+key leakage. In \emph{CRYPTO}, pages 18--35, 2009.
+
+{[}36{]} Moni Naor and Moti Yung. Public-key cryptosystems provably
+secure against chosen ci- phertext attacks. In \emph{STOC}, pages
+427--437, 1990.
+
+19
+
+{[}37{]} David Pointcheval and Jacques Stern. Security arguments for
+digital signatures and blind signatures. \emph{J. Cryptology},
+13(3):361--396, 2000.
+
+{[}38{]} Charles Rackoff and Daniel R. Simon. Non-interactive
+zero-knowledge proof of knowledge and chosen ciphertext attack. In
+\emph{CRYPTO}, pages 433--444, 1991.
+
+{[}39{]} Amit Sahai. Non-malleable non-interactive zero knowledge and
+adaptive chosen-ciphertext security. In \emph{FOCS}, pages 543--553,
+1999.
+
+{[}40{]} Alfredo De Santis, Giovanni Di Crescenzo, Rafail Ostrovsky,
+Giuseppe Persiano, and Amit Sahai. Robust non-interactive zero
+knowledge. In \emph{CRYPTO}, pages 566--598, 2001.
+
+{[}41{]} Dominique Unruh. Quantum proofs of knowledge. In
+\emph{EUROCRYPT}, pages 135--152, 2012.
+
+{[}42{]} Hoeteck Wee. Zero knowledge in the random oracle model,
+revisited. In \emph{ASIACRYPT}, pages 417--434, 2009.
+
+20
+
+\textbf{A Defining Proofs of Knowledge}
+
+Many different definitions of proof of knowledge have been proposed in
+the literature. According to Unruh {[}41{]}, it is possible to identify
+three main distinct notions, which he refers to as A, B and C-style
+PoKs.
+
+\textbf{Definition 8} (PoK)\textbf{.} \emph{Let ν} : \emph{\{}0\emph{,}
+1\emph{\}∗→}{[}0\emph{,} 1{]} \emph{be a function and R be a binary
+relation, with corresponding language LR. A protocol} (\emph{P, V})
+\emph{is a} proof of knowledge \emph{for R, with} knowledge error
+\emph{ν if the following properties hold:}
+
+\textbf{Completeness.} \emph{For any pair} (\emph{x, w}) \emph{∈R, if P
+and V follow the protocol specification on public input x and private
+input w (held by P), then the verifier accepts.}
+
+\textbf{Validity.} \emph{There exist a probabilistic oracle machine E
+and a constant c \textgreater{}} 0 \emph{such that, for any x ∈LR,
+whenever a prover P∗convinces V on common input x with
+probabilityϵ}(\emph{\textbar x\textbar{}}) \emph{\textgreater{}
+ν}(\emph{\textbar x\textbar{}})\emph{, then the extractor EP∗, taking x
+as an input and having oracle access to P∗, outputs a witness w such
+that R}(\emph{x, w}) = 1\emph{,}
+
+\begin{quote}
+\textbf{(A-style)} \emph{working in} strict \emph{polynomial time, with
+probability at least}
+
+(\emph{ϵ}(\emph{\textbar x\textbar{}})
+\emph{−ν}(\emph{\textbar x\textbar{}}))\emph{c}\\
+\emph{p}
+
+\emph{for c \textgreater{}} 0 \emph{and a polynomial p.}
+
+\textbf{(B-style)} \emph{within} expected \emph{number of steps bounded
+by}
+
+\emph{xc}\\
+\emph{ϵ}(\emph{\textbar x\textbar{}})
+\emph{−ν}(\emph{\textbar x\textbar{}})\emph{.}
+
+\textbf{(C-style)} \emph{working in} expected \emph{polynomial time,
+with probability at least}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{B}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{ϵ}(\emph{\textbar x\textbar{}})
+\emph{−ν}(\emph{\textbar x\textbar{}})\\
+\emph{p}
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+&
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Honest-verifier zero-knowledge and neighborhood}
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+The HVZK property essentially says there exists a simulator \emph{S}
+that produces, on input \emph{x}, transcripts that are indistinguishable
+from real conversations between \emph{P} and \emph{V} sharing input
+\emph{x}, as long as \emph{V} behaves honestly. It is possible to give
+stronger flavors of this property. A first example is the case of
+\emph{special honest-verifier zero-knowledge} (SHVZK), as introduced by
+Cramer, Damg˚ard and Schoenmakers {[}17{]}. Intuitively, this property
+says that the simulator \emph{S} can take \emph{any β} as input and
+produce a conversation indistinguishable from the space of all
+conversations between honest parties in which \emph{β} is the challenge.
+To formalize this, the experiments of Definition 1 are modified in such
+a way that both the verifier and the simulator get also \emph{β} as
+input. Even though the S-HVZK property is seemingly stronger than the
+plain HVZK property, the two notions are essentially equivalent. In
+fact, as Fischlin showed in {[}23{]}, any Σ-protocol where the challenge
+has size logarithmic in the security parameter, satisfies the stronger
+requirement of S-HVZK.
+
+A stronger variant of zero-knowledge --- first introduced by Bellare and
+Ristov {[}7{]} --- is \emph{strong special honest-verifier
+zero-knowledge} (SS-HVZK), which differs from the previous one in the
+fact that the simulator has to produce indistinguishable triplets
+(\emph{α, β, γ}) where the string \emph{γ} can be chosen at random and
+\emph{S} can compute the commitment \emph{α} trough a
+\emph{deterministic} function \emph{φ} of
+
+21
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+Prover
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{P′}(\emph{x, w})
+\end{quote}
+\end{minipage} &
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{α′}=(\emph{α,r})
+
+\emph{−β→}
+
+\emph{γ′}=(\emph{γ,z})\emph{←−}
+
+\emph{−→}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+Verifier
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{V′}(\emph{x})
+\end{quote}
+\end{minipage}} \\
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{r}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{←\{}0\emph{,} 1\emph{\}∗}, \emph{α ←P}0(\emph{x, w})
+\end{quote}
+\end{minipage}}} \\
+& & & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{β ←V}0(\emph{x, α})
+\end{quote}
+\end{minipage}}} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.5000} + 4\tabcolsep}}{%
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{z} = \emph{f}(\emph{r}), \emph{γ ←P}1(\emph{α′, β′, x, w})
+\end{quote}
+\end{minipage}}} \\
+& & & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Accept iff
+\end{quote}
+\end{minipage}} \\
+& & & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{V}1(\emph{x, α, β, γ}) = 1 and \emph{z} = \emph{f}(\emph{r})
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Figure 2: The protocol Σ\emph{′}, separating SS-HVZK and S-HVZK.
+
+\emph{x, β} and \emph{γ}, i.e. \emph{α} := \emph{φ}(\emph{x, β, γ}). We
+exhibit a separation between the SS-HVZK and S-HVZK properties, by
+showing that \emph{any} Σ-protocol which is SS-HVZK can be turned into
+anotherΣ-protocol which is still S-HVZK but not SS-HVZK. For proving
+such a claim, we just need
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+to assume the existence of one-way functions.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+The transform is depicted in Figure 2.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Let
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\emph{f} : \emph{\{}0\emph{,} 1\emph{\}∗→\{}0\emph{,} 1\emph{\}∗}be a
+one-way function. We start with an arbitrary Σ-protocol Σ = (\emph{P,
+V}) which satisfies the SS-HVZK property. The protocol Σ\emph{′}=
+(\emph{P′, V′}) is essentially identical to Σ, however the prover now
+also samples a random \emph{r} and adds \emph{r} to the commitment
+\emph{α}; moreover it also appends \emph{z} = \emph{f}(\emph{r}) to the
+last message. The verifier \emph{V′}runs the verifier \emph{V}, but also
+checks that \emph{z} = \emph{f}(\emph{r}).
+
+\textbf{Proposition 2} (Separation between S-HVZK and SS-HVZK)\textbf{.}
+\emph{Assuming the existence of one-way functions, there exists a}
+Σ\emph{-protocol which is} S-HVZK \emph{but not} SS-HVZK\emph{. More
+precisely, let} Σ = (\emph{P, V}) \emph{be a} Σ\emph{-protocol which is}
+SS-HVZK \emph{and f be a one-way function. Then, the protocol}
+Σ\emph{′}= (\emph{P′, V′}) \emph{of Figure 2 is} S-HVZK \emph{but not}
+SS-HVZK\emph{.}
+
+\emph{Proof.} We show that the protocol Σ\emph{′}cannot satisfy the
+stronger SS-HVZK property, even if the original protocol Σ does. The
+intuition for this is that, if it could be possible to compute the
+commitment \emph{α′after} having chosen the challenge \emph{β} and the
+response \emph{γ′}, then it could also be possible to invert \emph{f}.
+We now turn this intuition into a formal proof. Assume, towards a
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+contradiction, that Σ\emph{′}is SS-HVZK. This means that there exists a
+simulator \emph{S′}which can choose \emph{γ′}at random (for all
+\emph{β}), and compute \emph{α′}= (\emph{α, r}) as a deterministic
+function \emph{α′}=
+
+\emph{φ}(\emph{x, β, γ′}) of the other values. We now show how to use
+\emph{S′}to build a PPT adversary \emph{B} able to
+
+break one-wainess of the function \emph{f}. The attacker \emph{B} simply
+chooses a random image \emph{z}\\
+samples \emph{β, γ} at random and runs \emph{S′}(\emph{x, β, γ′}=
+(\emph{γ, z})\emph{,} 1\emph{k}) which returns \emph{α′}=
+\emph{φ}(\emph{x, β, γ′}). Since\emph{α′}= (\emph{α, r}) is such that
+\emph{f}(\emph{r}) = \emph{z}, the adversary \emph{B} has found a
+pre-image of \emph{z}, namely \emph{r} = \emph{f−}1(\emph{z}), breaking
+the one-wayness of \emph{f}. Note, however, that the protocol
+Σ\emph{′}is still S-HVZK. In fact,
+
+for every \emph{β}, the (special) HVZK simulator \emph{S′}can just run
+the SS-HVZK simulator \emph{S} of the
+
+underlying protocol Σ, yielding \emph{α ←S}(\emph{x, β, γ,} 1\emph{k}),
+and later append \emph{r}
+
+\emph{z} = \emph{f}(\emph{r}) to \emph{γ} by itself.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}\strut
+\end{minipage}} \\
+\midrule()
+\endhead
+\textbf{C} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Proof of Proposition 1}
+\end{quote}
+\end{minipage} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+The proof is similar to the proof of {[}41, Theorem 2{]}. Consider an
+adversary \emph{A} having access to (\emph{S}1\emph{, S′}2) that outputs
+a pair (\emph{x, π}) which makes the verifier \emph{V′} of the composed
+system accept, i.e. \emph{V′S}1(\emph{x, π}) = 1. Without loss of
+generality, we can assume that \emph{A} consists of \emph{n} machines
+\emph{Ai},
+
+each machine running the \emph{i}-th execution in the composed system.
+For \emph{i ≥}2, \emph{Ai} expects some
+
+state \emph{st} from \emph{Ai−}1; such a state includes a proof \emph{π}
+and the internal coin tosses \emph{ρ} of \emph{Ai−}1. Let \emph{E} be
+the extractor for (\emph{P, V}). We construct an extractor \emph{E′}for
+(\emph{P′, V′}) as follows. \emph{E′}chooses} \\
+\bottomrule()
+\end{longtable}
+
+22
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+an index \emph{i ∈}{[}\emph{n}{]} uniformly at random and internally
+simulates the first \emph{i −}1 executions of the composed system (with
+\emph{A}1\emph{, . . . , Ai−}1). Let \emph{st} = (\emph{π, ρ}) be the
+state that \emph{Ai−}1 passes to \emph{Ai}. \emph{E′}
+
+computes \emph{w ←EAi}(\emph{x, st}) = \emph{EAi}(\emph{x, π};
+\emph{ρ}).
+
+Denote with \emph{ai} the probability that \emph{A} is successful in the
+first \emph{i} executions. (Note that in particular \emph{ai−}1 is the
+probability that in an execution of \emph{E′}the internal simulation of
+the
+
+first \emph{i −}1 executions succeeds.) Let \emph{ci} denote the
+probability that the \emph{i}-th execution of the
+
+composed system succeeds, conditioned on the event that the first
+\emph{i −}1 executions succeed. We
+
+have \emph{a}0 = 1 and \emph{ai} = \emph{ci · ai−}1 for all \emph{i} =
+1\emph{, . . . , n}.
+
+Denote with ext\emph{′}the probability that \emph{E′}extracts a witness
+and with acc\emph{′}the probability that \emph{A} is successful in the
+composed system. Moreover, for some fixed index \emph{i}, let
+ext\emph{′i}be
+
+the probability that \emph{E′}succeeds given that index \emph{i} was
+chosen. Hence, we must have ext\emph{′}=
+
+\begin{quote}
+\emph{i}=1
+
+We proceed to bound ext\emph{′i≥}max1\emph{≤i≤n} 1 \emph{n}ext\emph{′i}.
+
+\emph{i}. Denote with \emph{Di−}1 the probability distribution of the
+state
+\end{quote}
+
+output by \emph{Ai−}1 conditioned on the fact that the first \emph{i −}1
+executions were successful. Clearly, the probability that
+\emph{E′}succeeds conditioned on the event that the first \emph{i −}1
+executions were
+
+successful is E{[}ext\emph{i}(\emph{st}){]}, where
+ext\emph{i}(\emph{st}) denotes the probability that \emph{EAi}(\emph{x,
+st}) outputs a witness. Hence, ext\emph{′i}=
+\emph{ai−}1E{[}ext\emph{i}(\emph{st}){]}, where \emph{st} is distributed
+accordingly to \emph{Di−}1. Using the hypothesis
+
+that (\emph{P, V}) has extraction error \emph{ν}, we get that there
+exists a constant \emph{d \textgreater{}} 0 and a polynomial \emph{p}
+such that ext\emph{i}(\emph{st}) \emph{≥}\uline{1}
+\emph{p}(acc\emph{i}(\emph{st}) \emph{−ν})\emph{d} for all \emph{st},
+where acc\emph{i}(\emph{st}) denotes the probability that \emph{Ai}
+
+is successful using state \emph{st}. Putting all together, we can
+conclude:
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+ext\emph{′i}= \emph{ai−}1E {[}ext\emph{i}(\emph{st}){]}
+\emph{≥ai−}1\emph{·} E
+
+\begin{quote}
+1\\
+\emph{p}(acc\emph{i}(\emph{st}) \emph{−ν})\emph{d}
+\end{quote}
+
+\emph{≥ai−}1 (E {[}acc\emph{i}(\emph{st}){]}
+\emph{−ν})\emph{d}=\emph{ai−}1 \emph{p}(\emph{ci −ν})\emph{d,}
+
+where the second inequality in the chain is obtained by applying
+Jensen's inequality E{[}\emph{f}(\emph{X}){]} \emph{≥f}(E{[}\emph{X}{]})
+(for any random variable \emph{X} and convex function \emph{f}).
+
+\begin{quote}
+Let now \emph{δ} = (acc\emph{′−νn}). Assume that \emph{δ \textgreater{}}
+0 otherwise there is nothing to prove.
+\end{quote}
+
+\textbf{Claim 1.} \emph{There exists an index i ∈}{[}\emph{n}{]}
+\emph{such that}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{ai−}1 \emph{\textless{} νi−}1+ (\emph{i −}1)\emph{δn}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{and}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{ai ≥νi}+ \emph{i δn.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\emph{Proof of claim.} We need to prove that there exists some \emph{i
+∈}{[}\emph{n}{]} such that
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}@{}}
+\toprule()
+\multicolumn{8}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{1.0000} + 14\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{ai−}1 \emph{−ai ≤νi−}1+ (\emph{i −}1)\emph{δn−νi −i δn}=
+\emph{νi−}1 \emph{−νi −δn.}
+
+Assume, towards a contradiction, that for all indexes \emph{i
+∈}{[}\emph{n}{]} we have \emph{ai−}1 \emph{−ai \textgreater{}
+νi−}1\emph{−νi−δ}Then, we get
+
+\emph{n}.
+\end{minipage}} \\
+\midrule()
+\endhead
+& \emph{n} & & \emph{n} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{i−}1\emph{iδ}
+\end{quote}
+\end{minipage} & & \emph{n} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{i−}1\emph{i}
+\end{quote}
+\end{minipage} \\
+\emph{a}0 \emph{−an} = & \emph{i}=1 & (\emph{ai−}1 \emph{−ai})
+\emph{\textgreater{}} & \emph{i}=1 &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{ν−ν−n}
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+= \emph{−δ} +
+\end{quote}
+\end{minipage} & \emph{i}=1 &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+(\emph{ν−ν})
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+= \emph{νn−}acc\emph{′}+ 1 \emph{−νn}= 1 \emph{−}acc\emph{′.}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+However this is impossible, because by construction \emph{a}0 \emph{−an}
+= 1 \emph{−}acc\emph{′}.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+For the index \emph{i} of the above claim, we have
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{ai−}1(\emph{ci −ν}) = \emph{ai −ai−}1\emph{ν ≥}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{νi}+ \emph{i δn}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{−}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{νi−}(\emph{i −}1)\emph{δn}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+=\emph{δn,}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+23
+
+and hence
+
+ext\emph{′≥}1 \emph{n}max 1\emph{≤i≤n}
+
+\emph{≥}1 \emph{n}max 1\emph{≤i≤n}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{ai−}1 \emph{p}(\emph{ci −ν})\emph{d ≥}1 \emph{n}max 1\emph{≤i≤n
+ad}
+\end{quote}
+
+\emph{i−}1 \emph{p}(\emph{ci −ν})\emph{d}
+
+\begin{quote}
+\emph{d}
+
+\emph{δ}1
+
+\emph{n} = \emph{p · nd}+1 (acc\emph{′ −νn})\emph{d.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Since \emph{p · nd}+1= \emph{p′}, the proposition follows.
+
+\textbf{D} \textbf{Details Omitted from Applications D.1}
+\textbf{Definitions of Leakage-Resilient Primitives}
+
+\textbf{Leakage-Resilient Hard Relations and Signatures.} definitions
+from {[}19{]} that we mention in section 5.1.
+
+\begin{quote}
+For completeness, we recall some
+\end{quote}
+
+\textbf{Definition 9} (Leakage-resilient hard relation)\textbf{.}
+\emph{A binary relation R ⊂\{}0\emph{,} 1\emph{\}∗×\{}0\emph{,}
+1\emph{\}∗is calledλ}-leakage-resilient hard relation \emph{if: (i)
+there exists an efficient sampling algorithm} Gen\emph{R such that for
+any pair} (\emph{pk, sk}) \emph{←}Gen\emph{R}(1\emph{k})\emph{, it holds
+R}(\emph{pk, sk}) = 1\emph{, (ii) deciding whether a pair satisfies
+R}(\emph{pk, sk}) = 1 \emph{or not can be done in polynomial time, (iii)
+any efficient adversary A has negligible advantage in winning the
+experiment defined below:}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{\textbf{Experiment}} ExpLK-REL \emph{R,A}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(1\emph{k})
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+(\emph{pk, sk}) \emph{←}Gen\emph{R}(1\emph{k})\\
+\emph{sk⋆←AOλsk}(\emph{·})(\emph{pk})
+
+\emph{Output} 1 \emph{if R}(\emph{pk, sk⋆}) = 1
+\end{quote}
+
+\emph{that is, for any PPT A, it holds:}
+
+\begin{quote}
+Prob{[}ExpLK-REL\\
+\emph{R,A}
+
+(1\emph{k}) = 1{]} \emph{≤negl}(\emph{k})
+\end{quote}
+
+\textbf{Definition 10} (Leakage-resilient signature)\textbf{.}
+\emph{Let} Π = (Gen\emph{,} Sign\emph{,} Vrf) \emph{be a signature
+scheme. The following experiment models an unforgeability game where the
+adversary gets leakage infor-}
+
+\emph{mation on the signing key.}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{\textbf{Experiment}} ExpLKR-SIGN Π\emph{,A}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(1\emph{k})
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+(\emph{pk, sk}) \emph{←}KeyGen(1\emph{k})\\
+(\emph{m⋆, σ⋆})
+\emph{←A}Sign(\emph{sk,·})\emph{,Oλsk}(\emph{·})(\emph{pk})
+
+\emph{Output} 1 \emph{if and only if:}
+
+\emph{1.} Vrf(\emph{pk, m⋆, σ⋆}) = 1
+
+\emph{2.} (\emph{m⋆, σ⋆}) \emph{/∈T}
+\end{quote}
+
+\emph{In the experiment above, T is a list containing queries to} Sign
+\emph{and corresponding answers. A signature scheme} Π \emph{is
+λ}-leakage resilient \emph{if any PPT adversary A has only negligible
+advantage in winning the unforgeability game:}
+
+\begin{quote}
+Prob{[}ExpLKR-SIGN\\
+Π\emph{,A}
+
+(1\emph{k}) = 1{]} \emph{≤negl}(\emph{k})
+\end{quote}
+
+24
+
+\textbf{Leakage-Resilient Public-Key Encryption.} security against
+\emph{λ}-key-leakage attacks from {[}35{]}.
+
+\begin{quote}
+We recall the definitions of CPA and CCA Let Π = (Gen\emph{,}
+Enc\emph{,} Dec) be a public key
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+encryption scheme and denote with \emph{PKk}, \emph{SKk} the sets of
+public/secret keys that are produced by Gen(1\emph{k}). We define an
+oracle \emph{Oλsk}depending on a secret key \emph{sk ∈SKk}, which takes
+as input (the description of) functions \emph{fi} :
+
+adversary if \emph{A} has access to \emph{Oλ}following experiments:
+\emph{sk}and the total leakage is bounded by \emph{SKk →\{}0\emph{,}
+1\emph{\}λi}. An oracle machine \emph{A} is a \emph{λ}-key-leakage
+\emph{iλi ≤λ}. Consider the
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Experiment} ExpLKG-CPA (1\emph{k})
+\end{quote}
+
+Π\emph{,A}
+
+\begin{quote}
+(\emph{pk, sk}) \emph{←}Gen(1\emph{k})
+
+(\emph{m}0\emph{, m}1) \emph{←A Oλ}0 \emph{sk}(\emph{·}) (\emph{pk})
+\end{quote}
+
+\$
+
+\begin{quote}
+\emph{cb ←}Enc(\emph{pk, mb}) for \emph{b←\{}0\emph{,} 1\emph{\}}
+
+\emph{b′←A}1(\emph{cb})
+
+Output 1 if and only if:
+\end{quote}
+
+1. \emph{b′}= \emph{b}
+
+2. \emph{\textbar m}0\emph{\textbar{}} =
+\emph{\textbar m}1\emph{\textbar{}}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Experiment} ExpLKG-CCA (1\emph{k})
+\end{quote}
+
+Π\emph{,A}
+
+\begin{quote}
+(\emph{pk, sk}) \emph{←}Gen(1\emph{k})
+
+(\emph{m}0\emph{, m}1) \emph{←A} Dec(\emph{sk,·})\emph{,Oλ}0
+\emph{sk}(\emph{·})
+
+\$\\
+(\emph{pk})
+
+\emph{cb ←}Enc(\emph{pk, mb}) for \emph{b←\{}0\emph{,} 1\emph{\}}
+
+\emph{b′←A}Dec(\emph{sk,·}) (\emph{cb})
+
+Output 1 if and only if:
+
+1. \emph{b′}= \emph{b}
+
+2. \emph{\textbar m}0\emph{\textbar{}} =
+\emph{\textbar m}1\emph{\textbar{}}
+
+3. \emph{cb} is never submitted to Dec(\emph{sk, ·})
+\end{quote}\strut
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+We stress that in the experiments above, \emph{A} is not allowed to
+query the leakage oracle after seeing the challenge ciphertext. (In
+fact, a single bit of leakage on the challenge ciphertext
+
+would allow her to win the game with probability 1.)
+
+\textbf{Definition 11} (ATK-secure encryption against
+\emph{λ}-key-leakage attacks)\textbf{.} \emph{For} ATK
+\emph{∈\{}CPA\emph{,} CCA\emph{\}, we say a public key encryption
+scheme} Π = (Gen\emph{,} Enc\emph{,} Dec) \emph{is} ATK\emph{-secure
+against λ-key-leakage}
+
+\emph{attacks if, for every PPT λ-key-leakage adversary A} =
+(\emph{A}0\emph{, A}1) \emph{as above, we have:}
+
+\textbf{D.2}
+
+\begin{quote}
+Prob{[}ExpLKG-ATK Π\emph{,A} (1\emph{k}) = 1{]} \emph{≤}1 2 +
+\emph{negl}(\emph{k})\emph{.}
+
+\textbf{Proof of Theorem 4}
+\end{quote}
+
+This proof follows the same strategy given in {[}19{]}, Theorem 4.3,
+with minor changes. We consider the following two games:
+
+\textbf{Game 0:} This is the unforgeability game of Definition 10
+tailored for leakage-resilient signa-tures described in 5.1.
+
+\textbf{Game 1:} In this game, we change the way in which the signing
+oracle answers to \emph{A}'s queries. Instead of giving valid proofs
+\emph{πi}, it answers signature queries \emph{mi} with simulated proofs
+\emph{S}(\emph{pk, mi}). Notice that we use a simplified notation and
+denote \emph{S} the simulator that combines \emph{S}1 (which answers
+queries to the random oracle) and \emph{S}2 (which generates the proofs)
+from Definition 4.
+
+In Game 1, the winning condition of \emph{A} is still to compute a valid
+forgery, i.e., to compute (\emph{m⋆, σ⋆}) such that Vrf(\emph{pk, m⋆,
+σ⋆}) = 1. The transition from Game 0 to Game 1 is based on the
+indistinguishability between proofs produced by the prover and proofs
+computed by the simulator. For the unbounded non-interactive
+zero-knowledge property of the scheme, the success probability in the
+two games turns out to be negligibly close. Indeed, the adversary does
+not notice whether she is talking to the signing oracle Sign\emph{sk} or
+to the simulator \emph{S}. Suppose for sake of contradiction that the
+success probability of \emph{A}, that we denote \emph{ϵ}, is
+non-negligible (wlog, we bound the success probability of \emph{A} for
+Game 1).
+
+25
+
+\begin{quote}
+We next construct an adversary \emph{B} that runs \emph{A} as a
+subroutine and breaks the security of
+\end{quote}
+
+the leakage-resilient hard relation \emph{R}. Adversary \emph{B} behaves
+as follows: after receiving \emph{pk} as
+
+the challenge for the hard relation, it simulates the environment for
+\emph{A} and answers her oracle queries. To this end, \emph{B} forwards
+\emph{A}'s leakage queries, addressed to oracle \emph{Oλsk}, to its own
+oracle
+
+\emph{O}2\emph{λsk}, and returns the answer to \emph{A}. To answer
+signing queries for \emph{mi}, \emph{B} creates simulated proofs\emph{σi
+←S}(\emph{pk, mi}). When \emph{A} outputs a forgery (\emph{m⋆, σ⋆}),
+adversary \emph{B} runs the extractor \emph{EA}(\emph{pk, σ⋆}) to obtain
+\emph{sk⋆}, hence outputs this value as a witness for \emph{pk}. Notice
+that by running the extractor
+
+\emph{EA}(\emph{pk, σ⋆}), we need to rewind \emph{A} which requires to
+simulate its leakage queries again. Hence,
+
+the need for a 2\emph{λ} leakage oracle (cf. Theorem 3).
+
+\begin{quote}
+It remains to analyze the success probability of \emph{B} in breaking
+the security of the leakage-
+\end{quote}
+
+resilient hard relation \emph{R}(\emph{pk, sk}). Let Win be the event
+that \emph{A} wins in Game 1, that is she outputs a pair (\emph{m⋆, σ⋆})
+accepted by \emph{VH}, and let Ext be the event that the extractor
+\emph{EA} computes a valid witness \emph{sk⋆}(cf. Definition 6). We have
+
+\begin{quote}
+Prob{[}ExpLK-REL \emph{R,B} (1\emph{k}) = 1{]} \emph{≥}Prob{[}Win
+\emph{∧}Ext{]} (1)
+
+= Prob{[}Ext\emph{\textbar{}}Win{]} \emph{·} Prob{[}Win{]} (2)
+
+\emph{≥}(1 \emph{−negl}(\emph{k}))\emph{d· ϵ} (3)
+\end{quote}
+
+In the above, Eq. (1) uses the fact that if \emph{A} produces a valid
+forgery (\emph{m, σ⋆}) and the extractor \emph{EA} succeeds and outputs
+a valid witness \emph{sk⋆}from such forgery, then \emph{B} wins: indeed,
+it simply returns \emph{sk⋆}. This implies that:
+
+\begin{quote}
+Prob{[}ExpLK-REL\\
+\emph{R,B}
+
+(1\emph{k}) = 1{]} \emph{≥}Prob{[}Win \emph{∧}Ext{]}
+
+In Eq. (2), we use the definition of conditional probability. In Eq. (3)
+we use the fact
+\end{quote}
+
+that (\emph{PH, VH}) has negligible extraction error and that
+conditioned on Win the verification
+
+always succeeds, i.e., acc = 1 in Theorem 3. Finally, in Eq. (3) we use
+our assumption that
+
+\emph{ϵ} := Prob{[}Win{]} is non-negligible, which implies that for any
+polynomial \emph{p} and constant \emph{d},
+
+\emph{p}(\emph{k})\emph{·} (1 \emph{−negl}(\emph{k}))\emph{d} is also
+non-negligible. This yields a contradiction to the security of the
+
+leakage-resilient hard relation \emph{R} and concludes the proof.
+
+\textbf{D.3} \textbf{Revisiting Naor-Segev in the ROM}
+
+\textbf{Naor-Yung paradigm.} In the random oracle model, the Naor-Yung
+(NY) construction con-
+
+siders two encryption schemes with CPA-security Π = (Gen\emph{,}
+Enc\emph{,} Dec), Π\emph{′}= (Gen\emph{′,} Enc\emph{′,} Dec\emph{′})
+
+and a NIZK proof system (\emph{PH, VH}) for the following language:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{LNY} =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(\emph{c, c′, pk, pk′}) : \emph{∃m, r, r′}s.t. \emph{c} = Enc(\emph{pk,
+m}; \emph{r})\emph{, c′}= Enc\emph{′}(\emph{pk′, m}; \emph{r′})
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{,}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+where the public keys \emph{pk} and \emph{pk′}are generated by Gen and
+Gen\emph{′}respectively. The new encryp-
+
+tion scheme Π\emph{∗}= (Gen\emph{∗,} Enc\emph{∗,} Dec\emph{∗}) is as
+follows:
+
+\textbf{Key generation:} Runs (\emph{pk, sk}) \emph{←}Gen(1\emph{k}),
+(\emph{pk′, sk′}) \emph{←}Gen\emph{′}(1\emph{k}), and outputs
+keys\emph{⃗}(\emph{pk, pk′}) and\emph{⃗sk} = (\emph{sk, sk′}). \emph{pk}
+=
+
+\textbf{Encryption:} Computes ciphertexts \emph{c} = Enc(\emph{pk, m};
+\emph{r}) and \emph{c′}= Enc\emph{′}(\emph{pk′, m}; \emph{r′}), invokes
+the
+
+\begin{quote}
+prover \emph{PH}on public input (\emph{c, c′, pk, pk′}) and private
+input (\emph{m, r, r′}) to get a NIZK proof
+
+\emph{π} for (\emph{c, c′, pk, pk′}) \emph{∈LNY} .
+\end{quote}
+
+\textbf{Decryption:} Checks the validity of proof \emph{π} by calling
+the (public) verification procedure
+
+\emph{VH}((\emph{c, c′})\emph{, π}). If \emph{π} is accepted, uses
+decryption algorithm Dec(\emph{sk, ·}) on ciphertext \emph{c}.
+
+26
+
+The extension of the Naor-Yung paradigm of twin encryption to the
+key-leakage framework has been proven by Naor and Segev {[}35{]} for
+NIZK proofs in the CRS model. They show that, when the NY paradigm is
+applied to leakage-resilient schemes, the resulting CCA-secure
+encryption scheme is still leakage-resilient. More precisely, starting
+from an encryption schemesΠ which is CPA-secure against
+\emph{λ}-key-leakage attacks, one gets a CCA-secure encryption
+schemeΠ\emph{∗}secure against \emph{λ}-key-leakage attacks. The proof of
+Naor and Segev is similar to the one appeared in {[}34{]}, except for
+the presence of a leakage oracle \emph{Oλ}ciphertext (\emph{c, c′, π})
+can be decrypted by using \emph{only one} secret key. Indeed, given
+knowledge \emph{sk}. The intuition is that a
+
+of one of the two secret keys, decryption can be carried out by checking
+the validity of \emph{π} (the verification procedure is public) and
+decrypting the corresponding ciphertext with the known secret key. In
+the leakage setting, the CPA-attacker has also to answer to leakage
+queries made by the CCA-attacker. Again, a single secret key is
+sufficient for this purpose.
+
+Below, we prove the ROM-equivalent of the result above when NIZKs are
+built in the random oracle model (in particular, when using the
+Fiat-Shamir transform). The only potential issue is that, since the
+random oracle is public, leakage functions might also depend on it.
+However, since we make use of Fiat-Shamir NIZKs, this fact does not
+affect the proof because the random oracle takes as input only public
+data (namely, the statement \emph{x} to be proven and the commitment
+\emph{α}in the NIZK proof).
+
+\textbf{Theorem 5} (ROM equivalent of {[}35{]})\textbf{.} \emph{Let} Π =
+(Gen\emph{,} Enc\emph{,} Dec) \emph{and} Π\emph{′}= (Gen\emph{′,}
+Enc\emph{′,} Dec\emph{′}) \emph{be two public-key encryption schemes
+secure against λ-key-leakage chosen-plaintext attacks, and let}
+(\emph{PH, VH}) \emph{be a simulation-sound NIZK proof system for the
+Naor-Yung language LNY associated to} (Π\emph{,} Π\emph{′})\emph{. In
+the random oracle model, the encryption scheme} Π\emph{∗obtained via the
+Naor-Yung paradigm is secure against adaptive λ-key-leakage
+chosen-ciphertext attacks.}
+
+In the random oracle setting, the proof presented in {[}35{]} can be
+mirrored in a straightforward way: it suffices to simply replace the
+CRS-based NIZK with an analogous NIZK proof system in the ROM. In fact,
+irrespective of the model being considered, the proof \emph{π} can be
+computed by the encryption algorithm Enc\emph{∗}and validated by the
+decryption procedure Dec\emph{∗}by invoking, in turn, prover and
+verifier. The presence of random oracles does not change the behavior of
+the leakage oracle. Nevertheless, we propose a new approach which traces
+out the proof appeared in {[}14{]}, in the context of KDM security.
+
+\emph{Proof.} Consider the LKG-CCA experiment adapted for the NY
+construction:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Experiment} ExpLKG-CCA (1\emph{k}):
+
+Π\emph{∗,A} \$
+
+(\emph{pk, pk′, sk, sk′}) \emph{←}Gen\emph{∗}(1\emph{k});
+\emph{b←\{}0\emph{,} 1\emph{\}}
+
+(\emph{m}0\emph{, m}1) \emph{←A} Dec\emph{∗}(\emph{sk,·})\emph{,Oλ}
+
+0 \emph{sk}(\emph{·}) (\emph{pk, pk′})
+
+\emph{cb} = Enc(\emph{pk, mb}; \emph{r});
+\emph{c′b←}Enc\emph{′}(\emph{pk′, mb}; \emph{r′})
+
+\emph{π ←PH}((\emph{cb, c′b, pk, pk′})\emph{,} (\emph{mb, r, r′}));
+\emph{⃗cb} := (\emph{cb, c′b, π})
+
+\emph{b′←A} Dec\emph{∗}(\emph{sk,·})\emph{,Oλ}1 \emph{sk}(\emph{·})
+(\emph{pk, pk′,⃗cb})
+
+Output 1 if and only if:
+
+1. \emph{b′}= \emph{b}
+
+2. \emph{\textbar m}0\emph{\textbar{}} =
+\emph{\textbar m}1\emph{\textbar{}}
+
+3. \emph{cb} not asked to Dec\emph{∗}(\emph{sk, ·})
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Dec\emph{∗}(\emph{c, c′, π}):\\
+if \emph{VH}((\emph{c, c′})\emph{, π}) = 1 \emph{m} = Dec(\emph{sk, c})
+
+Return \emph{m}
+
+\emph{Oλsk}(\emph{f}):\\
+Return \emph{f}(\emph{sk})
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+We stress that, even if not explicitly written (for better readability),
+the leakage functions \emph{f} may depend on the random oracle \emph{H}.
+However, such a dependence does not give any significant advantage to
+the adversary. In what follows, we derive a series of games whose
+outcomes cannot be mutually distinguished, as long as one does not
+violate the hypothesis of the theorem.
+
+27
+
+\textbf{Game 0.} We consider the LKG-CCA experiment defined above, in
+the case the random bit is \emph{b} = 0. Observe that the challenge
+ciphertext (\emph{cb, c′b, π}) contains encryptions of the same message
+\emph{m}0.
+
+\textbf{Game 1.} This game differs from the previous one in that the
+proof \emph{π} attached to the challenge ciphertext is not properly
+generated by the prover, but computed by the ZK simulator.
+
+\textbf{Game 2.} As in Game 1, but in the challenge phase the ciphertext
+\emph{c′}Enc\emph{′}(\emph{pk′, m}1). As a consequence, the attached
+proof \emph{π} is a fake one, since \emph{cb} and \emph{c′} \emph{b}is
+computed as \emph{c′b←} \emph{b} encrypt \emph{m}0 and \emph{m}1
+respectively.
+
+\textbf{Game 3.} This game is defined as Game 2 but the decryption
+oracle uses the secret key \emph{sk′}instead of \emph{sk}, i.e. answers
+to queries (\emph{c, c′, π}) by computing Dec\emph{′}(\emph{sk′, c′}).
+
+\textbf{Game 4.} Again, we change the encryption oracle in such a way
+that the first ciphertext \emph{c} encrypts the message \emph{m}1. This
+means that the challenge ciphertext contains Enc(\emph{pk, m}1) and
+Enc\emph{′}(\emph{pk′, m}1), both encryptions of the same message
+\emph{m}1, hence it is a valid ciphertext.
+
+\textbf{Game 5.} As in Game 4, but we restore the prover \emph{PH}to
+compute proofs.
+
+\textbf{Game 6.} Game 6 differs from the previous one in that the
+decryption oracle restart to invoke Dec(\emph{sk, ·}) on input the first
+ciphertext \emph{c} (and the leakage oracle also uses \emph{sk}). This
+is the experiment LKG-CCA for \emph{b} = 1.
+
+Denote by \emph{Si} the adversary success in Game i, for \emph{i} =
+0\emph{,} 1\emph{, . . . ,} 6. Observe that
+\emph{\textbar{}}Prob{[}\emph{S}0{]}
+\emph{−}Prob{[}\emph{S}6{]}\emph{\textbar{}} bounds the advantage of a
+(\emph{λ}-key-leakage) CCA-adversary attacking the scheme Π\emph{∗}. We
+show that the difference \emph{\textbar{}}Prob{[}\emph{Si}{]}
+\emph{−}Prob{[}\emph{Si}+1{]}\emph{\textbar{}} is negligible for any
+\emph{i} = 1\emph{, . . .} 5, which implies the former.
+
+0 \emph{→}1 The transition between games 0 and 1 is based on the
+indistinguishability of NIZK proofs properly computed from proofs
+generated by the simulator. Indeed, if the probabilities of winning in
+the two games were not negligibly close, one could build an efficient
+distin-guisher able to detect whether a proof comes from the prover
+\emph{PH}or from the simulator \emph{S}. 1 \emph{→}2 CPA-security of the
+encryption scheme Π\emph{′}means that no efficient adversary can
+distin-guish between encryptions of different messages under the same
+public key. In particular, encryption of different messages under the
+same public key \emph{pk′}are indistinguishable.
+
+\begin{quote}
+\emph{b, π}) is generated: Game 1 and Game 2 differ only in the way the
+challenge ciphertext (\emph{cb, c′}\\
+ciphertext \emph{c′b}equals Enc\emph{′}(\emph{pk′, m}0) in the first
+case, while in Game 2 it is Enc\emph{′}(\emph{pk′, m}1).
+
+Thus, any PPT distinguisher who recognizes which games is involved with
+could be di-rectly used to discern which one of the two plaitexts has
+been encrypted.
+\end{quote}
+
+2 \emph{→}3 The difference between Game 2 and Game 3 lies in the way the
+decryption oracle answers adversarial queries (\emph{c, c′, π}), namely
+by decrypting \emph{c} with key \emph{sk} or \emph{c′}with key
+\emph{sk′}, respec-tively. The only chance to tell apart the two
+experiments is to query the decryption oracle with an invalid ciphertext
+(\emph{c, c′, π}) such that \emph{c} and \emph{c′}are the encryptions of
+different mes-sages. This would require to produce an accepting proof
+\emph{π⋆}for a pair (\emph{c, c′}) \emph{/∈LNY} (the decryption oracle
+checks the validity of the proof before allowing decryption). Observe
+that in both games, the adversary actually receives a fake (simulated)
+accepting proof for a false statement (since one of the ciphertext
+encrypts \emph{m}0 and the other encrypts \emph{m}1), and she might
+potentially gain some information from that proof. However, the
+simulation soundness of the proof system forbids her to produce a new
+accepting proof for a false statement.
+
+28
+
+3 \emph{→}4 The transition between Game 3 and Game 4 is equivalent to
+the one involving games 1 and 2, that we have already discussed. Since
+the scheme Π is CPA-secure, indistin-
+
+\begin{quote}
+guishability of ciphertexts Enc(\emph{pk, m}0) and Enc(\emph{pk, m}1)
+implies that the probabilities of
+
+succeeding in the two games are negligibly close.
+\end{quote}
+
+4 \emph{→}5 Another symmetry makes similar the transition from Game 4 to
+Game 5 with the one between games 0 and 1: indistinguishability follows
+from the zero-knowledge property of
+
+\begin{quote}
+the non-interactive proof system.
+\end{quote}
+
+5 \emph{→}6 Game 6 differs from Game 5 in that the decryption oracle
+restarts to decrypt ciphertext \emph{c} by using secret key \emph{sk},
+as in the original experiment. To notice the difference, an efficient
+
+\begin{quote}
+distinguisher should be able to produce an invalid ciphertext (\emph{c,
+c′, π}), hence an accepted
+
+proof \emph{π} for a false statement, as for the transition between
+games 2 and 3. We have
+
+already seen that no adversary is allowed to do so, otherwise the
+simulation soundness of
+
+the proof system would be broken. Moreover, in games 5 and 6, the
+challenge ciphertext
+
+contains two encryptions of the same message \emph{m}1, that means it is
+a valid ciphertext.
+
+The adversary is not even allowed to get fake simulated proof, thus
+producing fresh fake
+
+proofs would in fact violate the soundness property of the proof system.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{D.4}
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.7500} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Σ\textbf{-Protocol for BHHO}
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.7500} + 4\tabcolsep}}{%
+\emph{Proof.} Completeness condition is trivially satisfied.} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+In order to prove that the protocol is
+\end{quote}
+\end{minipage} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+special sound, let \emph{π}1 = (\emph{⃗α, β}1\emph{, ⃗γ}1) and \emph{π}2
+= (\emph{⃗α, β}2\emph{, ⃗γ}2) be two different accepted proofs for a
+
+given theorem \emph{x} = (\emph{c, pk, c′, pk′}), with challenges
+\emph{β}1 \emph{̸}= \emph{β}2. We show how to extract a witness
+
+for \emph{x ∈L}. The validity of both proofs implies that, for any
+\emph{i} = 1\emph{, . . . , ℓ}, we have:} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\emph{αi} = \emph{gγ}1 \emph{i}
+
+\emph{α′i}= \emph{gγ′}1} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{· cβ}1 = \emph{gγ}2 \emph{i· cβ}2
+
+\emph{·} (\emph{c′i})\emph{−β}1 = \emph{gγ′}2
+\end{quote}
+
+\emph{·} (\emph{c′i})\emph{−β}2
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+and
+
+\emph{α′′}= \emph{hγ}1\emph{·} (\emph{h′})\emph{γ′}1 \emph{·}
+(\emph{cℓ}+1 \emph{·} (\emph{c′ℓ}+1)\emph{−}1)\emph{β}1 = \emph{hγ}2
+\emph{·} (\emph{h′})\emph{γ′}2 \emph{·} (\emph{cℓ}+1 \emph{·}
+(\emph{c′ℓ}+1)\emph{−}1)\emph{β}2\emph{.}
+
+From the first pair of equations we can easily compute
+\emph{g}(\emph{γ}1\emph{−γ}2) \emph{i} = \emph{c}(\emph{β}1\emph{−β}2)
+\emph{i} and \emph{g}(\emph{γ′i} 1\emph{−γ′}2) =
+
+(\emph{c′}
+
+\emph{g}(\emph{γ}1\emph{−γ}2)(\emph{β}1\emph{−β}2)\emph{−}1
+
+\emph{ρ′}= (\emph{γ′}
+
+\emph{i} = 1\emph{, . . . , ℓ}it holds \emph{ci} = \emph{gρ}\\
+\emph{i}\\
+\emph{i})(\emph{β}2\emph{−β}1). Hence, since the challenges are
+distinct, we can invert (\emph{β}2 \emph{−β}1), obtaining \emph{ci} =
+
+\begin{quote}
+1\emph{−γ′}2)(\emph{β}2 \emph{−β}1)\emph{−}1 yields a witness \emph{w} =
+(\emph{ρ, ρ′}) for the statement \emph{x}. Indeed, for any index and
+\emph{c′i}= \emph{g}(\emph{γ′}
+
+\emph{i}, \emph{c′i}= \emph{gρ′}\\
+1\emph{−γ′}2)(\emph{β}2\emph{−β}1)\emph{−}1
+
+\emph{i}and\\
+. Finally, setting \emph{ρ} = (\emph{γ}1 \emph{−γ}2)(\emph{β}1
+\emph{−β}2)\emph{−}1and
+\end{quote}
+
+\emph{cℓ}+1 \emph{·} (\emph{c′ℓ}+1)\emph{−}1 = \emph{hρ ·}
+(\emph{hρ′})\emph{−}1\emph{.}
+
+The last equations prove that the ciphertexts encrypt the same message,
+that is to say the
+
+statement \emph{x} is in \emph{L}.
+
+\begin{quote}
+It's not difficult to see that the protocol is not only HVZK, but also
+SS-HVZK. Indeed,
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+computing the response \emph{⃗γ} as the third move of the prover is the
+same as choosing it at random
+
+in Z\emph{q ×} Z\emph{q}, because both \emph{s} and \emph{β}, like so
+\emph{s′}and \emph{β′}, are chosen at random. Once a response \emph{⃗}is
+chosen, for any challenge \emph{β} we can easily compute a commitment
+\emph{⃗α} in such a way that the\emph{γ}
+
+triplet (\emph{⃗α, β,⃗γ}) satisfies the check: this is a consequences of
+the special form the verification
+
+procedure has, that directly shows how to compute \emph{⃗α}. Given this,
+a probabilistic polynomial-
+\end{minipage}} \\
+\midrule()
+\endhead
+time algorithm which acts as an SS-HVZK simulator can be described. &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+29
+
+\textbf{D.5} \textbf{Revisiting Camenisch-Chandran-Shoup in the ROM}
+
+Let Π = (Gen\emph{,} Enc\emph{,} Dec) be a public-key encryption scheme
+and denote with \emph{PKk}, \emph{SKk} the sets of public/secret keys
+that are produced by Gen(1\emph{k}). Also, for integer \emph{n}, denote
+with Gen(\emph{n})(1\emph{k})
+
+the algorithm which outputs two vectors (\emph{⃗pk, ⃗sk}) containing
+\emph{n} public/secret keys. Given the
+
+message space \emph{M}, consider the family of functions:
+
+\emph{∞}
+
+\begin{quote}
+\emph{F}(\emph{n})\emph{⊂\{f} : \emph{SKn k→M\} F} =
+\emph{F}(\emph{n})\emph{.}
+\end{quote}
+
+\emph{n}=1
+
+We define an oracle ∆\emph{b}(\emph{i, f}) depending on a bit \emph{b
+∈\{}0\emph{,} 1\emph{\}} and taking as input an index \emph{i
+∈}{[}\emph{n}{]}
+
+and a function \emph{f ∈F}. Whenever \emph{b} = 1, the oracle returns
+Enc(\emph{pki, f}(\emph{⃗}of \emph{f}(\emph{⃗sk}) under the \emph{i}-th
+public key in\emph{⃗pk}); otherwise it returns Enc(\emph{pki,} 0) (i.e.,
+the encryption \emph{sk})) (i.e., an encryption
+
+of a fixed message in \emph{M}). Consider the following experiments:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Experiment} ExpKDM-CPA Π\emph{,A,F}\\
+(\emph{⃗pk, ⃗sk}) \emph{←}Gen(\emph{n})(1\emph{k})\\
+\emph{b′←A}∆\emph{b}(\emph{·,·})(\emph{⃗pk})
+
+Output 1 if and only if:
+\end{quote}\strut
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(1\emph{k})
+\end{quote}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Experiment} ExpKDM-CCA Π\emph{,A,F}\\
+(\emph{⃗pk, ⃗sk}) \emph{←}Gen(\emph{n})(1\emph{k})\\
+\emph{b′←A}∆\emph{b}(\emph{·,·})\emph{,}Dec(\emph{·,·})(\emph{⃗pk})
+\end{quote}
+
+Output 1 if and only if:\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(1\emph{k})
+\end{quote}
+\end{minipage} \\
+& &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1. \emph{b′}= \emph{b}
+\end{quote}
+\end{minipage}}} \\
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+1. \emph{b′}= \emph{b}
+\end{minipage}} \\
+& &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2. Dec(\emph{i, ·}) not queried on \emph{c ←}∆\emph{b}(\emph{i, ·})
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Note that oracle Dec(\emph{i, c}) outputs Dec(\emph{ski, c}).
+
+\textbf{Definition 12} (KDM-ATK secure encryption)\textbf{.} \emph{For}
+ATK \emph{∈\{}CPA\emph{,} CCA\emph{\}, we say a public-}
+
+\emph{key encryption scheme} Π = (Gen\emph{,} Enc\emph{,} Dec) \emph{is}
+KDM{[}\emph{F}{]}-ATK \emph{secure if, for every probabilistic}
+
+\emph{polynomial-time adversary A as above and for all n, we have:}
+
+\begin{quote}
+Prob{[}ExpKDM-ATK\\
+Π\emph{,A,F}
+
+(1\emph{k}) = 1{]} \emph{≤}1 2 + \emph{negl}(\emph{k})\emph{.}
+\end{quote}
+
+\textbf{Simulation soundness and CCA-KDM security.} As shown in {[}14,
+Appendix A.1{]}, a variation of the Naor-Yung paradigm instantiated with
+a simulation-sound NIZK can leverage CPA-security to CCA-security in the
+context of KDM security, provided that one of the two encryption scheme
+already satisfy KDM-CPA security. The basic elements are an encryption
+scheme Π = (Gen\emph{,} Enc\emph{,} Dec) with KDM-CPA security with
+respect a given class of function \emph{F}, a CPA-secure encryption
+scheme Π\emph{′}= (Gen\emph{′,} Enc\emph{′,} Dec\emph{′}) and a
+simulation sound NIZK proofΠ\emph{∗}= (Gen\emph{∗,} Enc\emph{∗,}
+Dec\emph{∗}) is defined as in the original NY paradigm of twin
+encryption (see system (\emph{PH, VH}) for the NY language associated to
+(Π\emph{,} Π\emph{′}). The combined encryption scheme Section D.3).
+
+The statement below is the ROM-equivalent of {[}14{]}. The proof
+strategy is essentially the same already used in the proof of Theorem 5,
+the only difference being the instantiation of Πwith a KDM-CPA scheme.
+
+\textbf{Theorem 6} (ROM-equivalent of {[}14{]})\textbf{.} \emph{Let} Π
+\emph{be a KDM-CPA secure encryption scheme with respect to a class of
+function F,} Π\emph{′be a CPA-secure encryption scheme and let}
+(\emph{PH, VH}) \emph{be a simulation-sound NIZK proof system for the
+Naor-Yung language LNY associated to} (Π\emph{,} Π\emph{′})\emph{. In
+the random oracle model, the encryption scheme} Π\emph{∗obtained via the
+Naor-Yung paradigm is KDM-CCA secure with respect to the class of
+function F.}
+
+\emph{Proof.} We only sketch the proof. Consider the KDM-CCA experiment
+adapted for the NY construction:
+
+30
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+Dec\emph{∗}(\emph{i,} (\emph{c, c′, π})):
+\end{minipage}} \\
+\midrule()
+\endhead
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Experiment} ExpKDM-CCA Π\emph{∗,A,F}\\
+(\emph{⃗pk, ⃗sk}) \emph{←}Gen\emph{∗}(1\emph{k})\\
+\emph{b′←A}∆\emph{b}(\emph{·,·})\emph{,}Dec\emph{∗}(\emph{·,·})(\emph{⃗pk})
+
+Output 1 if and only if:
+\end{quote}\strut
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+(1\emph{k}):
+\end{quote}
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+if \emph{VH}((\emph{c, c′})\emph{, π}) = 1\\
+\emph{m} = Dec(\emph{ski, c})
+\end{quote}\strut
+\end{minipage} \\
+& & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Return \emph{m}
+\end{quote}
+\end{minipage} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1. \emph{b′}= \emph{b}\\
+2. Dec(\emph{i, ·}) not queried on \emph{c ←}∆\emph{b}(\emph{i, ·})
+\end{quote}\strut
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+∆\emph{b}(\emph{i, f}) :\\
+if \emph{b} = 1 output Enc\emph{∗}(\emph{pki, f}(\emph{⃗sk}))
+
+else output Enc\emph{∗}(\emph{pki,} 0\emph{\textbar f}(
+\emph{⃗sk})\emph{\textbar{}})
+\end{quote}\strut
+\end{minipage} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+Note that the \emph{i}-th key in vector\emph{⃗pk} has a type (\emph{pki,
+pk′i}) (one key for Π and the other one for
+
+Π\emph{′}), and the same holds for\emph{⃗sk}. Consider the following
+games:} \\
+\bottomrule()
+\end{longtable}
+
+\textbf{Game 0.} Is the KDM-CCA experiment defined above, when \emph{b}
+= 0.
+
+\textbf{Game 1.} This game differs from the previous one in that the
+proof \emph{π} and queries to the random oracle are not computed using
+\emph{PH}and \emph{H} respectively, but are produced by the ZK
+simulator. \emph{This is indistinguishable by the unbounded
+zero-knowledge property of the proof system.}
+
+\textbf{Game 2.} As in Game 1, but encryption queries for index \emph{i}
+are answered by computing the \emph{i,} 0\emph{\textbar f}(
+\emph{⃗sk})\emph{\textbar{}}). (Hence, the attached proof \emph{π} is a
+simulated second ciphertext as \emph{c′←}Enc\emph{′}(\emph{pk′}proof of
+a false statement.) \emph{This is indistinguishable due to the
+CPA-security of} Π\emph{′.}
+
+\textbf{Game 3.} This game is defined as Game 2 but decryption queries
+for index \emph{i} are answered by using secret key \emph{sk′i}instead
+of \emph{ski}, i.e. answer to queries (\emph{i,} (\emph{c, c′, π})) by
+comput-ing Dec\emph{′}(\emph{sk′i, c′}) whenever \emph{π} is accepted.
+\emph{This is indistinguishable due to the simulation soundness of the
+proof system.}
+
+\textbf{Game 4.} We change the encryption oracle in such a way that the
+first ciphertext is computed as \emph{c ←}Enc(\emph{pki,}
+0\emph{\textbar f}( \emph{⃗sk})\emph{\textbar{}}). \emph{This is
+indistinguishable due to the KDM-CPA security of} Π\emph{.} \textbf{Game
+5.} As in Game 4, but we restore the prover \emph{PH}to compute proofs.
+\emph{This is indistin-guishable by the unbounded zero-knowledge
+property of the proof system.}
+
+\textbf{Game 6.} Game 6 differs from the previous one in that the
+decryption oracle restart to invoke Dec(\emph{ski, ·}) on input the
+first ciphertext \emph{c}. \emph{This is indistinguishable due to the
+soundness of the proof system.}
+
+\begin{quote}
+Note that this is exactly the experiment KDM-CCA in the case \emph{b} =
+1.
+\end{quote}
+
+Denote by \emph{Si} the adversary success in Game \emph{i}, for \emph{i}
+= 0\emph{,} 1\emph{, . . . ,} 6. Observe that
+\emph{\textbar{}}Prob{[}\emph{S}0{]}
+\emph{−}Prob{[}\emph{S}6{]}\emph{\textbar{}} bounds the advantage of a
+KDM-CCA adversary attacking the scheme Π\emph{∗}. As in the proof of
+Theorem 5, the difference \emph{\textbar{}}Prob{[}\emph{Si}{]}
+\emph{−}Prob{[}\emph{Si}+1{]}\emph{\textbar{}} is negligible for all
+\emph{i} = 1\emph{, . . .} 5, which makes negligible the advantage of a
+KDM-CCA adversary against the scheme Π\emph{∗}. The only difference here
+is in the scheme Π, that is KDM-CPA secure instead of simply CPA-secure.
+In fact, the combined encryption scheme Π\emph{∗}inherits KDM-security
+just from the scheme Π (when
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+we move from Game 3 to Game 4).
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+31
+
+\end{document}

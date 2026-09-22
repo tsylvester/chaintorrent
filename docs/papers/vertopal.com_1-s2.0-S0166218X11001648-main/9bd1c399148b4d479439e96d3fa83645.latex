@@ -1,0 +1,1915 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{multirow}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\usepackage[normalem]{ulem}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\includegraphics[width=0.82639in,height=0.90556in]{vertopal_9bd1c399148b4d479439e96d3fa83645/media/image1.png}
+\end{quote}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Contents lists available at
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\includegraphics[width=0.79306in,height=0.99444in]{vertopal_9bd1c399148b4d479439e96d3fa83645/media/image2.png}
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+Discrete Applied Mathematics
+\end{minipage} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+journal homepage:
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+On cryptographic protocols employing asymmetric pairings --- The role of
+\emph{Ψ} revisited
+
+Sanjit Chatterjee, Alfred Menezes∗
+
+\emph{Department of Combinatorics \& Optimization, University of
+Waterloo, Waterloo, Ontario N2L 3G1, Canada}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+a r t i c l e
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+i n f o
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+a b s t r a c t
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{Article history:}\\
+Received 27 December 2009\\
+Received in revised form 22 February 2011 Accepted 23 April 2011\\
+Available online 31 May 2011
+\end{quote}\strut
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Asymmetric pairings \emph{e} : G1 × G2 →G\emph{T} for which an
+efficiently-computable isomorphism\emph{ψ} : G2 →G1 is known are called
+Type 2 pairings; if such an isomorphism \emph{ψ} is not known then
+\emph{e} is called a Type 3 pairing. Many cryptographic protocols in the
+asymmetric setting
+
+rely on the existence of \emph{ψ} for their security reduction while
+some use it in the protocol
+
+itself. For these reasons, it is believed that some of these protocols
+cannot be implemented
+\end{quote}
+\end{minipage} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{Keywords:}\\
+Bilinear pairings\\
+Elliptic curve cryptography
+\end{quote}\strut
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+with Type 3 pairings, while for some the security reductions either
+cannot be transformed to the Type 3 setting or else require a stronger
+complexity assumption. Contrary to these widely held beliefs, we argue
+that Type 2 pairings are merely inefficient implementations of Type 3
+pairings, and appear to offer no benefit for protocols based on
+asymmetric pairings from the point of view of functionality, security,
+and performance.
+\end{quote}
+
+© 2011 Elsevier B.V. All rights reserved.
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\textbf{1. Introduction}
+
+Pairing-based cryptography, though proposed only at the turn of the
+century, has witnessed a tremendous growth. The successful application
+of pairings in the design of novel cryptographic protocols {[}29,34,8{]}
+and their potential use as a principal building block for many others
+fueled this growth. The main thrust of research efforts in this area has
+been, and still is, in the development of new protocols.
+
+For three groups G1, G2, G\emph{T} of the same (prime) order, a pairing
+is a function \emph{e} : G1 × G2 →G\emph{T} that is bilinear,
+non-degenerate, and efficiently computable. If G1 = G2 then the pairing
+is \emph{symmetric} and following {[}25{]} we call it a Type 1 pairing.
+The pairing is \emph{asymmetric} when G1 ̸= G2. In the asymmetric
+setting, if there is an efficiently-computable G1 (or from G1 to G2)
+then we call it Type 3. Known examples of such pairings are the Weil and
+Tate pairings over suitable isomorphism \emph{ψ} : G2 →G1 then \emph{e}
+is called a Type 2 pairing. If no efficiently-computable isomorphism is
+known from G2 to elliptic curve groups G1 and G2, and their
+modifications such as the ate pairing {[}28{]} and the R-ate pairing
+{[}31{]}.1Since Type 1 pairings are quite restricted in terms of the
+choice of curves and are significantly slower than their asymmetric
+counterparts at higher security levels {[}27{]}, they will not be
+considered in the remainder of this paper.
+
+Recent work {[}25{]} suggests that Type 3 is a better choice than Type 2
+in terms of the size of elements in G2, the cost of performing group
+operations in G2, the cost of membership testing in G2, the feasibility
+of hashing into G2, and the cost of the pairing operation. However,
+these performance advantages do not immediately make Type 3 pairings an
+obvious choice for protocols described in the asymmetric setting.
+Cryptographic protocols are designed to realize some concrete
+functionality in a secure way. The question of security is
+\emph{intrinsic} to that of functionality for such protocols. The
+question of efficiency enters only after issues of functionality and
+security have been settled. In the context of pairing-based protocols in
+the
+
+∗Corresponding a567x6934; fax:
+
+\emph{E-mail addresses:} (S. Chatterjee), (A. Menezes).
+
+1 Cryptographicalllso be defined f and, more generally, from abelian
+varieties {[}24{]}. Since elliptic curve pairings are believed to offer
+superior performance, this paper will only be concerned with pairings
+derived from elliptic curves.
+
+0166-218X/\$ -- see front matter © 2011 Elsevier B.V. All rights
+reserved.
+\end{quote}
+
+1312 \emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322}
+
+asymmetric setting, Type 3 can be considered to be a better choice only
+if it is possible to argue that whatever is achievable in terms of
+functionality and security in Type 2 can also be achieved in Type 3, and
+moreover if the overall performance of the Type 3 version of the
+protocol is at least as good (if not better) than its Type 2
+counterpart.
+
+Performance apart, the key difference between Type 2 and Type 3 is the
+existence or otherwise of the map \emph{ψ}. While there exist some
+protocols in the asymmetric setting which do not require \emph{ψ} to be
+efficiently computable, there are many others which do -- either in the
+security proof or in the protocol itself. For example, consider the very
+first protocol described in the asymmetric setting -- the
+Boneh--Lynn--Shacham (BLS) short signature scheme {[}10{]}. In {[}10{]}
+the authors observed that the efficiently-computable isomorphism
+\emph{ψ} : G2 →G1 is essential for the security of the protocol and can
+be avoided only at the cost of making a stronger complexity assumption.
+The same argument was later echoed by Shacham in his Ph.D. Thesis
+{[}35{]} which asserts that `\,`the map {[}\emph{ψ}{]} isn't merely a
+proof artifact'\,'. These observations were likely instrumental in
+causing much of the subsequent work in pairing-based cryptography to
+consider the Type 2 setting as the \emph{natural} choice either when
+proposing a new protocol or when modifying a protocol from the symmetric
+to the asymmetric setting. While most of these protocols need \emph{ψ}
+in the security argument only, some do use it in the protocol itself.
+The use of \emph{ψ} in a protocol might further be construed as evidence
+that the map \emph{ψ} cannot possibly be avoided altogether even if one
+is prepared to make stronger complexity assumptions.
+
+Galbraith et al. {[}25{]} provided an excellent exposition of what is
+achievable and what is not when a particular type of pairing is
+employed. They too comment that for many pairing-based primitives, the
+`\,`security proof does not apply if the cryptosystem is implemented
+using pairings of the third type'\,' (i.e., Type 3). Since Type 3 offers
+better performance and flexibility they conclude that it would be
+desirable if protocol designers prove the security of their protocol in
+the Type 3 setting.
+
+One possible way to address the need for \emph{ψ} in some security
+reductions is to use relativized assumptions as introduced by Smart and
+Vercauteren {[}37{]}. Here, it is assumed that an underlying hard
+problem remains hard even when the adversary is given oracle access to
+\emph{ψ}. Such oracle access allows a security reduction to go through
+in the Type 3 setting even when one cannot efficiently compute \emph{ψ}.
+Smart and Vercauteren discuss the security of BLS and the
+Boneh--Franklin identity-based encryption (BF-IBE) scheme under this
+kind of relativized assumption. Their approach was further pursued by
+Chen et al. {[}19{]} to prove the security of some identity-based key
+agreement protocols in the Type 3 setting.
+
+In {[}16{]} Chatterjee et al. took a closer look at the security and
+efficiency aspects of two signature schemes and two aggregate signature
+schemes when implemented with Barreto--Naehrig (BN) elliptic curves
+{[}4{]}. One of the contributions of that work is to establish that
+there is no security (or performance) benefit to be gained by using a
+Type 2 pairing instead of Type 3 for the particular schemes under
+consideration. For example, compared to Type 2, the BLS signature scheme
+in Type 3 does \emph{not} depend on a stronger complexity assumption as
+was stated in {[}10{]}, nor is it necessary to use a relativized
+assumption as suggested in {[}37{]}. This motivated us to further
+investigate the exact role played by \emph{ψ} in pairing-based protocols
+and in their security arguments. The current work takes the findings of
+{[}16{]} as its starting point and can be seen as its sequel in a
+broader canvas.
+
+Specifically, we find it relevant to raise the following questions. Can
+any cryptographic protocol originally described in the Type 2 setting be
+transformed to the Type 3 setting? What about the security of the
+transformed protocol --- is it equivalent to the original one? Is there
+any performance benefit to be accrued by working in the Type 3 setting
+after such a transformation?
+
+Our study indicates that given any protocol, Protocol-2, described using
+a Type-2 pairing, and a security proof for Protocol-2 with respect to
+some problem P -2, there is a natural transformation of Protocol-2 to a
+Protocol-3 that uses a Type-3 pairing, a natural transformation of P -2
+to P -3, and a natural transformation of the security proof to one for
+Protocol-3 with respect to P -3. Moreover, Protocol-3 is at least as
+efficient as Protocol-2, and P -3 is equally as hard as P -2 (for
+appropriately chosen parameters). In other words, \emph{ψ} does not play
+\emph{any} cryptographically significant role and hence there is no
+reason to use Protocol-2 instead of Protocol-3.
+
+We emphasize that our arguments that any Type 2 protocol can be
+converted to a Type 3 protocol without loss of functionality, security
+or efficiency are \emph{empirical}. In particular, we leave it as an
+open question to determine the existence of a (natural) Type 2 protocol
+that has no (natural, secure and efficient) counterpart in the Type 3
+setting.
+
+We note that Freeman {[}22{]} recently proposed an abstract framework
+for converting some composite-order pairing-based protocols to the
+setting of prime-order pairings. In contrast, our work looks at the
+problem of converting protocols from Type 2 setting to the Type 3
+setting, both of which are defined over prime-order groups.
+
+The remainder of the paper is organized as follows. In Section 2, we
+compare the performance of Type 2 and Type 3 pairings derived from
+elliptic curves having even embedding degrees. The complexity
+assumptions in the asymmetric setting are reviewed in Section 3 and we
+demonstrate that for each complexity assumption in Type 2, there is a
+natural counterpart in Type 3 such that the two problems are equivalent
+when parameters are chosen in an appropriate way. Section 4 is devoted
+to existing protocols in the asymmetric setting. We show how some known
+protocols in the Type 2 setting can be transformed into Type 3 without
+affecting the functionality or security, and moreover it is sometimes
+possible to obtain better performance. These observations are extended
+in Section 5 where we provide general guidelines on how to transform a
+given protocol as well as its security argument from Type 2 to Type 3.
+Finally, we conclude in Section 6 with some open problems which we think
+will shed further light on the role of \emph{ψ} in the context of
+cryptographic protocols in the asymmetric setting.
+
+\begin{quote}
+\emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322} 1313
+\end{quote}
+
+\textbf{2. Asymmetric pairings}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+Let F\emph{q} be a finite field of characteristic \emph{p} ≥5, and let
+\emph{E} be an ordinary elliptic curve defined over F\emph{q}. Let
+\emph{n} be a prime divisor of \#\emph{E(}F\emph{q)} satisfying
+gcd\emph{(n, q)} = 1, and let \emph{k} (the embedding degree) be the
+smallest positive integer such that \emph{n} \textbar{} \emph{qk}−1. We
+will assume that \emph{k \textgreater{}} 1, whence
+\emph{E}{[}\emph{n}{]} ⊆\emph{E(}F\emph{qk)} where
+\emph{E}{[}\emph{n}{]} denotes the \emph{n}-torsion group of \emph{E}.
+We further assume that \emph{n}3∤\#\emph{E(}F\emph{qk)}. Let G\emph{T}
+be the order-\emph{n} subgroup of F∗\emph{qk}. The (full) Tate pairing
+is a non-degenerate bilinear function
+\end{minipage}} \\
+\midrule()
+\endhead
+\emph{e} : \emph{E}{[}\emph{n}{]} × \emph{E}{[}\emph{n}{]} →G\emph{T}
+and can be defined as follows: \emph{e(P, Q)} =\emph{fn,P(Q} +
+\emph{R)} \emph{fn,P(R)} \emph{(qk}−1\emph{)/n ,} & (1) \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+where \emph{R} ∈\emph{E(}F\emph{qk)} with \emph{R} ̸∈\{∞\emph{, P,}
+−\emph{Q, P} −\emph{Q}\}, and where the \emph{Miller function fn,P} is a
+function whose only zeros and poles in \emph{E} are a zero of order
+\emph{n} at \emph{P} and a pole of order \emph{n} at ∞. For
+cryptographic applications, one generally restricts the domain of
+\emph{e} to a product of two order-\emph{n} subgroups G1 and G2 of
+\emph{E}{[}\emph{n}{]}. The first group G1 is taken to be
+\emph{E(}F\emph{q)}{[}\emph{n}{]}, and any other order-\emph{n}
+
+subgroup can be selected for the second group G2. Then the definition of
+ˆ\emph{e} simplifies to ˆ\emph{e(P, Q)} =
+\emph{(fn,P(Q))(qk}−1\emph{)/n}for all \emph{P} ∈G1 and \emph{Q} ∈G2
+{[}3{]}. Moreover, one assumes \emph{k} to be even because then the
+`denominator elimination' {[}3{]} speedup is applicable for the Type 3
+pairings defined next.} \\
+\bottomrule()
+\end{longtable}
+
+\emph{2.1. Type 3 pairings}
+
+\begin{quote}
+Following {[}25{]}, we denote by \emph{D} the CM discriminant of
+\emph{E} and set
+
+\emph{e} =gcd\emph{(k,} 6\emph{),} if \emph{D} = −3\emph{,}
+
+if \emph{D} = −4\emph{,}
+
+if \emph{D \textless{}} −4\emph{,}\\
+(2)
+\end{quote}
+
+and \emph{d} = \emph{k/e}. For example, BN curves {[}4{]} have \emph{k}
+= 12, \emph{e} = 6 and \emph{d} = 2, whereas MNT curves {[}33{]} have
+\emph{k} = 6, \emph{e} = 2 and
+
+\emph{d} = 3. Now, \emph{E} has a unique degree-\emph{e} twist˜\emph{E}
+defined over F\emph{qd} such that \emph{n} \textbar{}
+\#˜\emph{E(}F\emph{qd)} {[}28{]}. Let˜\emph{P}2 ∈˜\emph{E(}F\emph{qd)}
+be a point of order
+
+\emph{n}, and let˜G2 = ⟨˜\emph{P}2⟩. Then there is a monomorphism
+\emph{φ} : ˜G2 →\emph{E(}F\emph{qk)} such that \emph{P}2 =
+\emph{φ(}˜\emph{P}2\emph{)} ̸∈G1. The group G2 = ⟨\emph{P}2⟩is
+
+the Trace-0 subgroup of \emph{E}{[}\emph{n}{]}, so named because it
+consists of all points \emph{P} ∈\emph{E}{[}\emph{n}{]} for which
+Tr\emph{(P)} =∑\emph{k}−1
+
+efficiently computable in both directions; therefore we can identify˜G2
+and G2, and consequently G2 can be viewed as having \emph{i}=0\emph{π
+i(P)} = ∞,
+
+G2 →G2 is
+
+coordinates in F\emph{qd} (instead of in the larger field F\emph{qk}).
+The restriction of ˆof the Type 3 variety because no
+efficiently-computable isomorphism from G2 to G1 is known. Several Type
+3 pairings that \emph{e} to G1 ×G2 gives a pairing \emph{tn} : G1 ×G2
+→G\emph{T} that is
+
+are faster to evaluate have been discovered. Among these are the ate
+pairing {[}28{]}, the R-ate pairing {[}31{]}, and Vercauteren's
+
+optimal pairing {[}38{]}. These pairings, which we will collectively
+denote by \emph{e}3 : G1 × G2 →G\emph{T} , have the property that there
+
+is a fixed integer \emph{N} (with \emph{n} ∤\emph{N}) such that
+\emph{e}3\emph{(P, Q)} = ˆ\emph{e(Q, P)N}for all \emph{P} ∈G1, \emph{Q}
+∈G2.
+
+\emph{2.2. Type 2 pairings}
+
+\begin{quote}
+If \emph{P}′2∈\emph{E}{[}\emph{n}{]} with \emph{P}′2̸∈G1 and
+\emph{P}′2̸∈G2, then G′2= ⟨\emph{P}′2⟩is an order-\emph{n} subgroup of
+\emph{E(}F\emph{qk)} with G′2̸= G1 and G′2̸= G2.
+\end{quote}
+
+Bilinear pairings \emph{e} : G1 × G′from G′2to G1. These pairings have
+the property that hashing onto G′2→G\emph{T} are of the Type 2 variety
+because the map Tr is an efficiently-computable isomorphism 2is not
+feasible (other than by multiplying \emph{P}′2by a
+
+randomly selected integer).
+
+is without much loss of generality since in any cryptographic
+application it makes no difference if the pairing is replaced by
+Consider now the Type 2 pairing \emph{e}2 : G1 × G′2→G\emph{T} defined
+by \emph{e}2\emph{(P, Q)} = ˆ\emph{e(Q, P)}2\emph{N}. Notice that this
+choice of pairing
+
+its \emph{(}2\emph{N)}th power. As first shown in {[}30{]}, the
+computation of \emph{e}2 is easily reduced to the task of computing
+\emph{e}3.
+
+\textbf{Lemma 1} (\emph{{[}30{]}})\textbf{.} \emph{Let P} ∈G1 \emph{and
+Q} ∈G′2\emph{. Then e}2\emph{(P, Q)} = \emph{e}3\emph{(P,} ˆ\emph{Q),
+where}ˆ\emph{Q} = \emph{Q} −\emph{πf(Q) and f} = \emph{k/}2\emph{.}
+
+\textbf{Proof.} First note thatˆ\emph{Q} ̸= ∞since \emph{Q}
+̸∈\emph{E(}F\emph{qf )}. Moreover, Tr\emph{(}ˆ\emph{Q)} = Tr\emph{(Q)}
+−Tr\emph{(πf(Q))} = ∞, and henceˆ\emph{Q} ∈G2. Finally,
+
+\begin{quote}
+\emph{e}2\emph{(P, Q)} = ˆ\emph{e(Q, P)}2\emph{N}
+
+= ˆ\emph{e(}2\emph{Q, P)N}
+
+= ˆ\emph{e(Q} + ˆ\emph{Q} + \emph{πf(Q), P)N}
+
+= ˆ\emph{e(}ˆ\emph{Q, P)N}· ˆ\emph{e(Q} + \emph{πf(Q), P)N}
+
+= \emph{e}3\emph{(P,}ˆ\emph{Q),}
+\end{quote}
+
+since \emph{Q} + \emph{πf(Q)} ∈\emph{E(}F\emph{qf )} whence ˆ\emph{e(Q}
++ \emph{πf(Q), P)} = 1 {[}23, Lemma IX.8{]}. □
+
+1314 \emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322}
+
+\emph{2.3. Comparing the performance of Type 2 and Type 3 pairings}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Since points in G′2have coordinates in F\emph{qk} whereas points in G2
+have coordinates in F\emph{qd}, it would appear that the ratio
+\end{quote}
+
+of the bit lengths of points in G′2and G2 is \emph{k/d}. Similarly, the
+ratio of the costs of addition in G′2and G2 can be expected to
+
+be \emph{k}2\emph{/d}2bit operations (using naive methods for extension
+field arithmetic). These ratios are given in Table 3 of {[}25{]}; see
+
+also Table 5 of {[}19{]}. However, as observed in {[}16{]}, points in
+G′2have a shorter representation which we describe next. We
+
+emphasize that this representation can be used for \emph{all}
+order-\emph{n} subgroups G′2of \emph{E}{[}\emph{n}{]} different from G1
+and G2.
+
+\begin{quote}
+Let \emph{P}′2be an arbitrary point from \emph{E}{[}\emph{n}{]}
+\textbackslash{} \emph{(}G1 ∪G2\emph{)}, and set G′2= ⟨\emph{P}′2⟩.
+Define \emph{P}1 =\sout{1 \emph{k}}Tr\emph{(P}′2\emph{)} so that the map
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{ψ} : G′2→G1\emph{,}}} & \emph{Q} & 1 &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Tr\emph{(Q)}
+\end{quote}
+\end{minipage} & \multirow{2}{*}{(3)} \\
+& & → & \emph{k} & \\
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+is an efficiently-computable isomorphism with \emph{ψ(P}′2\emph{)} =
+\emph{P}1. Finally, set \emph{P}2 =
+\emph{c}−1\emph{(P}′2−\emph{P}1\emph{)} for an arbitrary integer
+\emph{c} ∈Z∗\emph{n}.
+
+Then \emph{P}2 ∈G2 and the map} \\
+\emph{ρ} : G′2→G2\emph{,} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.6667} + 6\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{Q} →\emph{Q} −\emph{ψ(Q)}
+\end{quote}
+\end{minipage}} & (4) \\
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+is an efficiently-computable isomorphism with \emph{ρ(P}′2\emph{)} =
+\emph{cP}2.
+
+\begin{quote}
+Now, given a point \emph{Q} ∈G′2, one can efficiently determine the
+unique points \emph{Q}1 ∈G1 and \emph{Q}2 ∈G2 such that \emph{Q} =
+\emph{Q}1+\emph{Q}2;
+\end{quote}
+
+namely, \emph{Q}1 = \emph{ψ(Q)} and \emph{Q}2 = \emph{ρ(Q)} = \emph{Q}
+−\emph{Q}1. Writing \emph{D(Q)} = \emph{(ψ(Q), ρ(Q))}, and letting H′of
+\emph{D}, we have an efficiently-computable isomorphism \emph{D} :
+G′2→H′2whose inverse is also efficiently computable. Hence, 2⊆G1 × G2
+denote the range
+
+without loss of generality, points \emph{Q} ∈G′that arithmetic in
+G′2with this representation is component-wise. Thus the ratio of the bit
+lengths of points in G′2can be represented by a pair of points
+\emph{(Q}1\emph{, Q}2\emph{)} with \emph{Q}1 ∈G1 and \emph{Q}2 ∈G2. Note
+2and G2 is
+
+in fact \emph{(d} + 1\emph{)/d}, whereas the ratio of the costs of
+addition in G′Table 2 of {[}16{]} lists the costs of performing basic
+operations in G1, G2 and G′2and G2 is \emph{(d}2 + 1\emph{)/d}2. 2for a
+particular BN curve. The table confirms
+
+the expectation that basic operations in G′2are only marginally more
+expensive than the operations in G2. One exception
+
+is that testing membership in G′2is several times more expensive than
+membership testing in G2 since the former requires
+
+two pairing operations.
+
+\begin{quote}
+In summary, we have shown that even though the basic operations in the
+Type 2 group G′2are indeed more expensive
+\end{quote}
+
+than in the Type 3 group G2, the differences are not as high as
+previously reported. The same is true for the bit lengths of
+
+points in G′2versus G2. The remainder of the paper will compare the
+security and efficiency of protocols that use the pairings
+
+\emph{e}2 or \emph{e}3. For consistency with the literature on
+pairing-based protocols, we will use multiplicative notation for
+elements of
+
+G1, G2 and G′2. In particular, the generators of these groups will be
+denoted by \emph{g}1, \emph{g}2 and \emph{g}′2, and the identity element
+will
+
+be denoted by 1.
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\textbf{3. Hardness assumptions in the asymmetric setting}
+
+Security of a pairing-based protocol is based on some hard problem in
+the respective pairing groups. The standard practice is to argue the
+security of the protocol in terms of a reduction from the hard problem
+to breaking the protocol in an appropriate security model. Suppose that
+we have a protocol, Protocol-2, described in the Type 2 setting whose
+security is based on some hard problem P -2 in that setting. Also
+suppose that we have some means of obtaining a version of Protocol-2,
+say Protocol-3, in the Type 3 setting which achieves the same
+functionality as Protocol-2. Simultaneously, we would like the assurance
+that Protocol-3 is at least as secure as Protocol-2. One way to achieve
+this is to define a version of problem P -2, say P -3 in the Type 3
+setting, and then argue the security of Protocol-3 based on P -3. Now,
+if P -3 can be shown to be at least as hard as P -2, then the assurance
+provided by the reduction for Protocol-3 is at least as high as the
+assurance provided by the reduction for Protocol-2. If P -2 and P -3 are
+computationally equivalent, then the assurances provided by the
+reductions are the same. Hence the security of Protocol-2 and Protocol-3
+can be compared if one can find a way to define P -3 so that it is at
+least as hard as P -2.
+
+For example, as shown in {[}16{]}, security of BLS in the Type 2 setting
+is based on the co-DHP problem (compute \emph{hz}given \emph{h} ∈G1 and
+\emph{g}′\emph{h, gz} chosen. We next show equivalence of the Type 2 and
+Type 3 variants of the bilinear Diffie--Hellman (BDH) problem. 1∈G1 and
+\emph{gz} 2 \emph{z} ∈G′2∈G2). Furthermore, these two problems are
+equivalent if the generators \emph{g}1, \emph{g}2, \emph{g}′2), whereas
+security of BLS in the Type 3 setting is based on the co-DHP* problem
+(compute \emph{hz} given 2are appropriately
+
+\emph{3.1. The bilinear Diffie--Hellman assumption}
+
+BDH was originally defined in the symmetric setting {[}8{]} and later
+extended to the asymmetric setting {[}26,13{]}. It is possible to define
+several versions of the problem in the asymmetric setting --- see e.g.,
+{[}37,12{]} and Remark 2. We consider the following version of the
+problem in Type 2 used by Galindo in {[}26{]} and which is the same as
+the problem discussed in {[}13{]} when specialized to Type 2.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+1315
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Definition 1} (\emph{Bilinear Diffie--Hellman Problem in Type 2
+(BDH-2)})\textbf{.} Given \emph{gα}
+\end{quote}
+
+BDH-2 problem is to compute the Type 2 pairing value
+\emph{e}2\emph{(g}1\emph{, g}′2\emph{)αβγ} . The BDH-2 assumption
+asserts that BDH-2 is hard. 1∈G1 and \emph{g}′2\emph{β, g}′2\emph{γ}
+∈G′2for \emph{α, β, γ} ∈\emph{R} Z\emph{n}, the
+
+\begin{quote}
+The decisional version DBDH-2 of the problem is to decide, given
+\emph{(gα}
+\end{quote}
+
+\emph{Z} = \emph{e}2\emph{(g}1\emph{, g}′2\emph{)αβγ} . The DBDH-2
+assumption is that DBDH-2 is hard. 1\emph{, g}′2\emph{β, g}′2\emph{γ ,
+Z)} ∈G1 × G′2× G′2× G\emph{T} , whether or not
+
+\begin{quote}
+We define a version of the BDH-2 problem in Type 3 as follows.
+
+\textbf{Definition 2} (\emph{Bilinear Diffie--Hellman Problem in Type 3
+(BDH-3)})\textbf{.} Given \emph{gα}
+\end{quote}
+
+the BDH-3 problem is to compute the Type 3 pairing value
+\emph{e}3\emph{(g}1\emph{, g}2\emph{)αβγ}. The decisional version DBDH-3
+is defined 1\emph{, gβ}1\emph{, gγ}1∈G1 and \emph{gβ}2\emph{, gγ}2∈G2
+for \emph{α, β, γ} ∈\emph{R} Z\emph{n},
+
+\begin{quote}
+analogously to DBDH-2. The BDH-3 (resp. DBDH-3) assumption asserts that
+BDH-3 (resp. DBDH-3) problem is hard.
+\end{quote}
+
+are provided as input to BDH-3. However, note that one can easily
+compute these values in BDH-2 by virtue of \emph{ψ}. Hence we At first
+glance it may appear that BDH-3 is a stronger assumption than BDH-2 as
+two extra elements, namely \emph{gβ}1\emph{, gγ}1∈G1,
+
+consider these two problems as natural counterparts and in fact they are
+equivalent as we show in Lemma 3. Essentially the
+
+\begin{quote}
+same argument also applies for the decisional versions DBDH-2 and
+DBDH-3.
+
+\textbf{Lemma 2.} \emph{Let g}1\emph{, g}′
+\end{quote}
+
+\emph{e}2\emph{(g}1\emph{, g}′2\emph{)} = \emph{e}3\emph{(g}1\emph{,
+g}2\emph{)}2\emph{c.} 2\emph{, g}2 \emph{be generators of} G1\emph{,}
+G′2\emph{,} G2 \emph{with g}1 = \emph{ψ(g}′2\emph{) and g}2 =
+\emph{(ρ(g}′2\emph{))}1\emph{/c for some c} ∈Z∗\emph{n. Then}
+
+\begin{quote}
+\textbf{Proof.} First note that \emph{g}′2= \emph{g}1\emph{gc} 2. Hence,
+by Lemma 1, we have
+
+\emph{e}2\emph{(g}1\emph{, g}′2\emph{)} = \emph{e}3\emph{g}1\emph{,}
+
+\emph{πf(g}′\\
+\emph{g}′2
+\end{quote}
+
+2\emph{)}= \emph{e}3\emph{g}1\emph{,}
+
+\begin{quote}
+\emph{g}1\emph{(πf(g}2\emph{))c g}1\emph{gc} 2 \emph{.}
+
+The result then follows if we can establish that \emph{πf(g}2\emph{)} =
+\emph{g}−1 \emph{q} 2.
+\end{quote}
+
+\emph{qk}
+
+\begin{quote}
+Since G2 is the \emph{q}-eigenspace of \emph{π}, we have
+\emph{π(g}2\emph{)} = \emph{g} 2. Hence \emph{π k(g}2\emph{)} = \emph{g}
+2= \emph{g}2 and so
+
+\emph{g(qf} −1\emph{)(qf} +1\emph{)} 2 = 1\emph{.} (5)
+
+Since \emph{n} ∤\emph{qf}−1, (5) implies that \emph{g} 2 \emph{qf}+1 =
+1, so \emph{πf(g}2\emph{)} = \emph{g}−1 2.□
+
+\textbf{Lemma 3.} \emph{Let g}1\emph{, g}′
+\end{quote}
+
+\emph{BDH-3 are equivalent.} 2\emph{, g}2 \emph{be generators of}
+G1\emph{,} G′2\emph{,} G2 \emph{with g}1 = \emph{ψ(g}′2\emph{) and g}2 =
+\emph{(ρ(g}′2\emph{))}1\emph{/c for some c} ∈Z∗\emph{n. Then BDH-2 and}
+
+\begin{quote}
+\textbf{Proof.} Given a BDH-2 problem instance \emph{(gα}
+
+\emph{gγ}2= \emph{(ρ(g}′2\emph{γ ))}1\emph{/c} and apply \emph{ψ} :
+G′2→G1 to obtain \emph{gβ}\\
+1\emph{, g}′2\emph{β, g}′2\emph{γ )}, we apply \emph{ρ}
+
+1= \emph{ψ(g}′2\emph{β)} and \emph{gγ}\\
+: G′2→
+
+1= \emph{ψ(g}′\\
+G2 to obtain \emph{gβ}
+\end{quote}
+
+2\emph{γ )}. The resulting BDH-3 problem =
+\emph{(ρ(g}′2\emph{β))}1\emph{/c} and
+
+instance \emph{(gα}1\emph{, gβ}1\emph{, gγ}1\emph{, gβ}2\emph{,
+gγ}2\emph{)} is given to the BDH-3 solver which returns
+\emph{e}3\emph{(g}1\emph{, g}2\emph{)αβγ} from which the solution
+\emph{e}2\emph{(g}1\emph{, g}′2\emph{)αβγ}
+
+\begin{quote}
+of the original BDH-2 problem is obtained by Lemma 2. This establishes
+that BDH-2 ≤BDH-3.
+
+resulting BDH-2 problem instance \emph{(gα}\\
+Conversely, given a BDH-3 problem instance \emph{(gα}
+\end{quote}
+
+1\emph{, g}′2\emph{β, g}′2\emph{γ )} is given to the BDH-2 solver which
+returns \emph{e}2\emph{(g}1\emph{, g}′1\emph{, gβ}1\emph{, gγ}1\emph{,
+gβ}2\emph{, gγ}2\emph{)}, we compute \emph{g}′2\emph{β} =
+\emph{gβ}1\emph{(gβ}2\emph{)c} and \emph{g}′
+
+2\emph{)αβγ} . Thereafter, the 2\emph{γ} =
+\emph{gγ}1\emph{(gγ}2\emph{)c}. The
+
+\begin{quote}
+solution \emph{e}3\emph{(g}1\emph{, g}2\emph{)αβγ}of the original BDH-3
+problem is obtained showing that BDH-3 ≤BDH-2. □
+\end{quote}
+
+\textbf{Remark 1} (\emph{Knowledge of c})\textbf{.} The formal
+equivalence between (D)BDH-2 and (D)BDH-3 is established under the
+condition
+
+that the parameter \emph{c} is known. No such equivalence is known if
+\emph{c} is unknown, nor is there any indication that one problem
+
+is weaker than the other. Note that BDH-2 can be solved either by
+solving the Diffie--Hellman problem (DHP) in G1 or G′2or
+
+by solving co-DHP. Similarly, BDH-3 can be solved either by solving DHP
+in G1 or G2 or by solving co-DHP*. Currently there
+
+is no evidence to suggest that DHP is any easier in G2 than in G′2, or,
+for that matter, co-DHP* is any easier than co-DHP
+
+\begin{quote}
+(see Section 2.3 of {[}16{]} for a discussion on the relationship
+between co-DHP and co-DHP*).
+\end{quote}
+
+\textbf{Remark 2} (\emph{Variants of BDH})\textbf{.} As already noted,
+it is possible to formulate different versions of BDH in the asymmetric
+
+setting. Some of these variants have been used to argue the security of
+some existing protocols. For example, Smart and
+
+Vercauteren {[}37{]} discuss several such variants (including the
+relativized versions) and their relationships and show that the
+
+security of different versions of BF-IBE relies on different versions of
+the BDH problem. Boyen provides a general statement
+
+of the problem (called BDH') in {[}12{]} for all known pairing types,
+the earliest mention of which can be traced to {[}13{]}.2In Type 2
+
+\begin{quote}
+the problem is to compute \emph{e}2\emph{(g}1\emph{, g}′
+\end{quote}
+
+and BDH-2 are equivalent. The analogous problem in Type 3, which we call
+BDH-3b, is obtained by replacing elements of G′2\emph{)αβγ} given
+\emph{gα}1\emph{, gβ}1∈G1 and \emph{g}′2\emph{β, g}′2\emph{γ} ∈G′2; we
+call this problem BDH-2b. Clearly BDH-2b
+
+2
+
+by elements of G2 and the task is to compute \emph{e}3\emph{(g}1\emph{,
+g}2\emph{)αβγ}. However, it is not known whether BDH-3b is equivalent to
+BDH-3
+
+(or for that matter to BDH-2 or BDH-2b). Still another variant in Type
+3, which we call BDH-3c, is to compute \emph{e}3\emph{(g}1\emph{,
+g}2\emph{)αβγ}
+
+\begin{quote}
+given \emph{gα}
+\end{quote}
+
+but currently we do not know anything in the reverse direction. 1∈G1 and
+\emph{gβ}2\emph{, gγ}2∈G2. BDH-3c is attributed to Galbraith in
+{[}12{]}. It is easy to see that BDH-3 ≤BDH-3b ≤BDH-3c,\strut
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+2 The statement allows uniform description of the problem across
+different settings. However, that does not imply that the problem
+remains equivalent in different settings. In other words, though the
+`\,`statement complexity'\,' remains the same the computational
+complexity might be quite different!
+\end{quote}
+
+1316 \emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322}
+
+\emph{3.2. Other assumptions}
+
+A large array of complexity assumptions have been proposed so far in
+pairing groups; see {[}12{]} for a listing of such assumptions. Most of
+these assumptions come in two flavors --- computational and decisional
+as in the case of BDH. Many of these assumptions were initially
+introduced in the symmetric setting to be generalized later in the
+asymmetric setting. As we have noted, some authors {[}37,19,18{]} also
+used the notion of relativized assumption in the Type 3 setting ---
+assuming that the problem remains hard even when the adversary is given
+oracle access to \emph{ψ}.
+
+Their apparent diversity notwithstanding, the complexity assumptions in
+pairing groups can be broadly classified into two categories.
+
+\begin{quote}
+(i) Assumptions where the problem does not explicitly involve any
+element from G\emph{T} --- examples are co-DHP, Linear, Strong DH,
+Hidden SDH, and Poly-SDH.
+\end{quote}
+
+(ii) Assumptions where the problem involves a pairing computation and
+hence element of G\emph{T} --- examples are BDH, Bilinear DH Inversion,
+and Bilinear DH Exponent.
+
+Given a hardness assumption in the Type 2 setting, our primary concern
+here is to formulate its natural counterpart in Type 3. Note that if one
+is given some element \emph{g}′if the input to problem P -2 includes
+\emph{g}′case for Type 3 as \emph{ψ} is not known in that setting.
+Hence, as in the case of BDH and co-DHP, we insist that both \emph{gz} 2
+\emph{z} then that implies that \emph{gz z} ∈G′2, then one can easily
+obtain \emph{gz} 1∈G1 is also part of the input. However, that is not
+the 1= \emph{ψ(g}′2 \emph{z)} without knowing \emph{z}. So
+
+1and \emph{gz} be included in the input to P -3 in order to make it the
+natural counterpart of P -2 in the Type 3 setting. For an assumption in
+Category (i) above, we can then use the argument of Lemma 2 of {[}16{]}
+(which establishes the equivalence of co-DHP and co-DHP*) to show that P
+-3 is equivalent to P -2, while the argument put forth in Lemma 3 above
+for the case of BDH can be readily adapted to show equivalence between P
+-2 and P -3 for an assumption in Category (ii).
+
+\textbf{Remark 3} (\emph{Weakening Assumptions})\textbf{.} For some
+cryptographic protocols in Type 3, it might be possible to drop one or
+more elements of G1 from the statement of P -3 without affecting the
+reduction. For example, BF-IBE-3 can be proven secure under BDH-3b (see
+Section 4.1.1). However, we do not know any protocol that can be proven
+secure under the seemingly weaker
+
+assumption BDH-3c. Note that the input to BDH-3c includes only
+\emph{gα}1∈G1 along with \emph{gβ}2\emph{, gγ}2∈G2, whereas all known
+security reductions based on BDH in the asymmetric setting require at
+least one of \emph{gβ}1or \emph{gγ}1as part of the problem input. The
+situation is similar for the `\,`weaker statement'\,' of the Linear
+assumption in Type 3 as stated in {[}12{]} (also attributed to
+Galbraith). In fact an interesting open question is to what extent one
+can prune P -3 and still use it in the security reduction of a natural
+cryptographic problem.
+
+\textbf{4. Protocols in the asymmetric setting}
+
+We revisit some existing pairing-based protocols in the asymmetric
+setting. Some of these protocols employ the isomorphism \emph{ψ} in the
+protocol itself and some others only in the security reduction. The
+purpose of this investigation is twofold --- to determine the exact role
+played by \emph{ψ} in the functionality and security of these protocols
+and then to investigate whether it is possible to avoid the use of
+\emph{ψ} altogether.
+
+\emph{4.1. Protocols where ψ is used in the security argument only}
+
+Several authors have used \emph{ψ} to argue the security of
+pairing-based protocols in the asymmetric settings --- these protocols
+include signature {[}10,5,7{]}, encryption {[}8,18{]}, and key agreement
+{[}19{]} schemes.
+
+The case of the BLS signature scheme has already been discussed in
+detail in {[}16{]}. Several other signature schemes also use \emph{ψ} in
+the security reduction including Boneh--Boyen short signature scheme
+{[}5{]}, the Boneh--Boyen--Shacham short group signature scheme {[}7{]},
+and the Delerablé-Pointcheval anonymous short group signature {[}15{]}.
+In a later version {[}6{]} Boneh and Boyen modified the security
+argument of their short signature scheme in {[}5{]} to remove the
+necessity of \emph{ψ}; the same argument can also be used for the
+Boneh--Boyen--Shacham short group signature scheme.
+
+We would like to argue in general that it is possible to avoid \emph{ψ}
+in the security argument. As illustrative examples we consider the case
+of BF-IBE and an identity-based key agreement protocol. Our arguments
+are quite general and are applicable to other protocols.
+
+\emph{4.1.1. Boneh--Franklin IBE}\\
+For simplicity we focus on the basic version of the BF-IBE protocol
+(called BasicIdent in {[}8{]}). This protocol was originally described
+in the symmetric setting but can also be implemented in the asymmetric
+setting {[}26,37{]}. In contrast to previous findings, our study
+indicates that Type 3 is indeed a better choice than Type 2 for BF-IBE
+taking into account functionality, security and efficiency.
+
+\emph{BF-IBE-2}. The master secret of the key generation center (KGC) is
+\emph{x} ∈\emph{R} Z\emph{n} and the corresponding public key is
+\emph{g}pub = \emph{g}′2 \emph{x} ∈G′2. Given a user identity id
+∈\{0\emph{,} 1\}∗, the public key of the user is \emph{h}id =
+\emph{H}1\emph{(}id\emph{)} ∈G1, where \emph{H}1 : \{0\emph{,} 1\}∗→G1
+is a publicly computable hash function. The corresponding private key is
+\emph{d}id = \emph{hx} id. To encrypt a message \emph{M} ∈\{0\emph{,}
+1\}\emph{n} a sender chooses
+
+\begin{quote}
+\emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322} 1317
+\end{quote}
+
+\emph{r} ∈\emph{R} Z\emph{n} and sends ⟨\emph{g}′receiver computes
+\emph{H}2\emph{(e}2\emph{(d}id\emph{, g}′2 \emph{r, M}
+⊕\emph{H}2\emph{(e}2\emph{(h}id\emph{, g}pub\emph{)r)}⟩where \emph{H}2 :
+G\emph{T} →\{0\emph{,} 1\}\emph{n} is another publicly computable hash
+function. The 2 \emph{r))} and then xors it with the second component of
+the ciphertext to obtain \emph{M}. The decryption process succeeds since
+\emph{e}2\emph{(d}id\emph{, g}′BDH-2 to the breaking of BF-IBE-2. 2
+\emph{r)} = \emph{e}2\emph{(hx} id\emph{, g}′2\emph{)r} =
+\emph{e}2\emph{(h}id\emph{, g}pub\emph{)r}. The security of BF-IBE-2 is
+argued by a reduction from
+
+\emph{BF-IBE-3}. The above scheme can be directly implemented in Type 3
+--- the KGC's public key is \emph{g}pub = \emph{gx} ephemeral key in the
+ciphertext will be \emph{gr} breaking of BF-IBE-3. 2∈G2. The security of
+BF-IBE-3 is argued by a reduction from BDH-3b to the 2∈G2 and the
+
+A variant of BF-IBE in Type 3 can be obtained by hashing the identities
+into G2. We call this variant BF-IBE-3b which gives a smaller ciphertext
+overhead. Such an optimization is not possible for BF-IBE-2 as we do not
+know how to hash into G′2. \emph{BF-IBE-3b}. The KGC's master public key
+is \emph{g}pub = \emph{gx} To encrypt \emph{M} ∈\{0\emph{,} 1\}\emph{n}a
+sender chooses \emph{rR} ∈Z\emph{n} and sends ⟨\emph{gr} and xors it
+with the second component of the ciphertext to obtain \emph{M}. The
+security of BF-IBE-3b is argued by a reduction 1∈G1 while \emph{H}1 :
+\{0\emph{,} 1\}∗→G2 and so both \emph{h}id = \emph{H}1\emph{(}id\emph{)}
+and \emph{d}id are in G2. 1\emph{, M} ⊕\emph{H}2\emph{(e(g}pub\emph{,
+h}id\emph{)r)}⟩. The receiver computes \emph{H}2\emph{(e(gr} 1\emph{,
+d}id\emph{))}
+
+from BDH-3b.
+
+The ciphertext overhead in BF-IBE-3b is one element of G1 (namely
+\emph{gr} 1), while that in BF-IBE-2 is one element of G′2. Furthermore,
+exponentiation in G1 is faster than exponentiation in G′2, and hence
+BF-IBE-3b is a better choice as far as performance is concerned.
+
+Smart and Vercauteren {[}37{]} observed that the security of BF-IBE-3
+can be reduced to either BDH-3c with oracle access to\emph{ψ} or to
+BDH-3b without such oracle access. In the first case one does not know
+how to simulate the oracle and in the second case they consider the
+problem (which they call coBDH1\emph{,}2) to be `\,`somewhat
+unnatural'\,'. Based on these observations they conclude that one should
+use a pairing with an efficiently-computable isomorphism, i.e., Type 2
+for BF-IBE. However, as we have already noted, BDH-3b is at least as
+hard as BDH-2 and so Type 3 is overall a better choice for BF-IBE.
+
+\emph{4.1.2. SCK-1 identity-based key agreement}\\
+In {[}19{]}, Chen, Cheng and Smart examine the security and efficiency
+of several identity-based key agreement protocols in the context of
+different types of pairings. They show that the protocol originally
+proposed by Smart {[}36{]} and later modified by Chen and Kudla {[}20{]}
+(called SCK-1 and SCK-2 in {[}19{]}) and an enhanced version due to
+McCullagh and Barreto {[}32,21{]} (called e-MB-2 in {[}19{]}) can be
+proven secure in the asymmetric setting. Both reductions employ the map
+\emph{ψ} and hence in Type 3 depend on a relativized assumption, i.e.,
+oracle access to \emph{ψ}. It should be noted that the protocols
+themselves do not require \emph{ψ}.
+
+The security reductions are quite involved (and run into several pages).
+However, it is possible to avoid the map \emph{ψ} in the security
+argument by including some extra elements of G1 in the problem instance
+of the respective complexity assumption for Type 3 in the manner
+described in Section 3. Here we provide a high-level description of how
+this can be achieved for the security argument of SCK-1. A similar
+approach is applicable for SCK-2 and e-MB-2.
+
+\emph{Protocol SCK-1 in Type 3}. The KGC's master secret key is \emph{s}
+∈\emph{R} Z\emph{n} and the corresponding master public key is \emph{R}
+= \emph{gs} 2. Given an identity string ID ∈\{0\emph{,} 1\}∗, the KGC
+obtains the public key as \emph{h}ID = \emph{H}1\emph{(}ID\emph{)},
+where \emph{H}1 : \{0\emph{,} 1\}∗→G1 is a publicly computable hash
+function. The corresponding private key is \emph{d}ID = \emph{hs (hB,
+dB)} respectively, run the protocol as follows: ID∈G1. Two parties,
+\emph{A} and \emph{B} with key pairs \emph{(hA, dA)} and
+
+\begin{quote}
+\emph{A} →\emph{B} : \emph{EA} = \emph{gx} 2\emph{,} \emph{y} where
+\emph{x} ∈\emph{R} Z\emph{n}\\
+\emph{B} →\emph{A} : \emph{EB} = \emph{g} 2\emph{,} where \emph{y}
+∈\emph{R} Z\emph{n.}
+\end{quote}
+
+\emph{B, R)} · \emph{e}3\emph{(dA, EB)} and \emph{A} (resp. \emph{B})
+checks whether \emph{EB} (resp. \emph{EA}) belongs to G2. If the check
+is successful \emph{A} computes \emph{K} = \emph{e}3\emph{(hx}\\
+\emph{(EB)x}= \emph{g} where \emph{H}2 is another publicly computable
+hash function. 2while \emph{B} computes \emph{K} = \emph{e}3\emph{(h} 2.
+The session key is \emph{SK} = \emph{H}2\emph{(A, B, EA, EB, g} 2\emph{,
+K)},
+
+The authors consider the random oracle model. Session key security of
+SCK-1 in the Type 3 setting is established assuming the hardness of
+BDH-3c with oracle access to \emph{ψ}, and forward secrecy under the
+computational Diffie--Hellman (CDH) assumption in G2 with oracle access
+to \emph{ψ}. We do not elaborate on the security arguments ---
+interested readers can consult Theorem 1 and 2 in {[}19{]}. Instead, we
+only indicate how \emph{ψ} can be avoided.
+
+In Theorem 1, the simulator invokes the oracle \emph{ψ} to compute
+either \emph{ψ(gβ}2\emph{)} or \emph{ψ(gβr} 2\emph{)} where \emph{gβ}2is
+part of the BDH-3c problem instance and \emph{r} ∈\emph{R} Z\emph{n} is
+chosen by the simulator. The simulator can easily compute the
+corresponding values without the oracle if it is provided with
+\emph{gβ}on BDH-3b. This is perfectly acceptable, because the security
+of SCK-1 in Type 2 depends upon BDH-2 and we know that 1∈G1 as part of
+the problem instance, which means the security now depends
+
+BDH-3b is at least as hard as BDH-2.
+
+In Theorem 2, given \emph{ga} 2, \emph{gb} 2and oracle access to
+\emph{ψ}, the simulator interacts with the adversary to compute
+\emph{gab} 2. The oracle is used in a pairing computation which is
+either of the form \emph{e}3\emph{(ψ(X), Y)} or \emph{e}3\emph{(ψ(Y),
+X)} where \emph{(X, Y)} are the protocol messages exchanged in a key
+agreement session. At least one of these messages, say \emph{X} ∈G2, is
+chosen by the simulator and set to either \emph{gar} also provided with
+\emph{ga} now allows the simulation to go through. Note that the
+alternative formulation of CDH in G2 used here (i.e., compute \emph{gab}
+2or \emph{gbr} 2, where \emph{r} ∈\emph{R} Z\emph{n} is chosen by the
+simulator. So the simulator can compute \emph{ψ(X)} without oracle
+access to \emph{ψ} if she is 1and \emph{gb} 1as part of the problem
+instance. This together with the fact that \emph{e}3\emph{(ψ(Y), X)} =
+\emph{e}3\emph{(ψ(X), Y)}
+
+given \emph{ga} 1, \emph{ga} 2, \emph{gb} 1, \emph{gb} 2) is equivalent
+to CDH in G′2if the generators are appropriately chosen.
+
+1318 \emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322}
+
+\emph{4.2. Protocols employing ψ}
+
+Some protocols employ \emph{ψ} in the protocol itself. For example
+consider the verifiably encrypted signature scheme and ring signature
+scheme of Boneh, Gentry, Lynn and Shacham (BGLS) {[}9{]} and the group
+signature scheme with verifier-local revocation of Boneh and Shacham
+{[}11{]}. Here we describe the ring signature scheme and its security
+argument in the original Type 2 setting and then show how one can easily
+modify both to allow working in the Type 3 setting. A similar argument
+applies to the verifiably encrypted signature scheme. As observed in
+{[}37{]}, the Boneh--Shacham group signature scheme cannot be
+implemented in either Type 2 or Type 3 (cf. footnote 3).
+
+A ring signature on a message is constructed using the public keys of a
+set \emph{U} of users and the private key of a single user \emph{u}
+∈\emph{U}. The verification process gives the assurance that the
+signature was produced using one of the private keys of \emph{U} but the
+verifier should not be able to determine which particular \emph{u}
+∈\emph{U} signed the message. This is the so-called
+\emph{signer-ambiguity} property of a ring signature.
+
+\emph{BGLS-2 ring signature scheme}. Let \emph{e}2 : G1 × G′isomorphism
+with \emph{ψ(g}′An individual signer's private key is an integer
+\emph{x} ∈\emph{R} Z\emph{n} and her public key is \emph{X} = \emph{(g}′
+2\emph{)} = \emph{g}1. The signature scheme employs a hash function
+\emph{H} : \{0\emph{,} 1\}∗→G1. 2→G\emph{T} be a Type 2 pairing and
+\emph{ψ} : G′2→G1 be an efficiently-computable
+
+2\emph{)x}. Given the public keys \emph{X}1\emph{, . . . , Xℓ}of a set
+\emph{U} of \emph{ℓ}users, a message \emph{M} ∈\{0\emph{,} 1\}∗, and a
+private key \emph{xs} corresponding to one of the users in \emph{U}
+whose public key is \emph{Xs}, the signer chooses \emph{ai} ∈\emph{R}
+Z\emph{n} for each \emph{i} ̸= \emph{s} and computes \emph{h} =
+\emph{H(M)} and \emph{σs} = \emph{(h/ψ(}∏\emph{σi} = \emph{g} accepts if
+and only if \emph{e}2\emph{(h, g}′
+
+and \emph{s} = 1. For \emph{h} = \emph{H(M)}, we have \emph{σ}1 =
+\emph{(h/ψ(X} The correctness of the verification algorithm can be
+easily checked using the bilinear property. We show this for \emph{ℓ}= 2
+2\emph{)} = ∏\emph{ℓi}=1\emph{e}2\emph{(σi, Xi)}.
+
+\begin{quote}
+1for each \emph{i} ̸= \emph{s}. The ring signature on \emph{M} is
+\emph{σ} = ⟨\emph{σ}1\emph{, . . . , σℓ}⟩. Given \emph{(M, σ)}, the
+verifier computes \emph{h} = \emph{H(M)} and
+
+1 \emph{)}1\emph{/x}1and \emph{σ}2 = \emph{g} 1. Thus\\
+\emph{i}̸=\emph{sX i))}1\emph{/xs}. She also computes
+
+\emph{e}2\emph{(σ}1\emph{, X}1\emph{)e}2\emph{(σ}2\emph{, X}2\emph{)} =
+\emph{e}2\emph{((hg}−\emph{a}2\emph{x}2 \emph{)}1\emph{/x}1\emph{, g}′2
+\emph{x}1\emph{)e}2\emph{(g} 1\emph{, g}′\emph{a}2 2 \emph{x}2\emph{)} =
+\emph{e}2\emph{(h, g}′2\emph{).}
+\end{quote}
+
+There are two aspects of security for a ring signature scheme --- signer
+ambiguity and unforgeability. Using a probabilistic argument it was
+shown in {[}9{]} that the signer's identity is unconditionally
+protected. Unforgeability is based on the following complexity
+assumption: given \emph{gab} 1and \emph{g}′2 \emph{b} it is hard to
+compute \emph{ga} 1. We call it the co-divisible computational
+Diffie--Hellman (co-DCDH) assumption --- see {[}2{]} for the statement
+of DCDH in the Diffie--Hellman setting. Here we briefly reproduce the
+original security argument.
+
+\emph{Security argument}. For simplicity, we assume \emph{ℓ}= 2; the
+argument can be easily extended to any \emph{ℓ\textgreater{}} 2. Given
+\emph{gab} 1and \emph{g}′2 \emph{b},
+
+the challenger S sets \emph{X}1 = \emph{g}′hash query, S flips a coin
+which shows 0 with some probability \emph{p} and 1 otherwise; S selects
+\emph{r} ∈\emph{R} Z\emph{n} and returns \emph{(gab} outcome of the coin
+flip is 0, and returns \emph{ψ(g}′2 \emph{b} and \emph{X}2 = \emph{(g}′
+
+\begin{quote}
+2\\
+2
+
+\emph{b)r} in the other case. On receiving a signing query for a message
+\emph{M}, S aborts \emph{b)x}2 for some \emph{x}2 ∈\emph{R} Z\emph{n},
+and gives \emph{X}1, \emph{X}2 to the adversary A. On receiving a
+1\emph{)r} if the
+\end{quote}
+
+if the outcome of the coin flip on the hash query for \emph{M} was 0.
+Otherwise, \emph{H(M)} = \emph{ψ(g}′S returns the signature \emph{σ} =
+⟨\emph{g} 1 \emph{r}−\emph{a}2\emph{x}2 \emph{, g} 1⟩for some \emph{a}2
+∈\emph{R} Z\emph{n}. When A outputs a valid forgery on some message
+\emph{M}, S first \emph{a}2 2 \emph{b)r} where \emph{r} was chosen by S,
+and
+
+checks that the output of the coin flip for the corresponding hash query
+on \emph{M} was 0; otherwise it aborts. Then, \emph{H(M)} = \emph{gabr}
+for some \emph{r} chosen by S and S returns \emph{(σ}1\emph{σ}\\
+The map \emph{ψ} is used in the protocol itself when the signer computes
+\emph{ψ(X i)}, and also in the security argument to compute \emph{ai}
+
+\emph{ψ(g}′2 \emph{b)} when simulating the random oracle \emph{H}. Both
+these uses, however, can be easily avoided as we detail below.
+
+\emph{BGLS-3 ring signature scheme}. Let \emph{e} : G1 × G2 →G\emph{T}
+be a Type 3 pairing and \emph{H} : \{0\emph{,} 1\}∗→G1 a hash function.
+The private key of an individual signer is \emph{x} ∈\emph{R} Z\emph{n}
+and her public key is \emph{(W} = \emph{gx} 1\emph{, X} = \emph{gx}
+2\emph{)}. A certification authority entrusted with certifying the
+public key should verify that \emph{W} ∈G1, \emph{X} ∈G2, \emph{W} ̸= 1,
+\emph{X} ̸= 1, and \emph{e(g}1\emph{, X)} = \emph{e(W, g}2\emph{)}. Note
+that the public key effectively gives \emph{ψ(X)} = \emph{W} though we
+do not have any means to compute \emph{ψ} when supplied with a random
+element of G2. Except for this modification BGLS-3 is identical to
+BGLS-2. In the signing algorithm, the signer now uses \emph{Wi} in place
+1, \emph{gb}\\
+1, \emph{gb} 2it is hard of \emph{ψ(Xi)}. The unforgeability of BGLS-3
+can be established under the co-DCDH* assumption that given \emph{gab}
+to compute \emph{ga} 1; co-DCDH and co-DCDH* are equivalent under the
+assumption that the parameter \emph{c} (cf. Lemma 2) is known.
+
+2\emph{)}. Breaking BGLS-3 is thus seen The security argument for BGLS-2
+can be modified in the obvious way by setting \emph{gb} to be equivalent
+to solving co-DCDH∗. 1= \emph{ψ(gb}
+
+Note that in BGLS-3 the signer only needs the G1 component of the public
+keys of the other users in \emph{U} whereas the verifier only needs the
+G2 component of the public keys of users in \emph{U}. They can
+respectively ignore the other component from G2 or G1, thus leading to
+decreased communication bandwidth and computational cost than in BGLS-2.
+
+\textbf{5. Transforming a protocol from Type 2 to Type 3}
+
+As case studies we have discussed in the last section how some known
+protocols in the Type 2 setting can be transformed to the Type 3 setting
+without affecting the functionality or security. We generalize these
+observations and propose some guidelines on how to transform an
+arbitrary Type-2 protocol, Protocol-2, to a Type-3 protocol, Protocol-3,
+where Protocol-3 is at least as secure as Protocol-2 and it is possible
+to achieve a better performance.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+1319
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Before delving into the guidelines let us consider a (hypothetical)
+situation where such a transformation is \emph{not} possible.
+\end{quote}
+
+Suppose that a protocol in the Type 2 setting involves a hash function
+\emph{H} : \{0\emph{,} 1\}∗→G′2and the following steps -- given a
+
+public string str ∈\{0\emph{,} 1\}∗, first obtain \emph{X} =
+\emph{H(}str\emph{)} ∈G′2and then compute \emph{ψ(X)} ∈G1. This protocol
+cannot be transformed into Type 3 because given a random \emph{X} ∈G2
+one does not know how to compute \emph{ψ(X)} ∈G1. However, the protocol
+cannot be implemented in Type 2 either, because we do not know how to
+hash into G′2in the first place.3 Hence in the following we
+
+assume that Protocol-2 does not require hashing into G′2and argue that
+it is always possible to \emph{naturally} transform it into
+
+\begin{quote}
+Protocol-3.
+
+Suppose we have a protocol, Protocol-2, and its security reduction with
+respect to some hard problem P -2. Let P -3 be
+\end{quote}
+
+the natural counterpart of P -2 in Type 3 as described in Section 3. Our
+aim is to obtain the corresponding Protocol-3 with
+
+an analogous security reduction with respect to P -3. Protocol-2 will
+typically include elements from G1\emph{,} G′2and G\emph{T} and so
+
+also the corresponding security reduction. (In the security reduction,
+the challenger simulates the protocol environment for
+
+an attacker based on the given instance of the hard problem.) The
+elements of G1 and G\emph{T} will not be affected in any way
+
+when we convert Protocol-2 and its security reduction to Type 3. So our
+primary concern will be with the elements of G′2.
+
+\begin{quote}
+Let \emph{g}1\emph{, g}′2\emph{, g}2 be the generators of G1, G′2and G2
+respectively, where \emph{g}1 = \emph{ψ(g}′2\emph{)} and \emph{g}2 =
+\emph{ρ(g}′2\emph{)} (for simplicity we
+\end{quote}
+
+assume \emph{c} = 1). Recall from Section 2.2 that for any elliptic
+curve with an even embedding degree, the task of computing the Type 2
+pairing \emph{e}2 : G1 × G′Recall also from Section 2.3 that every
+element \emph{X} ∈G′Given Protocol-2 and its reductionist security
+argument with respect to P -2, let us first consider the following
+`preliminary'2→G\emph{T} can be easily reduced to the task of computing
+the Type 3 pairing \emph{e}3 : G1 × G2 →G\emph{T} . 2can be represented
+by the pair \emph{(X}1\emph{, X}2\emph{)} = \emph{(ψ(X), ρ(X))} ∈G1 ×
+G2.
+
+transformation. Represent each \emph{X} ∈G′problem instance of P -2 and
+the security reduction. 2appearing in Protocol-2 by \emph{(X}1\emph{,
+X}2\emph{)} ∈G1 × G2. Also make similar changes in the
+
+\begin{quote}
+It is easy to see that \emph{any} protocol in the Type 2 setting as well
+as its security argument can be rewritten in this way where
+\end{quote}
+
+elements of G′2are represented by elements of G1 × G2. By Lemma 2,
+computing a Type 2 pairing \emph{e}2\emph{(}·\emph{, X)} is equivalent
+to computing the Type 3 pairing value \emph{e}3\emph{(}·\emph{,
+X}2\emph{)}, and hence it is possible to employ \emph{e}3 directly
+instead of \emph{e}2 in the protocol. It is now possible to argue the
+security of this `\,`modified'\,' protocol with respect to P -3. This
+new representation allows a better
+
+performance than the conventional representation of a protocol in the
+Type 2 setting without affecting functionality and
+
+\begin{quote}
+security.
+
+However, just because the protocol is now described in terms of elements
+of G1, G2 and G\emph{T} does not necessarily mean
+\end{quote}
+
+that we are no longer in the Type 2 setting. What really changed is the
+representation of elements of G′2, i.e., each \emph{X} ∈G′2
+
+involved in Protocol-2 will now be written as \emph{(ψ(X), ρ(X))}
+∈G1×G2. But for some protocols (and their security arguments) it might
+be sufficient to work only with the G2 component of \emph{X} and the G1
+component is actually redundant. In that case
+
+one can drop those redundant elements of G1 from the protocol
+description without affecting functionality and security.
+
+\begin{quote}
+The \emph{modified} protocol will now be in the Type 3 setting and (in
+most cases) allows a still better performance.
+
+We illustrate this process of transformation with an example --- the
+SCK-1 protocol of Section 4.1.2. We start with the
+\end{quote}
+
+protocol in Type 2 with new representation of G′2. Then for each
+\emph{X} = \emph{(X}1\emph{, X}2\emph{)} ∈G′2in the protocol
+description, check
+
+whether \emph{X}1 = \emph{ψ(X)} ∈G1 is \emph{necessary} for the protocol
+or the security argument; if not then \emph{X}1 is dropped. At the end
+we get the corresponding protocol description in Type 3.
+
+\emph{Protocol SCK-1 in Type 2}. The KGC has a master secret key
+\emph{s} ∈\emph{R} Z\emph{n} and a corresponding master public key
+\emph{R} = \emph{g}′2 \emph{s} = \emph{(gs} 1\emph{, gs} 2\emph{)} =
+\emph{(R}1\emph{, R}2\emph{)} ∈G1 × G2. Given an identity string ID
+∈\{0\emph{,} 1\}∗, the corresponding public and private keys are
+obtained as in Section 4.1.2, i.e., \emph{h}ID =
+\emph{H}1\emph{(}ID\emph{)} ∈G1 and \emph{d}ID = \emph{hs} respectively,
+run the protocol as follows: ID∈G1. Two parties, \emph{A} and \emph{B}
+with key pairs \emph{(hA, dA)} and \emph{(hB, dB)}
+
+\begin{quote}
+\emph{A} →\emph{B} : \emph{X} = \emph{g}′2 \emph{x} = \emph{(gx}
+1\emph{, gx}
+
+\emph{y} 2\emph{)} = \emph{(X}1\emph{, X}2\emph{), y} where \emph{x}
+∈\emph{R} Z\emph{n}
+
+\emph{B} →\emph{A} : \emph{Y} = \emph{g}′2 \emph{y} = \emph{(g} 1\emph{,
+g} 2\emph{)} = \emph{(Y}1\emph{, Y}2\emph{),} where \emph{y} ∈\emph{R}
+Z\emph{n.}
+\end{quote}
+
+On receiving \emph{Y}, \emph{A} first checks whether \emph{Y} belongs to
+G′2. If the check is successful she computes \emph{K} =
+\emph{e}2\emph{(hx B, R)} · \emph{e}2\emph{(dA, Y)} and then the session
+key \emph{SK} = \emph{H}2\emph{(A, B, X, Y, Yx, K)}. \emph{B} follows an
+analogous procedure to compute the same session key. In our new
+representation of G′2, testing whether \emph{Y} belongs to G′2amounts to
+deciding whether \emph{Y}1 belongs to G1 and
+
+\begin{quote}
+\emph{Y}2 belongs to G2 and then computing a product of pairings.
+Similarly, computing \emph{Yx}∈G′and \emph{Yx}
+
+representation of G′2∈G2. Also note that \emph{e}2\emph{(}·\emph{, R)}
+can be easily computed from \emph{e}3\emph{(}·\emph{, R}2\emph{)} and
+similarly \emph{e}2\emph{(}·\emph{, X)} and \emph{e}2\emph{(}·\emph{,
+Y)}. So the new 2allows a much better performance than the conventional
+representation (cf. Section 2.3). However, we 2amounts to computing
+\emph{Y x} 1∈G1
+
+are still in the Type 2 setting.
+
+Now we consider whether it is possible to drop any of the G1 components
+\emph{R}1\emph{, X}1\emph{, Y}1 of the G′2elements \emph{R, X, Y} from
+the
+\end{quote}
+
+protocol description without affecting functionality and security. This
+can be a two-step process. First we check whether,
+
+for example, \emph{X}1 = \emph{ψ(X)} (and not just \emph{X}) is
+explicitly used at any stage in the protocol or the security argument.
+If there is no such use we discard \emph{X}1 from the protocol
+description. Otherwise in the next step we check whether it is still
+possible to
+
+\begin{quote}
+obtain \emph{X}1 without recourse to \emph{ψ}. In that case also we drop
+\emph{X}1 from the protocol description.
+
+Investigating this way we observe that \emph{R}1 is not used in the
+protocol but the simulator needs it in the security argument.
+\end{quote}
+
+However, in the simulation \emph{R}1 is provided as part of the original
+problem instance so we can drop it from the protocol
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+3 For example, the Boneh--Shacham group signature scheme with
+verifier-local revocation {[}11{]} requires precisely these two steps
+and hence cannot be implemented in either Type 2 or Type 3. The scheme
+can be implemented in Type 1 and Type 4 {[}17{]}.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1320
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+description. Next consider the G1 component of the protocol messages,
+i.e., \emph{X}1 and \emph{Y}1. They too do not play any
+\emph{independent} role in the protocol (apart from being a part of the
+representation of \emph{X} and \emph{Y}) while in the security argument
+one of them
+
+(but not both) is explicitly used by the simulator. So it may appear at
+first sight that we have to provide \emph{X}1 and \emph{Y}1 as part of
+the protocol message. However, in a typical simulation of a key
+agreement session at least one of the messages (say \emph{X})
+
+\begin{quote}
+is chosen by the simulator. As we already argued in Section 4.1.2, the
+simulator can directly compute \emph{X}1 based on what she received as
+part of the problem instance. So we can drop \emph{X}1 and \emph{Y}1 and
+modify the protocol so that the protocol messages are elements of G2
+only (i.e., \emph{X}2, \emph{Y}2). Note that in the modified protocol
+\emph{A} derives the session key as \emph{SK} = \emph{H}2\emph{(A, B,
+X}2\emph{, Y}2\emph{, Yx} (and analogously for \emph{B}). 2\emph{, K)}
+
+This modified protocol achieves a better performance both in terms of
+communication bandwidth and computational
+
+cost because the users are no longer burdened with the unnecessary G1
+components of the messages and the master public key. Once these G1
+components are dropped there is no way to obtain the conventional
+representation of the corresponding elements of G′2or to apply \emph{ψ}
+to them and we are \emph{actually} in the Type 3 setting.
+
+The transformation discussed above gives us the essential cue for the
+actual transformation from Protocol-2 to Protocol-3. Namely, for each
+\emph{X} ∈G′2involved in a particular step of Protocol-2 or its security
+argument, the corresponding protocol or its security argument.4Note that
+in Protocol-3 and its security argument, \emph{X}2 can be obtained in
+the same way as step in Protocol-3 or its security argument requires the
+computation of \emph{X}2 ∈G2, and also \emph{X}1 ∈G1 if \emph{ψ(X)} is
+necessary for the \emph{X} in the case of Protocol-2. However, we must
+have some means to obtain \emph{X}1 in Type 3 when necessary. The
+transformation will fail only when we are unable to do so.
+
+In Protocol-2, \emph{X} can be part of the static data such as the
+private key, the public key or the public parameters, or the
+\end{quote}
+
+`\,`run-time'\,' data, e.g., a signature, a ciphertext, or the ephemeral
+key in a key agreement protocol. Given Protocol-2 and its
+
+\begin{quote}
+security reduction, we consider these situations separately for the
+conversion.
+
+\emph{Private data contains an element X} ∈G′2. If either the protocol
+or the security reduction requires \emph{ψ(X)} then include both
+\emph{X}1 ∈G1 and \emph{X}2 ∈G2 in the private information in
+Protocol-3. If neither requires \emph{ψ(X)} then include only \emph{X}2.
+\end{quote}
+
+\emph{Public data contains an element X} ∈G′or it can be part of the
+KGC's public parameters when in the identity-based setting. Whatever be
+the case, the entity who 2. \emph{X} can be part of the public key of a
+user when in the traditional public key setting
+
+\begin{quote}
+generated \emph{X} must also know its discrete log with respect to a
+known base in G′2(since hashing into G′2is not feasible). There are two
+possibilities depending on whether the protocol uses \emph{ψ(X)} or not.
+\end{quote}
+
+1. Protocol-2 employs \emph{ψ(X)}: Replace \emph{X} = \emph{g}′in
+Protocol-3. This is always doable because the entity who generated
+\emph{X} must know \emph{x}. In the traditional PKI setting a 2 \emph{x}
+in the public data of Protocol-2 with \emph{X}1 = \emph{gx} 1∈G1 and
+\emph{X}2 = \emph{gx} 2∈G2
+
+certification authority entrusted with certifying the public key can
+easily verify whether they are properly generated or
+
+not, and in the identity-based setting they are assumed to be properly
+generated by the trusted KGC. If in Protocol-2 a user
+
+Alice requires only \emph{ψ(X)} (resp. \emph{X}) then she will be
+concerned with only \emph{X}1 (resp. \emph{X}2) in Protocol-3. This is
+the case for the BGLS-3 ring signature scheme which, as we have already
+noted, performs better than the BGLS-2 ring signature because now
+
+\begin{quote}
+the ring signer is concerned only with the G1 component of the public
+key of the other signers in the group whereas the verifier is concerned
+only with the G2 components. They can respectively ignore the G2 and G1
+components of the public key leading to decreased communication
+bandwidth.
+\end{quote}
+
+2. \emph{ψ(X)} is necessary for the security argument of Protocol-2:
+Replace \emph{X} = \emph{g}′as was done in the case of BF-IBE-3 in
+Section 4.1.1, and BLS-3 and Waters-3a in {[}16{]}. This allows smaller
+public keys and 2 \emph{x} in Protocol-2 with \emph{X}2 = \emph{gx} 2in
+Protocol-3,
+
+hence (sometimes) less computation in Protocol-3. In some protocols it
+might still be necessary to include \emph{X}1 = \emph{gx} public key.
+For example, \emph{X}1 may be required for the reduction to go through
+as in the BGLS-3 aggregate signature scheme 1in the
+
+\begin{quote}
+(see {[}16{]}). Note that even if \emph{X}1 were included in the public
+key or the public parameters, it would never be required in the actual
+protocol run. So the users will effectively ignore \emph{X}1 in their
+computation, which in turn will lead to better optimization in terms of
+communication bandwidth and perhaps even computational cost compared to
+Protocol-2.
+\end{quote}
+
+\emph{Protocol message contains elements of} G′2. Suppose that in
+Protocol-2 Bob receives a message from Alice containing some \emph{Y}
+∈G′as Bob's public key or the system-wide public parameters. If Bob
+requires \emph{ψ(Y)} then in Protocol-3 Alice should send both 2. Alice
+may compute \emph{Y} either solely based on her secret information or in
+combination with some public data, such
+
+\begin{quote}
+\emph{Y}1 ∈G1 and \emph{Y}2 ∈G2 to Bob. This is doable but, to the best
+of our knowledge, is not required by any existing protocol. If Bob's
+computation in Protocol-2 depends only on \emph{Y} then it is sufficient
+in Protocol-3 to send only \emph{Y}2. However, for the known security
+argument of some protocols to go through, it might be necessary to send
+\emph{Y}1 also. For example, in the security argument of BF-IBE-3 it is
+sufficient to send the G2 component only of the ephemeral key, while for
+the security argument of the Waters-3b signature scheme (see {[}16{]})
+we need both the G1 and G2 components for one of the signature
+components. In the former case, Protocol-3 will be more optimized than
+Protocol-2 while it will be at least as efficient as Protocol-2 in
+
+the latter.
+
+Now consider the security reduction for Protocol-3 where the challenger
+simulates the protocol environment for an
+\end{quote}
+
+adversary based on the problem instance in the given security model.
+Note that Protocol-3 is derived based on both
+
+Protocol-2 and its security reduction. Once we have obtained Protocol-3
+in this manner, it is relatively straightforward to
+
+\begin{quote}
+modify the security argument of Protocol-2 to get an analogous security
+argument for Protocol-3.
+\end{quote}
+\end{minipage}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+`derived' from \emph{X}. We do not know how to formulate this statement
+rigorously. 4 Intuitively, we consider \emph{ψ(X)} to be `necessary' if
+either \emph{ψ(X)} or some \emph{ψ(Y)} is required in the protocol or
+the security argument where \emph{Y} ∈G′2is} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322} 1321
+\end{quote}
+
+in the simulation. Note that if \emph{X} is part of the problem instance
+of P -2 then by definition both \emph{X}1 and \emph{X}2 must be part of
+the Like the protocol, our only concern here is with those elements
+\emph{X} ∈G′2for which the challenger needs to compute \emph{ψ(X)}
+
+problem instance of P -3. So we only need to consider the following two
+situations in the simulation in Type 2 and show how one can obtain
+\emph{X}1 in each case in Type 3.
+
+1. \emph{X} is part of the message sent by the adversary: This can only
+happen if there is an analogous step in Protocol-2 and has been taken
+care of when we transformed it into Protocol-3. Namely the corresponding
+message in Protocol-3 includes both \emph{X}1 and \emph{X}2 and hence
+the adversary must send both to the challenger.
+
+2. The challenger generates \emph{X}: The challenger cannot generate
+this by hashing into G′2. So the challenger can generate \emph{X} either
+solely based on its own random coin tosses, or along with that
+randomness it may also depend on the adversary's input or the problem
+instance P -2. Whatever be the case, the challenger will have enough
+information to generate both \emph{X}1 and \emph{X}2 in the security
+reduction of Protocol-3.
+
+\textbf{6. Concluding remarks}
+
+Many pairing-based protocols in the asymmetric setting rely on the
+existence of an efficiently-computable isomorphism from G2 to G1, i.e.,
+the Type 2 setting. Some earlier works in pairing-based cryptography
+gave the impression that such an isomorphism is necessary for the
+functionality or the security of the protocols (or both). In contrast,
+we have argued that relying on such an isomorphism is more of an
+artifact of initial research in this area rather than an actual
+necessity as far as the functionality and security of the protocols are
+concerned. Moreover, restricting a protocol to such a setting in most
+cases has a negative impact on performance.
+
+\begin{quote}
+In particular, we have provided evidence in support of the following
+assertions:
+\end{quote}
+
+(1) For any hard problem P -2 in the Type 2 setting, there is a natural
+counterpart P -3 in the Type 3 setting which is equally hard.
+
+(2) Any protocol Protocol-2 and its security argument based on P -2 in
+the Type 2 setting can be naturally converted to Protocol-3 with an
+analogous security argument based on P -3 in the Type 3 setting.
+
+(3) Protocol-3 is at least as efficient as Protocol-2 and in most cases
+outperforms Protocol-2. In some situations one can further optimize
+Protocol-3, for example, by hashing into G2 instead of G1 as is the case
+with BF-IBE-3b. Such optimizations are not possible for Protocol-2 as it
+is not known how to hash into G′2.
+
+Setting aside the question of performance, our study indicates that
+there is no major difference of cryptographic significance when a
+protocol originally described in the Type 2 setting is transformed into
+Type 3. This leads us to posit the question of whether there exists a
+cryptographic protocol which necessarily has to be restricted to Type 2
+for implementation or security reasons. We conclude with the following
+remarks and question.
+
+(1) Some authors have used the extended Diffie--Hellman (XDH) assumption
+to argue the security of their protocols {[}7,14, 15{]}. The XDH
+assumption requires that the decision Diffie--Hellman (DDH) problem is
+hard in G1. If it is also required that DDH is hard in G2 then the
+corresponding assumption is called symmetric XDH (SXDH) {[}1{]}. Note
+that in the Type 2 setting, DDH is easy in G′2because of \emph{ψ}.
+Hence, the protocols described in {[}1,39{]} where security is based on
+the SXDH assumption cannot be instantiated securely in Type 2 (but can
+be implemented in Type 3 since DDH is believed to be hard in G2). On the
+other hand, if some Protocol-2 or its security argument requires DDH to
+be hard in G1 but easy in G′2, then it may appear at first glance that
+Protocol-2 cannot be converted to the Type 3 setting. However, we expect
+that the conversion would be possible by adding the appropriate elements
+from G1 to the protocol or its security argument in the same manner as
+was used earlier to avoid \emph{ψ}. We are not aware of the existence of
+any such protocols.
+
+(2) In Type 3 it is possible to make a minimalist complexity assumption
+such as BDH-3c as proposed by Galbraith {[}12{]}. Such minimalist
+assumptions do not have any counterpart in Type 2. The question is
+whether there exists a protocol whose security is based on such an
+assumption.
+
+(3) Some protocols, such as the Boneh--Shacham group signature scheme
+with verifier-local revocation {[}11{]} and the SYL, RYY and BMP
+identity-based key agreement protocols (see {[}19{]}), that involve
+hashing into G2 followed by an application of \emph{ψ} on the resulting
+hash values cannot be implemented in either Type 2 or Type 3. However,
+they can be implemented using Type 1 and Type 4 pairings (cf. {[}17{]}).
+
+\textbf{Acknowledgments}
+
+\begin{quote}
+Thanks to M. Prem Laxman Das and the anonymous referees for their useful
+suggestions.
+\end{quote}
+
+\textbf{References}
+
+\begin{quote}
+{[}1{]} G. Ateniese, J. Camenisch, S. Hohenberger, B. de Medeiros,
+Practical group signatures without random oracles, Cryptology ePrint
+Archive Report 2005\emph{/}385.
+
+{[}2{]} F. Bao, R. Deng, H. Zhu, Variations of Diffie-Hellman problem,
+in: Information and Communication Security -- ICICS 2003, in: LNCS, vol.
+2836, 2003, pp. 301--312.
+
+{[}3{]} P. Barreto, B. Lynn, M. Scott, Efficient implementation of
+pairing-based cryptosystems, Journal of Cryptology 17 (2004) 321--334.
+\end{quote}
+
+1322 \emph{S. Chatterjee, A. Menezes / Discrete Applied Mathematics 159
+(2011) 1311--1322}
+
+\begin{quote}
+{[}4{]} P. Barreto, M. Naehrig, Pairing-friendly elliptic curves of
+prime order, in: Selected Areas in Cryptography -- SAC 2005, in: LNCS,
+vol. 3897, 2006, pp. 319--331.
+\end{quote}
+
+{[}5{]} D. Boneh, X. Boyen, Short signatures without random oracles, in:
+Advances in Cryptology -- EUROCRYPT 2004, in: LNCS, vol. 3027, 2004, pp.
+56--73. {[}6{]} D. Boneh, X. Boyen, Short signatures without random
+oracles and the SDH assumption in bilinear groups, Journal of Cryptology
+21 (2008) 149--177.
+
+\begin{quote}
+{[}7{]} D. Boneh, X. Boyen, H. Shacham, Short group signatures, in:
+Advances in Cryptology -- CRYPTO 2004, in: LNCS, vol. 3152, 2004, pp.
+41--55. {[}8{]} D. Boneh, M. Franklin, Identity-based encryption from
+Weil pairing, SIAM Journal of Computing 32 (2003) 586--615.
+
+{[}9{]} D. Boneh, C. Gentry, B. Lynn, H. Shacham, Aggregate and
+verifiably encrypted signatures from bilinear maps, in: Advances in
+Cryptology -- EUROCRYPT 2003, in: LNCS, vol. 2656, 2003, pp. 416--432.
+\end{quote}
+
+{[}10{]} D. Boneh, B. Lynn, H. Shacham, Short signatures from the Weil
+pairing, Journal of Cryptology 17 (2004) 297--319.
+
+{[}11{]} D. Boneh, H. Shacham, Group signatures with verifier-local
+revocation, in: 11th ACM Conference on Computer and Communications
+Security -- CCS 2004, ACM Press, 2004, pp. 168--177.
+
+{[}12{]} X. Boyen, The uber-assumption family -- A unified complexity
+framework for blinear groups, in: Pairing-Based Cryptography -- Pairing
+2008, in: LNCS, vol. 5209, 2008, pp. 39--56.
+
+{[}13{]} X. Boyen, Q. Mei, B. Waters, Direct chosen ciphertext security
+from identity-based techniques, in: 12th ACM Conference on Computer and
+Communications Security -- CCS 2005, ACM Press, 2005, pp. 320--329.
+
+{[}14{]} J. Camenisch, S. Hohenberger, A. Lysyanskaya, Compact E-cash,
+in: Advances in Cryptology -- EUROCRYPT 2005, in: LNCS, vol. 3494, 2005,
+pp. 302--321. {[}15{]} C. Delerablée, D. Pointcheval, Dynamic fully
+anonymous short group signatures, in: Progress in Cryptology --
+VIETCRYPT 2006, in: LNCS, vol. 4341, 2006, pp. 193--210.
+
+{[}16{]} S. Chatterjee, D. Hankerson, E. Knapp, A. Menezes, Comparing
+two pairing-based aggregate signature schemes, Designs, Codes and
+Cryptography 55 (2010) 141--167.
+
+{[}17{]} S. Chatterjee, D. Hankerson, A. Menezes, On the efficiency and
+security of pairing-based protocols in the Type 1 and Type 4 settings,
+in: International Workshop on Arithmetic of Finite Fields -- WAIFI 2010,
+in: LNCS, vol. 6087, 2010, pp. 114--134.
+
+{[}18{]} L. Chen, Z. Cheng, Security proof of Sakai-Kasahara's
+identity-based encryption scheme, in: Cryptography and Coding, in: LNCS,
+vol. 3706, 2005, pp. 442--459.
+
+{[}19{]} L. Chen, Z. Cheng, N. Smart, Identity-based key agreement
+protocols from pairings, International Journal of Information Security 6
+(2007) 213--241. {[}20{]} L. Chen, C. Kudla, Identity-based
+authenticated key agreement from pairings, IEEE Computer Security
+Foundations Workshop, 219--233, 2003. The modified version is available
+at Cryptology ePrint Archive, Report 2002\emph{/}184.
+
+{[}21{]} Z. Cheng, L. Chen, On security proof of McCullagh-Barreto's key
+agreement protocol and its variants, Cryptology ePrint Archive Report
+2005\emph{/}201. {[}22{]} D. Freeman, Converting pairing-based
+cryptosystems from composite-order groups to prime-order groups, in:
+Advances in Cryptology -- EUROCRYPT 2010, in: LNCS, vol. 6110, 2010, pp.
+44--61.
+
+{[}23{]} S. Galbraith, Pairings, in: I. Blake, G. Seroussi, N. Smart
+(Eds.), Advances in Elliptic Curve Cryptography, Vol. 2, Cambridge
+University Press, 2005 (Chapter IX).
+
+{[}24{]} S. Galbraith, F. Hess, F. Vercauteren, Hyperelliptic pairings,
+in: Pairing-Based Cryptography -- Pairing 2007, in: LNCS, vol. 4575,
+2007, pp. 108--131. {[}25{]} S. Galbraith, K. Paterson, N. Smart,
+Pairings for cryptographers, Discrete Applied Mathematics 156 (2008)
+3113--3121.
+
+{[}26{]} D. Galindo, Boneh--Franklin Identity-based encryption
+revisited, in: Automata, Language and Programming -- ICALP 2005, in:
+LNCS, vol. 3580, 2005, pp. 791--802.
+
+{[}27{]} D. Hankerson, A. Menezes, M. Scott, Software implementation of
+pairings, in: M. Joye, G. Neven (Eds.), Identity-Based Cryptography, IOS
+Press, 2008, pp. 188--206.
+
+{[}28{]} F. Hess, N. Smart, F. Vercauteren, The eta pairing revisited,
+IEEE Transactions on Information Theory 52 (2006) 4595--4602.
+
+{[}29{]} A. Joux, A one round protocol for tripartite Diffie-Hellman,
+Journal of Cryptology 17 (2004) 263--276.
+
+{[}30{]} B. Kang, J. Park, On the relationship between squared pairings
+and plain pairings, Information Processing Letters 97 (2006) 219--224.
+
+{[}31{]} E. Lee, H. Lee, C. Park, Efficient and generalized pairing
+computation on abelian varieties, IEEE Transactions on Information
+Theory 55 (2009) 1793--1803.
+
+{[}32{]} N. McCullagh, P. Barreto, A new two-party identity-based
+authenticated key agreement, in: Topics in Cryptology -- CT-RSA 2005,
+in: LNCS, vol. 3376, 2005, pp. 262--274.
+
+{[}33{]} A. Miyaji, M. Nakabayashi, S. Tanako, New explicit condition of
+elliptic curve trace for FR-reduction, IEICE Transactions on
+Fundamentals of Electronics, Communications and Computer Sciences E84-A
+(2001) 1234--1243.
+
+{[}34{]} R. Sakai, K. Ohgishi, M. Kasahara, Cryptosystems based on
+pairing over elliptic curve (in Japanese), The 2000 Symposium on
+Cryptography and Information Security, 2000.
+
+{[}35{]} H. Shacham, New paradigms in signature schemes, Ph.D. thesis,
+Stanford University, 2005.
+
+{[}36{]} N. Smart, An identity based authenticated key agreement
+protocol based on the Weil pairing, Electronics Letters 38 (2002)
+630--632.
+
+{[}37{]} N. Smart, F. Vercauteren, On computable isomorphisms in
+efficient pairing-based systems, Discrete Applied Mathematics 155 (2007)
+538--547. {[}38{]} F. Vercauteren, Optimal pairings, IEEE Transactions
+on Information Theory 56 (2010) 455--461.
+
+{[}39{]} B. Waters, Dual system encryption: realizing fully secure IBE
+and HIBE under simple assumptions, in: Advances in Cryptology -- CRYPTO
+2009, in: LNCS, vol. 5677, 2009, pp. 595--618.
+
+\end{document}

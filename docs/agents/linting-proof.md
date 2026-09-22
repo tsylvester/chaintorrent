@@ -4,6 +4,8 @@ After every edit, the touched file is linted clean, and completion is proven —
 
 Applies whenever a file is edited. This is a Process topic — it governs all other work.
 
+Linting does not apply to documents, such as markdown or text. 
+
 ## Lint every edit
 
 - After each edit, lint the touched file and resolve every warning and error.
