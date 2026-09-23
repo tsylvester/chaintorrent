@@ -1,6 +1,12 @@
 {
-  "description": "Read-only static-analysis commands the terminal guard permits. DENY BY DEFAULT: an empty 'allow' blocks every terminal command. Bind YOUR toolchain by copying entries from 'examples' into 'allow'. Each entry is a literal command prefix; a command matches if it equals the entry or begins with the entry followed by a space, and contains no shell metacharacters. Rationale and the two-gate test: docs/agents/terminal-policy.md",
-  "allow": [],
+  "description": "Read-only static-analysis commands the terminal guard permits. DENY BY DEFAULT: an empty 'allow' blocks every terminal command. Bind YOUR toolchain by copying entries from 'examples' into 'allow'. Each entry is a literal command prefix; a command matches if it equals the entry or begins with the entry followed by a space, and contains no shell metacharacters. Rationale and the two-gate test: docs/agents/terminal-policy.md. The Rust and Solidity entries are the type-check and lint surfaces the MVP's proof model depends on; prefix matching cannot exclude a trailing --fix or --write flag, so agents must not pass one, per the policy's no-fix rule.",
+  "allow": [
+    "cargo check",
+    "cargo clippy",
+    "cargo fmt --check",
+    "forge build",
+    "forge fmt --check"
+  ],
   "examples": [
     "deno check",
     "deno lint",

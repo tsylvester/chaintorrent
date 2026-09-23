@@ -183,14 +183,6 @@ Three related properties are settled rather than open, and are stated in the spe
 
 Arguments still running. Each blocks work that cannot be authored around it.
 
-### Escrow salt custodian
-
-**What was found.** The escrow record binds the absent maintainer through a salted commitment to the `package.json` email, so that an enumerable address is not published as a testable mapping, and the salt was to be held by the provisioning layer, which already held the escrowed content key. The provisioning layer no longer exists. Every candidate custodian has a cost: the First Finder already holds the escrow master scalar but must not become a dependency at claim, since a claim is designed to complete without it; the claim verifier already authenticates the claimant but would turn a lost salt into a permanently unclaimable record; and dropping the on-chain commitment altogether, with the verifier establishing the claim set from upstream metadata at verification time, publishes no maintainer linkage and leaves nothing to lose but removes a binding the record was designed to carry.
-
-**Where.** [`docs/MVP Scope.md`, Escrow Claim](../../MVP%20Scope.md#escrow-claim) and [Active Email Bot for First Finder Escrow](../../MVP%20Scope.md#active-email-bot-for-first-finder-escrow); [`docs/MVP Application Requirements.md`, PC-02 and PC-04](../../MVP%20Application%20Requirements.md#publishing-and-claims).
-
-**What resolving it would take.** A decision among the three, made against the rule that claim-set verification must not depend on any party that can be unavailable at claim. This is a design choice with no determinant in the existing materials, and it blocks the escrow-claim contract surface.
-
 ### Attempt-rule parameters and piece-group size
 
 **What was found.** The attempt rule replaces the former decryption windows. A conforming client reads a state view at the deployment's declared tier no older than `τ_soft` before every piece-group key derivation, renews its wallet-control assertion every `τ_wallet`, and destroys decrypt-capable material only when a transfer out reaches `HARD`. The piece-group size fixes how many pieces one capsule covers: smaller groups bound what one leaked key unlocks, larger groups bound the pairing work per byte. All three are published per deployment and none has a value.
@@ -241,6 +233,14 @@ That scope is currently stated under Modified Clients as a security consideratio
 
 **What resolving it would take.** Deciding whether the invariant list carries its own scope sentence or whether the Modified Clients statement suffices. This is a question of where the statement belongs, not whether it is true.
 
+### Entitlement migration across chain adapters
+
+**What was found.** The chain sits behind an adapter and the protocol intends its own chain eventually, but an adapter swap moves nothing: entitlements, interval state, envelope digests, parameter-set liveness, deployment records, and identity bindings live in one chain's contract state, and a later chain, whether Ethereum mainnet, another L2, or the project's own, starts empty. Every invariant the protocol makes about an entitlement, asset binding, irrevocability, transferability, and the delivery chain that authenticates its credential history, is a statement about one ledger. No document specifies how an entitlement and its interval history become valid on a second ledger without a party acquiring discretion over the move, which the No Party May Selectively Withhold invariant forbids.
+
+**Where.** [`docs/MVP Scope.md`, Adapter Composition and Capability Declaration](../../MVP%20Scope.md#adapter-composition-and-capability-declaration) and [Entitlement Ledger and Escrow Contract](../../MVP%20Scope.md#entitlement-ledger-and-escrow-contract); [`docs/cryptography.md`, Architectural Invariants](../../cryptography.md#overview-and-invariant-requirements) and [Credential Delivery](../../cryptography.md#cryptographic-primitives); the launch network decision recorded in [`docs/project-planning/product-requirements.md`](../../project-planning/product-requirements.md).
+
+**What resolving it would take.** A migration mechanism with the same non-deniability the transfer path has: a snapshot, claim, or bridge construction under which a holder proves its entitlement and interval on the source ledger and obtains the equivalent record on the target ledger with no party able to withhold it, the source record retired or frozen so scarcity is not doubled, the envelope history carried or re-anchored so the next sale's proof has a base case, and parameter-set liveness reproduced so existing credentials keep decrypting. None of it is needed before the MVP, which lives on one chain. It is needed before any second chain adapter carries live entitlements, and it is the item that decides whether the first-party chain is a migration or a fresh start.
+
 ## Releases on a deliberate policy line
 
 Not blocked by engineering. Blocked by a line the project draws on purpose, so that crossing it is a decision rather than a drift.
@@ -275,18 +275,10 @@ Two crossings are held behind separate answers: an adapter aimed at licensed con
 
 Nothing is unresolved here. These wait for their turn.
 
-### Launch chain selection
-
-**What was found.** Ethereum is the launch ecosystem, because ERC-721 entitlements and Solidity contracts are its native objects; the chain sits behind an adapter and the protocol intends its own chain eventually. Which Ethereum network is not selected. An L2 keeps delivery verification cheap on BN254; mainnet has the BLS12-381 precompiles that remove pairings from verification but makes each relayer-paid mint expensive.
-
-**Where.** [`docs/MVP Scope.md`, Signature Scheme](../../MVP%20Scope.md#signature-scheme), [Entitlement Ledger and Escrow Contract](../../MVP%20Scope.md#entitlement-ledger-and-escrow-contract), and [Key Custody](../../MVP%20Scope.md#key-custody).
-
-**What resolving it would take.** A network whose settlement tier mapping, view-call batching, ERC-4337 paymaster support, and pairing precompiles are adequate, chosen against the measured delivery-verification gas from the validation harness. The network fixes the pairing curve through `IPairingAdapter`; the harness runs on BN254 meanwhile.
-
 ### Boundary decisions under this gate
 
 * **Git commit wrapping** — mutable DAGs and merge complexity against static immutable tarballs; packages first. Deferred in [`docs/MVP Scope.md`, Git Commit Wrapping](../../MVP%20Scope.md#git-commit-wrapping).
-* **Active email bot for First Finder escrow** — cut for spam and domain reputation, and made costless by the salted commitment and claim-set mechanism. Deferred in [`docs/MVP Scope.md`, Active Email Bot for First Finder Escrow](../../MVP%20Scope.md#active-email-bot-for-first-finder-escrow).
+* **Active email bot for First Finder escrow** — cut for spam and domain reputation, and made costless by the claim-set mechanism. Deferred in [`docs/MVP Scope.md`, Active Email Bot for First Finder Escrow](../../MVP%20Scope.md#active-email-bot-for-first-finder-escrow).
 * **Version alignment engine** — resolution belongs to the package manager; surfaces later as a diagnostic. Deferred in [`docs/MVP Scope.md`, Version Alignment Engine](../../MVP%20Scope.md#version-alignment-engine).
 
 ## Proposed method
@@ -295,14 +287,14 @@ Nothing is unresolved here. These wait for their turn.
 
 **What was proposed.** An authoring order for the Work Breakdown Structure, derived from what depends on what rather than from what is most interesting to build. Recorded here as a proposal, not a decision — no node has been authored against it.
 
-* **Decisions before nodes.** The credential construction, key custody, host adapter approach, and claim granularity are settled; Ethereum is the launch ecosystem and the network is held; the escrow salt custodian and the license are not settled, and the salt blocks the escrow-claim surface.
+* **Decisions before nodes.** The credential construction, key custody, host adapter approach, claim granularity, launch network, and the absence of a maintainer commitment in the escrow record are settled; the license is not settled and is a release prerequisite rather than a node blocker.
 * **Cryptographic validation harness.** The credential KEM, envelope, and delivery proof on the resolved pairing adapter, with the verifier deployed to a test chain, producing the measurements that fix the piece-group size. This precedes any node that encrypts, because piece geometry is a suite parameter every later deployment carries.
 * **Swarm transport, seed host, and the ciphertext store.** Everything downstream needs bytes to move, and this is provable end to end with no chain and no cryptography: seed an object and its sidecar, fetch them elsewhere, verify Bao paths.
 * **Registry contract**, carrying batch resolve, batch authorize, pagination, envelope-key registration, the parameter-set registry with the sidecar-coverage rule, per-entitlement interval state, delivery verification through the precompiles, and the per-`(package, version)` claim-set state layout.
 * **First Finder ingest** — fetch, verify attestation, generate the parameter set, encrypt per group, build the sidecar, register, seed. This is the spine both publisher paths reuse.
 * **Package host adapter**, at which point an ordinary `npm install` resolves against the swarm and the MVP has something to demonstrate.
 * **Credential delivery and per-attempt authorization**, closing the read path: mint delivery through the relayer, local decryption under the attempt rule, interval-end destruction.
-* **Explicit publisher path** as branches off First Finder, then **transaction flow proof**, which is where transfer delivery is first exercised, then **escrow claim** last, since nothing else depends on it and the salt decision gates it.
+* **Explicit publisher path** as branches off First Finder, then **transaction flow proof**, which is where transfer delivery is first exercised, then **escrow claim** last, since nothing else depends on it.
 
 **Where.** No node exists. The Work Breakdown Structure above is empty.
 
