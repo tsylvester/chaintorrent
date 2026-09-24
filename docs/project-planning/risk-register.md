@@ -3,16 +3,16 @@
 
 ## Overview
 
-Draft, 2026-09-23. Specific identified risks to the ChainTorrent MVP, consolidated from the risks named in [cryptography.md](../research/cryptography.md), [MVP Scope](../research/MVP%20Scope.md), [MVP Application Requirements](../research/MVP%20Application%20Requirements.md), the [workplan To-Do list](../workplans/current/ChainTorrent%20MVP.md), and the planning documents written against them: the [business case](business-case.md), its [critique](business-case-critique.md), the [technical approach](technical-approach.md), and the [success metrics](success-metrics.md). Each risk is one block below with the template's seven fields; the Notes field of each carries affected components, dependencies, sequencing, guardrails, signals, and open questions, which the document descriptor asks for and the template does not name separately.
+Draft, 2026-09-23. Specific identified risks to the ChainTorrent MVP, consolidated from the risks named in [cryptography.md](../research/cryptography.md), [MVP Scope](../research/MVP%20Scope.md), [MVP Application Requirements](../research/MVP%20Application%20Requirements.md), the [workplan To-Do list](../workplans/current/ChainTorrent%20MVP.md), and the planning documents written against them: the [business case](business-case.md), its [critique](business-case-critique.md), the [technical approach](technical-approach.md), and the [success metrics](success-metrics.md). Each risk is one block below with the template's fields; the Notes field of each carries affected components, dependencies, sequencing, guardrails, signals, and open questions, which the document descriptor asks for and the template does not name separately.
 
-Ratings are qualitative. **Impact** is High when the risk would block release, break an invariant, or lose the adopting population; Medium when it would degrade a release-defining metric or require rework across more than one component; Low when it is contained. **Likelihood** is High when the sources already record the condition as present or unmeasured; Medium when it depends on a decision or measurement not yet made; Low when the design already forecloses it and only implementation error remains. The sources supply no probabilities and none are invented. Risks are ordered approximately by the product of the two ratings, highest first, with accepted residuals last because they are not open. R-01 keeps its position after being re-rated from High to Medium on both axes, because it is the risk that most needs a decision before the First Finder node is authored.
+Ratings are qualitative. **Impact** is High when the risk would block release, break an invariant, or lose the adopting population; Medium when it would degrade a release-defining metric or require rework across more than one component; Low when it is contained. **Likelihood** is High when the sources already record the condition as present or unmeasured; Medium when it depends on a decision or measurement not yet made; Low when the design already forecloses it and only implementation error remains. The sources supply no probabilities and none are invented. Risks are ordered approximately by the product of the two ratings, highest first, with accepted residuals last because they are not open.
 
 A summary table is under Additional Content.
 
 ---
 
 ## Risk
-**R-01. Unauthorized public redistribution and irrevocability of ingested packages.** The specification confines ingest adapters to archives whose content is already free to use, and the MVP implements that as public npm availability. The two are close: npm serves every public package to anyone at no charge regardless of its license, so availability tests that the publisher chose free public distribution, and a user obtains nothing from the swarm they could not already obtain from npm. What the swarm changes is who distributes and whether it can be withdrawn. First Finders and seeders redistribute to the public without the grant the publisher gave npm, and some restrictive licenses forbid redistribution even of freely obtainable bytes; and the swarm is irrevocable by design, so a publisher loses the ability to unpublish. The escrow contract also mints a transferable entitlement the publisher never authorized, which at $0.00 confers nothing beyond what npm gave but is a new artifact carrying their content's identity.
+**R-01. Unauthorized public redistribution and irrevocability of ingested packages.** The specification confines ingest adapters to content its rights holder distributes to the public at no charge, and the MVP implements that as public npm availability. The two are close: npm serves every public package to anyone at no charge regardless of its license, so availability tests that the publisher chose free public distribution, and a user obtains nothing from the swarm they could not already obtain from npm. What the swarm changes is who distributes and whether it can be withdrawn. First Finders and seeders redistribute to the public without the grant the publisher gave npm, and some restrictive licenses forbid redistribution even of freely obtainable bytes; and the swarm is irrevocable by design, so a publisher loses the ability to unpublish. The escrow contract also mints a transferable entitlement the publisher never authorized, which at $0.00 confers nothing beyond what npm gave but is a new artifact carrying their content's identity.
 
 ## Impact
 Medium. No revenue is denied, since npm charged nobody for the download, so the post-claim pricing paradox does not arise for this corpus. The exposure is an objection from a rights holder of a freely distributed package to unauthorized redistribution or to the loss of withdrawal, landing on the ingest path and on seeders. Seeders hold ciphertext they cannot read, which places them closer to a cache than to a public copy.
@@ -21,24 +21,23 @@ Medium. No revenue is denied, since npm charged nobody for the download, so the 
 Medium. Public npm mirrors and enterprise proxies redistribute the same packages today and are largely uncontested, which is evidence that objections are uncommon; a swarm serving strangers and refusing withdrawal is a different posture from a proxy serving one organization's licensees, which is why the likelihood is not Low.
 
 ## Mitigation
-State the principle precisely in MVP Scope and the business case: free public distribution by the rights holder's own choice, with public npm availability as the implementing test, and the residual named as redistribution and irrevocability rather than denied revenue. Whether to additionally refuse First Finder ingest for packages whose declared license forbids redistribution is a policy choice the workplan already holds behind a deliberate line; it narrows an already small exposure and should be decided on that footing, not as a repair. Advisory backlinks and the local trust set are the specification's mechanism for a publisher's later objection to reach clients without registry mutation.
+The principle is stated in the specification and MVP Scope: free public distribution by the rights holder's own choice, with public npm availability as the implementing test, and the residual named as redistribution and irrevocability rather than denied revenue. The MVP ingests whatever npm serves; a license check at ingest is a later policy decision. Advisory backlinks and the local trust set are the specification's mechanism for a publisher's later objection to reach clients without registry mutation.
 
 ## Seed Examples
 - A vendor publishes a proprietary SDK to npm at no charge under a license that forbids redistribution. A First Finder ingests it and the swarm serves it permanently. Every user could already download it from npm; the vendor's objection is to the redistribution and to being unable to withdraw it, not to lost sales.
 - A publisher unpublishes a package from npm for a reason of their own; the swarm continues to serve it and the publisher's only recourse is an advisory.
 
 ## Mitigation Plan
-1. Restate the eligibility principle and its residual in MVP Scope and the business case before the First Finder ingest node is authored.
-2. Decide, as a recorded policy choice, whether the npm ingest adapter also refuses licenses that forbid redistribution; if so, implement it in the adapter's eligibility contract so every First Finder applies it identically, with the initiating install still served from upstream bytes.
-3. Ensure the advisory mechanism, when built, gives a publisher a visible channel for objection that conforming clients can act on locally.
+- Carry the principle and its residual into onboarding messaging.
+- Give a publisher, when the advisory mechanism is built, a visible channel for objection that conforming clients can act on locally.
 
 ## Notes
 - **Affected components:** `IIngestSourceAdapter` npm implementation, First Finder bootstrap workflow, seed hosts, MVP Scope's ingest section, business case; advisory backlinks in V2.
 - **Dependencies:** none technical; a policy decision.
-- **Sequencing:** before workplan step five.
+- **Sequencing:** before the First Finder engine milestone.
 - **Guardrails:** no First Finder ingest from a source the public cannot retrieve at no charge.
-- **Signals:** a rights holder's objection to a specific escrowed asset; any escrow record whose upstream manifest declares a license forbidding redistribution, if that becomes a tracked field.
-- **Open questions:** whether to refuse redistribution-forbidding licenses; whether npm license metadata is reliable enough to gate on; whether a missing license field is refused or accepted.
+- **Signals:** a rights holder's objection to a specific escrowed asset.
+- **Open questions:** none in the MVP.
 
 ---
 
@@ -59,19 +58,19 @@ Build the validation harness first and choose the piece-group size and curve fro
 - The piece-group size chosen to bound key leakage is small enough that a large package needs hundreds of decapsulations.
 
 ## Mitigation Plan
-1. Harness on both curves, recording sizes, decapsulation time, proof times, and gas (CD-07, AS-21).
-2. Declare the budget, including the acceptable authorization fraction, before measurement.
-3. Choose piece-group size against the budget; record the choice in release evidence.
-4. Measure state-read latency during the dogfood run; choose `τ_soft` and `τ_wallet`.
-5. If no parameter within the specification's bounds meets the budget, report it as a finding against the design rather than relaxing the budget.
+- Harness on both curves, recording sizes, decapsulation time, proof times, and gas (CD-07, AS-21).
+- Declare the budget, including the acceptable authorization fraction, before measurement.
+- Choose piece-group size against the budget; record the choice in release evidence.
+- Measure state-read latency during the dogfood run; choose `τ_soft` and `τ_wallet`.
+- If no parameter within the specification's bounds meets the budget, report it as a finding against the design rather than relaxing the budget.
 
 ## Notes
 - **Affected components:** validation harness, encrypted consumption, settlement and entitlement-state adapters, deployment hash-card parameters.
-- **Dependencies:** launch network for the curve; harness on BN254 meanwhile.
-- **Sequencing:** workplan step two, before any node that encrypts.
+- **Dependencies:** the harness on both curves.
+- **Sequencing:** the harness grouping, before any node that encrypts a registered deployment.
 - **Guardrails:** latency budget (RO-06).
 - **Signals:** authorization fraction of install wall-clock rising toward the budget; `PENDING_SETTLEMENT` dwell time rising.
-- **Open questions:** the budget's value; whether batch reads at the declared tier are available on the chosen network.
+- **Open questions:** the budget's value; whether batch reads at the declared tier are available on Base.
 
 ---
 
@@ -93,15 +92,15 @@ External cryptographic review of the composition and the contract verifier befor
 - A registered `G2` key on BLS12-381 is accepted without an MSM or pairing check and is off the prime-order subgroup.
 
 ## Mitigation Plan
-1. Implement the verifier in Rust and Solidity from the same statement of the relations; treat the Rust verifier as the reference and the contract as its port.
-2. Mutation and replay test suite over every statement field, both curve forms.
-3. Commission external review in parallel with the harness, scoped to the composition claims and the verifier.
-4. Gate the priced dogfood deployment on the review's result.
+- Implement the verifier in Rust and Solidity from the same statement of the relations; treat the Rust verifier as the reference and the contract as its port.
+- Mutation and replay test suite over every statement field, both curve forms.
+- Commission external review in parallel with the harness, scoped to the composition claims and the verifier.
+- Gate the priced dogfood deployment on the review's result.
 
 ## Notes
 - **Affected components:** `SchnorrFsDeliveryProofAdapter`, `IPairingAdapter` implementations, contract suite, validation harness.
-- **Dependencies:** curve choice for the verifier form.
-- **Sequencing:** harness at step two; contract at step four; review before the transaction flow proof at step eight.
+- **Dependencies:** both verifier forms, BLS12-381 primary.
+- **Sequencing:** the harness grouping; the registry contracts milestone; review before the transaction flow proof.
 - **Guardrails:** zero accepted invalid deliveries.
 - **Signals:** any divergence between Rust and on-chain verification on the harness vector set.
 - **Open questions:** who performs the review and when the result is needed.
@@ -118,21 +117,21 @@ High. Delivery risk, not design risk: the last third of the work, publishing, cl
 High. The breadth is a fact of the requirements and no schedule or team exists to set against it.
 
 ## Mitigation
-The workplan's dependency-ordered sequence, test-first and bottom-up, with one file per turn. An internal demonstrable milestone at workplan step six, where an ordinary `npm install` is served at the registry's speed, registers and prefetches, and resolves against the swarm with the registry down, without reducing the release boundary. Deferred items held deferred.
+The workplan's dependency-ordered sequence, test-first and bottom-up, with one file per turn. A demonstrable milestone after credential delivery, where an ordinary `npm install` is served at the registry's speed, registers and prefetches, and a second identity resolves against the swarm with the registry down, without reducing the release boundary. Deferred items held deferred.
 
 ## Seed Examples
 - Platform-specific service lifecycle on one supported OS consumes the effort planned for credential delivery.
 - The license text waits on legal drafting while everything else is done, and release waits on it.
 
 ## Mitigation Plan
-1. Ratify the build sequence and author the first node.
-2. Define the step-six milestone with its own north-star and latency measurement.
-3. Author nodes only from settled decisions; hold the escrow-claim node until R-13 resolves.
-4. Size the team and a timeline once the harness is done and the first nodes have measured throughput.
+- Author nodes from the ratified sequence.
+- Define the demonstrable milestone with its own north-star and latency measurement.
+- Author nodes only from settled decisions.
+- Size the team and a timeline once the harness has measured throughput.
 
 ## Notes
 - **Affected components:** all.
-- **Dependencies:** blocking selections (R-13).
+- **Dependencies:** open selections (R-09).
 - **Sequencing:** throughout.
 - **Guardrails:** completion boundary as written; no test-only bypass.
 - **Signals:** requirement-to-proof reconciliation lagging node completion.
@@ -157,9 +156,9 @@ Lead the developer value proposition with what substitutes cannot do: the swarm 
 - A registry operator ships a native peer cache and captures the outage benefit.
 
 ## Mitigation Plan
-1. Revise the business case's beachhead argument per the critique.
-2. Describe the cold-start dynamics: seed host for the core closure, build platforms as superseeders, long tail by accumulation.
-3. Instrument and report north-star and remote-encrypted-hit rate from the first dogfood run.
+- Lead the beachhead argument with what substitutes cannot do.
+- Describe the cold-start dynamics: seed host for the core closure, build platforms as superseeders, long tail by accumulation.
+- Instrument and report north-star and remote-encrypted-hit rate from the dogfood run.
 
 ## Notes
 - **Affected components:** business case, onboarding messaging, seed host, discovery.
@@ -188,9 +187,9 @@ State the exposure at onboarding, where the request and prefetch behaviors are c
 - A configured RPC provider logs a client's state-read stream and reconstructs its dependency set in real time.
 
 ## Mitigation Plan
-1. Add the exposure to the business case's Risks and Differentiation, and to onboarding consent text.
-2. Prefer own-node state reads in the default configuration where a light client is available.
-3. Keep the candidate constructions, ephemeral wallets, blinded reads, aggregate settlement, zero-knowledge entitlement proofs, on the workplan as a V2 design question.
+- Add the exposure to the business case's Risks and Differentiation, and to onboarding consent text.
+- Prefer own-node state reads in the default configuration where a light client is available.
+- Keep the candidate constructions, ephemeral wallets, blinded reads, aggregate settlement, zero-knowledge entitlement proofs, on the workplan as a V2 design question.
 
 ## Notes
 - **Affected components:** entitlement contract, entitlement-state adapter, onboarding, documentation.
@@ -219,18 +218,18 @@ Artifact and update authentication before execution (SI-04, IC-02, SI-17); plain
 - A tampered update artifact with valid-looking metadata replaces the working daemon.
 
 ## Mitigation Plan
-1. Signing-key custody and rotation for artifacts as part of the release process.
-2. IPC authentication and capability separation tested from untrusted local users and project scripts.
-3. Fuzz every adapter contract and IPC request.
-4. Security review of the daemon alongside the cryptographic review.
+- Signing-key custody and rotation for artifacts as part of the release process.
+- IPC authentication and capability separation tested from untrusted local users and project scripts.
+- Fuzz every adapter contract and IPC request.
+- Security review of the daemon alongside the cryptographic review.
 
 ## Notes
 - **Affected components:** installer, daemon, IPC, update mechanism, package host.
 - **Dependencies:** platform credential stores for signing verification.
-- **Sequencing:** with steps three through six.
+- **Sequencing:** the swarm, contracts, daemon skeleton, and package-host milestones.
 - **Guardrails:** no protected side effects from untrusted input; no unauthenticated artifact executed.
 - **Signals:** any IPC call from an unprivileged principal succeeding beyond package requests.
-- **Open questions:** where the artifact signing key lives and who holds it.
+- **Open questions:** none; XA-08 fixes signing-key custody and rotation.
 
 ---
 
@@ -241,7 +240,7 @@ Artifact and update authentication before execution (SI-04, IC-02, SI-17); plain
 Medium. Exhaustion stops free onboarding, which is the MVP's only onboarding; griefing ties up buyers' funds briefly.
 
 ## Likelihood
-Medium for cost growth with success, reduced from High by the Base launch decision, under which L2 execution is cheap and the L1 data-posting fee is the dominant and measurable component; Medium for deliberate abuse.
+Medium for cost growth with success, since on Base L2 execution is cheap and the L1 data-posting fee is the dominant and measurable component; Medium for deliberate abuse.
 
 ## Mitigation
 Per-identity rate limits under relayer policy; short published lock expiries with refund; explicit failure states that never produce false authorization; relayer gas recorded per install with L2 execution and L1 data fee reported separately (LC-10, RO-01, RO-03, AS-27). Bundlers and paymasters on Base make sponsored transactions available but do not remove the project's gas bill. The subsidy is named as scaffolding to be replaced.
@@ -251,14 +250,14 @@ Per-identity rate limits under relayer policy; short published lock expiries wit
 - A buyer opens locks against many listings and lets them lapse.
 
 ## Mitigation Plan
-1. Size the grant pool from measured gas per mint and per binding after the harness and dogfood run.
-2. Set rate-limit policy as a relayer parameter, not a contract constant.
-3. Define what replaces the subsidy and when free onboarding ends, in the business case.
+- Size the grant pool from measured gas per mint and per binding after the harness and dogfood run.
+- Set rate-limit policy as a relayer parameter, not a contract constant.
+- Define what replaces the subsidy and when free onboarding ends, in the business case.
 
 ## Notes
 - **Affected components:** relayer, entitlement contract, lock logic.
 - **Dependencies:** launch network for gas; ERC-4337 support.
-- **Sequencing:** relayer with step seven.
+- **Sequencing:** the relayer milestone, entering on the chain adapters.
 - **Guardrails:** grant pool not drained by a flood.
 - **Signals:** subsidy consumption rising faster than identity creation.
 - **Open questions:** pool funding source and size; replacement path.
@@ -266,33 +265,33 @@ Per-identity rate limits under relayer policy; short published lock expiries wit
 ---
 
 ## Risk
-**R-09. Blocking selections delay node authoring.** Attempt-rule parameters and piece-group size, license text, custody recovery UX, and the multi-device sync mechanism remain; default key custody, launch network and curve, and the escrow-salt question are resolved and recorded in the product requirements.
+**R-09. Open selections delay node authoring.** The attempt-rule parameters and piece-group size, the license text, and custody recovery UX remain open.
 
 ## Impact
-Medium. Each delays the nodes that depend on it; the parameters gate every node that encrypts and are resolved by the harness; the license gates release, not nodes.
+Medium. Each delays the nodes that depend on it; the parameters gate every node that encrypts a registered deployment and are fixed by the harness; the license gates release, not nodes; recovery UX gates the identity milestone.
 
 ## Likelihood
-High. The condition is present; the technical approach records default assumptions but they are assumptions.
+Medium. The parameters are measured before any node that needs them; the license and recovery UX have owners and milestones.
 
 ## Mitigation
-Resolve the parameters from harness measurement before any node that encrypts; treat the license as a release prerequisite; confirm the multi-device sync recommendation in the product requirements.
+Fix the parameters from harness measurement before any node that encrypts a registered deployment; treat the license as a release prerequisite; decide recovery UX at the identity milestone.
 
 ## Seed Examples
-- Custody is deferred pending a browser password-manager evaluation, and the identity node cannot be authored.
 - The piece-group size is assumed before the harness reports, and every node that encrypts is authored twice.
+- Recovery UX is left to the desktop milestone, and the identity milestone's custody adapter is reworked to fit it.
 
 ## Mitigation Plan
-1. Confirm or overrule each assumption in the technical approach's Feedback blocks.
-2. Author the custody adapter as the first `IKeyCustodyAdapter` with declared capabilities, so a later implementation is a second adapter rather than a rewrite.
-3. Hold every node that encrypts until the harness records the piece-group size.
+- Hold every node that encrypts a registered deployment until the harness records the piece-group size.
+- Decide custody recovery UX before the identity milestone.
+- Start license drafting with the harness.
 
 ## Notes
-- **Affected components:** custody, identity, escrow claim, deployment parameters, licensing.
-- **Dependencies:** harness output for parameters and curve.
+- **Affected components:** identity, deployment parameters, licensing.
+- **Dependencies:** harness output for the parameters.
 - **Sequencing:** before the nodes that depend on each.
 - **Guardrails:** no node authored against an unrecorded decision.
 - **Signals:** a node's `deps` element naming an unresolved adapter.
-- **Open questions:** the six selections themselves.
+- **Open questions:** the parameters' values, the license text, the recovery UX.
 
 ---
 
@@ -313,9 +312,9 @@ Restate the legal framings as analogies and name licensing as the actual protect
 - The paymaster is characterized in some jurisdiction as a regulated payment service.
 
 ## Mitigation Plan
-1. Correct the business case per the critique.
-2. Legal review in parallel with the harness.
-3. Record the outcome in MVP Scope's licensing section and in the workplan.
+- Keep the legal framings as analogies across the planning set.
+- Legal review in parallel with the harness.
+- Record the outcome in MVP Scope's licensing section and in the workplan.
 
 ## Notes
 - **Affected components:** business case, licensing, relayer, priced dogfood path.
@@ -344,13 +343,13 @@ The first state-locked registration wins; the loser destroys ciphertext, sidecar
 - The daemon is killed between encryption and registration and restarts with a second deployment identifier.
 
 ## Mitigation Plan
-1. Race the demonstration harness's independent finders and inspect chain state, stores, and secret lifecycle.
-2. Terminate at every checkpoint and prove single completion.
+- Race the demonstration harness's independent finders and inspect chain state, stores, and secret lifecycle.
+- Terminate at every checkpoint and prove single completion.
 
 ## Notes
 - **Affected components:** First Finder workflow, registry contract, custody, seed host.
 - **Dependencies:** registry contract's state lock.
-- **Sequencing:** step five.
+- **Sequencing:** the First Finder engine milestone.
 - **Guardrails:** one deployment and one parameter set per asset from bootstrap.
 - **Signals:** any asset with two escrow deployments.
 - **Open questions:** none.
@@ -370,81 +369,80 @@ Medium. OP Stack upgrades are routine. EIP-2537 is confirmed live on Base since 
 Chain behind an adapter with settlement expressed as tiers rather than confirmation counts; state views from a quorum of configured nodes at a common reference with divergence failing closed (XA-06); precompile availability confirmed per launch network before selection; gas instrumented.
 
 ## Seed Examples
-- The chosen L2 has not deployed the BLS12-381 precompiles and the verifier form must be the batched pairing product on BN254.
+- Base's sequencer stalls; mints, grants, and transfers wait while reads continue from configured nodes until the freshest agreeing view ages past `τ_soft`.
 - A hard fork changes pairing precompile gas and the free path's cost per mint doubles.
 
 ## Mitigation Plan
-1. Confirm precompile availability and pricing as part of network selection.
-2. Keep both verifier forms implemented and tested.
-3. Monitor gas per mint and per transfer against the dogfood baseline.
+- Measure precompile pricing on Base at the harness.
+- Keep both verifier forms implemented and tested.
+- Monitor gas per mint and per transfer against the dogfood baseline.
 
 ## Notes
 - **Affected components:** chain adapter, settlement adapter, pairing adapter, relayer.
-- **Dependencies:** network selection.
-- **Sequencing:** step one and ongoing.
+- **Dependencies:** none.
+- **Sequencing:** the harness and ongoing.
 - **Guardrails:** attempts proceed with one node failed; halt on disagreement.
 - **Signals:** rising `PENDING_SETTLEMENT` dwell; gas deviation from baseline.
-- **Open questions:** the network.
+- **Open questions:** none.
 
 ---
 
 ## Risk
-**R-13. Escrow-salt custodian choice leaves a record unclaimable or reintroduces a dependency. Resolved: no commitment is stored and no custodian exists.** Siting a salt with the First Finder would make a claim depend on a party designed to be unnecessary; siting it with the claim verifier would make a lost salt a permanently unclaimable record; and the commitment confers nothing the attestor verifier can use. The verifier establishes the claim set from upstream metadata at verification time; a commitment is reopened only with a ZK-Email verifier that computes its own at claim without a custodian.
+**R-13. An escrow-salt custodian would leave a record unclaimable or reintroduce a dependency; the escrow record therefore carries no maintainer commitment and no custodian exists.** Siting a salt with the First Finder would make a claim depend on a party designed to be unnecessary; siting it with the claim verifier would make a lost salt a permanently unclaimable record; and the commitment confers nothing the attestor verifier can use. The verifier establishes the claim set from upstream metadata at verification time; a commitment is reopened only with a ZK-Email verifier that computes its own at claim without a custodian.
 
 ## Impact
-Medium. Affects the escrow-claim surface only, but a wrong choice is a contract-level change after deployments exist.
+None open. A custodian would have been a contract-level change after deployments exist, which is why the record's form is fixed before the contracts sprint.
 
 ## Likelihood
-Closed. The decision is made and recorded in MVP Scope, PC-02, PC-04, and the product requirements; the residual is the absence of any maintainer binding at ingest, which the per-version claim design did not use.
+Closed by design; the residual is the absence of any maintainer binding at ingest, which the per-version claim design does not use.
 
 ## Mitigation
-Decide before the escrow-claim node. The technical approach's default is to drop the on-chain commitment and have the verifier establish the claim set from upstream metadata at verification time.
+PC-02 and PC-04 carry the rule; the claim-set state layout has no commitment field.
 
 ## Seed Examples
-- The verifier holds the salt, loses it in a key rotation, and ninety versions of a package become unclaimable forever.
+- A verifier holding a salt loses it in a key rotation, and every escrowed version of a package becomes unclaimable forever; the design forecloses this.
 
 ## Mitigation Plan
-1. Confirm or overrule the default in the technical approach's Feedback block.
-2. Author the claim-set state layout accordingly; keep the claim-set mechanism, which is unchanged by the choice.
+- Author the claim-set state layout without a commitment field.
 
 ## Notes
 - **Affected components:** escrow contract, claim verifier, PC-02, PC-04.
 - **Dependencies:** none.
-- **Sequencing:** before step eight's escrow claim.
+- **Sequencing:** the registry contracts milestone.
 - **Guardrails:** claim completes with the First Finder and any portal-like component absent.
 - **Signals:** none until the surface exists.
-- **Open questions:** the decision.
+- **Open questions:** none.
 
 ---
 
 ## Risk
-**R-14. Governance of the adapter registry and centralization scaffolding.** Adapters are resolved from a governance-controlled on-chain registry, immutable once bound, and no document says who governs it. The relayer, project seed host, and claim verifier are centralized conveniences the project operates.
+**R-14. Governance of the adapter registry and centralization scaffolding.** Adapters are resolved from a governance-controlled on-chain registry, immutable once bound, governed in the MVP by a single project-held key recorded as scaffolding; the same key updates the source-key table the on-chain attestation check reads. The relayer, project seed host, and claim verifier are centralized conveniences the project operates.
 
 ## Impact
-Medium. For a decentralization thesis, an unstated governor of adapter resolution is a material omission; captured scaffolding could become authoritative in practice if clients default to it.
+Medium. For a decentralization thesis, a single governing key over adapter resolution and source keys is scaffolding that must be replaced; captured scaffolding could become authoritative in practice if clients default to it.
 
 ## Likelihood
-Medium. The scaffolding is bounded by design, none is on a client's critical path, and the verifier key is revocable on chain; the registry governance is simply unstated.
+Medium. The scaffolding is bounded by design, none is on a client's critical path, and the verifier key is revocable on chain.
 
 ## Mitigation
-State the registry's governance in the specification. Keep every service behind an interface with a documented replacement path; the seed host is a convenience no client depends on, the verifier is one implementation with a revocable key, the relayer covers the free path only.
+Keep every service behind an interface with a documented replacement path; the seed host is a convenience no client depends on, the verifier is one implementation with a revocable key, the relayer covers the free path only; hold the governance key's replacement path as a workplan item.
 
 ## Seed Examples
-- The adapter registry's governing key is a single project-held key and a compromise rebinds every new escrow contract's adapters.
+- The governing key is compromised and rebinds every new escrow contract's adapters, or admits a source key that forges attestations, so the on-chain attestation check is only as strong as that key's custody.
 - Clients ship with the project's discovery endpoint as the only configured source and the swarm degrades when it is down.
 
 ## Mitigation Plan
-1. Record the registry governance model as a workplan item.
-2. Ship default configuration with more than one discovery source and more than one state-read node.
-3. Publish the replacement path for each service in the business case.
+- Hold the governing key under the same custody discipline as issuance material and its replacement path as a workplan item.
+- Ship default configuration with more than one discovery source and more than one state-read node.
+- Publish the replacement path for each service in the business case.
 
 ## Notes
-- **Affected components:** adapter registry contract, factory, relayer, seed host, claim verifier, default configuration.
+- **Affected components:** adapter registry contract, factory, source-key table, relayer, seed host, claim verifier, default configuration.
 - **Dependencies:** none.
-- **Sequencing:** registry governance before step four.
+- **Sequencing:** before the registry contracts milestone.
 - **Guardrails:** protocol resolves with every project-run service unreachable.
 - **Signals:** any acceptance scenario that passes only with a project service reachable.
-- **Open questions:** who governs the registry and how it changes.
+- **Open questions:** how governance moves off the single key.
 
 ---
 
@@ -458,19 +456,19 @@ Low. The exposure is one entitlement's credential held by a non-holder, the same
 Low for public free packages reading at `INCLUDED`, which accept a higher frequency of an already-accepted failure; lower for priced deployments declaring a deeper tier.
 
 ## Mitigation
-Reads at `SOFT`, destruction at `HARD`, tier declared per deployment and immutable; scarcity is ordered by the ledger, never by a credential (LC-04, LC-05, AS-19).
+Reads at the declared tier, destruction at `HARD`, the tier declared per deployment and immutable; scarcity is ordered by the ledger, never by a credential (LC-04, LC-05, AS-19).
 
 ## Seed Examples
 - A reorganization on the L2 reverts a transfer after the buyer decrypted; the buyer holds a working credential and no entitlement; the seller re-posts and the sale completes.
 
 ## Mitigation Plan
-1. Exercise included, pending, reorganized, stale, and insufficient-tier references through the attempt rule (LC-04).
-2. Declare and justify a deeper tier for the priced dogfood deployment.
+- Exercise included, pending, reorganized, stale, and insufficient-tier references through the attempt rule (LC-04).
+- Declare and justify a deeper tier for the priced dogfood deployment.
 
 ## Notes
 - **Affected components:** settlement adapter, attempt rule, destruction logic.
 - **Dependencies:** chain tier mapping.
-- **Sequencing:** step seven.
+- **Sequencing:** the credential delivery milestone.
 - **Guardrails:** destruction only at `HARD`.
 - **Signals:** reorg depth on the chosen network exceeding the tier mapping's assumptions.
 - **Open questions:** none; a stated property.
@@ -493,14 +491,14 @@ Key rotation and revocation; voucher binding; front-running protection by bindin
 - A leaked verifier key signs a voucher claiming a popular package's escrow records to an attacker address before revocation lands.
 
 ## Mitigation Plan
-1. Key custody for the verifier under the same custody discipline as issuance material.
-2. Revocation drill in the acceptance run.
-3. Consider a ZK-Email or DNSSEC verifier as a peer implementation post-MVP, which removes the attestor key.
+- Key custody for the verifier under the same custody discipline as issuance material.
+- Revocation drill in the acceptance run.
+- Consider a ZK-Email or DNSSEC verifier as a peer implementation post-MVP, which removes the attestor key.
 
 ## Notes
 - **Affected components:** claim verifier, escrow contract, verifier key registry.
 - **Dependencies:** none.
-- **Sequencing:** step eight.
+- **Sequencing:** the claim milestone.
 - **Guardrails:** revoked key's vouchers rejected.
 - **Signals:** any voucher signed outside the verifier's audited path.
 - **Open questions:** none for the MVP.
@@ -524,13 +522,13 @@ Secret lifecycle services that minimize copies, exclude secrets from logs, and z
 - A debug log line prints an envelope's decrypted tuple.
 
 ## Mitigation Plan
-1. Instrument lifecycle boundaries and crash artifacts in the acceptance run.
-2. Treat any sensitive field in a telemetry scan as a release-blocking security defect.
+- Instrument lifecycle boundaries and crash artifacts in the acceptance run.
+- Treat any sensitive field in a telemetry scan as a release-blocking security defect.
 
 ## Notes
 - **Affected components:** all components handling decrypt-capable material; logging; diagnostics.
 - **Dependencies:** none.
-- **Sequencing:** with step seven and throughout.
+- **Sequencing:** the credential delivery milestone and throughout.
 - **Guardrails:** no protected material in any telemetry, log, storage, or crash artifact.
 - **Signals:** any telemetry scan hit.
 - **Open questions:** none.
@@ -553,13 +551,13 @@ As specified; proven by injecting failure after every mutating stage and compari
 - Installation fails after writing the npm registry configuration and before starting the daemon; every install on the machine fails until the user finds the change.
 
 ## Mitigation Plan
-1. Failure injection at every checkpoint in the acceptance run (AS-04, AS-05).
-2. Consent trace review for any unexplained interaction (SI-19).
+- Failure injection at every checkpoint in the acceptance run (AS-04, AS-05).
+- Consent trace review for any unexplained interaction (SI-19).
 
 ## Notes
 - **Affected components:** installer, configuration registry, package-manager configuration.
 - **Dependencies:** platform facilities.
-- **Sequencing:** step six.
+- **Sequencing:** the installation coordinator milestone.
 - **Guardrails:** consent boundary; exact restoration.
 - **Signals:** any host configuration difference from the snapshot after a failed install.
 - **Open questions:** none.
@@ -582,8 +580,8 @@ Accepted and stated. The piece-group size bounds how much one leaked key unlocks
 - A holder extracts and publishes the piece-group keys for a priced deployment; anyone holding the ciphertext decrypts it.
 
 ## Mitigation Plan
-1. Choose the piece-group size with this exposure in view.
-2. Do not describe the protocol as preventing it; the specification claims bounded operation for the conforming client, not hostile DRM.
+- Choose the piece-group size with this exposure in view.
+- Do not describe the protocol as preventing it; the specification claims bounded operation for the conforming client, not hostile DRM.
 
 ## Notes
 - **Affected components:** payload cipher, KEM, piece-group size.
@@ -611,14 +609,14 @@ Accepted and stated. An identity without a credential is served by the registry 
 - A rarely used package's only holder is offline; blind seeders hold every byte; a new identity cannot obtain a grant until a holder returns, and the client says so.
 
 ## Mitigation Plan
-1. Verify grant fulfilment with the First Finder permanently offline (AS-26).
-2. Verify that a swarm with only non-holder seeders reports the missing grant author accurately and is not counted as new-user availability.
-3. Monitor grant fulfilment latency as a signal, separately from swarm health.
+- Verify grant fulfilment with the First Finder permanently offline (AS-26).
+- Verify that a swarm with only non-holder seeders reports the missing grant author accurately and is not counted as new-user availability.
+- Monitor grant fulfilment latency as a signal, separately from swarm health.
 
 ## Notes
 - **Affected components:** credential delivery, seed host, grant service, availability pilot.
 - **Dependencies:** none.
-- **Sequencing:** step seven.
+- **Sequencing:** the credential delivery milestone.
 - **Guardrails:** First Finder absence affects nothing.
 - **Signals:** grant fulfilment slowing while swarm health holds.
 - **Open questions:** none.
@@ -642,8 +640,8 @@ The constraints above are recorded in MVP Scope as the tier's architectural prot
 - A rendezvous operator attempts to initiate a transfer from a claimed daemon; the daemon refuses because transfer requires local presence.
 
 ## Mitigation Plan
-1. When the tier is scoped, author its requirements with the four constraints as acceptance criteria before any rendezvous code exists.
-2. Extend the consent trace to record the authorizing surface for every operation.
+- When the tier is scoped, author its requirements with its constraints as acceptance criteria before any rendezvous code exists.
+- Extend the consent trace to record the authorizing surface for every operation.
 
 ## Notes
 - **Affected components:** daemon IPC, a future rendezvous service, a future remote head.
@@ -672,8 +670,8 @@ Recorded in MVP Scope as the tier's protection: the mapping is held only by the 
 - A user links and later wishes to unlink; the mapping must be deletable and its deletion must leave the identity functional.
 
 ## Mitigation Plan
-1. When the tier is scoped, treat the mapping store as the most sensitive data the project holds, with deletion on request and no export path.
-2. Carry the first-run disclosure through to account creation, so the user knows what linking discloses before linking.
+- When the tier is scoped, treat the mapping store as the most sensitive data the project holds, with deletion on request and no export path.
+- Carry the first-run disclosure through to account creation, so the user knows what linking discloses before linking.
 
 ## Notes
 - **Affected components:** a future account service; onboarding disclosure.
@@ -702,8 +700,8 @@ Disclose the cost at install; run the prefetch in the background at low priority
 - A machine with a small disk hits the ciphertext quota; later assets stay pending with the reason shown, and the plaintext install is unaffected.
 
 ## Mitigation Plan
-1. Verify the prefetch obeys each setting and the quota in turn and that the foreground install's latency is unchanged with it stalled (PR-08, PR-11).
-2. Record first-run disk and bandwidth per closure in the acceptance run alongside idle footprint (RO-07).
+- Verify the prefetch obeys each setting and the quota in turn and that the foreground install's latency is unchanged with it stalled (PR-08, PR-11).
+- Record first-run disk and bandwidth per closure in the acceptance run alongside idle footprint (RO-07).
 
 ## Notes
 - **Affected components:** resolution orchestrator, prefetch job, ciphertext store, installer consent flow.
@@ -721,20 +719,20 @@ Disclose the cost at install; run the prefetch in the background at low priority
 
 | ID | Risk | Impact | Likelihood | Status | Owner by role |
 | --- | --- | --- | --- | --- | --- |
-| R-01 | Unauthorized redistribution and irrevocability of ingested packages | Medium | Medium | Open, restate principle; optional policy narrowing | Project lead |
+| R-01 | Unauthorized redistribution and irrevocability of ingested packages | Medium | Medium | Stated; a license check is a later policy decision | Project lead |
 | R-02 | Cryptographic cost exceeds latency budget | High | Medium | Open, measurement | Cryptography implementer |
 | R-03 | Delivery proof or verifier flaw | High | Low / Medium | Open, review | Cryptography implementer |
 | R-04 | Execution breadth | High | High | Open, planning | Project lead |
 | R-05 | Beachhead parity with existing tools | High | Medium | Open, positioning | Project lead |
 | R-06 | Consumption privacy for developers | High / Medium | High | Open, inherited | Project lead |
 | R-07 | Daemon as supply-chain surface | High | Medium | Mitigated by requirements | Daemon implementer |
-| R-08 | Free-path abuse and subsidy | Medium | Medium | Open, funding; eased by the Base launch decision | Relayer operator |
-| R-09 | Blocking selections | Medium | High | Open, decisions | Project lead |
+| R-08 | Free-path abuse and subsidy | Medium | Medium | Open, funding | Relayer operator |
+| R-09 | Open selections | Medium | Medium | Open, measurement and drafting | Project lead |
 | R-10 | Legal framings and regulation | Medium / High | Medium | Open, legal review | Project lead |
 | R-11 | First Finder race and job failure | Medium | Low | Mitigated by requirements | First Finder implementer |
 | R-12 | Chain properties change | Medium | Medium | Mitigated by adapters | Chain adapter implementer |
-| R-13 | Escrow-salt custodian | Medium | Closed | Resolved: no commitment, no custodian | Project lead |
-| R-14 | Adapter registry governance and scaffolding | Medium | Medium | Open, inherited | Project lead |
+| R-13 | Escrow-salt custodian | None open | Closed | No commitment, no custodian | Project lead |
+| R-14 | Adapter registry governance and scaffolding | Medium | Medium | Scaffolding; replacement path held | Project lead |
 | R-15 | Settlement reversal | Low | Low | Stated property | Chain adapter implementer |
 | R-16 | Verifier key compromise | High | Low | Mitigated by requirements | Claim verifier operator |
 | R-17 | Secret leakage | High | Low / Medium | Mitigated by requirements | All implementers |

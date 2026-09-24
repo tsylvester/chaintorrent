@@ -19,13 +19,13 @@ Sources: [product requirements](product-requirements.md), [technical requirement
 
 # Executive Summary
 
-The milestones, in groupings by delivery role, carry the work from an empty repository to a released MVP. The foundation grouping establishes the workspace, the three-platform build, and the terminal proof surface. The cryptographic validation harness grouping builds the pairing adapters, the credential KEM, the envelope, the delivery proof, and the Solidity verifier, measures them on Base Sepolia, fixes the piece-group size and curve, and yields the project's first throughput calibration. The protocol core grouping builds the cipher and commitments, signatures, the contract suite, the chain adapters, and, in parallel and without any chain, the swarm transport over the `librqbit` soft fork. The daemon grouping builds the process every requirement family meets, reaching the demonstrable milestone at which an ordinary `npm install` is served at the registry's speed, registers and prefetches, resolves against the swarm with the registry down, and the north star, first-run independence, and the latency guardrail are first observed, and then closes the read path with credential delivery and per-attempt authorization. The shells and services grouping builds installation on Windows, macOS, and Linux, the control surfaces, the relayer, the publisher path, the claim verifier, the site with its WebAssembly demonstration, observability reconciliation, and the demonstration harness. The acceptance and release grouping runs the transaction flow proof on the Base mainnet pilot, closes external review and legal prerequisites, runs every acceptance scenario on clean machines, records the dogfood baseline, and releases.
+The milestones, in groupings by delivery role, carry the work from an empty repository to a released MVP. The foundation grouping establishes the workspace, the canonical encoding, the redaction layer, the build on Windows, macOS, and Linux, and the terminal proof surface. The cryptographic validation harness grouping builds the pairing adapters, the credential KEM, the envelope, the delivery proof, and the Solidity verifier, measures them on Base Sepolia, fixes the piece-group size, confirms the curve, and yields the project's throughput calibration. The protocol core grouping builds hashing, signatures, and the swarm transport over the `librqbit` soft fork at ticket resolution beside the harness, without any chain, and the cipher and sidecar layer, the contract suite, and the chain adapters after the harness report. The daemon grouping builds the process every requirement family meets, closes the read path with credential delivery and per-attempt authorization, and then reaches the demonstrable milestone at which an ordinary `npm install` is served at the registry's speed, registers and prefetches, a second identity resolves against the swarm with the registry down, and the north star, first-run independence, and the latency guardrail are observed. The shells and services grouping builds installation on Windows, macOS, and Linux, the control surfaces, the relayer, the publisher path, the claim verifier, the site with its WebAssembly demonstration, observability reconciliation, and the demonstration harness. The acceptance and release grouping runs the transaction flow proof on the Base mainnet pilot, closes external review and legal prerequisites, runs every acceptance scenario on clean machines, records the dogfood baseline, and releases.
 
-Each milestone states its purpose, scope by subsystem and ticket, entry conditions, exit proof by requirement and scenario identifier, deliverables, owner role, and what it unblocks. Resolution follows the dependency map's decay: the harness grouping is authored at ticket resolution now; each later grouping is re-mapped to tickets when the grouping before it closes. Five stop criteria from the product requirements sit at the milestones where they can first be evaluated.
+Each milestone states its purpose, scope by subsystem and ticket, entry conditions, exit proof by requirement and scenario identifier, deliverables, owner role, and what it unblocks. Resolution follows the dependency map's decay: the foundation and harness groupings and the hashing, signature, and swarm milestones are at ticket resolution now; the remaining milestones are re-mapped to tickets as the harness closes and outward from there. The stop criteria from the product requirements sit at the milestones where they can first be evaluated.
 
 # Pipeline Context
 
-This document sits between the product and technical requirements above it and the workplan's nodes below it. The [technical requirements](technical-requirements.md) fix what the system must contain; the [dependency map](dependency-map.md) fixes what depends on what and holds the harness at ticket resolution; this document segments that into milestones with entry and exit conditions; the workplan's Work Breakdown Structure then holds one node per source file, authored through the repository's ordinary path from the tickets a milestone names. The master plan, which the pipeline places before this document, summarizes these milestones into the implementation view and tracks their status; it can be produced from this document without loss. No node exists yet; the first node is the first ticket of the foundation grouping.
+This document sits between the product and technical requirements above it and the workplan's nodes below it. The [technical requirements](technical-requirements.md) fix what the system must contain; the [dependency map](dependency-map.md) fixes what depends on what and holds the harness at ticket resolution; this document segments that into milestones with entry and exit conditions; the workplan's Work Breakdown Structure then holds one node per source file, authored through the repository's ordinary path from the tickets a milestone names. The master plan, which the pipeline places before this document, summarizes these milestones into the implementation view and tracks their status; it can be produced from this document without loss. No node exists yet; the workplan names its opening node when authored, from the foundation tickets.
 
 Two repository rules govern everything below. Nodes and groupings are addressed relationally, never numbered. Each node is one source file with its full support system, authored test-first in the fixed element order, one file per turn, with a commit only at the end of a chain that can be integration-tested.
 
@@ -47,7 +47,7 @@ Built once in the foundation grouping and consumed by every later milestone.
 | Infrastructure | Provides | Built in |
 | --- | --- | --- |
 | Cargo workspace with rings as crates | A domain crate, a workflows crate, one crate per adapter family, apps; a ring violation is a compile error | Workspace and discipline bootstrap |
-| Three-platform continuous integration on clean ephemeral runners | `cargo check`, `cargo clippy`, `cargo fmt --check`, `forge build`, `forge fmt --check`, `cargo-audit`, `cargo-deny` on every push; end-to-end scenarios on clean runners | Workspace and discipline bootstrap |
+| Continuous integration on clean ephemeral runners for Windows, macOS, and Linux | `cargo check`, `cargo clippy`, `cargo fmt --check`, `forge build`, `forge fmt --check`, the TypeScript linter, `cargo-audit`, `cargo-deny` on every push; end-to-end scenarios on clean runners | Workspace and discipline bootstrap |
 | Terminal proof surface | The allowlist bound so an agent can lint after every edit as the linting-proof topic requires | Done, 2026-09-23 |
 | Canonical binary encoding | One encoder for everything hashed, signed, or stored, shared by Rust and mirrored in Solidity | Workspace and discipline bootstrap |
 | Tracing with redaction | Secret-typed values unformattable; per-request correlation | Workspace and discipline bootstrap |
@@ -65,13 +65,13 @@ Within each grouping, milestones are listed in dependency order; where two are i
 
 ### Workspace and discipline bootstrap
 
-**Purpose.** Turn the empty repository into a workspace where the first node can be authored and proven on all three platforms.
+**Purpose.** Turn the empty repository into a workspace where a node can be authored and proven on Windows, macOS, and Linux.
 
-**Scope.** Workspace manifest and crate skeletons for `domain`, `workflows`, every `adapters/*` family, and every `apps/*` entry from the technical requirements' file tree, the `domain` crate as an empty skeleton; `rust-toolchain.toml`, `deny.toml` with the license allowlist; the node-element-to-Rust mapping applied as one module directory per function with one file per element; the canonical encoding module; `tracing` with the redaction layer; GitHub Actions matrix over Windows, macOS, and Linux running the allowlisted checks and audits; Apple, Microsoft, and Sigstore signing enrollment started.
+**Scope.** The tickets `workspace/cargo`, `domain/encoding`, `telemetry/redaction`, and `workspace/ci`: the workspace manifest and crate skeletons for `domain`, `workflows`, every `adapters/*` family, and every `apps/*` entry from the technical requirements' file tree, the `domain` crate as an empty skeleton beyond its encoding module; `rust-toolchain.toml`, `deny.toml` with the license allowlist, `foundry.toml`; the element mapping applied as one module directory per function with one file per element; the canonical encoding module; `tracing` with the redaction layer; the GitHub Actions matrix over Windows, macOS, and Linux running the allowlisted checks and audits; Apple, Microsoft, and Sigstore signing enrollment started. The manifests and the CI definition are configuration files with no types and no tests.
 
 **Entry.** None; this is the first milestone.
 
-**Exit.** The empty workspace builds and passes checks on all three platforms; a first node authored in the harness grouping's form compiles against the skeleton; `cargo-deny` enforces the allowlist; the redaction layer refuses to format a secret-typed value in a test. Requirement rows: XA-07 for the facilities, NF-M07 as the authoring discipline.
+**Exit.** The empty workspace builds and passes checks on Windows, macOS, and Linux; a node authored in the harness grouping's form compiles against the skeleton; `cargo-deny` enforces the allowlist; the redaction layer refuses to format a secret-typed value in a test. Requirement rows: XA-07 for the facilities, NF-M07 as the authoring discipline.
 
 **Deliverables.** The workspace; the CI definition; the encoding and tracing crates; the signing enrollment requests filed.
 
@@ -87,11 +87,11 @@ Mapped at ticket resolution in the dependency map. The independent starting poin
 
 **Purpose.** The group arithmetic and derivation every cryptographic ticket calls, on both curves, with encodings that match the precompiles.
 
-**Scope.** `pairing/bn254`, which owns the pairing interface and types, `pairing/bls12-381`, `kdf/hash-to-scalar`, which owns the wrapping-key derivation and the piece-group-key wrap and unwrap; the arkworks-versus-`halo2curves` benchmark that selects the implementation; capability declaration for second-group arithmetic at the verifier.
+**Scope.** `pairing/bn254`, which owns the pairing interface and types, `pairing/bls12_381`, `pairing/benchmark`, which selects the library, and `kdf/hash_to_scalar`, which owns BLAKE3 keyed derivation for every off-chain use, keccak256 hash-to-scalar for the identity mapping and the challenge, and the piece-group-key wrap and unwrap; capability declaration for second-group arithmetic at the verifier.
 
 **Entry.** Workspace and discipline bootstrap.
 
-**Exit.** CR-10 vectors against precompile behavior including subgroup rejection and encoding edge cases on both curves; the KDF and hash-to-scalar produce the specification's domain-separated outputs with context strings, serialization, and output lengths frozen, matching a Solidity mirror and known-answer vectors from an independent implementation; the benchmark recorded and the library chosen.
+**Exit.** CR-10 vectors against precompile behavior including subgroup rejection and encoding edge cases on both curves; CR-11's derivation, hash-to-scalar, and wrap produce the specification's outputs with context strings, serialization, and output lengths frozen, matching a Solidity mirror and known-answer vectors from an independent implementation; the benchmark recorded and the library chosen.
 
 **Deliverables.** The pairing and KDF crates; the benchmark record.
 
@@ -103,7 +103,7 @@ Mapped at ticket resolution in the dependency map. The independent starting poin
 
 **Purpose.** The construction that makes decryption capability native and distinct per interval.
 
-**Scope.** `kem/setup`, which owns the KEM interface with the declared identity scope and the parameter-set types, `kem/issue`, `kem/rerandomize`, `kem/validity`, `kem/encapsulate`, `kem/well-formed`, `kem/decapsulate`.
+**Scope.** `kem/setup`, which owns the KEM interface with the declared identity scope and the parameter-set types, `kem/issue`, `kem/rerandomize`, `kem/validity`, `kem/encapsulate`, `kem/well_formed`, `kem/decapsulate`.
 
 **Entry.** Pairing adapters and key derivation.
 
@@ -135,7 +135,7 @@ Mapped at ticket resolution in the dependency map. The independent starting poin
 
 **Purpose.** The proof the contract verifies before it records an interval, in Rust as the reference and in Solidity as the shipped contract, bit for bit.
 
-**Scope.** `proof/challenge`, which owns the delivery-proof interface and the statement types, over the full context schema, `proof/prove-mint`, `proof/prove-transfer`, `proof/verify` in both forms; `contracts/pairing-lib` over EIP-196, EIP-197, and EIP-2537 with contract-side subgroup checks, `contracts/delivery-verifier`, `contracts/test-deploy` to Anvil and Base Sepolia; the generator that emits Solidity constants and vectors from the Rust reference; `chain/verifier-client`.
+**Scope.** `proof/challenge`, which owns the delivery-proof interface and the statement types, over the full context schema under keccak256, `proof/prove_mint`, `proof/prove_transfer`, `proof/verify` in both forms; `contracts/PairingLib` over EIP-196, EIP-197, and EIP-2537 with contract-side subgroup checks, `harness-crypto/generate` emitting the Solidity constants and vectors from the Rust reference, `contracts/DeliveryVerifier`, `contracts/deploy` to Anvil and Base Sepolia; `chain/verifier_client`.
 
 **Entry.** Credential KEM and envelope; the Solidity pairing library may start at the workspace bootstrap and joins here.
 
@@ -151,47 +151,63 @@ Mapped at ticket resolution in the dependency map. The independent starting poin
 
 **Purpose.** Measure what nothing has measured, fix the parameters that gate every node that encrypts, and calibrate throughput.
 
-**Scope.** `harness/vectors`, `harness/measure`, `harness/report`; the report node carries the grouping's integration test across the whole chain and its commit.
+**Scope.** `harness-crypto/vectors`, `harness-crypto/measure`, `harness-crypto/report`; the report node carries the grouping's integration test across the whole chain and its commit.
 
 **Entry.** Delivery proof and Solidity verifier.
 
-**Exit.** CD-07 and AS-21: capsule, envelope, and proof sizes; decapsulation time per piece group; proof generation and verification time; delivery cost as L2 execution gas and L1 data fee for a mint and a transfer, on both curves; the piece-group size and curve chosen against the budget declared before this milestone and recorded in release evidence; tickets closed per unit of time recorded across the grouping.
+**Exit.** CD-07 and AS-21: capsule, envelope, and proof sizes; decapsulation time per piece group; proof generation and verification time; delivery cost as L2 execution gas and L1 data fee for a mint and a transfer, on both curves, the L1 fee noted as Sepolia's; the piece-group size chosen and the curve confirmed against the budget declared before this milestone and recorded in release evidence; tickets closed per unit of time recorded across the grouping.
 
 **Stop criterion.** If no parameter within the specification's bounds meets the latency budget declared before this milestone, the finding is reported against the design and the plan halts here.
 
-**Deliverables.** The release-evidence document; the throughput record; the first evidence-based estimate of the remaining work, produced by re-mapping the protocol core grouping to tickets.
+**Deliverables.** The release-evidence document; the throughput record; the first evidence-based estimate of the remaining work, produced by re-mapping the remaining protocol core milestones to tickets.
 
 **Owner.** Cryptography implementer; project lead for the budget declaration, the re-map, and the funding decision.
 
-**Unblocks.** Every node that encrypts; the funding stop criterion.
+**Unblocks.** Every node that encrypts a registered deployment; the funding stop criterion.
 
 ## Protocol core and contract suite grouping
 
-Re-mapped to ticket resolution when the harness report closes. The swarm milestone is independent of the contract milestones and runs in parallel from the payload cipher milestone onward.
+The hashing, signature, and swarm milestones are at ticket resolution and run beside the harness, since they depend on nothing it measures; the remaining milestones are re-mapped to tickets when the harness report closes.
 
-### Payload cipher and commitments
+### Hashing and commitments
 
-**Purpose.** The symmetric layer and the integrity layer the specification separates deliberately.
+**Purpose.** The integrity layer the specification separates from confidentiality deliberately.
 
-**Scope.** `AesCtrAdapter` with the 64/64 counter layout, continuous-stream addressing, extent and index bounds; BLAKE3 roots, Bao outboard construction, streaming and random-access verification, random custody challenges; the sidecar layer, per live parameter set a capsule and wrapped piece-group key per group committed by that set's Bao root; manifest, hash-card, and sidecar validation in the ordering the specification requires; the decapsulation-to-cipher seam; the `sample-deployment` generator for the site demonstration, which needs the cipher and so lives here rather than in the harness.
+**Scope.** `hashing/blake3_root`, `hashing/bao_verify`, `hashing/bao_challenge`: BLAKE3 roots, Bao outboard construction, streaming and random-access verification, random custody challenges; the challenge node carries the milestone's integration test and commit.
 
-**Entry.** Harness report, for the piece-group size.
+**Entry.** Workspace and discipline bootstrap. Independent of the harness.
 
-**Exit.** CR-01 vectors including maximum-valid counters and overflow rejection; CR-02 corruption of roots, paths, chunks, lengths, and order detected; CR-06 fuzzing with chain and custody spies proving validation precedes any credential exercise; a two-set sidecar opening one ciphertext under a credential of either set; the sample deployment bundled for the WebAssembly build.
+**Exit.** CR-02 corruption of roots, paths, chunks, lengths, and order detected across construction, verification, and challenge.
 
-**Deliverables.** The cipher and hashing crates; the validation workflow; the sample deployment.
+**Deliverables.** The hashing crate.
 
 **Owner.** Cryptography implementer.
 
-**Unblocks.** Swarm transport, decryption pipeline, First Finder engine, the site demonstration.
+**Unblocks.** Swarm transport and seed host; payload cipher and sidecar layer; the plaintext CAS.
+
+### Payload cipher and sidecar layer
+
+**Purpose.** The symmetric layer, and the sidecar that lets every live parameter set open one ciphertext.
+
+**Scope.** `AesCtrAdapter` with the 64/64 counter layout, continuous-stream addressing, extent and index bounds; the sidecar layer, per live parameter set a capsule and wrapped piece-group key per group committed by that set's Bao root, each sidecar its own object; manifest, hash-card, and sidecar validation in the ordering the specification requires; the decapsulation-to-cipher seam; the `sample_deployment` generator for the site demonstration, which needs the cipher and so lives here rather than in the harness.
+
+**Entry.** Hashing and commitments; `kdf/hash_to_scalar` for the wrap; the harness report, for the piece-group size the `sample_deployment` generator fixes.
+
+**Exit.** CR-01 vectors including maximum-valid counters and overflow rejection; CR-06 fuzzing with chain and custody spies proving validation precedes any credential exercise; a two-set sidecar opening one ciphertext under a credential of either set; the sample deployment bundled for the WebAssembly build.
+
+**Deliverables.** The cipher crate; the validation workflow; the sample deployment.
+
+**Owner.** Cryptography implementer.
+
+**Unblocks.** Decryption pipeline, First Finder engine, the site demonstration.
 
 ### Signature services and binding schema
 
 **Purpose.** Per-layer signatures and the identity binding the chain reads two words of.
 
-**Scope.** `Ed25519Adapter`, `Secp256k1Adapter` through `alloy`, domain separation and complete-message binding; DID Document types with the anchor hash; EIP-712 typed data for registrations and bindings.
+**Scope.** `signature/ed25519`, `signature/secp256k1`, `signature/binding_schema`: `Ed25519Adapter`, `Secp256k1Adapter` through `alloy`, domain separation and complete-message binding; DID Document types with the anchor hash; EIP-712 typed data for registrations, bindings, and signed intents; the binding-schema node carries the milestone's integration test and commit.
 
-**Entry.** Workspace and discipline bootstrap. Independent of the cipher milestone.
+**Entry.** Workspace and discipline bootstrap. Independent of the harness and the cipher milestone.
 
 **Exit.** CR-03: valid signatures verified; cross-domain, cross-layer, truncated-context, wrong-scheme, and replay substitutions rejected.
 
@@ -205,11 +221,11 @@ Re-mapped to ticket resolution when the harness report closes. The swarm milesto
 
 **Purpose.** The ledger the protocol's decentralized properties rest on.
 
-**Scope.** The contract suite from the technical requirements' API surface: registry with asset records and the per-name version index, deployments carrying every hash-card field, the sidecar-per-live-set rule, sidecar addition for later sets, on-chain attestation verification through the P-256 precompile against the source-key table, and later escrow deployments of an existing asset; parameter-set liveness and retirement; envelope-key registry with proofs of possession; ERC-721 entitlements with interval state and envelope digests and the ownership override that disables the standard transfer and approval entry points; batched grant requests readable by holders and closed by grant or withdrawal; locks with expiry and refund; mint, deliver, grant calling the harness's verifier; `evaluateAuthorization` and its paginated batch; escrow records per deployment with provenance, attestation, and no maintainer commitment; identity binding; claim settlement state layout and verifier-key registry; the adapter registry and factory with constructor-injected, immutable bindings under the project-held governance key. Deployment scripts to Anvil and Base Sepolia.
+**Scope.** The contract suite from the technical requirements' API surface: registry with asset records and the per-name version index, deployments carrying every hash-card field, the sidecar-per-live-set rule, sidecar addition for later sets, on-chain attestation verification through the P-256 precompile against the source-key table or a recorded absence, and later escrow deployments of an existing asset; parameter-set liveness and retirement; envelope-key registry with proofs of possession; ERC-721 entitlements with interval state and envelope digests and the ownership override that disables the standard transfer and approval entry points; batched grant requests readable by holders and closed by grant or withdrawal; locks with expiry and refund; mint, deliver, grant calling the harness's verifier; every identity-bound mutation taking the acting identity and a signed intent verified by ECDSA or ERC-1271, with lock expiry enforced and no volume limit; `evaluateAuthorization` and its paginated batch; escrow records per deployment with provenance, attestation or its absence, and no maintainer commitment; identity binding; claim settlement state layout and verifier-key registry; the adapter registry and factory with constructor-injected, immutable bindings under the project-held governance key. Deployment scripts to Anvil and Base Sepolia.
 
 **Entry.** Delivery proof and Solidity verifier.
 
-**Exit.** Every transition of LC-01 exercised through Foundry tests with asserted events and views, the Rust-adapter form of that proof belonging to the chain adapters milestone; LC-02, LC-05, LC-07, LC-08, LC-09 including sidecar addition, LC-10, LC-11 with owner, approved address, and operator each refused an ordinary transfer, LC-12 with batched requests opened, fulfilled, withdrawn, and shown to authorize nothing; AS-13's proof-set acceptance and rejection on Base Sepolia.
+**Exit.** Every transition of LC-01 exercised through Foundry tests with asserted events and views, the Rust-adapter form of that proof belonging to the chain adapters milestone; LC-02, LC-05, LC-07, LC-08, LC-09 including sidecar addition, LC-10, LC-11 with owner, approved address, and operator each refused an ordinary transfer, LC-12 with batched requests opened, fulfilled, withdrawn, and shown to authorize nothing, LC-13 from a contract account, a relayer-submitted intent for an externally owned account, and a self-funded caller with foreign, expired, and replayed intents refused; AS-13's proof-set acceptance and rejection on Base Sepolia.
 
 **Deliverables.** The contract suite deployed on Base Sepolia; addresses in configuration; Foundry fuzz and invariant tests; static analysis in CI.
 
@@ -221,7 +237,7 @@ Re-mapped to ticket resolution when the harness report closes. The swarm milesto
 
 **Purpose.** The daemon's only view of consensus, from a quorum of configured nodes.
 
-**Scope.** `chain/client` bindings through `alloy`; `chain/settlement` mapping Base's tiers to INCLUDED, SOFT, HARD, and SETTLED with reference age; `chain/entitlement_state` single and paginated views aggregated as a quorum, two of three configured nodes agreeing at a common reference within `τ_soft`, stale nodes ignored, divergence and over-age views failing closed; `chain/events` for envelope recovery from calldata and events; relayer submission path.
+**Scope.** `chain/client` bindings through `alloy`; `chain/settlement` mapping Base's tiers to INCLUDED, SOFT, HARD, and SETTLED with reference age; `chain/entitlement_state` single and paginated views aggregated as a quorum, two of three configured nodes agreeing at a common reference within `τ_soft`, stale nodes ignored, divergence and over-age views failing closed; `chain/events` for envelope recovery from calldata and events; intent signing and the relayer submission path.
 
 **Entry.** Registry and entitlement contracts.
 
@@ -237,9 +253,9 @@ Re-mapped to ticket resolution when the harness report closes. The swarm milesto
 
 **Purpose.** Bytes moving between machines with nothing readable in transit, provable with no chain and no KEM.
 
-**Scope.** The `[patch.crates-io]` overlay onto tagged `librqbit` with the adapter's hooks and the upstream issues opened; `transport/bittorrent_rqbit` with root-to-infohash translation, torrent creation per deployment with the sidecar as a second file, Bao verification of every completed piece after the library's SHA-1 check, seeder-map peer injection; `discovery/*` aggregation over the library's DHT, PEX, and trackers plus local and the on-chain seeder map; `seed_host/owned` and `seed_host/delegated` with Bao custody challenges; the root-keyed ciphertext store with holding reason, quota, and eviction; settings passthrough for the controls the library has and enforcement of the ones it does not.
+**Scope.** `transport/rqbit_overlay`, the `[patch.crates-io]` overlay onto tagged `librqbit` with the adapter's hooks and the upstream issues opened; `transport/bittorrent_rqbit` with root-to-infohash translation, torrent creation per object with the ciphertext and each sidecar as its own object and locator, Bao verification of every completed piece after the library's SHA-1 check, seeder-map peer injection; `discovery/aggregate`, `discovery/local`, and `discovery/seeder_map` over the library's DHT, PEX, and trackers plus local and the on-chain seeder map; `seed-host/store`, the root-keyed ciphertext store with holding reason, quota, and eviction; `seed-host/owned` and `seed-host/delegated` with Bao custody challenges; settings passthrough for the controls the library has and enforcement of the ones it does not; the delegated node carries the milestone's integration test and commit.
 
-**Entry.** Payload cipher and commitments. Independent of every contract milestone.
+**Entry.** Hashing and commitments. Independent of the harness and of every contract milestone; `discovery/seeder_map` joins when the chain adapters exist.
 
 **Exit.** SW-01 through SW-07 and EC-02 as amended: retrieval through the owned host and a delegated external client with identical roots; a corrupted piece passing SHA-1 rejected by Bao before storage; discovery aggregation deterministic under conflicting and malicious results; seeding continuity across host restart while another participant retrieves; delegated custody challenges detecting false reports; resumable failure handling; the archive visible.
 
@@ -257,11 +273,11 @@ Re-mapped to tickets when the protocol core grouping closes. The identity milest
 
 **Purpose.** The process that owns the stores and the two ingress surfaces, with every cross-cutting mechanism present before any workflow lands.
 
-**Scope.** `adapters/jobs` over `redb` with checkpoints, idempotency keys, restart, and cancellation; `adapters/config` and `workflows/settings` with the catalogue, validation, migration jobs, backup and restore, export and import; `workflows/compose` the composition resolver; `workflows/health`; `adapters/telemetry` with the RO-03 record and the trace exporter; `adapters/ipc` with the decided framing and per-platform authentication, principals, and the capability table; single-instance lock; `apps/daemon` binary skeleton.
+**Scope.** `adapters/jobs` over `redb` with checkpoints, idempotency keys, restart, and cancellation; `adapters/config` and `workflows/settings` with the catalogue including its presence-required marks and the hedge delay, source deadline, and grant wait, validation, migration jobs, backup and restore, export and import; `workflows/compose` the composition resolver; `workflows/health`; `adapters/telemetry` with the RO-03 record and the trace exporter; `adapters/ipc` with the decided framing, per-platform authentication, the control-principal rule, and the local-presence confirmation; single-instance lock; `apps/daemon` binary skeleton.
 
 **Entry.** Workspace and discipline bootstrap; signature services for the settings that reference custody. Independent of the swarm and contract milestones.
 
-**Exit.** XA-03 termination at every persisted transition with exactly-once effects; IC-04, IC-05 with no side effects from invalid compositions, IC-08; ST-01 through ST-05 and ST-08 through the IPC and, once they exist, the surfaces; XA-02 other local users gain nothing, a lifecycle script running as the installing user obtains resolution only, and every local-presence operation waits on the daemon-owned interactive confirmation; XA-10 backoff within declared ceilings; RO-04 correlation across the skeleton.
+**Exit.** XA-03 termination at every persisted transition with exactly-once effects; IC-04, IC-05 with no side effects from invalid compositions, IC-08; ST-01 through ST-04 and ST-08 through the IPC; XA-02 other local users gain nothing, a lifecycle script running as the installing user obtains resolution only, and every local-presence operation and presence-required setting waits on the daemon-owned interactive confirmation; XA-10 backoff within declared ceilings; RO-04 correlation across the skeleton.
 
 **Deliverables.** A daemon that starts, resolves a composition, holds settings, reports health, and refuses what it must.
 
@@ -289,67 +305,67 @@ Re-mapped to tickets when the protocol core grouping closes. The identity milest
 
 **Purpose.** The benefit a developer feels, served before any cryptography is exercised on the read path.
 
-**Scope.** `adapters/cas` with the content-hash layout of verified tarballs under the repointable root, atomic commit, quota, pinning, eviction warnings, nothing linking into the store; `workflows/resolve` serving plaintext from the first source that delivers it within the budget, upstream for any identity without a credential, a bounded grant wait when upstream is down, and path and reason metrics; `workflows/health` independence status per asset and per project; `adapters/package-host-npm` serving packuments from the metadata store and tarballs on the loopback port, with canonical tarball URLs for lockfile portability and the metadata capture at every upstream resolution; the upstream plaintext-root check against the canonical record; store migration jobs for ST-02.
+**Scope.** `adapters/cas` with the content-hash layout of verified tarballs under the repointable root, atomic commit, quota, pinning, eviction warnings, nothing linking into the store; `workflows/resolve` trying sources in order and hedged under the catalogue's hedge delay, source deadline, and grant wait, upstream for any identity without a credential, and path and reason metrics; `workflows/health` independence status per asset and per project; `adapters/package-host-npm` serving packuments from the metadata store and tarballs on the loopback port, with canonical tarball URLs for lockfile portability and the metadata capture at every upstream resolution; the upstream plaintext-root check against the canonical record; store migration jobs for ST-02.
 
 **Entry.** Daemon skeleton.
 
-**Exit.** PR-01 parity with upstream across representative projects; PR-02 deterministic mapping; PR-03 each source chosen and its reason recorded with and without a held credential and with upstream available and unavailable, the bounded wait and the pending failure asserted; PR-04 under interruption, races, and corruption; PR-05 lifecycles separate; PR-06 and AS-06 plaintext hit with everything else unreachable; PR-08 the foreground install's latency unchanged with every background stage stalled; PR-09 a lockfile committed on one machine installing on another with a different host port, and the metadata store serving with a staleness marker when upstream is unavailable; PR-12 independence shown identically on every surface; ST-02 migration with interruption and prior projects still installing afterward.
+**Exit.** PR-01 parity with upstream across representative projects; PR-02 deterministic mapping; PR-03 each source chosen and its reason recorded with and without a held credential and with upstream available and unavailable, the hedge start, the bounded wait, and the pending failure asserted; PR-04 under interruption, races, and corruption; PR-05 lifecycles separate; PR-06 and AS-06 plaintext hit with everything else unreachable; PR-08 the foreground install's latency unchanged with every background stage stalled; PR-09 a lockfile committed on one machine installing on another with a different host port, and the metadata store serving with a staleness marker when upstream is unavailable; PR-12 independence shown identically on every surface; ST-02 migration with interruption and prior projects still installing afterward.
 
 **Deliverables.** The CAS and package-host crates; the resolution workflow.
 
 **Owner.** Daemon implementer.
 
-**Unblocks.** First Finder engine; the demonstrable milestone.
+**Unblocks.** First Finder engine.
 
 ### First Finder engine
 
 **Purpose.** Absent packages enter the swarm without slowing the install that fetched them.
 
-**Scope.** `adapters/ingest-npm` with as-is fetch, registry-signature attestation validation against the registry's published keys, metadata capture, and public-availability eligibility; `workflows/first_finder` foreground serve and background durable job: deployment identity under state lock, master scalar and parameter set through the KEM, capsule randomness and IV, encryption per group, sidecar and hash-card, registration race with loser destruction, escrow custody of the master scalar, seed handoff; the grant service under the asset scope.
+**Scope.** `adapters/ingest-npm` with as-is fetch, registry-signature attestation validation against the registry's published keys or recorded absence, metadata capture, and public-availability eligibility; `workflows/first_finder` foreground serve and background durable job: deployment identity under state lock, master scalar and parameter set through the KEM, a piece-group key and capsule randomness per group and the IV, encryption per group, one sidecar per live set and the hash-card, registration race with loser destruction, escrow custody of the master scalar, seed handoff, and the finder's grant of the asset's first entitlement to itself; the grant service under the asset scope.
 
-**Entry.** Plaintext CAS and package host; swarm transport and seed host; registry contracts; chain adapters; identity and custody; credential KEM.
+**Entry.** Plaintext CAS and package host; swarm transport and seed host; registry contracts; chain adapters; identity and custody; the credential KEM, envelope, and mint-proof tickets for the self-grant.
 
-**Exit.** FF-01 through FF-07 and AS-09, AS-10, AS-12: verified bytes served with every background dependency unavailable, and forged, missing, and mismatched attestations refused; single completion after termination at every checkpoint; production randomness validated; race with one winner and clean losers, and a later escrow deployment of an existing asset admitted; the master scalar retained under custody. The grant service under the asset scope is built here and proven at the credential delivery milestone, whose producers it needs.
+**Exit.** FF-01 through FF-07 and AS-09, AS-10, AS-12: verified bytes served with every background dependency unavailable, forged and mismatched attestations refused and a missing one recorded; single completion after termination at every checkpoint; production randomness validated; race with one winner and clean losers, and a later escrow deployment of an existing asset admitted; the master scalar retained under custody; the self-grant recorded once. The grant service under the asset scope is built here and proven at the credential delivery milestone, whose producers it needs.
 
 **Deliverables.** The ingest crate and First Finder workflow.
 
 **Owner.** Daemon implementer.
 
-**Unblocks.** The demonstrable milestone; explicit publishing.
-
-### Demonstrable milestone: an install resolves against the swarm
-
-**Purpose.** The first point the north star and the latency guardrail can be observed, and the first thing the project can show.
-
-**Scope.** No new subsystem. A second clean identity on a second machine profile installs a pinned closure the first ingested, first with the registry available, at the registry's speed with the requests registered and the ciphertext prefetched, and then with the registry unavailable, through the packaged daemon and package host over the swarm, using a grant from the first identity fulfilled while the second was offline. The latency budget has been declared before this milestone.
-
-**Entry.** First Finder engine; swarm transport; the chain adapters; and enough of credential delivery for a grant to be authored and consumed, which is the reason the two milestones below are sequenced immediately after and this milestone is evaluated once they land.
-
-**Exit.** FF-08 and AS-11, AS-24, and AS-29 in substance; the north star, cross-project reuse, and the fraction of the closure independent after the first run measured on the dogfood population; whole-command elapsed time and authorization fraction evaluated against the declared budget as a pass or fail.
-
-**Stop criterion.** If the benefit is not felt on the dogfood population, the case does not proceed to the adopting population.
-
-**Deliverables.** The first dogfood measurement record.
-
-**Owner.** Project lead.
-
-**Unblocks.** Confidence; nothing technical.
+**Unblocks.** Credential delivery; explicit publishing.
 
 ### Credential delivery and per-attempt authorization
 
 **Purpose.** Close the read path: nothing requested from anyone at read time, and nothing decrypted without a current view.
 
-**Scope.** `workflows/request`, one batched sponsored request per install for every unheld ledger-known asset, queued until submittable, with pickup of grants from chain events on any later run; `workflows/prefetch`, ciphertext and sidecar while a request is pending, under the seeding settings and quota, pinned, seeded, and matched to the granted set; `workflows/acquire` with relayer-paid mint, escrow grant, and funded purchase with lock; the grant service fulfilling open requests for held escrow assets as it seeds, requesters present or absent; the credential engine decrypting envelopes into the secret region, validity check, in-memory rerandomization, zeroization; `workflows/attempt` with `AttemptContext`, freshness clocks, wallet-control assertion, three-state handling, batch form; `workflows/decrypt` decapsulation, KDF, AES-CTR addressing, Bao verification, CAS commit, streaming; the interval-end watcher; the deployment gate; sale delivery from a fresh decryption with the transfer proof.
+**Scope.** `workflows/request`, one batched sponsored request per install for every unheld ledger-known asset, queued until submittable, with pickup of grants from chain events on any later run; `workflows/prefetch`, ciphertext and sidecar while a request is pending, under the seeding settings and quota, pinned, seeded, and matched to the granted set; `workflows/acquire` with relayer-paid mint, escrow grant, and funded purchase with lock; the grant service fulfilling open requests for held escrow assets as it seeds, requesters present or absent; the credential engine decrypting envelopes into the secret region, validity check, in-memory rerandomization, zeroization; `workflows/attempt` with `AttemptContext`, freshness clocks, wallet-control assertion, three-state handling, batch form; `workflows/decrypt` decapsulation, unwrap, AES-CTR addressing, Bao verification, CAS commit, streaming; the interval-end watcher; the deployment gate; sale delivery from a fresh decryption with the transfer proof.
 
-**Entry.** Identity and custody; chain adapters; KEM, envelope, proof; payload cipher; registry contracts; the relayer's request endpoint, or self-funded submission on Base Sepolia until it exists.
+**Entry.** Identity and custody; chain adapters; KEM, envelope, proof; payload cipher and sidecar layer; registry contracts; First Finder engine; the relayer's request endpoint, or self-funded submission on Base Sepolia until it exists.
 
-**Exit.** EC-01 through EC-08 and AS-07, AS-08 with the ingest source disabled, AS-19; CD-01, CD-02, CD-04, CD-08 and AS-14; CD-05's automatic grant service with the First Finder offline, a requester offline when its grant is authored and loading it on its next run, and a swarm of only non-holder seeders reporting no grant author truthfully, AS-26; PR-10 and PR-11 through AS-29, the first run ending independent with every branch exercised, held, absent, dead-deployment, explicit-publisher, and priced assets; the delivery scenario AS-13 through the daemon rather than the harness; storage and crash artifacts free of decrypt-capable material; destruction at HARD and a reorganized transfer leaving the seller able to read.
+**Exit.** EC-01 through EC-08 and AS-07, AS-08 with the ingest source disabled, AS-19; CD-01, CD-02, CD-04, CD-08 and AS-14; CD-05's automatic grant service with the First Finder offline, a requester offline when its grant is authored and loading it on its next run, and a swarm of only non-holder seeders reporting no grant author truthfully, AS-26; PR-10 and PR-11 through AS-29, the first run ending independent with every branch exercised, held, absent, dead-deployment, explicit-publisher, and priced assets; the delivery scenario AS-13 through the daemon rather than the harness; the grant-request and grant-pickup integration points crossed; storage and crash artifacts free of decrypt-capable material; destruction at HARD and a reorganized transfer leaving the seller able to read.
 
 **Deliverables.** The acquisition, credential, attempt, decryption, and interval workflows.
 
 **Owner.** Daemon implementer with the cryptography implementer.
 
-**Unblocks.** The transaction flow proof; the demonstrable milestone's grant path.
+**Unblocks.** The demonstrable milestone; the transaction flow proof.
+
+### Demonstrable milestone: an install resolves against the swarm
+
+**Purpose.** The earliest point the north star and the latency guardrail can be observed, and the first thing the project can show.
+
+**Scope.** No new subsystem. A second clean identity on a second machine profile installs a pinned closure the first ingested, at the registry's speed with the requests registered and the ciphertext prefetched, and then, with the registry unavailable, through the packaged daemon and package host over the swarm, on a grant from the first identity fulfilled while the second was offline. The latency budget has been declared before this milestone.
+
+**Entry.** Credential delivery and per-attempt authorization; plaintext CAS and package host; First Finder engine; swarm transport and seed host.
+
+**Exit.** FF-08 and AS-11, AS-24, and AS-29 in substance; the north star, cross-project reuse, and the fraction of the closure independent after the first run measured on the dogfood population; whole-command elapsed time and authorization fraction evaluated against the declared budget as a pass or fail.
+
+**Stop criterion.** If the benefit is not felt on the dogfood population, the case does not proceed to the adopting population.
+
+**Deliverables.** The dogfood measurement record.
+
+**Owner.** Project lead.
+
+**Unblocks.** Confidence; nothing technical.
 
 ## Onboarding shells and services grouping
 
@@ -375,7 +391,7 @@ Re-mapped to tickets when the daemon grouping closes. The relayer and the publis
 
 **Purpose.** A first-run user never acquires gas to install a free package.
 
-**Scope.** `apps/relayer` over `alloy` and an ERC-4337 bundler and paymaster provider on Base behind a relayer adapter; sponsor endpoints for the one binding, one batched request per install, free mints, and fulfilling grants; admission policy with a global per-window budget and maximum sponsored liability first and per-identity rate limits sized to a realistic closure as one layer; explicit failure states naming exhaustion and denial; cost and budget reporting with L2 execution and L1 data fee separated; the grant pool sized from harness and dogfood gas.
+**Scope.** `apps/relayer` over `alloy` and an ERC-4337 bundler and paymaster provider on Base behind a relayer adapter; the identity's chain-level form and the sponsorship mechanism chosen here under LC-13's signed-intent rule, with sponsorship overhead measured; sponsor endpoints for the one binding, one batched request per install, free mints, and fulfilling grants; admission policy with a global per-window budget and maximum sponsored liability first and per-identity rate limits sized to a realistic closure as one layer; explicit failure states naming exhaustion and denial; cost and budget reporting with L2 execution and L1 data fee separated; the grant pool sized from harness and dogfood gas.
 
 **Entry.** Chain adapters; registry contracts. Independent of the daemon grouping's closure.
 
@@ -423,7 +439,7 @@ Re-mapped to tickets when the daemon grouping closes. The relayer and the publis
 
 **Purpose.** The project publishes its own package, seeding the swarm with its first content and supplying the only assets that may carry a price.
 
-**Scope.** `workflows/publish` with seed-derived parameter sets and capsule randomness, `adapters/identity_proof` provenance and maintainer-OAuth adapters in strength order, proof class recorded on chain, dependency-closure ingestion as First Finder, the issuance policy service serving mints automatically under configuration with per-request approval as a declared capability; the publisher seed under custody.
+**Scope.** `workflows/publish` with seed-derived parameter sets and capsule randomness, `adapters/identity-proof` provenance and maintainer-OAuth adapters in strength order, proof class recorded on chain, dependency-closure ingestion as First Finder, the issuance policy service serving mints automatically under configuration with per-request approval as a declared capability; the publisher seed under custody.
 
 **Entry.** First Finder engine; identity and custody; registry contracts.
 
@@ -455,11 +471,11 @@ Re-mapped to tickets when the daemon grouping closes. The relayer and the publis
 
 **Purpose.** A seed of the core closure from day one and an education tier a prospective developer can try with nothing to sign up for.
 
-**Scope.** The daemon's seed host configured for persistence and seeded by the dogfood publication; the static site; `apps/wasm-demo` built with `wasm-bindgen` from the domain, hashing, pairing, KEM, and cipher crates, running against the sample deployment generated at the payload cipher milestone; the download links; the statement that seeding and the CAS do not run in a browser.
+**Scope.** The daemon's seed host configured for persistence, seeded by the dogfood publication, and holding an entitlement and credential for every asset it seeds; the static site; `apps/wasm-demo` built with `wasm-bindgen` from the domain, hashing, pairing, KEM, and cipher crates, running against the sample deployment generated at the payload cipher milestone; the download links; the statement that seeding and the CAS do not run in a browser.
 
-**Entry.** Explicit publisher path; swarm transport; payload cipher and commitments, for the sample deployment.
+**Entry.** Explicit publisher path; swarm transport; payload cipher and sidecar layer, for the sample deployment.
 
-**Exit.** The core closure retrievable from the seed host after publication, FF-09; the demonstration performing real resolution, verification, and decapsulation with no network access on the read path; the protocol resolving with the seed host unreachable.
+**Exit.** The core closure retrievable from the seed host after publication, FF-09; SW-08, a new identity obtaining a grant for a core-closure asset from the seed host with every other holder offline; the demonstration performing real resolution, verification, and decapsulation with no network access on the read path; the protocol resolving with the seed host unreachable.
 
 **Deliverables.** The seed host deployment; the site; the demonstration bundle.
 
@@ -487,7 +503,7 @@ Re-mapped to tickets when the daemon grouping closes. The relayer and the publis
 
 **Purpose.** Reproducible participants, wallets, chain state, and failures, without which the completion boundary cannot be met.
 
-**Scope.** `apps/harness-demo`: spawned daemons under distinct identities and machine profiles, Anvil and Base Sepolia chain state, wallets funded and unfunded, fault injection at process, network, disk, and chain, the race and reorganization drivers, the clean-machine runner integration for CI.
+**Scope.** `apps/harness-demo`: spawned daemons under distinct identities and machine profiles, Anvil and Base Sepolia chain state, wallets funded and unfunded, fault injection at process, network, disk, and chain, the race and reorganization drivers, the deliberately incompatible adapter declarations the incompatibility scenario rejects, the clean-machine runner integration for CI.
 
 **Entry.** Daemon skeleton; runs alongside every milestone from the daemon grouping onward and closes here.
 
@@ -539,7 +555,7 @@ Re-mapped to tickets when the daemon grouping closes. The relayer and the publis
 
 **Purpose.** The completion boundary, met or not.
 
-**Scope.** Every acceptance scenario through the packaged applications on clean machines on every supported platform, driven by the demonstration harness, with every metric reconciled against induced activity and the telemetry scanned; no test-only bypass of onboarding, the package host, capability resolution, or the deployed verifier.
+**Scope.** Every acceptance scenario through the packaged applications on clean machines on every supported platform, driven by the demonstration harness against Base Sepolia, the priced scenario against the Base mainnet pilot, with every metric reconciled against induced activity and the telemetry scanned; no test-only bypass of onboarding, the package host, capability resolution, or the deployed verifier.
 
 **Entry.** Every milestone above.
 
@@ -557,7 +573,7 @@ Re-mapped to tickets when the daemon grouping closes. The relayer and the publis
 
 **Purpose.** Ship, with the numbers that make the next decision possible.
 
-**Scope.** The dogfood baseline for the north star, primary KPIs, and leading indicators recorded alongside the harness measurements, the chosen piece-group size, curve, and attempt-rule parameters; signed packages published; the extension and npm package published; the site live with the demonstration; the reporting cadence set; the next planning cycle's re-map of deferred items begun.
+**Scope.** The dogfood baseline for the north star, primary KPIs, and leading indicators recorded on the Base mainnet pilot alongside the harness measurements, the mainnet re-take of the L1 data fee, the chosen piece-group size, curve, and attempt-rule parameters; signed packages published; the extension and npm package published; the site live with the demonstration; the reporting cadence set; the next planning cycle's re-map of deferred items begun.
 
 **Entry.** Acceptance run; external review and legal prerequisites closed; transaction flow proof.
 
@@ -571,9 +587,9 @@ Re-mapped to tickets when the daemon grouping closes. The relayer and the publis
 
 # Iteration Semantics
 
-**Resolution decays and re-maps.** The harness grouping is at ticket resolution now. When its report node commits, the protocol core grouping is re-mapped from sprints to tickets using what the harness taught and its measured throughput, the daemon grouping from epics to sprints, and so on outward; this document and the dependency map are revised in place with no history carried.
+**Resolution decays and re-maps.** The foundation and harness groupings and the hashing, signature, and swarm milestones are at ticket resolution now. When the harness report node commits, the remaining protocol core milestones are re-mapped from sprints to tickets using what the harness taught and its measured throughput, the daemon grouping from epics to sprints, and so on outward; this document and the dependency map are revised in place.
 
-**Nodes are authored from tickets through the ordinary path.** A ticket names a source file's role, dependencies, and proof; the workplan author writes the node in the fixed element order, resolving every path and symbol so the implementer instantiates rather than invents; the implementer edits one file per turn, lints through the bound allowlist, and halts.
+**Nodes are authored from tickets through the ordinary path.** A ticket names a source file's role, dependencies, and proof; the workplan author writes the node in the fixed element order, resolving every path and symbol so the implementer instantiates rather than invents; the implementer builds it under the repository's process topics.
 
 **A milestone closes on its commit.** The last node in a milestone's chain carries the integration test across the chain and the commit; the milestone's exit rows are the requirements that test proves.
 
@@ -587,7 +603,7 @@ Re-mapped to tickets when the daemon grouping closes. The relayer and the publis
 
 # Features Context
 
-The seventeen in-scope features of the [feature spec](feature-spec.md) map onto milestones as follows. Cryptographic services and validation harness: the harness grouping. Adapter composition: the daemon skeleton. Entitlement ledger and settlement: registry contracts and chain adapters. Swarm, discovery, and seed hosting: swarm transport and seed host, and the project seed host. Package serving and CAS: plaintext CAS and package host. Encrypted content consumption: credential delivery and per-attempt authorization. First Finder bootstrap: First Finder engine. Credential delivery: credential delivery and per-attempt authorization, and claim. Identity, wallet, and custody: identity and custody. Settings and configuration: daemon skeleton, with surfaces in CLI and desktop. Self-installing onboarding: installation coordinator, the extension and npm bootstrap. Relaying: relayer. Explicit publishing and escrow claim: explicit publisher path, claim verifier and escrow claim. Project seed host and site: its milestone. Observability: observability reconciliation. Test facilities and demonstration harness: demonstration harness and the acceptance run. Transaction flow proof: its milestone. The deferred features and the travelling-developer story constrain choices in identity and custody, the daemon skeleton's IPC, and the publisher path's issuance policy, and consume no milestone.
+The in-scope features of the [feature spec](feature-spec.md) map onto milestones as follows. Cryptographic services and validation harness: the harness grouping and the hashing and payload cipher milestones. Adapter composition: the daemon skeleton. Entitlement ledger and settlement: registry contracts and chain adapters. Swarm, discovery, and seed hosting: swarm transport and seed host, and the project seed host. Package serving and CAS: plaintext CAS and package host. Encrypted content consumption: credential delivery and per-attempt authorization. First Finder bootstrap: First Finder engine. Credential delivery: credential delivery and per-attempt authorization, and claim. Identity, wallet, and custody: identity and custody. Settings and configuration: daemon skeleton, with surfaces in CLI and desktop. Self-installing onboarding: installation coordinator, the extension and npm bootstrap. Relaying: relayer. Explicit publishing and escrow claim: explicit publisher path, claim verifier and escrow claim. Project seed host and site: its milestone. Observability: observability reconciliation. Test facilities and demonstration harness: demonstration harness and the acceptance run. Transaction flow proof: its milestone. The deferred features and the travelling-developer story constrain choices in identity and custody, the daemon skeleton's IPC, and the publisher path's issuance policy, and consume no milestone.
 
 # Feasibility Insights
 
@@ -595,11 +611,11 @@ From the [feasibility assessment](technical-feasibility.md): technical feasibili
 
 # Non-Functional Alignment
 
-Each non-functional requirement of the [review](non-functional-requirements.md) is proven inside the milestone that owns its subsystem: security rows in the harness, contracts, and credential-delivery milestones; performance rows at the harness report, the demonstrable milestone, and observability reconciliation; reliability rows in the daemon skeleton, installation coordinator, and swarm milestones; maintainability rows in the workspace bootstrap and the tickets that own each type; compliance rows in external review and legal prerequisites. The nine adopted requirements, XA-08 through XA-10, IC-09, IC-10, RO-07, RO-08, and LI-02, are carried where they land: signing-key custody in the bootstrap and installer; the package-host threat model in the daemon skeleton's IPC; footprint limits and cold-start in the daemon skeleton and settings; backoff bounds in the chain and swarm adapters; the suite compatibility statement at release; regulatory and export review in legal prerequisites; accessibility in CLI and desktop; the first-run disclosure in the installer.
+Each non-functional requirement of the [review](non-functional-requirements.md) is proven inside the milestone that owns its subsystem: security rows in the harness, contracts, and credential-delivery milestones; performance rows at the harness report, the demonstrable milestone, and observability reconciliation; reliability rows in the daemon skeleton, installation coordinator, and swarm milestones; maintainability rows in the workspace bootstrap and the tickets that own each type; compliance rows in external review and legal prerequisites. The requirements the review added, XA-08, XA-09, XA-10, IC-09, IC-10, RO-07, RO-08, and LI-02, are carried where they land: signing-key custody in the bootstrap and installer; the package-host threat model in the daemon skeleton's IPC; footprint limits and cold-start in the daemon skeleton and settings; backoff bounds in the chain and swarm adapters; the suite compatibility statement at release; regulatory and export review in legal prerequisites; accessibility in CLI and desktop; the first-run cost disclosure in the installer.
 
 # Architecture Summary
 
-As the [system architecture](system-architecture.md) states: one canonical ciphertext and sidecar per deployment on the swarm, entitlements on Base, credentials delivered inside settlement and verified by proof, per-attempt local authorization, and a daemon serving npm's protocol from whichever of cache, swarm, and registry delivers within budget, never slower than the registry, leaving a first run independent, with nothing on the read path.
+As the [system architecture](system-architecture.md) states: one canonical ciphertext per deployment and one sidecar per live parameter set, each its own object, on the swarm, entitlements on Base, credentials delivered inside settlement and verified by proof, per-attempt local authorization, and a daemon serving npm's protocol from whichever of cache, swarm, and registry delivers within budget, never slower than the registry alone by more than the hedge delay, leaving a first run independent, with nothing on the read path.
 
 # Services
 
@@ -615,12 +631,12 @@ Declaration, composition, suite binding, fail closed, and the on-chain factory, 
 
 # Component Details
 
-The daemon's twenty-one subsystems, their ownership, trust boundaries, process model, and storage ownership are in the system architecture's daemon breakout; their APIs, schemas, and file tree are in the technical requirements. This document adds only their milestone assignment, which the Milestones section states per scope line.
+The daemon's subsystems, their ownership, trust boundaries, process model, and storage ownership are in the system architecture's daemon breakout; their APIs, schemas, and file tree are in the technical requirements. This document adds only their milestone assignment, which the Milestones section states per scope line.
 
 # Integration Requirements
 
-The fourteen integration points of the system architecture are each crossed by the integration test of the milestone that first joins the two sides: verifier parity and precompile encoding in the delivery-proof milestone; the decapsulation-to-cipher seam and sidecar commitment in payload cipher and commitments; envelope-in-settlement in registry contracts; attempt context in chain adapters; resolution order and the package-manager protocol in the CAS and package host; the persistent credential in identity and custody; installer-to-daemon and shells-to-coordinator in the installer and shells; relayer-to-contracts in the relayer; voucher-to-contract in claim; the site demonstration in the seed host and site milestone.
+The integration points of the dependency map are each crossed by the integration test of the milestone that first joins the two sides: verifier parity and precompile encoding in the delivery-proof milestone; the decapsulation-to-cipher seam and sidecar commitment in payload cipher and sidecar layer; envelope-in-settlement and the signed intent in registry contracts; attempt context in chain adapters; resolution order and the package-manager protocol in the CAS and package host; the persistent credential in identity and custody; grant request to holder and grant pickup from events in credential delivery; installer-to-daemon and shells-to-coordinator in the installer and shells; relayer-to-contracts in the relayer; voucher-to-contract in claim; the site demonstration in the seed host and site milestone.
 
 # Migration Context
 
-Four migrations exist in the MVP's own lifetime and one beyond it. Settings and store roots migrate through checkpointed jobs under ST-02. Configuration schema migrates under IC-04 and SI-17 with reversible updates. A deployment suite changes only by a successor deployment carrying a sidecar per live parameter set, and a parameter set retires only when no live entitlement remains under it. The `librqbit` overlay migrates onto each upstream release by rebase, with the hard-fork trigger ending that track. Beyond the MVP, entitlements and contract state do not move between chain adapters, no mechanism exists, and one is required before any second chain, including the project's own, carries live entitlements; it is held in the workplan To-Do and is not scheduled here.
+Migrations in the MVP's own lifetime, and the one beyond it. Settings and store roots migrate through checkpointed jobs under ST-02. Configuration schema migrates under IC-04 and SI-17 with reversible updates. A deployment suite changes only by a successor deployment carrying a sidecar per live parameter set, and a parameter set retires only when no live entitlement remains under it. The `librqbit` overlay migrates onto each upstream release by rebase, with the hard-fork trigger ending that track. Beyond the MVP, entitlements and contract state do not move between chain adapters, no mechanism exists, and one is required before any second chain, including the project's own, carries live entitlements; it is held in the workplan To-Do and is not scheduled here.

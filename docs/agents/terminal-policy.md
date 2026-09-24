@@ -17,8 +17,8 @@ Both gates. Read-only but has an internal equivalent still fails (gate 1). No eq
 
 **Allowed** (passes both — the proof surface the methodology depends on):
 
-- read-only type-check — e.g. `deno check`, `tsc --noEmit`
-- read-only lint — e.g. `deno lint`, `eslint` (no `--fix`), `biome check` (no `--write`)
+- read-only type-check — e.g. `deno check`, `tsc --noEmit`, `cargo check`, `forge build`
+- read-only lint — e.g. `deno lint`, `eslint` (no `--fix`), `biome check` (no `--write`), `cargo clippy`, `cargo fmt --check`, `forge fmt --check`
 
 **Denied, and why:**
 

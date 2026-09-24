@@ -20,7 +20,7 @@ Cited by: construction view (workplan node `interface` and `implementation` elem
 
 When a function hits a failure, classify it:
 
-1. A dependency or callee already returned a **typed error** → propagate it unchanged. Never convert, coerce, or re-wrap it.
+1. A dependency or callee already returned a **typed error** → propagate it unchanged. Never convert, coerce, or re-wrap it. In Rust, `?` propagates a callee's error only where this function's error arm carries it intact in a variant through `From`; a `map_err` that reshapes it is the forbidden conversion.
 2. The failure is **this function's own** — a validation failure, a violated precondition → return a **new, specific typed error this function owns**, naming exactly what failed and where.
 
 There is no third option. You never convert one error type into another, and you never invent an untyped or generic error to stand in for a specific one.
@@ -39,12 +39,28 @@ The top-level return always has **exactly two arms**: `SuccessReturn | ErrorRetu
 MyFunctionReturn = MyFunctionSuccessReturn | MyFunctionErrorReturn   // always two arms
 
 MyFunctionSuccessReturn =
-  | ArtifactFoundReturn   // success: an existing compression artifact was returned
-  | EnqueuedReturn        // success: no artifact found, a compress job was enqueued
+  | ArtifactFoundReturn   // success: an existing artifact was returned
+  | EnqueuedReturn        // success: no artifact found, a job was enqueued
 
 MyFunctionErrorReturn =
   | ValidationError
   | EnqueueError
+```
+
+The Rust form: `Result` is the two arms, and each arm is a named enum of flavors.
+
+```rust
+pub type MyFunctionReturn = Result<MyFunctionSuccessReturn, MyFunctionErrorReturn>;   // always two arms
+
+pub enum MyFunctionSuccessReturn {
+    ArtifactFound(ArtifactFoundReturn),   // success: an existing artifact was returned
+    Enqueued(EnqueuedReturn),             // success: no artifact found, a job was enqueued
+}
+
+pub enum MyFunctionErrorReturn {
+    Validation(ValidationError),
+    Enqueue(EnqueueError),
+}
 ```
 
 Both `ArtifactFoundReturn` and `EnqueuedReturn` are successes — the operation did what it should. They differ only in *which* successful outcome occurred, so they are members of `MyFunctionSuccessReturn`. (The enqueued case is one illustration; any success or error condition with several discrete outcomes takes the same shape.)

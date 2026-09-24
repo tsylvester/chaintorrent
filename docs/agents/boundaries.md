@@ -18,11 +18,37 @@ export * from "./enqueueCompressJobs.guard.ts";
 export * from "./enqueueCompressJobs.mock.ts";
 ```
 
+The Rust form: the module's `mod.rs` keeps every element private and exposes `provides` as its only `pub mod`; `provides.rs` re-exports the surface, and `lib.rs` re-exports each module's `provides` and nothing else.
+
+```rust
+// mod.rs
+mod interface;
+mod guard;
+#[cfg(feature = "mocks")]
+mod mock;
+pub mod provides;
+#[cfg(test)]
+mod interface_test;
+#[cfg(test)]
+mod guard_test;
+#[cfg(test)]
+mod test;
+
+pub(crate) fn enqueue_compress_jobs(…) -> EnqueueCompressJobsReturn { … }
+
+// provides.rs
+pub use super::enqueue_compress_jobs;
+pub use super::interface::*;
+pub use super::guard::*;
+#[cfg(feature = "mocks")]
+pub use super::mock::*;
+```
+
 The mock is part of the public surface on purpose: a consumer's tests import the module's official mock rather than hand-rolling a test double (see [mocks](mocks.md)).
 
 ## Barrels are the only place to re-export
 
-Re-exporting is permitted **only** in barrel files — the ones named `index` or `provides`. No other file re-exports. This is the home of the barrel rule that [types](types.md) points to.
+Re-exporting is permitted **only** in barrel files — the ones named `index` or `provides`, and in Rust `provides.rs` and the crate's `lib.rs`. No other file re-exports. This is the home of the barrel rule that [types](types.md) points to.
 
 ## Directionality
 

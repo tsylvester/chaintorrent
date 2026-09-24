@@ -130,20 +130,20 @@ Declare every user-configurable value in one catalogue with its default, scope, 
 Package Serving and Local Content Addressable Storage
 
 ## Feature Objective
-Serve npm's own registry protocol from a local package host backed by a machine-wide plaintext CAS, resolving each artifact from the first source that delivers plaintext within the declared budget, local plaintext, local or swarm ciphertext under a held credential, then the upstream ingest source, so that a package fetched once is reused by every project on the machine, an install is never slower than npm, and a first run leaves the machine independent of the registry and of every other participant for everything it installed.
+Serve npm's own registry protocol from a local package host backed by a machine-wide plaintext CAS, trying sources in order and hedged, local plaintext, local or swarm ciphertext under a held credential, then the upstream ingest source, so that a package fetched once is reused by every project on the machine, an install is never slower than npm alone by more than the hedge delay, and a first run leaves the machine independent of the registry and of every other participant for everything it installed.
 
 ## User Stories
 - As a developer, a package I installed in one project installs into a second project from local plaintext with the registry, the chain, and the swarm all unreachable.
-- As a developer, my first install of a project is as fast as npm, and afterwards the same project installs with npm and every other participant unreachable.
+- As a developer, my first install of a project is served at npm's speed, and afterwards the same project installs with npm and every other participant unreachable.
 - As a developer, I can see for each dependency whether I am independent of the registry for it or still waiting on a grant, and why.
-- As a developer, npm, pnpm, yarn, or bun resolve my dependency graph exactly as before; only where the bytes come from has changed.
+- As a developer, npm resolves my dependency graph exactly as before; only where the bytes come from has changed.
 - As a developer, I can see cache capacity, pins, quota, eviction, and hit rate, and I am warned before evicting anything I could not re-authorize.
 - As a developer, `node_modules` is disposable; rebuilding it touches neither the network nor the ledger.
 
 ## Acceptance Criteria
 - The npm package-host adapter serves compatible metadata and tarball responses while leaving resolution, peer dependencies, workspaces, overrides, and lockfiles to npm; representative projects produce the same resolved graphs and lockfile behavior as upstream (PR-01).
 - Package coordinates resolve deterministically to the canonical identity hash `BLAKE3(packageName@version)` and authenticated deployment records; malformed requests are rejected deterministically (PR-02).
-- Plaintext is served from the first source that delivers it within the budget, local plaintext, local or swarm ciphertext under a held credential, the ingest source when available, and swarm ciphertext under a grant obtained within a bounded wait only when the ingest source is unavailable, failing otherwise with an actionable result that leaves the request pending; an identity without a credential is served by the ingest source while it is available; the path and its reason are recorded (PR-03; AS-08, AS-23, AS-24, AS-25).
+- Sources are tried in order, local plaintext, local or swarm ciphertext under a held credential, the ingest source, and swarm ciphertext under a grant obtained within a bounded wait only when the ingest source is unavailable, each hedged by starting the next in parallel after its configured delay and serving the first plaintext to verify, failing when exhausted with an actionable result that leaves the request pending; an identity without a credential is served by the ingest source while it is available; the path and its reason are recorded (PR-03; AS-08, AS-23, AS-24, AS-25).
 - For every ledger-known asset the identity does not hold, a durable grant request is registered before or alongside the upstream fetch, batched per install into one sponsored operation, queued behind key registration and while the chain or relayer is unavailable, and fulfillable while the requester is offline; no request is made for held, absent, or dead-deployment assets, an explicit-publisher request goes to its issuance policy, and a priced asset becomes a notice (PR-10; AS-29).
 - While a request is pending the deployment's ciphertext and sidecar are prefetched in the background under the bandwidth, metered, and battery settings and the ciphertext quota, pinned until the grant lands, seeded meanwhile, and matched to the granted set afterwards (PR-11; AS-29).
 - Every control surface shows per-asset independence, plaintext, ciphertext, and credential held, or pending with its reason, and a project's independence as every lockfile asset being independent (PR-12; AS-29).
@@ -188,7 +188,7 @@ Authenticate a deployment's record, hash-card, suite, manifest bounds, and heade
 - Every attempt holds a state view at the declared tier no older than `τ_soft` over the complete `AttemptContext`, and a wallet-control assertion no older than `τ_wallet`; omitting or aging any element fails closed (EC-04).
 - `AUTHORIZED`, `PENDING_SETTLEMENT`, and `DENIED` lead to decryption, bounded wait and retry, and terminal refusal respectively, in single and paginated batch evaluation without losing per-context bindings (EC-05, LC-06).
 - The envelope is decrypted only under the identity's own registered envelope keys, the credential is verified against the parameter set's validity equation, and each capsule's well-formedness is verified before decapsulation; substituted envelopes, credentials, and capsules are rejected (EC-06).
-- Decryption decapsulates each group's capsule, derives the piece-group key, implements AES-256-CTR addressing, verifies plaintext against the authenticated root, commits atomically, and serves the exact upstream tarball across random ranges and boundaries (EC-07, CR-01).
+- Decryption decapsulates each group's capsule, derives the set's wrapping key, unwraps the piece-group key, implements AES-256-CTR addressing, verifies plaintext against the authenticated root, commits atomically, and serves the exact upstream tarball across random ranges and boundaries (EC-07, CR-01).
 - Decrypted credential, piece-group keys, cipher state, and keystream are memory-only; attempts stop on a transfer out observed at the declared tier and everything decrypt-capable is destroyed at `HARD`; the persistent credential is stored only under custody (EC-08, CR-07; AS-19).
 - The state view is a quorum of two of three configured nodes agreeing at a common reference within the freshness bound; a stale or unreachable node does not deny, divergent state at one reference and an over-age view fail closed (XA-06).
 - The local encrypted hit, the remote encrypted hit with the ingest source unavailable, and the interval-end scenarios pass with their denial, stale-view, and interval-end variants (AS-07, AS-08, AS-19).
@@ -224,10 +224,10 @@ When an asset is absent from the ledger, fetch the exact upstream artifact, veri
 - The npm ingest adapter fetches the immutable tarball as-is and validates the published integrity attestation before commit; mismatched, mutable, truncated, and unavailable responses commit nothing (FF-01).
 - Verified upstream plaintext is atomically committed and served to the initiating request before background bootstrap completes, with every background dependency unavailable (FF-02, PR-08; AS-09).
 - A durable idempotent job continues parameter-set creation, deployment creation, encryption, registration, and seeding after npm, the editor, the CLI, or the daemon exits, reaching single completion after restart (FF-03; AS-10, AS-18).
-- Deployment creation generates a unique deployment identifier, a random master scalar and parameter set where none is live, random capsule randomness per piece group and a random IV, encrypts as one continuous stream keyed per group, constructs sidecar, commitments, and hash-card, and never derives a key from public material (FF-04, CR-05).
+- Deployment creation generates a unique deployment identifier, a random master scalar and parameter set where none is live, a random piece-group key and random capsule randomness per piece group and a random IV, encrypts as one continuous stream keyed per group, constructs a sidecar per live set carrying that set's capsule and the wrapped piece-group key as its own object, commitments, and hash-card, and never derives a key from public material (FF-04, CR-05).
 - State-locked escrow registration yields one canonical winner; a loser destroys ciphertext, sidecar, master scalar, derivatives, and keystream, then resolves the winner (FF-05, LC-07; AS-12).
 - The winner retains the master scalar under custody as escrow custodian, authors credentials only for grants the escrow contract authorizes, and erases only after acknowledged handover (FF-06).
-- Bootstrap completion requires authenticated parameter-set and deployment registration, sidecar publication, and persistent seeding; partial success is a recoverable job with no duplicate deployments or sets (FF-07).
+- Bootstrap completion requires authenticated parameter-set and deployment registration, sidecar publication, persistent seeding, and the finder's grant of the asset's first entitlement to itself; partial success is a recoverable job with no duplicate deployments, sets, or self-grants (FF-07).
 - A later seeker discovers the canonical deployment, leeches ciphertext and sidecar, obtains an entitlement with a credential from any online holder, decrypts, and installs without contacting npm (FF-08; AS-11, AS-24).
 - The escrow record carries source provenance, the upstream attestation, and the escrow parameter set, carries no maintainer commitment, and the finder gains no publisher rights (PC-02).
 - Explicit publication ingests the dependency closure, bootstrapping absent dependencies and verifying present ones (FF-09; AS-22, AS-23).
@@ -304,13 +304,14 @@ Deploy a Solidity contract suite on the Ethereum launch network representing can
 - Parameter sets are registered per asset, marked live at bootstrap and claim, retired only when no live entitlement remains, and a deployment record is rejected unless it carries a sidecar root for every live set; the asset's authority may add a sidecar for a set made live later (LC-09; AS-16).
 - Payment locks carry a bounded published expiry; relayer-paid mints and zero-price grants are admitted under a global budget and per-identity limits (LC-10; AS-27).
 - Ownership changes only through mint, grant, and delivery; the token's standard transfer and approval entry points are disabled and receiver callbacks run after state is final (LC-11; AS-27).
+- Every function that mutates identity-bound state takes the acting identity and a signed intent verified by ECDSA or ERC-1271, so sponsored and self-funded callers share one entry point, and the contracts enforce lock expiry and no volume limit (LC-13).
 - All three content roots and the plaintext-root disclosure mode are registered; public registries use Public mode (MVP Scope, Entitlement Ledger).
 - The per-identity binding record stores the bound handshake key and scheme on-chain with an anchor hash to the DID Document (MVP Scope, Entitlement Ledger).
 
 ## Dependencies
 - Cryptographic services, for the on-chain verifier through `IPairingAdapter` (CR-09, CR-10).
 - Credential delivery, whose proofs the contract verifies.
-- The launch network selection, held in the workplan To-Do, which fixes the curve.
+- Base as the launch network, with BLS12-381 as the primary verifier form and BN254 retained.
 
 ## Success Metrics
 - Delivery-verification gas for a mint and a transfer on the resolved curve (CD-07, RO-03).
@@ -343,7 +344,7 @@ Create or import a protocol identity on first run, bind its handshake key on-cha
 - Signature services support Ed25519 for protocol layers and secp256k1 for the EVM chain layer with domain separation and complete-message binding (CR-03).
 
 ## Dependencies
-- The default key-custody implementation selection, held in the workplan To-Do and blocking.
+- The local keystore under the OS credential store as the default `IKeyCustodyAdapter`.
 - Relaying, for the binding transaction.
 - Ledger contracts, for the binding record and envelope-key registry.
 
@@ -358,10 +359,10 @@ Create or import a protocol identity on first run, bind its handshake key on-cha
 Cryptographic Services and Validation Harness
 
 ## Feature Objective
-Implement the suite-constrained Rust cryptography, the AES-256-CTR payload cipher, BLAKE3/Bao commitments, signatures, the pairing adapter on BN254 and BLS12-381, the credential KEM, the pairing ElGamal envelope, and the Schnorr delivery proof, and ship a validation harness that measures their sizes, timings, and gas on each candidate curve against a deployed verifier so that the piece-group size and curve are chosen from measurement before release.
+Implement the suite-constrained Rust cryptography, the AES-256-CTR payload cipher, BLAKE3/Bao commitments, signatures, the pairing adapter on BN254 and BLS12-381, the credential KEM, the pairing ElGamal envelope, and the Schnorr delivery proof, and ship a validation harness that measures their sizes, timings, and gas on each candidate curve against a deployed verifier so that the piece-group size is chosen from measurement and the curve confirmed before release.
 
 ## User Stories
-- As the project, I know the byte, latency, and gas cost of every cryptographic step on each candidate curve before I fix the piece-group size or choose the launch network.
+- As the project, I know the byte, latency, and gas cost of every cryptographic step on each candidate curve before I fix the piece-group size or confirm the curve.
 - As a developer, the cryptography I run is the one the specification defines, verified by test vectors, not an approximation.
 - As an auditor, the Rust verifier and the deployed on-chain verifier agree bit for bit.
 
@@ -372,6 +373,7 @@ Implement the suite-constrained Rust cryptography, the AES-256-CTR payload ciphe
 - The credential KEM implements setup, issue, rerandomize, validity, encapsulate, well-formedness, and decapsulate exactly as specified: every valid credential recovers the same value from every well-formed capsule, rerandomization needs no master scalar, credentials are non-convertible across entitlements, malformed capsules are rejected, trivial identity elements refused (CR-08).
 - The delivery proof proves and verifies the mint and transfer relations over the full statement in both verifier forms, and the Rust verifier matches the deployed on-chain verifier bit for bit; each statement field and response mutation is rejected and replay across settlements fails (CR-09).
 - The pairing adapter exposes source-group operations, subgroup checks, and the pairing-product check on both curves with encodings matching the target chain's precompiles (CR-10).
+- Sidecar and derivation services derive each set's wrapping key, wrap and unwrap the piece-group key as specified, use BLAKE3 keyed derivation off chain and keccak256 under domain tags for the identity mapping and the challenge, and freeze contexts with known-answer vectors; two independently generated sets unwrap one piece-group key (CR-11).
 - Manifest, hash-card, and sidecar validation authenticate all suite fields and capsules and reject malformed bounds before any credential is exercised, with ordering proven by chain and custody spies (CR-06).
 - Secret lifecycle services minimize copies, exclude secrets from logs, keep decrypted credentials and keys memory-only, and zeroize at every transition (CR-07).
 - The harness produces capsule, envelope, and proof sizes, decapsulation time per piece group, proof generation and verification time, and delivery-verification gas for a mint and a transfer on each candidate curve, and the piece-group size is chosen from them and recorded in release evidence (CD-07; AS-21).
@@ -379,13 +381,13 @@ Implement the suite-constrained Rust cryptography, the AES-256-CTR payload ciphe
 ## Dependencies
 - Existing BLAKE3, Bao, AES, Ed25519, secp256k1, and pairing-curve libraries.
 - A test-chain deployment of the contract verifier, for the gas and bit-for-bit measurements.
-- None on other MVP features; this is the first cryptographic thing built.
+- None on other MVP features.
 
 ## Success Metrics
 - Measured capsule, envelope, and proof bytes on each curve.
 - Measured decapsulation time per piece group, proof generation and verification time.
 - Measured delivery-verification gas per mint and per transfer.
-- A recorded piece-group size and curve selection derived from those measurements.
+- A recorded piece-group size and curve confirmation derived from those measurements.
 - Vector pass rate, target complete, across every service.
 
 ---
@@ -565,6 +567,7 @@ Ship unit, integration, and end-to-end test facilities including a demonstration
 - Durable workflows are idempotent, observable, cancellable where safe, and recoverable, proven by termination at every persisted transition (XA-03).
 - The packaged MVP runs without a developer toolchain on supported machines (XA-05).
 - Every acceptance scenario passes through the packaged applications with no test-only bypass of onboarding, the package host, capability resolution, or the deployed verifier (MVP Acceptance Scenarios, Completion Boundary).
+- The demonstration harness supplies the deliberately incompatible adapter declarations the incompatibility scenario rejects (XA-07; AS-17).
 
 ## Dependencies
 - Every feature above; this is the completion gate.
@@ -590,6 +593,7 @@ Run a persistent first seeder of the core packages and their dependency closure,
 ## Acceptance Criteria
 - The seed host persistently seeds the core packages and their dependency closure after swarm-native publication (FF-09; AS-22).
 - Any API it exposes is a convenience a client may use and never a component a client must reach; the protocol resolves without it (MVP Scope, Project Seed Host and Site).
+- The seed host holds an entitlement, and so a credential, for every asset it seeds; a new identity obtains a grant from it with every other holder offline, and resolution proceeds with it unreachable (SW-08).
 - The browser demonstration is built from the same crates as the client, runs against a sample deployment with a sample credential, performs no network, chain, or swarm access on the read path, and states that seeding and the CAS do not run in a browser (MVP Scope, Project Seed Host and Site).
 - The installer's consent flow presents the account-link step as reserved and unavailable, and the consent trace records that it was shown and not acted on (MVP Scope, Website, Account, and Remote Head).
 - Every asset record carries content terms and packaged applications ship under the chosen license (LI-01).
@@ -607,13 +611,13 @@ Run a persistent first seeder of the core packages and their dependency closure,
 
 ## Additional Content
 
-**Cross-feature dependencies and build order.** The Application Requirements fix the dependency direction: protocol and domain, then application workflows, then adapters and host shells. Cryptographic services and the validation harness come first because the piece-group size, curve, and attempt-rule parameters gate everything that consumes them. Ledger contracts and credential delivery follow, then encrypted consumption and First Finder bootstrap, then package serving and swarm hosting, then onboarding shells, relaying, publishing and claims, and finally the transaction flow proof, observability reconciliation, and the completion gate.
+**Cross-feature dependencies and build order.** The Application Requirements fix the dependency direction: protocol and domain, then application workflows, then adapters and host shells. The validation harness precedes every node that encrypts a registered deployment, because the piece-group size and attempt-rule parameters gate them. The payload cipher, the contracts, and the chain adapters follow, with hashing, signatures, and swarm hosting in parallel from the foundation onward; then the daemon, identity, package serving, First Finder bootstrap, credential delivery, and the demonstrable milestone; then onboarding shells, relaying, publishing and claims, the seed host and site, observability, and the demonstration harness; then the transaction flow proof and the completion gate.
 
 **Features deliberately absent.** Git commit wrapping, an email bot for escrow, general paid monetization, a version alignment engine, arbitrary media and streaming, content flagging and advisory surfaces, per-entitlement variance, composable container objects, partial encryption, seeder compensation, retention enforcement, Sybil-resistant stake, and the website account, remote head, and hosted instance are deferred to V2 and architecturally protected as recorded in MVP Scope. None is a hidden dependency of any feature above.
 
 **Deferred feature, recorded for its protection: website account, remote head, and hosted instance.** Objective: let a person create a website account with a familiar sign-in, see and manage their local installation from that account, and, as a separate product mode, use a hosted instance without a local install. What the account owns: onboarding state, preferences, a roster of linked identities and devices, and optionally an end-to-end encrypted holder seed blob under a user-held secret; never an entitlement. User stories it would serve: as a developer, I link my installation to my account by a signed challenge and see its status, seeding archive, jobs, footprint, and diagnostics from any browser, and I start a repair remotely; as a developer, transfer, key export, binding changes, and uninstall require me to be at the machine; as a developer with two machines, I move one holder seed between them and both decrypt the same entitlements. Acceptance criteria it would carry: outbound-only rendezvous connection; end-to-end encryption under a daemon-pinned key; commands to the daemon with keys never leaving it; capability tiers with local presence for value-moving operations; the consent trace recording the authorizing surface; the account-to-identity mapping held only by the account service, never on chain, and optional; a hosted instance declared as its own adapter with a service on its read path. Dependencies: the daemon's authenticated IPC (XA-02), the custody adapter's declared multi-device capability (IW-02, IW-05), and the reserved link step in the installer. Protection in the MVP: the reserved consent step, the holder-seed custody derivation, and a browser demonstration built from the client's own crates.
 
-**Open selections that features depend on.** The attempt-rule parameters and piece-group size, custody recovery UX, the multi-device sync mechanism, and the license text remain open; custody, the launch network and curve, and the escrow-salt question are resolved in the product requirements. Each feature that depends on an open one names it under Dependencies.
+**Open selections that features depend on.** The attempt-rule parameters and piece-group size, custody recovery UX, and the license text remain open. Each feature that depends on one names it under Dependencies.
 
 **Anticipated capability, unimplemented in the MVP: the travelling developer.** Recorded early so that no MVP choice accidentally blocks or complicates it. Nothing below is an MVP requirement; every item under "what the MVP must preserve" is already a recorded decision, and the list exists so an implementer can check a choice against the story.
 

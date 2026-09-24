@@ -30,6 +30,8 @@ A single, strictly typed, immutable context object may be created at the operati
 
 Leaf functions accept either only the context object or explicit deps derived from it — choose one consistent pattern per module.
 
+The Rust form: `deps` is a struct of handles typed by repo-owned traits, `Box<dyn Trait>` or a generic bound, never by an implementing type, built once at the composition root; the context object is an immutable struct with no `Option` field, built by a typed factory that sets every field.
+
 ## Refactor triggers → halt
 
 Stop, report the discovery, propose the node, and halt (see [discovery-halt](discovery-halt.md)) when:

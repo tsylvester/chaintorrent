@@ -239,6 +239,25 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
     * `[ ]`   List structural, behavioral, and contract changes
 ```
 
+## Element files by language
+
+The template names elements with TypeScript suffixes. Each language realizes the same elements as follows; the element, its order, and its governing topics do not change.
+
+| Element | TypeScript | Rust | Solidity |
+| --- | --- | --- | --- |
+| interface test | `[function].interface.test.ts` | `interface_test.rs`, a `#[cfg(test)]` module | `[Contract].interface.t.sol` in `contracts/test/` |
+| interface | `[function].interface.ts` | `interface.rs` | `I[Contract].sol` in `contracts/src/` |
+| interaction spec | `[function].interaction.spec` | `interaction.spec.md` | `interaction.spec.md` |
+| mock | `[function].mock.ts` | `mock.rs`, behind the `mocks` feature | `[Contract]Mock.sol` in `contracts/test/` |
+| guard test | `[function].guard.test.ts` | `guard_test.rs`, a `#[cfg(test)]` module | `[Contract].guard.t.sol` |
+| guard | `[function].guard.ts` | `guard.rs` | the contract's `require` and custom-error revert paths |
+| unit test | `[function].test.ts` | `test.rs`, a `#[cfg(test)]` module, split by behavior as `test_*.rs` | `[Contract].t.sol` |
+| implementation | `[function].ts` | `mod.rs` | `[Contract].sol` |
+| provides | `[function].provides.ts` | `provides.rs`, the module's only `pub mod` | the contract's public ABI |
+| integration test | `[function].integration.test.ts` | `integration_test.rs` under the crate's `tests/` | `[Contract].integration.t.sol` against a deployed suite |
+
+In Rust a function is a module directory holding these files; crate directories are hyphenated and module directories underscored, and a node is addressed as `crate/module`. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it. In Solidity a contract is one node; its Foundry test contracts are its test elements, and its constants and vectors are generated from the Rust reference rather than authored.
+
 Element → topic citations, clickable: `module` → [boundaries](boundaries.md); `deps` → [dependency-injection](dependency-injection.md); `interface.test` → [tests](tests.md#interface); `interface` → [composition](composition.md) + [types](types.md) + [errors-and-returns](errors-and-returns.md); `mock` → [mocks](mocks.md); `guard.test` / `guard` → [tests](tests.md#guard) + [guards](guards.md); `test` → [tests](tests.md#unit); `implementation` → [composition](composition.md) + [dependency-injection](dependency-injection.md) + [types](types.md) + [errors-and-returns](errors-and-returns.md) + [guards](guards.md) + [logging](logging.md); `provides` → [boundaries](boundaries.md); `integration.test` → [tests](tests.md#integration).
 
 ## Legend

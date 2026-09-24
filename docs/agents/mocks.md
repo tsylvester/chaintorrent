@@ -66,6 +66,8 @@ Use production names. Per owned object type, generate exactly:
 
 Per owned function, generate `mockFunctionName`.
 
+In Rust the same names in the language's cases: `MyObjectOverrides`, `build_my_object`, `MyObjectCorruptions`, `invalidate_my_object`, `mock_function_name`.
+
 Do not invent names. Do not append descriptors (`Default`, `NoOverrides`, `Contract`, `Guard`, `Unit`, `Integration`, `MissingDependency`). There is no `InvalidObjectName` or any other invalidator naming.
 
 ## Builders — valid objects only
@@ -81,6 +83,24 @@ export function buildMyObject(overrides?: MyObjectOverrides): MyObject {
     bar: buildBar(),
   };
   return overrides ? { ...base, ...overrides } : base;
+}
+```
+
+The Rust form: the overrides struct is the `Partial<T>`, one `Option` per field with `Default` derived, so `build_my_object(Default::default())` is the no-override call.
+
+```rust
+// mock.rs — behind the `mocks` feature
+#[derive(Default)]
+pub struct MyObjectOverrides {
+    pub foo: Option<Foo>,
+    pub bar: Option<Bar>,
+}
+
+pub fn build_my_object(overrides: MyObjectOverrides) -> MyObject {
+    MyObject {
+        foo: overrides.foo.unwrap_or_else(|| build_foo(Default::default())),
+        bar: overrides.bar.unwrap_or_else(|| build_bar(Default::default())),
+    }
 }
 ```
 
@@ -157,6 +177,24 @@ export function invalidateMyObject(corruptions: MyObjectCorruptions): unknown {
 }
 ```
 
+The Rust form: the corruptions struct is one `Option<serde_json::Value>` per field, and the invalidator serializes the built object and overwrites the corrupted keys, returning the untrusted type the guard consumes.
+
+```rust
+#[derive(Default)]
+pub struct MyObjectCorruptions {
+    pub foo: Option<serde_json::Value>,
+    pub bar: Option<serde_json::Value>,
+}
+
+pub fn invalidate_my_object(corruptions: MyObjectCorruptions) -> serde_json::Value {
+    let mut value = serde_json::to_value(build_my_object(Default::default())).expect("a built object serializes");
+    let fields = value.as_object_mut().expect("a built object is an object");
+    if let Some(foo) = corruptions.foo { fields.insert("foo".into(), foo); }
+    if let Some(bar) = corruptions.bar { fields.insert("bar".into(), bar); }
+    value
+}
+```
+
 ```ts
 // valid — returnType preserved
 const object = buildMyObject({ foo: someFoo });
@@ -176,6 +214,17 @@ Runtime type safety is never bypassed anywhere, **including the invalidator**. I
 export const mockFunctionName: FunctionName = async (deps, params, payload) => {
   return buildFunctionNameSuccessReturn();
 };
+```
+
+```rust
+pub fn mock_function_name(
+    _deps: &FunctionNameDeps,
+    _params: FunctionNameParams,
+    _payload: FunctionNamePayload,
+) -> FunctionNameReturn {
+    Ok(build_function_name_success_return(Default::default()))
+}
+// it is the production function type and nothing else: `let f: FunctionNameFn = mock_function_name;`
 ```
 
 A test needing different behavior does not configure the mock — it declares its own production-typed function inside the test, composed from builders:
@@ -227,6 +276,8 @@ export function buildLoggerAdapter(overrides?: LoggerAdapterOverrides): LoggerAd
 
 An external class reaches this rule already resolved: DI mandates a repo-owned adapter interface for every external dependency, and external services are never mocked (see *Ownership* above). You mock the adapter interface, never the vendor's class.
 
+The Rust form: the mock file provides a struct implementing the trait, `MockLoggerAdapter` for `LoggerAdapter`, whose every method returns built defaults; that struct is the builder whose method properties default to the function mocks. A test needing different behavior implements the trait on its own local struct.
+
 ### Constructed by the code itself → build a real instance
 
 Errors, value objects, and domain entities are constructed by the code under test, not injected. The mock returns a **real instance**, and the override surface moves from the instance to the constructor:
@@ -277,6 +328,8 @@ export function buildCompressionKey(
 
 **There is no `mockCompressionKey`.** If a call site must defer construction, the seam is a named factory function type declared in the interface — already a function, already covered above: `mockCreateCompressionKey` returns `buildCompressionKey()`. `new` then appears only in the adapter or the composition root.
 
+The Rust form: `build_compression_key(overrides)` returns `CompressionKey::try_new(build_compression_key_constructor_params(overrides)).expect("built params are valid")`, a real instance with private fields intact; the constructor-params struct takes the four symbols, and there is no `invalidate_compression_key` and no `mock_compression_key`.
+
 ### Naming — per owned class
 
 `buildClassName`, plus the four standard symbols on `ClassNameConstructorParams` (`ClassNameConstructorParamsOverrides`, `buildClassNameConstructorParams`, `ClassNameConstructorParamsCorruptions`, `invalidateClassNameConstructorParams`). Do not invent `ClassNameOverrides`, `invalidateClassName`, or `mockClassName`.
@@ -295,7 +348,7 @@ This topic outranks the workplan. If a node step instructs a null/undefined-acce
 
 ## Residual limitation — exactOptionalPropertyTypes
 
-`Partial<T>` overrides admit explicit `undefined`: `buildMyObject({ foo: undefined })` type-checks and clobbers a required field. Full enforcement requires `exactOptionalPropertyTypes`, deferred repo-wide. Interim convention: callers omit properties rather than pass `undefined`. Enabling EOPT makes the violation a compile error.
+`Partial<T>` overrides admit explicit `undefined`: `buildMyObject({ foo: undefined })` type-checks and clobbers a required field. Full enforcement requires `exactOptionalPropertyTypes`, deferred repo-wide. Interim convention: callers omit properties rather than pass `undefined`. Enabling EOPT makes the violation a compile error. The Rust form has no such residual: an omitted override is `None`.
 
 ## Forbidden (summary)
 

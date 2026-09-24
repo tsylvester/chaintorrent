@@ -7,7 +7,7 @@ Draft, 2026-09-23. Derived from the Cost Instrumentation section of [MVP Scope](
 
 The MVP's objective, as MVP Scope states it, is a working install path for JavaScript dependencies that serves popular packages from a peer swarm, reuses across every project on a machine whatever that machine has already fetched, survives an upstream registry outage for packages already ingested, and exercises the full identity, entitlement, credential-delivery, encryption, and transfer lifecycle end to end. The MVP validates distribution and identity. It deliberately does not validate willingness to pay or seeder compensation.
 
-The individual developer is the adopting population, and the benefits are ordered accordingly: cross-project reuse first, swarm retrieval second, registry-outage survival third. Metrics follow the same order. The one thing a developer at a terminal notices is a slower install, so interactive install wall-clock is the binding constraint and the guardrail every other metric is subordinate to.
+The individual developer is the adopting population, and the benefits are ordered accordingly: cross-project reuse, then swarm retrieval, then registry-outage survival. Metrics follow the same order. The one thing a developer at a terminal notices is a slower install, so interactive install wall-clock is the binding constraint and the guardrail every other metric is subordinate to.
 
 Three outcomes therefore define success, and each has a metric family below.
 
@@ -39,7 +39,7 @@ Two things the north star deliberately excludes. It does not count installs serv
 | First-run independence | Fraction of a closure's assets independent, plaintext, ciphertext, and credential held, at the end of the first run, and time to independence for the rest | Up | None; measured on the dogfood population first | RO-03, PR-10–PR-12; AS-29 |
 | Acceptance scenario pass rate | Every acceptance scenario passing through the packaged applications with no test-only bypass | Up | Every scenario, which is the release condition | MVP Acceptance Scenarios, Completion Boundary |
 | Cost per install | Relayer gas per free install and swarm bandwidth per install | Down | None; the first unit-economics datapoint, to be measured and reported | RO-03, MVP Scope Cost Instrumentation |
-| Delivery-verification gas | On-chain cost for a mint and for a transfer on the resolved curve, reported as two components on the launch L2: L2 execution gas and the L1 data-posting fee, since the latter dominates on Base | Down | None; input to the curve choice and to grant-pool sizing, measured by the validation harness | CD-07, RO-03; AS-21 |
+| Delivery-verification gas | On-chain cost for a mint and for a transfer on the resolved curve, reported as L2 execution gas and the L1 data-posting fee, since the latter dominates on Base | Down | None; input to the curve confirmation and to grant-pool sizing, measured by the validation harness | CD-07, RO-03; AS-21 |
 | Cross-project reuse | Number of projects on one machine sharing a given artifact | Up | None; reported with the north star | RO-03 |
 
 # Leading Indicators
@@ -64,7 +64,7 @@ Indicators that confirm an outcome after it has happened.
 - **Priced settlement completed.** One primary and one secondary priced settlement through the explicit-publisher path with every boundary assertion passing: proof verified and payment released in one transaction, buyer decrypting at the declared tier, seller destroying at `HARD` (AS-15).
 - **Escrow claim completed with the First Finder absent**, with escrow-era credentials still working and a successor deployment readable under every live parameter set (AS-16).
 - **Requirement-to-proof reconciliation.** Every requirement identifier mapped to a passing proof in CI on a clean machine (XA-07).
-- **Measured piece-group size and curve recorded in release evidence**, derived from harness measurements rather than asserted (CD-07; AS-21).
+- **Measured piece-group size and confirmed curve recorded in release evidence**, derived from harness measurements rather than asserted (CD-07; AS-21).
 - **Repair, update, and uninstall fidelity.** State preserved and package-manager configuration restored exactly across the recovery matrix (SI-16, SI-17, SI-18; AS-05).
 
 # Guardrails
@@ -79,21 +79,20 @@ Metrics that must not degrade regardless of how the north star moves. A guardrai
 - **Package-manager parity.** Resolved graphs and lockfile behavior identical to upstream across the representative project set (PR-01).
 - **Consent boundary.** No clean install performs an unexplained manual download, account creation, endpoint entry, or component-install instruction (SI-19).
 - **Subsidy bound.** Free mints, batched requests, and grants admitted under a global per-window budget and maximum sponsored liability with per-identity limits as one layer; a flood of fresh identities never spends beyond the configured budget (LC-10; AS-27).
-- **Foreground isolation.** The initiating install's latency is unchanged with every background stage stalled: bootstrap, request registration, prefetch, and grant pickup (PR-08; AS-09, AS-29).
+- **Foreground isolation.** The initiating install's latency ends with the response of the source that served it and is unchanged with every background stage stalled: bootstrap, request registration, prefetch, and grant pickup (FF-02, PR-08; AS-09, AS-29).
 - **Ciphertext under obligation is never evicted** by plaintext cache policy (PR-05).
-- **Foreground install independence.** The initiating install's latency ends with the upstream response and CAS commit regardless of background bootstrap state (FF-02, PR-08; AS-09).
 
 # Measurement Plan
 
-**Stage 1, budget declaration.** Before the harness selects anything, the project declares the interactive latency budget for the local developer population: the acceptable whole-command regression against the baseline package-manager configuration, and the fraction of it that authorization may add. It declares at the same time the representative project corpus, the baseline configuration, the cache and network conditions, and the concurrency under which every later measurement runs. Declaring any of these after measurement would let the number set the threshold; the source documents forbid that ordering (MVP Scope, Cost Instrumentation; RO-06). Measurements taken before the declaration are exploratory and decide nothing.
+**Budget declaration.** Before the harness selects anything, the project declares the interactive latency budget for the local developer population: the acceptable whole-command regression against the baseline package-manager configuration, and the fraction of it that authorization may add. It declares at the same time the representative project corpus, the baseline configuration, the cache and network conditions, and the concurrency under which every later measurement runs. Declaring any of these after measurement would let the number set the threshold; the source documents forbid that ordering (MVP Scope, Cost Instrumentation; RO-06). Measurements taken before the declaration are exploratory and decide nothing.
 
-**Stage 2, validation harness.** The cryptographic validation harness runs on each candidate curve against a verifier deployed on Base Sepolia and records capsule, envelope, and proof sizes; decapsulation time per piece group; proof generation and verification time; and delivery-verification cost for a mint and a transfer, split into L2 execution gas and the L1 data-posting fee. The piece-group size and curve are chosen from these against the declared budget and recorded in release evidence (CD-07; AS-21). This is the first acceptance measurement produced and the only one that has no dependency on the rest of the build.
+**Validation harness.** The cryptographic validation harness runs on each candidate curve against a verifier deployed on Base Sepolia and records capsule, envelope, and proof sizes; decapsulation time per piece group; proof generation and verification time; and delivery-verification cost for a mint and a transfer, split into L2 execution gas and the L1 data-posting fee, with the conditions declaring that the L1 fee is Sepolia's and is re-taken on the mainnet pilot. The piece-group size is chosen from these against the declared budget, the curve confirmed, and both recorded in release evidence (CD-07; AS-21). This is the acceptance measurement with no dependency on the rest of the build.
 
-**Stage 3, acceptance run.** Every acceptance scenario runs through the packaged applications on clean machines, and the three latency measurements, whole command, artifact serving, and authorization attempt, are taken under the declared conditions. Every metric in RO-03 is captured and reconciled against the activity each scenario induces (AS-20). Telemetry is scanned for sensitive fields. The run yields the first values of the north star, the primary KPIs, and every leading indicator, on the dogfood population.
+**Acceptance run.** Every acceptance scenario runs through the packaged applications on clean machines, and the three latency measurements, whole command, artifact serving, and authorization attempt, are taken under the declared conditions. Every metric in RO-03 is captured and reconciled against the activity each scenario induces (AS-20). Telemetry is scanned for sensitive fields. The run yields the first values of the north star, the primary KPIs, and every leading indicator, on the dogfood population.
 
-**Stage 4, dogfood baseline.** The project's own package is published swarm-natively and consumed through a second identity, and the priced primary and secondary settlements execute. An availability pilot runs alongside: dependency-closure coverage in the swarm, grant-fulfilment latency measured separately from swarm health, and acquisition success on a fresh machine with empty caches after ordinary peer churn, so that a high local reuse rate cannot mask a failing fresh-user outage path; the pilot has an unambiguous result on its own. The measured values from this stage are the baseline against which the adopting population is later compared.
+**Dogfood baseline.** The project's own package is published swarm-natively and consumed through a second identity, and the priced primary and secondary settlements execute. An availability pilot runs alongside: dependency-closure coverage in the swarm, grant-fulfilment latency measured separately from swarm health, and acquisition success on a fresh machine with empty caches after ordinary peer churn, so that a high local reuse rate cannot mask a failing fresh-user outage path; the pilot has an unambiguous result on its own. The measured values from this stage are the baseline against which the adopting population is later compared.
 
-**Stage 5, adopting population.** After release, the same instrumentation runs on every install by the adopting population. Metrics are reported without secrets and without identifying data beyond what the public entitlement ledger already publishes. The north star trend, cost per install, and state-read cost are reported against the baseline.
+**Adopting population.** After release, the same instrumentation runs on every install by the adopting population. Metrics are reported without secrets and without identifying data beyond what the public entitlement ledger already publishes. The north star trend, cost per install, and state-read cost are reported against the baseline.
 
 **Instrumentation requirements.** Metrics record CAS hit and cross-project reuse, install wall-clock, state-read volume and latency, decapsulation time per group, proof generation and verification time and gas, swarm bytes, ingest bytes, relayer gas, job outcome, and adapter health (RO-03). Structured logs and traces correlate one package request across package host, CAS, swarm, chain, credential custody, decryption, and background First Finder work (RO-04). Health and diagnostics expose the same facts through CLI, desktop, extension, and API (RO-05).
 
@@ -115,13 +114,13 @@ Observations that indicate a metric is about to fail or an assumption is wrong.
 
 # Next Steps
 
-1. Build the validation harness and produce the Stage 1 measurements on both candidate curves.
-2. Choose and record the piece-group size and curve from those measurements.
-3. Declare the interactive latency budget, including the acceptable authorization fraction, before the acceptance run.
-4. Implement the RO-03 metrics, RO-04 correlation, and RO-05 health surfaces as each feature lands, so no scenario runs uninstrumented.
-5. Run the acceptance scenarios and reconcile every metric against induced activity; scan telemetry for sensitive fields.
-6. Publish the dogfood package, execute the priced settlements, and record the dogfood baseline.
-7. Release, and begin reporting the adopting-population metrics against the baseline.
+- Declare the interactive latency budget, the acceptable authorization fraction, the corpus, the baseline configuration, and the measurement conditions before the harness selects anything.
+- Build the validation harness and produce its measurements on both candidate curves.
+- Choose and record the piece-group size, and confirm the curve, from those measurements.
+- Implement the RO-03 metrics, RO-04 correlation, and RO-05 health surfaces as each feature lands, so no scenario runs uninstrumented.
+- Run the acceptance scenarios and reconcile every metric against induced activity; scan telemetry for sensitive fields.
+- Publish the dogfood package, execute the priced settlements, and record the dogfood baseline.
+- Release, and begin reporting the adopting-population metrics against the baseline.
 
 # Data Sources
 
@@ -143,7 +142,7 @@ No data source records secrets, and none records identifying data beyond what th
 
 The source documents do not fix a cadence. The following is proposed.
 
-- **Per harness run:** the Stage 1 measurement table, with the resulting piece-group size and curve selection once chosen.
+- **Per harness run:** the harness measurement table, with the resulting piece-group size and curve confirmation once chosen.
 - **Per acceptance run:** the full scenario pass table, every RO-03 metric reconciled against induced activity, the telemetry scan result, and the latency-budget pass or fail.
 - **At release:** the dogfood baseline for the north star, primary KPIs, and leading indicators, recorded in release evidence alongside the harness measurements.
 - **After release:** the north star, cost per install, state-read cost, and guardrail status reported on a regular interval to be set at release, with the baseline as the comparison in every report.
@@ -154,8 +153,8 @@ The sources name roles, not people. Ownership is assigned by role.
 
 | Metric family | Owner |
 | --- | --- |
-| Validation harness measurements, piece-group size, and curve selection | Cryptography implementer |
-| Latency budget declaration | Project lead, before the acceptance run |
+| Validation harness measurements, piece-group size, and curve confirmation | Cryptography implementer |
+| Latency budget declaration | Project lead, before the harness selects anything |
 | North star, resolution-path metrics, install wall-clock | Package host and CAS implementer |
 | State-read, attempt, and destruction metrics | Encrypted consumption implementer |
 | Delivery, settlement, and gas metrics | Contract suite and chain adapter implementer |

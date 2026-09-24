@@ -33,6 +33,21 @@ test("EnqueuedReturn is a member of MyFunctionSuccessReturn", () => {
 });
 ```
 
+The Rust form, the same typed assignment:
+
+```rust
+// interface_test.rs
+use super::interface::{EnqueuedReturn, MyFunctionReturn, MyFunctionSuccessReturn};
+
+/// Contract: MyFunctionSuccessReturn is the Ok arm of MyFunctionReturn.
+#[test]
+fn my_function_success_return_is_the_ok_arm() {
+    let success = MyFunctionSuccessReturn::Enqueued(EnqueuedReturn { enqueued: true, job_id: "job-1".into() });  // typed literal, never a builder
+    let result: MyFunctionReturn = Ok(success);   // compiles only if membership holds
+    assert!(result.is_ok());
+}
+```
+
 ### Every exported symbol is proven
 
 The interface's export surface is the checklist. **Every symbol the interface exports has at least one block proving it** — not the symbols the node happened to enumerate, and not the ones whose proof is convenient. A node lists elements, not symbols, and its silence on a symbol has not excluded it (see [scope](scope.md#node-silence-is-not-exclusion)).
@@ -78,6 +93,17 @@ test("MyObject has the required surface", () => {
 });
 ```
 
+The Rust form of the surface record is an exhaustive destructuring pattern with no `..`, in an item that is never called: it compiles only if the pattern names every field of the struct and no other, and it constructs nothing.
+
+```rust
+/// Contract: MyObject's required key surface is exactly arg1 and arg2.
+#[test]
+fn my_object_has_the_required_surface() {
+    fn surface(MyObject { arg1: _, arg2: _ }: &MyObject) {}
+    let _ = surface;
+}
+```
+
 If the interface under test accepts an imported object as a field, enumerate that field in the owning interface's surface test. Do not add a database-row fixture, import its builder, or compare the field with the same imported row type: those steps either construct the value or prove only `ImportedType extends ImportedType`.
 
 **Function types are proven without stubbing them.** A value that inhabits a function type *is* an implementation, however empty; `const fn: MyFunction = () => …` is a function body and does not belong in the test. There is no stub that is not an implementation. Do not use `declare const` for the function or its arguments, and never call an ambient function. Prove each parameter object's required surface with an explicit boolean record derived from `Parameters<MyFunction>`; no function value is constructed or referenced.
@@ -104,6 +130,19 @@ test("MyFunction has the required params surface", () => {
   };
   assert(Object.keys(surface).length === 2);
 });
+```
+
+The Rust form proves the function type's signature by type identity, through the shared test-support item `assert_same::<A, B>()`, which compiles only when `A` and `B` are the same type; each parameter struct's surface is then the destructuring pattern above.
+
+```rust
+use crate::test_support::assert_same;
+use super::interface::{MyFunctionDeps, MyFunctionFn, MyFunctionParams, MyFunctionPayload, MyFunctionReturn};
+
+/// Contract: MyFunctionFn takes deps, params, and payload and returns MyFunctionReturn.
+#[test]
+fn my_function_fn_has_the_declared_signature() {
+    assert_same::<MyFunctionFn, fn(&MyFunctionDeps, MyFunctionParams, MyFunctionPayload) -> MyFunctionReturn>();
+}
 ```
 
 Prove the return type against the function's **declared** return. Pick the form that matches the signature — do not reason about it, copy the matching one:
@@ -155,7 +194,7 @@ An async function's `ReturnType` is the `Promise`, so the annotation is `Promise
 
 Do not write a `declare const` binding for an interface test. If you begin writing a function body — even `throw`, even `return undefined` — inside an interface test, stop: you have begun implementing, and the contract is proven by types, never by a body.
 
-**RED is the interface not yet providing the symbols.** Whether the interface file does not exist yet (greenfield) or exists without the new exports (extension), the resulting compiler errors — missing module or missing export — **are the deliverable**. Report them verbatim and stop. That is success, not a halt.
+**RED is the interface not yet providing the symbols.** Whether the interface file does not exist yet (greenfield) or exists without the new exports (extension), the resulting compiler errors — missing module or missing export, in Rust an unresolved import or a missing item — **are the deliverable**. Report them verbatim and stop. That is success, not a halt.
 
 - Never create or edit the interface file. "I'm only creating the file" is editing it.
 - Halt applies to one case only: the test needs a type owned by a **different** interface that does not exist in its home — a dependency-ordering violation. Report and halt (see [discovery-halt](discovery-halt.md)).

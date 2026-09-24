@@ -61,6 +61,51 @@ test("isOwnedObject rejects each omitted required property", () => {
 });
 ```
 
+The Rust form, the same cases against the `TryFrom` guard; a built object reaches the guard through `serde_json::to_value`, and a missing field is the serialized object with the key removed:
+
+```rust
+// guard_test.rs
+use super::interface::OwnedObject;
+use super::mock::{build_owned_object, invalidate_owned_object, OwnedObjectCorruptions, OwnedObjectOverrides};
+
+/// Contract: case 1 — the builder's valid default is accepted.
+#[test]
+fn owned_object_accepts_the_valid_default() {
+    let value = serde_json::to_value(build_owned_object(Default::default())).unwrap();
+    assert!(OwnedObject::try_from(value).is_ok());
+}
+
+/// Contract: case 2 — valid overrides are accepted.
+#[test]
+fn owned_object_accepts_valid_overrides() {
+    let value = serde_json::to_value(build_owned_object(OwnedObjectOverrides { foo: Some(some_valid_foo), ..Default::default() })).unwrap();
+    assert!(OwnedObject::try_from(value).is_ok());
+}
+
+/// Contract: case 3 — null, numbers, strings, and arrays are rejected.
+#[test]
+fn owned_object_rejects_non_objects() {
+    for value in [serde_json::Value::Null, 7.into(), "x".into(), serde_json::Value::Array(vec![])] {
+        assert!(OwnedObject::try_from(value).is_err());
+    }
+}
+
+/// Contract: case 4 — each property, corrupted in turn, is rejected.
+#[test]
+fn owned_object_rejects_each_corrupted_property() {
+    assert!(OwnedObject::try_from(invalidate_owned_object(OwnedObjectCorruptions { foo: Some(serde_json::Value::Null), ..Default::default() })).is_err());
+    assert!(OwnedObject::try_from(invalidate_owned_object(OwnedObjectCorruptions { bar: Some(42.into()), ..Default::default() })).is_err());
+}
+
+/// Contract: case 5 — each required property, omitted in turn, is rejected.
+#[test]
+fn owned_object_rejects_each_omitted_required_property() {
+    let mut missing_foo = serde_json::to_value(build_owned_object(Default::default())).unwrap();
+    missing_foo.as_object_mut().unwrap().remove("foo");
+    assert!(OwnedObject::try_from(missing_foo).is_err());
+}
+```
+
 Scope: test only guards for types this interface owns. A foreign guard is tested in its home package and is exercised here only indirectly through case 4 — never imported into this test.
 
 Forbidden: running any terminal commands, importing the implementation, creating/editing the guard file; defining a guard in the test; silencing the compiler; hand-rolled fixtures duplicating builders; testing a foreign guard; hand-building fixtures for imported types. If the mock file lacks a needed builder or invalidator, add it there in the four-symbol form (see [mocks](mocks.md)); if it belongs to an imported type, find it in its home or halt.

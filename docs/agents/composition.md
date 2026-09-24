@@ -26,6 +26,31 @@ myFunction: MyFunctionFn {
 }: MyFunctionReturn = MyFunctionSuccessReturn | MyFunctionErrorReturn
 ```
 
+The Rust form, with the same slots and the same two-arm return:
+
+```rust
+// interface.rs
+pub type MyFunctionReturn = Result<MyFunctionSuccessReturn, MyFunctionErrorReturn>;
+pub type MyFunctionFn = fn(&MyFunctionDeps, MyFunctionParams, MyFunctionPayload) -> MyFunctionReturn;
+
+// mod.rs — TRUSTED form: payload arrives already narrowed, from an in-crate caller
+pub fn my_function(
+    deps: &MyFunctionDeps,
+    params: MyFunctionParams,
+    payload: MyFunctionPayload,
+) -> MyFunctionReturn { … }
+
+// mod.rs — VALIDATING form: payload arrives as untrusted data from a runtime boundary,
+// guarded on the first line and narrowed to MyFunctionPayload for the whole body
+pub fn my_function(
+    deps: &MyFunctionDeps,
+    params: MyFunctionParams,
+    payload: serde_json::Value,
+) -> MyFunctionReturn { … }
+```
+
+`Result` is the two-arm union: `Ok` is the success arm, `Err` the error arm, and each may be an enum of flavors. An `async fn` keeps the same slots and the same `Result`. `deps` is a struct of collaborator handles, each typed by the repo-owned trait its adapter implements, `Box<dyn LoggerAdapter>` or a generic bound, never by the implementing type.
+
 - a defined function name
 - a signature type ending in `Fn`
 - a typed `deps` object — injected collaborators
@@ -57,6 +82,8 @@ The four-slot signature maps onto an adapter without changing:
 - each **method** takes its own named `params` and `payload` types and returns its own `Success | Error` union, exactly as a standalone function does.
 
 A method is the adapter's surface, not an independent exported function, so it does not claim a file of its own — but every method's function type is **named in the interface** (an inline function type at a property is an inline type definition; see [types](types.md)). A value or error class declares only the constructor-params object; its members follow [types](types.md) and, for errors, [errors-and-returns](errors-and-returns.md).
+
+The Rust form of the two roles: an adapter is a struct implementing the repo-owned trait declared in `interface.rs`, constructed once at the composition root from one typed constructor-params struct, and the trait's method signatures are the named function types; an owned value or error type is a struct or enum with a fallible constructor, `try_new(params) -> Result<Self, …>`, and no other producer.
 
 How each role is mocked is owned by [mocks](mocks.md#classes--decompose-never-mock-the-class); how each is guarded is owned by [guards](guards.md#classes--instanceof-for-owned-classes-shape-for-their-params).
 

@@ -15,6 +15,7 @@ Cited by: construction view (workplan node `interface.test`, `guard.test`, `unit
 - Never change an assertion to match broken code — fix the code.
 - Fixtures come from the mock file's builders and invalidators (see [mocks](mocks.md)), never hand-rolled.
 - Test files mirror the source tree and may split by behavior (`bar.basic.test.ts`, `bar.error.test.ts`, `bar.edge.test.ts`); group related tests in nested `Deno.test` / `t.step` blocks.
+- In Rust each test element is a `#[cfg(test)]` module file in the function's module directory, `interface_test.rs`, `guard_test.rs`, `test.rs`, splitting by behavior as `test_basic.rs`, `test_error.rs`; the runner is `cargo test` with `assert!` and `assert_eq!`, and the agent still never runs it.
 - The agent never runs tests (see [environment](environment.md)). A test's RED or GREEN state is proven by compiler/linter output, not by execution.
 - Examples in this topic use `test(...)` for a test block and `assert(...)` for a truthy assertion as neutral placeholders. Substitute your project's own runner and assertion library — `Deno.test` + `@std/assert`, `test` / `it` + `expect`, and so on — and its module-resolution convention for import paths.
 
@@ -65,6 +66,28 @@ test("selectSessionDocuments returns only the current session's documents", () =
   assert(result.length === 2);
   assert(!result.includes(foreign));
 });
+```
+
+```rust
+/// Contract: given documents from more than one session, only the current session's
+///   documents are returned.
+/// Arrange: two documents in the current session, one in a foreign session.
+/// Act:     select_session_documents over all three.
+/// Assert:  both current-session ids are returned; the foreign id is absent.
+#[test]
+fn select_session_documents_returns_only_the_current_sessions_documents() {
+    // Arrange
+    let mine = build_document(DocumentOverrides { session_id: Some("session-1".into()), ..Default::default() });
+    let also_mine = build_document(DocumentOverrides { session_id: Some("session-1".into()), ..Default::default() });
+    let foreign = build_document(DocumentOverrides { session_id: Some("session-2".into()), ..Default::default() });
+
+    // Act
+    let result = select_session_documents(&[mine, also_mine, foreign.clone()], "session-1");
+
+    // Assert
+    assert_eq!(result.len(), 2);
+    assert!(!result.contains(&foreign));
+}
 ```
 
 The header states what the test **is**, never what it was — the no-stateful-tests standard above governs the header exactly as it governs the block name.

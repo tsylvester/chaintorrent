@@ -43,7 +43,7 @@ Single source of truth for how agents work in this repo. Every rule lives in exa
 
 ## Implementation routing
 
-A map from the file you are building to the topic that governs it, the template or example to copy, and its most common halt trigger. Every element is also governed by all Process topics.
+A map from the file you are building to the topic that governs it, the template or example to copy, and its most common halt trigger. Every element is also governed by all Process topics. Each standards topic carries its examples in TypeScript and in Rust, and [workplan-structure](workplan-structure.md#element-files-by-language) maps the elements to their files per language; copy the form of the language you are building in.
 
 | Building | Conforms to | Copy from | Halt if |
 |---|---|---|---|

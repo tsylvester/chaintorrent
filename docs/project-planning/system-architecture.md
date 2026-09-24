@@ -2,7 +2,7 @@
 # Architecture Summary
 Draft, 2026-09-23. How the ChainTorrent MVP is designed, synthesized from [cryptography.md](../research/cryptography.md), [MVP Scope](../research/MVP%20Scope.md), [MVP Application Requirements](../research/MVP%20Application%20Requirements.md), the [MVP Execution Trace](../research/MVP%20Execution%20Trace.md), and the planning documents that derive from them, in particular the [technical approach](technical-approach.md), [tech stack](tech-stack.md), [dependency map](dependency-map.md), [product requirements](product-requirements.md), and [risk register](risk-register.md). Those documents are authoritative; this one arranges them as a system design and adds no rule. Where a decision is the user's, it is cited from the product requirements' Resolved Positions; where a choice is a recommendation, it says so.
 
-The system is a protocol client and its supporting services. One canonical ciphertext per deployment plus one public header sidecar per live parameter set is seeded to a peer swarm and committed on chain by three BLAKE3/Bao roots. An entitlement is a single-owner bearer asset on Base, bound to the asset rather than to any deployment. Each ownership interval receives a native credential delivered inside the settlement that creates it, verified by a proof the contract checks through the chain's pairing precompiles. A conforming client authorizes every decryption attempt from a fresh view of consensus state, decrypts locally, and destroys decrypt-capable material when the entitlement leaves it. No service sits on the read path. The MVP applies this to JavaScript dependencies through a local daemon that serves npm's own registry protocol from whichever of a machine-wide plaintext cache, the swarm, and the upstream registry delivers within budget, never slower than the registry, and that requests entitlements and prefetches ciphertext in the background so a first run leaves the machine independent of the registry for everything it installed.
+The system is a protocol client and its supporting services. One canonical ciphertext per deployment plus one public header sidecar per live parameter set, each sidecar its own object with its own locator, are seeded to a peer swarm and committed on chain by three BLAKE3/Bao roots. An entitlement is a single-owner bearer asset on Base, bound to the asset rather than to any deployment. Each ownership interval receives a native credential delivered inside the settlement that creates it, verified by a proof the contract checks through the chain's pairing precompiles. A conforming client authorizes every decryption attempt from a fresh view of consensus state, decrypts locally, and destroys decrypt-capable material when the entitlement leaves it. No service sits on the read path. The MVP applies this to JavaScript dependencies through a local daemon that serves npm's own registry protocol from whichever of a machine-wide plaintext cache, the swarm, and the upstream registry delivers within budget, never slower than the registry alone by more than the hedge delay, and that requests entitlements and prefetches ciphertext in the background so a first run leaves the machine independent of the registry for everything it installed.
 
 # Architecture
 
@@ -68,7 +68,7 @@ flowchart TB
 
 ## The cryptographic construction, stated once
 
-Type-3 pairing groups on BLS12-381 primary and BN254 retained, per the launch decision. A parameter set is `g1, u0, u1` in the first group and `g2, hpub = g2^α` in the second; the master scalar `α` is the issuer's. The entitlement's identity element is `F_I = u0 · u1^I`. A credential is `(g1^α · F_I^r, g2^r)`, rerandomized by the seller as `(A · F_I^s, B · g2^s)` without the master scalar, valid under a public pairing check. A capsule is `(g2^t, u0^t, u1^t)`, well-formed under two pairing checks, encapsulating `e(g1, hpub)^t`; decapsulation is two pairings and one scalar multiplication, and the piece-group key is a domain-separated KDF of that value and the context. Envelopes are ElGamal in each source group to the recipient's two independently keyed envelope keys. Delivery proofs are generalized Schnorr under Fiat–Shamir over the full statement. Under the escrow suite the identity element is fixed per asset and any holder authors grants. Security rests on SXDH, decisional BDH-3b, and the random-oracle model; the composition is closed at the research level with proof sketches, concrete loss terms, and an independent re-derivation.
+Type-3 pairing groups on BLS12-381 primary and BN254 retained, on Base. A parameter set is `g1, u0, u1` in the first group and `g2, hpub = g2^α` in the second; the master scalar `α` is the issuer's. The entitlement's identity element is `F_I = u0 · u1^I`. A credential is `(g1^α · F_I^r, g2^r)`, rerandomized by the seller as `(A · F_I^s, B · g2^s)` without the master scalar, valid under a public pairing check. A capsule is `(g2^t, u0^t, u1^t)`, well-formed under two pairing checks, encapsulating `e(g1, hpub)^t`; decapsulation is two pairings and one scalar multiplication; a domain-separated KDF of that value and the context yields the set's wrapping key, and the piece-group key, chosen by the encryptor, travels in the sidecar wrapped under it. Envelopes are ElGamal in each source group to the recipient's two independently keyed envelope keys. Delivery proofs are generalized Schnorr under Fiat–Shamir over the full statement. Under the escrow suite the identity element is fixed per asset and any holder authors grants. Security rests on SXDH, decisional BDH-3b, and the random-oracle model; the composition is closed at the research level with proof sketches, concrete loss terms, and an independent re-derivation.
 
 # Services
 
@@ -80,7 +80,7 @@ Every service the project runs is scaffolding no client depends on.
 | Relayer or paymaster | Rust service, ERC-4337 EntryPoint v0.7 on Base | Sponsors the free path and the one-time identity binding under per-identity rate limits; reports cost | Anything on the paid path or the read path |
 | Claim verifier | Rust service | Authenticates claimants against npm metadata, provenance attestations, and GitHub OAuth; signs vouchers over committed claim sets under a key registered on chain with rotation and revocation | A party a claim depends on being available; it is one implementation behind `IClaimVerifierAdapter` |
 | Project seed host and site | Rust daemon instance plus static site with a WebAssembly demonstration | First seeder of the core closure; optional relayer and discovery host; education tier and download | A privileged seeder or a host any client must reach |
-| Cryptographic validation harness | Rust binary against Base Sepolia | Measures sizes, timings, and gas; records piece-group size and curve selection | A throwaway; its delivery verifier is the shipped contract |
+| Cryptographic validation harness | Rust binary against Base Sepolia | Measures sizes, timings, and gas; records the piece-group size and confirms the curve | A throwaway; its delivery verifier is the shipped contract |
 | Demonstration harness | Rust | Controlled participants, wallets, chain state, and induced failures | Test tooling that can be skipped; the completion boundary makes it load-bearing |
 
 Deferred services, recorded so their boundaries are designed now: an account service owning onboarding state, preferences, a device roster, and optionally an end-to-end encrypted holder seed blob, never an entitlement; a rendezvous relaying end-to-end encrypted sessions between a browser and a daemon that dialed out; a remote head over the daemon's IPC; and a hosted instance as a separate product mode with a service on its read path.
@@ -89,7 +89,7 @@ Deferred services, recorded so their boundaries are designed now: an account ser
 
 Grouped by ring. Each row names the module family in the Application Requirements and the interface it implements or consumes.
 
-**Protocol and domain ring.** Canonical identity `BLAKE3(name@version)`; authenticated hash-card and immutable deployment suite; parameter set, master scalar, credential, envelope key pair, envelope, capsule, delivery statement with the challenge context schema; `AttemptContext`; entitlement and interval state; custody state including device roles; manifest and sidecar bounds; claim sets; lifecycle transitions. Guards on every type at every boundary.
+**Protocol and domain ring.** Canonical identity `BLAKE3(name@version)`; the canonical binary encoding of everything hashed, signed, or stored; authenticated hash-card and immutable deployment suite; parameter set, master scalar, credential, envelope key pair, envelope, capsule, delivery statement with the challenge context schema; `AttemptContext`; entitlement and interval state; custody state including device roles; manifest and sidecar bounds; claim sets; lifecycle transitions. Guards on every type at every boundary.
 
 **Application workflow ring.** Installation coordinator with a durable checkpointed plan; package serving and resolution orchestrator; First Finder bootstrap as a durable idempotent job; encrypted acquisition; credential delivery at mint, grant, and sale; per-attempt authorization; decryption and CAS commit; seeding; explicit publishing with dependency-closure ingestion; escrow claim; transfer; repair; recovery.
 
@@ -106,7 +106,7 @@ Grouped by ring. Each row names the module family in the Application Requirement
 | `ISettlementAdapter` | Base tier mapping: INCLUDED sequencer inclusion, SOFT safe head, HARD L1-finalized, SETTLED fault-proof resolution | Tier vocabulary, reference age |
 | `IEntitlementStateAdapter` | Registry views, single and paginated batch, as a quorum of configured nodes at a common reference | Batch ceiling |
 | `IIdentityAdapter`, `IPublisherProofAdapter`, `IClaimVerifierAdapter` | Publisher authority and escrow identity adapters; provenance-then-OAuth proof ordering; attestor verifier | Proof classes |
-| `IIngestSourceAdapter` | npm, as-is tarball with integrity attestation, public availability as eligibility | Attestation presence |
+| `IIngestSourceAdapter` | npm, as-is tarball with its release attestation or recorded absence, public availability as eligibility | Attestation presence |
 | `IPackageHostAdapter` | npm registry protocol served locally | Ecosystem |
 | `ISwarmTransportAdapter` | BitTorrent through embedded `librqbit`, pinned, the MVP's sole transport; BLAKE3-native transport reserved for V2 | Integrity structure on the wire |
 | `IPeerDiscoveryAdapter` | DHT, tracker, PEX, local, on-chain seeder map | Source, non-authoritative |
@@ -131,17 +131,17 @@ flowchart TB
 
     subgraph workflows["Application workflows: durable, restartable"]
         direction TB
-        resolve["Resolution orchestrator: first source that delivers plaintext within budget, CAS, ciphertext under a held credential, upstream, bounded grant wait when upstream is down"]
+        resolve["Resolution orchestrator: sources in order and hedged, CAS, ciphertext under a held credential, upstream, bounded grant wait when upstream is down"]
         gate["Deployment gate: descriptor, suite, bounds, sidecar, capsule well-formedness"]
         request["Grant request job: one batched sponsored request per install for every unheld asset, queued until submittable, pickup from chain events"]
         prefetch["Prefetch job: ciphertext and sidecar while a request is pending, under seeding settings and quota, pinned, seeded, set-matched after the grant"]
         acquire["Entitlement acquisition: mint, grant, purchase; delivery verified"]
         attempt["Attempt engine: AttemptContext, state view freshness, wallet assertion, three-state result"]
-        decrypt["Decryption pipeline: decapsulate, KDF, AES-CTR addressing, Bao verify, CAS commit"]
+        decrypt["Decryption pipeline: decapsulate, unwrap, AES-CTR addressing, Bao verify, CAS commit"]
         ff["First Finder engine: foreground serve, background bootstrap job, registration race, escrow custody"]
         publish["Publisher engine: explicit path, closure ingestion, issuance policy service"]
         grant["Grant service: fulfils pending requests for held escrow assets as it seeds, requesters present or absent, under the relayer's policy"]
-        interval["Interval-end watcher: stop at SOFT, destroy at HARD"]
+        interval["Interval-end watcher: stop at the declared tier, destroy at HARD"]
     end
 
     subgraph engines["Engines"]
@@ -217,8 +217,8 @@ flowchart TB
 | Subsystem | Responsibility | Owns | Defined by |
 | --- | --- | --- | --- |
 | Package host endpoint | Serves npm-compatible metadata and tarball responses; maps coordinates deterministically to the identity hash and authenticated deployment records; leaves dependency resolution, peers, workspaces, overrides, and lockfiles to npm | The registry-protocol listener; nothing else | PR-01, PR-02 |
-| IPC server | Authenticated, least-privilege local API for the extension, desktop, CLI, and later a remote head; per-principal capabilities so a project process that requests a package gains no custody, credential, key, or authority; request classes for package, status, control, and administration | The local socket or named pipe; the principal-to-capability table | XA-02, RO-05, IC-08 |
-| Resolution orchestrator | Serves plaintext from the first source that delivers it within the declared budget: local plaintext CAS; local or swarm ciphertext under a held credential; the upstream ingest source when available, which serves any identity without a credential; and, only with upstream unavailable, swarm ciphertext under a grant obtained within a bounded wait, otherwise an actionable failure with the request pending; checks upstream bytes for a ledger-known asset against the record's plaintext root and marks a mismatching deployment dead; records the path and its reason; hands every unheld ledger-known asset to the request job | The resolution plan per request | PR-03, PR-06, PR-07, PR-08 |
+| IPC server | Authenticated, least-privilege local API for the extension, desktop, CLI, and later a remote head; a control principal is the installing user by peer credential or token file, and a package caller is anyone on the loopback port; local-presence operations and the catalogue's presence-required settings complete only after the daemon-owned interactive confirmation; request classes for package, status, control, and administration | The local socket or named pipe; the request-class table | XA-02, RO-05, IC-08 |
+| Resolution orchestrator | Tries sources in order, local plaintext CAS, local or swarm ciphertext under a held credential, the upstream ingest source, which serves any identity without a credential, and, only with upstream unavailable, swarm ciphertext under a grant obtained within a bounded wait, starting the next source in parallel after the current one's configured hedge delay and serving the first plaintext to verify, otherwise an actionable failure with the request pending; the hedge delay, source deadline, and grant wait are catalogue settings with shipped defaults; checks upstream bytes for a ledger-known asset against the record's plaintext root and marks a mismatching deployment dead; records the path and its reason; hands every unheld ledger-known asset to the request job | The resolution plan per request | PR-03, PR-06, PR-07, PR-08 |
 | Grant request job | For every ledger-known asset the identity does not hold, opens a durable request, batched per install into one sponsored operation, queued behind binding and key registration and while chain, relayer, or budget is unavailable; skips held, absent, dead-deployment, and priced assets, routes explicit-publisher requests to the issuance policy; watches chain events for mints to the identity and loads a grant fulfilled in its absence on the next run; after the grant lands confirms a held deployment carries the granted set | The request queue and its batch references | PR-10, LC-12, CD-04 |
 | Prefetch job | While a request is pending, fetches and Bao-verifies the deployment's ciphertext and sidecar in the background at low priority under the bandwidth, metered, and battery settings and the ciphertext quota, pins them until the grant lands, seeds them meanwhile, and fetches a deployment under the granted set if the held one differs; never delays the foreground install | Pinned prefetch entries in the ciphertext store | PR-11, PR-08 |
 | Plaintext CAS | Verified content addressing of tarballs, atomic temp-then-rename commit, extraction left to the package manager with nothing linking into the store, quota, pinning of artifacts a live project resolved, eviction with a warning before removing anything not re-authorizable; never evicts ciphertext | The plaintext directory and its index | PR-04, PR-05, PR-06; MVP Scope, Local CAS |
@@ -229,9 +229,9 @@ flowchart TB
 | Entitlement acquisition | Inspects the wallet, skips held targets, and acquires the rest in the background: relayer-paid free mint, escrow grant fulfilled by any holder against the open request whether or not this identity is online, or user-initiated funded purchase with a payment lock; verifies the delivery proof result and records the persistent credential under custody; never on the foreground install's path | The acquisition queue | EC-03, CD-01, CD-02, CD-05, PR-10, RO-01, RO-02 |
 | Credential engine | Decrypts the envelope under the identity's own envelope secrets into the secret region at start-up or on delivery; checks the parameter set's validity equation; may rerandomize in memory; hands the decrypted credential to the attempt engine and to a sale; zeroizes on every terminal transition | The secret region's credential entries | EC-06, CR-04, CR-07, CR-08 |
 | Attempt engine | Before every piece-group key derivation, constructs the `AttemptContext`, obtains a state view at the declared tier no older than `τ_soft` and a wallet-control assertion no older than `τ_wallet`, evaluates `AUTHORIZED`, `PENDING_SETTLEMENT` with bounded retry, or `DENIED` with terminal refusal, in single or paginated batch form without losing per-context bindings | The attempt queue and freshness clocks | EC-04, EC-05, LC-06 |
-| Decryption pipeline | Decapsulates the group's capsule, derives the piece-group key, decrypts at continuous-stream offsets under the suite's counter layout, verifies plaintext against the authenticated root per Bao chunk, commits atomically to the CAS, and serves the exact upstream tarball; streams while further pieces arrive | Transient decryption contexts in the secret region | EC-07, CR-01, CR-02 |
-| Interval-end watcher | Observes a transfer out at SOFT and stops new attempts; at HARD destroys the decrypted credential, piece-group keys, cipher state, keystream, and every live context; leaves the persistent envelope and keys in custody; never strands a still-owner on a reorganization | Subscription to entitlement events | EC-08, LC-05; cryptography.md, Phase 2 step 6 |
-| First Finder engine | Foreground: fetch the exact upstream tarball, validate the integrity attestation, commit, serve. Background durable job: allocate the deployment identity under state lock, generate master scalar and parameter set if none is live, capsule randomness and IV, encrypt per group, build sidecar and hash-card, race the escrow registration, on loss destroy everything and follow the winner, on win register and hand off to the seed host, retain the master scalar under custody as escrow custodian | The bootstrap job's checkpoints | FF-01 through FF-08, CR-05, PC-02 |
+| Decryption pipeline | Decapsulates the group's capsule, derives the set's wrapping key, unwraps the piece-group key, decrypts at continuous-stream offsets under the suite's counter layout, verifies plaintext against the authenticated root per Bao chunk, commits atomically to the CAS, and serves the exact upstream tarball; streams while further pieces arrive | Transient decryption contexts in the secret region | EC-07, CR-01, CR-02 |
+| Interval-end watcher | Observes a transfer out at the deployment's declared tier and stops new attempts; at HARD destroys the decrypted credential, piece-group keys, cipher state, keystream, and every live context; leaves the persistent envelope and keys in custody; never strands a still-owner on a reorganization | Subscription to entitlement events | EC-08, LC-05; cryptography.md, Phase 2 step 6 |
+| First Finder engine | Foreground: fetch the exact upstream tarball, validate the release attestation or record its absence, commit, serve. Background durable job: allocate the deployment identity under state lock, generate master scalar and parameter set if none is live, a piece-group key and capsule randomness per group and the IV, encrypt per group, build one sidecar per live set and the hash-card, race the escrow registration, on loss destroy everything and follow the winner, on win register, hand off to the seed host, retain the master scalar under custody as escrow custodian, and grant itself the asset's first entitlement | The bootstrap job's checkpoints | FF-01 through FF-08, CR-05, PC-02 |
 | Publisher engine | Explicit publisher path with keys derived from the publisher hierarchy; ingests the dependency closure, bootstrapping absent dependencies as First Finder; runs the issuance policy service that serves priced mints automatically under the publisher's configuration, with per-request approval where configured | Publisher configuration and issuance policy | PC-01, FF-09; MVP Scope, Paid Monetization |
 | Grant service | Under the escrow suite, reads open requests for assets this identity holds and authors their credentials from its own credential, with the transfer proof against its own envelope, encrypted to each requester's registered keys so the requester need not be online, automatically as it seeds and under the relayer's policy | The grant queue | CD-05, CD-08, LC-12 |
 | Job engine | Durable, checkpointed, idempotent, cancellable-where-safe jobs that survive process and machine failure with exactly-once effects or safe compensation; hosts bootstrap, acquisition, seeding, publication, claim, repair, and migration jobs | The job store | XA-03, FF-03, IC-07 |
@@ -247,7 +247,7 @@ Five boundaries, each with one rule.
 
 - **Ingress is untrusted.** Every package-host request and every IPC request is validated at the boundary and carries a principal whose capabilities bound what it may cause. A package request can cause resolution and serving and nothing else.
 - **The network is untrusted.** No chunk enters the ciphertext store without a Bao authentication path against the authenticated root; no peer or discovery result is authoritative; a delegated seed host's reports are verified by challenge, not believed.
-- **The chain is authenticated by agreement.** Three nodes are configured by default and a state view is accepted only when at least two reachable nodes agree at a common reference block within `τ_soft`; a node behind the reference is stale and is ignored, not counted as disagreeing; two nodes returning different state at the same reference is divergence and fails closed; a view older than `τ_soft`, as during a prolonged stall, fails closed. The trust assumption is that fewer than two configured providers lie in concert. The upstream registry is authenticated by its release attestation, for npm the registry signature over name, version, and integrity, as provenance, never as safety.
+- **The chain is authenticated by agreement.** Three nodes are configured by default and a state view is accepted only when at least two reachable nodes agree at a common reference block within `τ_soft`; a node behind the reference is stale and is ignored, not counted as disagreeing; two nodes returning different state at the same reference is divergence and fails closed; a view older than `τ_soft`, as during a prolonged stall, fails closed. The trust assumption is that fewer than two configured providers lie in concert. The upstream registry is authenticated by its release attestation, for npm the registry signature over name, version, and integrity, as provenance, never as safety, with a declared absence recorded rather than implied.
 - **Custody is the only durable home for secrets.** The holder seed, envelope secrets, chain and handshake keys, master scalars, publisher seeds, and per-entitlement persistent credentials live there and nowhere else. The daemon holds a handle, not a copy.
 - **The secret region is memory-only.** Decrypted credentials, piece-group keys, expanded cipher state, buffered keystream, and live decryption contexts exist only inside `zeroize`-guarded types that cannot be serialized, logged, or formatted, and are destroyed on success, interval end, cancellation, loss, and error. Nothing from this region crosses IPC, reaches the job store, or reaches telemetry.
 
@@ -294,11 +294,11 @@ sequenceDiagram
     C->>C: advance interval, record buyer keys and digest, emit envelope, transfer entitlement, release payment
     B->>C: read state view at declared tier
     B->>B: decrypt envelope, validity check, decapsulate per group, decrypt
-    S->>C: observe transfer out at SOFT
+    S->>C: observe transfer out at the declared tier
     S->>S: stop attempts, destroy decrypt-capable material at HARD
 ```
 
-**First Finder bootstrap.** Foreground: fetch, verify attestation, commit to CAS, serve. Background durable job: allocate deployment identity under state lock, generate master scalar and parameter set if none is live, capsule randomness and IV, encrypt per group, build sidecar and hash-card, race the escrow registration, on loss destroy everything and follow the winner, on win register the parameter set and sidecar root, retain the master scalar as escrow custodian, hand ciphertext and sidecar to the seed host.
+**First Finder bootstrap.** Foreground: fetch, verify the attestation or record its absence, commit to CAS, serve. Background durable job: allocate deployment identity under state lock, generate master scalar and parameter set if none is live, a piece-group key and capsule randomness per group and the IV, encrypt per group, build one sidecar per live set and the hash-card, race the escrow registration, on loss destroy everything and follow the winner, on win register the parameter set and sidecar roots, retain the master scalar as escrow custodian, hand ciphertext and sidecars to the seed host, and grant itself the asset's first entitlement.
 
 **Device roles under one identity.** The multi-device design as decided, with the MVP declaring only the full role.
 
@@ -393,8 +393,10 @@ Resolution is the security property, not a convenience. It runs once at installa
 
 - **Delivery verifier is built in the harness and consumed by the contract suite.** It is production code from the first ticket.
 - **Two verifier forms, one shipped.** Both are built and measured; BLS12-381 ships on Base; BN254 is retained.
-- **Swarm sprint precedes the contract sprint by dependency but follows it in the business case's grouping.** The dependency map records the parallelism; the groupings are by role.
-- **Custody is in the daemon phase but the installer needs it.** The dependency runs the right way; identity and custody are built early in that phase.
+- **The hashing, signature, and swarm tickets precede the contract sprints by dependency and run beside the harness.** The dependency map records the parallelism; the groupings are by role.
+- **The demonstrable milestone follows credential delivery**, because resolving against the swarm with the registry down needs a second identity to hold a credential.
+- **Custody is in the daemon grouping but the installer needs it.** The dependency runs the right way; identity and custody are built early in that grouping.
+- **The identity's chain-level form is chosen at the relayer milestone.** Every identity-bound contract mutation takes a signed intent verified by ECDSA or ERC-1271, so neither a contract account under a paymaster nor an externally owned account under a relayer is precluded.
 - **The escrow record carries no maintainer commitment**, so the escrow claim milestone has no policy gate and the verifier establishes the claim set at verification time.
 - **The account-link step exists in the installer's consent flow and does nothing in the MVP.** It is shown as unavailable and the consent trace records it; a reviewer should not read it as dead code.
 - **The Tauri stable line is 2; 3 is alpha.** The desktop targets 2.
@@ -402,7 +404,7 @@ Resolution is the security property, not a convenience. It runs once at installa
 
 # Sequencing
 
-The [dependency map](dependency-map.md) holds the sequence at decaying resolution and its Mermaid graph. By role: the cryptographic validation harness at ticket resolution, closing at the report that fixes piece-group size and curve; the protocol core and contract suite with the swarm sprint in parallel; the local daemon and package serving to the demonstrable milestone where an ordinary `npm install` is served at the registry's speed, registers and prefetches, and, with the registry down, resolves against the swarm; credential delivery and per-attempt authorization closing the read path and completing a first run's independence; onboarding shells and services with escrow claim last; acceptance and release. External review and legal work start with the harness. Resolution is re-mapped one phase outward as each phase closes.
+The [dependency map](dependency-map.md) holds the sequence at decaying resolution and its Mermaid graph. By role: the foundation; the cryptographic validation harness at ticket resolution, closing at the report that fixes the piece-group size and confirms the curve; the protocol core and contract suite with the hashing, signature, and swarm tickets in parallel from the foundation; the local daemon and package serving, through credential delivery and per-attempt authorization closing the read path and completing a first run's independence, to the demonstrable milestone where an ordinary `npm install` is served at the registry's speed, registers and prefetches, and, with the registry down, a second identity resolves against the swarm; onboarding shells and services with escrow claim last; acceptance and release. External review and legal work start with the harness. Resolution is re-mapped one grouping outward as each closes.
 
 # Risk Mitigations
 
@@ -417,7 +419,7 @@ Architecture-level mitigations, with the register identifier.
 | R-11 First Finder race | State-locked registration; loser destroys ciphertext, sidecar, master scalar, and derivatives; the plaintext root proves equivalence |
 | R-12 chain properties | Chain behind an adapter with settlement as tiers; multi-node reads failing closed; both precompile sets confirmed on Base; sequencer stalls writes only |
 | R-14 scaffolding | Every project service behind an interface with a replacement path; default configuration with more than one discovery and RPC source |
-| R-15 settlement reversal | Reads at SOFT, destruction at HARD; exposure is one entitlement's credential |
+| R-15 settlement reversal | Reads at the declared tier, destruction at HARD; exposure is one entitlement's credential |
 | R-17 secret leakage | Decrypt-capable material memory-only with zeroization; redaction at the tracing layer; custody inspected after decryption and transfer |
 | R-19 accepted residuals | Piece-group size bounds exposure; decapsulation-to-cipher seam preserved for a multi-key suite |
 | R-21 rendezvous | Outbound-only, end-to-end under a daemon-pinned key, keys never leave, local presence for value-moving operations; deferred |
@@ -474,29 +476,13 @@ The independence claims, made precise per operation. A cell that says nobody or 
 
 # Compliance Controls
 
-Ingest eligibility is free public distribution by the rights holder's choice, implemented as public npm availability, with the residual, unauthorized public redistribution and irrevocability, stated rather than denied revenue; a further license check is an optional policy narrowing held in the workplan. Entitlement records are public by design for public content, and the individual case is disclosed at first run and mitigated by own-node reads. The escrow record publishes no bare hash of an enumerable email; the salt commitment is dropped by default. Telemetry records no secrets and no identifying data beyond what the ledger publishes. User interaction is limited to the permitted consent set and a consent trace fails on anything else. Governance is advisory metadata against a local trust set; no takedown. The software license is source-available with a conformance clause, unstarted; legal review of the license, the eligibility principle, priced entitlements, the paymaster, and export constraints runs in parallel with the harness. Accessibility baselines for the desktop and extension are a proposed non-functional requirement.
+Ingest eligibility is free public distribution by the rights holder's choice, implemented as public npm availability, with the residual, unauthorized public redistribution and irrevocability, stated rather than denied revenue; a license check at ingest is a later policy decision. Entitlement records are public by design for public content, and the individual case is disclosed at first run and mitigated by own-node reads. The escrow record publishes no bare hash of an enumerable email; the salt commitment is dropped by default. Telemetry records no secrets and no identifying data beyond what the ledger publishes. User interaction is limited to the permitted consent set and a consent trace fails on anything else. Governance is advisory metadata against a local trust set; no takedown. The software license is source-available with a conformance clause, unstarted; legal review of the license, the eligibility principle, priced entitlements, the paymaster, and export constraints runs in parallel with the harness. Accessibility baselines for the desktop and extension are a proposed non-functional requirement.
 
 # Open Questions
 
 Those with architectural consequence, each carrying a Feedback block; the product requirements hold the full list.
 
 **Multi-device custody sync mechanism.** Recommended: holder-seed derivation of envelope secrets and handshake key, with paired local transfer as the MVP's declared capability and the authenticator export and account blob as later custody adapters; device roles full, read-delegate, and signer-only as versioned custody capabilities, with only the full role declared in the MVP. Assumption if blank: as recommended.
-
-Feedback:
-
-**Pairing library.** arkworks over both curves, with `halo2curves` benchmarked for comparison in the harness. Assumption if blank: arkworks.
-
-Feedback:
-
-**Embedded database for jobs and indexes.** `redb`, with SQLite as the alternative. Assumption if blank: `redb`.
-
-Feedback:
-
-**BitTorrent compatibility base.** `librqbit` evaluated behind the transport adapter, or a from-scratch owned transport. Assumption if blank: evaluate `librqbit` first.
-
-Feedback:
-
-**RPC provider strategy on Base.** Three providers in the default configuration with two required to agree at a common reference, the project-run node added with the seed host as one of them. Resolved by the quorum rule under XA-06, 2026-09-24.
 
 Feedback:
 
@@ -516,7 +502,7 @@ Feedback:
 
 **Why the daemon and not a library.** Seeding must survive the editor; the read path must not depend on a browser; a single machine-level instance owns the CAS, the ciphertext store, the jobs, and the IPC, and every control surface attaches to it rather than containing it.
 
-**Why the harness first and why it ships.** Every parameter that gates encryption depends on measurements nobody has; its delivery verifier is the contract the registry calls; and its throughput is the only calibration the project can obtain for everything after it.
+**Why the harness early and why it ships.** Every parameter that gates encryption depends on measurements nobody has; its delivery verifier is the contract the registry calls; and its throughput is the only calibration the project can obtain for everything after it.
 
 **Why Base.** Both precompile sets are live since Isthmus, L2 execution is cheap and the L1 data fee is measurable, bundlers and paymasters exist, and the sequencer is a write-path dependency only. Ethereum mainnet remains a later adapter, and no chain migration exists yet, which is recorded as debt.
 

@@ -23,15 +23,15 @@ The protocol's security posture is stated in cryptography.md's Security Properti
 | NF-S08 | Local APIs are authenticated and least-privileged; a project process gains no custody, credentials, keys, or authority by requesting a package | XA-02 | Stated |
 | NF-S09 | Downloaded artifacts and updates are authenticated before execution; tampering halts without replacing the working version | SI-04, IC-02, SI-17 | Stated |
 | NF-S10 | Envelope keys are never wallet keys; the two envelope secrets are independent; identity-element keys and trivial identity elements are rejected | IW-07, CR-04, LC-08 | Stated |
-| NF-S11 | Signing-key custody for artifact signing, its rotation, and who holds it | XA-08 | Adopted as XA-08, 2026-09-24: artifact signing keys are held under the same custody discipline as issuance material, with a documented rotation and revocation path, before the first signed release |
+| NF-S11 | Signing-key custody for artifact signing, its rotation, and who holds it | XA-08 | Stated: artifact signing keys are held under the same custody discipline as issuance material, with a documented rotation and revocation path, before the first signed release |
 | NF-S12 | Seeder agnosticism: possession of encrypted pieces or the sidecar confers no access | cryptography.md, Seeder Agnosticism | Stated |
 | NF-S13 | Blast radius: a leaked credential exposes one asset; a leaked piece-group key exposes one group of one deployment; no number of credentials recovers the master scalar | cryptography.md, Blast Radius Containment | Stated |
 | NF-S14 | Front-running resistance: claim proofs bound to the claimant's chain identity; verifier key revocable on chain | cryptography.md, Escrow Claim Front-Running; PC-03, PC-07 | Stated |
 | NF-S15 | Failure messages identify the failed capability and a safe recovery action without exposing secrets or suggesting insecure bypasses | XA-04 | Stated |
-| NF-S16 | Threat model for the daemon as a supply-chain surface on developer machines, stated as such | XA-09; risk register R-07 | Adopted as XA-09, 2026-09-24: a threat-model statement for the local package host, covering local privilege escalation, artifact substitution, and redirect abuse, added to the Application Requirements' cross-cutting section |
+| NF-S16 | Threat model for the daemon as a supply-chain surface on developer machines, stated as such | XA-09; risk register R-07 | Stated: a threat-model statement for the local package host covering same-user processes, local privilege escalation, artifact substitution, and redirect abuse |
 | NF-S17 | Accepted residuals stated, not overclaimed: modified-client retention, common piece-group keys, settlement reversal | cryptography.md, Modified Clients, Common Piece-Group Keys, Settlement Reversal | Stated |
 
-**Assessment.** The cryptographic and application security requirements are unusually complete and each carries a proof obligation. The two gaps are operational: signing-key custody for the release channel, and an explicit statement that the local package host is a supply-chain surface. External review of the composition and the verifier is a stated prerequisite for any priced deployment and is the one security requirement whose satisfaction depends on a party outside the project.
+**Assessment.** The cryptographic and application security requirements are unusually complete and each carries a proof obligation. Signing-key custody for the release channel and the package host's threat-model statement are XA-08 and XA-09. External review of the composition and the verifier is a stated prerequisite for any priced deployment and is the one security requirement whose satisfaction depends on a party outside the project.
 
 ## Performance
 
@@ -46,10 +46,10 @@ The protocol's security posture is stated in cryptography.md's Security Properti
 | NF-P07 | Incremental verification at Bao-chunk granularity without downloading the remainder | cryptography.md, Incremental Verification | Stated |
 | NF-P08 | Delivery-verification gas per mint and transfer measured on the resolved curve and used to select curve and verifier form | CD-07, RO-03 | Stated; value set by measurement |
 | NF-P09 | `PENDING_SETTLEMENT` handled by bounded wait and retry rather than failure, so an install that reads state it just wrote does not abort | EC-05; cryptography.md, Phase 2 | Stated; backoff bounds unspecified |
-| NF-P10 | Resource footprint of the daemon on a developer machine: CPU at idle, memory, and bandwidth consumed by seeding and by the background prefetch of ciphertext, which roughly doubles a first run's disk and bandwidth | RO-07, ST-06, PR-11, SI-20 | Adopted as RO-07, 2026-09-24: the daemon exposes and respects configurable upload bandwidth and idle CPU limits, the prefetch obeys them and the ciphertext quota, the first-run cost is disclosed at install, and the acceptance run records idle footprint on each supported platform |
-| NF-P11 | Cold-start time of the daemon after reboot before the package host is serving | RO-08 | Adopted as RO-08, 2026-09-24: measured and reported in the acceptance run; no threshold |
+| NF-P10 | Resource footprint of the daemon on a developer machine: CPU at idle, memory, and bandwidth consumed by seeding and by the background prefetch of ciphertext, which roughly doubles a first run's disk and bandwidth | RO-07, ST-06, PR-11, SI-20 | Stated: the daemon exposes and respects configurable upload bandwidth and idle CPU limits, the prefetch obeys them and the ciphertext quota, the first-run cost is disclosed at install, and the acceptance run records idle footprint on each supported platform |
+| NF-P11 | Cold-start time of the daemon after reboot before the package host is serving | RO-08 | Stated: measured and reported in the acceptance run; no threshold |
 
-**Assessment.** The performance model is correctly built around one declared budget and a set of measurements that feed it. What is missing is the developer's side of the ledger: the daemon's idle and seeding footprint, which the value proposition never mentions and which is the cost a developer will notice second after install latency.
+**Assessment.** The performance model is correctly built around one declared budget and a set of measurements that feed it. The developer's side of the ledger, the daemon's idle and seeding footprint, is RO-07; it is the cost a developer notices after install latency.
 
 ## Reliability
 
@@ -66,7 +66,7 @@ The protocol's security posture is stated in cryptography.md's Security Properti
 | NF-R09 | A lost envelope is recoverable from chain history through any honest full-history node | CD-04, IW-05 | Stated |
 | NF-R10 | Data availability of envelopes and proofs: carried in settlement calldata and events, not by a hash of bytes held elsewhere | cryptography.md, Credential Delivery; research notebook Q09 fourth increment | Stated |
 | NF-R11 | Availability of the swarm object itself: replication is a constructed factor through retention assignment | MVP Scope, Retention Obligation | Partial. The shape ships; nothing is enforced and no replication factor is set. In the MVP, availability of an ingested asset rests on the project seed host for the core closure and on voluntary seeding for the rest |
-| NF-R12 | Backoff bounds and retry limits for `PENDING_SETTLEMENT`, discovery, transport, and queued request submission | XA-10; EC-05, SW-06, PR-10 | Adopted as XA-10, 2026-09-24: bounded exponential backoff with declared ceilings per adapter, recorded in the configuration registry |
+| NF-R12 | Backoff bounds and retry limits for `PENDING_SETTLEMENT`, discovery, transport, and queued request submission | XA-10; EC-05, SW-06, PR-10 | Stated: bounded exponential backoff with declared ceilings per adapter, recorded in the configuration registry |
 
 **Assessment.** Reliability of the local system is thoroughly specified through durable jobs and checkpointed lifecycle operations. Reliability of the network is where the MVP is honest about its limits: the retention obligation is unenforced, so long-tail availability is voluntary, and the seed host covers only the core closure. This is a stated MVP boundary, not an oversight, and the review records it so it is not mistaken for a guarantee.
 
@@ -84,7 +84,7 @@ The protocol's security posture is stated in cryptography.md's Security Properti
 | NF-SC08 | Load profile of continuous-decryption content classes | MVP Scope, What the MVP Does and Does Not Exercise | Stated as out of scope; decapsulation time per group is recorded as the baseline |
 | NF-SC09 | Plaintext CAS and ciphertext store are sized and retained independently, with quota and eviction policy exposed | PR-05, SW-05 | Stated |
 
-**Assessment.** The cryptographic scaling properties are the construction's strengths and are stated exactly. The unbounded quantities are economic rather than technical: relayer cost with adoption and chain capacity on an unchosen network. Both resolve with the network selection and the harness measurements.
+**Assessment.** The cryptographic scaling properties are the construction's strengths and are stated exactly. The unbounded quantities are economic rather than technical: relayer cost with adoption and chain capacity on Base. Both resolve with the harness measurements and the dogfood run.
 
 ## Maintainability
 
@@ -99,27 +99,27 @@ The protocol's security posture is stated in cryptography.md's Security Properti
 | NF-M07 | Repository authoring discipline: test-first, bottom-up, one file per turn, strict typing, guards at every boundary, `Success | Error` returns | docs/agents topics; workplan node template | Stated |
 | NF-M08 | Specification discipline: every rule classified as invariant, defined behavior, required-but-unresolved, or implementation choice; undetermined decisions held in one To-Do list; no fact in two places | cryptography.md, Statement Classes; workplan To-Do | Stated |
 | NF-M09 | Observability for maintenance: structured logs and traces correlating one request across every subsystem; health states consistent across surfaces | RO-04, RO-05, IC-08 | Stated |
-| NF-M10 | Contract upgradeability: constructor-injected adapters from a governance-controlled registry, immutable once bound, with optional EIP-1967 proxies | cryptography.md, Population Strategy | Partial. The mechanism is stated; the governance of the adapter registry is not (risk register R-14) |
-| NF-M11 | Adapter and suite versioning across releases: how a client with an older suite implementation treats a newer deployment | IC-09 | Adopted as IC-09, 2026-09-24: a compatibility statement per release listing the suite identifiers and adapter versions it can resolve |
+| NF-M10 | Contract upgradeability: constructor-injected adapters from a governance-controlled registry, immutable once bound, with optional EIP-1967 proxies | cryptography.md, Population Strategy | Stated: a single project-held key governs the registry in the MVP, recorded as scaffolding with its replacement path held in the workplan (risk register R-14) |
+| NF-M11 | Adapter and suite versioning across releases: how a client with an older suite implementation treats a newer deployment | IC-09 | Stated: a compatibility statement per release listing the suite identifiers and adapter versions it can resolve |
 
-**Assessment.** Maintainability is where the project has invested most deliberately: adapters, rings, one implementation, a proof class per requirement, and an authoring discipline enforced by the repository's own rules. The two partial items are governance of the on-chain adapter registry and a client-side compatibility statement across releases.
+**Assessment.** Maintainability is where the project has invested most deliberately: adapters, rings, one implementation, a proof class per requirement, and an authoring discipline enforced by the repository's own rules. The adapter registry's governance is scaffolding under a single project-held key, and IC-09 carries the compatibility statement.
 
 ## Compliance
 
 | ID | Requirement | Source | Disposition |
 | --- | --- | --- | --- |
-| NF-C01 | Ingest eligibility: adapters target archives whose content is publicly distributed at no charge by the rights holder's choice, implemented for the MVP as public npm availability; the residual is unauthorized public redistribution and irrevocability, not denied revenue | cryptography.md, Ingest Source Eligibility; MVP Scope, Canonical Identity; risk register R-01 | Partial. The principle is stated as "free to use"; the precise restatement and the residual are proposed by the critique and register and not yet in the specifications |
+| NF-C01 | Ingest eligibility: adapters target archives whose content is publicly distributed at no charge by the rights holder's choice, implemented for the MVP as public npm availability; the residual is unauthorized public redistribution and irrevocability, not denied revenue | cryptography.md, Ingest Source Eligibility; MVP Scope, Canonical Identity; risk register R-01 | Stated |
 | NF-C02 | Software license: source-available with a conformance clause making a non-conforming client a violation; per-asset content terms; the project's packages obligating an entitlement for use and a license per copy sold or bundled | MVP Scope, Distribution and Client License; LI-01 | Partial. Required and unstarted; legal drafting is on the release path |
 | NF-C03 | Maintainer privacy in escrow records: no maintainer-derived field published on chain at all; the claim set is established from upstream metadata at verification | MVP Scope, Entitlement Ledger and Escrow Claim; PC-02, PC-04 | Stated |
 | NF-C04 | Consumption privacy: entitlement records are public by design for public content; a first run in the default mode publishes the identity's dependency closure as grant requests at once, consented at install, and cache-only mode leaves no chain footprint; the individual and private-content cases are recorded as open with candidate constructions; no private-registry adapter ships before a consumption-privacy answer | cryptography.md, Dependency Graph Privacy; SI-20, PR-10 | Stated as open; onboarding disclosure and cache-only mode in the requirements |
 | NF-C05 | Telemetry records no secrets and no identifying data beyond what the ledger publishes | RO-03; success metrics, Data Sources | Stated |
 | NF-C06 | Consent: user interaction limited to unavoidable OS permissions, explicit package-manager redirect consent, the request and prefetch consent items with the first-run cost disclosure, custody user presence, recovery confirmation, and funding for the paid proof; a consent trace fails for anything else | SI-19, SI-20 | Stated |
 | NF-C07 | Content governance: no takedown; advisories are signed, append-only, and evaluated against a local trust set; jurisdictional obligations for gateway and indexer operators are raised, not answered | cryptography.md, Content Governance | Stated as framed; not implemented in the MVP |
-| NF-C08 | Regulatory treatment of priced transferable entitlements and of the paymaster | LI-02 | Adopted as LI-02, 2026-09-24: legal review scoped to these, in parallel with the harness, before the transaction flow proof |
-| NF-C09 | Export or cryptographic-distribution constraints on shipping a client containing AES and pairing cryptography to every supported platform and jurisdiction | LI-02 | Adopted as LI-02, 2026-09-24: confirm during legal review; standard open cryptographic libraries typically qualify for exemption but the project ships a packaged binary |
-| NF-C10 | Accessibility of the desktop application and extension | IC-10 | Adopted as IC-10, 2026-09-24: adopt platform accessibility baselines for the Tauri surfaces and the extension's webviews; no MVP acceptance scenario tests them |
+| NF-C08 | Regulatory treatment of priced transferable entitlements and of the paymaster | LI-02 | Stated: legal review scoped to these, in parallel with the harness, before the transaction flow proof |
+| NF-C09 | Export or cryptographic-distribution constraints on shipping a client containing AES and pairing cryptography to every supported platform and jurisdiction | LI-02 | Stated: confirmed during legal review; standard open cryptographic libraries typically qualify for exemption but the project ships a packaged binary |
+| NF-C10 | Accessibility of the desktop application and extension | IC-10 | Stated: platform accessibility baselines for the Tauri surfaces and the extension's webviews, recorded in release evidence |
 
-**Assessment.** Compliance is the least specified area, which is consistent with the sources' focus, and it is where the review proposes the most. The eligibility restatement, the license, the regulatory review, and the export question are all on the release path and none has started.
+**Assessment.** Compliance is the least specified area. The license, the regulatory review, and the export question are on the release path and none has started.
 
 ## Outcome Alignment
 
@@ -143,7 +143,7 @@ The [success metrics](success-metrics.md) hold the full KPI set. The non-functio
 
 - State-read volume and latency per install, the empirical input to `τ_soft` (NF-P01, NF-P04).
 - Decapsulation time per group multiplied by groups per package on the dogfood corpus (NF-P05).
-- Daemon idle CPU, memory, and upload bandwidth on each platform, once NF-P10 is adopted.
+- Daemon idle CPU, memory, and upload bandwidth on each platform (NF-P10).
 - Bootstrap job completion rate and time after induced termination (NF-R01).
 - Requirement-to-proof reconciliation progress against node completion (NF-M04).
 - Adapter capability declarations present for every implementation before its consumer is authored (NF-M01).
@@ -153,19 +153,18 @@ The [success metrics](success-metrics.md) hold the full KPI set. The non-functio
 - Every acceptance scenario passing on clean machines.
 - External cryptographic review completed with findings dispositioned (NF-S01, NF-S02).
 - License text adopted and content-terms field populated for the project's packages (NF-C02).
-- Eligibility principle restated in MVP Scope with its residual recorded (NF-C01).
 - Legal review of priced entitlements, the paymaster, and export complete (NF-C08, NF-C09).
 - Piece-group size, curve, `τ_soft`, and `τ_wallet` recorded in release evidence (NF-P05, NF-P08).
 
 ## Measurement Plan
 
-The [success metrics](success-metrics.md) document's five-stage plan applies unchanged: harness, budget declaration, acceptance run, dogfood baseline, adopting population. Non-functional additions to that plan:
+The [success metrics](success-metrics.md) measurement plan applies unchanged: budget declaration, validation harness, acceptance run, dogfood baseline, adopting population. Non-functional additions to that plan:
 
-1. **Security proofs run as scenarios, not as audits.** Every NF-S row with a requirement identifier is proven by its named integration or end-to-end test; the acceptance run includes the fuzzing, mutation, replay, and telemetry-scan cases.
-2. **Platform matrix.** Reliability and installation requirements are measured on every supported OS and architecture, not on one reference machine.
-3. **Footprint capture.** If NF-P10 and NF-P11 are adopted, idle footprint and cold-start time are captured in the same acceptance run on each platform.
-4. **Compliance checklist.** NF-C01, NF-C02, NF-C08, and NF-C09 are checked as release evidence items with a document reference each, since they have no runtime measurement.
-5. **Review closure.** External cryptographic review findings are tracked to disposition and recorded in release evidence before the transaction flow proof.
+- **Security proofs run as scenarios, not as audits.** Every NF-S row with a requirement identifier is proven by its named integration or end-to-end test; the acceptance run includes the fuzzing, mutation, replay, and telemetry-scan cases.
+- **Platform matrix.** Reliability and installation requirements are measured on Windows, macOS, and Linux, not on one reference machine.
+- **Footprint capture.** Idle footprint and cold-start time are captured in the same acceptance run on each platform.
+- **Compliance checklist.** NF-C02, NF-C08, and NF-C09 are checked as release evidence items with a document reference each, since they have no runtime measurement.
+- **Review closure.** External cryptographic review findings are tracked to disposition and recorded in release evidence before the transaction flow proof.
 
 ## Risk Signals
 
@@ -180,7 +179,7 @@ The [risk register](risk-register.md) and success metrics carry the full set. Th
 - Grant fulfilment slowing with the First Finder offline (NF-R06).
 - Relayer subsidy consumption rising faster than identity creation (NF-SC06).
 - A node's `deps` element naming an adapter with no capability declaration (NF-M01).
-- Daemon upload bandwidth or idle CPU drawing user complaints before NF-P10 limits exist.
+- Daemon upload bandwidth or idle CPU exceeding the configured limits (NF-P10).
 
 ## Guardrails
 
@@ -198,13 +197,11 @@ Non-functional guardrails that block release. They are the same as the success m
 
 ## Next Steps
 
-1. Done, 2026-09-24: the nine proposed requirements (NF-S11, NF-S16, NF-P10, NF-P11, NF-R12, NF-M11, NF-C08, NF-C09, NF-C10) are adopted into the Application Requirements as XA-08, XA-09, RO-07, RO-08, XA-10, IC-09, LI-02, LI-02, and IC-10, each with a proof.
-2. Restate the ingest eligibility principle and its residual in MVP Scope (NF-C01).
-3. Add the local package host threat-model statement to the cross-cutting requirements (NF-S16).
-4. Record artifact signing-key custody in the release process before the first signed artifact (NF-S11).
-5. Start legal drafting and review in parallel with the harness (NF-C02, NF-C08, NF-C09).
-6. Record adapter registry governance as a workplan item (NF-M10).
-7. Carry NF-P10 and NF-P11 into the acceptance run's measurement set if adopted.
+- Write the local package host's threat-model statement for release evidence (NF-S16).
+- Record artifact signing-key custody in the release process before the first signed artifact (NF-S11).
+- Start legal drafting and review in parallel with the harness (NF-C02, NF-C08, NF-C09).
+- Hold the adapter registry governance key's replacement path as a workplan item (NF-M10).
+- Carry NF-P10 and NF-P11 into the acceptance run's measurement set.
 
 # Additional Content
 

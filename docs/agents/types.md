@@ -6,7 +6,7 @@ Cited by: construction view (workplan node `interface` element) and implementati
 
 ## Strict typing
 
-- Explicit types everywhere for any object the repo owns. No `any`, `as`, `as const`, inline ad-hoc types, or casts.
+- Explicit types everywhere for any object the repo owns. No `any`, `as`, `as const`, inline ad-hoc types, or casts. In Rust: no numeric `as` on a repo-owned value (`TryFrom` instead), no `unwrap`, `expect`, or `panic!` in production code, no `Box<dyn Any>`, no `unsafe`.
 - Every object and variable is typed. If you find an untyped var or object while working, stop, report the discovery, propose the node to type it, and halt (see [discovery-halt](discovery-halt.md)).
 - Construct full objects that satisfy their interface. Compose complex objects from smaller typed components. Never rely on defaults, fallbacks, or backfilling to "heal" missing data.
 
@@ -25,7 +25,7 @@ Intentionally malformed test data is **not** an exception. Corruption is produce
 
 `unknown` may **not** substitute for locating and applying a specific application or database type. Typing something `unknown` to avoid finding its real type is a laziness dodge and is prohibited.
 
-`unknown` **is** required at a genuine runtime boundary — where untrusted data enters (queue, JSON, external API, DB row, user input) and is immediately narrowed by a guard. This is the strictest possible handling, not the weakest: `unknown` forbids all access until proven. See [guards](guards.md#guard-on-entry-validating-functions-take-unknown).
+`unknown` **is** required at a genuine runtime boundary — where untrusted data enters (queue, JSON, external API, DB row, user input) and is immediately narrowed by a guard. This is the strictest possible handling, not the weakest: `unknown` forbids all access until proven. See [guards](guards.md#guard-on-entry-validating-functions-take-unknown). In Rust the boundary type is the untrusted input the guard consumes, `serde_json::Value` for structured data and `&[u8]` for wire bytes, and it forbids the same access until the guard has produced the owned type.
 
 ## No inline or renegotiated types
 
@@ -69,6 +69,22 @@ export type itemAOrB = itemA | itemB;
 import type { itemAOrB } from "./x.interface.ts";
 ```
 
+The Rust form. A union is a named `enum` declared in the owning `interface.rs`. Rust has no inline union syntax, and the substitutes are the same violation: `Result<A, B>` used as a sum type, `Either<A, B>`, a tuple, or `Box<dyn Any>` at a use site. Branch by `match` on the named enum and hold one concrete type per arm:
+
+```rust
+// declared once, in the owning interface.rs — never at the use site
+pub enum ItemAOrB {
+    A(ItemA),
+    B(ItemB),
+}
+
+// at the use site — one concrete type per arm; no arm falls through untyped
+match raw {
+    ItemAOrB::A(item) => handle_item_a(item),
+    ItemAOrB::B(item) => handle_item_b(item),
+}
+```
+
 If you need a union that does not yet exist as a named type, that is a **type change**: stop, propose the node to declare it in its owning interface, and halt (see [discovery-halt](discovery-halt.md)). You do not mint it inline.
 
 ### Nullable and absent states belong in the definition
@@ -94,6 +110,21 @@ if (state.selection === null) {
 return handleItemA(state.selection); // selection is itemA here — one type
 ```
 
+The Rust form: the definition carries `Option<ItemA>`, and the use site matches it.
+
+```rust
+// interface.rs
+pub struct FormState {
+    pub selection: Option<ItemA>,   // awaiting input is a real, declared state
+}
+
+// mod.rs — branch the None case explicitly, then hold the one concrete type
+match state.selection {
+    None => prompt_for_selection(),
+    Some(item) => handle_item_a(item),   // item is ItemA here — one type
+}
+```
+
 If you discover a value must be nullable but its definition does not say so, that is a **type change**: propose the node to correct the definition in its owning interface, and halt (see [discovery-halt](discovery-halt.md)). You never add `| null` at the use site to cover for a definition that should have carried it.
 
 ## No production defaults
@@ -106,6 +137,7 @@ A ternary is not a type guard — a ternary supplies a default value. Default va
 - Never import an entire library with `*`.
 - Never alias imports.
 - Reexporting is permitted only in barrel files (see [boundaries](boundaries.md)).
+- In Rust: `use` names from the module's `provides`; no `use path::*` outside a `provides` barrel; no `as` renames.
 
 ## Precedence
 
