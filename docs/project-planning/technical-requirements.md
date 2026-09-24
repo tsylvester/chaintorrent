@@ -23,9 +23,9 @@ Sources: [cryptography.md](../research/cryptography.md), [MVP Scope](../research
 
 # Executive Summary
 
-The MVP is a Rust protocol client and its supporting services. A single machine-level daemon serves npm's registry protocol to package managers from a plaintext cache, a peer swarm, and the upstream registry in that order; authorizes every decryption attempt from a fresh view of Base state; decrypts locally with a native credential delivered inside settlement; and seeds ciphertext it cannot read. A Solidity contract suite on Base holds canonical identities, deployments, parameter sets, envelope keys, entitlements with interval state, escrow, claims, and a delivery verifier over the BLS12-381 and BN254 precompiles. A relayer sponsors the free path, a claim verifier attests maintainers, and a project seed host and site carry the core closure and the education tier. Two onboarding shells, a desktop application, and a CLI attach to the daemon over authenticated IPC. A validation harness of thirty-two source files is built first and its delivery verifier is the shipped contract.
+The MVP is a Rust protocol client and its supporting services. A single machine-level daemon serves npm's registry protocol to package managers from whichever of a plaintext cache, a peer swarm, and the upstream registry delivers within budget, never slower than the registry, while requesting entitlements and prefetching ciphertext in the background so a first run leaves the machine independent; authorizes every decryption attempt from a fresh view of Base state; decrypts locally with a native credential delivered inside settlement; and seeds ciphertext it cannot read. A Solidity contract suite on Base holds canonical identities, deployments, parameter sets, envelope keys, entitlements with interval state, escrow, claims, and a delivery verifier over the BLS12-381 and BN254 precompiles. A relayer sponsors the free path, a claim verifier attests maintainers, and a project seed host and site carry the core closure and the education tier. Two onboarding shells, a desktop application, and a CLI attach to the daemon over authenticated IPC. A validation harness is built first and its delivery verifier is the shipped contract.
 
-What must function, in one sentence per family: install on Windows, macOS, and Linux through either shell to one identical postcondition after only permitted consent; serve packages by the fixed resolution order with a verified atomic CAS; authenticate every descriptor before any credential is exercised and authorize every attempt from a multi-node state view; bootstrap absent packages in the background without blocking the initiating install and win or lose the registration race cleanly; move ciphertext by root across transports with non-authoritative discovery and a persistent seed host; deliver credentials at mint, grant, and sale with on-chain proof verification and atomic payment; hold identity under a custody adapter that derives keys from a holder seed and declares device roles; implement the cryptography exactly and measure its cost before fixing parameters; publish explicitly with dependency-closure ingestion and let maintainers claim escrowed records without the First Finder; sponsor free onboarding under rate limits; and observe every install without recording a secret. Completion is twenty-seven acceptance scenarios through packaged applications on clean machines.
+What must function, in one sentence per family: install on Windows, macOS, and Linux through either shell to one identical postcondition after only permitted consent; serve packages from the first source that delivers within the budget, never slower than the registry, with a verified atomic CAS, and leave a first run independent of the registry asset by asset through batched grant requests and background prefetch; authenticate every descriptor before any credential is exercised and authorize every attempt from a multi-node state view; bootstrap absent packages in the background without blocking the initiating install and win or lose the registration race cleanly; move ciphertext by root across transports with non-authoritative discovery and a persistent seed host; deliver credentials at mint, grant, and sale with on-chain proof verification and atomic payment; hold identity under a custody adapter that derives keys from a holder seed and declares device roles; implement the cryptography exactly and measure its cost before fixing parameters; publish explicitly with dependency-closure ingestion and let maintainers claim escrowed records without the First Finder; sponsor free onboarding, batched requests, and fulfilling grants under a global budget; and observe every install without recording a secret. Completion is every acceptance scenario through packaged applications on clean machines.
 
 # Subsystems
 
@@ -35,8 +35,12 @@ The [system architecture](system-architecture.md) breaks the daemon into twenty-
 | --- | --- | --- | --- | --- |
 | Domain types and guards | all | Protocol and domain | `domain` | Composition Boundary |
 | Package host endpoint | daemon | Adapter | `adapters/package-host-npm` | PR-01, PR-02 |
+| Package metadata store | daemon | Adapter | `adapters/package-host-npm` | PR-09 |
 | IPC server | daemon | Adapter | `adapters/ipc` | XA-02, RO-05 |
-| Resolution orchestrator | daemon | Workflow | `workflows` | PR-03, PR-06, PR-07 |
+| Resolution orchestrator | daemon | Workflow | `workflows` | PR-03, PR-06, PR-07, PR-08 |
+| Grant request job | daemon | Workflow | `workflows/request` | PR-10, LC-12 |
+| Prefetch job | daemon | Workflow | `workflows/prefetch` | PR-11 |
+| Independence status | daemon, every control surface | Workflow | `workflows/health` | PR-12 |
 | Plaintext CAS | daemon | Adapter | `adapters/cas` | PR-04, PR-05 |
 | Deployment gate | daemon | Workflow | `workflows` | EC-01, CR-06 |
 | Swarm engine: transports, discovery, seed host controller | daemon, seed host | Adapter | `adapters/transport`, `adapters/discovery`, `adapters/seed-host` | SW-01 to SW-07 |
@@ -50,7 +54,7 @@ The [system architecture](system-architecture.md) breaks the daemon into twenty-
 | Interval-end watcher | daemon | Workflow | `workflows` | EC-08 |
 | First Finder engine | daemon | Workflow | `workflows` | FF-01 to FF-08 |
 | Publisher engine and issuance policy | daemon | Workflow | `workflows` | PC-01, FF-09 |
-| Grant service | daemon | Workflow | `workflows` | CD-05, CD-08 |
+| Grant service | daemon | Workflow | `workflows` | CD-05, CD-08, LC-12 |
 | Job engine | daemon, installer | Adapter | `adapters/jobs` | XA-03, FF-03 |
 | Composition resolver | daemon, installer | Workflow | `workflows` | IC-05, SI-10 |
 | Configuration registry | daemon, installer | Adapter | `adapters/config` | IC-04 |
@@ -88,7 +92,7 @@ Every value a user may reasonably want to change is a setting: declared once in 
 
 - **Nothing protocol-fixed is a setting.** A value the deployment's hash-card fixes, the piece-group size, the IV, `τ_soft`, `τ_wallet`, `minSettlementTier`, the suite, is read from the record and never from configuration. A client may apply a *stricter* local policy where the specification says a limit is conforming-client policy, never a looser one.
 - **Scope is declared.** Machine, identity, or project. Machine settings need local presence and a control principal; identity settings follow the identity across devices where the custody adapter's sync carries them; project settings live with the package-manager redirect scope.
-- **Paths are repointable.** Every store root is a setting with a platform default; changing one is a durable job that migrates or relinks contents, is checkpointed and reversible, and refuses to point two stores at one location. Nothing in this document is a fixed path; every path shown is the default.
+- **Paths are repointable.** Every store root is a setting with a platform default; changing one is a durable job that migrates contents, is checkpointed and reversible, and refuses to point two stores at one location. Nothing in this document is a fixed path; every path shown is the default.
 - **Validation before effect.** A change is validated against the catalogue's constraints and, where it touches an adapter, against the composition resolver; an invalid value is refused with the reason and no side effect.
 - **Restart requirements are declared.** A setting states whether it applies live, on the next job, or after daemon restart, and the surface says so.
 - **Secrets are never settings.** A setting may reference custody; it never holds a key, a seed, or a credential.
@@ -105,8 +109,12 @@ Every value a user may reasonably want to change is a setting: declared once in 
 | Paths | Job store, logs and metrics, temporary directory | Platform defaults under the data directory | Machine | Restart | Exposed |
 | Storage | Plaintext CAS quota | Unbounded | Machine | Live | Exposed |
 | Storage | Ciphertext store capacity | Unbounded | Machine | Live | Exposed |
-| Storage | Pin linked artifacts; warn before evicting anything not re-authorizable | On; on | Machine | Live | Exposed |
+| Storage | Pin artifacts a live project resolved; warn before evicting anything not re-authorizable | On; on | Machine | Live | Exposed |
 | Storage | Voluntary holdings policy: keep own closure, keep everything fetched, keep nothing beyond obligation | Keep own closure | Identity | Live | Exposed |
+| Storage | Prefetch ciphertext while grant requests are pending | On | Identity | Live | Exposed at install and settings, as a consent item |
+| Chain | Automatic grant requests for every unheld ledger-known asset | On | Identity | Live | Exposed at install and settings, as a consent item |
+| Chain | Cache-only mode: no chain identity, no request, no prefetch | Off | Machine | Restart | Exposed at install and settings |
+| Package host | Bounded wait for a grant when upstream is unavailable | Within the declared latency budget | Machine | Live | Exposed under advanced |
 | Seeding | Upload bandwidth limit; download bandwidth limit | Unlimited; unlimited | Machine | Live | Exposed |
 | Seeding | Idle CPU limit; schedule windows; pause on battery; pause on metered connection | None; none; on; on | Machine | Live | Exposed |
 | Seeding | Listening port and interface; port mapping | Random; all; on | Machine | Restart | Exposed |
@@ -116,7 +124,7 @@ Every value a user may reasonably want to change is a setting: declared once in 
 | Network | Discovery sources enabled: DHT, tracker, PEX, local, on-chain seeder map; tracker URLs | All; project tracker | Machine | Restart | Exposed |
 | Network | Peer connection limits; encryption requirement for compatibility peers | Adapter defaults | Machine | Live | Mechanism only |
 | Chain | Network profile: Base mainnet, Base Sepolia, local Anvil | Base mainnet | Machine | Restart | Exposed under advanced |
-| Chain | RPC endpoints, at least two; archive endpoint for envelope recovery; prefer own node | Two providers; provider; off | Machine | Live | Exposed |
+| Chain | RPC endpoints, at least three, two of which must agree at a common reference; archive endpoint for envelope recovery; prefer own node | Three providers; provider; off | Machine | Live | Exposed |
 | Chain | Contract addresses per network profile | From the release's deployment record | Machine | Restart | Mechanism only |
 | Chain | Relayer endpoint | Project relayer | Machine | Live | Exposed under advanced |
 | Chain | Stricter local settlement policy: read no earlier than a tier above the deployment's declared tier | Off | Identity | Live | Mechanism only |
@@ -141,13 +149,13 @@ Settings the specification forbids the client from offering: anything that skips
 
 Five API surfaces exist. The specification fixes the adapter interface signatures, reproduced in the system architecture's Interfaces section; this section covers the surfaces that cross a process or network boundary.
 
-**Package host, npm registry protocol, served by the daemon on a loopback port.** `GET /{package}` returns the packument with versions and `dist.tarball` URLs pointing at the local host; `GET /{package}/-/{name}-{version}.tgz` returns the exact upstream bytes from the CAS after resolution; `GET /-/ping` for readiness. No write endpoints; publishing goes through the CLI, not the registry protocol. Responses carry the upstream integrity value so npm's own verification passes unchanged.
+**Package host, npm registry protocol, served by the daemon on a loopback port.** `GET /{package}` returns the packument assembled from the local metadata store, which captures immutable per-version metadata with its attestation and the dist-tag snapshot with its capture time at every upstream resolution and ingest; when upstream is unavailable the packument is served from the store with a staleness marker, its version list completed from the ledger's per-name index of ingested versions, and dist-tags marked best effort. `dist.tarball` URLs are the canonical registry host's, so a committed lockfile carries no machine-specific port and stays portable; npm's registry-host replacement maps them to the local host, where `GET /{package}/-/{name}-{version}.tgz` returns the exact upstream bytes from the CAS after resolution. `GET /-/ping` for readiness. No write endpoints; publishing goes through the CLI, not the registry protocol. Responses carry the upstream integrity value so npm's own verification passes unchanged, and the daemon has already verified the bytes against the attested digest before serving them. The outage guarantee is a pinned closure from ledger and swarm alone; range resolution during an outage is best effort and says so (PR-09).
 
-**Daemon IPC, authenticated, local-only.** Request classes and the capability each requires: `package.resolve`, `package.status`, any principal; `status.health`, `status.jobs`, `status.archive`, `status.footprint`, `status.diagnostics`, control principals; `job.cancel`, `job.repair`, control principals; `settings.schema` returning the catalogue with defaults, scopes, constraints, and restart requirements, any control principal; `settings.get`, control principals; `settings.set`, `settings.reset`, `settings.import` with validation and the migration job for path changes, control principals with local presence; `settings.export` without secrets, control principals; `identity.create`, `identity.import`, `identity.registerEnvelopeKeys`, `identity.connectWallet`, `identity.export` under local presence; `entitlement.acquire`, `entitlement.transfer` under local presence; `publish.package`, `claim.submit` under local presence; `admin.uninstall` under local presence. Every request carries a principal, a correlation identifier, and an idempotency key where it mutates. Framing is length-prefixed canonical binary messages, the same encoding used for anything hashed or signed, over a Unix domain socket on macOS and Linux and a named pipe on Windows, at a path under the configuration directory that is a machine-scoped setting. Authentication is by peer credentials where the platform supplies them, the connecting process's user identity read from the socket or pipe, mapped to a principal by the capability table; where peer credentials are unavailable, a per-installation token file readable only by the installing user is presented on connect. Control principals are the installing user's own processes; a project process spawned by a package manager is a package principal and nothing more. The consent trace records the surface and principal for every mutating call.
+**Daemon IPC, authenticated, local-only.** Request classes and the capability each requires: `package.resolve`, `package.status`, any principal; `status.health`, `status.jobs`, `status.archive`, `status.footprint`, `status.independence` returning per-asset independent or pending with its reason and per-project independence, `status.diagnostics`, control principals; `job.cancel`, `job.repair`, control principals; `settings.schema` returning the catalogue with defaults, scopes, constraints, and restart requirements, any control principal; `settings.get`, control principals; `settings.set`, `settings.reset`, `settings.import` with validation and the migration job for path changes, control principals with local presence; `settings.export` without secrets, control principals; `identity.create`, `identity.import`, `identity.registerEnvelopeKeys`, `identity.connectWallet`, `identity.export` under local presence; `entitlement.acquire`, `entitlement.transfer` under local presence; `publish.package`, `claim.submit` under local presence; `admin.uninstall` under local presence. Every request carries a principal, a correlation identifier, and an idempotency key where it mutates. Framing is length-prefixed canonical binary messages, the same encoding used for anything hashed or signed, over a Unix domain socket on macOS and Linux and a named pipe on Windows, at a path under the configuration directory that is a machine-scoped setting. Authentication is by peer credentials where the platform supplies them, the connecting process's user identity read from the socket or pipe; where peer credentials are unavailable, a per-installation token file readable only by the installing user is presented on connect. Either mechanism distinguishes the installing user from other local users and nothing finer: every process of the installing user, the CLI, the desktop application, an editor, and an npm lifecycle script alike, is one principal to the operating system, and the daemon does not pretend otherwise. The threat model is therefore same-user. The package host is the package surface and confers resolution and serving only, on any caller. IPC requests from the installing user may read status and the catalogue; every request this table lists under local presence, transfer, key export, identity and binding changes, machine-scoped settings, publish, claim, and uninstall, completes only after an interactive confirmation through a surface the daemon owns, the desktop application's dialog or the platform's native prompt, which the CLI invokes rather than replaces: the daemon issues a nonce for the pending request, shows the operation, and applies it only when the confirmation returns that nonce, so no IPC message, script, or automation completes it alone. A principal field in a request is descriptive and confers nothing. The consent trace records the surface, the principal, and the confirmation for every mutating call.
 
-**Contract suite, Solidity on Base.** Registry: `registerAsset`, `registerDeployment` with the sidecar-per-live-set check, `registerParameterSet`, `retireParameterSet`, `resolve` and `resolveBatch` views. Envelope keys: `registerEnvelopeKeys(pk1, pk2, pop1, pop2, walletSig)`, rejecting identity elements. Entitlements: `mint(entitlement, recipient, envelope, mintProof)`, `lock(entitlement, seller, price, expiry)`, `deliver(entitlement, previousEnvelope, newEnvelope, transferProof)` which advances the interval, records keys and digest, emits the envelope, transfers, and releases payment, `withdrawLapsed(lock)`, `grant(entitlement, recipient, authorEnvelope, envelope, transferProof)` under the escrow suite. Authorization: `evaluateAuthorization(context)` and `evaluateAuthorizationBatch(contexts, page)` views returning the three-state result. Escrow and claims: `registerEscrow`, `submitClaim(claimSet, voucher)`, `transferAuthority`, `rotateVerifierKey`, `revokeVerifierKey`. Identity: `bindHandshakeKey(pubkey, scheme, anchorHash, walletSig)`. Every mutating function is bound to chain, contract, and expiry where a proof or voucher is involved. Exact ABI is authored at the contract nodes.
+**Contract suite, Solidity on Base.** Registry: `registerAsset`, recording the name hash and appending the version to a per-name index read by the `versionsByName` view; `registerDeployment` with the sidecar-per-live-set check, verifying the release attestation's signature on chain through the P-256 precompile at `0x100` against the `sourceKeys` table and admitting further escrow deployments of an existing asset from later First Finders; `addSidecar(deploymentId, parameterSetId, root, locator)` by the asset's authority for a set made live after the deployment's registration; `registerParameterSet`, `retireParameterSet`, `rotateSourceKey` and `revokeSourceKey` under the governance key, `resolve` and `resolveBatch` views. Envelope keys: `registerEnvelopeKeys(pk1, pk2, pop1, pop2, walletSig)`, rejecting identity elements. Entitlements: `mint(entitlement, recipient, envelope, mintProof)`, `lock(entitlement, seller, price, expiry)`, `deliver(entitlement, previousEnvelope, newEnvelope, transferProof)` which advances the interval, records keys and digest, emits the envelope, transfers, and releases payment, `withdrawLapsed(lock)`, `grant(entitlement, recipient, authorEnvelope, envelope, transferProof)` under the escrow suite, closing the recipient's open request for the asset. Requests: `requestGrants(assets[])` recording one open request per asset for the caller, batched; `withdrawRequests(assets[])`; `openRequests(asset, page)` view for holders; an open request authorizes nothing. The token overrides its ownership update so that ownership changes only inside `mint`, `grant`, and `deliver`; `transferFrom`, `safeTransferFrom`, `approve`, and `setApprovalForAll` revert; receiver callbacks run after state is final under a reentrancy guard (LC-11). Authorization: `evaluateAuthorization(context)` and `evaluateAuthorizationBatch(contexts, page)` views returning the three-state result. Escrow and claims: `registerEscrow`, `submitClaim(claimSet, voucher)`, `transferAuthority`, `rotateVerifierKey`, `revokeVerifierKey`. Identity: `bindHandshakeKey(pubkey, scheme, anchorHash, walletSig)`. Every mutating function is bound to chain, contract, and expiry where a proof or voucher is involved. Exact ABI is authored at the contract nodes.
 
-**Relayer service.** `POST /sponsor/binding` and `POST /sponsor/mint` accepting a signed user operation for the one binding and for a free mint, applying per-identity rate limits, returning the sponsored transaction hash or an explicit failure state; `GET /cost` reporting gas spent by category. No endpoint sponsors a paid acquisition.
+**Relayer service.** `POST /sponsor/binding`, `POST /sponsor/requests` for one batched request per install, and `POST /sponsor/mint` accepting a signed user operation for the one binding, for a batch of requests, and for a free mint or fulfilling grant, applying admission policy in this order, the global per-window expenditure budget and the maximum sponsored liability, then per-identity rate limits, and returning the sponsored transaction hash or an explicit failure state that names exhaustion or denial; `GET /cost` reporting gas spent by category; `GET /budget` reporting the window's remaining budget and outstanding liability. No endpoint sponsors a paid acquisition, and no flood of fresh identities can spend beyond the configured budget (LC-10).
 
 **Claim verifier service.** `POST /claim/verify` accepting a claimant address, a package or claim set, and the proof inputs, running provenance-then-OAuth verification, and returning a voucher over the committed claim set, claimant, contract, chain, nonce, and expiry, signed under the on-chain registered key. `GET /key` returning the current attestation key.
 
@@ -157,14 +165,17 @@ Five API surfaces exist. The specification fixes the adapter interface signature
 
 **On-chain state.** Fields per record; types are Solidity's.
 
-- `Asset`: `identityHash bytes32`, `attestation bytes` or explicit absence flag, `authority address`, `proofClass uint8`, `entitlementAdapter address`, `issuanceAuthority address`, `liveParameterSets bytes32[]`, `deployments bytes32[]`.
+- `Asset`: `identityHash bytes32`, `nameHash bytes32`, `attestation bytes` carrying the source's release signature and the digest it covers, or an explicit absence flag, `authority address`, `proofClass uint8`, `entitlementAdapter address`, `issuanceAuthority address`, `liveParameterSets bytes32[]`, `deployments bytes32[]`.
 - `Deployment`: `deploymentId bytes32`, `suiteId bytes32`, `cipherId uint8`, `counterLayout uint8`, `iv bytes8`, `pieceSize uint32`, `pieceGroupSize uint32`, `totalExtent uint64`, `sidecars (parameterSetId bytes32, root bytes32, locator bytes)[]`, `kdfId uint8`, `hashToScalarId uint8`, `encodingId uint8`, `statementVersion uint16`, `tauSoft uint32`, `tauWallet uint32`, `minSettlementTier uint8`, `ciphertextRoot bytes32`, `plaintextRootMode uint8`, `plaintextRoot bytes32`, `locators bytes[]`, `advisoryRoot bytes32`.
 - `ParameterSet`: `id bytes32`, `asset bytes32`, `g1, u0, u1` first-group points, `g2, hpub` second-group points, `identityScope uint8`, `live bool`.
 - `EnvelopeKeys`: `identity address`, `pk1` first-group point, `pk2` second-group point.
 - `Entitlement`: ERC-721 token; `asset bytes32`, `parameterSet bytes32`, `interval uint64`, `holderKeys (pk1, pk2)`, `envelopeDigest bytes32`, `identityElement` first-group point.
 - `Lock`: `entitlement uint256`, `buyer address`, `seller address`, `price uint256`, `expiry uint64`.
-- `Escrow`: `asset bytes32`, `provenance bytes`, `parameterSet bytes32`; no maintainer commitment by the accepted default.
+- `VersionIndex`: key `nameHash bytes32`; value `identityHash bytes32[]` of ingested versions, appended at `registerAsset`, read by `versionsByName`.
+- `SourceKey`: `sourceId uint8`, `keyId bytes32`, `key bytes`, `activeFrom uint64`, `revokedAt uint64`; the npm registry's signing keys, updated under the governance key.
+- `Escrow`: keyed by `deploymentId bytes32`; `asset bytes32`, `provenance bytes`, `attestation bytes`, `parameterSet bytes32`; one per escrow deployment, so an asset may carry several; no maintainer commitment by the accepted default.
 - `Binding`: `identity address`, `handshakeKey bytes32`, `scheme uint8`, `anchorHash bytes32`.
+- `Request`: keyed by `identity address` and `asset bytes32`; `openedAt uint64`, `closedAt uint64`, `closedBy` grant or withdrawal; submitted in batches; readable per asset by holders.
 - `VerifierKey`: `key bytes32`, `activeFrom uint64`, `revokedAt uint64`.
 - Events carry the full envelope and proof at every mint, grant, and transfer.
 
@@ -173,22 +184,25 @@ Five API surfaces exist. The specification fixes the adapter interface signature
 - `jobs`: key job id; value kind, state, checkpoint, idempotency key, created, updated, error.
 - `resolutions`: key request correlation id; value path chosen, timings, outcome.
 - `ciphertext_index`: key ciphertext root; value size, transports, locators, holding reason obligated or voluntary, sidecar roots held.
-- `cas_index`: key content hash; value size, upstream integrity, linked projects, pinned, last used.
+- `cas_index`: key content hash; value size, upstream integrity, resolving projects, pinned, last used.
+- `packuments`: key package name; value immutable per-version metadata with its attestation and capture time, and the dist-tag snapshot with its capture time; served with a staleness marker when upstream is unavailable.
 - `entitlements`: key entitlement id; value asset, parameter set, interval index, envelope digest, custody reference to the persistent credential; never the decrypted credential.
+- `requests`: key asset; value state queued, submitted, open, fulfilled, withdrawn, or refused, with the batch's transaction reference, the reason when pending, and timestamps.
+- `independence`: key asset; value plaintext held, ciphertext held with its parameter sets, credential held with its set, independent or pending with its reason, and the projects whose lockfiles name the asset.
 - `state_views`: key node id and reference; value tier, timestamp, result cache bounded by `τ_soft`.
 - `settings`: key catalogue path; value schema version, default, user override, scope, constraint reference, restart requirement, last changed by surface and principal; secrets only as custody references.
 - `health`: key subsystem; value state and last probe.
 - `consent_trace`: key event id; value surface, principal, operation, shown-and-acted flags, timestamp.
 
-**Plaintext CAS layout.** Under the configured CAS root, whose default is the platform application-data directory's `cas` and which the user repoints at install or in settings: `{cas_root}/{hash[0..2]}/{hash[2..4]}/{hash}/` holding the tarball and a manifest; `{cas_root}/tmp/` for uncommitted writes on the same volume so commit is a rename. Links from `node_modules` into the CAS entry; a root change is a migration job that relinks.
+**Plaintext CAS layout.** Under the configured CAS root, whose default is the platform application-data directory's `cas` and which the user repoints at install or in settings: `{cas_root}/{hash[0..2]}/{hash[2..4]}/{hash}/` holding the tarball and a manifest; `{cas_root}/tmp/` for uncommitted writes on the same volume so commit is a rename. Package managers extract from the served tarball into each project; nothing links into the CAS, so reuse is at the tarball and a root change is a migration job that moves entries and updates the index.
 
 **Ciphertext store layout, owned mode.** Under the configured store root, default the platform application-data directory's `swarm`, repointable the same way: `{swarm_root}/{root[0..2]}/{root}/` holding pieces, the Bao outboard, and sidecars by parameter set. Under delegation the layout is the external client's, whose download directory is itself a setting of that client, and the index translates. The two roots may not coincide.
 
 **Custody store.** Under the OS credential store, a wrapping key per identity; on disk, an encrypted blob holding the holder seed or the derived keys, the chain key if local, per-entitlement persistent credentials as envelope plus interval index, publisher seed if any, master scalars if any. Device role recorded per device. Never the decrypted credential or a piece-group key.
 
-**Metrics schema.** One record per install with correlation id: resolution path, CAS hit, cross-project reuse count, wall-clock, authorization fraction, state-read count and latency, decapsulation time per group and group count, swarm bytes, ingest bytes, relayer gas, L2 execution gas and L1 data fee for any settlement, job outcomes, adapter health snapshot. No identifying data beyond what the ledger publishes.
+**Metrics schema.** One record per install with correlation id: resolution path and its reason, CAS hit, cross-project reuse count, request registered and its batch, grant landed and the time from request, ciphertext held, fraction of the closure independent at the end of the run, wall-clock, authorization fraction, state-read count and latency, decapsulation time per group and group count, swarm bytes, ingest bytes, relayer gas, L2 execution gas and L1 data fee for any settlement, job outcomes, adapter health snapshot. No identifying data beyond what the ledger publishes.
 
-**Harness sample deployment for the site demonstration.** A generated asset with a small plaintext, its ciphertext and sidecar, a parameter set, and one sample credential, bundled with the WebAssembly build.
+**Sample deployment for the site demonstration.** A generated asset with a small plaintext, its ciphertext and sidecar, a parameter set, and one sample credential, bundled with the WebAssembly build; generated by the `sample-deployment` node of the payload cipher milestone, since it needs the cipher.
 
 # Proposed File Tree
 
@@ -223,7 +237,7 @@ ChainTorrent/
         claim_set/
     workflows/                        application ring; depends on domain and adapter interfaces only
       src/
-        resolve/  gate/  acquire/  attempt/  decrypt/  interval_end/
+        resolve/  gate/  request/  prefetch/  acquire/  attempt/  decrypt/  interval_end/
         first_finder/  publish/  grant/  identity/  compose/  health/
         settings/                     catalogue, validation, migration jobs, export and import
         install/                      installation coordinator plan; initial values from the catalogue
@@ -270,7 +284,7 @@ ChainTorrent/
     vscode-extension/ TypeScript; IPC client; no protocol logic
     npm-bootstrap/    minimal JS bin invoking the signed installer; no postinstall
   site/
-    static site; embeds apps/wasm-demo output and a harness-generated sample deployment
+    static site; embeds apps/wasm-demo output and the generated sample deployment
   docs/               unchanged
   .github/workflows/  three-platform matrix; clean-runner end-to-end; cargo-audit, cargo-deny, cargo-fuzz smoke
 ```
@@ -322,7 +336,7 @@ Plaintext CAS reuse: the fraction of installs served from local plaintext with n
 
 # Primary KPIs
 
-Interactive install wall-clock and authorization fraction against a budget declared before the run; clean-install success on every platform through both paths; registry-outage install success for the ingested set; all twenty-seven scenarios passing; cost per install; delivery cost as L2 execution and L1 data fee per mint and transfer; cross-project reuse.
+Interactive install wall-clock and authorization fraction against a budget declared before the run; clean-install success on every platform through both paths; registry-outage install success for the ingested set; every acceptance scenario passing; cost per install; delivery cost as L2 execution and L1 data fee per mint and transfer; cross-project reuse.
 
 # Guardrails
 
@@ -334,7 +348,7 @@ Five stages: harness on both curves against Base Sepolia; budget declaration; ac
 
 # Architecture Summary
 
-As stated in the [system architecture](system-architecture.md): one canonical ciphertext and sidecar per deployment on the swarm, entitlements on Base, credentials delivered inside settlement and verified by proof, per-attempt local authorization, and a daemon that serves npm's protocol from cache, swarm, and registry in that order.
+As stated in the [system architecture](system-architecture.md): one canonical ciphertext and sidecar per deployment on the swarm, entitlements on Base, credentials delivered inside settlement and verified by proof, per-attempt local authorization, and a daemon that serves npm's protocol from whichever of cache, swarm, and registry delivers within budget, never slower than the registry, and leaves a first run independent.
 
 # Architecture
 
@@ -374,7 +388,7 @@ RO-03 metrics without secrets, per-request correlation, consistent health across
 
 # Scalability Plan
 
-Constant credential size, capsule cost independent of entitlements, unbounded issuance, sidecar overhead proportional to payload and unmeasured, constant on-chain state per interval, paginated batch reads, multi-homed deployments, independent store sizing, relayer cost under rate limits sized from measured gas, streaming out of scope with decapsulation time recorded as baseline. In the system architecture.
+Constant credential size, capsule cost independent of entitlements, unbounded issuance, sidecar overhead proportional to payload and unmeasured, constant on-chain state per interval, paginated batch reads, multi-homed deployments, independent store sizing, relayer cost under a global budget with per-identity limits sized to a closure, from measured gas, streaming out of scope with decapsulation time recorded as baseline. In the system architecture.
 
 # Resilience Strategy
 
@@ -390,7 +404,7 @@ Rust throughout; `tokio`; one workspace with a domain crate and a crate per adap
 
 # Data Platform
 
-`redb` for the job store and indexes; filesystem CAS with atomic rename and links; root-keyed ciphertext store with holding reason; custody under the OS credential store through `keyring` with a wrapping key and encrypted blob; multi-node Base RPC views; archive access for envelope recovery; local metrics store. In the tech stack.
+`redb` for the job store and indexes; filesystem CAS with atomic rename; root-keyed ciphertext store with holding reason; custody under the OS credential store through `keyring` with a wrapping key and encrypted blob; multi-node Base RPC views; archive access for envelope recovery; local metrics store. In the tech stack.
 
 # DevOps Tooling
 

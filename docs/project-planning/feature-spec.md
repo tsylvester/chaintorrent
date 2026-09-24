@@ -11,7 +11,7 @@ Draft, 2026-09-23. One instance of the feature spec template per feature. Featur
 Self-Installing Onboarding
 
 ## Feature Objective
-Turn either supported entry point, the Visual Studio Code extension or `npm install chaintorrent`, into a complete working environment on a clean machine with no manual component installation, converging on one Rust installation coordinator and the same post-installation state, with reversible package-manager redirect, durable daemon, idempotent reinstall, repair, signed update, and uninstall.
+Turn either supported entry point, the Visual Studio Code extension or `npx chaintorrent`, into a complete working environment on a clean machine with no manual component installation, converging on one Rust installation coordinator and the same post-installation state, with reversible package-manager redirect, durable daemon, idempotent reinstall, repair, signed update, and uninstall.
 
 ## User Stories
 - As a developer, I install the extension or run one npm command and can install a package through ChainTorrent without downloading, configuring, or starting anything else.
@@ -20,9 +20,11 @@ Turn either supported entry point, the Visual Studio Code extension or `npm inst
 - As a developer, when something breaks I run one repair operation from the CLI, the desktop app, or the extension and service is restored without losing my state.
 - As a developer, when I uninstall, npm works against its prior registry and my identity and plaintext are preserved unless I explicitly ask for their removal.
 - As a CI operator, the daemon and its jobs survive reboot without an editor open.
+- As a developer, I choose at install whether the daemon requests entitlements and prefetches ciphertext for my dependencies, I am told that a first run roughly doubles disk and bandwidth, and I can choose a cache-only mode with no chain identity if I want only the local cache and the registry.
 
 ## Acceptance Criteria
 - On a clean supported machine either entry point yields a ready environment and a successful package install after only permitted consent (SI-01, SI-02, SI-19; AS-01, AS-02).
+- Installation offers a cache-only mode that creates no chain identity, registers no request, and prefetches nothing; presents automatic requests and prefetch as consent items; and discloses the first-run disk and bandwidth cost, all recorded in the consent trace (SI-19, SI-20; AS-30).
 - Platform, architecture, service capabilities, package managers, and custody and wallet integrations are detected and produce deterministic adapter selection or an actionable fail-closed result (SI-03).
 - Every downloaded native artifact and update is authenticated before execution; tampering halts installation without replacing the working version (SI-04, IC-02).
 - Configuration store, durable job store, plaintext CAS, ciphertext store, IPC endpoint, and logs are created with correct permissions and survive restart (SI-05).
@@ -99,7 +101,7 @@ Declare every user-configurable value in one catalogue with its default, scope, 
 
 ## Acceptance Criteria
 - The catalogue declares every configurable value with default, scope, constraints, apply mode, and exposure; nothing fixed by a hash-card or the specification is a setting; local policy may only be stricter (ST-01).
-- Every store root is a repointable default; a change is a checkpointed reversible migration that keeps links valid and refuses coinciding roots (ST-02).
+- Every store root is a repointable default; a change is a checkpointed reversible migration that moves contents and refuses coinciding roots; nothing links into a store (ST-02).
 - Changes are validated against constraints and the composition resolver before effect; invalid values are refused with no side effect (ST-03).
 - Every change is backed up and restorable; export contains no secret and import validates (ST-04).
 - All surfaces expose the same catalogue identically; mutations require a control principal and local presence for machine scope; every change is in the consent trace (ST-05).
@@ -118,7 +120,7 @@ Declare every user-configurable value in one catalogue with its default, scope, 
 
 ## Success Metrics
 - Surface parity: identical daemon state after the same change from each surface, across the whole catalogue.
-- Migration recovery at every checkpoint, with links valid afterward.
+- Migration recovery at every checkpoint, with prior projects still installing from the CAS afterward.
 - Zero secrets in any export.
 - Zero forbidden settings reachable through any surface or the registry store.
 
@@ -128,10 +130,12 @@ Declare every user-configurable value in one catalogue with its default, scope, 
 Package Serving and Local Content Addressable Storage
 
 ## Feature Objective
-Serve npm's own registry protocol from a local package host backed by a machine-wide plaintext CAS, resolving each artifact in fixed order, local plaintext, local encrypted store, remote encrypted swarm, then upstream ingest source, so that a package fetched once is reused by every project on the machine and installs proceed with no network, chain, or authorization when the plaintext is already local.
+Serve npm's own registry protocol from a local package host backed by a machine-wide plaintext CAS, resolving each artifact from the first source that delivers plaintext within the declared budget, local plaintext, local or swarm ciphertext under a held credential, then the upstream ingest source, so that a package fetched once is reused by every project on the machine, an install is never slower than npm, and a first run leaves the machine independent of the registry and of every other participant for everything it installed.
 
 ## User Stories
 - As a developer, a package I installed in one project installs into a second project from local plaintext with the registry, the chain, and the swarm all unreachable.
+- As a developer, my first install of a project is as fast as npm, and afterwards the same project installs with npm and every other participant unreachable.
+- As a developer, I can see for each dependency whether I am independent of the registry for it or still waiting on a grant, and why.
 - As a developer, npm, pnpm, yarn, or bun resolve my dependency graph exactly as before; only where the bytes come from has changed.
 - As a developer, I can see cache capacity, pins, quota, eviction, and hit rate, and I am warned before evicting anything I could not re-authorize.
 - As a developer, `node_modules` is disposable; rebuilding it touches neither the network nor the ledger.
@@ -139,12 +143,18 @@ Serve npm's own registry protocol from a local package host backed by a machine-
 ## Acceptance Criteria
 - The npm package-host adapter serves compatible metadata and tarball responses while leaving resolution, peer dependencies, workspaces, overrides, and lockfiles to npm; representative projects produce the same resolved graphs and lockfile behavior as upstream (PR-01).
 - Package coordinates resolve deterministically to the canonical identity hash `BLAKE3(packageName@version)` and authenticated deployment records; malformed requests are rejected deterministically (PR-02).
-- Resolution order is enforced with no forbidden fall-through and the chosen path is recorded in metrics (PR-03; AS-23, AS-24, AS-25).
+- Plaintext is served from the first source that delivers it within the budget, local plaintext, local or swarm ciphertext under a held credential, the ingest source when available, and swarm ciphertext under a grant obtained within a bounded wait only when the ingest source is unavailable, failing otherwise with an actionable result that leaves the request pending; an identity without a credential is served by the ingest source while it is available; the path and its reason are recorded (PR-03; AS-08, AS-23, AS-24, AS-25).
+- For every ledger-known asset the identity does not hold, a durable grant request is registered before or alongside the upstream fetch, batched per install into one sponsored operation, queued behind key registration and while the chain or relayer is unavailable, and fulfillable while the requester is offline; no request is made for held, absent, or dead-deployment assets, an explicit-publisher request goes to its issuance policy, and a priced asset becomes a notice (PR-10; AS-29).
+- While a request is pending the deployment's ciphertext and sidecar are prefetched in the background under the bandwidth, metered, and battery settings and the ciphertext quota, pinned until the grant lands, seeded meanwhile, and matched to the granted set afterwards (PR-11; AS-29).
+- Every control surface shows per-asset independence, plaintext, ciphertext, and credential held, or pending with its reason, and a project's independence as every lockfile asset being independent (PR-12; AS-29).
+- The initiating install waits only for the source that served it, never for bootstrap, request registration, prefetch, or grant pickup (PR-08).
 - The plaintext CAS uses verified content addressing and atomic commit; incomplete or mismatched artifacts are never served under interruption, racing writers, or corruption (PR-04).
-- Cache policy exposes capacity, pinning, quota, eviction, hit rate, and cross-project reuse, never deletes ciphertext held under a seed obligation, and pins artifacts linked into a live `node_modules` (PR-05; MVP Scope, Local CAS).
+- Cache policy exposes capacity, pinning, quota, eviction, hit rate, and cross-project reuse, never deletes ciphertext held under a seed obligation, and pins artifacts a live project resolved (PR-05; MVP Scope, Local CAS).
 - A plaintext CAS hit serves without swarm, chain, entitlement acquisition, or decryption authorization (PR-06; AS-06).
+- Reuse is at the tarball: the CAS holds verified tarballs, package managers extract per project, and nothing links into the store (PR-04; technical requirements, Plaintext CAS layout).
 - Ciphertext, local or remote, enters the authorization and decryption workflow before plaintext is committed or served (PR-07).
-- The local API is authenticated and least-privileged; a project process gains no custody, credentials, keys, or authority by requesting a package (XA-02).
+- Package metadata is captured at every upstream resolution into an authenticated local store; tarball URLs stay on the canonical registry host so lockfiles are portable; the outage guarantee is a pinned closure, with range resolution against the ledger's version index marked best effort (PR-09; AS-11, AS-24).
+- The local API is authenticated and least-privileged; the package host confers resolution and serving only; a project process gains no custody, credentials, keys, or authority by requesting a package or by running as the user, and sensitive operations complete only after an interactive confirmation no IPC message can supply (XA-02).
 
 ## Dependencies
 - Encrypted content consumption, for the encrypted-source paths.
@@ -153,6 +163,7 @@ Serve npm's own registry protocol from a local package host backed by a machine-
 
 ## Success Metrics
 - Plaintext CAS hit rate and cross-project reuse count, the MVP's headline adoption metric (RO-03).
+- Fraction of a closure independent at the end of its first run, and time to independence for the rest (RO-03; AS-29).
 - Interactive install wall-clock against the pre-declared latency budget (RO-06).
 - Lockfile and resolved-graph parity with upstream across the representative project set.
 
@@ -165,7 +176,7 @@ Encrypted Content Consumption and Per-Attempt Authorization
 Authenticate a deployment's record, hash-card, suite, manifest bounds, and header sidecar before any credential is exercised; acquire and Bao-verify ciphertext and sidecar; hold a fresh state view at the deployment's declared tier before every piece-group key derivation; decapsulate, decrypt, verify against the plaintext root, commit to CAS, and serve; and stop attempts and destroy decrypt-capable material when the entitlement transfers away.
 
 ## User Stories
-- As a developer, a package that exists in the swarm installs from peers with my own credential and nothing requested from any service.
+- As a developer, a package that exists in the swarm installs from peers with my own credential and nothing requested from any service, whenever I already hold the credential and whenever the registry is unavailable.
 - As a developer, an entitlement I have held for years still installs, and it never installs on a stale view.
 - As a seller, once my transfer settles my client stops decrypting and destroys its keys, and a reorganized transfer never strands me while I still own the entitlement.
 - As a developer, a malformed or hostile manifest halts before my credential is touched.
@@ -179,8 +190,8 @@ Authenticate a deployment's record, hash-card, suite, manifest bounds, and heade
 - The envelope is decrypted only under the identity's own registered envelope keys, the credential is verified against the parameter set's validity equation, and each capsule's well-formedness is verified before decapsulation; substituted envelopes, credentials, and capsules are rejected (EC-06).
 - Decryption decapsulates each group's capsule, derives the piece-group key, implements AES-256-CTR addressing, verifies plaintext against the authenticated root, commits atomically, and serves the exact upstream tarball across random ranges and boundaries (EC-07, CR-01).
 - Decrypted credential, piece-group keys, cipher state, and keystream are memory-only; attempts stop on a transfer out observed at the declared tier and everything decrypt-capable is destroyed at `HARD`; the persistent credential is stored only under custody (EC-08, CR-07; AS-19).
-- The state view is obtainable from more than one configured node; one unreachable node does not deny, inconsistent views fail closed (XA-06).
-- The local encrypted hit, remote encrypted hit, and interval-end scenarios pass with their denial, stale-view, and interval-end variants (AS-07, AS-08, AS-19).
+- The state view is a quorum of two of three configured nodes agreeing at a common reference within the freshness bound; a stale or unreachable node does not deny, divergent state at one reference and an over-age view fail closed (XA-06).
+- The local encrypted hit, the remote encrypted hit with the ingest source unavailable, and the interval-end scenarios pass with their denial, stale-view, and interval-end variants (AS-07, AS-08, AS-19).
 
 ## Dependencies
 - Cryptographic services (CR-01 through CR-10).
@@ -290,8 +301,9 @@ Deploy a Solidity contract suite on the Ethereum launch network representing can
 - Batch and paginated reads preserve every attempt context and never broaden authorization (LC-06).
 - State-locked registration and claim settlement are race safe, replay safe, and bound to contract, chain, claimant, asset, and expiry (LC-07).
 - Envelope-key registration requires a proof of possession per key under a wallet signature and rejects identity-element keys; mint rejects a trivial identity element (LC-08).
-- Parameter sets are registered per asset, marked live at bootstrap and claim, retired only when no live entitlement remains, and a deployment record is rejected unless it carries a sidecar root for every live set (LC-09).
-- Payment locks carry a bounded published expiry; relayer-paid mints and zero-price grants are rate-limited per identity (LC-10; AS-27).
+- Parameter sets are registered per asset, marked live at bootstrap and claim, retired only when no live entitlement remains, and a deployment record is rejected unless it carries a sidecar root for every live set; the asset's authority may add a sidecar for a set made live later (LC-09; AS-16).
+- Payment locks carry a bounded published expiry; relayer-paid mints and zero-price grants are admitted under a global budget and per-identity limits (LC-10; AS-27).
+- Ownership changes only through mint, grant, and delivery; the token's standard transfer and approval entry points are disabled and receiver callbacks run after state is final (LC-11; AS-27).
 - All three content roots and the plaintext-root disclosure mode are registered; public registries use Public mode (MVP Scope, Entitlement Ledger).
 - The per-identity binding record stores the bound handshake key and scheme on-chain with an anchor hash to the DID Document (MVP Scope, Entitlement Ledger).
 
@@ -387,7 +399,8 @@ Deliver each holder's native credential exactly once per ownership interval insi
 ## User Stories
 - As a buyer, I receive a credential that decrypts every live deployment of the asset, delivered in the same transaction that transfers me the entitlement.
 - As a seller, I deliver from a fresh decryption of my own envelope after a restart, with no in-memory state and no persisted offset.
-- As a new identity, I obtain a free grant for an escrowed package from any online holder; the First Finder's permanent absence stops nothing.
+- As a new identity, I obtain a free grant for an escrowed package from any online holder, including while I am offline, since my first run registered the request and my daemon picks the credential up from chain history; the First Finder's permanent absence stops nothing.
+- As a holder, my daemon fulfils pending requests for the assets I hold as it seeds them, sponsored by the relayer, without my involvement.
 - As a maintainer who claimed my package, my escrow-era holders keep working, my successor deployments carry a sidecar for every live set, and a holder can migrate to my parameter set voluntarily.
 
 ## Acceptance Criteria
@@ -395,7 +408,9 @@ Deliver each holder's native credential exactly once per ownership interval insi
 - Sale delivers the buyer's credential in the settlement from the seller's fresh decryption, rerandomized with a private offset, with a transfer proof against the previous envelope; the seller's persisted offset is never required (CD-02; AS-15).
 - The on-chain verifier verifies mint and transfer proofs through the pairing adapter's precompile interface in the declared form and rejects any statement field the record contradicts (CD-03; AS-13).
 - The persistent credential survives restart and is recoverable from chain history; lost envelope secrets end transfer but not reading while the decrypted credential is held (CD-04).
-- Under an escrow suite any current holder authors the credential for a newly minted zero-price entitlement, the contract records it as interval zero, the conforming client serves pending grants automatically under rate limits, and the First Finder's absence affects nothing (CD-05; AS-26).
+- Under an escrow suite any current holder authors the credential for a newly minted zero-price entitlement, the contract records it as interval zero, the conforming client serves pending grant requests automatically under the relayer's policy including for requesters that are offline, and the First Finder's absence affects nothing (CD-05; AS-26, AS-29).
+- The registry holds durable, batched, withdrawable grant requests readable by holders, open until a grant settles and authorizing nothing by themselves (LC-12; AS-29).
+- A grant fulfilled in the requester's absence is loaded on its next run from chain history, and the requester then confirms it holds a deployment carrying the granted set (PR-10, PR-11, CD-04; AS-29).
 - Holder-assisted authorship is refused under the entitlement scope (CD-08; AS-26).
 - Claim registers the claimant's parameter set, leaves escrow-era credentials working, allows optional encrypted handover with a compatibility proof, requires later bodies to carry a sidecar per live set, and supports voluntary replacement of escrow-era credentials (CD-06; AS-16).
 
@@ -406,7 +421,7 @@ Deliver each holder's native credential exactly once per ownership interval insi
 
 ## Success Metrics
 - Proof generation and verification time and gas per mint and per transfer (RO-03).
-- Grant fulfilment rate with the First Finder offline.
+- Grant fulfilment rate with the First Finder offline, and fulfilment latency from request to credential loaded, measured separately from swarm health.
 - Zero accepted deliveries whose envelope fails the recipient's local validity check.
 
 ---
@@ -479,16 +494,17 @@ Prove that a nonzero transaction settles by publishing the project's own package
 Relaying and Free-Path Subsidy
 
 ## Feature Objective
-Sponsor free entitlement acquisition and the one-time identity binding through a relayer or ERC-4337 paymaster funded by a grant pool, with per-identity rate limits, explicit failure states, and cost reporting, so a first-run user is never blocked on acquiring gas.
+Sponsor free entitlement acquisition and the one-time identity binding through a relayer or ERC-4337 paymaster funded by a grant pool, with a global per-window budget, a maximum sponsored liability, per-identity rate limits as one layer, explicit failure states, and cost reporting, so a first-run user is never blocked on acquiring gas.
 
 ## User Stories
 - As a developer, I install free packages without holding any cryptocurrency and without knowing a relayer exists.
+- As a developer, my first install registers one request for everything I do not hold, in one sponsored operation, and holders fulfil it while I am offline.
 - As an operator, I see what the subsidy costs per install and can deny or exhaust it without producing false authorizations.
-- As an operator, a flood of free mints from many identities cannot drain the grant pool.
+- As an operator, a flood of free mints from many fresh identities cannot spend beyond the subsidy budget I configured, and when it is exhausted onboarding fails truthfully rather than authorizing falsely.
 
 ## Acceptance Criteria
-- The relayer sponsors free entitlement acquisition and the single initial binding transaction with abuse controls and explicit failure states; exhaustion or denial yields actionable recovery without false authorization (RO-01; AS-14).
-- Zero-price grants and relayer-paid mints are rate-limited per identity by relayer policy and the pool is not drained by a flood (LC-10; AS-27).
+- The relayer sponsors free entitlement acquisition, batched grant requests and their fulfilling grants, and the single initial binding transaction with abuse controls and explicit failure states; exhaustion or denial yields actionable recovery without false authorization, with requests queued locally until sponsorship returns (RO-01; AS-14, AS-29).
+- Zero-price grants, batched requests, and relayer-paid mints are admitted under a global per-window budget and maximum sponsored liability as well as per-identity limits that admit a realistic dependency closure in one batch; a flood of fresh identities never spends beyond the configured budget and exhaustion is an explicit failure (LC-10; AS-27).
 - Per-attempt state reads never pass through the relayer (MVP Scope, Gas Relayer).
 - Relayer gas is recorded per install (RO-03).
 
@@ -498,7 +514,7 @@ Sponsor free entitlement acquisition and the one-time identity binding through a
 
 ## Success Metrics
 - Relayer gas per install.
-- Grant-pool drain under flood, target bounded by policy.
+- Sponsored spend under flood, never above the configured budget.
 - Free onboarding success rate.
 
 ---
@@ -515,7 +531,7 @@ Record the metrics that make the MVP's economics measurable, correlate one packa
 - As an operator, I reconstruct any single install's path across package host, CAS, swarm, chain, custody, decryption, and background work.
 
 ## Acceptance Criteria
-- Metrics record CAS hit and cross-project reuse, install wall-clock, state-read volume and latency, decapsulation time per group, proof generation and verification time and gas, swarm bytes, ingest bytes, relayer gas, job outcome, and adapter health without secrets; every acceptance path reconciles with induced activity (RO-03; AS-20).
+- Metrics record CAS hit and cross-project reuse, resolution path and its reason, request and grant timing, the fraction of a closure independent after its first run and time to independence, install wall-clock, state-read volume and latency, decapsulation time per group, proof generation and verification time and gas, swarm bytes, ingest bytes, relayer gas, job outcome, and adapter health without secrets; every acceptance path reconciles with induced activity (RO-03; AS-20).
 - Structured logs and traces correlate one request across all subsystems under concurrent installs (RO-04).
 - Health and diagnostics expose degraded dependencies, compatibility decisions, job state, and recovery actions consistently through CLI, Tauri, extension, and API (RO-05).
 - Attempt latency is measured against a pre-declared interactive budget and yields a pass or failure (RO-06).
@@ -537,7 +553,7 @@ Record the metrics that make the MVP's economics measurable, correlate one packa
 Test Facilities and Demonstration Harness
 
 ## Feature Objective
-Ship unit, integration, and end-to-end test facilities including a demonstration harness that creates controlled participants, services, wallets, chain state, and failures, so that every requirement's proof class maps to a facility and all twenty-seven acceptance scenarios run reproducibly through the packaged applications.
+Ship unit, integration, and end-to-end test facilities including a demonstration harness that creates controlled participants, services, wallets, chain state, and failures, so that every requirement's proof class maps to a facility and every acceptance scenario runs reproducibly through the packaged applications.
 
 ## User Stories
 - As the project, every requirement identifier reconciles with a passing proof in CI on a clean machine.
@@ -548,14 +564,14 @@ Ship unit, integration, and end-to-end test facilities including a demonstration
 - The repository ships unit, integration, and end-to-end facilities including the demonstration harness, and every requirement's proof class maps to one (XA-07).
 - Durable workflows are idempotent, observable, cancellable where safe, and recoverable, proven by termination at every persisted transition (XA-03).
 - The packaged MVP runs without a developer toolchain on supported machines (XA-05).
-- All acceptance scenarios AS-01 through AS-27 pass through the packaged applications with no test-only bypass of onboarding, the package host, capability resolution, or the deployed verifier (MVP Acceptance Scenarios, Completion Boundary).
+- Every acceptance scenario passes through the packaged applications with no test-only bypass of onboarding, the package host, capability resolution, or the deployed verifier (MVP Acceptance Scenarios, Completion Boundary).
 
 ## Dependencies
 - Every feature above; this is the completion gate.
 
 ## Success Metrics
 - Requirement-to-proof reconciliation, target every identifier.
-- Acceptance scenario pass rate on clean machines, target all twenty-seven.
+- Acceptance scenario pass rate on clean machines, target every scenario.
 
 ---
 

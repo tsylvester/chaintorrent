@@ -49,7 +49,7 @@ State the principle precisely in MVP Scope and the business case: free public di
 High. Interactive install wall-clock is the binding constraint; the success metrics make the latency budget the only threshold that can fail a run and the first stop criterion.
 
 ## Likelihood
-Medium. The research's by-formula estimates put sidecar overhead below one percent of payload and decapsulation at two pairings per group, which is cheap, but nothing is measured, the piece-group size is unchosen, and state-read latency depends on the launch network.
+Medium. The research's by-formula estimates put sidecar overhead at roughly one percent of payload at 16 KiB groups, depending on curve and scope, and decapsulation at two pairings per group, which is cheap, but nothing is measured, the piece-group size is unchosen, and state-read latency depends on the launch network.
 
 ## Mitigation
 Build the validation harness first and choose the piece-group size and curve from its measurements. Declare the latency budget before the acceptance run so instrumentation produces a failure rather than a number. Instrument state-read volume and latency per install to choose `τ_soft`. Install-once content crosses the attempt boundary rarely, which bounds the exposure for the MVP's content class.
@@ -109,7 +109,7 @@ External cryptographic review of the composition and the contract verifier befor
 ---
 
 ## Risk
-**R-04. Execution breadth and the strict completion boundary.** One hundred fifteen operational requirements each carrying a boundary-crossing proof, twenty-seven packaged scenarios on clean machines, four control surfaces, multi-platform signed installation and service lifecycle, a contract suite, three services, and a demonstration harness. No code exists and no team is named.
+**R-04. Execution breadth and the strict completion boundary.** Every operational requirement carrying a boundary-crossing proof, every acceptance scenario packaged on clean machines, four control surfaces, multi-platform signed installation and service lifecycle, a contract suite, three services, and a demonstration harness. No code exists and no team is named.
 
 ## Impact
 High. Delivery risk, not design risk: the last third of the work, publishing, claims, and the transaction proof, is where schedules slip, and the completion boundary forbids mocked adapters, off-chain-only verifiers, and manually prepared machines as completion evidence.
@@ -118,7 +118,7 @@ High. Delivery risk, not design risk: the last third of the work, publishing, cl
 High. The breadth is a fact of the requirements and no schedule or team exists to set against it.
 
 ## Mitigation
-The workplan's dependency-ordered sequence, test-first and bottom-up, with one file per turn. An internal demonstrable milestone at workplan step six, where an ordinary `npm install` resolves against the swarm, without reducing the release boundary. Deferred items held deferred.
+The workplan's dependency-ordered sequence, test-first and bottom-up, with one file per turn. An internal demonstrable milestone at workplan step six, where an ordinary `npm install` is served at the registry's speed, registers and prefetches, and resolves against the swarm with the registry down, without reducing the release boundary. Deferred items held deferred.
 
 ## Seed Examples
 - Platform-specific service lifecycle on one supported OS consumes the effort planned for credential delivery.
@@ -172,7 +172,7 @@ Lead the developer value proposition with what substitutes cannot do: the swarm 
 ---
 
 ## Risk
-**R-06. Consumption privacy for the adopting population.** Every entitlement is a public on-chain record binding an identity to an asset, and per-attempt state reads form a traffic stream to whichever node serves them. The specification's argument that public consumption is a benefit concerns organizations concealing inherited risk; it says a solo participant's install history is a behavioral profile and that pseudonymity only partially helps.
+**R-06. Consumption privacy for the adopting population.** Every entitlement is a public on-chain record binding an identity to an asset, a first run in the default mode publishes the identity's whole dependency closure as grant requests at once rather than as it is used, and per-attempt state reads form a traffic stream to whichever node serves them. The specification's argument that public consumption is a benefit concerns organizations concealing inherited risk; it says a solo participant's install history is a behavioral profile and that pseudonymity only partially helps.
 
 ## Impact
 High for adoption; Medium for the protocol. Individual developers are the MVP's adopting population and the population the argument excludes. Disclosure of their install history at onboarding may be a reason not to adopt.
@@ -181,7 +181,7 @@ High for adoption; Medium for the protocol. Individual developers are the MVP's 
 High. The condition is inherent in the design for public content and the MVP ships no privacy construction.
 
 ## Mitigation
-State the exposure at onboarding. Read state from the client's own node where it can, which discloses nothing through the read path. Record the private-content and individual cases as open in the specification, with candidate constructions, and gate any private-registry adapter on a consumption-privacy answer.
+State the exposure at onboarding, where the request and prefetch behaviors are consent items and a cache-only mode with no chain identity and no request exists for a user who wants only the local cache and the registry. Read state from the client's own node where it can, which discloses nothing through the read path. Record the private-content and individual cases as open in the specification, with candidate constructions, and gate any private-registry adapter on a consumption-privacy answer.
 
 ## Seed Examples
 - A developer's identity is linked to a real name by one transaction; their entire install history, with timing, is retroactively public.
@@ -367,7 +367,7 @@ Medium. Reads are protected by multi-node views and continue through a sequencer
 Medium. OP Stack upgrades are routine. EIP-2537 is confirmed live on Base since Isthmus activated on 9 May 2025, so the precompile gate is closed; Arbitrum's remains unconfirmed and it is excluded as a fallback until confirmed.
 
 ## Mitigation
-Chain behind an adapter with settlement expressed as tiers rather than confirmation counts; state views from more than one configured node with inconsistency failing closed (XA-06); precompile availability confirmed per launch network before selection; gas instrumented.
+Chain behind an adapter with settlement expressed as tiers rather than confirmation counts; state views from a quorum of configured nodes at a common reference with divergence failing closed (XA-06); precompile availability confirmed per launch network before selection; gas instrumented.
 
 ## Seed Examples
 - The chosen L2 has not deployed the BLS12-381 precompiles and the verifier form must be the batched pairing product on BN254.
@@ -596,30 +596,31 @@ Accepted and stated. The piece-group size bounds how much one leaked key unlocks
 ---
 
 ## Risk
-**R-20. Accepted residual: pre-claim grant liveness and escrow-era attribution.** Under the escrow suite any holder can author a grant, so a new identity needs at least one holder online, the same condition as one seeder; and escrow-era credentials carry no entitlement-level attribution because the suite uses the asset identity scope.
+**R-20. Accepted residual: pre-claim grant liveness and escrow-era attribution.** Under the escrow suite any holder can author a grant, so a new identity needs at least one holder online. That is a stricter condition than the swarm having a seeder: a conforming holder seeds, but a blind seeder holds no credential and authors nothing, so a swarm can hold every encrypted byte while no new user can obtain a grant. Escrow-era credentials carry no entitlement-level attribution because the suite uses the asset identity scope. Availability differs per operation and is stated separately in the system architecture's operation table: a cached plaintext read needs nobody; an existing holder's encrypted read needs no online party, only a quorum state view; a new escrow grant needs one online holder; post-claim issuance is the publisher's policy; metadata, chain state, and sponsorship each carry their own condition.
 
 ## Impact
-Low. An asset with no holder online is also an asset with no seeder; attribution is meaningless while entitlements are $0.00.
+Low while the registry is available, since an identity without a credential is served by the registry and its request is fulfilled later, in its absence if need be; Medium during a registry outage, when a healthy swarm with no holder online is a real state and the new user is told truthfully that no grant author is reachable, with a retry succeeding once one appears. Attribution is meaningless while entitlements are $0.00.
 
 ## Likelihood
-High that the condition exists; Low that it bites for popular packages.
+High that the condition exists; Low that it bites for popular packages; Medium for the long tail, which is where the availability differentiation is claimed.
 
 ## Mitigation
-Accepted and stated. The conforming client serves pending grants automatically as it seeds; the project seed host holds the core closure; a claim never needs the First Finder.
+Accepted and stated. An identity without a credential is served by the registry while it is available and its request stays pending until any holder fulfils it, offline requesters included; the conforming client serves pending requests automatically as it seeds; the project seed host holds an entitlement, and so a credential, for every asset it seeds, so its availability promise covers grants and not only bytes for the core closure; a claim never needs the First Finder.
 
 ## Seed Examples
-- A rarely used package's only holder is offline and a new identity cannot obtain a grant until one returns.
+- A rarely used package's only holder is offline; blind seeders hold every byte; a new identity cannot obtain a grant until a holder returns, and the client says so.
 
 ## Mitigation Plan
 1. Verify grant fulfilment with the First Finder permanently offline (AS-26).
-2. Monitor grant fulfilment latency as a signal.
+2. Verify that a swarm with only non-holder seeders reports the missing grant author accurately and is not counted as new-user availability.
+3. Monitor grant fulfilment latency as a signal, separately from swarm health.
 
 ## Notes
-- **Affected components:** credential delivery, seed host, grant service.
+- **Affected components:** credential delivery, seed host, grant service, availability pilot.
 - **Dependencies:** none.
 - **Sequencing:** step seven.
 - **Guardrails:** First Finder absence affects nothing.
-- **Signals:** grant fulfilment slowing.
+- **Signals:** grant fulfilment slowing while swarm health holds.
 - **Open questions:** none.
 
 ---
@@ -684,6 +685,36 @@ Recorded in MVP Scope as the tier's protection: the mapping is held only by the 
 
 ---
 
+## Risk
+**R-23. First-run disk and bandwidth doubling.** In the default mode a first run fetches and holds both the plaintext and the deployment's ciphertext for every dependency, so disk and download roughly double against npm alone. That is the price of independence and of seeding before holding, and it is the one observable cost of the first-run rule that is not latency.
+
+## Impact
+Medium for adoption on constrained machines and metered or slow connections; none for the foreground install, which the prefetch never delays.
+
+## Likelihood
+High. The condition is inherent in the default mode.
+
+## Mitigation
+Disclose the cost at install; run the prefetch in the background at low priority under the bandwidth, metered, and battery settings and the ciphertext store's quota; stop the prefetch, never the install, when the quota is reached; offer cache-only mode, which prefetches nothing.
+
+## Seed Examples
+- A developer on a metered connection installs a large project; the prefetch waits for an unmetered connection while the install completes at npm's speed.
+- A machine with a small disk hits the ciphertext quota; later assets stay pending with the reason shown, and the plaintext install is unaffected.
+
+## Mitigation Plan
+1. Verify the prefetch obeys each setting and the quota in turn and that the foreground install's latency is unchanged with it stalled (PR-08, PR-11).
+2. Record first-run disk and bandwidth per closure in the acceptance run alongside idle footprint (RO-07).
+
+## Notes
+- **Affected components:** resolution orchestrator, prefetch job, ciphertext store, installer consent flow.
+- **Dependencies:** R-06 for the consent step.
+- **Sequencing:** with the CAS and package host milestone.
+- **Guardrails:** foreground isolation.
+- **Signals:** pending assets accumulating with quota or metered reasons.
+- **Open questions:** none.
+
+---
+
 # Additional Content
 
 ## Summary table
@@ -709,9 +740,10 @@ Recorded in MVP Scope as the tier's protection: the mapping is held only by the 
 | R-17 | Secret leakage | High | Low / Medium | Mitigated by requirements | All implementers |
 | R-18 | Installation misconfiguration | High | Low | Mitigated by requirements | Installer implementer |
 | R-19 | Modified-client retention; common keys | Medium | High | Accepted residual | None |
-| R-20 | Pre-claim grant liveness; escrow attribution | Low | High / Low | Accepted residual | None |
+| R-20 | Pre-claim grant liveness; escrow attribution | Low / Medium | High / Low | Accepted residual; upstream serves and requests pend | None |
 | R-21 | Remote head rendezvous over claimed daemons | High when built / none in MVP | Low | Deferred; constraints recorded | Project lead |
 | R-22 | Account-to-identity mapping as deanonymizing record | High when built / none in MVP | Medium | Deferred; constraints recorded | Project lead |
+| R-23 | First-run disk and bandwidth doubling | Medium | High | Mitigated by disclosure, settings, quota, cache-only mode | Daemon implementer |
 
 ## Relationship to the other documents
 

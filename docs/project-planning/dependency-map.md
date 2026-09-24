@@ -3,7 +3,7 @@
 
 ## Overview
 
-Draft, 2026-09-23. How the parts of the ChainTorrent MVP fit together and in what order they are built, drawn from the [business case](business-case.md) delivery plan, the [technical approach](technical-approach.md), the [workplan](../workplans/current/ChainTorrent%20MVP.md)'s proposed build sequence, and the [MVP Application Requirements](../research/MVP%20Application%20Requirements.md). The map uses the business case's five delivery phases as its groupings and addresses each by its dependency role, never by ordinal, as [workplan-structure](../agents/workplan-structure.md) requires: **cryptographic validation harness**, **protocol core and contract suite**, **local daemon and package serving**, **onboarding shells and services**, and **acceptance and release**.
+Draft, 2026-09-23. How the parts of the ChainTorrent MVP fit together and in what order they are built, drawn from the [business case](business-case.md) delivery plan, the [technical approach](technical-approach.md), the [workplan](../workplans/current/ChainTorrent%20MVP.md)'s proposed build sequence, and the [MVP Application Requirements](../research/MVP%20Application%20Requirements.md). The map uses the business case's delivery phases as its groupings and addresses each by its dependency role: **cryptographic validation harness**, **protocol core and contract suite**, **local daemon and package serving**, **onboarding shells and services**, and **acceptance and release**.
 
 Resolution decays with distance, deliberately. The nearest phase, the harness, is mapped at **ticket** resolution: one ticket per source file, which is the node template's unit, so that each ticket is a candidate node the workplan author can promote. The next phase is mapped as **sprints** named by dependency role. Beyond that the map holds **epics**, then **milestones**, then **objectives**. The reason is that implementation of the nearest phase will produce discoveries that revise the anticipated order of everything after it, and detail authored now for distant phases would be rewritten rather than used. When the harness phase completes, the protocol core phase is re-mapped to ticket resolution from what was learned, and the decay shifts outward by one phase.
 
@@ -15,32 +15,24 @@ Grouped by phase role. Within the harness phase each row is a ticket; within lat
 
 ### Cryptographic validation harness, at ticket resolution
 
-The harness implements the credential KEM, envelope, and delivery proof on both candidate pairing curves, exercises the deployed verifier on a test chain, and records the measurements that fix the piece-group size and curve (CD-07, AS-21). Every ticket is one Rust source file with its full support system except where the row says otherwise. Ticket names are the deepest unique path segment the node would carry.
+The harness implements the credential KEM, envelope, and delivery proof on both candidate pairing curves, exercises the deployed verifier on a test chain, and records the measurements that fix the piece-group size and curve (CD-07, AS-21). Every ticket is one Rust source file with its full support system except where the row says otherwise; the row that owns an interface or a type says so. Ticket names are the deepest unique path segment the node would carry.
 
 | Ticket | Owns | Depends on | Proves |
 | --- | --- | --- | --- |
-| `domain/parameter-set` | Types for a parameter set, master scalar, identity element, and their guards; encoding contract | nothing | CR-08 types |
-| `domain/credential` | Types for credential, envelope key pair, envelope, interval index, and guards | `domain/parameter-set` | CR-04, CR-08 types |
-| `domain/capsule` | Types for capsule, encapsulated value, piece-group context, and guards | `domain/parameter-set` | CR-08 types |
-| `domain/delivery-statement` | Types for the mint and transfer statements and the challenge context schema, with guards; delivery-statement version | `domain/credential` | CR-09 statement fields |
-| `pairing/interface` | `IPairingAdapter` contract: generators, add, mul, MSM, subgroup check, pairing-product check, capability declaration for second-group arithmetic, encoding | nothing | CR-10 contract |
-| `pairing/bn254` | BN254 implementation with precompile-matching encodings and the declared first-group-only verifier capability | `pairing/interface` | CR-10 on BN254 |
-| `pairing/bls12-381` | BLS12-381 implementation with precompile-matching encodings, subgroup checks on every input, and the declared second-group capability | `pairing/interface` | CR-10 on BLS12-381 |
-| `kdf/hash-to-scalar` | Domain-separated hash-to-scalar for identity mapping and challenges; KDF for piece-group keys from an encapsulated value and context | `pairing/interface` | CR-05 derivation, CR-08 identity mapping |
-| `kem/interface` | `ICredentialKemAdapter` contract with the declared identity-scope capability | `domain/capsule`, `domain/credential` | CR-08 contract, CD-08 |
-| `kem/setup` | Parameter set and master scalar generation, random for escrow lineage | `kem/interface`, `pairing/interface` | CR-05, CR-08 |
-| `kem/issue` | Credential issuance under the master scalar for one entitlement identity; trivial identity-element refusal | `kem/setup`, `kdf/hash-to-scalar` | CR-08, LC-08 |
+| `pairing/bn254` | BN254 implementation with precompile-matching encodings and the declared first-group-only verifier capability; owns the `IPairingAdapter` contract (generators, add, mul, MSM, subgroup check, pairing-product check, capability declaration for second-group arithmetic, encoding) and the pairing types and guards | nothing | CR-10 contract and CR-10 on BN254 |
+| `pairing/bls12-381` | BLS12-381 implementation with precompile-matching encodings, subgroup checks on every input, and the declared second-group capability | `pairing/bn254`, for the interface | CR-10 on BLS12-381 |
+| `kdf/hash-to-scalar` | Domain-separated hash-to-scalar for identity mapping and challenges; KDF from an encapsulated value and context to a set's wrapping key; wrap and unwrap of a piece-group key under it; context strings, serialization, and output lengths frozen with known-answer vectors from an independent implementation | `pairing/bn254`, for the interface | CR-05 derivation, CR-08 identity mapping, cross-set agreement |
+| `kem/setup` | Parameter set and master scalar generation, random for escrow lineage; owns the `ICredentialKemAdapter` contract with the declared identity-scope capability and the parameter-set, master-scalar, and identity-element types and guards with their encoding contract | `pairing/bn254` | CR-05, CR-08 contract and types, CD-08 |
+| `kem/issue` | Credential issuance under the master scalar for one entitlement identity; trivial identity-element refusal; owns the credential and interval-index types and guards | `kem/setup`, `kdf/hash-to-scalar` | CR-08, LC-08 |
 | `kem/rerandomize` | Seller-side rerandomization with a private offset, no master scalar | `kem/issue` | CR-08 |
 | `kem/validity` | Public validity check of a credential against a parameter set, with encoding and subgroup validation | `kem/issue` | CR-08, EC-06 |
-| `kem/encapsulate` | Capsule and encapsulated value per piece group; both identity scopes | `kem/setup` | CR-08 |
+| `kem/encapsulate` | Capsule and encapsulated value per piece group; both identity scopes; owns the capsule, encapsulated-value, and piece-group-context types and guards | `kem/setup` | CR-08 |
 | `kem/well-formed` | Capsule well-formedness check | `kem/encapsulate` | CR-08, EC-06 |
-| `kem/decapsulate` | Recovery of the encapsulated value from a credential and capsule; piece-group key via the KDF | `kem/validity`, `kem/well-formed`, `kdf/hash-to-scalar` | CR-08 cross-holder agreement |
-| `envelope/interface` | `IKeyAgreementAdapter` contract declaring the envelope algebra | `domain/credential` | CR-04 contract |
-| `envelope/keygen` | Envelope key pair with independent secrets and Schnorr proofs of possession; identity-element rejection | `envelope/interface`, `pairing/interface` | CR-04, LC-08 |
+| `kem/decapsulate` | Recovery of the encapsulated value from a credential and capsule; wrapping key via the KDF and the piece-group key by unwrap | `kem/validity`, `kem/well-formed`, `kdf/hash-to-scalar` | CR-08 cross-holder agreement and cross-set agreement |
+| `envelope/keygen` | Envelope key pair with independent secrets and Schnorr proofs of possession; identity-element rejection; owns the `IKeyAgreementAdapter` contract declaring the envelope algebra and the envelope key pair and envelope types and guards | `kem/issue`, for the credential types; `pairing/bn254` | CR-04 contract, CR-04, LC-08 |
 | `envelope/wrap` | Pairing ElGamal encryption of a credential to two registered keys with independent coins | `envelope/keygen` | CR-04 |
 | `envelope/unwrap` | Decryption under the recipient's secrets and local validity check | `envelope/wrap`, `kem/validity` | CR-04, EC-06 |
-| `proof/interface` | `IDeliveryProofAdapter` contract declaring the supported envelope algebra and both verifier forms | `domain/delivery-statement`, `envelope/interface` | CR-09 contract |
-| `proof/challenge` | Fiat–Shamir challenge over the full context schema with domain separation | `proof/interface`, `kdf/hash-to-scalar` | CR-09 statement binding |
+| `proof/challenge` | Fiat–Shamir challenge over the full context schema with domain separation; owns the `IDeliveryProofAdapter` contract declaring the supported envelope algebra and both verifier forms, the mint and transfer statement types with the challenge context schema and delivery-statement version, and their guards | `envelope/keygen`, for the envelope types; `kdf/hash-to-scalar` | CR-09 contract, CR-09 statement binding and fields |
 | `proof/prove-mint` | Mint relation prover | `proof/challenge`, `kem/issue`, `envelope/wrap` | CD-01 |
 | `proof/prove-transfer` | Transfer relation prover from the seller's fresh decryption and total offset | `proof/challenge`, `kem/rerandomize`, `envelope/unwrap` | CD-02 |
 | `proof/verify` | Rust reference verifier in both forms: second-group arithmetic, and hash-weighted pairing product with first-group arithmetic only | `proof/prove-mint`, `proof/prove-transfer` | CR-09 |
@@ -48,21 +40,20 @@ The harness implements the credential KEM, envelope, and delivery proof on both 
 | `contracts/delivery-verifier` | Solidity mint and transfer verification over the statement fields, bit-for-bit with `proof/verify` | `contracts/pairing-lib` | CD-03, CR-09 |
 | `contracts/test-deploy` | Test-chain deployment of the verifier on each curve form; exempt from the full support structure as a deployment script | `contracts/delivery-verifier` | CD-07 |
 | `chain/verifier-client` | Rust binding that submits proofs to the deployed verifier and reads acceptance and gas | `proof/verify`, `contracts/test-deploy` | CD-03 cross-verification |
-| `harness/vectors` | Algebraic and mutation vector sets: cross-holder agreement, rerandomized validity, non-convertibility, malformed capsules, mutated statement fields, replay | `kem/decapsulate`, `proof/verify` | CR-08, CR-09 vectors |
+| `harness/vectors` | Algebraic and mutation vector sets: cross-holder agreement, cross-set agreement with two independently generated parameter sets unwrapping one piece-group key, rerandomized validity, non-convertibility, malformed capsules, mutated statement fields, replay | `kem/decapsulate`, `proof/verify` | CR-08, CR-09 vectors |
 | `harness/measure` | Size, timing, and gas capture per curve: capsule, envelope, proof bytes; decapsulation per group; prove and verify time; mint and transfer gas | `harness/vectors`, `chain/verifier-client` | CD-07, RO-03 |
-| `harness/sample-deployment` | Generates the site demonstration's sample: a small plaintext, its ciphertext and sidecar under a generated parameter set, and one sample credential, bundled for the WebAssembly build | `kem/encapsulate`, `kem/issue`, `envelope/wrap` | MVP Scope, Project Seed Host and Site |
-| `harness/report` | Release-evidence report and the recorded piece-group size and curve selection; integration test across the whole chain and the commit for the phase | `harness/measure`, `harness/sample-deployment` | AS-21 |
+| `harness/report` | Release-evidence report and the piece-group size and curve selected against the declared budget; integration test across the whole chain and the commit for the phase | `harness/measure` | AS-21 |
 
 ### Protocol core and contract suite, as sprints
 
 | Sprint by role | Contents | Depends on |
 | --- | --- | --- |
-| Domain model | Canonical identity, hash-card, immutable suite, attempt context, entitlement and interval state, custody state, manifest and sidecar bounds, claims, lifecycle transitions | harness domain types |
-| Payload cipher and commitments | `AesCtrAdapter` with counter layout and extent rules; BLAKE3/Bao roots, paths, streaming verification, random challenges; manifest and sidecar validation ordering | domain model |
+| Domain model | Canonical identity, hash-card, immutable suite, attempt context, entitlement and interval state, custody state, manifest and sidecar bounds, claims, lifecycle transitions | the types the harness tickets own |
+| Payload cipher and commitments | `AesCtrAdapter` with counter layout and extent rules; BLAKE3/Bao roots, paths, streaming verification, random challenges; the sidecar layer, per live set a capsule and wrapped piece-group key per group under that set's Bao root; manifest and sidecar validation ordering; the `sample-deployment` generator for the site demonstration, which needs the cipher and so lives here rather than in the harness | domain model; `kdf/hash-to-scalar` for the wrap |
 | Signature services | `Ed25519Adapter` and `Secp256k1Adapter` with domain separation and complete-message binding; DID Document binding schema | domain model |
 | Swarm transport and seed host | `ISwarmTransportAdapter` over embedded `librqbit` as the MVP's sole transport, with root-to-infohash translation, Bao verification of completed pieces, torrent creation per deployment with the sidecar as a second file, and seeder-map peer injection in the adapter; `IPeerDiscoveryAdapter` aggregation over the library's DHT, PEX, and trackers plus the on-chain seeder map; `ISeedHostAdapter` owned daemon and delegation to external clients with Bao custody challenges; root-keyed ciphertext store with holding reason, quota, and eviction | payload cipher and commitments; no chain, no KEM |
-| Registry and entitlement contracts | Asset records, deployments and hash-cards, parameter-set liveness with the sidecar-coverage rule, envelope-key registry, entitlements with interval state, issuance and transfer calling the delivery verifier, escrow records, identity binding, claim-set state layout, batch and paginated views | harness contracts; domain model |
-| Chain, settlement, and entitlement-state adapters | Contract bindings; tier mapping; `evaluateAuthorization` and batch with per-context bindings; multi-node view aggregation failing closed | registry and entitlement contracts |
+| Registry and entitlement contracts | Asset records with the per-name version index, deployments and hash-cards, on-chain attestation verification against the source-key table, later escrow deployments, parameter-set liveness with the sidecar-coverage rule and sidecar addition, envelope-key registry, entitlements with interval state and the ownership override that disables standard transfers, issuance and transfer calling the delivery verifier, batched grant requests readable by holders and closed by grant or withdrawal, escrow records per deployment, identity binding, claim-set state layout, batch and paginated views | harness contracts; domain model |
+| Chain, settlement, and entitlement-state adapters | Contract bindings; tier mapping; `evaluateAuthorization` and batch with per-context bindings; quorum view aggregation, two of three at a common reference, stale ignored, divergence and views older than `τ_soft` failing closed | registry and entitlement contracts |
 | Adapter registry and factory | Governance-controlled registry, constructor injection, immutability once bound | registry and entitlement contracts |
 
 ### Local daemon and package serving, as epics
@@ -70,10 +61,10 @@ The harness implements the credential KEM, envelope, and delivery proof on both 
 | Epic by role | Contents | Depends on |
 | --- | --- | --- |
 | Durable jobs and configuration | Job store, checkpointing, idempotent restart; versioned configuration registry; capability resolution failing closed | domain model |
-| Plaintext CAS and resolution orchestrator | Verified atomic CAS; symlinking; quota, pinning, eviction; fixed resolution order | durable jobs and configuration |
-| First Finder ingest | npm ingest adapter with attestation validation and eligibility; foreground serve; background bootstrap job; state-locked registration race; escrow custody of the master scalar; seeding | plaintext CAS; swarm transport and seed host; registry contracts; KEM |
-| Package host adapter | npm registry protocol served locally, leaving resolution to npm | plaintext CAS and resolution orchestrator; First Finder ingest |
-| Credential delivery and per-attempt authorization | Envelope-key registration on first run; mint and grant delivery; sale delivery; credential load and recovery; attempt rule with `τ_soft` and `τ_wallet`; decapsulation and decryption; interval-end destruction | chain adapters; KEM, envelope, proof; payload cipher |
+| Plaintext CAS and resolution orchestrator | Verified atomic CAS of tarballs, extracted per project by the package manager with nothing linking into the store; quota, pinning, eviction; plaintext from the first source that delivers it within the budget, upstream for any identity without a credential, a bounded grant wait when upstream is down; the package metadata store; per-asset independence status | durable jobs and configuration |
+| First Finder ingest | npm ingest adapter with registry-signature attestation validation, metadata capture, and eligibility; foreground serve; background bootstrap job; state-locked registration race; escrow custody of the master scalar; seeding | plaintext CAS; swarm transport and seed host; registry contracts; KEM |
+| Package host adapter | npm registry protocol served locally, leaving resolution to npm; canonical tarball URLs so lockfiles stay portable; packuments from the metadata store with staleness marking and the ledger's version index during an outage | plaintext CAS and resolution orchestrator; First Finder ingest |
+| Credential delivery and per-attempt authorization | Envelope-key registration on first run; the batched grant request job and its pickup from chain events; the prefetch job with pinning, seeding, and set matching; mint and grant delivery, holders fulfilling requests for absent requesters; sale delivery; credential load and recovery; attempt rule with `τ_soft` and `τ_wallet`; decapsulation and decryption; interval-end destruction | chain adapters; KEM, envelope, proof; payload cipher; relayer for sponsorship |
 | Identity and custody | `IKeyCustodyAdapter` default implementation; identity creation; relayer-paid binding; wallet integrations | signature services; chain adapters |
 
 ### Onboarding shells and services, as milestones
@@ -83,7 +74,7 @@ The harness implements the credential KEM, envelope, and delivery proof on both 
 | Installation coordinator | Durable install plan, platform detection, signed artifacts, service lifecycle, reversible package-manager redirect, repair, update, uninstall, health probe | durable jobs and configuration; identity and custody |
 | Visual Studio Code extension and npm bootstrap | Thin shells over the coordinator | installation coordinator |
 | Desktop application and CLI | Tauri and Rust control surfaces | installation coordinator |
-| Relayer or paymaster | Free-path sponsorship, rate limits, cost reporting | chain adapters |
+| Relayer or paymaster | Free-path sponsorship under a global per-window budget and maximum liability with per-identity limits as one layer; cost and budget reporting | chain adapters, so it may start before the daemon grouping closes |
 | Explicit publisher path | Publisher-derived lineage; publisher proof adapters; swarm-native publication of the dependency closure | First Finder ingest; identity and custody |
 | Claim verifier and escrow claim | Attestor service with revocable key; claim set established from upstream metadata at verification; claim-set vouchers; claimant parameter set; optional handover; voluntary migration | registry contracts; explicit publisher path |
 | Project seed host and site | Persistent first seeder of the core closure; static site | swarm transport and seed host; explicit publisher path |
@@ -95,7 +86,7 @@ The harness implements the credential KEM, envelope, and delivery proof on both 
 | Objective by role | Contents | Depends on |
 | --- | --- | --- |
 | Transaction flow proof | Priced primary issuance and secondary transfer through the packaged applications | explicit publisher path; credential delivery; relayer |
-| Acceptance scenarios | AS-01 through AS-27 on clean machines through packaged applications | every milestone |
+| Acceptance scenarios | Every acceptance scenario on clean machines through packaged applications | every milestone |
 | External cryptographic review closed | Findings dispositioned before any priced deployment | harness report |
 | Legal prerequisites | License text, eligibility restatement, regulatory review | none technical |
 | Dogfood baseline and release | ChainTorrent published swarm-natively; baseline metrics recorded; release evidence complete | acceptance scenarios; review; legal |
@@ -109,16 +100,18 @@ Where one component's output becomes another's input across a boundary that an i
 | Verifier parity | `proof/verify` | `contracts/delivery-verifier` via `chain/verifier-client` | Rust to chain; bit-for-bit acceptance on every vector |
 | Precompile encoding | `pairing/bn254`, `pairing/bls12-381` | `contracts/pairing-lib` | Rust encoding to precompile input |
 | Piece-group key | `kem/decapsulate` and `kdf/hash-to-scalar` | payload cipher | The decapsulation-to-cipher seam preserved for a future multi-key suite |
-| Sidecar root | `kem/encapsulate` | commitments and hash-card | Capsules committed by their own Bao root |
+| Sidecar root | `kem/encapsulate` and the wrapped key from `kdf/hash-to-scalar` | commitments and hash-card | Per live set, capsule and wrapped key per group committed by that set's Bao root |
 | Envelope in settlement | `envelope/wrap` and `proof/prove-*` | registry and entitlement contracts | Calldata and event; digest stored |
 | Attempt context | domain model | entitlement-state adapter and credential delivery | View call at the declared tier |
 | Resolution order | resolution orchestrator | plaintext CAS, ciphertext store, swarm transport, First Finder ingest | Local, encrypted, swarm, upstream |
-| Package-manager protocol | package host adapter | npm | HTTP registry protocol; resolution stays in npm |
+| Package-manager protocol | package host adapter | npm | HTTP registry protocol; resolution stays in npm; canonical tarball URLs so lockfiles stay portable |
 | Persistent credential | envelope and custody | credential delivery | Stored only under `IKeyCustodyAdapter` |
 | Installer to daemon | installation coordinator | daemon, package host, seed host | Service lifecycle and IPC |
 | Shells to coordinator | extension, npm bootstrap, desktop, CLI | installation coordinator | One coordinator, identical postcondition |
 | Relayer to contracts | relayer | identity binding and mint | Sponsored transactions under policy |
 | Verifier voucher to contract | claim verifier | escrow claim contract surface | Voucher bound to claimant, set, contract, chain, nonce, expiry |
+| Grant request to holder | request job, through the relayer | registry request record; any holder's grant service | Batched sponsored request; holder reads open requests and fulfils them for absent requesters |
+| Grant pickup from events | registry mint and grant events | request job and credential engine | Envelope recovered from chain history on the next run; set matched against held deployments |
 
 ## Conflict Flags
 
@@ -137,15 +130,9 @@ The dependency graph across all five phases. Edges point from producer to consum
 flowchart TB
     subgraph harness["Cryptographic validation harness"]
         direction TB
-        dom_ps["domain/parameter-set"]
-        dom_cred["domain/credential"]
-        dom_cap["domain/capsule"]
-        dom_stmt["domain/delivery-statement"]
-        pair_if["pairing/interface"]
         pair_bn["pairing/bn254"]
         pair_bls["pairing/bls12-381"]
         kdf["kdf/hash-to-scalar"]
-        kem_if["kem/interface"]
         kem_setup["kem/setup"]
         kem_issue["kem/issue"]
         kem_rerand["kem/rerandomize"]
@@ -153,11 +140,9 @@ flowchart TB
         kem_encap["kem/encapsulate"]
         kem_wf["kem/well-formed"]
         kem_decap["kem/decapsulate"]
-        env_if["envelope/interface"]
         env_keygen["envelope/keygen"]
         env_wrap["envelope/wrap"]
         env_unwrap["envelope/unwrap"]
-        proof_if["proof/interface"]
         proof_chal["proof/challenge"]
         proof_mint["proof/prove-mint"]
         proof_xfer["proof/prove-transfer"]
@@ -168,19 +153,11 @@ flowchart TB
         chain_vc["chain/verifier-client"]
         h_vectors["harness/vectors"]
         h_measure["harness/measure"]
-        h_sample["harness/sample-deployment"]
         h_report["harness/report"]
 
-        dom_ps --> dom_cred
-        dom_ps --> dom_cap
-        dom_cred --> dom_stmt
-        pair_if --> pair_bn
-        pair_if --> pair_bls
-        pair_if --> kdf
-        dom_cap --> kem_if
-        dom_cred --> kem_if
-        kem_if --> kem_setup
-        pair_if --> kem_setup
+        pair_bn --> pair_bls
+        pair_bn --> kdf
+        pair_bn --> kem_setup
         kem_setup --> kem_issue
         kdf --> kem_issue
         kem_issue --> kem_rerand
@@ -190,15 +167,12 @@ flowchart TB
         kem_valid --> kem_decap
         kem_wf --> kem_decap
         kdf --> kem_decap
-        dom_cred --> env_if
-        env_if --> env_keygen
-        pair_if --> env_keygen
+        kem_issue --> env_keygen
+        pair_bn --> env_keygen
         env_keygen --> env_wrap
         env_wrap --> env_unwrap
         kem_valid --> env_unwrap
-        dom_stmt --> proof_if
-        env_if --> proof_if
-        proof_if --> proof_chal
+        env_keygen --> proof_chal
         kdf --> proof_chal
         proof_chal --> proof_mint
         kem_issue --> proof_mint
@@ -216,11 +190,7 @@ flowchart TB
         proof_verify --> h_vectors
         h_vectors --> h_measure
         chain_vc --> h_measure
-        kem_encap --> h_sample
-        kem_issue --> h_sample
-        env_wrap --> h_sample
         h_measure --> h_report
-        h_sample --> h_report
     end
 
     subgraph core["Protocol core and contract suite"]
@@ -288,10 +258,11 @@ flowchart TB
         o_legal --> o_release
     end
 
-    dom_stmt --> s_domain
+    kem_issue --> s_domain
     h_report --> s_registry
     sol_verify --> s_registry
     kem_decap --> s_cipher
+    kdf --> s_cipher
 
     s_domain --> e_jobs
     s_swarm --> e_ff
@@ -332,7 +303,7 @@ flowchart TB
 
 ## Sequencing
 
-Sequencing within the harness phase is the tickets' dependency order, producers first, exactly as the graph draws it. There are four independent starting points: `domain/parameter-set`, `pairing/interface`, `contracts/pairing-lib`, and nothing else; every other ticket has a producer. The four tracks converge at `chain/verifier-client` and `harness/vectors`, and the phase closes at `harness/report`, whose node carries the integration test across the whole chain and the commit.
+Sequencing within the harness phase is the tickets' dependency order, producers first, exactly as the graph draws it. The independent starting points are `pairing/bn254` and `contracts/pairing-lib`; every other ticket has a producer. The tracks converge at `chain/verifier-client` and `harness/vectors`, and the phase closes at `harness/report`, whose node carries the integration test across the whole chain and the commit.
 
 Across phases the sequence is the business case's phase order with two corrections the graph makes visible: the swarm sprint may begin as soon as the payload cipher sprint exists, in parallel with the contract sprint; and the identity and custody epic may begin as soon as the signature and chain sprints exist, before the CAS epic, because the installation coordinator needs it.
 
@@ -370,6 +341,6 @@ Each question carries a Feedback block. A blank block means the map proceeds on 
 
 **What a ticket is and is not.** A ticket here is a candidate for a workplan node: it names the source file's role, what it owns, what it depends on, and what requirement it proves. It is not a node. A node is authored through the ordinary path in the node template, with every element in the fixed order, and this document does not emit node structure. When a ticket is promoted, its row here is unchanged; the node is the instruction and this map is the overview.
 
-**Why the harness has thirty-three tickets.** Because the node template requires one source file per node and the harness has that many source files once the KEM, envelope, proof, two curves, Solidity verifier, chain client, measurement driver, and the sample-deployment generator for the site are each given their own file with full support. That count is the honest size of the first phase and it is why the phase is mapped at this resolution and nothing beyond it is.
+**Why the harness has the tickets it has.** One source file per node, so the KEM, envelope, proof, both curves, the Solidity verifier, the chain client, and the measurement driver each get their own file with full support. The sample-deployment generator needs the payload cipher and belongs to the protocol core grouping. That list is the honest size of the first phase and it is why the phase is mapped at this resolution and nothing beyond it is.
 
 **Requirement coverage of the harness phase.** CR-04, CR-05 in part, CR-08, CR-09, CR-10, CD-03, CD-07, CD-08, LC-08 in part, and AS-21. Everything else the requirements name is in a later phase.
