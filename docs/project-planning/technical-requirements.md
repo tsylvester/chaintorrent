@@ -215,14 +215,15 @@ Five API surfaces exist. The specification fixes the adapter interface signature
 
 # Proposed File Tree
 
-Each function is a module directory with one file per element: `interface.rs`, `interface_test.rs`, `interaction.spec.md`, `mock.rs`, `guard.rs`, `guard_test.rs`, `test.rs`, `mod.rs` for the implementation, and `provides.rs` for the public surface; test files attach as `#[cfg(test)]` modules and `mock.rs` sits behind a `mocks` feature. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it. A Solidity contract is a module of `contracts/src/` with its Foundry tests as its interface, guard, and unit elements and its constants and vectors generated from the Rust reference. Crate directories are hyphenated and module directories underscored; a ticket is named `crate/module`. The tree is the shape the workspace reaches; each crate is created by the node of the first module that lives in it, and the workspace manifest's glob members admit it without an edit. The manifest carries the lint table, and every crate takes `test-support` as a dev-dependency.
+Each function is a module directory with one file per element: `interface.rs`, `interface_test.rs`, `interaction.spec.md`, `mock.rs`, `guard.rs`, `guard_test.rs`, `test.rs`, `mod.rs` for the implementation, and `provides.rs` for the public surface; test files attach as `#[cfg(test)]` modules and `mock.rs` sits behind a `mocks` feature. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it. A Solidity contract is a module of `contracts/src/` with its Foundry tests as its interface, guard, and unit elements and its constants and vectors generated from the Rust reference. Crate directories are hyphenated and module directories underscored; a ticket is named `crate/module`. The tree is the shape the workspace reaches; each crate is created by the node of the first module that lives in it, and the workspace manifest's glob members, `crates/*`, `adapters/*`, and `apps/*`, admit it without an edit, which is why every direct child of those directories is a crate and nothing nests a crate directory inside another. The manifest carries the lint table, and every crate takes `test-support` as a dev-dependency.
 
 ```
 ChainTorrent/
   Cargo.toml                          workspace; glob members, lint table; dependencies pinned by their first consumer
   rust-toolchain.toml
   deny.toml                           cargo-deny license allowlist
-  crates/
+  .gitignore                          /target; Cargo.lock tracked
+  crates/                             test support, protocol and domain ring, application ring
     test-support/                     dev-only; assert_same and the other test-only items the standards name
     domain/                           protocol and domain ring; no host or chain dependency; only the types its own modules implement
       src/
@@ -244,30 +245,30 @@ ChainTorrent/
         first_finder/  publish/  grant/  claim/  identity/  compose/  health/
         settings/                     catalogue, validation, migration jobs, export and import
         install/                      installation coordinator plan; initial values from the catalogue
-    adapters/
-      encoding/       encoder/  decoder/  abi_encode/  abi_decode/   IEncoderAdapter and IDecoderAdapter under one versioned encoding identifier; Ethereum ABI through alloy sol types, the mirrors owned here; foundation tickets
-      pairing/        interface/  bn254/  bls12_381/  benchmark/
-      kem/            interface/  setup/  issue/  rerandomize/  validity/  encapsulate/  well_formed/  decapsulate/
-      envelope/       interface/  keygen/  wrap/  unwrap/
-      proof/          interface/  challenge/  prove_mint/  prove_transfer/  verify/
-      kdf/            hash_to_scalar/   derivation, hash-to-scalar, and the sidecar wrap
-      cipher/         aes_ctr/
-      hashing/        blake3_root/  bao_verify/  bao_challenge/
-      signature/      ed25519/  secp256k1/
-      chain/          client/  settlement/  entitlement_state/  events/  verifier_client/
-      ingest-npm/
-      package-host-npm/
-      transport/      interface/  rqbit_overlay/  bittorrent_rqbit/   overlay onto pinned librqbit; adapter with translation, Bao post-verification, peer injection
-      discovery/      aggregate/  local/  seeder_map/
-      seed-host/      store/  owned/  delegated/
-      cas/
-      custody/        interface/  local_keystore/  holder_seed/  device_roles/  device_key/  upgrade/
-      identity-proof/ provenance/  maintainer_oauth/  verifier_client/
-      jobs/
-      config/         registry store; defaults, overrides, scopes, versions
-      ipc/            server/  principals/  framing/
-      telemetry/      metrics/  tracing/
-      platform/       service_linux/  service_macos/  service_windows/  credential_store/  install_paths/
+  adapters/                           adapter ring; one crate per adapter family, each a direct child so the manifest's glob admits it
+    encoding/       encoder/  decoder/  abi_encode/  abi_decode/   IEncoderAdapter and IDecoderAdapter under one versioned encoding identifier; Ethereum ABI through alloy sol types, the mirrors owned here; foundation tickets
+    pairing/        interface/  bn254/  bls12_381/  benchmark/
+    kem/            interface/  setup/  issue/  rerandomize/  validity/  encapsulate/  well_formed/  decapsulate/
+    envelope/       interface/  keygen/  wrap/  unwrap/
+    proof/          interface/  challenge/  prove_mint/  prove_transfer/  verify/
+    kdf/            hash_to_scalar/   derivation, hash-to-scalar, and the sidecar wrap
+    cipher/         aes_ctr/
+    hashing/        blake3_root/  bao_verify/  bao_challenge/
+    signature/      ed25519/  secp256k1/
+    chain/          client/  settlement/  entitlement_state/  events/  verifier_client/
+    ingest-npm/
+    package-host-npm/
+    transport/      interface/  rqbit_overlay/  bittorrent_rqbit/   overlay onto pinned librqbit; adapter with translation, Bao post-verification, peer injection
+    discovery/      aggregate/  local/  seeder_map/
+    seed-host/      store/  owned/  delegated/
+    cas/
+    custody/        interface/  local_keystore/  holder_seed/  device_roles/  device_key/  upgrade/
+    identity-proof/ provenance/  maintainer_oauth/  verifier_client/
+    jobs/
+    config/         registry store; defaults, overrides, scopes, versions
+    ipc/            server/  principals/  framing/
+    telemetry/      metrics/  tracing/
+    platform/       service_linux/  service_macos/  service_windows/  credential_store/  install_paths/
   apps/
     daemon/           binary: package host, IPC, engines, workflows
     cli/
