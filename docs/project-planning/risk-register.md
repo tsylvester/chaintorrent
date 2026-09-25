@@ -679,7 +679,7 @@ Recorded in MVP Scope as the tier's protection: the mapping is held only by the 
 - **Sequencing:** post-MVP.
 - **Guardrails:** mapping never on chain; identity functional without an account.
 - **Signals:** none until the tier exists.
-- **Open questions:** whether the account blob for seed sync is offered at all, given that it makes the account service a custodian of an encrypted identity.
+- **Open questions:** whether the account's encrypted recovery backup of the holder seed is offered at all, given that it makes the account service a custodian of an encrypted identity.
 
 ---
 
@@ -713,6 +713,38 @@ Disclose the cost at install; run the prefetch in the background at low priority
 
 ---
 
+## Risk
+**R-24. A lost or compromised admitted device, or a custody upgrade that changes the principal.** A reader device holds the envelope secrets and its own device key; a signer device holds a device key with permissions on the identity's contract account; a custody upgrade rewraps the seed on a root. Each is a place where the identity's authority could outlive the user's intent or be silently replaced.
+
+## Impact
+Medium. A compromised reader under a conforming client reads what the identity holds until its next state view after revocation; a compromised signer acts within its permissions until revoked; a principal changed by an upgrade would strand the identity's entitlements.
+
+## Likelihood
+Medium for device loss, which is ordinary; Low for an upgrade fault, which the migration verifies against the chain.
+
+## Mitigation
+The seed never leaves a root, so no added device can rebind, rotate, or admit. Every attempt's wallet-control assertion is made by a device key the contract account admits in the same state view as the authorization, so revocation takes effect at the device's next view, when its conforming client purges its envelopes and envelope secrets exactly as it purges a transferred entitlement; beyond `τ_soft` an offline device holds only committed plaintext, and retention by a modified client is R-19. Signer permissions scope transfer and payment per device. The custody upgrade writes beside the old blob and retires it only after the re-derived public keys match the on-chain binding and envelope-key registration.
+
+## Seed Examples
+- A laptop is stolen; the user revokes it from the workstation; the laptop's client, on its next state read, fails the wallet-control assertion and purges.
+- A phone admitted as a signer with permission to lock payment is compromised; the attacker can approve purchases within that permission until revocation.
+- A keystore upgrade derives from a truncated seed; the re-derived handshake key does not match the binding and the job rolls back.
+
+## Mitigation Plan
+- Prove revocation and purge at the next state view in the identity and credential delivery milestones.
+- Default signer permissions to the narrowest role; require a root for admission and rescoping.
+- Prove the upgrade's rollback on a tampered rewrap.
+
+## Notes
+- **Affected components:** custody adapter, identity manager, identity contract account, attempt engine, relayer.
+- **Dependencies:** R-19 for non-conforming retention; R-06, since the signer set on chain discloses how many devices an identity has admitted.
+- **Sequencing:** the registry contracts and identity and custody milestones.
+- **Guardrails:** no authorization without an admitted device key in the current view.
+- **Signals:** attempts from a revoked device key; upgrade rollbacks.
+- **Open questions:** none.
+
+---
+
 # Additional Content
 
 ## Summary table
@@ -742,6 +774,7 @@ Disclose the cost at install; run the prefetch in the background at low priority
 | R-21 | Remote head rendezvous over claimed daemons | High when built / none in MVP | Low | Deferred; constraints recorded | Project lead |
 | R-22 | Account-to-identity mapping as deanonymizing record | High when built / none in MVP | Medium | Deferred; constraints recorded | Project lead |
 | R-23 | First-run disk and bandwidth doubling | Medium | High | Mitigated by disclosure, settings, quota, cache-only mode | Daemon implementer |
+| R-24 | Lost or compromised device; custody upgrade changing the principal | Medium | Medium / Low | Mitigated by root-held seed, on-chain revocation read in every attempt, verified upgrade | Daemon implementer |
 
 ## Relationship to the other documents
 

@@ -77,19 +77,19 @@ Every service the project runs is scaffolding no client depends on.
 | Service | Runtime | Responsibility | What it must never become |
 | --- | --- | --- | --- |
 | Local daemon and package host | Rust, single instance per machine | Registry endpoint, CAS orchestration, encrypted acquisition, credential custody, per-attempt authorization, decryption, durable jobs, seed host control, authenticated IPC | A component another machine depends on |
-| Relayer or paymaster | Rust service, ERC-4337 EntryPoint v0.7 on Base | Sponsors the free path and the one-time identity binding under per-identity rate limits; reports cost | Anything on the paid path or the read path |
+| Relayer or paymaster | Rust service, ERC-4337 EntryPoint v0.7 on Base | Sponsors the free path, the one-time identity binding, and device admission and revocation under per-identity rate limits; reports cost | Anything on the paid path or the read path |
 | Claim verifier | Rust service | Authenticates claimants against npm metadata, provenance attestations, and GitHub OAuth; signs vouchers over committed claim sets under a key registered on chain with rotation and revocation | A party a claim depends on being available; it is one implementation behind `IClaimVerifierAdapter` |
 | Project seed host and site | Rust daemon instance plus static site with a WebAssembly demonstration | First seeder of the core closure; optional relayer and discovery host; education tier and download | A privileged seeder or a host any client must reach |
 | Cryptographic validation harness | Rust binary against Base Sepolia | Measures sizes, timings, and gas; records the piece-group size and confirms the curve | A throwaway; its delivery verifier is the shipped contract |
 | Demonstration harness | Rust | Controlled participants, wallets, chain state, and induced failures | Test tooling that can be skipped; the completion boundary makes it load-bearing |
 
-Deferred services, recorded so their boundaries are designed now: an account service owning onboarding state, preferences, a device roster, and optionally an end-to-end encrypted holder seed blob, never an entitlement; a rendezvous relaying end-to-end encrypted sessions between a browser and a daemon that dialed out; a remote head over the daemon's IPC; and a hosted instance as a separate product mode with a service on its read path.
+Deferred services, recorded so their boundaries are designed now: an account service owning onboarding state, preferences, a device roster, and optionally an end-to-end encrypted recovery backup of the holder seed, never an entitlement; a rendezvous relaying end-to-end encrypted sessions between a browser and a daemon that dialed out; a remote head over the daemon's IPC; and a hosted instance as a separate product mode with a service on its read path.
 
 # Components
 
 Grouped by ring. Each row names the module family in the Application Requirements and the interface it implements or consumes.
 
-**Protocol and domain ring.** Canonical identity `BLAKE3(name@version)`; the canonical binary encoding of everything hashed, signed, or stored; authenticated hash-card and immutable deployment suite; parameter set, master scalar, credential, envelope key pair, envelope, capsule, delivery statement with the challenge context schema; `AttemptContext`; entitlement and interval state; custody state including device roles; manifest and sidecar bounds; claim sets; lifecycle transitions. Guards on every type at every boundary.
+**Protocol and domain ring.** Canonical identity `BLAKE3(name@version)`; the canonical binary encoding of everything hashed, signed, or stored; authenticated hash-card and immutable deployment suite; parameter set, master scalar, credential, envelope key pair, envelope, capsule, delivery statement with the challenge context schema; `AttemptContext`; entitlement and interval state; custody state including device roles, device keys, and delegations; manifest and sidecar bounds; claim sets; lifecycle transitions. Guards on every type at every boundary.
 
 **Application workflow ring.** Installation coordinator with a durable checkpointed plan; package serving and resolution orchestrator; First Finder bootstrap as a durable idempotent job; encrypted acquisition; credential delivery at mint, grant, and sale; per-attempt authorization; decryption and CAS commit; seeding; explicit publishing with dependency-closure ingestion; escrow claim; transfer; repair; recovery.
 
@@ -111,7 +111,7 @@ Grouped by ring. Each row names the module family in the Application Requirement
 | `ISwarmTransportAdapter` | BitTorrent through embedded `librqbit`, pinned, the MVP's sole transport; BLAKE3-native transport reserved for V2 | Integrity structure on the wire |
 | `IPeerDiscoveryAdapter` | DHT, tracker, PEX, local, on-chain seeder map | Source, non-authoritative |
 | `ISeedHostAdapter` | Owned daemon; delegation to an external client with Bao custody challenges | Capacity, obligated versus voluntary |
-| `IKeyCustodyAdapter` | Local keystore under the OS credential store, holder-seed derived | Signing, envelope keys, issuance material, device roles, multi-device, recovery, user presence, publisher seed |
+| `IKeyCustodyAdapter` | Local keystore under the OS credential store; on a root, the holder seed with its control and envelope branches; on any device, its own device key; blobs tagged by adapter version | Signing, envelope keys, issuance material, device roles, device admission, multi-device, recovery, in-place upgrade, user presence, publisher seed |
 
 **Host shells.** Visual Studio Code extension and npm bootstrap package as thin TypeScript over the installer and IPC; Tauri desktop and Rust CLI as control surfaces.
 
@@ -163,7 +163,7 @@ flowchart TB
         metrics["Metrics and traces"]
     end
 
-    custody["Custody adapter: OS credential store; holder seed, envelope secrets, persistent credentials; never the decrypted credential"]
+    custody["Custody adapter: OS credential store; holder seed on a root only, device key, envelope secrets on a reading device, persistent credentials; never the decrypted credential"]
     secret["Secret region: decrypted credentials, piece-group keys, cipher state; memory-only, zeroized"]
 
     host --> resolve
@@ -225,10 +225,10 @@ flowchart TB
 | Deployment gate | Authenticates the canonical record and hash-card, resolves the complete immutable suite, validates piece geometry, piece-group size, addressable extent, and index range, authenticates the sidecar root and each capsule's well-formedness; halts before any credential is exercised | Nothing persistent; a validated descriptor handed to acquisition | EC-01, CR-06; cryptography.md, Manifest Bounds Validation |
 | Swarm engine | Runs the resolved transport adapters and concurrent discovery adapters, unions and deduplicates peers, verifies every ingress chunk against the ciphertext or sidecar root before storage, drives the seed host controller in owned or delegated mode, issues Bao custody challenges to a delegated client, resumes transfers after failure | The ciphertext store through `ISeedHostAdapter`, keyed by root with holding reason | SW-01 through SW-07, EC-02 |
 | Ledger client | Chain adapter bindings; settlement adapter exposing Base's tiers, the references at which the attempt rule reads and destroys, and reference age; entitlement-state views single and paginated as a quorum of two of three configured nodes at a common reference, stale ignored, divergence and over-age views failing closed; event and calldata reader for envelope recovery and grant pickup | RPC endpoint set and the per-node view cache | LC-04, LC-06, XA-06, CD-04, PR-10 |
-| Identity manager | Creates or imports the identity; completes the relayer-paid handshake-key binding once; registers envelope keys with proofs of possession once; connects external wallets through EIP-1193 or WalletConnect for signing only; derives keys from the holder seed through the custody adapter | Nothing secret; it calls custody | IW-01, IW-03, IW-05, IW-07 |
+| Identity manager | Creates or imports the identity; completes the relayer-paid handshake-key binding once; registers envelope keys with proofs of possession once; on a root, derives the control and envelope branches from the holder seed through the custody adapter, pairs new devices, admits and revokes their signers on the contract account, and signs their delegations; on any device, generates its device key and asserts wallet control with it; connects external wallets through EIP-1193 or WalletConnect for signing only; runs the custody adapter's in-place upgrade | Nothing secret; it calls custody | IW-01, IW-03, IW-05, IW-07 |
 | Entitlement acquisition | Inspects the wallet, skips held targets, and acquires the rest in the background: relayer-paid free mint, escrow grant fulfilled by any holder against the open request whether or not this identity is online, or user-initiated funded purchase with a payment lock; verifies the delivery proof result and records the persistent credential under custody; never on the foreground install's path | The acquisition queue | EC-03, CD-01, CD-02, CD-05, PR-10, RO-01, RO-02 |
 | Credential engine | Decrypts the envelope under the identity's own envelope secrets into the secret region at start-up or on delivery; checks the parameter set's validity equation; may rerandomize in memory; hands the decrypted credential to the attempt engine and to a sale; zeroizes on every terminal transition | The secret region's credential entries | EC-06, CR-04, CR-07, CR-08 |
-| Attempt engine | Before every piece-group key derivation, constructs the `AttemptContext`, obtains a state view at the declared tier no older than `τ_soft` and a wallet-control assertion no older than `τ_wallet`, evaluates `AUTHORIZED`, `PENDING_SETTLEMENT` with bounded retry, or `DENIED` with terminal refusal, in single or paginated batch form without losing per-context bindings | The attempt queue and freshness clocks | EC-04, EC-05, LC-06 |
+| Attempt engine | Before every piece-group key derivation, constructs the `AttemptContext`, obtains a state view at the declared tier no older than `τ_soft` and a wallet-control assertion no older than `τ_wallet` by a device key the identity's contract account admits in that view, evaluates `AUTHORIZED`, `PENDING_SETTLEMENT` with bounded retry, or `DENIED` with terminal refusal, in single or paginated batch form without losing per-context bindings | The attempt queue and freshness clocks | EC-04, EC-05, LC-06 |
 | Decryption pipeline | Decapsulates the group's capsule, derives the set's wrapping key, unwraps the piece-group key, decrypts at continuous-stream offsets under the suite's counter layout, verifies plaintext against the authenticated root per Bao chunk, commits atomically to the CAS, and serves the exact upstream tarball; streams while further pieces arrive | Transient decryption contexts in the secret region | EC-07, CR-01, CR-02 |
 | Interval-end watcher | Observes a transfer out at the deployment's declared tier and stops new attempts; at HARD destroys the decrypted credential, piece-group keys, cipher state, keystream, and every live context; leaves the persistent envelope and keys in custody; never strands a still-owner on a reorganization | Subscription to entitlement events | EC-08, LC-05; cryptography.md, Phase 2 step 6 |
 | First Finder engine | Foreground: fetch the exact upstream tarball, validate the release attestation or record its absence, commit, serve. Background durable job: allocate the deployment identity under state lock, generate master scalar and parameter set if none is live, a piece-group key and capsule randomness per group and the IV, encrypt per group, build one sidecar per live set and the hash-card, race the escrow registration, on loss destroy everything and follow the winner, on win register, hand off to the seed host, retain the master scalar under custody as escrow custodian, and grant itself the asset's first entitlement | The bootstrap job's checkpoints | FF-01 through FF-08, CR-05, PC-02 |
@@ -248,7 +248,7 @@ Five boundaries, each with one rule.
 - **Ingress is untrusted.** Every package-host request and every IPC request is validated at the boundary and carries a principal whose capabilities bound what it may cause. A package request can cause resolution and serving and nothing else.
 - **The network is untrusted.** No chunk enters the ciphertext store without a Bao authentication path against the authenticated root; no peer or discovery result is authoritative; a delegated seed host's reports are verified by challenge, not believed.
 - **The chain is authenticated by agreement.** Three nodes are configured by default and a state view is accepted only when at least two reachable nodes agree at a common reference block within `τ_soft`; a node behind the reference is stale and is ignored, not counted as disagreeing; two nodes returning different state at the same reference is divergence and fails closed; a view older than `τ_soft`, as during a prolonged stall, fails closed. The trust assumption is that fewer than two configured providers lie in concert. The upstream registry is authenticated by its release attestation, for npm the registry signature over name, version, and integrity, as provenance, never as safety, with a declared absence recorded rather than implied.
-- **Custody is the only durable home for secrets.** The holder seed, envelope secrets, chain and handshake keys, master scalars, publisher seeds, and per-entitlement persistent credentials live there and nowhere else. The daemon holds a handle, not a copy.
+- **Custody is the only durable home for secrets.** The holder seed and handshake key on a root, the device key on every device, envelope secrets on a reading device, master scalars, publisher seeds, and per-entitlement persistent credentials live there and nowhere else. The daemon holds a handle, not a copy. A device's authority is whatever the identity's contract account admits at the current state view, and a conforming client purges envelopes and envelope secrets when that view shows its signer revoked.
 - **The secret region is memory-only.** Decrypted credentials, piece-group keys, expanded cipher state, buffered keystream, and live decryption contexts exist only inside `zeroize`-guarded types that cannot be serialized, logged, or formatted, and are destroyed on success, interval end, cancellation, loss, and error. Nothing from this region crosses IPC, reaches the job store, or reaches telemetry.
 
 ### Process and concurrency model
@@ -268,7 +268,7 @@ One process, one `tokio` runtime, task groups per ingress and engine: the packag
 
 ### What the daemon exposes to later tiers without change
 
-A remote head drives the same authenticated IPC with a principal whose capabilities exclude value-moving operations. A read-delegate device receives decrypted credentials from the credential engine over a secure channel under a delegation the identity manager signs. A signer-only device connects as an external wallet through the identity manager. The account-link step is a consent-flow entry the installation coordinator already reserves. None of these adds a third ingress surface; each is a capability on one of the two that exist.
+A remote head drives the same authenticated IPC with a principal whose capabilities exclude value-moving operations. A read-delegate device receives decrypted credentials from a root's credential engine over a secure channel under a delegation the root's identity manager signs. A signer device holds only its device key, admitted on the identity's contract account, and approves operations within its permissions without envelope material. The account-link step is a consent-flow entry the installation coordinator already reserves. None of these adds a third ingress surface; each is a capability on one of the two that exist.
 
 ### What is not yet specified
 
@@ -300,17 +300,29 @@ sequenceDiagram
 
 **First Finder bootstrap.** Foreground: fetch, verify the attestation or record its absence, commit to CAS, serve. Background durable job: allocate deployment identity under state lock, generate master scalar and parameter set if none is live, a piece-group key and capsule randomness per group and the IV, encrypt per group, build one sidecar per live set and the hash-card, race the escrow registration, on loss destroy everything and follow the winner, on win register the parameter set and sidecar roots, retain the master scalar as escrow custodian, hand ciphertext and sidecars to the seed host, and grant itself the asset's first entitlement.
 
-**Device roles under one identity.** The multi-device design as decided, with the MVP declaring only the full role.
+**Device roles under one identity.** The holder seed stays on root devices; every other device holds its own device key, admitted as a signer on the identity's contract account, with a delegation from the handshake key naming its role. The MVP declares root and reader. Revoking a signer on the account ends the device's authority at its next state view, when the conforming client purges its envelopes and envelope secrets.
 
 ```mermaid
 flowchart LR
-    seed["Holder seed"]
-    full["Full device: seed, envelope secrets, handshake key, chain key"]
-    delegate["Read-delegate device: decrypted credentials in memory only, delegation signed by handshake key"]
-    signer["Signer-only device: chain key and handshake key, no envelope material"]
-    seed -->|"paired transfer / authenticator export / account blob (deferred)"| full
-    full -->|"decrypted credential over secure channel"| delegate
-    seed -.->|"derives"| signer
+    seed["Holder seed, on a root only"]
+    control["Control branch: handshake key; binding, rotation, device set"]
+    envelope["Envelope branch: envelope secrets"]
+    account["Identity contract account: signer set is the device registry"]
+    root["Root device: seed, both branches, its device key"]
+    reader["Reader device: its device key, envelope secrets; reads alone, envelopes from chain history"]
+    delegate["Read-delegate device: its device key; decrypted credentials in memory only"]
+    signer["Signer device: its device key only; approves within its permissions, never decrypts"]
+    seed -->|"derives"| control
+    seed -->|"derives"| envelope
+    root --- seed
+    control -->|"admits and revokes signers"| account
+    control -->|"signs role delegation"| reader
+    control -->|"signs role delegation"| delegate
+    control -->|"signs role delegation"| signer
+    envelope -->|"envelope secrets over the paired channel"| reader
+    root -->|"decrypted credentials over a secure channel"| delegate
+    account -.->|"wallet-control assertion read in every attempt"| reader
+    account -.->|"wallet-control assertion read in every attempt"| delegate
 ```
 
 # Interfaces
@@ -396,7 +408,7 @@ Resolution is the security property, not a convenience. It runs once at installa
 - **The hashing, signature, and swarm tickets precede the contract sprints by dependency and run beside the harness.** The dependency map records the parallelism; the groupings are by role.
 - **The demonstrable milestone follows credential delivery**, because resolving against the swarm with the registry down needs a second identity to hold a credential.
 - **Custody is in the daemon grouping but the installer needs it.** The dependency runs the right way; identity and custody are built early in that grouping.
-- **The identity's chain-level form is chosen at the relayer milestone.** Every identity-bound contract mutation takes a signed intent verified by ECDSA or ERC-1271, so neither a contract account under a paymaster nor an externally owned account under a relayer is precluded.
+- **The identity is a contract account; its sponsorship mechanism is chosen at the relayer milestone.** The account's signer set is the device registry, and every identity-bound contract mutation takes a signed intent verified through ERC-1271, so a paymaster, a relayer, and a self-funded caller share one entry point.
 - **The escrow record carries no maintainer commitment**, so the escrow claim milestone has no policy gate and the verifier establishes the claim set at verification time.
 - **The account-link step exists in the installer's consent flow and does nothing in the MVP.** It is shown as unavailable and the consent trace records it; a reviewer should not read it as dead code.
 - **The Tauri stable line is 2; 3 is alpha.** The desktop targets 2.
@@ -473,6 +485,8 @@ The independence claims, made precise per operation. A cell that says nobody or 
 | Envelope recovery | Nobody | Chain history at any honest full-history node | None | An unreachable archive defers recovery; the custody copy still serves |
 | Metadata resolution during an upstream outage | Nobody | The ledger's per-name version index; the local metadata store | None | A pinned closure is served; range resolution is best effort against ingested versions and dist-tags are marked stale |
 | Sponsored onboarding | Nobody | The relayer's remaining budget | The relayer | Exhaustion is an explicit failure with recovery, never a false authorization |
+| Device admission | A root device and the new device, paired | The identity's contract account | The relayer for sponsorship, or the identity's own gas | The new device holds no authority until its signer is admitted; the root keeps working |
+| Device revocation | A root device | The identity's contract account | The relayer for sponsorship, or the identity's own gas | Takes effect at the revoked device's next state view, when a conforming client purges its envelopes and envelope secrets; an offline device holds only committed plaintext beyond `τ_soft` |
 
 # Compliance Controls
 
@@ -480,11 +494,7 @@ Ingest eligibility is free public distribution by the rights holder's choice, im
 
 # Open Questions
 
-Those with architectural consequence, each carrying a Feedback block; the product requirements hold the full list.
-
-**Multi-device custody sync mechanism.** Recommended: holder-seed derivation of envelope secrets and handshake key, with paired local transfer as the MVP's declared capability and the authenticator export and account blob as later custody adapters; device roles full, read-delegate, and signer-only as versioned custody capabilities, with only the full role declared in the MVP. Assumption if blank: as recommended.
-
-Feedback:
+Those with architectural consequence outside the MVP, each carrying a Feedback block.
 
 **Rendezvous operator, when the deferred tier is scoped.** The project seed host and site, or a separate operator. Assumption if blank: decided when the tier is scoped; no MVP impact.
 
@@ -499,6 +509,8 @@ Feedback:
 **Why the immutable suite.** Reinterpreting existing ciphertext under a different construction is how a protocol acquires an undocumented compatibility matrix; a successor deployment with a sidecar per live parameter set is the one path, and entitlements survive it because they bind to the asset.
 
 **Why resolution fails closed before anything happens.** The ordering is the security property: validating before decryption means a malformed manifest never causes a credential to be exercised, and validating a composition before an operation means no key material, state traffic, or swarm activity is spent on a composition that was never going to complete.
+
+**Why the seed stays on a root.** A device added for convenience, a phone or a cloud instance, should not become the identity's custodian. Devices carry their own keys under a contract account whose signer set is read in every attempt, so a device's authority ends at its next state view when its signer is revoked, by the same conforming-client purge that ends a transferred entitlement. The seed's control branch governs the identity, its envelope branch governs reading, and signer permissions govern transfer.
 
 **Why the daemon and not a library.** Seeding must survive the editor; the read path must not depend on a browser; a single machine-level instance owns the CAS, the ciphertext store, the jobs, and the IPC, and every control surface attaches to it rather than containing it.
 

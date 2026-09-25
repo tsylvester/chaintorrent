@@ -45,7 +45,7 @@ The adapter surfaces the MVP resolves, with their MVP implementations:
 | `ISwarmTransportAdapter` | Embedded `librqbit` as the sole MVP transport, a soft fork pinned by commit with its hooks submitted upstream | Deployment, multi-homed |
 | `IPeerDiscoveryAdapter` | DHT, tracker, PEX, local, on-chain seeder map, concurrent and non-authoritative | Client |
 | `ISeedHostAdapter` | Owned daemon; delegation to an existing BitTorrent client | Installation |
-| `IKeyCustodyAdapter` | Local keystore under the OS credential store, keys derived from a holder seed, device roles declared as versioned capabilities; default identity is a local key | Installation |
+| `IKeyCustodyAdapter` | Local keystore under the OS credential store with version-headed blobs upgraded in place; the holder seed on root devices with its control and envelope branches; a device key on every device, admitted on the identity's contract account; device roles declared as versioned capabilities | Installation |
 
 ## Cryptographic construction, stated once
 
@@ -81,7 +81,7 @@ Each family below is a composable module group in the Application Requirements, 
 - **First Finder bootstrap** (FF): as-is ingest with attestation validation; foreground serve before background bootstrap; durable idempotent bootstrap job; random master scalar, parameter set, capsule randomness, IV; state-locked escrow race with loser destruction; escrow custody of the master scalar; completion requiring registration and persistent seeding; later-seeker install without npm; dependency-closure ingestion on publication.
 - **Swarm, discovery, and storage** (SW): transport by authenticated root with BitTorrent as one implementation; concurrent non-authoritative discovery; session-independent seed host; delegated host with Bao custody challenges; root-keyed ciphertext store distinguishing obligated from voluntary; resumable failure handling; visible seeding archive.
 - **Ledger, contracts, and settlement** (LC): the full contract state model; asset binding; $0.00 escrow issuance with the priced dogfood exception; tier and reference exposure; transfer with delivery verification, atomic interval advance, and payment release; batch reads that never broaden authorization; race- and replay-safe registration and claim; envelope-key proofs of possession; parameter-set liveness and the sidecar-coverage rule; lock expiry and rate limits.
-- **Identity, wallet, and custody** (IW): separable capabilities bound to one principal; declared custody capabilities; first-run identity, one binding, one envelope-key registration; custody of identity, envelope, issuance, and seed material with per-entitlement envelopes; recovery and multi-device without silent principal change; authority rotation that versions nothing; EIP-1193, WalletConnect, EIP-712, local default identity.
+- **Identity, wallet, and custody** (IW): separable capabilities bound to one principal; declared custody capabilities; first-run identity, one binding, one envelope-key registration; custody of identity, envelope, issuance, and seed material with per-entitlement envelopes; the seed on root devices and every other device admitted under its own key; recovery and multi-device without silent principal change; in-place custody upgrade verified against the chain; authority rotation that versions nothing; EIP-1193, WalletConnect, EIP-712, local default identity.
 - **Cryptographic services** (CR): payload cipher, Bao commitments and challenges, signatures, envelopes, randomness and derivation lineages, descriptor validation, secret lifecycle, credential KEM, delivery proof, pairing adapter, sidecar wrap and hash assignment.
 - **Credential delivery** (CD): delivery at mint, at sale, and at escrow grant; on-chain verification; persistent credential recovery; declared identity scope; claim with optional handover and sidecar-per-live-set; the validation harness.
 - **Publishing and claims** (PC): explicit publisher path with derived keys; escrow record contents; proof binding; claim verification independent of any unavailable party; complete authority transfer on claim; claim-set vouchers; verifier key rotation.
@@ -122,7 +122,7 @@ Three content roots are registered per deployment, and public registries use Pub
 | --- | --- | --- | --- |
 | Plaintext CAS | Client | Content hash | Persists by design; outside the authorization boundary; user quota with pinning of artifacts a live project resolved and warning before evicting anything not re-authorizable |
 | Ciphertext store | Seed host adapter | Ciphertext root | Shared across transports; separately budgeted; obligated versus voluntary holdings recorded; never evicted by plaintext policy |
-| Custody store | `IKeyCustodyAdapter` | Identity | Handshake, chain, and envelope keys; master scalars and derivation seeds; per entitlement the envelope and interval index; never the decrypted credential or piece-group keys |
+| Custody store | `IKeyCustodyAdapter` | Identity | On a root, the holder seed and the handshake key; on every device, its device key and role delegation; on a reading device, the envelope secrets; master scalars and derivation seeds; per entitlement the envelope and interval index; blobs headed by adapter version; never the decrypted credential or piece-group keys |
 | Durable job store | Daemon | Job | Checkpointed, idempotent, restartable across process and machine failure |
 | Configuration registry | Daemon | Version | Defaults, overrides, secret references, capabilities, endpoints; no raw secrets |
 | Logs and metrics | Daemon | Request correlation | RO-03 metrics and RO-04 traces; no secrets |
@@ -138,7 +138,9 @@ Decrypted credential, expanded cipher state, derived piece-group keys, buffered 
 | Master scalar `α` | Issuer: publisher, seed-derived; First Finder, random, retained as escrow custodian for optional handover | Per parameter set; loss recovered by registering a new set |
 | Credential exponent `r` and offsets `s` | Never disclosed to anyone; offsets private to the seller and buyer | Discarded after use |
 | Envelope coins | Credential author | Discarded after posting |
-| Envelope secrets `x, y` | Holder | Persistent for the interval; loss ends transfer, not reading |
+| Holder seed | The holder's root devices only | Persistent; recovery secret; its control branch never leaves a root |
+| Device key | Each admitted device | Until its signer is revoked on the identity's contract account |
+| Envelope secrets `x, y` | Holder: root and reader devices | Persistent for the interval; loss ends transfer, not reading; purged by a conforming client when its device is revoked |
 | Capsule randomness `t` | Encryptor | Discarded after encapsulation |
 | Publisher seed phrase | Publisher | Recovery secret, not rotatable; never leaves the client |
 
@@ -146,9 +148,9 @@ Decrypted credential, expanded cipher state, derived piece-group keys, buffered 
 
 **Target platforms.** Windows, macOS, and Linux for the daemon, CLI, desktop application, and extension, with signed native artifacts per platform. The packaged MVP runs without Rust, Solidity tooling, or repository source; npm itself is the only developer tool assumed.
 
-**Installation.** Both shells invoke one Rust installation coordinator executing a durable plan: detect platform and capabilities; download and authenticate artifacts; create and permission stores and the IPC endpoint; install, start, and enable the daemon or an equivalent persistent user service; offer explicit reversible package-manager redirect; create or import identity and complete the relayer-paid binding and envelope-key registration, or select cache-only mode with no identity; take the request and prefetch consent items with the first-run cost disclosure; configure default chain, discovery, relay, and ingest endpoints; resolve the full adapter composition; and report ready only on an active end-to-end health probe. Every mutating stage is backed up and rolls back on later failure.
+**Installation.** Both shells invoke one Rust installation coordinator executing a durable plan: detect platform and capabilities; download and authenticate artifacts; create and permission stores and the IPC endpoint; install, start, and enable the daemon or an equivalent persistent user service; offer explicit reversible package-manager redirect; create or import identity as a root, completing the relayer-paid binding, contract account creation, and envelope-key registration, or pair with an existing root as an admitted device, or select cache-only mode with no identity; take the request and prefetch consent items with the first-run cost disclosure; configure default chain, discovery, relay, and ingest endpoints; resolve the full adapter composition; and report ready only on an active end-to-end health probe. Every mutating stage is backed up and rolls back on later failure.
 
-**Chain deployment.** The contract suite deploys to Base through an on-chain factory that injects constructor-bound adapter addresses from an adapter registry governed by a single project-held key, immutable once bound, with optional EIP-1967 proxies for adapter logic. The validation harness deploys the verifier to Base Sepolia. Delivery verification uses EIP-2537 on BLS12-381 as the primary form and EIP-196 and EIP-197 on BN254 as the retained form; both precompile sets are live on Base. Every function that mutates identity-bound state takes the acting identity and a signed intent verified by ECDSA or ERC-1271, so the identity's chain-level form and the sponsorship mechanism are chosen at the relayer milestone without contract rework.
+**Chain deployment.** The contract suite deploys to Base through an on-chain factory that injects constructor-bound adapter addresses from an adapter registry governed by a single project-held key, immutable once bound, with optional EIP-1967 proxies for adapter logic. The validation harness deploys the verifier to Base Sepolia. Delivery verification uses EIP-2537 on BLS12-381 as the primary form and EIP-196 and EIP-197 on BN254 as the retained form; both precompile sets are live on Base. The identity is a contract account verified by ERC-1271 whose signer set is its device registry, and every function that mutates identity-bound state takes the acting identity and a signed intent verified against a signer whose permissions cover it, so the sponsorship mechanism is chosen at the relayer milestone without contract rework.
 
 **Services.** The relayer or paymaster, the claim verifier, and the project seed host and site run as Rust services with operational controls, explicit failure states, and cost reporting. Each is replaceable and none is on any client's critical path.
 
@@ -203,7 +205,9 @@ Decisions on the MVP path are stated; items held behind a policy line or release
 
 **Launch network and pairing curve.** Base, with Base Sepolia as the test network; BLS12-381 primary through EIP-2537 and BN254 retained; tiers mapped to Base; delivery cost measured as L2 execution and L1 data fee.
 
-**Default key custody.** A local keystore under the OS credential store as the first `IKeyCustodyAdapter`, keys derived from a holder seed, device roles as versioned custody capabilities with only the full role in the MVP, external wallets signing only, paired local transfer as the multi-device mechanism.
+**Default key custody.** A local keystore under the OS credential store as the first `IKeyCustodyAdapter`, with version-headed blobs and an in-place upgrade verified against the on-chain binding; the holder seed on root devices, deriving a control branch and an envelope branch; every other device admitted under its own key as a signer on the identity's contract account and revoked there; device roles as versioned custody capabilities, root and reader in the MVP; external wallets signing only.
+
+**Identity's chain-level form.** A contract account verified by ERC-1271 whose signer set is the device registry, read in every attempt's wallet-control assertion; the sponsorship mechanism is chosen at the relayer milestone.
 
 **Escrow record.** No maintainer commitment is stored and no salt custodian exists; the verifier establishes the claim set from upstream metadata at verification time; a commitment is reopened only with a ZK-Email verifier.
 
@@ -213,7 +217,7 @@ Decisions on the MVP path are stated; items held behind a policy line or release
 
 **Build sequence.** The order under Sequencing is ratified.
 
-**Identity's chain-level form and sponsorship.** Chosen at the relayer milestone; LC-13's signed-intent rule keeps the contracts agnostic so neither answer is precluded.
+**Sponsorship mechanism.** Chosen at the relayer milestone; LC-13's signed-intent rule keeps the contracts agnostic to it.
 
 ## Measured by the harness
 
