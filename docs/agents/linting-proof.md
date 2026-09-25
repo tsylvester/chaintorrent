@@ -19,6 +19,10 @@ When a test is written before its interface, guard, or implementation, the compi
 
 Never silence a valid RED error. Do not add `@ts-*` or `@es*` suppressions, create an empty stub function, or otherwise make the error disappear. The error is the deliverable at that step.
 
+## Lint scope is declared, not suppressed
+
+The workspace lint table denies constructs in production code that test code legitimately uses, such as `expect` in a builder. Test modules and mock files are outside that scope, and the Rust form declares it: each test module and `mock.rs` carries one module-level `allow` naming only the lint-table entries it is exempt from. That attribute is part of the file's scope, written when the file is created. An `allow` anywhere else, or one naming a lint outside the lint table, is a suppression and is forbidden like any other.
+
 ## Completion proof
 
 Completion requires a lint-clean file **plus** GREEN test evidence — or a documented exemption for pure docs, types, or interfaces. Record the evidence in your response (e.g. "Lint: clean via internal tool; Tests: not run per policy"). The agent does not run tests; test evidence comes from provided output (see [environment](environment.md)). Never assume success without proof.

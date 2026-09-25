@@ -15,14 +15,17 @@ Grouped by role. Within a grouping at ticket resolution each row is a ticket; el
 
 ### Foundation, at ticket resolution
 
-The workspace every node builds on, the encoding everything hashed or signed shares, the tracing layer that cannot format a secret, and the continuous integration that proves each ticket where the completion boundary requires.
+The workspace every node builds on, the shared test support every interface test imports, the encoder and decoder adapters everything hashed, signed, stored, or framed shares, the secret type that cannot be formatted, the tracing setup that correlates a request, and the continuous integration that proves each ticket where the completion boundary requires. No crate is created ahead of the module that first lives in it; each ticket below creates its crate when that crate does not yet exist.
 
 | Ticket | Owns | Depends on | Proves |
 | --- | --- | --- | --- |
-| `workspace/cargo` | The workspace manifest, `rust-toolchain.toml`, `deny.toml` with the license allowlist, `foundry.toml`, and crate skeletons for `domain`, `workflows`, every `adapters/*` family, and every `apps/*` entry; configuration files with no types and no tests | nothing | The workspace builds and passes the allowlisted checks on Windows, macOS, and Linux |
-| `domain/encoding` | The canonical binary encoder and decoder for everything hashed, signed, or stored, with known-answer vectors the Solidity generator mirrors; owns the encoding types and guards | `workspace/cargo` | CR-03 complete-message binding, CR-09 statement encoding, the hash-card's encoding identifier |
-| `telemetry/redaction` | The tracing layer: secret-typed values that cannot be formatted, per-request correlation identifiers | `workspace/cargo` | CR-07 exclusion of secrets from logs; RO-04 correlation |
-| `workspace/ci` | The continuous-integration definition: the allowlisted checks, `cargo-audit`, `cargo-deny`, and the clean-runner end-to-end job on Windows, macOS, and Linux; a configuration file with no types and no tests | `workspace/cargo` | XA-07 facilities run in CI; NF-M07 |
+| `workspace/cargo` | The workspace manifest with glob members and the lint table; `rust-toolchain.toml`; `deny.toml` with the license allowlist; configuration files with no types and no tests; each workspace dependency is pinned by the ticket that first consumes it | nothing | The workspace builds and passes `cargo check`, `cargo clippy`, and `cargo fmt --check` on Windows, macOS, and Linux; the lint table rejects `unsafe_code`, `unwrap_used`, `expect_used`, `panic`, and `as_conversions` in production code |
+| `test-support/assert_same` | The dev-only `test-support` crate and its `assert_same` item, which compiles only when its two type arguments are the same type; every crate's dev-dependency | `workspace/cargo` | The Rust interface-test form every later ticket uses |
+| `domain/secret` | The secret-typed value: no formatting or serialization trait, an explicit accessor for the cryptographic operations and custody wrapping that consume it, zeroization on drop; creates the `domain` crate | `workspace/cargo`, `test-support/assert_same` | CR-07 exclusion of secrets from logs, proven at compile time |
+| `encoding/abi_encode` | `AbiEncoderAdapter`, the Ethereum ABI encoder through `alloy`'s sol types, with known-answer vectors the Solidity generator mirrors; owns the `IEncoderAdapter` interface with the versioned encoding identifier, the encoding types and guards, and the sol-type mirrors with their conversions from every type it encodes, so no other crate depends on `alloy` for encoding; creates the `adapters/encoding` crate and pins `alloy` | `workspace/cargo`, `test-support/assert_same` | CR-03 complete-message binding, CR-09 statement encoding, the hash-card's encoding identifier |
+| `encoding/abi_decode` | `AbiDecoderAdapter`, the Ethereum ABI decoder: untrusted bytes to the owned type or its error; owns the `IDecoderAdapter` interface, which declares the encoder's versioned encoding identifier, and the conversions from the sol-type mirrors | `encoding/abi_encode` | Round trip against the encoder's vectors; malformed input rejected |
+| `telemetry/tracing` | Tracing setup carrying per-request correlation identifiers; creates the `adapters/telemetry` crate | `workspace/cargo`, `test-support/assert_same` | RO-04 correlation |
+| `workspace/ci` | The continuous-integration definition: `cargo check`, `cargo clippy`, `cargo fmt --check`, the unit and integration tests, `cargo-audit`, and `cargo-deny` on Windows, macOS, and Linux; a configuration file with no types and no tests; each later step, `forge`, the TypeScript linter, `cargo-fuzz`, and the clean-runner end-to-end job, is added by the ticket that first needs it | `workspace/cargo` | XA-07 facilities run in CI; NF-M07 |
 
 ### Cryptographic validation harness, at ticket resolution
 
@@ -33,23 +36,23 @@ The harness implements the credential KEM, envelope, and delivery proof on both 
 | `pairing/bn254` | BN254 implementation with precompile-matching encodings and the declared first-group-only verifier capability; owns the `IPairingAdapter` contract (generators, add, mul, MSM, subgroup check, pairing-product check, capability declaration for second-group arithmetic, encoding) and the pairing types and guards | `workspace/cargo` | CR-10 contract and CR-10 on BN254 |
 | `pairing/bls12_381` | BLS12-381 implementation with precompile-matching encodings, subgroup checks on every input, and the declared second-group capability | `pairing/bn254`, for the interface | CR-10 on BLS12-381 |
 | `pairing/benchmark` | The arkworks-versus-`halo2curves` measurement of scalar multiplication, multi-scalar multiplication, and pairing on both curves that selects the library; a measurement driver | `pairing/bn254`, `pairing/bls12_381` | The recorded library choice |
-| `kdf/hash_to_scalar` | BLAKE3 keyed derivation for the wrapping key from an encapsulated value and context and for every other off-chain derivation; keccak256 hash-to-scalar under domain tags for the identity mapping and the delivery challenge; the XOR wrap and unwrap of a piece-group key under a wrapping key; context strings, serialization, and output lengths frozen with known-answer vectors from an independent implementation | `pairing/bn254`, for the interface; `domain/encoding` | CR-05 derivation, CR-08 identity mapping, CR-11, cross-set agreement |
-| `kem/setup` | Parameter set and master scalar generation, random for escrow lineage; owns the `ICredentialKemAdapter` contract with the declared identity-scope capability and the parameter-set, master-scalar, and identity-element types and guards with their encoding contract | `pairing/bn254` | CR-05, CR-08 contract and types, CD-08 |
-| `kem/issue` | Credential issuance under the master scalar for one entitlement identity; trivial identity-element refusal; owns the credential and interval-index types and guards | `kem/setup`, `kdf/hash_to_scalar` | CR-08, LC-08 |
+| `kdf/hash_to_scalar` | BLAKE3 keyed derivation for the wrapping key from an encapsulated value and context and for every other off-chain derivation; keccak256 hash-to-scalar under domain tags for the identity mapping and the delivery challenge; the XOR wrap and unwrap of a piece-group key under a wrapping key; context strings, serialization, and output lengths frozen with known-answer vectors from an independent implementation | `pairing/bn254`, for the interface; `encoding/abi_encode` | CR-05 derivation, CR-08 identity mapping, CR-11, cross-set agreement |
+| `kem/setup` | Parameter set and master scalar generation, random for escrow lineage; owns the `ICredentialKemAdapter` contract with the declared identity-scope capability and the parameter-set, master-scalar, and identity-element types and guards with their encoding contract | `pairing/bn254`; `domain/secret` | CR-05, CR-08 contract and types, CD-08 |
+| `kem/issue` | Credential issuance under the master scalar for one entitlement identity; trivial identity-element refusal; owns the credential and interval-index types and guards | `kem/setup`, `kdf/hash_to_scalar`, `domain/secret` | CR-08, LC-08 |
 | `kem/rerandomize` | Seller-side rerandomization with a private offset, no master scalar | `kem/issue` | CR-08 |
 | `kem/validity` | Public validity check of a credential against a parameter set, with encoding and subgroup validation | `kem/issue` | CR-08, EC-06 |
 | `kem/encapsulate` | Capsule and encapsulated value per piece group; both identity scopes; owns the capsule, encapsulated-value, and piece-group-context types and guards | `kem/setup` | CR-08 |
 | `kem/well_formed` | Capsule well-formedness check | `kem/encapsulate` | CR-08, EC-06 |
 | `kem/decapsulate` | Recovery of the encapsulated value from a credential and capsule; the wrapping key through the KDF and the piece-group key by unwrap | `kem/validity`, `kem/well_formed`, `kdf/hash_to_scalar` | CR-08 cross-holder agreement, CR-11 cross-set agreement |
-| `envelope/keygen` | Envelope key pair with independent secrets and Schnorr proofs of possession; identity-element rejection; owns the `IKeyAgreementAdapter` contract declaring the envelope algebra and the envelope key pair and envelope types and guards | `kem/issue`, for the credential types; `pairing/bn254` | CR-04 contract, CR-04, LC-08 |
+| `envelope/keygen` | Envelope key pair with independent secrets and Schnorr proofs of possession; identity-element rejection; owns the `IKeyAgreementAdapter` contract declaring the envelope algebra and the envelope key pair and envelope types and guards | `kem/issue`, for the credential types; `pairing/bn254`; `domain/secret` | CR-04 contract, CR-04, LC-08 |
 | `envelope/wrap` | Pairing ElGamal encryption of a credential to two registered keys with independent coins | `envelope/keygen` | CR-04 |
 | `envelope/unwrap` | Decryption under the recipient's secrets and local validity check | `envelope/wrap`, `kem/validity` | CR-04, EC-06 |
-| `proof/challenge` | The keccak256 Fiat–Shamir challenge over the full context schema with domain separation; owns the `IDeliveryProofAdapter` contract declaring the supported envelope algebra and both verifier forms, the mint and transfer statement types with the challenge context schema and delivery-statement version, and their guards | `envelope/keygen`, for the envelope types; `kdf/hash_to_scalar`; `domain/encoding` | CR-09 contract, CR-09 statement binding and fields |
+| `proof/challenge` | The keccak256 Fiat–Shamir challenge over the full context schema with domain separation; owns the `IDeliveryProofAdapter` contract declaring the supported envelope algebra and both verifier forms, the mint and transfer statement types with the challenge context schema and delivery-statement version, and their guards | `envelope/keygen`, for the envelope types; `kdf/hash_to_scalar`; `encoding/abi_encode` | CR-09 contract, CR-09 statement binding and fields |
 | `proof/prove_mint` | Mint relation prover | `proof/challenge`, `kem/issue`, `envelope/wrap` | CD-01 |
 | `proof/prove_transfer` | Transfer relation prover from the seller's fresh decryption and total offset | `proof/challenge`, `kem/rerandomize`, `envelope/unwrap` | CD-02 |
 | `proof/verify` | Rust reference verifier in both forms: second-group arithmetic, and hash-weighted pairing product with first-group arithmetic only | `proof/prove_mint`, `proof/prove_transfer` | CR-09 |
-| `contracts/PairingLib` | Solidity library over the precompiles in both forms, with contract-side subgroup checks where the precompile does not perform them | `workspace/cargo`, for the Foundry configuration; mirrors `pairing/bn254` and `pairing/bls12_381` | CR-10 on chain |
-| `harness-crypto/generate` | The generator emitting Solidity constants and test vectors from the Rust reference for the pairing library and the verifier, including the challenge and identity-mapping vectors | `proof/verify`, `domain/encoding` | CR-09 parity inputs; CR-11 on-chain vectors |
+| `contracts/PairingLib` | Solidity library over the precompiles in both forms, with contract-side subgroup checks where the precompile does not perform them; creates `contracts/foundry.toml` and adds the `forge build` and `forge fmt --check` steps to continuous integration | `workspace/ci`; mirrors `pairing/bn254` and `pairing/bls12_381` | CR-10 on chain |
+| `harness-crypto/generate` | The generator emitting Solidity constants and test vectors from the Rust reference for the pairing library and the verifier, including the challenge and identity-mapping vectors | `proof/verify`, `encoding/abi_encode` | CR-09 parity inputs; CR-11 on-chain vectors |
 | `contracts/DeliveryVerifier` | Solidity mint and transfer verification over the statement fields, bit-for-bit with `proof/verify`, its constants and vectors generated | `contracts/PairingLib`, `harness-crypto/generate` | CD-03, CR-09 |
 | `contracts/deploy` | Deployment script for the verifier on each curve form to Anvil and Base Sepolia, emitting addresses to configuration; exempt from the full support structure as a deployment script | `contracts/DeliveryVerifier` | CD-07 |
 | `chain/verifier_client` | Rust binding that submits proofs to the deployed verifier and reads acceptance and gas | `proof/verify`, `contracts/deploy` | CD-03 cross-verification |
@@ -65,7 +68,7 @@ The hashing, signature, and swarm milestones are at ticket resolution; they depe
 
 | Ticket | Owns | Depends on | Proves |
 | --- | --- | --- | --- |
-| `hashing/blake3_root` | BLAKE3 root and Bao outboard construction over a byte stream; owns the root and outboard types and guards | `domain/encoding` | CR-02 construction |
+| `hashing/blake3_root` | BLAKE3 root and Bao outboard construction over a byte stream; owns the root and outboard types and guards | `encoding/abi_encode` | CR-02 construction |
 | `hashing/bao_verify` | Streaming and random-access verification of chunks against a root with an authentication path | `hashing/blake3_root` | CR-02 verification; EC-02 |
 | `hashing/bao_challenge` | Random chunk challenge and response for delegated custody and retention audit; carries the milestone's integration test and commit | `hashing/bao_verify` | CR-02 challenges; SW-04 |
 
@@ -73,9 +76,9 @@ The hashing, signature, and swarm milestones are at ticket resolution; they depe
 
 | Ticket | Owns | Depends on | Proves |
 | --- | --- | --- | --- |
-| `signature/ed25519` | `Ed25519Adapter` with domain separation and complete-message binding; owns the `ISignatureAdapter` contract and the signature types and guards | `domain/encoding` | CR-03 |
+| `signature/ed25519` | `Ed25519Adapter` with domain separation and complete-message binding; owns the `ISignatureAdapter` contract and the signature types and guards | `encoding/abi_encode` | CR-03 |
 | `signature/secp256k1` | `Secp256k1Adapter` through `alloy`, with EIP-712 typed data for registrations, bindings, and signed intents | `signature/ed25519`, for the interface | CR-03, IW-07, LC-13 intents |
-| `signature/binding_schema` | DID Document types with the anchor hash and the verification relationships the binding uses; carries the milestone's integration test and commit | `signature/ed25519`, `domain/encoding` | The binding schema; IW-01 |
+| `signature/binding_schema` | DID Document types with the anchor hash and the verification relationships the binding uses; carries the milestone's integration test and commit | `signature/ed25519`, `encoding/abi_encode` | The binding schema; IW-01 |
 
 #### Swarm transport and seed host, at ticket resolution
 
@@ -94,7 +97,7 @@ The hashing, signature, and swarm milestones are at ticket resolution; they depe
 
 | Sprint by role | Contents | Depends on |
 | --- | --- | --- |
-| Domain model | Canonical identity, hash-card, immutable suite, attempt context, entitlement and interval state, custody state, manifest and sidecar bounds, claims, lifecycle transitions; each type authored in the node of the file that first consumes it and housed in the domain crate | the types the harness tickets own; `domain/encoding` |
+| Domain model | The protocol's types, each authored in the node of the file that first consumes it and housed in the module that implements it, fixed when that module's ticket is written; the `domain` crate holds only the types its own modules implement | the types the harness tickets own; `domain/secret` |
 | Payload cipher and sidecar layer | `AesCtrAdapter` with counter layout and extent rules; the sidecar layer, per live set a capsule and wrapped piece-group key per group under that set's Bao root, each sidecar its own object; manifest and sidecar validation ordering; the `sample_deployment` generator for the site demonstration, which needs the cipher and so lives here rather than in the harness | domain model; the hashing tickets; `kdf/hash_to_scalar` for the wrap |
 | Registry and entitlement contracts | Asset records with the per-name version index, deployments and hash-cards, on-chain attestation verification against the source-key table or recorded absence, later escrow deployments, parameter-set liveness with the sidecar-coverage rule and sidecar addition, envelope-key registry, entitlements with interval state and the ownership override that disables standard transfers, issuance and transfer calling the delivery verifier, batched grant requests readable by holders and closed by grant or withdrawal, escrow records per deployment, identity binding, the identity contract account under ERC-1271 with its device registry and the `isDeviceAdmitted` view, claim-set state layout, batch and paginated views; every identity-bound mutation taking the acting identity and a signed intent verified through the account against a signer whose permissions cover it, the contracts enforcing lock expiry and no volume limit | harness contracts; domain model |
 | Chain, settlement, and entitlement-state adapters | Contract bindings; tier mapping; `evaluateAuthorization` and batch with per-context bindings; quorum view aggregation, two of three at a common reference, stale ignored, divergence and views older than `τ_soft` failing closed; event and calldata reader; intent signing and submission | registry and entitlement contracts |
@@ -104,7 +107,7 @@ The hashing, signature, and swarm milestones are at ticket resolution; they depe
 
 | Epic by role | Contents | Depends on |
 | --- | --- | --- |
-| Durable jobs and configuration | Job store, checkpointing, idempotent restart; versioned configuration registry and the settings catalogue; capability resolution failing closed; IPC with the control-principal and local-presence rules | domain model; `telemetry/redaction` |
+| Durable jobs and configuration | Job store, checkpointing, idempotent restart; versioned configuration registry and the settings catalogue; capability resolution failing closed; IPC with the control-principal and local-presence rules | domain model; `telemetry/tracing` |
 | Identity and custody | `IKeyCustodyAdapter` default implementation with version-headed blobs and the in-place upgrade; the holder seed's control and envelope branches on a root; device keys; identity creation; relayer-paid binding and contract account creation; envelope-key registration; device pairing, signer admission, and revocation; wallet integrations | the signature tickets; chain adapters; `envelope/keygen`; durable jobs and configuration |
 | Plaintext CAS, resolution orchestrator, and package host | Verified atomic CAS of tarballs, extracted per project by the package manager with nothing linking into the store; quota, pinning, eviction; the hedged source order with the catalogue's source deadline and grant wait; upstream for any identity without a credential; the package metadata store; the npm registry protocol served locally with canonical tarball URLs; per-asset independence status | durable jobs and configuration; `hashing/blake3_root` |
 | First Finder ingest | npm ingest adapter with attestation validation or recorded absence, metadata capture, and availability as eligibility; foreground serve; background bootstrap job; state-locked registration race; escrow custody of the master scalar; seeding; the finder's grant of the asset's first entitlement to itself | plaintext CAS and package host; the swarm tickets; registry contracts; chain adapters; identity and custody; the KEM, envelope, and mint-proof tickets |
@@ -179,11 +182,17 @@ flowchart TB
     subgraph foundation["Foundation"]
         direction TB
         f_ws["workspace/cargo"]
-        f_enc["domain/encoding"]
-        f_red["telemetry/redaction"]
+        f_ts["test-support/assert_same"]
+        f_sec["domain/secret"]
+        f_enc["encoding/abi_encode"]
+        f_dec["encoding/abi_decode"]
+        f_tel["telemetry/tracing"]
         f_ci["workspace/ci"]
-        f_ws --> f_enc
-        f_ws --> f_red
+        f_ws --> f_ts
+        f_ts --> f_sec
+        f_ts --> f_enc
+        f_enc --> f_dec
+        f_ts --> f_tel
         f_ws --> f_ci
     end
 
@@ -355,15 +364,18 @@ flowchart TB
     end
 
     f_ws --> pair_bn
-    f_ws --> sol_pair
+    f_ci --> sol_pair
     f_ws --> tr_overlay
     f_enc --> kdf
     f_enc --> proof_chal
     f_enc --> sol_gen
     f_enc --> h_root
     f_enc --> sig_ed
-    f_enc --> s_domain
-    f_red --> e_jobs
+    f_sec --> s_domain
+    f_sec --> kem_setup
+    f_sec --> kem_issue
+    f_sec --> env_keygen
+    f_tel --> e_jobs
 
     kem_issue --> s_domain
     h_report --> s_registry
@@ -414,11 +426,11 @@ flowchart TB
     h_report --> o_review
 ```
 
-**Reading the graph.** Everything in the foundation and harness subgraphs, and every ticket-named node in the protocol core, is one source file. The harness's `contracts/DeliveryVerifier` is consumed directly by the registry sprint; the harness's `kem/*`, `envelope/*`, and `proof/*` files are consumed directly by the First Finder, credential delivery, and identity epics. The hashing, signature, and swarm tickets have no incoming edge from any contract sprint, which is the point that bytes can move before any chain exists. The relayer milestone depends only on the chain adapters and can be built as soon as they exist. The demonstrable milestone has incoming edges from credential delivery, the package host, First Finder ingest, and the seed host, and nothing depends on it.
+**Reading the graph.** Everything in the foundation and harness subgraphs, and every ticket-named node in the protocol core, is one source file, except the configuration tickets `workspace/cargo` and `workspace/ci`, each of which carries its configuration files together. `test-support/assert_same` is a dev-dependency of every crate; its edges are drawn only to the foundation tickets that first import it. The harness's `contracts/DeliveryVerifier` is consumed directly by the registry sprint; the harness's `kem/*`, `envelope/*`, and `proof/*` files are consumed directly by the First Finder, credential delivery, and identity epics. The hashing, signature, and swarm tickets have no incoming edge from any contract sprint, which is the point that bytes can move before any chain exists. The relayer milestone depends only on the chain adapters and can be built as soon as they exist. The demonstrable milestone has incoming edges from credential delivery, the package host, First Finder ingest, and the seed host, and nothing depends on it.
 
 ## Sequencing
 
-`workspace/cargo` precedes everything. Within the harness the starting points are `pairing/bn254` and `contracts/PairingLib`; every other ticket has a producer, the tracks converge at `chain/verifier_client` and `harness-crypto/vectors`, and the grouping closes at `harness-crypto/report`, whose node carries the integration test across the whole chain and the commit. The hashing tickets start from `domain/encoding`, the signature tickets from `domain/encoding`, and the swarm tickets from `transport/rqbit_overlay` and `hashing/bao_verify`; each of those milestones closes at the ticket its table names.
+`workspace/cargo` precedes everything, and `test-support/assert_same` precedes every ticket with an interface test. Within the harness the starting points are `pairing/bn254` and `contracts/PairingLib`; every other ticket has a producer, the tracks converge at `chain/verifier_client` and `harness-crypto/vectors`, and the grouping closes at `harness-crypto/report`, whose node carries the integration test across the whole chain and the commit. The hashing tickets start from `encoding/abi_encode`, the signature tickets from `encoding/abi_encode`, and the swarm tickets from `transport/rqbit_overlay` and `hashing/bao_verify`; each of those milestones closes at the ticket its table names.
 
 Across groupings the sequence is the [milestones](milestones.md)' order, with the parallelism the graph makes visible: the hashing, signature, and swarm tickets run beside the harness and the contract sprints; the identity and custody epic begins as soon as the signature tickets and the chain sprint exist, before the CAS epic, because the installation coordinator needs it; the relayer milestone begins on the chain adapters; the demonstrable milestone follows credential delivery.
 
@@ -438,7 +450,13 @@ The decay rule governs re-mapping. When the `harness-crypto/report` node commits
 
 ## Decisions
 
-**Crate and path layout.** One workspace with a domain crate, a workflows crate, a crate per adapter family, and a crate per deployable; tickets are named by crate and module as the technical requirements' file tree spells them.
+**Crate and path layout.** One workspace with a domain crate, a workflows crate, a crate per adapter family, and a crate per deployable, each created by the ticket of the first module that lives in it; the workspace manifest lists members by glob; tickets are named by crate and module as the technical requirements' file tree spells them.
+
+**Canonical encoding.** Separate encoder and decoder adapters behind `IEncoderAdapter` and `IDecoderAdapter`, which share one versioned encoding identifier; Ethereum ABI through `alloy`'s sol types in the MVP, with the adapters owning the sol-type mirrors and conversions; one encoding for everything hashed, signed, stored, or framed over IPC.
+
+**Tools and dependencies.** Each is pinned, configured, or added to continuous integration by the ticket that first needs it.
+
+**Secrets.** The secret-typed value is a `domain` ticket; telemetry carries correlation and tracing setup and no redaction layer.
 
 **Ticket granularity for the KEM.** One function per file as mapped.
 

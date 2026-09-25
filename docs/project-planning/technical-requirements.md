@@ -33,15 +33,17 @@ The [system architecture](system-architecture.md) breaks the daemon into its sub
 
 | Subsystem | Deployable | Ring | Crate | Defined by |
 | --- | --- | --- | --- | --- |
-| Domain types and guards | all | Protocol and domain | `domain` | Composition Boundary |
-| Canonical encoding | all | Protocol and domain | `domain` | CR-03, CR-09; the foundation grouping |
+| Domain types and guards, only those the domain crate's own modules implement; every other type lives in the module that implements it | all | Protocol and domain | `domain` | Composition Boundary |
+| Secret type | all | Protocol and domain | `domain` | CR-07; the foundation grouping |
+| Canonical encoding adapters: `IEncoderAdapter` and `IDecoderAdapter` sharing one versioned encoding identifier, the ABI encoder and decoder, and the sol-type mirrors and conversions they own; one encoding for everything hashed, signed, stored, or framed over IPC | all | Adapter | `adapters/encoding` | CR-03, CR-09; the foundation grouping |
+| Shared test support | every crate, as a dev-dependency | Test support | `test-support` | The Rust interface-test form; the foundation grouping |
 | Package host endpoint | daemon | Adapter | `adapters/package-host-npm` | PR-01, PR-02 |
 | Package metadata store | daemon | Adapter | `adapters/package-host-npm` | PR-09 |
 | IPC server | daemon | Adapter | `adapters/ipc` | XA-02, RO-05 |
 | Resolution orchestrator | daemon | Workflow | `workflows` | PR-03, PR-06, PR-07, PR-08 |
-| Grant request job | daemon | Workflow | `workflows/request` | PR-10, LC-12 |
-| Prefetch job | daemon | Workflow | `workflows/prefetch` | PR-11 |
-| Independence status | daemon, every control surface | Workflow | `workflows/health` | PR-12 |
+| Grant request job, `request` module | daemon | Workflow | `workflows` | PR-10, LC-12 |
+| Prefetch job, `prefetch` module | daemon | Workflow | `workflows` | PR-11 |
+| Independence status, `health` module | daemon, every control surface | Workflow | `workflows` | PR-12 |
 | Plaintext CAS | daemon | Adapter | `adapters/cas` | PR-04, PR-05 |
 | Deployment gate | daemon | Workflow | `workflows` | EC-01, CR-06 |
 | Swarm engine: transports, discovery, seed host controller | daemon, seed host | Adapter | `adapters/transport`, `adapters/discovery`, `adapters/seed-host` | SW-01 to SW-07 |
@@ -56,11 +58,11 @@ The [system architecture](system-architecture.md) breaks the daemon into its sub
 | First Finder engine | daemon | Workflow | `workflows` | FF-01 to FF-08 |
 | Publisher engine and issuance policy | daemon | Workflow | `workflows` | PC-01, FF-09 |
 | Grant service | daemon | Workflow | `workflows` | CD-05, CD-08, LC-12 |
-| Claim workflow | daemon | Workflow | `workflows/claim` | PC-05, CD-06 |
+| Claim workflow, `claim` module | daemon | Workflow | `workflows` | PC-05, CD-06 |
 | Job engine | daemon, installer | Adapter | `adapters/jobs` | XA-03, FF-03 |
 | Composition resolver | daemon, installer | Workflow | `workflows` | IC-05, SI-10 |
 | Configuration registry | daemon, installer | Adapter | `adapters/config` | IC-04 |
-| Settings service and catalogue | daemon, installer, every control surface | Workflow | `workflows/settings` | IC-04, IC-06, SI-05, SI-07, RO-05; this document, Settings |
+| Settings service and catalogue, `settings` module | daemon, installer, every control surface | Workflow | `workflows` | IC-04, IC-06, SI-05, SI-07, RO-05; this document, Settings |
 | Health and diagnostics | daemon | Workflow | `workflows` | IC-08, RO-05 |
 | Telemetry | all | Adapter | `adapters/telemetry` | RO-03, RO-04, RO-06 |
 | Lifecycle and single instance | daemon, installer | Adapter | `adapters/platform` | IC-03, SI-06 |
@@ -156,7 +158,7 @@ Five API surfaces exist. The specification fixes the adapter interface signature
 
 **Package host, npm registry protocol, served by the daemon on a loopback port.** `GET /{package}` returns the packument assembled from the local metadata store, which captures immutable per-version metadata with its attestation and the dist-tag snapshot with its capture time at every upstream resolution and ingest; when upstream is unavailable the packument is served from the store with a staleness marker, its version list completed from the ledger's per-name index of ingested versions, and dist-tags marked best effort. `dist.tarball` URLs are the canonical registry host's, so a committed lockfile carries no machine-specific port and stays portable; npm's registry-host replacement maps them to the local host, where `GET /{package}/-/{name}-{version}.tgz` returns the exact upstream bytes from the CAS after resolution. `GET /-/ping` for readiness. No write endpoints; publishing goes through the CLI, not the registry protocol. Responses carry the upstream integrity value so npm's own verification passes unchanged, and the daemon has already verified the bytes against the attested digest before serving them. The outage guarantee is a pinned closure from ledger and swarm alone; range resolution during an outage is best effort and says so (PR-09).
 
-**Daemon IPC, authenticated, local-only.** A control principal is the installing user, established by peer credentials where the platform supplies them or by the per-installation token file where it does not; a package caller is anyone who can reach the loopback port. Request classes and what each requires: `package.resolve`, `package.status`, any caller; `status.health`, `status.jobs`, `status.archive`, `status.footprint`, `status.independence` returning per-asset independent or pending with its reason and per-project independence, `status.diagnostics`, `settings.schema` returning the catalogue with defaults, scopes, constraints, restart requirements, and presence marks, `settings.get`, `settings.export` without secrets, and `job.repair`, a control principal; `settings.set` and `settings.reset` on a setting the catalogue does not mark presence-required, a control principal; `settings.set` and `settings.reset` on a machine-scoped or presence-required setting, `settings.import` with validation and the migration job for path changes, `job.cancel`, `identity.create`, `identity.import`, `identity.registerEnvelopeKeys`, `identity.connectWallet`, `identity.export`, `identity.upgradeCustody`, `device.pair`, `device.admit`, `device.rescope`, `device.revoke`, `entitlement.acquire`, `entitlement.transfer`, `publish.package`, `claim.submit`, and `admin.uninstall`, a control principal with local presence. Every request carries a correlation identifier and an idempotency key where it mutates. Framing is length-prefixed canonical binary messages, the same encoding used for anything hashed or signed, over a Unix domain socket on macOS and Linux and a named pipe on Windows, at a path under the configuration directory that is a machine-scoped setting. Authentication is by peer credentials where the platform supplies them, the connecting process's user identity read from the socket or pipe; where peer credentials are unavailable, a per-installation token file readable only by the installing user is presented on connect. Either mechanism distinguishes the installing user from other local users and nothing finer: every process of the installing user, the CLI, the desktop application, an editor, and an npm lifecycle script alike, is one principal to the operating system, and the daemon does not pretend otherwise. The threat model is therefore same-user. The package host is the package surface and confers resolution and serving only, on any caller. IPC requests from the installing user may read status and the catalogue; every request this table lists under local presence, transfer, key export, identity and binding changes, machine-scoped and presence-required settings, job cancellation, publish, claim, and uninstall, completes only after an interactive confirmation through a surface the daemon owns, the desktop application's dialog or the platform's native prompt, which the CLI invokes rather than replaces: the daemon issues a nonce for the pending request, shows the operation, and applies it only when the confirmation returns that nonce, so no IPC message, script, or automation completes it alone. A principal field in a request is descriptive and confers nothing. The consent trace records the surface, the principal, and the confirmation for every mutating call.
+**Daemon IPC, authenticated, local-only.** A control principal is the installing user, established by peer credentials where the platform supplies them or by the per-installation token file where it does not; a package caller is anyone who can reach the loopback port. Request classes and what each requires: `package.resolve`, `package.status`, any caller; `status.health`, `status.jobs`, `status.archive`, `status.footprint`, `status.independence` returning per-asset independent or pending with its reason and per-project independence, `status.diagnostics`, `settings.schema` returning the catalogue with defaults, scopes, constraints, restart requirements, and presence marks, `settings.get`, `settings.export` without secrets, and `job.repair`, a control principal; `settings.set` and `settings.reset` on a setting the catalogue does not mark presence-required, a control principal; `settings.set` and `settings.reset` on a machine-scoped or presence-required setting, `settings.import` with validation and the migration job for path changes, `job.cancel`, `identity.create`, `identity.import`, `identity.registerEnvelopeKeys`, `identity.connectWallet`, `identity.export`, `identity.upgradeCustody`, `device.pair`, `device.admit`, `device.rescope`, `device.revoke`, `entitlement.acquire`, `entitlement.transfer`, `publish.package`, `claim.submit`, and `admin.uninstall`, a control principal with local presence. Every request carries a correlation identifier and an idempotency key where it mutates. Framing is length-prefixed messages under the encoder and decoder adapters, the same encoding used for anything hashed or signed, over a Unix domain socket on macOS and Linux and a named pipe on Windows, at a path under the configuration directory that is a machine-scoped setting. Authentication is by peer credentials where the platform supplies them, the connecting process's user identity read from the socket or pipe; where peer credentials are unavailable, a per-installation token file readable only by the installing user is presented on connect. Either mechanism distinguishes the installing user from other local users and nothing finer: every process of the installing user, the CLI, the desktop application, an editor, and an npm lifecycle script alike, is one principal to the operating system, and the daemon does not pretend otherwise. The threat model is therefore same-user. The package host is the package surface and confers resolution and serving only, on any caller. IPC requests from the installing user may read status and the catalogue; every request this table lists under local presence, transfer, key export, identity and binding changes, machine-scoped and presence-required settings, job cancellation, publish, claim, and uninstall, completes only after an interactive confirmation through a surface the daemon owns, the desktop application's dialog or the platform's native prompt, which the CLI invokes rather than replaces: the daemon issues a nonce for the pending request, shows the operation, and applies it only when the confirmation returns that nonce, so no IPC message, script, or automation completes it alone. A principal field in a request is descriptive and confers nothing. The consent trace records the surface, the principal, and the confirmation for every mutating call.
 
 **Contract suite, Solidity on Base.** Registry: `registerAsset`, recording the name hash and appending the version to a per-name index read by the `versionsByName` view; `registerDeployment` with the sidecar-per-live-set check, verifying a declared release attestation's signature on chain through the P-256 precompile at `0x100` against the `sourceKeys` table, admitting a declared absence with the absence recorded, and admitting further escrow deployments of an existing asset from later First Finders; `addSidecar(deploymentId, parameterSetId, root, locator)` by the asset's authority for a set made live after the deployment's registration; `registerParameterSet`, `retireParameterSet`, `rotateSourceKey` and `revokeSourceKey` under the governance key, `resolve` and `resolveBatch` views. Envelope keys: `registerEnvelopeKeys(pk1, pk2, pop1, pop2, walletSig)`, rejecting identity elements. Entitlements: `mint(entitlement, recipient, envelope, mintProof)`, `lock(entitlement, seller, price, expiry)`, `deliver(entitlement, previousEnvelope, newEnvelope, transferProof)` which advances the interval, records keys and digest, emits the envelope, transfers, and releases payment, `withdrawLapsed(lock)`, `grant(entitlement, recipient, authorEnvelope, envelope, transferProof)` under the escrow suite, closing the recipient's open request for the asset. Requests: `requestGrants(assets[])` recording one open request per asset for the signing identity, batched; `withdrawRequests(assets[])`; `openRequests(asset, page)` view for holders; an open request authorizes nothing. The token overrides its ownership update so that ownership changes only inside `mint`, `grant`, and `deliver`; `transferFrom`, `safeTransferFrom`, `approve`, and `setApprovalForAll` revert; receiver callbacks run after state is final under a reentrancy guard (LC-11). Authorization: `evaluateAuthorization(context)` and `evaluateAuthorizationBatch(contexts, page)` views returning the three-state result. Escrow and claims: `registerEscrow`, `submitClaim(claimSet, voucher)`, `transferAuthority`, `rotateVerifierKey`, `revokeVerifierKey`. Identity: the identity is a contract account implementing ERC-1271, created at binding, whose signer set is the device registry; `bindHandshakeKey(pubkey, scheme, anchorHash, walletSig)`; `admitDevice(deviceKey, role, permissions)`, `rescopeDevice(deviceKey, permissions)`, and `revokeDevice(deviceKey)`, each a signed intent under the control branch; `isDeviceAdmitted(identity, deviceKey)` view, read in the same state view as `evaluateAuthorization` so the wallet-control assertion and the authorization agree at one reference. Every function that mutates identity-bound state, `bindHandshakeKey`, `admitDevice`, `rescopeDevice`, `revokeDevice`, `registerEnvelopeKeys`, `requestGrants`, `withdrawRequests`, `grant`, `mint`, `lock`, and `deliver`, takes the acting identity and an EIP-712 intent over the call's fields, chain, contract, nonce, and expiry, verified through the identity's ERC-1271 check against a signer whose permissions cover the call, so that a paymaster-sponsored call, a relayer-submitted call, and a self-funded call share one entry point; the contracts enforce lock expiry and no volume limit. Every proof or voucher is bound to chain, contract, and expiry. Exact ABI is authored at the contract nodes.
 
@@ -186,7 +188,7 @@ Five API surfaces exist. The specification fixes the adapter interface signature
 - `VerifierKey`: `key bytes32`, `activeFrom uint64`, `revokedAt uint64`.
 - Events carry the full envelope and proof at every mint, grant, and transfer.
 
-**Daemon local stores, `redb` tables.** Keys and values as canonical binary.
+**Daemon local stores, `redb` tables.** Keys and values under the encoder and decoder adapters.
 
 - `jobs`: key job id; value kind, state, checkpoint, idempotency key, created, updated, error.
 - `resolutions`: key request correlation id; value path chosen, timings, outcome.
@@ -213,19 +215,19 @@ Five API surfaces exist. The specification fixes the adapter interface signature
 
 # Proposed File Tree
 
-Each function is a module directory with one file per element: `interface.rs`, `interface_test.rs`, `interaction.spec.md`, `mock.rs`, `guard.rs`, `guard_test.rs`, `test.rs`, `mod.rs` for the implementation, and `provides.rs` for the public surface; test files attach as `#[cfg(test)]` modules and `mock.rs` sits behind a `mocks` feature. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it. A Solidity contract is a module of `contracts/src/` with its Foundry tests as its interface, guard, and unit elements and its constants and vectors generated from the Rust reference. Crate directories are hyphenated and module directories underscored; a ticket is named `crate/module`.
+Each function is a module directory with one file per element: `interface.rs`, `interface_test.rs`, `interaction.spec.md`, `mock.rs`, `guard.rs`, `guard_test.rs`, `test.rs`, `mod.rs` for the implementation, and `provides.rs` for the public surface; test files attach as `#[cfg(test)]` modules and `mock.rs` sits behind a `mocks` feature. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it. A Solidity contract is a module of `contracts/src/` with its Foundry tests as its interface, guard, and unit elements and its constants and vectors generated from the Rust reference. Crate directories are hyphenated and module directories underscored; a ticket is named `crate/module`. The tree is the shape the workspace reaches; each crate is created by the node of the first module that lives in it, and the workspace manifest's glob members admit it without an edit. The manifest carries the lint table, and every crate takes `test-support` as a dev-dependency.
 
 ```
 ChainTorrent/
-  Cargo.toml                          workspace
+  Cargo.toml                          workspace; glob members, lint table; dependencies pinned by their first consumer
   rust-toolchain.toml
   deny.toml                           cargo-deny license allowlist
   crates/
-    domain/                           protocol and domain ring; no host or chain dependency
+    test-support/                     dev-only; assert_same and the other test-only items the standards name
+    domain/                           protocol and domain ring; no host or chain dependency; only the types its own modules implement
       src/
         lib.rs
-        encoding/                     canonical binary encoding; foundation ticket
-        parameter_set/                one function or type family per module
+        secret/                       secret type: no formatting or serialization, explicit accessor, zeroized on drop; foundation ticket
           interface.rs                types and signatures
           interface_test.rs
           interaction.spec.md         branch contract, declarative
@@ -235,15 +237,7 @@ ChainTorrent/
           test.rs
           mod.rs                      implementation
           provides.rs                 public surface
-        credential/
-        capsule/
-        delivery_statement/
-        attempt_context/
-        hash_card/
-        entitlement_state/
-        custody_state/
-        manifest_bounds/
-        claim_set/
+        …                             each further module added by the ticket of the type it implements
     workflows/                        application ring; depends on domain and adapter interfaces only
       src/
         resolve/  gate/  request/  prefetch/  acquire/  attempt/  decrypt/  interval_end/
@@ -251,6 +245,7 @@ ChainTorrent/
         settings/                     catalogue, validation, migration jobs, export and import
         install/                      installation coordinator plan; initial values from the catalogue
     adapters/
+      encoding/       encoder/  decoder/  abi_encode/  abi_decode/   IEncoderAdapter and IDecoderAdapter under one versioned encoding identifier; Ethereum ABI through alloy sol types, the mirrors owned here; foundation tickets
       pairing/        interface/  bn254/  bls12_381/  benchmark/
       kem/            interface/  setup/  issue/  rerandomize/  validity/  encapsulate/  well_formed/  decapsulate/
       envelope/       interface/  keygen/  wrap/  unwrap/
@@ -271,7 +266,7 @@ ChainTorrent/
       jobs/
       config/         registry store; defaults, overrides, scopes, versions
       ipc/            server/  principals/  framing/
-      telemetry/      metrics/  tracing/  redaction/
+      telemetry/      metrics/  tracing/
       platform/       service_linux/  service_macos/  service_windows/  credential_store/  install_paths/
   apps/
     daemon/           binary: package host, IPC, engines, workflows
@@ -284,7 +279,7 @@ ChainTorrent/
     claim-verifier/
     wasm-demo/        sample_deployment/   wasm-bindgen build of domain, hashing, pairing, kem, cipher for the site, and the sample deployment it runs against
   contracts/
-    foundry.toml
+    foundry.toml      created by the contracts/PairingLib ticket
     src/              Registry, ParameterSets, EnvelopeKeys, Entitlements, Locks, Escrow, Claims, Binding, IdentityAccount, VerifierKeys, PairingLib, DeliveryVerifier; each a module with its Foundry tests as its elements
     test/             mutation, replay, cross-entitlement, record-contradiction vectors
     script/           deploy to Anvil and Base Sepolia; addresses emitted to config
@@ -295,7 +290,7 @@ ChainTorrent/
   site/
     static site; embeds apps/wasm-demo output and the generated sample deployment
   docs/               unchanged
-  .github/workflows/  matrix over Windows, macOS, and Linux; clean-runner end-to-end; cargo-audit, cargo-deny, cargo-fuzz smoke; the TypeScript linter
+  .github/workflows/  matrix over Windows, macOS, and Linux; cargo checks, tests, cargo-audit, cargo-deny; forge, the TypeScript linter, cargo-fuzz smoke, and clean-runner end-to-end, each added by the ticket that first needs it
 ```
 
 # Architecture Overview
@@ -396,7 +391,7 @@ Tauri 2 stable for the desktop; plain TypeScript with a small component library 
 
 # Backend Stack
 
-Rust throughout; `tokio`; one workspace with a domain crate and a crate per adapter family; authenticated local IPC over Unix domain sockets and named pipes; `alloy` for the EVM; Foundry for Solidity; `serde` with canonical binary encoding; `tracing`; versioned TOML configuration. In the tech stack.
+Rust throughout; `tokio`; one workspace with a domain crate and a crate per adapter family; authenticated local IPC over Unix domain sockets and named pipes; `alloy` for the EVM; Foundry for Solidity; encoder and decoder adapters under one versioned encoding identifier, Ethereum ABI through `alloy`'s sol types in the MVP; `tracing` with per-request correlation; versioned TOML configuration. In the tech stack.
 
 # Data Platform
 
@@ -408,7 +403,7 @@ Rust throughout; `tokio`; one workspace with a domain crate and a crate per adap
 
 # Security Tooling
 
-`zeroize` and `subtle`; `cargo-audit` and `cargo-deny`; `cargo-fuzz` at every boundary; Foundry fuzz and invariant tests plus a static analyzer; telemetry scanning; redaction at the tracing layer; release signing keys under custody discipline. In the tech stack.
+`zeroize` and `subtle`; `cargo-audit` and `cargo-deny`; `cargo-fuzz` at every boundary; Foundry fuzz and invariant tests plus a static analyzer; telemetry scanning; a secret type that cannot be formatted or serialized and zeroizes on drop; the workspace lint table; release signing keys under custody discipline. In the tech stack.
 
 # Shared Libraries
 

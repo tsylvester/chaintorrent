@@ -19,7 +19,7 @@ Sources, in the order the pipeline produced them: [revised business case](busine
 
 ChainTorrent is a protocol that distributes encrypted assets over a peer swarm and lets the holder of a transferable, irrevocable access right decrypt them from nothing but their own credential and a fresh view of public ledger state, with no service on the read path. The MVP applies it to JavaScript dependencies: a developer installs one extension or one npm package, consents once, and thereafter installs from whichever of a machine-wide cache, a peer swarm, or the registry delivers within the declared budget, never slower than the registry alone by more than the hedge delay, at $0.00, with a first run leaving the machine independent of the registry for everything it installed and the swarm holding what anyone fetched and serving when the registry does not. The cryptographic problem that once made the design impossible is closed and adopted; technical feasibility is high; delivery feasibility is calibrated by the first delivery grouping.
 
-The build runs through delivery groupings addressed by role. The foundation grouping establishes the workspace, the canonical encoding, the redaction layer, and continuous integration. The cryptographic validation harness grouping builds the pairing adapters, credential KEM, envelope, delivery proof, and the shipped Solidity verifier, measures them on Base Sepolia, fixes the piece-group size, confirms the curve, and calibrates throughput. The protocol core grouping builds hashing, signatures, and the swarm transport over the `librqbit` soft fork beside the harness, and the cipher and sidecar layer, the contract suite, and the chain adapters after it. The daemon grouping builds the single machine-level process every requirement family meets, closes the read path with credential delivery and per-attempt authorization, completing a first run's independence, and reaches the demonstrable milestone where an ordinary `npm install` is served at the registry's speed, registers and prefetches, and a second identity resolves against the swarm with the registry down. The shells and services grouping builds installation on Windows, macOS, and Linux, the control surfaces, the relayer, the publisher path, the claim verifier, the site with its WebAssembly demonstration, observability, and the demonstration harness. The acceptance and release grouping runs the priced transaction flow proof on the Base mainnet pilot, closes external review and legal prerequisites, passes every acceptance scenario on clean machines, and releases with the dogfood baseline recorded.
+The build runs through delivery groupings addressed by role. The foundation grouping establishes the workspace and its lint table, the shared test support, the encoder and decoder adapters, the secret type, tracing with per-request correlation, and continuous integration. The cryptographic validation harness grouping builds the pairing adapters, credential KEM, envelope, delivery proof, and the shipped Solidity verifier, measures them on Base Sepolia, fixes the piece-group size, confirms the curve, and calibrates throughput. The protocol core grouping builds hashing, signatures, and the swarm transport over the `librqbit` soft fork beside the harness, and the cipher and sidecar layer, the contract suite, and the chain adapters after it. The daemon grouping builds the single machine-level process every requirement family meets, closes the read path with credential delivery and per-attempt authorization, completing a first run's independence, and reaches the demonstrable milestone where an ordinary `npm install` is served at the registry's speed, registers and prefetches, and a second identity resolves against the swarm with the registry down. The shells and services grouping builds installation on Windows, macOS, and Linux, the control surfaces, the relayer, the publisher path, the claim verifier, the site with its WebAssembly demonstration, observability, and the demonstration harness. The acceptance and release grouping runs the priced transaction flow proof on the Base mainnet pilot, closes external review and legal prerequisites, passes every acceptance scenario on clean machines, and releases with the dogfood baseline recorded.
 
 Nothing is started. The workplan names its opening node when authored, from the foundation tickets. The stop criteria sit where they can first be evaluated, and the plan halts at any of them.
 
@@ -33,7 +33,7 @@ The template's word is phases; here they are groupings addressed by dependency r
 
 **Entry.** The empty repository.
 
-**Exit.** The workspace builds and passes checks on all three platforms; the domain crate skeleton depends on nothing outside itself, its types authored later in the nodes that first consume them.
+**Exit.** The workspace and every crate the foundation creates build and pass checks on Windows, macOS, and Linux; the domain crate depends on nothing outside itself; no crate exists ahead of the module that first lives in it, and every later type is authored in the node that first consumes it.
 
 **Yields.** The substrate every later grouping consumes, and signing enrollment started so certificates exist before onboarding.
 
@@ -188,12 +188,14 @@ Every requirement is simultaneously an operational requirement and an integratio
 
 # Component Mapping
 
-Subsystem to crate to milestone, from the technical requirements' register and the milestones' scope lines.
+Subsystem to crate or module to milestone, from the technical requirements' register and the milestones' scope lines. An entry is a crate path, or a module of a crate named as `crate/module`, so `workflows/settings` is the `settings` module of the `workflows` crate.
 
-| Crate | Subsystems | Milestone |
+| Crate or module | Subsystems | Milestone |
 | --- | --- | --- |
-| `domain` | Types and guards; the canonical encoding | Workspace and discipline bootstrap for the skeleton and the encoding; every milestone thereafter |
-| `adapters/telemetry` | Redaction layer; metrics and traces | Workspace and discipline bootstrap for the redaction layer; daemon skeleton |
+| `test-support` | `assert_same` and the other test-only items the standards name | Workspace and discipline bootstrap |
+| `domain` | The types its own modules implement, with their guards; the secret type | Workspace and discipline bootstrap for the secret type, which creates the crate; every milestone thereafter |
+| `adapters/encoding` | `IEncoderAdapter` and `IDecoderAdapter` sharing one versioned encoding identifier; the ABI encoder and decoder; the sol-type mirrors and conversions | Workspace and discipline bootstrap |
+| `adapters/telemetry` | Tracing with per-request correlation; metrics and traces | Workspace and discipline bootstrap for tracing and correlation; daemon skeleton |
 | `adapters/pairing`, `adapters/kdf` | Pairing adapters, the benchmark, KDF, hash-to-scalar, the sidecar wrap | Pairing adapters and key derivation |
 | `adapters/kem` | Credential KEM | Credential KEM |
 | `adapters/envelope` | Envelope | Envelope |
@@ -249,7 +251,7 @@ Tauri 2 stable for the desktop; plain TypeScript with a small component library 
 
 # Backend Stack
 
-Rust throughout; `tokio`; one workspace with a domain crate and a crate per adapter family; authenticated local IPC over Unix domain sockets and named pipes with peer-credential or token authentication; `alloy` for the EVM; Foundry for Solidity; `serde` with canonical binary encoding; `tracing` with redaction; versioned configuration under the settings catalogue. In the tech stack and technical requirements.
+Rust throughout; `tokio`; one workspace with a domain crate and a crate per adapter family; authenticated local IPC over Unix domain sockets and named pipes with peer-credential or token authentication; `alloy` for the EVM; Foundry for Solidity; encoder and decoder adapters under one versioned encoding identifier, Ethereum ABI through `alloy`'s sol types in the MVP; `tracing` with per-request correlation; versioned configuration under the settings catalogue. In the tech stack and technical requirements.
 
 # Data Platform
 
@@ -261,7 +263,7 @@ Rust throughout; `tokio`; one workspace with a domain crate and a crate per adap
 
 # Security Tooling
 
-`zeroize` and `subtle`; `cargo-audit` and `cargo-deny`; `cargo-fuzz` at every boundary; Foundry fuzz and invariant tests plus a static analyzer; the telemetry scan; redaction at the tracing layer; release signing keys under custody discipline. In the tech stack.
+`zeroize` and `subtle`; `cargo-audit` and `cargo-deny`; `cargo-fuzz` at every boundary; Foundry fuzz and invariant tests plus a static analyzer; the telemetry scan; a secret type that cannot be formatted or serialized and zeroizes on drop; the workspace lint table; release signing keys under custody discipline. In the tech stack.
 
 # Shared Libraries
 

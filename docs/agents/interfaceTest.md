@@ -132,10 +132,10 @@ test("MyFunction has the required params surface", () => {
 });
 ```
 
-The Rust form proves the function type's signature by type identity, through the shared test-support item `assert_same::<A, B>()`, which compiles only when `A` and `B` are the same type; each parameter struct's surface is then the destructuring pattern above.
+The Rust form proves the function type's signature by type identity, through `assert_same::<A, B>()` from the workspace's dev-only `test-support` crate, which every crate takes as a dev-dependency and none copies; it compiles only when `A` and `B` are the same type; each parameter struct's surface is then the destructuring pattern above.
 
 ```rust
-use crate::test_support::assert_same;
+use test_support::assert_same;
 use super::interface::{MyFunctionDeps, MyFunctionFn, MyFunctionParams, MyFunctionPayload, MyFunctionReturn};
 
 /// Contract: MyFunctionFn takes deps, params, and payload and returns MyFunctionReturn.

@@ -28,12 +28,12 @@ Draft, 2026-09-23. The technologies the ChainTorrent MVP is built with. Two kind
 | Concern | Choice | Verified | Note |
 | --- | --- | --- | --- |
 | Async runtime | `tokio` | Widely used; not re-verified | The daemon, seed host, relayer, verifier, and harness are all long-running async services |
-| Workspace layout | One Cargo workspace; a domain crate; one crate per adapter family; one crate per deployable | Per the accepted default in the product requirements | Crate boundaries are the ring boundaries, so a domain crate that depends on Tauri or a chain SDK fails to compile rather than to review |
+| Workspace layout | One Cargo workspace; a domain crate; one crate per adapter family; one crate per deployable; each crate created by the node of the first module that lives in it, admitted by the manifest's glob members | Per the product requirements' Resolved Positions | Crate boundaries are the ring boundaries, so a domain crate that depends on Tauri or a chain SDK fails to compile rather than to review |
 | Local IPC | Unix domain sockets on macOS and Linux, named pipes on Windows, with a request-authenticated framing layer | Recommended | XA-02 requires authenticated least-privilege local APIs; the transport is per platform, the authentication is shared Rust |
 | EVM client | `alloy` 2.5.0, updated 2026-09-23 | Yes | Contract bindings, transaction submission, EIP-712 typed data, view calls, and event reads; the successor to ethers-rs and the maintained choice |
 | Solidity toolchain | Foundry: `forge` for build and test, `anvil` for a local chain, `cast` for scripting | External context | Foundry's test harness is the natural place for the mutation and replay vectors the verifier must reject; Anvil provides the local chain before Base Sepolia |
 | Contract language | Solidity, with the pairing library over the EIP-196, EIP-197, and EIP-2537 precompile addresses | Fixed language; library recommended | Constants and test vectors generated from the Rust reference by `harness-crypto/generate` |
-| Serialization | `serde` with a canonical binary encoding for anything hashed or signed | Recommended | Canonical encoding is load-bearing for the delivery statement and the hash-card; a non-canonical encoder is a correctness bug |
+| Canonical encoding | Separate encoder and decoder adapters behind `IEncoderAdapter` and `IDecoderAdapter`, sharing one versioned encoding identifier; the MVP implementations are Ethereum ABI encoding through `alloy`'s sol types, the adapters owning the sol-type mirrors and conversions so no other crate depends on `alloy` for encoding; one encoding for everything hashed, signed, stored, or framed over IPC | Per the product requirements' Resolved Positions | Canonical encoding is load-bearing for the delivery statement and the hash-card, and the contracts reproduce ABI encoding natively for every value they recompute; a later encoding is a further implementation named by the hash-card's encoding identifier |
 | Structured logging and tracing | `tracing` with an OpenTelemetry exporter | Recommended | RO-04 requires one request correlated across package host, CAS, swarm, chain, custody, decryption, and background work |
 | Configuration | Versioned TOML in the configuration registry with schema migrations | Recommended | IC-04 requires a versioned registry with no raw secrets; secret references point into custody |
 
@@ -84,7 +84,8 @@ Draft, 2026-09-23. The technologies the ChainTorrent MVP is built with. Two kind
 | Fuzzing | `cargo-fuzz` targets for every adapter boundary, descriptor parser, IPC request, and proof verifier input | XA-01, CR-06 |
 | Contract analysis | Foundry's fuzz and invariant testing plus a static analyzer such as Slither in CI | External context for Slither; the mutation and replay vectors are Foundry tests |
 | Telemetry scanning | A test that greps every log, trace, metric, and crash artifact produced by the acceptance run for known secret encodings and fails on any hit | RO-03, AS-20 |
-| Secret-free diagnostics | Redaction at the `tracing` layer so that secret-typed values cannot be formatted | Type-level enforcement rather than review |
+| Secret-free diagnostics | A `domain` secret type that implements no formatting or serialization trait, exposes the wrapped value only through an explicit accessor, and zeroizes on drop, proven at compile time | Type-level enforcement rather than review; the tracing layer carries correlation and does no redaction |
+| Workspace lints | The manifest's lint table forbids `unsafe_code` and denies clippy's `unwrap_used`, `expect_used`, `panic`, and `as_conversions` in production code, exempting test modules and the `mocks` feature | The typing rules checked by `cargo clippy` on every edit |
 | Signing-key custody | Release signing keys under the same custody discipline as issuance material, held off the CI runner with a rotation path | The non-functional review's NF-S11 gap |
 
 ## Shared Libraries
@@ -107,6 +108,7 @@ Draft, 2026-09-23. The technologies the ChainTorrent MVP is built with. Two kind
 | Hash-to-scalar and challenge | keccak256 under a domain tag, reduced modulo the group order, for the identity mapping and the delivery proof's challenge, because the contract recomputes both and the EVM has no BLAKE3 precompile | Fixed by the specification | The construction is fixed at the `kdf/hash_to_scalar` and `proof/challenge` tickets and mirrored in Solidity through the generated vectors |
 | Randomness | `rand_core` with the OS RNG through `getrandom` | Widely used | CR-05 requires a cryptographic source for First Finder lineage |
 | DID Documents | `serde`-based types over the DID Core data model | Recommended | The on-chain fields are two storage words; the document is anchored by hash and resolved off chain |
+| Test support | The project's dev-only `test-support` crate, providing `assert_same` and the other test-only items the standards name | Per the product requirements' Resolved Positions | Every crate's dev-dependency; no crate carries its own copy |
 
 **Recommended Solidity libraries.** A project-owned pairing library over the precompile addresses in both verifier forms, with constants and vectors generated from the Rust reference; OpenZeppelin for ERC-721 and access control, which are conventional; ERC-4337 EntryPoint v0.7 as deployed on Base for the paymaster integration.
 
@@ -177,11 +179,11 @@ Feedback:
 ## Next Steps
 
 - Benchmark arkworks against `halo2curves` on both curves at the `pairing/benchmark` ticket and record the choice there.
-- Pin every recommended crate at the versions verified here in the workspace manifest, with `cargo-deny` enforcing the license allowlist from the `workspace/cargo` ticket.
-- Set up Foundry with Anvil and a Base Sepolia deployment script before the delivery verifier ticket.
+- Pin each recommended crate at the version verified here in the ticket that first consumes it, with `cargo-deny` enforcing the license allowlist from the `workspace/cargo` ticket.
+- Configure Foundry at the `contracts/PairingLib` ticket, and Anvil and the Base Sepolia deployment script at the `contracts/deploy` ticket.
 - Begin Apple and Microsoft code-signing enrollment and generate Sigstore identities during the harness grouping.
 - Stand up the Windows, macOS, and Linux CI matrix with ephemeral runners at the `workspace/ci` ticket, so every ticket's proof runs where the completion boundary requires.
-- Bind the TypeScript linter into the terminal allowlist before the shells grouping is re-mapped.
+- Bind the TypeScript linter into the terminal allowlist and continuous integration at the first shell or webview ticket.
 - At the swarm tickets, pin `librqbit`, build the adapter over it, and open upstream issues for the generic hooks the adapter wants: a piece-completion hook or a wrappable storage trait for Bao verification, a peer-injection call, and a stable storage backend trait.
 - Record the confirmed choices in the technical approach's adapter table and in the workplan when nodes are authored.
 

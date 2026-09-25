@@ -73,7 +73,7 @@ Resolve every protocol layer against declared adapter capabilities rather than i
 - The configuration registry owns defaults, overrides, secret references, and adapter capabilities without storing raw custody secrets, and round-trips identically through every control surface (IC-04).
 
 ## Dependencies
-- The protocol and domain ring's authenticated suite and hash-card types.
+- The authenticated suite and hash-card types, in the modules that implement them.
 - Every adapter family, since each must declare before it can be resolved.
 
 ## Success Metrics

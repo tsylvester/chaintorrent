@@ -89,7 +89,7 @@ Deferred services, recorded so their boundaries are designed now: an account ser
 
 Grouped by ring. Each row names the module family in the Application Requirements and the interface it implements or consumes.
 
-**Protocol and domain ring.** Canonical identity `BLAKE3(name@version)`; the canonical binary encoding of everything hashed, signed, or stored; authenticated hash-card and immutable deployment suite; parameter set, master scalar, credential, envelope key pair, envelope, capsule, delivery statement with the challenge context schema; `AttemptContext`; entitlement and interval state; custody state including device roles, device keys, and delegations; manifest and sidecar bounds; claim sets; lifecycle transitions. Guards on every type at every boundary.
+**Protocol and domain ring.** Pure Rust types and rules with no host, chain SDK, wallet, transport, or storage dependency, holding only the types its own modules implement, beginning with the secret type, which implements no formatting or serialization trait, exposes the wrapped value only through an explicit accessor, and zeroizes on drop. Every type lives in the module that implements it, and its home is fixed when that module's ticket is written. Guards on every type at every boundary.
 
 **Application workflow ring.** Installation coordinator with a durable checkpointed plan; package serving and resolution orchestrator; First Finder bootstrap as a durable idempotent job; encrypted acquisition; credential delivery at mint, grant, and sale; per-attempt authorization; decryption and CAS commit; seeding; explicit publishing with dependency-closure ingestion; escrow claim; transfer; repair; recovery.
 
@@ -97,6 +97,7 @@ Grouped by ring. Each row names the module family in the Application Requirement
 
 | Interface | MVP implementation | Declares |
 | --- | --- | --- |
+| `IEncoderAdapter`, `IDecoderAdapter` | `AbiEncoderAdapter` and `AbiDecoderAdapter`, Ethereum ABI through `alloy`'s sol types, owning the sol-type mirrors and conversions; the canonical encoding of everything hashed, signed, stored, or framed over IPC | One shared versioned encoding identifier, named by the hash-card |
 | `IPayloadCipherAdapter` | `AesCtrAdapter`, 64-bit IV, 64-bit counter | Counter layouts, `maxAddressableBytes` |
 | `IPairingAdapter` | `Bls12381PairingAdapter` primary, `Bn254PairingAdapter` retained | Second-group arithmetic at the verifier, encodings |
 | `ICredentialKemAdapter` | `Bb1DepthOneKemAdapter` | Identity scope: entitlement for explicit publishers, asset for escrow |
@@ -238,7 +239,7 @@ flowchart TB
 | Composition resolver | Validates the full adapter composition against declared capabilities and the deployment suite before any operation; refuses incompatible pairs with no side effect | The resolved capability graph | IC-05, SI-10; MVP Scope, Adapter Composition |
 | Configuration registry | Versioned defaults, user overrides, secret references, adapter capabilities, endpoints; schema-aware reversible migrations; no raw secrets | The configuration store | IC-04, SI-17 |
 | Health and diagnostics | Installed, configured, degraded, incompatible, ready, from active probes; recovery actions; per-asset independence, plaintext, ciphertext, and credential held, or pending with its reason, and per-project independence; identical facts to every control surface | The health state machine and the independence index | SI-13, IC-08, RO-05, PR-12, XA-04 |
-| Telemetry | RO-03 metrics without secrets; per-request correlation across every subsystem; redaction at the tracing layer so secret-typed values cannot be formatted; attempt latency against the declared budget | The metrics store and trace exporter | RO-03, RO-04, RO-06, CR-07 |
+| Telemetry | RO-03 metrics without secrets; per-request correlation across every subsystem; no redaction of its own, since secret-typed values cannot be formatted; attempt latency against the declared budget | The metrics store and trace exporter | RO-03, RO-04, RO-06, CR-07 |
 | Lifecycle and single instance | Single-instance lock per machine; start, stop, restart, and repair hooks the installation coordinator drives; survival across reboot under the platform service manager or a persistent user service | The instance lock and service registration | IC-03, SI-06, SI-16 |
 
 ### Trust boundaries inside the process
@@ -397,7 +398,7 @@ Resolution is the security property, not a convenience. It runs once at installa
 
 - **Declaration.** Every adapter implementation declares its capabilities, version, and compatibility as data the resolver reads; a consumer never branches on an implementation's name.
 - **Composition.** The resolver assembles package-host, ingest, chain, pairing, credential-KEM, key-agreement, delivery-proof, wallet, identity, custody, settlement, entitlement, transport, discovery, and seed-host implementations and validates the complete composition: a delivery-proof adapter is admissible only if it declares the chosen envelope algebra; a custody adapter only if it declares the capabilities the identity needs; a transport only if it can carry what discovery advertises.
-- **Suite binding.** For any deployment the client resolves only implementations declared compatible with every field of the authenticated hash-card: pairing adapter, KEM and live parameter sets, cipher and piece-group size, key-agreement, delivery-proof, KDF and hash-to-scalar, delivery-statement version, attempt-rule parameters, settlement tier.
+- **Suite binding.** For any deployment the client resolves only implementations declared compatible with every field of the authenticated hash-card: pairing adapter, KEM and live parameter sets, cipher and piece-group size, key-agreement, delivery-proof, KDF, hash-to-scalar, and encoding, delivery-statement version, attempt-rule parameters, settlement tier.
 - **Fail closed.** An incompatible composition is refused with no network, chain, authorization, or secret side effect, and readiness is an active health probe, never file or process presence.
 - **On chain.** Contracts resolve adapters from a governance-controlled registry through a factory, constructor-injected and immutable once bound; governance of that registry is a single project-held key for the MVP, recorded as scaffolding.
 
@@ -432,7 +433,7 @@ Architecture-level mitigations, with the register identifier.
 | R-12 chain properties | Chain behind an adapter with settlement as tiers; multi-node reads failing closed; both precompile sets confirmed on Base; sequencer stalls writes only |
 | R-14 scaffolding | Every project service behind an interface with a replacement path; default configuration with more than one discovery and RPC source |
 | R-15 settlement reversal | Reads at the declared tier, destruction at HARD; exposure is one entitlement's credential |
-| R-17 secret leakage | Decrypt-capable material memory-only with zeroization; redaction at the tracing layer; custody inspected after decryption and transfer |
+| R-17 secret leakage | Decrypt-capable material memory-only with zeroization; a secret type that cannot be formatted or serialized; custody inspected after decryption and transfer |
 | R-19 accepted residuals | Piece-group size bounds exposure; decapsulation-to-cipher seam preserved for a multi-key suite |
 | R-21 rendezvous | Outbound-only, end-to-end under a daemon-pinned key, keys never leave, local presence for value-moving operations; deferred |
 | R-22 account mapping | Held only by the account service, never on chain, optional, deletable; deferred |
@@ -447,7 +448,7 @@ Authorization fraction of install wall-clock rising toward the budget. Decapsula
 - **Delivery soundness and replay resistance**: every proof hashes its complete statement; a proof is valid for exactly one settlement; the contract rejects an advanced counter.
 - **Per-attempt authorization** from a fresh state view at the declared tier; never a cached view, a prior session, or another interval's credential.
 - **No selective withholding**: reading needs no party but the holder; transfer needs seller and buyer only; no step requires a single third party's live action.
-- **Secret lifecycle**: decrypted credential, piece-group keys, cipher state, and keystream memory-only and zeroized at every transition; persistent credential only under custody; secret-typed values unformattable at the tracing layer.
+- **Secret lifecycle**: decrypted credential, piece-group keys, cipher state, and keystream memory-only and zeroized at every transition; persistent credential only under custody; secret-typed values that implement no formatting or serialization trait, proven at compile time.
 - **Boundary validation**: every input untrusted until validated; manifest, hash-card, and sidecar authenticated before any credential is exercised; fuzzing at every adapter contract and IPC request.
 - **Local API**: authenticated and least-privileged; a package request confers nothing.
 - **Artifacts**: authenticated before execution; platform signing plus Sigstore; signing keys under custody discipline with rotation.

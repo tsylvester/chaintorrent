@@ -19,18 +19,19 @@ The Application Requirements fix three dependency rings with dependencies pointi
 
 | Ring | Contents | Must not depend on |
 | --- | --- | --- |
-| Protocol and domain | Pure Rust types and rules: canonical identities, authenticated suites and hash-cards, attempt contexts, delivery statements, entitlement and interval state, custody state, manifest and sidecar bounds, parameter-set state, claims, lifecycle transitions | Tauri, Visual Studio Code, npm, any chain SDK, wallet product, transport, or storage engine |
+| Protocol and domain | Pure Rust types and rules its own modules implement, beginning with the secret type; every type lives in the module that implements it, fixed when that module's ticket is written | Tauri, Visual Studio Code, npm, any chain SDK, wallet product, transport, or storage engine |
 | Application workflows | Rust use cases: installation, package serving, cache resolution, grant requests and ciphertext prefetch, encrypted acquisition, First Finder ingestion, credential delivery, per-attempt authorization, decryption, seeding, publishing, claiming, transfer, repair, recovery; long-running operations as durable restartable jobs | The identity of any adapter implementation |
 | Adapters and host shells | Rust adapters for package-manager protocols, chains, pairing backends, wallets, custody, ingest sources, transports, discovery, seed hosts, claim verifiers, storage, telemetry; thin TypeScript or JavaScript shells for Visual Studio Code and npm | Nothing above them; they are the outermost ring |
 
 ## Adapter composition
 
-Every adapter declares capabilities, version, and compatibility. Consumers resolve against declarations, never against an implementation's name. Resolution validates the complete composition before any operation begins and fails closed before any credential is exercised, chain mutation sent, or swarm transfer started. The unit of cryptographic composition is an immutable deployment suite fixed in the authenticated hash-card: pairing adapter, credential-KEM adapter and live parameter sets with sidecar roots, payload-cipher adapter and piece-group size, key-agreement adapter, delivery-proof adapter, KDF and hash-to-scalar mappings, delivery-statement version, attempt-rule parameters, settlement tier, content commitments, and transport locators. Changing an incompatible cryptographic component is a successor deployment whose body carries a sidecar for every live parameter set, never a reinterpretation of existing ciphertext.
+Every adapter declares capabilities, version, and compatibility. Consumers resolve against declarations, never against an implementation's name. Resolution validates the complete composition before any operation begins and fails closed before any credential is exercised, chain mutation sent, or swarm transfer started. The unit of cryptographic composition is an immutable deployment suite fixed in the authenticated hash-card: pairing adapter, credential-KEM adapter and live parameter sets with sidecar roots, payload-cipher adapter and piece-group size, key-agreement adapter, delivery-proof adapter, KDF, hash-to-scalar, and encoding mappings, delivery-statement version, attempt-rule parameters, settlement tier, content commitments, and transport locators. Changing an incompatible cryptographic component is a successor deployment whose body carries a sidecar for every live parameter set, never a reinterpretation of existing ciphertext.
 
 The adapter surfaces the MVP resolves, with their MVP implementations:
 
 | Adapter | MVP implementation | Resolved by |
 | --- | --- | --- |
+| `IEncoderAdapter`, `IDecoderAdapter` | `AbiEncoderAdapter` and `AbiDecoderAdapter`: Ethereum ABI through `alloy`'s sol types under one shared versioned encoding identifier, the adapters owning the sol-type mirrors and conversions | Suite |
 | `IPayloadCipherAdapter` | `AesCtrAdapter`: AES-256-CTR, 64-bit IV, 64-bit counter, keyed per piece group | Suite |
 | `IPairingAdapter` | `Bls12381PairingAdapter` primary, `Bn254PairingAdapter` retained | Chain adapter, from Base's precompiles |
 | `ICredentialKemAdapter` | `Bb1DepthOneKemAdapter`, entitlement scope for explicit publishers, asset scope for escrow | Suite |
@@ -163,7 +164,7 @@ Decrypted credential, expanded cipher state, derived piece-group keys, buffered 
 The build order, by dependency role. The [dependency map](dependency-map.md) holds it at decaying resolution and the [milestones](milestones.md) hold each step's entry and exit.
 
 - **Decisions before nodes.** The credential construction, key custody, host adapter approach, claim granularity, launch network and curve, and the escrow record's form are decided; the license is a release prerequisite rather than a node blocker.
-- **Foundation.** The workspace, the canonical encoding, the tracing redaction layer, and the continuous-integration matrix, on which every node builds.
+- **Foundation.** The workspace with its lint table, the shared test support, the encoder and decoder adapters with their ABI implementations, the secret type, tracing with per-request correlation, and the continuous-integration matrix, on which every node builds; each crate is created by the node of the first module that lives in it.
 - **Cryptographic validation harness.** The credential KEM, envelope, and delivery proof on both curves with the verifier deployed to Base Sepolia, producing the measurements that fix the piece-group size and confirm the curve; it precedes any node that encrypts a registered deployment, because piece geometry is a suite parameter every deployment carries.
 - **Hashing, signatures, swarm transport, seed host, and the ciphertext store.** Provable end to end with no chain and no KEM, so they run beside the harness and the contracts.
 - **Registry contract**, carrying batch resolve, batch authorize, pagination, envelope-key registration, the parameter-set registry with the sidecar-coverage rule, per-entitlement interval state, delivery verification through the precompiles, signed intents under LC-13, and the per-package-and-version claim-set state layout; then the chain, settlement, and entitlement-state adapters.
