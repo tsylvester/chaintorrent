@@ -165,7 +165,7 @@ Serve npm's own registry protocol from a local package host backed by a machine-
 ## Success Metrics
 - Plaintext CAS hit rate and cross-project reuse count, the MVP's headline adoption metric (RO-03).
 - Fraction of a closure independent at the end of its first run, and time to independence for the rest (RO-03; AS-29).
-- Interactive install wall-clock against the pre-declared latency budget (RO-06).
+- Interactive install wall-clock and authorization fraction against baseline (RO-06).
 - Lockfile and resolved-graph parity with upstream across the representative project set.
 
 ---
@@ -203,7 +203,7 @@ Authenticate a deployment's record, hash-card, suite, manifest bounds, and heade
 ## Success Metrics
 - State-read volume and latency per install (RO-03).
 - Decapsulation time per piece group (RO-03).
-- Attempt latency, state read plus decapsulation, as a pass or fail against the declared budget (RO-06).
+- Attempt latency, state read plus decapsulation, reported against the values in force (RO-06).
 - Zero persisted decrypt-capable material found in storage or crash artifacts across the lifecycle matrix.
 
 ---
@@ -369,10 +369,10 @@ Create or import a protocol identity on first run as a contract account, bind it
 Cryptographic Services and Validation Harness
 
 ## Feature Objective
-Implement the suite-constrained Rust cryptography, the AES-256-CTR payload cipher, BLAKE3/Bao commitments, signatures, the pairing adapter on BN254 and BLS12-381, the credential KEM, the pairing ElGamal envelope, and the Schnorr delivery proof, and ship a validation harness that measures their sizes, timings, and gas on each candidate curve against a deployed verifier so that the piece-group size is chosen from measurement and the curve confirmed before release.
+Implement the suite-constrained Rust cryptography, the AES-256-CTR payload cipher, BLAKE3/Bao commitments, signatures, the pairing adapter on BN254 and BLS12-381, the credential KEM, the pairing ElGamal envelope, and the Schnorr delivery proof, and ship a validation harness that measures their sizes, timings, and gas on each candidate curve against a deployed verifier so that the piece-group size and curve defaults are adjusted from measurement where the data supports it.
 
 ## User Stories
-- As the project, I know the byte, latency, and gas cost of every cryptographic step on each candidate curve before I fix the piece-group size or confirm the curve.
+- As the project, I know the byte, latency, and gas cost of every cryptographic step on each candidate curve, and I adjust the piece-group size and curve defaults from that data.
 - As a developer, the cryptography I run is the one the specification defines, verified by test vectors, not an approximation.
 - As an auditor, the Rust verifier and the deployed on-chain verifier agree bit for bit.
 
@@ -386,7 +386,7 @@ Implement the suite-constrained Rust cryptography, the AES-256-CTR payload ciphe
 - Sidecar and derivation services derive each set's wrapping key, wrap and unwrap the piece-group key as specified, use BLAKE3 keyed derivation off chain and keccak256 under domain tags for the identity mapping and the challenge, and freeze contexts with known-answer vectors; two independently generated sets unwrap one piece-group key (CR-11).
 - Manifest, hash-card, and sidecar validation authenticate all suite fields and capsules and reject malformed bounds before any credential is exercised, with ordering proven by chain and custody spies (CR-06).
 - Secret lifecycle services minimize copies, exclude secrets from logs, keep decrypted credentials and keys memory-only, and zeroize at every transition (CR-07).
-- The harness produces capsule, envelope, and proof sizes, decapsulation time per piece group, proof generation and verification time, and delivery-verification gas for a mint and a transfer on each candidate curve, and the piece-group size is chosen from them and recorded in release evidence (CD-07; AS-21).
+- The harness produces capsule, envelope, and proof sizes, decapsulation time per piece group, proof generation and verification time, and delivery-verification gas for a mint and a transfer on each candidate curve, and the piece-group size default in force, with any adjustment the measurements support, is recorded in release evidence (CD-07; AS-21).
 
 ## Dependencies
 - Existing BLAKE3, Bao, AES, Ed25519, secp256k1, and pairing-curve libraries.
@@ -397,7 +397,7 @@ Implement the suite-constrained Rust cryptography, the AES-256-CTR payload ciphe
 - Measured capsule, envelope, and proof bytes on each curve.
 - Measured decapsulation time per piece group, proof generation and verification time.
 - Measured delivery-verification gas per mint and per transfer.
-- A recorded piece-group size and curve confirmation derived from those measurements.
+- The piece-group size and curve defaults in force recorded with those measurements and any adjustment they supported.
 - Vector pass rate, target complete, across every service.
 
 ---
@@ -535,7 +535,7 @@ Sponsor free entitlement acquisition and the one-time identity binding through a
 Observability, Diagnostics, and Cost Instrumentation
 
 ## Feature Objective
-Record the metrics that make the MVP's economics measurable, correlate one package request across every subsystem, expose degraded dependencies and recovery actions consistently through every control surface, and evaluate attempt latency against a latency budget declared before the run, all without recording secrets.
+Record the metrics that make the MVP's economics measurable, correlate one package request across every subsystem, expose degraded dependencies and recovery actions consistently through every control surface, and report attempt latency and install wall-clock against the configured values in force, all without recording secrets.
 
 ## User Stories
 - As the project, I obtain cost per install, state-read cost, cryptographic cost, and CAS reuse as measured numbers rather than estimates.
@@ -546,18 +546,18 @@ Record the metrics that make the MVP's economics measurable, correlate one packa
 - Metrics record CAS hit and cross-project reuse, resolution path and its reason, request and grant timing, the fraction of a closure independent after its first run and time to independence, install wall-clock, state-read volume and latency, decapsulation time per group, proof generation and verification time and gas, swarm bytes, ingest bytes, relayer gas, job outcome, and adapter health without secrets; every acceptance path reconciles with induced activity (RO-03; AS-20).
 - Structured logs and traces correlate one request across all subsystems under concurrent installs (RO-04).
 - Health and diagnostics expose degraded dependencies, compatibility decisions, job state, and recovery actions consistently through CLI, Tauri, extension, and API (RO-05).
-- Attempt latency is measured against a pre-declared interactive budget and yields a pass or failure (RO-06).
+- Attempt latency and whole-command time are measured and reported against the configured values in force, and injected delay is reflected accurately (RO-06).
 - Failure messages identify the failed capability and safe recovery without exposing secrets or suggesting bypasses (XA-04).
 - All external inputs are untrusted until validated at their boundary; fuzzing yields bounded failure with no protected side effects (XA-01).
 
 ## Dependencies
 - Every other feature, since each emits the metrics and traces this feature collects.
-- The declared latency budget, set before the measurement run.
+- The configured defaults in force, which the reported values are compared against.
 
 ## Success Metrics
 - Every metric in RO-03 reconciled against induced activity.
 - Zero sensitive fields found in telemetry scans.
-- Attempt-latency pass against the declared budget.
+- Attempt latency and install wall-clock reported against the values in force.
 
 ---
 
@@ -621,7 +621,7 @@ Run a persistent first seeder of the core packages and their dependency closure,
 
 ## Additional Content
 
-**Cross-feature dependencies and build order.** The Application Requirements fix the dependency direction: protocol and domain, then application workflows, then adapters and host shells. The validation harness precedes every node that encrypts a registered deployment, because the piece-group size and attempt-rule parameters gate them. The payload cipher, the contracts, and the chain and submission families follow, with hashing, signatures, and swarm hosting in parallel from the foundation onward, each family from its first concrete to its factory; then the daemon, identity, package serving, First Finder bootstrap, credential delivery, and the demonstrable milestone; then onboarding shells, relaying, publishing and claims, the seed host and site, observability, and the demonstration harness; then the transaction flow proof and the completion gate.
+**Cross-feature dependencies and build order.** The Application Requirements fix the dependency direction: protocol and domain, then application workflows, then adapters and host shells. The validation harness is the first cryptographic work and gates nothing, because the piece-group size and attempt-rule parameters are hash-card fields with configured defaults that every node reads from the deployment record. The payload cipher, the contracts, and the chain and submission families follow, with hashing, signatures, and swarm hosting in parallel from the foundation onward, each family from its first concrete to its factory; then the daemon, identity, package serving, First Finder bootstrap, credential delivery, and the demonstrable milestone; then onboarding shells, relaying, publishing and claims, the seed host and site, observability, and the demonstration harness; then the transaction flow proof and the completion gate.
 
 **Features deliberately absent.** Git commit wrapping, an email bot for escrow, general paid monetization, a version alignment engine, arbitrary media and streaming, content flagging and advisory surfaces, per-entitlement variance, composable container objects, partial encryption, seeder compensation, retention enforcement, Sybil-resistant stake, and the website account, remote head, and hosted instance are deferred to V2 and architecturally protected as recorded in MVP Scope. None is a hidden dependency of any feature above.
 

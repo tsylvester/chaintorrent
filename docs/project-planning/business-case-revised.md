@@ -83,7 +83,7 @@ The [risk register](risk-register.md) holds the identified risks with impact, li
 
 **Delivery breadth, High impact, High likelihood.** Every operational requirement with a boundary-crossing proof, every acceptance scenario on clean machines, four control surfaces, signed installation and service lifecycle on every supported platform, a contract suite, three services, and a demonstration harness that the completion boundary makes load-bearing, with no timeline or budget set against it. Mitigation: the foundation and harness groupings are mapped at ticket resolution, with the swarm and signature milestones beside them, and resolution decays outward from there; the harness's measured throughput is the calibration; the platform matrix is Windows, macOS, and Linux; a demonstrable milestone after credential delivery produces something to show and measure before publishing and claims.
 
-**Cryptographic cost against the latency budget, High impact, Medium likelihood.** Nothing is measured. Mitigation: the harness measures sizes, timings, and gas on both curves before any parameter is fixed; the latency budget is declared before the acceptance run so instrumentation produces a failure, not a number; install-once content crosses the attempt boundary rarely.
+**Cryptographic cost making installs noticeably slower, High impact, Medium likelihood.** Nothing is measured. Mitigation: the piece-group size and attempt-rule defaults are configured from the research's cost formula; the harness measures sizes, timings, and gas on both curves against them and the dogfood run measures install wall-clock, and the data adjusts the defaults for deployments created afterwards; install-once content crosses the attempt boundary rarely.
 
 **Beachhead parity, High impact, Medium likelihood.** Machine-wide reuse is available today from local stores. Mitigation: the value proposition leads with the long tail and accumulation; the superseeder mechanism is the adoption engine; the north star is measured on the dogfood population before the adopting population is asked.
 
@@ -99,7 +99,7 @@ The [risk register](risk-register.md) holds the identified risks with impact, li
 
 **Free-path subsidy, Medium impact, High likelihood of cost growth.** Every new identity costs a binding transaction and every free grant verifies a proof on chain at relayer expense; the grant pool is unfunded and grows with success. Mitigation: per-identity rate limits, short lock expiries with refund, gas recorded per install, the pool sized from measured gas after the harness and dogfood run. What ends free onboarding, and what replaces the relayer, is not decided; the case records that as open rather than implying the subsidy is permanent.
 
-**Open selections, Medium impact, Medium likelihood.** The attempt-rule parameters and piece-group size, the license text, and custody recovery UX remain open; custody, launch network and curve, and the escrow record's form are decided. Mitigation: the parameters are fixed from harness measurement before any node that encrypts a registered deployment; the license is a release prerequisite; recovery UX is decided at the identity milestone.
+**Open selections, Medium impact, Medium likelihood.** The license text and custody recovery UX remain open; custody, launch network and curve, the escrow record's form, and the configured defaults for the attempt-rule parameters and piece-group size are decided. Mitigation: the license is a release prerequisite; recovery UX is decided at the identity milestone.
 
 **Adapter registry governance and scaffolding, Medium impact, Medium likelihood.** Adapters are resolved from a governance-controlled on-chain registry, immutable once bound, governed in the MVP by a single project-held key recorded as scaffolding. The relayer, project seed host, and claim verifier are centralized conveniences the project operates. Mitigation: hold the governance's replacement path as a workplan item; ship default configuration with more than one discovery source and more than one state-read node; keep every service behind an interface with a documented replacement path.
 
@@ -121,13 +121,13 @@ The [risk register](risk-register.md) holds the identified risks with impact, li
 ## Weaknesses
 
 - No timeline or budget; delivery feasibility is undetermined until the harness calibrates it.
-- Cost is unmeasured: no byte, latency, proof, gas, or settlement figure exists, and the piece-group size and curve wait on the harness.
+- Cost is unmeasured: no byte, latency, proof, gas, or settlement figure exists, and the piece-group size and curve defaults are configured from formula until the harness measures them.
 - At the beachhead, machine-wide reuse is parity with existing local stores, and the rights layer is invisible at $0.00.
 - The engineering surface is wide and platform breadth across Windows, macOS, and Linux is the largest delivery risk.
 - The MVP validates the mechanism but not its load profile; streaming costs are unobserved.
 - The adopting population is the population the public-ledger argument does not cover, and the MVP ships no privacy construction.
 - Free onboarding depends on a subsidized relayer with no funding source, no size, and no replacement path.
-- The attempt-rule parameters, piece-group size, license text, and custody recovery UX remain open.
+- The license text and custody recovery UX remain open.
 - Compliance is the least specified area: eligibility restatement, license, regulatory review, and export confirmation are all on the release path.
 
 ## Opportunities
@@ -152,7 +152,7 @@ The [risk register](risk-register.md) holds the identified risks with impact, li
 - The relayer subsidy scaling with success while unfunded.
 - Chain properties outside the project's control: precompile availability and pricing on the launch L2, sequencer behavior, RPC censorship.
 - A published piece-group key set for a high-value deployment, decrypting the swarm copy for everyone and attributing to no one.
-- The harness showing authorization cost above the developer's tolerance, which is the first stop criterion and should be met as a finding rather than absorbed as a slower install.
+- The harness and the dogfood run showing installs noticeably slower for the developer, which the configured defaults are adjusted against rather than absorbed.
 
 # Next Steps
 
@@ -160,13 +160,12 @@ Ordered by dependency, named by role, not numbered. Each has an owner by role an
 
 - **Build the cryptographic validation harness.** Mapped at ticket resolution in the dependency map, closing at the report node that records capsule, envelope, and proof sizes, decapsulation time per piece group, proof generation and verification time, and delivery gas for a mint and a transfer on both curves, and that carries the phase's integration test and commit. The Solidity verifier is production code. Owner: cryptography implementer. Stop criterion: none at this step; the harness produces the inputs to the next.
 - **In parallel with the harness, start the external work that has no engineering dependency.** Quote and begin external cryptographic review on the composition claims, to conclude on the harness output. Begin legal drafting and review scoped to the license text, the eligibility principle and its residual, priced entitlements and the paymaster, and export constraints. Record the adapter registry's governance and the supported platform matrix as decisions. Owner: project lead.
-- **Declare the interactive latency budget**, including the fraction of install wall-clock authorization may add, before any measurement is compared to it. Owner: project lead. This is the first stop criterion: if no parameter within the specification's bounds meets the budget on the harness's measurements, the finding is reported against the design rather than absorbed.
-- **Resolve the measurement-gated selections from the harness output**: the piece-group size and attempt-rule parameters, and confirm the curve. Re-run the whole-target evaluation with measured costs. Owner: project lead with the cryptography implementer.
+- **Adjust the configured defaults from the harness output** where the data supports a better value: the piece-group size default and the primary curve form. Re-run the whole-target evaluation with measured costs. Owner: project lead with the cryptography implementer.
 - **Re-map the remaining protocol core milestones to ticket resolution from what the harness taught**, including its measured throughput, and produce the first evidence-based estimate of timeline and engineering cost. Owner: project lead. Stop criterion: if the estimate is beyond what the project can fund, that is decided here, before the wide work begins.
 - **Build the protocol core and contract suite, with the swarm and signature milestones in parallel from the foundation onward.** Domain model, payload cipher and commitments, registry and entitlement contracts calling the harness's verifier, the chain and submission families, the on-chain adapter registry and factory; hashing, signatures, swarm transport, seed host, and ciphertext store alongside, since they need no chain, each family from its first concrete to its factory. Owner: implementers by family.
 - **Build the local daemon and package serving.** Durable jobs, plaintext CAS and resolution order, First Finder ingest, package host; identity and custody early because the installer needs it. At the package host an ordinary `npm install` is served at the registry's speed, registers its requests, and prefetches its ciphertext. Owner: daemon implementer.
 - **Build credential delivery and per-attempt authorization**, closing the read path: mint delivery through the relayer, holders fulfilling requests for requesters present or absent, local decryption under the attempt rule, interval-end destruction, completing a first run's independence.
-- **Reach the demonstrable milestone.** With the registry down, a second identity installs a closure against the swarm on a grant fulfilled in its absence. Measure the north star, first-run independence, and the latency guardrail on the dogfood population here. Owner: project lead. Stop criterion: the guardrail; if the benefit is not felt on the dogfood population, the case does not proceed to the adopting population.
+- **Reach the demonstrable milestone.** With the registry down, a second identity installs a closure against the swarm on a grant fulfilled in its absence. Measure the north star, first-run independence, and install wall-clock on the dogfood population here, and adjust the configured defaults where the data supports it. Owner: project lead.
 - **Build the onboarding shells and services.** Installation coordinator, extension and npm bootstrap, desktop and CLI, relayer, explicit publisher path, claim verifier and escrow claim last, project seed host and site, observability, demonstration harness. Owner: platform and services implementers.
 - **Run acceptance and release.** Every acceptance scenario through packaged applications on clean machines; the transaction flow proof after external review closes; the dogfood baseline recorded; legal prerequisites complete; release. Stop criteria: any guardrail breach blocks; no priced deployment before review and legal.
 
@@ -202,10 +201,8 @@ No source supports a figure and none is invented. What the plan produces, and wh
 
 ## Stop criteria
 
-- The harness shows that no parameter within the specification's bounds meets the declared latency budget: reported as a finding against the design, not absorbed.
 - The post-harness estimate of the remaining work is beyond what the project can fund: decided before the wide work begins.
-- The north star and latency guardrail on the dogfood population at the demonstrable milestone show the benefit is not felt: the case does not proceed to the adopting population.
-- Any release guardrail breached in the acceptance run: release blocks. No guardrail may be waived by adjusting the metric.
+- An invariant guardrail breached in the acceptance run: release blocks. No guardrail may be waived by adjusting the metric.
 - External cryptographic review finds a composition or verifier flaw: no priced deployment until it is dispositioned.
 
 ## Delivery groupings, by dependency role

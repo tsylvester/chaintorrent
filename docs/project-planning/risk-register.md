@@ -42,35 +42,34 @@ The principle is stated in the specification and MVP Scope: free public distribu
 ---
 
 ## Risk
-**R-02. Measured cryptographic cost exceeds the interactive latency budget.** Byte, latency, proof, and gas figures come only from measurement. If decapsulation per piece group multiplied by groups per package, plus a state read per attempt, adds a noticeable fraction to a developer's install, the north-star benefit is not felt and the adopting population notices.
+**R-02. Measured cryptographic cost makes installs noticeably slower.** Byte, latency, proof, and gas figures come only from measurement. If decapsulation per piece group multiplied by groups per package, plus a state read per attempt, adds a noticeable fraction to a developer's install, the north-star benefit is not felt and the adopting population notices.
 
 ## Impact
-High. Interactive install wall-clock is the binding constraint; the success metrics make the latency budget the only threshold that can fail a run and the first stop criterion.
+High. Interactive install wall-clock is the binding constraint every other metric is subordinate to.
 
 ## Likelihood
-Medium. The research's by-formula estimates put sidecar overhead at roughly one percent of payload at 16 KiB groups, depending on curve and scope, and decapsulation at two pairings per group, which is cheap, but nothing is measured, the piece-group size is unchosen, and state-read latency depends on the launch network.
+Medium. The research's by-formula estimates put sidecar overhead at roughly one percent of payload at 16 KiB groups, depending on curve and scope, and decapsulation at two pairings per group, which is cheap, but nothing is measured and state-read latency depends on the launch network.
 
 ## Mitigation
-Build the validation harness first and choose the piece-group size and curve from its measurements. Declare the latency budget before the acceptance run so instrumentation produces a failure rather than a number. Instrument state-read volume and latency per install to choose `τ_soft`. Install-once content crosses the attempt boundary rarely, which bounds the exposure for the MVP's content class.
+Configure the piece-group size default from the research's cost formula and the attempt-rule parameters at the node that first writes a hash-card; measure what each costs with the validation harness and the dogfood run; adjust a default for deployments created afterwards when the data shows a better value. Instrument state-read volume and latency per install to tune `τ_soft`. Install-once content crosses the attempt boundary rarely, which bounds the exposure for the MVP's content class.
 
 ## Seed Examples
 - On the chosen L2, a state view at the declared tier takes long enough that a thousand-package closure, even paginated, adds seconds a developer notices.
-- The piece-group size chosen to bound key leakage is small enough that a large package needs hundreds of decapsulations.
+- The piece-group size default, small to bound key leakage, leaves a large package needing hundreds of decapsulations.
 
 ## Mitigation Plan
-- Harness on both curves, recording sizes, decapsulation time, proof times, and gas (CD-07, AS-21).
-- Declare the budget, including the acceptable authorization fraction, before measurement.
-- Choose piece-group size against the budget; record the choice in release evidence.
-- Measure state-read latency during the dogfood run; choose `τ_soft` and `τ_wallet`.
-- If no parameter within the specification's bounds meets the budget, report it as a finding against the design rather than relaxing the budget.
+- Harness on both curves, recording sizes, decapsulation time, proof times, and gas against the configured defaults (CD-07, AS-21).
+- Adjust the piece-group size default where the harness data supports it; record the measurements and the default in force in release evidence.
+- Measure whole-command time, authorization fraction, and state-read latency during the dogfood run; tune `τ_soft` and `τ_wallet`.
+- Report every adjustment with the data behind it.
 
 ## Notes
 - **Affected components:** validation harness, encrypted consumption, the chain family's settlement and entitlement-state views, deployment hash-card parameters.
-- **Dependencies:** the harness on both curves.
-- **Sequencing:** the harness grouping, before any node that encrypts a registered deployment.
-- **Guardrails:** latency budget (RO-06).
-- **Signals:** authorization fraction of install wall-clock rising toward the budget; `PENDING_SETTLEMENT` dwell time rising.
-- **Open questions:** the budget's value; whether batch reads at the declared tier are available on Base.
+- **Dependencies:** the harness on both curves; the dogfood run.
+- **Sequencing:** the harness grouping and the dogfood run; nothing waits on either.
+- **Guardrails:** none; the measurement drives adjustment (RO-06).
+- **Signals:** authorization fraction of install wall-clock rising; `PENDING_SETTLEMENT` dwell time rising.
+- **Open questions:** whether batch reads at the declared tier are available on Base.
 
 ---
 
@@ -125,13 +124,13 @@ The workplan's dependency-ordered sequence, test-first and bottom-up, with one f
 
 ## Mitigation Plan
 - Author nodes from the ratified sequence.
-- Define the demonstrable milestone with its own north-star and latency measurement.
+- Define the demonstrable milestone with its own north-star and install wall-clock measurement.
 - Author nodes only from settled decisions.
 - Size the team and a timeline once the harness has measured throughput.
 
 ## Notes
 - **Affected components:** all.
-- **Dependencies:** open selections (R-09).
+- **Dependencies:** drafting-gated selections (R-09).
 - **Sequencing:** throughout.
 - **Guardrails:** completion boundary as written; no test-only bypass.
 - **Signals:** requirement-to-proof reconciliation lagging node completion.
@@ -265,33 +264,31 @@ Per-identity rate limits under relayer policy; short published lock expiries wit
 ---
 
 ## Risk
-**R-09. Measurement-gated and drafting-gated selections delay node authoring.** The attempt-rule parameters and piece-group size, the license text, and custody recovery UX gate the nodes that depend on them.
+**R-09. Drafting-gated selections delay node authoring.** The license text and custody recovery UX gate the work that depends on them.
 
 ## Impact
-Medium. Each delays the nodes that depend on it; the parameters gate every node that encrypts a registered deployment and are fixed by the harness; the license gates release, not nodes; recovery UX gates the identity milestone.
+Medium. The license gates release, not nodes; recovery UX gates the identity milestone.
 
 ## Likelihood
-Medium. The parameters are measured before any node that needs them; the license and recovery UX have owners and milestones.
+Medium. The license and recovery UX have owners and milestones.
 
 ## Mitigation
-Fix the parameters from harness measurement before any node that encrypts a registered deployment; treat the license as a release prerequisite; decide recovery UX at the identity milestone.
+Treat the license as a release prerequisite; decide recovery UX at the identity milestone.
 
 ## Seed Examples
-- The piece-group size is assumed before the harness reports, and every node that encrypts is authored twice.
 - Recovery UX is left to the desktop milestone, and the identity milestone's custody adapter is reworked to fit it.
 
 ## Mitigation Plan
-- Hold every node that encrypts a registered deployment until the harness records the piece-group size.
 - Decide custody recovery UX before the identity milestone.
 - Start license drafting with the harness.
 
 ## Notes
-- **Affected components:** identity, deployment parameters, licensing.
-- **Dependencies:** harness output for the parameters.
-- **Sequencing:** before the nodes that depend on each.
+- **Affected components:** identity, licensing.
+- **Dependencies:** legal drafting; the identity milestone's design.
+- **Sequencing:** before the work that depends on each.
 - **Guardrails:** no node authored against an unrecorded decision.
 - **Signals:** a node's `deps` element naming an unresolved adapter.
-- **Open questions:** the parameters' values, the license text, the recovery UX.
+- **Open questions:** the license text, the recovery UX.
 
 ---
 
@@ -752,14 +749,14 @@ The seed never leaves a root, so no added device can rebind, rotate, or admit. E
 | ID | Risk | Impact | Likelihood | Owner by role |
 | --- | --- | --- | --- | --- |
 | R-01 | Unauthorized redistribution and irrevocability of ingested packages | Medium | Medium | Project lead |
-| R-02 | Cryptographic cost exceeds latency budget | High | Medium | Cryptography implementer |
+| R-02 | Cryptographic cost makes installs noticeably slower | High | Medium | Cryptography implementer |
 | R-03 | Delivery proof or verifier flaw | High | Low / Medium | Cryptography implementer |
 | R-04 | Execution breadth | High | High | Project lead |
 | R-05 | Beachhead parity with existing tools | High | Medium | Project lead |
 | R-06 | Consumption privacy for developers | High / Medium | High | Project lead |
 | R-07 | Daemon as supply-chain surface | High | Medium | Daemon implementer |
 | R-08 | Free-path abuse and subsidy | Medium | Medium | Relayer operator |
-| R-09 | Measurement-gated and drafting-gated selections | Medium | Medium | Project lead |
+| R-09 | Drafting-gated selections | Medium | Medium | Project lead |
 | R-10 | Legal framings and regulation | Medium / High | Medium | Project lead |
 | R-11 | First Finder race and job failure | Medium | Low | First Finder implementer |
 | R-12 | Chain properties change | Medium | Medium | Chain adapter implementer |

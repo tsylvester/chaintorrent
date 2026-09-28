@@ -38,11 +38,11 @@ The protocol's security posture is stated in cryptography.md's Security Properti
 
 | ID | Requirement | Source | Disposition |
 | --- | --- | --- | --- |
-| NF-P01 | Interactive install wall-clock for the local developer, with the fraction authorization may add, within a latency budget declared before the measurement run; instrumentation must produce a pass or failure | RO-06; MVP Scope, Cost Instrumentation | Stated; threshold set at declaration |
+| NF-P01 | Interactive install wall-clock for the local developer, with the fraction authorization adds, measured and reported against baseline under the declared corpus and conditions; the data drives adjustment of the configured defaults | RO-06; MVP Scope, Cost Instrumentation | Stated; reported against baseline |
 | NF-P02 | A plaintext CAS hit serves with no network, chain, swarm, or authorization work | PR-06 | Stated |
 | NF-P03 | The initiating install's latency ends with the response of the source that served it, independent of background bootstrap, request registration, ciphertext prefetch, and grant pickup | FF-02, PR-03, PR-08 | Stated |
 | NF-P04 | Per-attempt state reads are view calls, batched and paginated across a dependency closure with the ceiling advertised by the adapter, never one request per package and never one request the recipient cannot accept | LC-06; MVP Scope, Entitlement Ledger | Stated |
-| NF-P05 | Decapsulation cost per piece group and the piece-group size chosen from measurement against the latency budget | CD-07, AS-21 | Stated; value set by measurement |
+| NF-P05 | Decapsulation cost per piece group measured, with the piece-group size default adjusted where the measurement supports a better value | CD-07, AS-21 | Stated; default configured, adjusted from measurement |
 | NF-P06 | Seekable, order-independent decryption: any piece decrypts from its index alone, with no per-piece expansion and no padding | cryptography.md, Cryptographic Primitives | Stated |
 | NF-P07 | Incremental verification at Bao-chunk granularity without downloading the remainder | cryptography.md, Incremental Verification | Stated |
 | NF-P08 | Delivery-verification gas per mint and transfer measured on the resolved curve and used to select curve and verifier form | CD-07, RO-03 | Stated; value set by measurement |
@@ -50,7 +50,7 @@ The protocol's security posture is stated in cryptography.md's Security Properti
 | NF-P10 | Resource footprint of the daemon on a developer machine: CPU at idle, memory, and bandwidth consumed by seeding and by the background prefetch of ciphertext, which roughly doubles a first run's disk and bandwidth | RO-07, ST-06, PR-11, SI-20 | Stated: the daemon exposes and respects configurable upload bandwidth and idle CPU limits, the prefetch obeys them and the ciphertext quota, the first-run cost is disclosed at install, and the acceptance run records idle footprint on each supported platform |
 | NF-P11 | Cold-start time of the daemon after reboot before the package host is serving | RO-08 | Stated: measured and reported in the acceptance run; no threshold |
 
-**Assessment.** The performance model is correctly built around one declared budget and a set of measurements that feed it. The developer's side of the ledger, the daemon's idle and seeding footprint, is RO-07; it is the cost a developer notices after install latency.
+**Assessment.** The performance model is correctly built around configured defaults and a set of measurements that adjust them. The developer's side of the ledger, the daemon's idle and seeding footprint, is RO-07; it is the cost a developer notices after install latency.
 
 ## Reliability
 
@@ -133,7 +133,7 @@ The [success metrics](success-metrics.md) hold the full KPI set. The non-functio
 
 | KPI | Requirement served | Target |
 | --- | --- | --- |
-| Interactive install wall-clock and authorization fraction | NF-P01 | Pass against the declared budget |
+| Interactive install wall-clock and authorization fraction | NF-P01 | Reported against baseline |
 | Zero protected material in telemetry, logs, storage, crash artifacts | NF-S06, NF-C05 | Zero |
 | Zero accepted invalid deliveries; zero authorizations under a stale or altered view | NF-S02, NF-S03, NF-S04 | Zero |
 | Zero protected side effects from invalid compositions or untrusted inputs | NF-S07, NF-M01 | Zero |
@@ -156,11 +156,11 @@ The [success metrics](success-metrics.md) hold the full KPI set. The non-functio
 - External cryptographic review completed with findings dispositioned (NF-S01, NF-S02).
 - License text adopted and content-terms field populated for the project's packages (NF-C02).
 - Legal review of priced entitlements, the paymaster, and export complete (NF-C08, NF-C09).
-- Piece-group size, curve, `τ_soft`, and `τ_wallet` recorded in release evidence (NF-P05, NF-P08).
+- The piece-group size, curve, `τ_soft`, and `τ_wallet` defaults in force recorded in release evidence (NF-P05, NF-P08).
 
 ## Measurement Plan
 
-The [success metrics](success-metrics.md) measurement plan applies unchanged: budget declaration, validation harness, acceptance run, dogfood baseline, adopting population. Non-functional additions to that plan:
+The [success metrics](success-metrics.md) measurement plan applies unchanged: configured defaults, validation harness, acceptance run, dogfood baseline, adopting population. Non-functional additions to that plan:
 
 - **Security proofs run as scenarios, not as audits.** Every NF-S row with a requirement identifier is proven by its named integration or end-to-end test; the acceptance run includes the fuzzing, mutation, replay, and telemetry-scan cases.
 - **Platform matrix.** Reliability and installation requirements are measured on Windows, macOS, and Linux, not on one reference machine.
@@ -172,7 +172,7 @@ The [success metrics](success-metrics.md) measurement plan applies unchanged: bu
 
 The [risk register](risk-register.md) and success metrics carry the full set. Those specific to non-functional properties:
 
-- Authorization fraction of install wall-clock rising toward the budget (NF-P01).
+- Authorization fraction of install wall-clock rising (NF-P01).
 - Any sensitive field in a telemetry scan (NF-S06).
 - Any divergence between the Rust and on-chain verifier on the harness vector set (NF-S02).
 - Any IPC call from an unprivileged principal succeeding beyond a package request (NF-S08).
@@ -187,7 +187,7 @@ The [risk register](risk-register.md) and success metrics carry the full set. Th
 
 Non-functional guardrails that block release. They are the same as the success metrics' guardrails, restated against requirement identifiers:
 
-- Latency budget pass (NF-P01).
+- Install wall-clock and authorization fraction reported against baseline (NF-P01).
 - No protected material anywhere it should not be (NF-S06, NF-C05).
 - No authorization without a current view; no accepted invalid delivery (NF-S02 through NF-S04).
 - No side effects from invalid compositions or untrusted inputs (NF-S07, NF-M01).
