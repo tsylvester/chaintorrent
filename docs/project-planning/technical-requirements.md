@@ -35,8 +35,8 @@ The [system architecture](system-architecture.md) breaks the daemon into its sub
 | --- | --- | --- | --- | --- |
 | Domain types, only those the domain crate's own modules implement; every other type lives in the module that implements it | all | Protocol and domain | `domain` | Composition Boundary |
 | Secret type | all | Protocol and domain | `domain` | CR-07; the foundation grouping |
-| Encoding family: the factory owns `IEncoderAdapter`, `IDecoderAdapter`, the versioned encoding identifier, the vendor-free encoding contract, and the declaration; `encoding/abi` implements both through `alloy`'s sol types; one encoding for everything hashed, signed, stored, or framed over IPC | all | Adapter | `adapters/encoding` | CR-03, CR-09; the foundation grouping |
-| Randomness family: the factory owns the interface that fills bytes and draws scalars and its deterministic mock; `random/os` over the operating system's generator | all | Adapter | `adapters/random` | CR-05; the foundation grouping |
+| Encoding family: the factory owns `IEncoderAdapter`, `IDecoderAdapter`, the versioned encoding identifier, the vendor-free encoding contract, and the declaration; one family-owned description module per encoded domain type, `encoding/<type>`, implements the contract for that type; `encoding/abi` implements both interfaces through `alloy`'s sol types; one encoding for everything hashed, signed, stored, or framed over IPC | all | Adapter | `adapters/encoding` | CR-03, CR-09; the foundation grouping |
+| Randomness family: the factory owns the interface that fills bytes, the repo-owned sampling trait a scalar type implements to be drawn from uniform bytes, authored by its first consumer, and the declaration, naming no scalar type; `random/os` over the operating system's generator | all | Adapter | `adapters/random` | CR-05; the foundation grouping |
 | Package host family: the factory owns `IPackageHostAdapter` and the ecosystem declaration; `package-host/npm` serves the registry protocol and holds the package metadata store | daemon | Adapter | `adapters/package-host` | PR-01, PR-02, PR-09 |
 | IPC family: the factory owns the transport interface together with the framing, the principal rules, and the server; `ipc/unix_socket` and `ipc/named_pipe` | daemon | Adapter | `adapters/ipc` | XA-02, RO-05 |
 | Resolution orchestrator | daemon | Workflow | `workflows` | PR-03, PR-06, PR-07, PR-08 |
@@ -228,15 +228,15 @@ Five API surfaces exist. The specification fixes the adapter interface signature
 
 Each function is a module directory with one file per element: `interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, `mod.rs` for the implementation, and `provides.rs` for the public surface; test files attach as `#[cfg(test)]` modules and `mock.rs` sits behind a `mocks` feature. An adapter is one struct in one file implementing the repo-owned trait, so a concrete adapter's operations are its methods and claim no files of their own. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it.
 
-The layout is general responsibility, then functional need, then concrete implementation. Every adapter family is a crate under `adapters/`, and that crate is the family's factory: its root module holds the factory's elements, with `lib.rs` as the root module's implementation file holding the factory function, declaring each concrete as a private module and each function the family owns as a public module, and exposing `provides` as the crate's only public module. `interface.rs` at the root declares the generic trait, with a type only a concrete produces named as an associated type of the trait, the capability declaration every concrete fills in, and the factory function's signature and types. A concrete is a directory under `src/` named by its explicit noun, holding the same elements with `mod.rs` holding the adapter that implements the generic trait and a `provides.rs` visible to the crate only; a function a concrete owns is a module directory beneath the concrete. A consumer depends on the family crate and sees the factory's surface and nothing beneath it. The factory function takes the requested concrete, from configuration or from a deployment's hash-card, together with the declarations of the upstream adapters it must be compatible with, and returns the constructed adapter behind the generic trait or refuses. A family exists even where the MVP ships one concrete.
+The layout is general responsibility, then functional need, then concrete implementation. Every adapter family is a crate under `adapters/`, whose `factory` module is the family's factory: its `interface.rs` declares the generic trait, with a type only a concrete produces named as an associated type of the trait, the capability declaration every concrete fills in, and the factory function's signature and types; its `mod.rs` holds the factory function; its `provides.rs` is the crate's public surface. The crate root `lib.rs` is a barrel that declares each concrete as a private module and each function the family owns as a module, re-exports the factory module's provides, and holds nothing else; each module's node adds its own line there as its provides step. A concrete is a directory under `src/` named by its explicit noun, holding the same elements with `mod.rs` holding the adapter that implements the generic trait and a `provides.rs` visible to the crate only; a function a concrete owns is a module directory beneath the concrete. The factory module's interface and mock are authored in the node of the family's first ticket, its first concrete or a family-owned function preceding it, the first source file that requires them, together with that node's own implementation, and that node creates the crate; each further concrete and family-owned function is its own node; the factory module's implementation, test, and provides are authored in the factory node, which follows every concrete of the family in the workplan, since the factory function consumes the concretes, and which is revised in place when a later milestone adds a concrete. A consumer depends on the family crate and sees the factory's surface and nothing beneath it, and its node follows the factory node. The factory function takes the requested concrete, from configuration or from a deployment's hash-card, together with the declarations of the upstream adapters it must be compatible with, and returns the constructed adapter behind the generic trait or refuses. A family exists even where the MVP ships one concrete.
 
-A Solidity contract is a module of `contracts/evm/src/`, the EVM suite that is the on-chain concrete of the chain family's Base concrete, with its Foundry tests as its interface, guard, and unit elements and its constants and vectors generated from the Rust reference; a further chain form is a further suite under `contracts/<suite>` with its own toolchain. Crate directories are hyphenated and module directories underscored. A family's factory ticket is named by its crate, a concrete's by `crate/concrete`, a function a concrete owns by `crate/concrete/function`, a function the family owns by `crate/function`, a module of the domain or workflows crate by `crate/module`, and a contract by `contracts/<suite>/Contract`. The tree is the shape the workspace reaches; each crate is created by the node of the first module that lives in it, and the workspace manifest's glob members, `crates/*`, `adapters/*`, and `apps/*`, admit it without an edit, which is why every direct child of those directories is a crate and nothing nests a crate directory inside another. 
+A Solidity contract is a module of `contracts/evm/src/`, the EVM suite that is the on-chain concrete of the chain family's Base concrete, with its Foundry tests as its interface, guard, and unit elements and its constants and vectors generated from the Rust reference; a further chain form is a further suite under `contracts/<suite>` with its own toolchain. Crate directories are hyphenated and module directories underscored. A family's factory node is `crate/factory`, a concrete's `crate/concrete`, a function a concrete owns `crate/concrete/function`, a function the family owns `crate/function`, a module of the domain or workflows crate `crate/module`, and a contract `contracts/<suite>/Contract`. The tree is the shape the workspace reaches; each crate is created by the node of the first module that lives in it, which for a family is its first concrete, and the workspace manifest's glob members, `crates/*`, `adapters/*`, and `apps/*`, admit it without an edit, which is why every direct child of those directories is a crate and nothing nests a crate directory inside another. A configuration file is authored once, complete, by the node that creates it; a crate's manifest and barrel accumulate one entry per module from that module's node.
 
 ```
 ChainTorrent/
-  Cargo.toml                          workspace; glob members, lint table; dependencies pinned by their first consumer
+  Cargo.toml                          workspace; glob members, lint table, the [patch.crates-io] overlay for librqbit; no dependencies; authored once
   rust-toolchain.toml
-  deny.toml                           cargo-deny license allowlist
+  deny.toml                           cargo-deny license allowlist and the overlay repository as the allowed git source
   .gitignore                          /target; Cargo.lock tracked
   crates/                             protocol and domain ring, application ring
     domain/                           protocol and domain ring; no host, chain SDK, wallet, transport, or storage engine; only the types its own modules implement
@@ -258,22 +258,28 @@ ChainTorrent/
         first_finder/  publish/  grant/  claim/  identity/  compose/  health/
         settings/                     catalogue, validation, migration jobs, export and import
         install/                      installation coordinator plan; initial values from the catalogue
-  adapters/                           adapter ring; one crate per family, each a direct child so the manifest's glob admits it; the crate is the factory and its concretes are private modules beneath it
+  adapters/                           adapter ring; one crate per family, each a direct child so the manifest's glob admits it; the crate holds the factory module and its private concretes
     <family>/                         the shape every family crate takes
+      Cargo.toml                      created by the family's first node; each module's node adds its dependencies
       src/
-        lib.rs                        the factory: the factory function; each concrete declared private, each family-owned function declared public; provides the only public module
-        interface.rs                  the generic trait with its associated types, the capability declaration, the factory's signature and types
-        interaction.spec.md  mock.rs  test.rs
-        provides.rs                   the crate's public surface
-        <function>/                   a function the family owns, public, with the element files
-        <concrete>/                   a concrete, private, named by its explicit noun
+        lib.rs                        barrel only: each concrete declared private, each family-owned function declared, the factory's provides re-exported; each module's node adds its line
+        factory/                      the factory; node crate/factory, following every concrete
+          interface.rs                the generic trait with its associated types, the capability declaration, the factory's signature and types; authored in the family's first node
+          interaction.spec.md  test.rs
+          mock.rs                     the family's mock; authored in the family's first node
+          mod.rs                      the factory function, a branch per concrete
+          provides.rs                 the crate's public surface
+        <function>/                   a function the family owns, with the element files
+        <concrete>/                   a concrete, private, named by its explicit noun; the family's first node, a concrete or a family-owned function preceding it, creates the crate
           interface.rs                the concrete's own types and its signatures for the generic trait
           interaction.spec.md  mock.rs  test.rs
           mod.rs                      the adapter implementing the generic trait
           provides.rs                 visible to the crate only
           <function>/                 a function the concrete owns
-    encoding/       abi/              IEncoderAdapter and IDecoderAdapter under one versioned encoding identifier, the vendor-free encoding contract, the declaration; abi wraps alloy's sol types; foundation tickets
-    random/         os/               the randomness interface with its deterministic mock; os over the operating system's generator; foundation tickets
+      tests/
+        integration_test.rs           where the family closes a milestone's chain; in the factory node
+    encoding/       abi/  <type>/     IEncoderAdapter and IDecoderAdapter under one versioned encoding identifier, the vendor-free encoding contract, the declaration; abi wraps alloy's sol types; <type> the family-owned canonical description of one encoded domain type, implementing the contract; harness tickets following the derivation context, the first description creating the crate, further descriptions with the domain model
+    random/         os/               the byte-filling interface, the sampling trait a scalar type implements, the declaration; os over the operating system's generator; foundation tickets
     pairing/        bn254_arkworks/  bn254_halo2curves/  bls12_381_arkworks/  bls12_381_halo2curves/   IPairingAdapter, the pairing types, the curve and second-group declaration; one concrete per curve per library, each naming only its own library; harness-crypto/benchmark records the default per curve
     kdf/            blake3_keyed/     the derivation interface, context types, and KDF identifier
     hash-to-scalar/ keccak256/        the interface mapping domain-tagged bytes to a scalar, and its identifier
@@ -283,7 +289,7 @@ ChainTorrent/
     cipher/         aes_ctr/          IPayloadCipherAdapter with the counter-layout and addressable-extent declarations
     hashing/        blake3_bao/       the commitment interface with root, outboard, path, chunk, and challenge types, the commitment-scheme identifier, and the commitment-scheme declaration
     signature/      ed25519/  secp256k1/   ISignatureAdapter, the signature types, the per-layer declaration
-    transport/      rqbit/            ISwarmTransportAdapter, the locator types, the declaration, the engine capability a transport may expose; rqbit carries the [patch.crates-io] overlay onto pinned librqbit, translation, Bao post-verification, peer injection
+    transport/      rqbit/            ISwarmTransportAdapter, the locator types, the declaration, the engine capability a transport may expose; rqbit carries the hooks on the overlay branch the workspace manifest names, translation, Bao post-verification, peer injection
     discovery/      aggregate/  dht/  pex/  tracker/  local/  seeder_map/   IPeerDiscoveryAdapter and the peer types; aggregate is the family-owned function; dht, pex, and tracker consume the transport's engine capability
     storage/        redb/             the key-value store interface with tables, transactions, and checkpoints
     seed-host/      owned/  rqbit/    ISeedHostAdapter with the capacity and holding-reason declaration; owned holds the root-keyed ciphertext store and its index; rqbit drives the rqbit application through its HTTP API, one concrete per external client
@@ -308,9 +314,9 @@ ChainTorrent/
     cli/
     desktop/          Tauri 2 project; src-tauri/ and a small TS UI
     installer/        installation coordinator entry; may be linked into daemon binary
-    harness-crypto/   benchmark/  generate/  verifier/  vectors/  measure/  report/   validation harness; benchmark constructs every pairing concrete through the pairing factory and records the default per curve; generate and verifier are factories, each with an evm concrete; emits the release-evidence JSON
+    harness-crypto/   benchmark/  generate/  verifier/  vectors/  measure/  report/   validation harness; benchmark constructs every pairing concrete through the pairing factory and records the default per curve; generate and verifier are families, each with an evm concrete carrying the family's interface and a factory module following it; emits the release-evidence JSON
     harness-demo/     demonstration harness; participants, wallets, chain, faults
-    relayer/          bundler/        the relayer service; bundler is a factory with one concrete per provider
+    relayer/          bundler/        the relayer service; bundler is a family with one concrete per provider and a factory module following it
     claim-verifier/
     wasm-demo/        sample_deployment/   wasm-bindgen build of domain, hashing, pairing, kem, cipher for the site, and the sample deployment it runs against
   contracts/
@@ -326,7 +332,7 @@ ChainTorrent/
   site/
     static site; embeds apps/wasm-demo output and the generated sample deployment
   docs/               unchanged
-  .github/workflows/  matrix over Windows, macOS, and Linux; cargo checks, tests, cargo-audit, cargo-deny; forge, the TypeScript linter, cargo-fuzz smoke, and clean-runner end-to-end, each added by the ticket that first needs it
+  .github/workflows/  rust.yml with the matrix over Windows, macOS, and Linux, cargo checks, tests, cargo-audit, cargo-deny; contracts.yml for forge; a definition each for the TypeScript linter, cargo-fuzz smoke, and clean-runner end-to-end, each file authored once by the ticket that first needs it
 ```
 
 # Architecture Overview
@@ -427,7 +433,7 @@ Tauri 2 stable for the desktop; plain TypeScript with a small component library 
 
 # Backend Stack
 
-Rust throughout; `tokio`; one workspace with a domain crate, a workflows crate, and a crate per adapter family, each family crate its factory with private concretes beneath it; authenticated local IPC through the `ipc` family's Unix domain socket and named pipe concretes; `alloy` inside the chain, encoding, and secp256k1 concretes only; Foundry for the EVM suite; the `encoding` family with its ABI concrete under one versioned encoding identifier; `tracing` with per-request correlation in the `telemetry` factory; the configuration registry over the storage family, exported and imported as a versioned TOML document. In the tech stack.
+Rust throughout; `tokio`; one workspace with a domain crate, a workflows crate, and a crate per adapter family, each family crate holding its factory module with private concretes beneath it; authenticated local IPC through the `ipc` family's Unix domain socket and named pipe concretes; `alloy` inside the chain, encoding, and secp256k1 concretes only; Foundry for the EVM suite; the `encoding` family with its ABI concrete under one versioned encoding identifier; `tracing` with per-request correlation in the `telemetry` factory; the configuration registry over the storage family, exported and imported as a versioned TOML document. In the tech stack.
 
 # Data Platform
 

@@ -7,7 +7,7 @@ How the parts of the ChainTorrent MVP fit together and in what order they are bu
 
 Resolution decays with distance, deliberately. The foundation and harness groupings are mapped at **ticket** resolution: one ticket per source file, which is the node template's unit, so that each ticket is a candidate node the workplan author can promote. Inside the protocol core, the hashing, signature, and swarm milestones are also at ticket resolution, because they depend on nothing the harness measures and run beside it; the remaining protocol core milestones are mapped as **sprints** named by dependency role. Beyond that the map holds **epics**, then **milestones**, then **objectives**. The reason is that implementation of the nearest work will produce discoveries that revise the anticipated order of everything after it, and detail authored now for distant groupings would be rewritten rather than used. When the harness closes, the remaining protocol core milestones are re-mapped to ticket resolution from what was learned, and the decay shifts outward.
 
-Tickets are candidates, not nodes. No node is authored here; a ticket names the source file's role and its dependencies so a node can be written from it through the ordinary authoring path. Every adapter family is a factory crate owning its generic interface and capability declaration, with each implementation a private concrete beneath it, and the map names tickets accordingly: a family's factory ticket is named by its crate, a concrete's by `crate/concrete`, a function a concrete owns by `crate/concrete/function`, a function the family owns by `crate/function`, a module of the domain or workflows crate by `crate/module` with its functions beneath it, a contract by `contracts/<suite>/Contract`, and a configuration-only ticket by its directory; the [technical requirements](technical-requirements.md)' file tree spells every path, crate directories hyphenated and module directories underscored. A concrete adapter is one node, since its operations are the methods of one adapter in one file. A family's factory ticket precedes every concrete of the family, so the declarations the composition resolver reads exist from the ticket that first authors the family, and every consumer ticket depends on a factory and never on a concrete.
+Tickets are candidates, not nodes. No node is authored here; a ticket names the source file's role and its dependencies so a node can be written from it through the ordinary authoring path. Every adapter family is a crate holding its `factory` module, which owns the generic interface, the capability declaration, and the factory function, and its concretes as private modules beneath it, and the map names tickets accordingly: a family's factory ticket is `crate/factory`, a concrete's `crate/concrete`, a function a concrete owns `crate/concrete/function`, a function the family owns `crate/function`, a module of the domain or workflows crate `crate/module` with its functions beneath it, a contract `contracts/<suite>/Contract`, and a configuration-only ticket its directory; the [technical requirements](technical-requirements.md)' file tree spells every path, crate directories hyphenated and module directories underscored. A concrete adapter is one node, since its operations are the methods of one adapter in one file. Within a family the first ticket, its first concrete or a family-owned function that precedes it, authors the generic interface, the declaration, and the family's mock as its producers, since it is the first source file that requires them, and creates the crate; each further concrete and family-owned function follows; the factory ticket, which constructs the concretes and so consumes them, follows every concrete of the family in this workplan and is revised in place when a later milestone adds a concrete; and every consumer ticket depends on the factory and never on a concrete. The declarations the composition resolver reads therefore exist from the family's first ticket. A family's factory ticket closes a producer, implementation, consumer chain, so it carries the family's integration test across the factory and its concretes; the commit sits on the last ticket of the milestone's chain, which for a milestone that closes at a family is that family's factory.
 
 ## Components
 
@@ -15,125 +15,132 @@ Grouped by role. Within a grouping at ticket resolution each row is a ticket; el
 
 ### Foundation, at ticket resolution
 
-The workspace every node builds on, the encoding family everything hashed, signed, stored, or framed shares, the secret type that cannot be formatted, the randomness family every key-generating ticket draws from, and the continuous integration that proves each ticket where the completion boundary requires. No crate is created ahead of the module that first lives in it; each ticket below creates its crate when that crate does not yet exist.
+The workspace every node builds on, the secret type that cannot be formatted, the randomness family every key-generating ticket draws from, and the continuous integration that proves each ticket where the completion boundary requires. The encoding family is not a foundation member, since nothing encodable exists here; it follows the first encodable domain type at the head of the harness grouping. No crate is created ahead of the module that first lives in it; each ticket below creates its crate when that crate does not yet exist. A configuration file is authored once, complete, by the ticket that creates it, and no later ticket amends it; a crate's manifest and its `lib.rs` barrel are the exceptions by the topics' own design, since each module's ticket adds its dependencies to the manifest as its deps element and its re-export line to the barrel as its provides element.
 
 | Ticket | Owns | Depends on | Proves |
 | --- | --- | --- | --- |
-| `workspace/cargo` | The virtual workspace manifest with the glob members `crates/*`, `adapters/*`, and `apps/*` and the lint table; `rust-toolchain.toml`; `deny.toml` with the license allowlist; `.gitignore`; configuration files with no types and no tests; each workspace dependency is pinned by the ticket that first consumes it | nothing | The root configuration every later ticket builds within; its build proof arrives with the first member |
+| `workspace/cargo` | The virtual workspace manifest with the glob members `crates/*`, `adapters/*`, and `apps/*`, the lint table, and the `[patch.crates-io]` overlay pointing `librqbit` at the project's overlay branch `chaintorrent-overlay` in `https://github.com/tsylvester/rqbit`, which exists at a tagged upstream release before the bootstrap as external setup; `rust-toolchain.toml`; `deny.toml` with the license allowlist and that repository in `allow-git`; `.gitignore`; configuration files with no types and no tests, each authored once and complete | nothing | The root configuration every later ticket builds within; its build proof arrives with the first member |
 | `domain/secret` | The secret-typed value: no formatting or serialization trait, an explicit accessor for the cryptographic operations and custody wrapping that consume it, zeroization on drop through `zeroize`, a crate dependency; creates the `domain` crate | `workspace/cargo` | CR-07 exclusion of secrets from logs, proven at compile time; the lint table's rejection of `unsafe_code`, `unwrap_used`, `expect_used`, `panic`, and `as_conversions` in the first production crate |
-| `random` | The randomness family's factory: the interface that fills bytes and draws scalars, its deterministic mock for vectors and tests, the declaration, and the factory function; creates the `adapters/random` crate | `workspace/cargo` | CR-05 contract: the one interface every production draw passes through |
-| `random/os` | The concrete over the operating system's generator; pins `rand_core` and `getrandom` | `random` | CR-05 production randomness, validated statistically |
-| `workspace/ci` | The continuous-integration definition, edited in place in `.github/workflows/rust.yml`: `cargo fmt --check`, `cargo check`, `cargo clippy`, the unit and integration tests, `cargo-deny`, and `cargo-audit` on Windows, macOS, and Linux; a configuration file with no types and no tests; each later step, `forge`, the TypeScript linter, `cargo-fuzz`, and the clean-runner end-to-end job, is added by the ticket that first needs it | `workspace/cargo` | XA-07 facilities run in CI; NF-M07; `deny.toml` read and enforced on every supported platform |
-| `encoding` | The encoding family's factory: `IEncoderAdapter` and `IDecoderAdapter` with the versioned encoding identifier, the repo-owned encoding contract each encoded type implements in its own module, the encoding types, the capability declaration, and the factory function that constructs the concrete the configuration or a hash-card names; creates the `adapters/encoding` crate | `workspace/cargo` | The generic surface every hashed, signed, stored, or framed value passes through; the hash-card's encoding identifier |
-| `encoding/abi` | The Ethereum ABI concrete through `alloy`'s sol types, implementing both interfaces as one adapter, with known-answer vectors the generator mirrors; untrusted bytes to the owned type or its error; pins `alloy`; carries the grouping's integration test and commit | `encoding` | ABI encoding against its vectors; round trip; malformed input rejected |
+| `random/os` | The concrete over the operating system's generator; authors, as its producers, the randomness family's interface that fills bytes, the declaration, and the family's mock; creates the `adapters/random` crate; pins `rand_core` and `getrandom` | `workspace/cargo` | CR-05 contract; repeated draws of a fixed width pairwise distinct across a fixed count, and a filled buffer of a fixed length holding more than one distinct byte value; CR-05's per-bootstrap independence is proven at the First Finder engine and its reproducible publisher derivation at the explicit publisher path |
+| `random/factory` | The randomness family's factory function, constructing the concrete a configuration names with a branch per concrete, and the crate's public surface; carries the family's integration test across factory and concrete and the grouping's commit | `random/os` | CR-05: the one surface every production draw passes through |
+| `workspace/ci` | The Rust continuous-integration definition `.github/workflows/rust.yml`, authored once and complete: `cargo fmt --check`, `cargo check`, `cargo clippy`, the unit and integration tests, `cargo-deny`, and `cargo-audit` on Windows, macOS, and Linux; a configuration file with no types and no tests; the Solidity, shell, fuzz, and end-to-end checks are separate workflow files, each created once by the ticket that first needs it | `workspace/cargo` | XA-07 facilities run in CI; NF-M07; `deny.toml` read and enforced on every supported platform |
 
 ### Cryptographic validation harness, at ticket resolution
 
-The harness builds the pairing, key-derivation, hash-to-scalar, credential KEM, envelope, and delivery proof families with their factories first, exercises the deployed verifier on Base Sepolia, and records the measurements that fix the piece-group size and confirm the curve (CD-07, AS-21). It constructs every curve and verifier-form combination through the factories, so an invalid combination is refused in the harness exactly as the daemon's resolver will refuse it. Every ticket is one Rust source file with its full support system except where the row says otherwise; a factory ticket owns its family's generic interface, declaration, and factory function, and a concrete ticket is one adapter whose operations are its methods.
+The harness begins with the domain's identifier modules and the derivation context, the first encodable domain types, followed by the encoding family that describes and encodes them, and builds the pairing, key-derivation, hash-to-scalar, credential KEM, envelope, and delivery proof families, each from its first ticket, which carries the family's interface, to its factory, which follows every concrete, exercises the deployed verifier on Base Sepolia, and records the measurements that fix the piece-group size and confirm the curve (CD-07, AS-21). It constructs every curve and verifier-form combination through the factories, so an invalid combination is refused in the harness exactly as the daemon's resolver will refuse it. Every ticket is one Rust source file with its full support system except where the row says otherwise; a family's first ticket owns the family's generic interface, declaration, and mock beside its own implementation, a further concrete ticket is one adapter whose operations are its methods, and the factory ticket owns the factory function and the crate's public surface.
 
 | Ticket | Owns | Depends on | Proves |
 | --- | --- | --- | --- |
-| `pairing` | The pairing family's factory: `IPairingAdapter` with generators, add, mul, MSM, subgroup check, and the pairing-product check, the group-element and scalar types as associated types, the declaration of the curve, of second-group arithmetic at the verifier, and of precompile encodings, and the factory function that admits a curve the chain's declared precompile sets support and constructs the recorded default concrete for that curve unless the composition names one; creates the `adapters/pairing` crate | `workspace/cargo`, `encoding` | CR-10 contract; the declaration the proof and chain factories read |
-| `pairing/bn254_arkworks` | The BN254 concrete on arkworks, precompile-matching encodings, declaring the curve and first-group-only arithmetic at the verifier; pins `ark-bn254` | `pairing` | CR-10 on BN254 |
-| `pairing/bn254_halo2curves` | The BN254 concrete on `halo2curves`, precompile-matching encodings, declaring the curve and first-group-only arithmetic at the verifier; pins `halo2curves` | `pairing` | CR-10 on BN254 |
-| `pairing/bls12_381_arkworks` | The BLS12-381 concrete on arkworks, precompile-matching encodings, subgroup checks on every input, declaring the curve and second-group arithmetic at the verifier; pins `ark-bls12-381` | `pairing` | CR-10 on BLS12-381 |
-| `pairing/bls12_381_halo2curves` | The BLS12-381 concrete on `halo2curves`, precompile-matching encodings, subgroup checks on every input, declaring the curve and second-group arithmetic at the verifier | `pairing` | CR-10 on BLS12-381 |
-| `harness-crypto/benchmark` | The measurement of scalar multiplication, multi-scalar multiplication, and pairing over every pairing concrete, each constructed through the pairing factory, recording the default concrete per curve; names no library; creates the `apps/harness-crypto` crate | `pairing`, `pairing/bn254_arkworks`, `pairing/bn254_halo2curves`, `pairing/bls12_381_arkworks`, `pairing/bls12_381_halo2curves` | The recorded default per curve |
-| `kdf` | The key-derivation family's factory: the interface that derives a key of a stated length from key material under a context, the derivation-context types, the KDF identifier declaration, and the factory function; creates the `adapters/kdf` crate | `encoding` | CR-05, CR-11 derivation contract |
-| `kdf/blake3_keyed` | The BLAKE3 keyed-derivation concrete; context strings, serialization, and output lengths frozen with known-answer vectors from an independent implementation; pins `blake3` | `kdf` | CR-11 derivation vectors |
-| `hash-to-scalar` | The hash-to-scalar family's factory: the interface that maps domain-tagged bytes to a scalar of the resolved pairing's field, the domain-tag types, the identifier declaration, and the factory function; creates the `adapters/hash-to-scalar` crate | `encoding`, `pairing` | CR-08 identity-mapping contract |
-| `hash-to-scalar/keccak256` | The keccak256 concrete under domain tags, reduced modulo the group order, with vectors the generator mirrors | `hash-to-scalar` | CR-08, CR-09 identity-mapping and challenge vectors |
-| `kem` | The credential KEM family's factory: `ICredentialKemAdapter` with setup, issue, rerandomize, isValid, encapsulate, isWellFormed, and decapsulate, the parameter-set, master-scalar, credential, capsule, identity-element, and encapsulated-value types as associated types, the interval-index and entitlement-identity types, the identity-scope declaration, and the factory function that admits a concrete by the suite's declared scope; creates the `adapters/kem` crate | `pairing`, `hash-to-scalar`, `random`, `domain/secret`, `encoding` | CR-08 contract; CD-08 declaration |
-| `kem/bb1_depth_one` | The depth-one Boneh–Boyen concrete as one adapter: random master scalar and parameter set for escrow lineage, issuance with trivial identity-element refusal, seller-side rerandomization without the master scalar, the public validity check with encoding and subgroup validation, encapsulation under both identity scopes, well-formedness, and decapsulation to the encapsulated value; owns its parameter-set, credential, capsule, and identity-element types | `kem`; the pairing, hash-to-scalar, and random families through their factories | CR-08 algebraic properties, LC-08, EC-06, CD-08 |
-| `envelope` | The envelope family's factory: `IKeyAgreementAdapter` with key generation under proofs of possession, wrap, and unwrap, the key-pair and envelope types as associated types, the envelope-algebra declaration, and the factory function; creates the `adapters/envelope` crate | `pairing`, `random`, `domain/secret`, `encoding` | CR-04 contract |
-| `envelope/pairing_elgamal` | The pairing ElGamal concrete as one adapter: two independently keyed envelope keys with Schnorr proofs of possession, identity-element rejection, encryption of a credential with independent coins, decryption under the recipient's secrets; owns its key-pair and envelope types | `envelope`; the pairing, hash-to-scalar, and random families through their factories | CR-04; LC-08 at the algebra level |
-| `proof` | The delivery proof family's factory: `IDeliveryProofAdapter` with proveMint, proveTransfer, and verify, the mint and transfer statement types with the challenge context schema and the delivery-statement version, the proof type as an associated type, the declaration of supported envelope algebras and verifier forms, and the factory function that admits a concrete only when it declares the resolved envelope's algebra and the verifier form the resolved pairing declares; creates the `adapters/proof` crate | `envelope`, `kem`, `pairing`, `encoding` | CR-09 contract; the admission rule the harness exercises |
-| `proof/schnorr_fs/challenge` | The function the concrete owns: the keccak256 Fiat–Shamir challenge over the full context schema under a domain tag, through the hash-to-scalar family | `proof`, `hash-to-scalar`, `encoding` | CR-09 statement binding and fields |
-| `proof/schnorr_fs` | The generalized Schnorr concrete as one adapter: the mint prover, the transfer prover from the seller's fresh decryption and total offset, and the reference verifier in both forms, second-group arithmetic and the hash-weighted pairing product with first-group arithmetic only; declares both forms | `proof`, `proof/schnorr_fs/challenge`, `random` | CR-09, CD-01, CD-02 |
-| `workflows/sidecar/wrap` | The wrapping key derived through the KDF family from an encapsulated value and the context, and the XOR wrap of a piece-group key under it; creates the `workflows` crate | `kdf`, `kem`, `encoding` | CR-11 wrap |
+| `pairing/bn254_arkworks` | The BN254 concrete on arkworks, precompile-matching encodings, declaring the curve and first-group-only arithmetic at the verifier; authors, as its producers, `IPairingAdapter` with generators, add, mul, MSM, subgroup check, and the pairing-product check, the group-element and scalar types as associated types with their guards, the declaration of the curve, of second-group arithmetic at the verifier, and of precompile encodings, the family's mock, and, in the randomness family's interface, the repo-owned sampling trait, sample from uniform bytes, that a type implements to be drawn, which its scalar type implements and whose in-range draw its tests prove; creates the `adapters/pairing` crate; pins `ark-ec`, `ark-ff`, and `ark-bn254` | `workspace/cargo`, `random/factory` | CR-10 contract and CR-10 on BN254; the declaration the proof and chain factories read |
+| `pairing/bn254_halo2curves` | The BN254 concrete on `halo2curves`, precompile-matching encodings, declaring the curve and first-group-only arithmetic at the verifier; its scalar type implements the sampling trait and its tests prove the in-range draw; pins `halo2curves` | `pairing/bn254_arkworks` | CR-10 on BN254 |
+| `pairing/bls12_381_arkworks` | The BLS12-381 concrete on arkworks, precompile-matching encodings, subgroup checks on every input, declaring the curve and second-group arithmetic at the verifier; its scalar type implements the sampling trait and its tests prove the in-range draw; pins `ark-bls12-381` | `pairing/bn254_arkworks` | CR-10 on BLS12-381 |
+| `pairing/bls12_381_halo2curves` | The BLS12-381 concrete on `halo2curves`, precompile-matching encodings, subgroup checks on every input, declaring the curve and second-group arithmetic at the verifier; its scalar type implements the sampling trait and its tests prove the in-range draw | `pairing/bn254_arkworks` | CR-10 on BLS12-381 |
+| `pairing/factory` | The pairing family's factory function, admitting a curve the chain's declared precompile sets support and constructing the configured default concrete for that curve unless the composition names one, with a branch per concrete, and the crate's public surface; carries the family's integration test across factory and concretes | `pairing/bn254_arkworks`, `pairing/bn254_halo2curves`, `pairing/bls12_381_arkworks`, `pairing/bls12_381_halo2curves` | The surface the hash-to-scalar, KEM, envelope, proof, and chain tickets consume |
+| `harness-crypto/benchmark` | The measurement of scalar multiplication, multi-scalar multiplication, and pairing over every pairing concrete, each constructed through the pairing factory, recording the default per curve the factory is configured with; names no library; creates the `apps/harness-crypto` crate | `pairing/factory` | The recorded default per curve |
+| `domain/asset_identity` | The canonical asset identity, the package name and version, with its constructor and guards | `domain/secret` | The identity every record, hash-card, and derivation names |
+| `domain/deployment_identity` | The registry-assigned deployment identity with its constructor and guards | `domain/secret` | The deployment every derivation and object is bound to |
+| `domain/suite_identifier` | The cryptographic suite identifier and version with its constructor and guards | `domain/secret` | The suite every derivation is bound to |
+| `domain/parameter_set_identifier` | The parameter-set identifier with its constructor and guards | `domain/secret` | The set every capsule and wrapping key is bound to |
+| `domain/group_index` | The piece-group index with its constructor and bounds guard | `domain/secret` | The group every piece-group key is bound to |
+| `domain/piece_geometry` | The piece size, piece-group size, and addressable extent with their constructor and alignment guards | `domain/secret` | The geometry every derivation and the cipher are bound to |
+| `domain/derivation_context` | The derivation context composed of the asset identity, deployment identity, suite identifier, parameter-set identifier, group index, and geometry, with its constructor and guards; the first encodable domain type | `domain/asset_identity`, `domain/deployment_identity`, `domain/suite_identifier`, `domain/parameter_set_identifier`, `domain/group_index`, `domain/piece_geometry` | The context every wrapping key and lineage derivation is domain-separated by |
+| `encoding/derivation_context` | The family-owned description of the derivation context, implementing the encoding contract as its canonical field sequence, stated once and format-free; authors, as its producer, the repo-owned encoding contract in the encoding factory's interface, which names no format and no vendor; creates the `adapters/encoding` crate | `domain/derivation_context` | The contract, and the first description every encoding concrete encodes |
+| `encoding/abi` | The Ethereum ABI concrete through `alloy`'s sol types, implementing both interfaces as one adapter; untrusted bytes to the owned type or its error; authors, as its producers, `IEncoderAdapter` and `IDecoderAdapter` with the versioned encoding identifier, the encoding types, the capability declaration, and the family's mock; its known-answer vectors are the derivation context's and its identifiers' encodings authored from the ABI specification, which the generator later mirrors, and its round trip and its rejections of truncated input, trailing bytes, non-canonical padding, and a wrong element count run over the same values through the description; pins `alloy` | `encoding/derivation_context` | ABI encoding of the derivation context against its vectors; round trip; malformed input rejected; the hash-card's encoding identifier |
+| `encoding/factory` | The encoding family's factory function, constructing the concrete the configuration or a hash-card names with a branch per concrete, and the crate's public surface; carries the family's integration test across factory, concrete, and description | `encoding/abi` | The generic surface every hashed, signed, stored, or framed value passes through |
+| `kdf/blake3_keyed` | The BLAKE3 keyed-derivation concrete; context strings, serialization, and output lengths frozen with known-answer vectors from an independent implementation; authors, as its producers, the interface that derives a key of a stated length from key material under an encoded context, the KDF identifier declaration, and the family's mock; creates the `adapters/kdf` crate; pins `blake3` | `encoding/factory`, `domain/derivation_context` | CR-05, CR-11 derivation contract and vectors |
+| `kdf/factory` | The key-derivation family's factory function with a branch per concrete, and the crate's public surface; carries the family's integration test across factory and concrete | `kdf/blake3_keyed` | The surface every off-chain derivation passes through |
+| `hash-to-scalar/keccak256` | The keccak256 concrete under domain tags, reduced modulo the group order, with vectors the generator mirrors; authors, as its producers, the interface that maps domain-tagged bytes to a scalar of the resolved pairing's field, the domain-tag types with their guards, the identifier declaration, and the family's mock; creates the `adapters/hash-to-scalar` crate | `encoding/factory`, `pairing/factory` | CR-08, CR-09 identity-mapping and challenge contract and vectors |
+| `hash-to-scalar/factory` | The hash-to-scalar family's factory function with a branch per concrete, and the crate's public surface; carries the family's integration test across factory and concrete | `hash-to-scalar/keccak256` | The surface every value a contract recomputes passes through |
+| `kem/bb1_depth_one` | The depth-one Boneh–Boyen concrete as one adapter: random master scalar and parameter set for escrow lineage, issuance with trivial identity-element refusal, seller-side rerandomization without the master scalar, the public validity check with encoding and subgroup validation, encapsulation under both identity scopes, well-formedness, and decapsulation to the encapsulated value; owns its parameter-set, credential, capsule, and identity-element types; authors, as its producers, `ICredentialKemAdapter` with setup, issue, rerandomize, isValid, encapsulate, isWellFormed, and decapsulate, the parameter-set, master-scalar, credential, capsule, identity-element, and encapsulated-value types as associated types, the interval-index and entitlement-identity types with their guards, the identity-scope declaration, and the family's mock; creates the `adapters/kem` crate | `pairing/factory`, `hash-to-scalar/factory`, `random/factory`, `domain/secret`, `encoding/factory` | CR-08 contract and algebraic properties, LC-08, EC-06, CD-08 declaration |
+| `kem/factory` | The credential KEM family's factory function, admitting a concrete by the suite's declared scope, with a branch per concrete, and the crate's public surface; carries the family's integration test across factory and concrete | `kem/bb1_depth_one` | CD-08 admission; the surface the sidecar, vector, and delivery tickets consume |
+| `envelope/pairing_elgamal` | The pairing ElGamal concrete as one adapter: two independently keyed envelope keys with Schnorr proofs of possession, identity-element rejection, encryption of a credential with independent coins, decryption under the recipient's secrets; owns its key-pair and envelope types; authors, as its producers, `IKeyAgreementAdapter` with key generation under proofs of possession, wrap, and unwrap, the key-pair and envelope types as associated types with their guards, the envelope-algebra declaration, and the family's mock; creates the `adapters/envelope` crate | `pairing/factory`, `hash-to-scalar/factory`, `random/factory`, `domain/secret`, `encoding/factory` | CR-04 contract; LC-08 at the algebra level |
+| `envelope/factory` | The envelope family's factory function with a branch per concrete, and the crate's public surface; carries the family's integration test across factory and concrete | `envelope/pairing_elgamal` | The surface every envelope passes through |
+| `proof/schnorr_fs/challenge` | The function the concrete owns: the keccak256 Fiat–Shamir challenge over the full context schema under a domain tag, through the hash-to-scalar family; authors, as its producers, the mint and transfer statement types with the challenge context schema and the delivery-statement version, with their guards; creates the `adapters/proof` crate | `hash-to-scalar/factory`, `pairing/factory`, `envelope/factory`, `kem/factory`, `encoding/factory` | CR-09 statement binding and fields |
+| `proof/schnorr_fs` | The generalized Schnorr concrete as one adapter: the mint prover, the transfer prover from the seller's fresh decryption and total offset, and the reference verifier in both forms, second-group arithmetic and the hash-weighted pairing product with first-group arithmetic only; declares both forms; authors, as its producers, `IDeliveryProofAdapter` with proveMint, proveTransfer, and verify, the proof type as an associated type, the declaration of supported envelope algebras and verifier forms, and the family's mock | `proof/schnorr_fs/challenge`, `random/factory` | CR-09, CD-01, CD-02 |
+| `proof/factory` | The delivery proof family's factory function, admitting a concrete only when it declares the resolved envelope's algebra and the verifier form the resolved pairing declares, with a branch per concrete, and the crate's public surface; carries the family's integration test across factory and concrete | `proof/schnorr_fs` | CR-09 contract; the admission rule the harness exercises |
+| `workflows/sidecar/wrap` | The wrapping key derived through the KDF family from an encapsulated value and the context, and the XOR wrap of a piece-group key under it; creates the `workflows` crate | `kdf/factory`, `kem/factory`, `encoding/factory` | CR-11 wrap |
 | `workflows/sidecar/unwrap` | The unwrap of a piece-group key from its wrapped value under the derived wrapping key | `workflows/sidecar/wrap` | CR-11 cross-set agreement |
-| `contracts/evm/PairingLib` | The Solidity library over the precompiles in both forms, with contract-side subgroup checks where the precompile does not perform them; creates `contracts/evm/foundry.toml` and adds the `forge build` and `forge fmt --check` steps to continuous integration | `workspace/ci`; mirrors the pairing family's declared precompile encodings | CR-10 on chain |
-| `harness-crypto/generate` | The harness's generate family's factory: the interface that emits a target suite's constants and test vectors from the Rust reference, the declaration, and the factory function | `proof`, `encoding` | CR-09 parity-input contract |
-| `harness-crypto/generate/evm` | The EVM concrete emitting Solidity constants and test vectors for the pairing library and the verifier, including the challenge and identity-mapping vectors | `harness-crypto/generate`, `proof/schnorr_fs`, `hash-to-scalar/keccak256` | CR-09 parity inputs; CR-11 on-chain vectors |
-| `contracts/evm/DeliveryVerifier` | Solidity mint and transfer verification over the statement fields, bit-for-bit with `proof/schnorr_fs`, its constants and vectors generated | `contracts/evm/PairingLib`, `harness-crypto/generate/evm` | CD-03, CR-09 |
+| `contracts/evm/PairingLib` | The Solidity library over the precompiles in both forms, with contract-side subgroup checks where the precompile does not perform them; creates `contracts/evm/foundry.toml` and the Solidity continuous-integration definition `.github/workflows/contracts.yml` with `forge build` and `forge fmt --check`, each authored once and complete | `workspace/ci`; mirrors the pairing family's declared precompile encodings | CR-10 on chain |
+| `harness-crypto/generate/evm` | The EVM concrete emitting Solidity constants and test vectors for the pairing library and the verifier, including the challenge and identity-mapping vectors, through the proof and hash-to-scalar factories; authors, as its producers, the generate family's interface that emits a target suite's constants and test vectors from the Rust reference, its declaration, and its mock | `harness-crypto/benchmark`, `proof/factory`, `hash-to-scalar/factory`, `encoding/factory` | CR-09 parity inputs; CR-11 on-chain vectors |
+| `harness-crypto/generate/factory` | The generate family's factory function with a branch per concrete, and its public surface; carries the family's integration test across factory and concrete | `harness-crypto/generate/evm` | CR-09 parity-input contract |
+| `contracts/evm/DeliveryVerifier` | Solidity mint and transfer verification over the statement fields, bit-for-bit with `proof/schnorr_fs`, its constants and vectors generated | `contracts/evm/PairingLib`, `harness-crypto/generate/factory` | CD-03, CR-09 |
 | `contracts/evm/deploy` | The deployment script for the verifier on each curve form to Anvil and Base Sepolia, emitting addresses to configuration; exempt from the full support structure as a deployment script | `contracts/evm/DeliveryVerifier` | CD-07 |
-| `harness-crypto/verifier` | The harness's verifier family's factory: the interface that reaches a suite's deployed delivery verifier, submits a statement and proof, and reads acceptance and cost as L2 execution gas and L1 data fee, the declaration, and the factory function | `proof`, `encoding` | CD-03 cross-verification contract |
-| `harness-crypto/verifier/evm` | The EVM concrete over the deployed verifier through `alloy`, pinned for the harness | `harness-crypto/verifier`, `contracts/evm/deploy` | CD-03 cross-verification |
-| `harness-crypto/vectors` | Algebraic, mutation, and admission vector sets constructed through the factories: cross-holder agreement, cross-set agreement with two independently generated parameter sets unwrapping one piece-group key, rerandomized validity, non-convertibility, malformed capsules, mutated statement fields, replay, and every curve and verifier-form combination the proof factory must refuse | `kem/bb1_depth_one`, `envelope/pairing_elgamal`, `proof/schnorr_fs`, `workflows/sidecar/unwrap`; the deterministic mock of `random` | CR-08, CR-09, CR-11 vectors; AS-17 for the cryptographic families |
-| `harness-crypto/measure` | Size, timing, and gas capture per curve: capsule, envelope, proof bytes; decapsulation per group; prove and verify time; mint and transfer cost as L2 execution and L1 data fee | `harness-crypto/vectors`, `harness-crypto/verifier/evm` | CD-07, RO-03 |
+| `harness-crypto/verifier/evm` | The EVM concrete over the deployed verifier through `alloy`; authors, as its producers, the verifier family's interface that reaches a suite's deployed delivery verifier, submits a statement and proof, and reads acceptance and cost as L2 execution gas and L1 data fee, its declaration, and its mock; pins `alloy` for the harness | `contracts/evm/deploy`, `proof/factory`, `encoding/factory` | CD-03 cross-verification |
+| `harness-crypto/verifier/factory` | The verifier family's factory function with a branch per concrete, and its public surface; carries the family's integration test across factory and concrete | `harness-crypto/verifier/evm` | CD-03 cross-verification contract |
+| `harness-crypto/vectors` | Algebraic, mutation, and admission vector sets constructed through the factories: cross-holder agreement, cross-set agreement with two independently generated parameter sets unwrapping one piece-group key, rerandomized validity, non-convertibility, malformed capsules, mutated statement fields, replay, and every curve and verifier-form combination the proof factory must refuse | `kem/factory`, `envelope/factory`, `proof/factory`, `workflows/sidecar/unwrap`; `random/factory`, whose production concrete supplies the independent draws, the drawn values recorded with each emitted vector | CR-08, CR-09, CR-11 vectors; AS-17 for the cryptographic families |
+| `harness-crypto/measure` | Size, timing, and gas capture per curve: capsule, envelope, proof bytes; decapsulation per group; prove and verify time; mint and transfer cost as L2 execution and L1 data fee | `harness-crypto/vectors`, `harness-crypto/verifier/factory` | CD-07, RO-03 |
 | `harness-crypto/report` | The release-evidence report; the piece-group size selected and the curve confirmed against the declared budget; the grouping's integration test across the whole chain and its commit | `harness-crypto/measure` | AS-21 |
 
 ### Protocol core and contract suite
 
-The hashing, signature, and swarm milestones are at ticket resolution; they depend on nothing the harness measures and run beside it, and each begins with its family's factory ticket. The remaining milestones are sprints, re-mapped to tickets when the harness closes.
+The hashing, signature, and swarm milestones are at ticket resolution; they depend on nothing the harness measures and run beside it, and each begins with the first concrete of its family, which carries the family's interface, and closes each family at its factory. The remaining milestones are sprints, re-mapped to tickets when the harness closes.
 
 #### Hashing and commitments, at ticket resolution
 
 | Ticket | Owns | Depends on | Proves |
 | --- | --- | --- | --- |
-| `hashing` | The hashing family's factory: the commitment interface with root and outboard construction over a byte stream, streaming and random-access verification against a root with an authentication path, and random chunk challenge and response; the root, outboard, path, and chunk types; the commitment-scheme identifier the hash-card carries; the commitment-scheme and chunk-granularity declaration; the factory function; creates the `adapters/hashing` crate | `encoding` | CR-02 contract |
-| `hashing/blake3_bao` | The BLAKE3/Bao concrete as one adapter: root and outboard construction, verification, challenge and response, and keyed mode for the keyed plaintext-root disclosure mode; pins `blake3` and `bao`; carries the milestone's integration test and commit | `hashing` | CR-02 construction, verification, and challenges; EC-02; SW-04 |
+| `hashing/blake3_bao` | The BLAKE3/Bao concrete as one adapter: root and outboard construction, verification, challenge and response, and keyed mode for the keyed plaintext-root disclosure mode; authors, as its producers, the commitment interface with root and outboard construction over a byte stream, streaming and random-access verification against a root with an authentication path, and random chunk challenge and response, the root, outboard, path, and chunk types with their guards, the commitment-scheme identifier the hash-card carries, the commitment-scheme and chunk-granularity declaration, and the family's mock; creates the `adapters/hashing` crate; pins `blake3` and `bao` | `encoding/factory` | CR-02 contract, construction, verification, and challenges; EC-02; SW-04 |
+| `hashing/factory` | The hashing family's factory function with a branch per concrete, and the crate's public surface; carries the milestone's integration test and commit | `hashing/blake3_bao` | The surface every content root passes through |
 
 #### Signature services, at ticket resolution
 
 | Ticket | Owns | Depends on | Proves |
 | --- | --- | --- | --- |
-| `signature` | The signature family's factory: `ISignatureAdapter` with sign, isValidSignature, recoverSigner, and canonicalAddress, the signature types, the per-layer declaration of scheme and layers served, and the factory function that resolves a scheme per layer; creates the `adapters/signature` crate | `encoding`, `random` | CR-03 contract |
-| `signature/ed25519` | The Ed25519 concrete with domain separation and complete-message binding; pins `ed25519-dalek` | `signature` | CR-03 |
-| `signature/secp256k1` | The secp256k1 concrete through `alloy`, with EIP-712 typed data for registrations, bindings, and signed intents; carries the milestone's integration test and commit | `signature` | CR-03, IW-07, LC-13 intents |
+| `signature/ed25519` | The Ed25519 concrete with domain separation and complete-message binding; authors, as its producers, `ISignatureAdapter` with sign, isValidSignature, recoverSigner, and canonicalAddress, the signature types with their guards, the per-layer declaration of scheme and layers served, and the family's mock; creates the `adapters/signature` crate; pins `ed25519-dalek` | `encoding/factory`, `random/factory` | CR-03 contract and CR-03 |
+| `signature/secp256k1` | The secp256k1 concrete through `alloy`, with EIP-712 typed data for registrations, bindings, and signed intents; pins `alloy` for the signature crate | `signature/ed25519` | CR-03, IW-07, LC-13 intents |
+| `signature/factory` | The signature family's factory function, resolving a scheme per layer, with a branch per concrete, and the crate's public surface; carries the milestone's integration test and commit | `signature/ed25519`, `signature/secp256k1` | The surface every layer signs through |
 
 #### Swarm transport, discovery, storage, and seed host, at ticket resolution
 
 | Ticket | Owns | Depends on | Proves |
 | --- | --- | --- | --- |
-| `transport` | The transport family's factory: `ISwarmTransportAdapter`, the locator types, the declaration of the integrity structure on the wire and of the engine capability a transport may expose for library-backed discovery, and the factory function; creates the `adapters/transport` crate | `hashing`, `encoding` | SW-01 contract |
-| `transport/rqbit` | The `librqbit` concrete: the `[patch.crates-io]` overlay onto a tagged upstream release carrying the piece-completion hook, the peer-injection call, and the storage-backend trait with each hook's upstream issue; root-to-infohash translation; torrent creation per object with the ciphertext and each sidecar as its own object and locator; Bao verification of every completed piece after the library's check, through the hashing family; seeder-map peer injection; the engine capability; adds the overlay's git source to `deny.toml`'s `allow-git`; pins `librqbit` | `transport`; `workspace/cargo` for `deny.toml` | SW-01, SW-06, EC-02 |
-| `discovery` | The discovery family's factory: `IPeerDiscoveryAdapter`, the peer types, the declaration, and the factory function that resolves every source the composition admits; creates the `adapters/discovery` crate | `encoding` | SW-02 contract |
-| `discovery/aggregate` | The family-owned aggregation: concurrent sources unioned and deduplicated, none authoritative | `discovery` | SW-02 aggregation under overlapping, conflicting, unavailable, and malicious results |
-| `discovery/dht` | The library's DHT as a source, through the engine capability the transport factory's surface exposes | `discovery`, `transport` | SW-02 |
-| `discovery/pex` | Peer exchange as a source, through the same engine capability | `discovery`, `transport` | SW-02 |
-| `discovery/tracker` | Trackers as a source, through the same engine capability | `discovery`, `transport` | SW-02 |
-| `discovery/local` | Local-network discovery as a source | `discovery` | SW-02 |
-| `discovery/seeder_map` | The on-chain seeder map as a source | `discovery`; `chain/base` | SW-02 |
-| `storage` | The storage-engine family's factory: the key-value store interface with tables, transactions, and checkpoints, its types, the declaration, and the factory function; creates the `adapters/storage` crate | `encoding` | XA-03 and SW-05 store contract |
-| `storage/redb` | The `redb` concrete; pins `redb` | `storage` | Transactions and checkpoints under interruption |
-| `seed-host` | The seed host family's factory: `ISeedHostAdapter` with held-and-served, take custody, release, capacity and usage, and enumerate, the holding types with the obligated-versus-voluntary distinction, the capacity and holding-reason declaration, and the factory function; creates the `adapters/seed-host` crate | `hashing`, `encoding` | SW-05 contract; ST-06 |
-| `seed-host/owned` | The owned concrete: persistent seeding independent of sessions, the root-keyed ciphertext store with holding reason, quota, and eviction, its index through the storage family, settings passthrough and enforcement, archive enumeration | `seed-host`, `transport`, `storage` | SW-03, SW-05, SW-07, ST-06; PR-05 separation |
-| `seed-host/rqbit` | The delegated concrete: the rqbit application driven through its HTTP API, root-to-identifier translation, and Bao custody challenges through the hashing family; carries the milestone's integration test across owned and delegated retrieval and its commit | `seed-host`, `hashing` | SW-04 |
+| `transport/rqbit` | The `librqbit` concrete over the overlay branch the workspace manifest names: the piece-completion hook, the peer-injection call, and the storage-backend trait on that branch with each hook's upstream issue; root-to-infohash translation; torrent creation per object with the ciphertext and each sidecar as its own object and locator; Bao verification of every completed piece after the library's check, through the hashing family; seeder-map peer injection; the engine capability; authors, as its producers, `ISwarmTransportAdapter`, the locator types with their guards, the declaration of the integrity structure on the wire and of the engine capability a transport may expose for library-backed discovery, and the family's mock; creates the `adapters/transport` crate; pins `librqbit` | `hashing/factory`, `encoding/factory` | SW-01 contract, SW-01, SW-06, EC-02 |
+| `transport/factory` | The transport family's factory function with a branch per concrete, and the crate's public surface, including the engine capability; carries the family's integration test across factory and concrete | `transport/rqbit` | The surface the seed host, resolution, and library-backed discovery consume |
+| `discovery/local` | Local-network discovery as a source; authors, as its producers, `IPeerDiscoveryAdapter`, the peer types with their guards, the declaration, and the family's mock; creates the `adapters/discovery` crate | `encoding/factory` | SW-02 contract; SW-02 |
+| `discovery/dht` | The library's DHT as a source, through the engine capability the transport factory's surface exposes | `discovery/local`, `transport/factory` | SW-02 |
+| `discovery/pex` | Peer exchange as a source, through the same engine capability | `discovery/local`, `transport/factory` | SW-02 |
+| `discovery/tracker` | Trackers as a source, through the same engine capability | `discovery/local`, `transport/factory` | SW-02 |
+| `discovery/aggregate` | The family-owned aggregation: concurrent sources unioned and deduplicated, none authoritative | `discovery/local` | SW-02 aggregation under overlapping, conflicting, unavailable, and malicious results |
+| `discovery/factory` | The discovery family's factory function, resolving every source the composition admits behind the aggregation, with a branch per concrete, and the crate's public surface; carries the family's integration test across factory and concretes; revised in place when the chain and submission sprint adds `discovery/seeder_map` | `discovery/local`, `discovery/dht`, `discovery/pex`, `discovery/tracker`, `discovery/aggregate` | The surface the swarm engine consumes |
+| `storage/redb` | The `redb` concrete; authors, as its producers, the key-value store interface with tables, transactions, and checkpoints, its types with their guards, the declaration, and the family's mock; creates the `adapters/storage` crate; pins `redb` | `encoding/factory` | XA-03 and SW-05 store contract; transactions and checkpoints under interruption |
+| `storage/factory` | The storage-engine family's factory function with a branch per concrete, and the crate's public surface; carries the family's integration test across factory and concrete | `storage/redb` | The surface every index, the job engine, and the configuration registry consume |
+| `seed-host/owned` | The owned concrete: persistent seeding independent of sessions, the root-keyed ciphertext store with holding reason, quota, and eviction, its index through the storage family, settings passthrough and enforcement, archive enumeration; authors, as its producers, `ISeedHostAdapter` with held-and-served, take custody, release, capacity and usage, and enumerate, the holding types with the obligated-versus-voluntary distinction and their guards, the capacity and holding-reason declaration, and the family's mock; creates the `adapters/seed-host` crate | `hashing/factory`, `encoding/factory`, `transport/factory`, `storage/factory` | SW-05 contract; SW-03, SW-05, SW-07, ST-06; PR-05 separation |
+| `seed-host/rqbit` | The delegated concrete: the rqbit application driven through its HTTP API, root-to-identifier translation, and Bao custody challenges through the hashing family | `seed-host/owned`, `hashing/factory` | SW-04 |
+| `seed-host/factory` | The seed host family's factory function with a branch per concrete, and the crate's public surface; carries the milestone's integration test across owned and delegated retrieval and its commit | `seed-host/owned`, `seed-host/rqbit` | The surface resolution and the First Finder consume |
 
 #### Remaining milestones, as sprints
 
 | Sprint by role | Contents | Depends on |
 | --- | --- | --- |
-| Domain model | The protocol's types, each authored in the node of the file that first consumes it and housed in the module that implements it, fixed when that module's ticket is written; the `domain` crate holds only the types its own modules implement | the types the harness factories own; `domain/secret` |
-| Payload cipher and sidecar layer | The `cipher` factory with `IPayloadCipherAdapter`, the counter-layout and addressable-extent declarations, and the factory function, and its concrete `cipher/aes_ctr` with the counter layout and extent rules; `workflows/sidecar/build`, per live set a capsule and wrapped piece-group key per group committed by that set's Bao root, each sidecar its own object, and `workflows/sidecar/validate`, the manifest, hash-card, and sidecar validation ordering; the `sample_deployment` generator for the site demonstration, which needs the cipher and so lives here rather than in the harness | domain model; `hashing`; `workflows/sidecar/wrap`; `kem` |
+| Domain model | The protocol's remaining types, each authored in the node of the file that first consumes it and housed in the module that implements it, fixed when that module's ticket is written, the identifier modules and the derivation context being harness tickets; the `domain` crate holds only the types its own modules implement; for each encoded type, its canonical description as the encoding family's module `encoding/<type>`, implementing the factory's contract for that type, one module per type, authored after the type and before the first ticket that encodes it | the types the harness families own; `domain/derivation_context`; `encoding/factory` |
+| Payload cipher and sidecar layer | `cipher/aes_ctr` with the counter layout and extent rules, authoring `IPayloadCipherAdapter`, the counter-layout and addressable-extent declarations, and the family's mock as its producers and creating the `adapters/cipher` crate, then `cipher/factory`; `workflows/sidecar/build`, per live set a capsule and wrapped piece-group key per group committed by that set's Bao root, each sidecar its own object, and `workflows/sidecar/validate`, the manifest, hash-card, and sidecar validation ordering; the `sample_deployment` generator for the site demonstration, which needs the cipher and so lives here rather than in the harness | domain model; `hashing/factory`; `workflows/sidecar/wrap`; `kem/factory` |
 | Registry and entitlement contracts, the EVM suite | Under `contracts/evm`: asset records with the per-name version index, deployments and hash-cards, attestation verification through the `IAttestationVerifier` adapter bound per source with the npm P-256 verifier as the first concrete and the source-key table it reads, later escrow deployments, parameter-set liveness with the sidecar-coverage rule and sidecar addition, the envelope-key registry, `IEntitlement` with the ERC-721 concrete carrying interval state and the ownership override that disables standard transfers, issuance and transfer calling the delivery verifier, batched grant requests readable by holders and closed by grant or withdrawal, escrow records per deployment, identity binding, the identity contract account under ERC-1271 with its device registry and the `isDeviceAdmitted` view, claim-set state layout, batch and paginated views; every identity-bound mutation taking the acting identity and a signed intent verified through the account against a signer whose permissions cover it, the contracts enforcing lock expiry and no volume limit | harness contracts; domain model |
-| Chain and submission families | The `chain` factory with the chain interface, `ISettlementAdapter`, `IEntitlementStateAdapter`, the declaration, and the factory function; `chain/quorum_view`, the family-owned aggregation of two of three configured nodes at a common reference, stale ignored, divergence and views older than `τ_soft` failing closed; `chain/base` with the contract bindings, Base's tier mapping, `evaluateAuthorization` and batch with per-context bindings, and the event and calldata reader; the `submission` factory with the interface for submitting a signed intent and its concrete `submission/self_funded`, the path the daemon uses on Base Sepolia until the relayer exists | registry and entitlement contracts; `signature` |
+| Chain and submission families | `chain/base` with the contract bindings, Base's tier mapping, `evaluateAuthorization` and batch with per-context bindings, and the event and calldata reader, authoring the chain interface, `ISettlementAdapter`, `IEntitlementStateAdapter`, the declaration, and the family's mock as its producers and creating the `adapters/chain` crate; `chain/quorum_view`, the family-owned aggregation of two of three configured nodes at a common reference, stale ignored, divergence and views older than `τ_soft` failing closed; `chain/factory`; `submission/self_funded`, the path the daemon uses on Base Sepolia until the relayer exists, authoring the interface for submitting a signed intent and its declaration and creating the `adapters/submission` crate; `submission/factory`, revised in place when the relayer milestone adds `submission/paymaster` and `submission/relayer`; `discovery/seeder_map`, the on-chain seeder map as a discovery source through the chain factory, with `discovery/factory` revised in place to carry its branch | registry and entitlement contracts; `signature/factory`; `discovery/factory` |
 | Adapter registry and factory, on chain | The `AdapterRegistry` governed by a single project-held key and the factory that constructor-injects the identity adapters, the signature adapters, the attestation verifier per source, and the entitlement token form, each immutable once bound | registry and entitlement contracts |
 
 ### Local daemon and package serving, as epics
 
 | Epic by role | Contents | Depends on |
 | --- | --- | --- |
-| Durable jobs and configuration | `workflows/jobs`, the job engine over the storage family with checkpointing and idempotent restart; `workflows/config`, the versioned configuration registry over the storage and encoding families, and the settings catalogue; the `platform-paths` factory and its concretes for the store-root defaults; `workflows/compose`, capability resolution across every factory, failing closed; the `ipc` factory with its family-owned framing, principals, and server and its `ipc/unix_socket` and `ipc/named_pipe` concretes, with the control-principal and local-presence rules; the `lifecycle` factory with its single-instance lock as a family-owned function, its concretes following in the installation coordinator; the `telemetry` factory with the exporter interface, the declaration, and the factory function, creating the `adapters/telemetry` crate, then `telemetry/tracing`, the family-owned tracing setup carrying per-request correlation identifiers, then `telemetry/local_metrics`, the family's first concrete, over the storage family; the daemon binary | domain model; `storage` |
-| Identity and custody | The `custody` factory with `IKeyCustodyAdapter` and the versioned capability set including device roles, and its family-owned `custody/holder_seed` with the control and envelope branches, `custody/device_key`, and `custody/upgrade`, the in-place migration verified against the chain; `custody/local_keystore` over `keyring` with version-headed blobs; the `wallet` factory with `wallet/eip1193` and `wallet/walletconnect`; the `identity` factory with the binding schema and `identity/publisher_authority` and `identity/escrow`; `workflows/identity` with identity creation, relayer-paid binding and contract account creation, envelope-key registration, device pairing, signer admission, and revocation | the signature tickets; the chain and submission families; `envelope`; `kdf`; durable jobs and configuration |
-| Plaintext CAS, resolution orchestrator, and package host | The `cas` factory and `cas/filesystem`, verified atomic CAS of tarballs extracted per project by the package manager with nothing linking into the store, quota, pinning, eviction, its index through the storage family; `workflows/resolve` with the hedged source order under the catalogue's source deadline and grant wait, and upstream for any identity without a credential; the `package-host` factory and `package-host/npm` with its metadata store, the npm registry protocol served locally with canonical tarball URLs; per-asset independence status in `workflows/health` | durable jobs and configuration; `hashing` |
-| First Finder ingest | The `ingest` factory and `ingest/npm` with attestation validation or recorded absence, metadata capture, and availability as eligibility; `workflows/first_finder` with the foreground serve, the background bootstrap job, the state-locked registration race, escrow custody of the master scalar, seeding, and the finder's grant of the asset's first entitlement to itself; `workflows/grant` | plaintext CAS and package host; the swarm tickets; the registry contracts; the chain and submission families; identity and custody; the `kem`, `envelope`, and `proof` factories with their concretes; `workflows/sidecar/build` |
-| Credential delivery and per-attempt authorization | Envelope-key registration on first run; `workflows/request`, the batched grant request job and its pickup from chain events; `workflows/prefetch` with pinning, seeding, and set matching; `workflows/acquire` with mint and grant delivery, holders fulfilling requests for absent requesters, and sale delivery; credential load and recovery; `workflows/attempt` with `τ_soft` and `τ_wallet`; `workflows/decrypt` with decapsulation through the KEM factory, unwrap through `workflows/sidecar/unwrap`, and decryption through the cipher factory; `workflows/interval_end`; `workflows/gate` | the chain and submission families; identity and custody; the `kem`, `envelope`, and `proof` factories with their concretes; payload cipher and sidecar layer; First Finder ingest; `submission/relayer` once the relayer exists, `submission/self_funded` on Base Sepolia until then |
+| Durable jobs and configuration | `telemetry/local_metrics` over the storage family, authoring the exporter interface, the declaration, and the family's mock as its producers and creating the `adapters/telemetry` crate, then `telemetry/tracing`, the family-owned tracing setup carrying per-request correlation identifiers, then `telemetry/factory`, revised in place when observability adds `telemetry/opentelemetry`; `workflows/jobs`, the job engine over the storage family with checkpointing and idempotent restart; `workflows/config`, the versioned configuration registry over the storage and encoding families, and the settings catalogue; `platform-paths/linux`, authoring the application-directory interface and creating the crate, `platform-paths/macos`, `platform-paths/windows`, and `platform-paths/factory` for the store-root defaults; `workflows/compose`, capability resolution across every factory, failing closed; the `ipc` family's `ipc/framing` and `ipc/principals`, family-owned and creating the crate, `ipc/unix_socket` authoring the IPC transport interface, `ipc/named_pipe`, `ipc/server` with the control-principal and local-presence rules, and `ipc/factory`; `lifecycle/lock`, the single-instance lock as a family-owned function creating the `adapters/lifecycle` crate, the family's concretes and factory following in the installation coordinator; the daemon binary | domain model; `storage/factory` |
+| Identity and custody | `custody/holder_seed` with the control and envelope branches, family-owned and creating the `adapters/custody` crate; `custody/device_key`; `custody/local_keystore` over `keyring` with version-headed blobs, authoring `IKeyCustodyAdapter`, the versioned capability set including device roles, and the family's mock as its producers; `custody/upgrade`, the in-place migration between concretes verified against the chain, through the interface; `custody/factory`; `wallet/eip1193`, authoring the signing-only wallet interface and creating the crate, `wallet/walletconnect`, and `wallet/factory`; `identity/publisher_authority`, authoring `IIdentityAdapter` with the binding schema and creating the crate, `identity/escrow`, and `identity/factory`; `workflows/identity` with identity creation, relayer-paid binding and contract account creation, envelope-key registration, device pairing, signer admission, and revocation | the signature tickets; the chain and submission families; `envelope/factory`; `kdf/factory`; durable jobs and configuration |
+| Plaintext CAS, resolution orchestrator, and package host | `cas/filesystem`, verified atomic CAS of tarballs extracted per project by the package manager with nothing linking into the store, quota, pinning, eviction, its index through the storage family, authoring the store interface and creating the crate, then `cas/factory`; `workflows/resolve` with the hedged source order under the catalogue's source deadline and grant wait, and upstream for any identity without a credential; `package-host/npm` with its metadata store, the npm registry protocol served locally with canonical tarball URLs, authoring `IPackageHostAdapter` and creating the crate, then `package-host/factory`; per-asset independence status in `workflows/health` | durable jobs and configuration; `hashing/factory` |
+| First Finder ingest | `ingest/npm` with attestation validation or recorded absence, metadata capture, and availability as eligibility, authoring `IIngestSourceAdapter` and creating the crate, then `ingest/factory`; `workflows/first_finder` with the foreground serve, the background bootstrap job, the state-locked registration race, escrow custody of the master scalar, seeding, and the finder's grant of the asset's first entitlement to itself; `workflows/grant` | plaintext CAS and package host; the swarm tickets; the registry contracts; the chain and submission families; identity and custody; `kem/factory`, `envelope/factory`, and `proof/factory`; `workflows/sidecar/build` |
+| Credential delivery and per-attempt authorization | Envelope-key registration on first run; `workflows/request`, the batched grant request job and its pickup from chain events; `workflows/prefetch` with pinning, seeding, and set matching; `workflows/acquire` with mint and grant delivery, holders fulfilling requests for absent requesters, and sale delivery; credential load and recovery; `workflows/attempt` with `τ_soft` and `τ_wallet`; `workflows/decrypt` with decapsulation through the KEM factory, unwrap through `workflows/sidecar/unwrap`, and decryption through the cipher factory; `workflows/interval_end`; `workflows/gate` | the chain and submission families; identity and custody; `kem/factory`, `envelope/factory`, and `proof/factory`; payload cipher and sidecar layer; First Finder ingest; the submission factory's relayer concrete once the relayer exists, its self-funded concrete on Base Sepolia until then |
 | Demonstrable milestone | No new subsystem: a second identity on a second machine profile installs a pinned closure the First Finder ingested, at the registry's speed with requests registered and ciphertext prefetched, then with the registry unavailable, through the packaged daemon and package host over the swarm, on a grant fulfilled while it was offline; the north star, first-run independence, and the latency guardrail measured on the dogfood population | credential delivery and per-attempt authorization; plaintext CAS and package host; First Finder ingest; the swarm tickets |
 
 ### Onboarding shells and services, as milestones
 
 | Milestone by role | Contents | Depends on |
 | --- | --- | --- |
-| Installation coordinator | `workflows/install`, the durable install plan with platform detection, repair, update, uninstall, the health probe, the consent items, and the first-run cost disclosure; the `lifecycle` factory with `lifecycle/systemd`, `lifecycle/launchd`, `lifecycle/windows_service`, and `lifecycle/scheduled_task`; the `artifact-verifier` factory with `artifact-verifier/sigstore`, `artifact-verifier/authenticode`, and `artifact-verifier/apple_notarization`; the `redirect` factory with `redirect/npm`; the installer binary | durable jobs and configuration; identity and custody |
+| Installation coordinator | `workflows/install`, the durable install plan with platform detection, repair, update, uninstall, the health probe, the consent items, and the first-run cost disclosure; `lifecycle/systemd`, authoring the service-lifecycle interface, `lifecycle/launchd`, `lifecycle/windows_service`, `lifecycle/scheduled_task`, and `lifecycle/factory`; `artifact-verifier/sigstore`, authoring the signed-artifact verification interface and creating the crate, `artifact-verifier/authenticode`, `artifact-verifier/apple_notarization`, and `artifact-verifier/factory`; `redirect/npm`, authoring the detect, redirect, back-up, and restore interface and creating the crate, then `redirect/factory`; the installer binary | durable jobs and configuration; identity and custody |
 | Visual Studio Code extension and npm bootstrap | Thin shells over the coordinator | installation coordinator |
 | Desktop application and CLI | Tauri and Rust control surfaces | installation coordinator |
-| Relayer or paymaster | The relayer binary with its `bundler` factory and one concrete per provider; free-path sponsorship under a global per-window budget and maximum liability with per-identity limits as one layer; the sponsorship mechanism for the identity contract account chosen here under LC-13, with `submission/paymaster` and `submission/relayer` authored as the chosen mechanism requires; sponsored device admission and revocation; cost and budget reporting | the chain and submission families, so it may start before the daemon grouping closes |
-| Explicit publisher path | `workflows/publish` with the publisher-derived lineage, swarm-native publication of the dependency closure, and the issuance policy service; the `publisher-proof` factory with `publisher-proof/provenance` and `publisher-proof/maintainer_oauth` | First Finder ingest; identity and custody |
-| Claim verifier and escrow claim | The claim verifier binary with its revocable key; the `claim-verifier` factory with `claim-verifier/attestor`; `workflows/claim`; the claim set established from upstream metadata at verification; claim-set vouchers; the claimant parameter set; optional handover; sidecar addition; voluntary migration | registry contracts; explicit publisher path; credential delivery |
-| Project seed host and site | Persistent first seeder of the core closure holding an entitlement and credential for every asset it seeds; static site; WebAssembly demonstration | `seed-host/owned`; explicit publisher path; payload cipher and sidecar layer, for the sample deployment |
-| Observability | RO-03 metrics, RO-04 correlation, RO-05 health, latency budget evaluation; `telemetry/opentelemetry` | every component that emits |
+| Relayer or paymaster | The relayer binary with the chosen provider's bundler concrete, authoring the bundler-provider interface, and `relayer/bundler/factory`; free-path sponsorship under a global per-window budget and maximum liability with per-identity limits as one layer; the sponsorship mechanism for the identity contract account chosen here under LC-13, with `submission/paymaster` and `submission/relayer` authored as the chosen mechanism requires and `submission/factory` revised in place to carry their branches; sponsored device admission and revocation; cost and budget reporting | the chain and submission families, so it may start before the daemon grouping closes |
+| Explicit publisher path | `workflows/publish` with the publisher-derived lineage, swarm-native publication of the dependency closure, and the issuance policy service; `publisher-proof/provenance`, authoring `IPublisherProofAdapter` and creating the crate, `publisher-proof/maintainer_oauth`, and `publisher-proof/factory` | First Finder ingest; identity and custody |
+| Claim verifier and escrow claim | The claim verifier binary with its revocable key; `claim-verifier/attestor`, authoring `IClaimVerifierAdapter` and creating the crate, then `claim-verifier/factory`; `workflows/claim`; the claim set established from upstream metadata at verification; claim-set vouchers; the claimant parameter set; optional handover; sidecar addition; voluntary migration | registry contracts; explicit publisher path; credential delivery |
+| Project seed host and site | Persistent first seeder of the core closure holding an entitlement and credential for every asset it seeds; static site; WebAssembly demonstration | `seed-host/factory`; explicit publisher path; payload cipher and sidecar layer, for the sample deployment |
+| Observability | RO-03 metrics, RO-04 correlation, RO-05 health, latency budget evaluation; `telemetry/opentelemetry`, with `telemetry/factory` revised in place to carry its branch | every component that emits |
 | Demonstration harness | Controlled participants, wallets, chain state, failures, and the deliberately incompatible adapter declarations the incompatibility scenario rejects, refused by the factories and by `workflows/compose` | every component under test |
 
 ### Acceptance and release, as objectives
@@ -179,7 +186,8 @@ Where one component's output becomes another's input across a boundary that an i
 ## Conflict Flags
 
 - **Grouping membership versus dependency order.** The hashing, signature, and swarm tickets sit in the protocol core grouping and depend on no contract sprint, so they run in parallel with the harness and before the contracts.
-- **Every factory precedes its concretes.** A family's declaration type exists from its factory ticket, so the resolver in the daemon skeleton reads declarations its producers author, and no consumer ticket depends on a concrete.
+- **Every factory follows its concretes.** A family's generic interface, declaration, and mock are authored in its first ticket, so the declarations the resolver reads exist from the family's first ticket; the factory function consumes the concretes it constructs and is authored once after every concrete of the family in this workplan; and no consumer ticket depends on a concrete.
+- **A concrete a later milestone adds revises its factory's ticket in place.** `discovery/seeder_map` in the chain and submission sprint, `submission/paymaster` and `submission/relayer` at the relayer, and `telemetry/opentelemetry` at observability each add a branch by revising the family's factory ticket, which remains one ticket, per the workplan-structure rule that an existing node is copied and revised rather than followed by a second node editing the same file; the lifecycle family's lock precedes its concretes and factory, which arrive together at the installation coordinator.
 - **The harness needs a verifier client before the chain family exists.** The daemon never submits a proof to the verifier, since the contracts call it inside mint, grant, and delivery, so the verifier client is the harness's own `verifier` family with an `evm` concrete, and no chain concrete carries one.
 - **The wrap precedes the cipher.** The harness's cross-set vector needs the wrap and unwrap, so `workflows/sidecar/wrap` and `workflows/sidecar/unwrap` are harness tickets and create the workflows crate; `workflows/sidecar/build` and `workflows/sidecar/validate` wait for the cipher in the protocol core.
 - **The benchmark follows the pairing concretes.** It constructs each through the pairing factory and names no library; what it records is the default concrete per curve, which the factory constructs when a composition names a curve alone, and every concrete remains beneath the factory whether or not it is the default.
@@ -202,143 +210,165 @@ flowchart TB
         direction TB
         f_ws["workspace/cargo"]
         f_sec["domain/secret"]
-        f_rand["random"]
         f_rand_os["random/os"]
+        f_rand["random/factory"]
         f_ci["workspace/ci"]
-        f_enc["encoding"]
-        f_abi["encoding/abi"]
         f_ws --> f_sec
-        f_ws --> f_rand
-        f_rand --> f_rand_os
+        f_ws --> f_rand_os
+        f_rand_os --> f_rand
         f_ws --> f_ci
-        f_ws --> f_enc
-        f_enc --> f_abi
     end
 
     subgraph harness["Cryptographic validation harness"]
         direction TB
-        pair["pairing"]
         pair_bn_ark["pairing/bn254_arkworks"]
         pair_bn_h2c["pairing/bn254_halo2curves"]
         pair_bls_ark["pairing/bls12_381_arkworks"]
         pair_bls_h2c["pairing/bls12_381_halo2curves"]
+        pair["pairing/factory"]
         bench["harness-crypto/benchmark"]
-        kdf["kdf"]
+        dom_asset["domain/asset_identity"]
+        dom_dep["domain/deployment_identity"]
+        dom_suite["domain/suite_identifier"]
+        dom_pset["domain/parameter_set_identifier"]
+        dom_group["domain/group_index"]
+        dom_geom["domain/piece_geometry"]
+        dom_ctx["domain/derivation_context"]
+        enc_desc["encoding/derivation_context"]
+        f_abi["encoding/abi"]
+        f_enc["encoding/factory"]
         kdf_b3["kdf/blake3_keyed"]
-        h2s["hash-to-scalar"]
+        kdf["kdf/factory"]
         h2s_k["hash-to-scalar/keccak256"]
-        kem["kem"]
+        h2s["hash-to-scalar/factory"]
         kem_bb1["kem/bb1_depth_one"]
-        env["envelope"]
+        kem["kem/factory"]
         env_eg["envelope/pairing_elgamal"]
-        proof["proof"]
+        env["envelope/factory"]
         proof_ch["proof/schnorr_fs/challenge"]
         proof_sfs["proof/schnorr_fs"]
+        proof["proof/factory"]
         sc_wrap["workflows/sidecar/wrap"]
         sc_unwrap["workflows/sidecar/unwrap"]
         sol_pair["contracts/evm/PairingLib"]
-        gen["harness-crypto/generate"]
         gen_evm["harness-crypto/generate/evm"]
+        gen["harness-crypto/generate/factory"]
         sol_verify["contracts/evm/DeliveryVerifier"]
         sol_deploy["contracts/evm/deploy"]
-        hv["harness-crypto/verifier"]
         hv_evm["harness-crypto/verifier/evm"]
+        hv["harness-crypto/verifier/factory"]
         h_vectors["harness-crypto/vectors"]
         h_measure["harness-crypto/measure"]
         h_report["harness-crypto/report"]
 
-        pair --> pair_bn_ark
-        pair --> pair_bn_h2c
-        pair --> pair_bls_ark
-        pair --> pair_bls_h2c
-        pair_bn_ark --> bench
-        pair_bn_h2c --> bench
-        pair_bls_ark --> bench
-        pair_bls_h2c --> bench
-        kdf --> kdf_b3
-        pair --> h2s
-        h2s --> h2s_k
-        pair --> kem
-        h2s --> kem
-        kem --> kem_bb1
-        pair --> env
-        env --> env_eg
-        env --> proof
-        kem --> proof
-        pair --> proof
-        proof --> proof_ch
+        pair_bn_ark --> pair_bn_h2c
+        pair_bn_ark --> pair_bls_ark
+        pair_bn_ark --> pair_bls_h2c
+        pair_bn_ark --> pair
+        pair_bn_h2c --> pair
+        pair_bls_ark --> pair
+        pair_bls_h2c --> pair
+        pair --> bench
+        dom_asset --> dom_ctx
+        dom_dep --> dom_ctx
+        dom_suite --> dom_ctx
+        dom_pset --> dom_ctx
+        dom_group --> dom_ctx
+        dom_geom --> dom_ctx
+        dom_ctx --> enc_desc
+        enc_desc --> f_abi
+        f_abi --> f_enc
+        dom_ctx --> kdf_b3
+        kdf_b3 --> kdf
+        pair --> h2s_k
+        h2s_k --> h2s
+        pair --> kem_bb1
+        h2s --> kem_bb1
+        kem_bb1 --> kem
+        pair --> env_eg
+        h2s --> env_eg
+        env_eg --> env
         h2s --> proof_ch
+        pair --> proof_ch
+        env --> proof_ch
+        kem --> proof_ch
         proof_ch --> proof_sfs
+        proof_sfs --> proof
         kdf --> sc_wrap
         kem --> sc_wrap
         sc_wrap --> sc_unwrap
-        proof --> gen
-        gen --> gen_evm
-        proof_sfs --> gen_evm
-        h2s_k --> gen_evm
+        bench --> gen_evm
+        proof --> gen_evm
+        h2s --> gen_evm
+        gen_evm --> gen
         sol_pair --> sol_verify
-        gen_evm --> sol_verify
+        gen --> sol_verify
         sol_verify --> sol_deploy
-        proof --> hv
-        hv --> hv_evm
         sol_deploy --> hv_evm
-        kem_bb1 --> h_vectors
-        env_eg --> h_vectors
-        proof_sfs --> h_vectors
+        proof --> hv_evm
+        hv_evm --> hv
+        kem --> h_vectors
+        env --> h_vectors
+        proof --> h_vectors
         sc_unwrap --> h_vectors
         h_vectors --> h_measure
-        hv_evm --> h_measure
+        hv --> h_measure
         h_measure --> h_report
     end
 
     subgraph core["Protocol core and contract suite"]
         direction TB
-        hashing["hashing"]
         hashing_b3["hashing/blake3_bao"]
-        sig["signature"]
+        hashing["hashing/factory"]
         sig_ed["signature/ed25519"]
         sig_k1["signature/secp256k1"]
-        tr["transport"]
+        sig["signature/factory"]
         tr_rq["transport/rqbit"]
-        disc["discovery"]
-        disc_agg["discovery/aggregate"]
+        tr["transport/factory"]
+        disc_local["discovery/local"]
         disc_dht["discovery/dht"]
         disc_pex["discovery/pex"]
         disc_trk["discovery/tracker"]
-        disc_local["discovery/local"]
+        disc_agg["discovery/aggregate"]
+        disc["discovery/factory"]
         disc_map["discovery/seeder_map"]
-        st["storage"]
         st_redb["storage/redb"]
-        sh["seed-host"]
+        st["storage/factory"]
         sh_owned["seed-host/owned"]
         sh_rqbit["seed-host/rqbit"]
+        sh["seed-host/factory"]
         s_domain["Sprint: domain model"]
         s_cipher["Sprint: payload cipher and sidecar layer"]
         s_registry["Sprint: registry and entitlement contracts, the EVM suite"]
         s_chain["Sprint: chain and submission families"]
         s_adreg["Sprint: adapter registry and factory, on chain"]
 
-        hashing --> hashing_b3
-        sig --> sig_ed
-        sig --> sig_k1
-        hashing --> tr
-        tr --> tr_rq
-        disc --> disc_agg
-        disc --> disc_dht
-        disc --> disc_pex
-        disc --> disc_trk
-        disc --> disc_local
-        disc --> disc_map
+        hashing_b3 --> hashing
+        sig_ed --> sig_k1
+        sig_ed --> sig
+        sig_k1 --> sig
+        hashing --> tr_rq
+        tr_rq --> tr
+        disc_local --> disc_dht
+        disc_local --> disc_pex
+        disc_local --> disc_trk
+        disc_local --> disc_agg
         tr --> disc_dht
         tr --> disc_pex
         tr --> disc_trk
-        st --> st_redb
-        hashing --> sh
-        sh --> sh_owned
+        disc_local --> disc
+        disc_dht --> disc
+        disc_pex --> disc
+        disc_trk --> disc
+        disc_agg --> disc
+        st_redb --> st
+        hashing --> sh_owned
         tr --> sh_owned
         st --> sh_owned
-        sh --> sh_rqbit
+        sh_owned --> sh_rqbit
         hashing --> sh_rqbit
+        sh_owned --> sh
+        sh_rqbit --> sh
         s_domain --> s_cipher
         hashing --> s_cipher
         s_domain --> s_registry
@@ -346,6 +376,8 @@ flowchart TB
         sig --> s_chain
         s_registry --> s_adreg
         s_chain --> disc_map
+        disc_local --> disc_map
+        disc_map -.->|"revises in place"| disc
     end
 
     subgraph daemon["Local daemon and package serving"]
@@ -400,29 +432,34 @@ flowchart TB
         o_legal --> o_release
     end
 
-    f_ws --> pair
+    f_ws --> pair_bn_ark
+    f_rand --> pair_bn_ark
     f_ci --> sol_pair
-    f_ws --> tr_rq
-    f_enc --> pair
-    f_enc --> kdf
-    f_enc --> h2s
-    f_enc --> kem
-    f_enc --> env
-    f_enc --> proof
-    f_enc --> gen
-    f_enc --> hv
-    f_enc --> hashing
-    f_enc --> sig
-    f_enc --> disc
-    f_enc --> st
+    f_sec --> dom_asset
+    f_sec --> dom_dep
+    f_sec --> dom_suite
+    f_sec --> dom_pset
+    f_sec --> dom_group
+    f_sec --> dom_geom
+    f_enc --> kdf_b3
+    f_enc --> h2s_k
+    f_enc --> kem_bb1
+    f_enc --> env_eg
+    f_enc --> proof_ch
+    f_enc --> gen_evm
+    f_enc --> hv_evm
+    f_enc --> hashing_b3
+    f_enc --> sig_ed
+    f_enc --> disc_local
+    f_enc --> st_redb
     f_enc --> sc_wrap
-    f_rand --> kem
-    f_rand --> env
+    f_rand --> kem_bb1
+    f_rand --> env_eg
     f_rand --> proof_sfs
-    f_rand --> sig
+    f_rand --> sig_ed
     f_sec --> s_domain
-    f_sec --> kem
-    f_sec --> env
+    f_sec --> kem_bb1
+    f_sec --> env_eg
     st --> e_jobs
 
     kem --> s_domain
@@ -479,11 +516,11 @@ flowchart TB
     h_report --> o_review
 ```
 
-**Reading the graph.** Everything in the foundation and harness subgraphs, and every ticket-named node in the protocol core, is one source file, except the configuration tickets `workspace/cargo` and `workspace/ci`, each of which carries its configuration files together, and the deployment script. A factory node is the family's crate root; a concrete node is one adapter beneath it, private to the crate. Every edge out of a family runs from its factory, never from a concrete: the registry sprint consumes the harness's `contracts/evm/DeliveryVerifier`, and the First Finder, credential delivery, and identity epics consume the `kem`, `envelope`, `proof`, and `kdf` factories, which construct the concretes the harness proved. The hashing, signature, and swarm tickets have no incoming edge from any contract sprint, which is the point that bytes can move before any chain exists. The relayer milestone depends only on the chain and submission families and can be built as soon as they exist. The demonstrable milestone has incoming edges from credential delivery, the package host, First Finder ingest, and the seed-host family, and nothing depends on it.
+**Reading the graph.** Everything in the foundation and harness subgraphs, and every ticket-named node in the protocol core, is one source file, except the configuration tickets `workspace/cargo` and `workspace/ci`, each of which carries its configuration files together, and the deployment script. A factory node is the family's `factory` module; a concrete node is one adapter beneath it, private to the crate; a family's first ticket, its first concrete or a family-owned function preceding it, carries the family's interface and creates the crate, and the factory follows every concrete. Every edge out of a family runs from its factory, never from a concrete: the registry sprint consumes the harness's `contracts/evm/DeliveryVerifier`, and the First Finder, credential delivery, and identity epics consume the KEM, envelope, proof, and KDF factories, which construct the concretes the harness proved. The hashing, signature, and swarm tickets have no incoming edge from any contract sprint, which is the point that bytes can move before any chain exists. The relayer milestone depends only on the chain and submission families and can be built as soon as they exist. The demonstrable milestone has incoming edges from credential delivery, the package host, First Finder ingest, and the seed-host family, and nothing depends on it.
 
 ## Sequencing
 
-`workspace/cargo` precedes everything. Within the harness the starting points are the `pairing` factory, the `kdf` factory, and `contracts/evm/PairingLib`; every other ticket has a producer, each family's factory precedes its concretes, the tracks converge at `harness-crypto/verifier/evm` and `harness-crypto/vectors`, and the grouping closes at `harness-crypto/report`, whose node carries the integration test across the whole chain and the commit. The hashing and signature tickets start from their factories on `encoding`, and the swarm tickets from the `transport`, `discovery`, `storage`, and `seed-host` factories on `hashing` and `encoding`; each of those milestones closes at the ticket its table names.
+`workspace/cargo` precedes everything. Within the harness the starting points are `pairing/bn254_arkworks`, which carries the pairing interface and the sampling trait, the domain's identifier modules on `domain/secret`, and `contracts/evm/PairingLib`; the derivation context follows the identifiers, `encoding/derivation_context` carries the encoding contract and precedes `encoding/abi` and `encoding/factory`, and `kdf/blake3_keyed`, the first ticket that encodes, follows the encoding factory; every other ticket has a producer, each family's first ticket precedes its further concretes and its factory follows them all, the tracks converge at `harness-crypto/verifier/factory` and `harness-crypto/vectors`, and the grouping closes at `harness-crypto/report`, whose node carries the integration test across the whole chain and the commit. The hashing and signature tickets start from `hashing/blake3_bao` and `signature/ed25519` on `encoding/factory`, and the swarm tickets from `transport/rqbit`, `discovery/local`, and `storage/redb` on `hashing/factory` and `encoding/factory`; each of those milestones closes at the factory its table names.
 
 Across groupings the sequence is the [milestones](milestones.md)' order, with the parallelism the graph makes visible: the hashing, signature, and swarm tickets run beside the harness and the contract sprints; the identity and custody epic begins as soon as the signature tickets and the chain and submission families exist, before the CAS epic, because the installation coordinator needs it; the relayer milestone begins on the chain and submission families; the demonstrable milestone follows credential delivery.
 
@@ -497,32 +534,32 @@ The decay rule governs re-mapping. When the `harness-crypto/report` node commits
 | R-03, verifier flaw | `proof/schnorr_fs` and `contracts/evm/DeliveryVerifier` are separate tickets with `harness-crypto/verifier/evm` as the parity integration point and `harness-crypto/generate/evm` as the source of the contract's constants and vectors; `harness-crypto/vectors` carries the mutation and replay sets |
 | R-04, execution breadth | Decaying resolution means no distant detail is authored to be rewritten; the demonstrable milestone is reachable before publishing and claims; a concrete adapter is one node, so a family's ticket count is its factory plus its concretes |
 | R-09, open selections | Every node that encrypts a registered deployment waits on the harness report; the identity epic carries custody recovery UX |
-| R-12, chain properties | Both curve concretes and both verifier forms are harness tickets beneath the `pairing` and `proof` factories, so a precompile change on Base selects the retained form at resolution rather than rebuilding; a further chain is a further `chain` concrete with its own suite under `contracts/` |
+| R-12, chain properties | Every pairing concrete and both verifier forms are harness tickets beneath the pairing and proof factories, so a precompile change on Base selects the retained form at resolution rather than rebuilding; a further chain is a further `chain` concrete with its own suite under `contracts/` |
 | R-13, escrow record | No commitment and no custodian; the claim milestone has no policy gate |
 | R-14, adapter registry governance | The on-chain adapter registry sprint is separate from the registry contracts sprint, so its single project-held key can be replaced without touching entitlements; the same registry binds the attestation verifier per source and the entitlement token form |
-| A consumer bound to a concrete | Every family crate exposes its factory alone, every factory ticket precedes its concretes, and the harness constructs through the factories, so no ticket can name a concrete it does not own |
+| A consumer bound to a concrete | Every family crate exposes its factory alone, every consumer ticket follows the factory it names, and the harness constructs through the factories, so no ticket can name a concrete it does not own |
 
 ## Decisions
 
 **The adapter family form.** Every family is a factory crate owning the generic interface, the capability declaration, and the types the generic surface needs; each concrete is a private module beneath the factory with its own interface implementing the generic one and owning only the types it alone produces; consumers depend on the factory's surface alone; the layout is general responsibility, then functional need, then concrete implementation. A family exists even where the MVP ships one concrete.
 
-**Crate and path layout.** One workspace with a domain crate, a workflows crate, a crate per adapter family that is the family's factory, and a crate per deployable, each created by the ticket of the first module that lives in it; the workspace manifest lists members by glob; tickets are named by crate, concrete, and function as the technical requirements' file tree spells them.
+**Crate and path layout.** One workspace with a domain crate, a workflows crate, a crate per adapter family holding its `factory` module and its private concretes, and a crate per deployable, each created by the ticket of the first module that lives in it, which for a family is its first ticket; the workspace manifest lists members by glob; tickets are named by crate, factory, concrete, and function as the technical requirements' file tree spells them.
 
-**Canonical encoding.** The `encoding` factory owns `IEncoderAdapter` and `IDecoderAdapter` under one versioned encoding identifier, the repo-owned encoding contract that each encoded type implements in its own module, and the declaration; `encoding/abi` implements both through `alloy`'s sol types and is the only module naming `alloy` for encoding; one encoding for everything hashed, signed, stored, or framed over IPC, including the configuration registry's records.
+**Canonical encoding.** The `encoding` factory owns `IEncoderAdapter` and `IDecoderAdapter` under one versioned encoding identifier, the repo-owned encoding contract, and the declaration; the family owns one description module per encoded domain type, `encoding/<type>`, implementing the contract for that type, so the domain crate depends on nothing and the encoding crate depends on the domain crate; the family follows the first encodable domain type, the derivation context, at the head of the harness grouping, its first description authoring the contract and creating the crate; `encoding/abi` implements both through `alloy`'s sol types and is the only module naming `alloy` for encoding; one encoding for everything hashed, signed, stored, or framed over IPC, including the configuration registry's records.
 
-**Tools and dependencies.** Each is pinned, configured, or added to continuous integration by the ticket that first needs it, and a vendor library is named only by the concrete that wraps it; `harness-crypto/benchmark` names none and reaches each pairing library through the pairing factory.
+**Tools and dependencies.** A configuration file is authored once, complete, by the ticket that creates it: the workspace manifest with the `librqbit` overlay and `deny.toml` with the overlay repository's source at `workspace/cargo`, the Rust continuous-integration definition at `workspace/ci`, `contracts/evm/foundry.toml` and the Solidity continuous-integration definition at `contracts/evm/PairingLib`, and the shell, fuzz, and end-to-end continuous-integration definitions each at the ticket that first needs it, as separate files. A crate's manifest and its `lib.rs` barrel accumulate one entry per module, each added by that module's ticket as its deps and provides elements. A vendor library is named only by the concrete that wraps it; `harness-crypto/benchmark` names none and reaches each pairing library through the pairing factory.
 
 **Secrets.** The secret-typed value is a `domain` ticket pinning `zeroize` as a domain crate dependency; the telemetry family carries correlation and tracing setup and no redaction layer.
 
 **Ticket granularity for a concrete adapter.** One node: the concrete's operations are the methods of one adapter in one file, and a function the concrete owns, such as the Schnorr challenge, is a node beneath it.
 
-**Factories before concretes.** Every family's factory ticket precedes its concretes, so the declarations the resolver reads exist from the first ticket, and the harness constructs its combinations through the factories.
+**Interfaces first, factories last.** A family's generic interface, declaration, and mock are authored in the ticket of its first concrete, the first source file that requires them; each further concrete and family-owned function follows; the factory function, which consumes the concretes, is authored once after every concrete of the family in this workplan and revised in place when a later milestone adds one; every consumer follows the factory, and the harness constructs its combinations through the factories.
 
-**The harness's own families.** `harness-crypto/generate` and `harness-crypto/verifier`, each with an `evm` concrete, because emitting a suite's vectors and reaching a suite's verifier are suite-specific and the daemon needs neither.
+**The harness's own families.** The harness's `generate` and `verifier` families, each with an `evm` concrete carrying the family's interface and a factory following it, because emitting a suite's vectors and reaching a suite's verifier are suite-specific and the daemon needs neither.
 
 **The storage engine and the engines above it.** The `storage` factory with `storage/redb`; the job engine and the configuration registry are workflows modules over it, since nothing external remains in them.
 
-**BitTorrent library.** `librqbit` compiled in as a soft fork through a `[patch.crates-io]` overlay onto tagged upstream releases, carried inside `transport/rqbit`, hooks submitted upstream, commit pinned; no owned transport in the MVP; the library's discovery sources are `discovery` concretes reached through the transport factory's engine capability; the hard-fork trigger is recorded in the product requirements.
+**BitTorrent library.** `librqbit` compiled in as a soft fork through the workspace manifest's `[patch.crates-io]` overlay onto the project's overlay branch `chaintorrent-overlay` in `https://github.com/tsylvester/rqbit`, which tracks tagged upstream releases and exists before the bootstrap, with the hooks authored inside `transport/rqbit`, submitted upstream, and the commit pinned; no owned transport in the MVP; the library's discovery sources are `discovery` concretes reached through the transport factory's engine capability; the hard-fork trigger is recorded in the product requirements.
 
 **The contract suite.** `contracts/evm` is the on-chain concrete of `chain/base`, with Foundry inside it; a further chain form is a further suite.
 
@@ -538,6 +575,6 @@ The decay rule governs re-mapping. When the `harness-crypto/report` node commits
 
 **What a ticket is and is not.** A ticket here is a candidate for a workplan node: it names the source file's role, what it owns, what it depends on, and what requirement it proves. It is not a node. A node is authored through the ordinary path in the node template, with every element in the fixed order, and this document does not emit node structure. When a ticket is promoted, its row here is unchanged; the node is the instruction and this map is the overview.
 
-**Why the harness has the tickets it has.** One source file per node, so each cryptographic family's factory and each of its concretes, one per curve per library for pairing, the benchmark, the generate and verifier families with their EVM concretes, the Solidity library and verifier, the wrap and unwrap, and the measurement driver each get their own file with full support. The `sample_deployment` generator needs the payload cipher and belongs to the protocol core grouping. That list is the honest size of the harness grouping.
+**Why the harness has the tickets it has.** One source file per node, so each cryptographic family's concretes, one per curve per library for pairing, and its factory, the benchmark, the generate and verifier families with their EVM concretes, the Solidity library and verifier, the wrap and unwrap, and the measurement driver each get their own file with full support. The `sample_deployment` generator needs the payload cipher and belongs to the protocol core grouping. That list is the honest size of the harness grouping.
 
 **Requirement coverage of the foundation and harness groupings.** CR-03 in part, CR-04, CR-05, CR-07 in part, CR-08, CR-09, CR-10, CR-11, CD-03, CD-07, CD-08, LC-08 in part, XA-07 in part, AS-17 for the cryptographic families, and AS-21. Everything else the requirements name is in a later grouping.
