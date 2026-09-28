@@ -1,7 +1,7 @@
 <!-- Template: parenthesis_technical_requirements.md -->
 # Index
 
-Draft, 2026-09-23. The gating technical requirements for the ChainTorrent MVP, informing the master plan and milestones. New material in this document: the subsystem register, the API surfaces, the schemas, the proposed file tree with the Rust mapping of the workplan's node elements, the delta summary, and the iteration notes. Every other section states the position reached in an earlier planning document and cites it rather than repeating it.
+The gating technical requirements for the ChainTorrent MVP, informing the master plan and milestones. New material in this document: the subsystem register, the API surfaces, the schemas, the proposed file tree with the Rust mapping of the workplan's node elements, the delta summary, and the iteration notes. Every other section states the position reached in an earlier planning document and cites it rather than repeating it.
 
 - Executive Summary
 - Subsystems
@@ -33,7 +33,7 @@ The [system architecture](system-architecture.md) breaks the daemon into its sub
 
 | Subsystem | Deployable | Ring | Crate | Defined by |
 | --- | --- | --- | --- | --- |
-| Domain types and guards, only those the domain crate's own modules implement; every other type lives in the module that implements it | all | Protocol and domain | `domain` | Composition Boundary |
+| Domain types, only those the domain crate's own modules implement; every other type lives in the module that implements it | all | Protocol and domain | `domain` | Composition Boundary |
 | Secret type | all | Protocol and domain | `domain` | CR-07; the foundation grouping |
 | Encoding family: the factory owns `IEncoderAdapter`, `IDecoderAdapter`, the versioned encoding identifier, the vendor-free encoding contract, and the declaration; `encoding/abi` implements both through `alloy`'s sol types; one encoding for everything hashed, signed, stored, or framed over IPC | all | Adapter | `adapters/encoding` | CR-03, CR-09; the foundation grouping |
 | Randomness family: the factory owns the interface that fills bytes and draws scalars and its deterministic mock; `random/os` over the operating system's generator | all | Adapter | `adapters/random` | CR-05; the foundation grouping |
@@ -75,13 +75,13 @@ The [system architecture](system-architecture.md) breaks the daemon into its sub
 | Platform paths family: the factory owns the application-directory interface; `platform-paths/linux`, `platform-paths/macos`, `platform-paths/windows` | installer, daemon | Adapter | `adapters/platform-paths` | SI-05, ST-02 |
 | Artifact verifier family: the factory owns the signed-artifact verification interface; `artifact-verifier/sigstore`, `artifact-verifier/authenticode`, `artifact-verifier/apple_notarization` | installer | Adapter | `adapters/artifact-verifier` | SI-04, IC-02, SI-17 |
 | Package-manager redirect family: the factory owns the detect, redirect, back-up, and restore interface; `redirect/npm` | installer | Adapter | `adapters/redirect` | SI-07, IC-06 |
-| Pairing family: the factory owns `IPairingAdapter`, the pairing types and guards, and the curve and second-group declaration; `pairing/bn254_arkworks`, `pairing/bn254_halo2curves`, `pairing/bls12_381_arkworks`, `pairing/bls12_381_halo2curves`, one concrete per curve per library, the default per curve recorded by the harness benchmark | harness, daemon, contracts mirror | Adapter | `adapters/pairing` | CR-10 |
+| Pairing family: the factory owns `IPairingAdapter`, the pairing types, and the curve and second-group declaration; `pairing/bn254_arkworks`, `pairing/bn254_halo2curves`, `pairing/bls12_381_arkworks`, `pairing/bls12_381_halo2curves`, one concrete per curve per library, the default per curve recorded by the harness benchmark | harness, daemon, contracts mirror | Adapter | `adapters/pairing` | CR-10 |
 | Credential KEM family: the factory owns `ICredentialKemAdapter` and the identity-scope declaration; `kem/bb1_depth_one` implements every operation and owns its parameter-set, credential, capsule, and identity-element types | harness, daemon | Adapter | `adapters/kem` | CR-08, CD-08 |
 | Envelope family: the factory owns `IKeyAgreementAdapter` and the envelope-algebra declaration; `envelope/pairing_elgamal` owns its key-pair and envelope types | harness, daemon | Adapter | `adapters/envelope` | CR-04 |
 | Delivery proof family: the factory owns `IDeliveryProofAdapter`, the mint and transfer statement types, the context schema, the statement version, and the declaration of supported envelope algebras and verifier forms; `proof/schnorr_fs` owns its challenge and declares both forms | harness, daemon | Adapter | `adapters/proof` | CR-09 |
 | Payload cipher family: the factory owns `IPayloadCipherAdapter` and the counter-layout and addressable-extent declarations; `cipher/aes_ctr` | daemon, harness | Adapter | `adapters/cipher` | CR-01 |
 | Hashing family: the factory owns the commitment interface, root and outboard construction, streaming and random-access verification, and random challenge and response, the root, outboard, path, and chunk types, the commitment-scheme identifier the hash-card carries, and the commitment-scheme declaration; `hashing/blake3_bao` | daemon, harness, site demo | Adapter | `adapters/hashing` | CR-02 |
-| Signature family: the factory owns `ISignatureAdapter`, the signature types and guards, and the per-layer declaration; `signature/ed25519`, `signature/secp256k1` | daemon | Adapter | `adapters/signature` | CR-03 |
+| Signature family: the factory owns `ISignatureAdapter`, the signature types, and the per-layer declaration; `signature/ed25519`, `signature/secp256k1` | daemon | Adapter | `adapters/signature` | CR-03 |
 | KDF family: the factory owns the derivation interface, the context types, and the KDF identifier; `kdf/blake3_keyed` | harness, daemon | Adapter | `adapters/kdf` | CR-05, CR-11 |
 | Hash-to-scalar family: the factory owns the interface that maps domain-tagged bytes to a scalar and the identifier; `hash-to-scalar/keccak256` | harness, daemon | Adapter | `adapters/hash-to-scalar` | CR-08, CR-11 |
 | Ingest family: the factory owns `IIngestSourceAdapter` and the attestation-presence declaration; `ingest/npm` | daemon | Adapter | `adapters/ingest` | FF-01 |
@@ -226,7 +226,7 @@ Five API surfaces exist. The specification fixes the adapter interface signature
 
 # Proposed File Tree
 
-Each function is a module directory with one file per element: `interface.rs`, `interface_test.rs`, `interaction.spec.md`, `mock.rs`, `guard.rs`, `guard_test.rs`, `test.rs`, `mod.rs` for the implementation, and `provides.rs` for the public surface; test files attach as `#[cfg(test)]` modules and `mock.rs` sits behind a `mocks` feature. An adapter is one struct in one file implementing the repo-owned trait, so a concrete adapter's operations are its methods and claim no files of their own. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it.
+Each function is a module directory with one file per element: `interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, `mod.rs` for the implementation, and `provides.rs` for the public surface; test files attach as `#[cfg(test)]` modules and `mock.rs` sits behind a `mocks` feature. An adapter is one struct in one file implementing the repo-owned trait, so a concrete adapter's operations are its methods and claim no files of their own. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it.
 
 The layout is general responsibility, then functional need, then concrete implementation. Every adapter family is a crate under `adapters/`, and that crate is the family's factory: its root module holds the factory's elements, with `lib.rs` as the root module's implementation file holding the factory function, declaring each concrete as a private module and each function the family owns as a public module, and exposing `provides` as the crate's only public module. `interface.rs` at the root declares the generic trait, with a type only a concrete produces named as an associated type of the trait, the capability declaration every concrete fills in, and the factory function's signature and types. A concrete is a directory under `src/` named by its explicit noun, holding the same elements with `mod.rs` holding the adapter that implements the generic trait and a `provides.rs` visible to the crate only; a function a concrete owns is a module directory beneath the concrete. A consumer depends on the family crate and sees the factory's surface and nothing beneath it. The factory function takes the requested concrete, from configuration or from a deployment's hash-card, together with the declarations of the upstream adapters it must be compatible with, and returns the constructed adapter behind the generic trait or refuses. A family exists even where the MVP ships one concrete.
 
@@ -244,11 +244,8 @@ ChainTorrent/
         lib.rs
         secret/                       secret type: no formatting or serialization, explicit accessor, zeroized on drop through a crate dependency; foundation ticket
           interface.rs                types and signatures
-          interface_test.rs
           interaction.spec.md         branch contract, declarative
           mock.rs                     builders, invalidators, function mocks
-          guard.rs
-          guard_test.rs
           test.rs
           mod.rs                      implementation
           provides.rs                 public surface
@@ -266,18 +263,18 @@ ChainTorrent/
       src/
         lib.rs                        the factory: the factory function; each concrete declared private, each family-owned function declared public; provides the only public module
         interface.rs                  the generic trait with its associated types, the capability declaration, the factory's signature and types
-        interface_test.rs  interaction.spec.md  mock.rs  guard.rs  guard_test.rs  test.rs
+        interaction.spec.md  mock.rs  test.rs
         provides.rs                   the crate's public surface
         <function>/                   a function the family owns, public, with the element files
         <concrete>/                   a concrete, private, named by its explicit noun
           interface.rs                the concrete's own types and its signatures for the generic trait
-          interface_test.rs  interaction.spec.md  mock.rs  guard.rs  guard_test.rs  test.rs
+          interaction.spec.md  mock.rs  test.rs
           mod.rs                      the adapter implementing the generic trait
           provides.rs                 visible to the crate only
           <function>/                 a function the concrete owns
     encoding/       abi/              IEncoderAdapter and IDecoderAdapter under one versioned encoding identifier, the vendor-free encoding contract, the declaration; abi wraps alloy's sol types; foundation tickets
     random/         os/               the randomness interface with its deterministic mock; os over the operating system's generator; foundation tickets
-    pairing/        bn254_arkworks/  bn254_halo2curves/  bls12_381_arkworks/  bls12_381_halo2curves/   IPairingAdapter, the pairing types and guards, the curve and second-group declaration; one concrete per curve per library, each naming only its own library; harness-crypto/benchmark records the default per curve
+    pairing/        bn254_arkworks/  bn254_halo2curves/  bls12_381_arkworks/  bls12_381_halo2curves/   IPairingAdapter, the pairing types, the curve and second-group declaration; one concrete per curve per library, each naming only its own library; harness-crypto/benchmark records the default per curve
     kdf/            blake3_keyed/     the derivation interface, context types, and KDF identifier
     hash-to-scalar/ keccak256/        the interface mapping domain-tagged bytes to a scalar, and its identifier
     kem/            bb1_depth_one/    ICredentialKemAdapter with the identity-scope declaration; the concrete implements every operation and owns its parameter-set, credential, capsule, and identity-element types
@@ -285,7 +282,7 @@ ChainTorrent/
     proof/          schnorr_fs/       IDeliveryProofAdapter, the statement types, the context schema, the statement version, the declaration of algebras and verifier forms; schnorr_fs/challenge is the function the concrete owns
     cipher/         aes_ctr/          IPayloadCipherAdapter with the counter-layout and addressable-extent declarations
     hashing/        blake3_bao/       the commitment interface with root, outboard, path, chunk, and challenge types, the commitment-scheme identifier, and the commitment-scheme declaration
-    signature/      ed25519/  secp256k1/   ISignatureAdapter, the signature types and guards, the per-layer declaration
+    signature/      ed25519/  secp256k1/   ISignatureAdapter, the signature types, the per-layer declaration
     transport/      rqbit/            ISwarmTransportAdapter, the locator types, the declaration, the engine capability a transport may expose; rqbit carries the [patch.crates-io] overlay onto pinned librqbit, translation, Bao post-verification, peer injection
     discovery/      aggregate/  dht/  pex/  tracker/  local/  seeder_map/   IPeerDiscoveryAdapter and the peer types; aggregate is the family-owned function; dht, pex, and tracker consume the transport's engine capability
     storage/        redb/             the key-value store interface with tables, transactions, and checkpoints
@@ -398,7 +395,7 @@ The package-request state machine in the [Execution Trace](../research/MVP%20Exe
 
 # Interfaces
 
-The specification's fixed signatures for `ISettlementAdapter`, `ISignatureAdapter`, `IPairingAdapter`, `IKeyAgreementAdapter`, `ICredentialKemAdapter`, `IDeliveryProofAdapter`, and `IEntitlementStateAdapter`, reproduced in the system architecture, each declared in its family's factory and implemented by that family's concretes, plus the repository's function contract: injected dependencies through a context slice, deps, params, payload, and a `Success | Error` return union, guards on entry, `unknown` only at a boundary. The APIs section above covers the process and network surfaces.
+The specification's fixed signatures for `ISettlementAdapter`, `ISignatureAdapter`, `IPairingAdapter`, `IKeyAgreementAdapter`, `ICredentialKemAdapter`, `IDeliveryProofAdapter`, and `IEntitlementStateAdapter`, reproduced in the system architecture, each declared in its family's factory and implemented by that family's concretes, plus the repository's function contract: injected dependencies through a context slice, deps, params, payload, and a `Success | Error` return union, untrusted input validated on entry, `unknown` only at a boundary. The APIs section above covers the process and network surfaces.
 
 # Integration Points
 
@@ -446,7 +443,7 @@ The `storage` family with `storage/redb` for the job store and every index; the 
 
 # Shared Libraries
 
-`blake3` and `bao` inside `hashing/blake3_bao`; RustCrypto `aes` and `ctr` inside `cipher/aes_ctr`; `ed25519-dalek` inside `signature/ed25519`; `k256` through `alloy` inside `signature/secp256k1`; arkworks `ark-bn254` and `ark-bls12-381` inside `pairing/bn254_arkworks` and `pairing/bls12_381_arkworks`, and `halo2curves` inside `pairing/bn254_halo2curves` and `pairing/bls12_381_halo2curves`, with `harness-crypto/benchmark` measuring each through the pairing factory; BLAKE3 keyed-mode KDF inside `kdf/blake3_keyed`; `rand_core` with the OS RNG inside `random/os`; DID Core types in the identity factory; OpenZeppelin ERC-721 inside the EVM suite's entitlement concrete and ERC-4337 EntryPoint v0.7 on the contract side. Each library appears only inside the concrete that wraps it. Versions and verification dates in the tech stack.
+`blake3` and `bao` inside `hashing/blake3_bao`; RustCrypto `aes` and `ctr` inside `cipher/aes_ctr`; `ed25519-dalek` inside `signature/ed25519`; `k256` through `alloy` inside `signature/secp256k1`; arkworks `ark-bn254` and `ark-bls12-381` inside `pairing/bn254_arkworks` and `pairing/bls12_381_arkworks`, and `halo2curves` inside `pairing/bn254_halo2curves` and `pairing/bls12_381_halo2curves`, with `harness-crypto/benchmark` measuring each through the pairing factory; BLAKE3 keyed-mode KDF inside `kdf/blake3_keyed`; `rand_core` with the OS RNG inside `random/os`; DID Core types in the identity factory; OpenZeppelin ERC-721 inside the EVM suite's entitlement concrete and ERC-4337 EntryPoint v0.7 on the contract side. Each library appears only inside the concrete that wraps it. Versions in the tech stack.
 
 # Third Party Services
 

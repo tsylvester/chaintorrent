@@ -3,9 +3,9 @@
 
 ## Overview
 
-Draft, 2026-09-23. Specific identified risks to the ChainTorrent MVP, consolidated from the risks named in [cryptography.md](../research/cryptography.md), [MVP Scope](../research/MVP%20Scope.md), [MVP Application Requirements](../research/MVP%20Application%20Requirements.md), the [workplan To-Do list](../workplans/current/ChainTorrent%20MVP.md), and the planning documents written against them: the [business case](business-case.md), its [critique](business-case-critique.md), the [technical approach](technical-approach.md), and the [success metrics](success-metrics.md). Each risk is one block below with the template's fields; the Notes field of each carries affected components, dependencies, sequencing, guardrails, signals, and open questions, which the document descriptor asks for and the template does not name separately.
+Specific identified risks to the ChainTorrent MVP, consolidated from the risks named in [cryptography.md](../research/cryptography.md), [MVP Scope](../research/MVP%20Scope.md), [MVP Application Requirements](../research/MVP%20Application%20Requirements.md), the [workplan To-Do list](../workplans/current/ChainTorrent%20MVP.md), and the planning documents written against them: the [business case](business-case.md), its [critique](business-case-critique.md), the [technical approach](technical-approach.md), and the [success metrics](success-metrics.md). Each risk is one block below with the template's fields; the Notes field of each carries affected components, dependencies, sequencing, guardrails, signals, and open questions, which the document descriptor asks for and the template does not name separately.
 
-Ratings are qualitative. **Impact** is High when the risk would block release, break an invariant, or lose the adopting population; Medium when it would degrade a release-defining metric or require rework across more than one component; Low when it is contained. **Likelihood** is High when the sources already record the condition as present or unmeasured; Medium when it depends on a decision or measurement not yet made; Low when the design already forecloses it and only implementation error remains. The sources supply no probabilities and none are invented. Risks are ordered approximately by the product of the two ratings, highest first, with accepted residuals last because they are not open.
+Ratings are qualitative. **Impact** is High when the risk would block release, break an invariant, or lose the adopting population; Medium when it would degrade a release-defining metric or require rework across more than one component; Low when it is contained. **Likelihood** is High when the sources record the condition as inherent or unmeasured; Medium when it depends on a decision or measurement; Low when the design already forecloses it and only implementation error remains. The sources supply no probabilities and none are invented. Risks are ordered approximately by the product of the two ratings, highest first, with accepted residuals last because they are not open.
 
 A summary table is under Additional Content.
 
@@ -42,7 +42,7 @@ The principle is stated in the specification and MVP Scope: free public distribu
 ---
 
 ## Risk
-**R-02. Measured cryptographic cost exceeds the interactive latency budget.** No byte, latency, proof, or gas figure has been measured. If decapsulation per piece group multiplied by groups per package, plus a state read per attempt, adds a noticeable fraction to a developer's install, the north-star benefit is not felt and the adopting population notices.
+**R-02. Measured cryptographic cost exceeds the interactive latency budget.** Byte, latency, proof, and gas figures come only from measurement. If decapsulation per piece group multiplied by groups per package, plus a state read per attempt, adds a noticeable fraction to a developer's install, the north-star benefit is not felt and the adopting population notices.
 
 ## Impact
 High. Interactive install wall-clock is the binding constraint; the success metrics make the latency budget the only threshold that can fail a run and the first stop criterion.
@@ -108,7 +108,7 @@ External cryptographic review of the composition and the contract verifier befor
 ---
 
 ## Risk
-**R-04. Execution breadth and the strict completion boundary.** Every operational requirement carrying a boundary-crossing proof, every acceptance scenario packaged on clean machines, four control surfaces, multi-platform signed installation and service lifecycle, a contract suite, three services, and a demonstration harness. No code exists and no team is named.
+**R-04. Execution breadth and the strict completion boundary.** Every operational requirement carrying a boundary-crossing proof, every acceptance scenario packaged on clean machines, four control surfaces, multi-platform signed installation and service lifecycle, a contract suite, three services, and a demonstration harness, with no timeline or budget set against them.
 
 ## Impact
 High. Delivery risk, not design risk: the last third of the work, publishing, claims, and the transaction proof, is where schedules slip, and the completion boundary forbids mocked adapters, off-chain-only verifiers, and manually prepared machines as completion evidence.
@@ -135,7 +135,7 @@ The workplan's dependency-ordered sequence, test-first and bottom-up, with one f
 - **Sequencing:** throughout.
 - **Guardrails:** completion boundary as written; no test-only bypass.
 - **Signals:** requirement-to-proof reconciliation lagging node completion.
-- **Open questions:** team, timeline, and funding, none of which any document states.
+- **Open questions:** timeline and funding.
 
 ---
 
@@ -146,7 +146,7 @@ The workplan's dependency-ordered sequence, test-first and bottom-up, with one f
 High. If the individual developer feels no benefit beyond what they have, the adopting population does not adopt and nothing downstream follows.
 
 ## Likelihood
-Medium. The long-tail outage-survival benefit and network accumulation are real and no substitute offers them, but they depend on adoption already having happened, and the business case does not lead with them.
+Medium. The long-tail outage-survival benefit and network accumulation are real and no substitute offers them, but they depend on adoption having happened.
 
 ## Mitigation
 Lead the developer value proposition with what substitutes cannot do: the swarm holds what anyone fetched, not what one machine fetched. Use the workplan's build-platform superseeder mechanism as the adoption engine. Present supply-chain benefits, on-chain provenance and advisories that follow content, as first-class. Measure the north star on the dogfood population before release so the claim is evidenced.
@@ -187,7 +187,7 @@ State the exposure at onboarding, where the request and prefetch behaviors are c
 - A configured RPC provider logs a client's state-read stream and reconstructs its dependency set in real time.
 
 ## Mitigation Plan
-- Add the exposure to the business case's Risks and Differentiation, and to onboarding consent text.
+- Carry the exposure in onboarding consent text.
 - Prefer own-node state reads in the default configuration where a light client is available.
 - Keep the candidate constructions, ephemeral wallets, blinded reads, aggregate settlement, zero-knowledge entitlement proofs, on the workplan as a V2 design question.
 
@@ -265,7 +265,7 @@ Per-identity rate limits under relayer policy; short published lock expiries wit
 ---
 
 ## Risk
-**R-09. Open selections delay node authoring.** The attempt-rule parameters and piece-group size, the license text, and custody recovery UX remain open.
+**R-09. Measurement-gated and drafting-gated selections delay node authoring.** The attempt-rule parameters and piece-group size, the license text, and custody recovery UX gate the nodes that depend on them.
 
 ## Impact
 Medium. Each delays the nodes that depend on it; the parameters gate every node that encrypts a registered deployment and are fixed by the harness; the license gates release, not nodes; recovery UX gates the identity milestone.
@@ -391,10 +391,10 @@ Chain behind an adapter with settlement expressed as tiers rather than confirmat
 **R-13. An escrow-salt custodian would leave a record unclaimable or reintroduce a dependency; the escrow record therefore carries no maintainer commitment and no custodian exists.** Siting a salt with the First Finder would make a claim depend on a party designed to be unnecessary; siting it with the claim verifier would make a lost salt a permanently unclaimable record; and the commitment confers nothing the attestor verifier can use. The verifier establishes the claim set from upstream metadata at verification time; a commitment is reopened only with a ZK-Email verifier that computes its own at claim without a custodian.
 
 ## Impact
-None open. A custodian would have been a contract-level change after deployments exist, which is why the record's form is fixed before the contracts sprint.
+None. A custodian would be a contract-level change once deployments exist, which is why the record's form is fixed before the contracts sprint.
 
 ## Likelihood
-Closed by design; the residual is the absence of any maintainer binding at ingest, which the per-version claim design does not use.
+Foreclosed by design; the residual is the absence of any maintainer binding at ingest, which the per-version claim design does not use.
 
 ## Mitigation
 PC-02 and PC-04 carry the rule; the claim-set state layout has no commitment field.
@@ -749,32 +749,32 @@ The seed never leaves a root, so no added device can rebind, rotate, or admit. E
 
 ## Summary table
 
-| ID | Risk | Impact | Likelihood | Status | Owner by role |
-| --- | --- | --- | --- | --- | --- |
-| R-01 | Unauthorized redistribution and irrevocability of ingested packages | Medium | Medium | Stated; a license check is a later policy decision | Project lead |
-| R-02 | Cryptographic cost exceeds latency budget | High | Medium | Open, measurement | Cryptography implementer |
-| R-03 | Delivery proof or verifier flaw | High | Low / Medium | Open, review | Cryptography implementer |
-| R-04 | Execution breadth | High | High | Open, planning | Project lead |
-| R-05 | Beachhead parity with existing tools | High | Medium | Open, positioning | Project lead |
-| R-06 | Consumption privacy for developers | High / Medium | High | Open, inherited | Project lead |
-| R-07 | Daemon as supply-chain surface | High | Medium | Mitigated by requirements | Daemon implementer |
-| R-08 | Free-path abuse and subsidy | Medium | Medium | Open, funding | Relayer operator |
-| R-09 | Open selections | Medium | Medium | Open, measurement and drafting | Project lead |
-| R-10 | Legal framings and regulation | Medium / High | Medium | Open, legal review | Project lead |
-| R-11 | First Finder race and job failure | Medium | Low | Mitigated by requirements | First Finder implementer |
-| R-12 | Chain properties change | Medium | Medium | Mitigated by adapters | Chain adapter implementer |
-| R-13 | Escrow-salt custodian | None open | Closed | No commitment, no custodian | Project lead |
-| R-14 | Adapter registry governance and scaffolding | Medium | Medium | Scaffolding; replacement path held | Project lead |
-| R-15 | Settlement reversal | Low | Low | Stated property | Chain adapter implementer |
-| R-16 | Verifier key compromise | High | Low | Mitigated by requirements | Claim verifier operator |
-| R-17 | Secret leakage | High | Low / Medium | Mitigated by requirements | All implementers |
-| R-18 | Installation misconfiguration | High | Low | Mitigated by requirements | Installer implementer |
-| R-19 | Modified-client retention; common keys | Medium | High | Accepted residual | None |
-| R-20 | Pre-claim grant liveness; escrow attribution | Low / Medium | High / Low | Accepted residual; upstream serves and requests pend | None |
-| R-21 | Remote head rendezvous over claimed daemons | High when built / none in MVP | Low | Deferred; constraints recorded | Project lead |
-| R-22 | Account-to-identity mapping as deanonymizing record | High when built / none in MVP | Medium | Deferred; constraints recorded | Project lead |
-| R-23 | First-run disk and bandwidth doubling | Medium | High | Mitigated by disclosure, settings, quota, cache-only mode | Daemon implementer |
-| R-24 | Lost or compromised device; custody upgrade changing the principal | Medium | Medium / Low | Mitigated by root-held seed, on-chain revocation read in every attempt, verified upgrade | Daemon implementer |
+| ID | Risk | Impact | Likelihood | Owner by role |
+| --- | --- | --- | --- | --- |
+| R-01 | Unauthorized redistribution and irrevocability of ingested packages | Medium | Medium | Project lead |
+| R-02 | Cryptographic cost exceeds latency budget | High | Medium | Cryptography implementer |
+| R-03 | Delivery proof or verifier flaw | High | Low / Medium | Cryptography implementer |
+| R-04 | Execution breadth | High | High | Project lead |
+| R-05 | Beachhead parity with existing tools | High | Medium | Project lead |
+| R-06 | Consumption privacy for developers | High / Medium | High | Project lead |
+| R-07 | Daemon as supply-chain surface | High | Medium | Daemon implementer |
+| R-08 | Free-path abuse and subsidy | Medium | Medium | Relayer operator |
+| R-09 | Measurement-gated and drafting-gated selections | Medium | Medium | Project lead |
+| R-10 | Legal framings and regulation | Medium / High | Medium | Project lead |
+| R-11 | First Finder race and job failure | Medium | Low | First Finder implementer |
+| R-12 | Chain properties change | Medium | Medium | Chain adapter implementer |
+| R-13 | Escrow-salt custodian | None | Foreclosed by design | Project lead |
+| R-14 | Adapter registry governance and scaffolding | Medium | Medium | Project lead |
+| R-15 | Settlement reversal | Low | Low | Chain adapter implementer |
+| R-16 | Verifier key compromise | High | Low | Claim verifier operator |
+| R-17 | Secret leakage | High | Low / Medium | All implementers |
+| R-18 | Installation misconfiguration | High | Low | Installer implementer |
+| R-19 | Modified-client retention; common keys | Medium | High | None |
+| R-20 | Pre-claim grant liveness; escrow attribution | Low / Medium | High / Low | None |
+| R-21 | Remote head rendezvous over claimed daemons | High when built / none in MVP | Low | Project lead |
+| R-22 | Account-to-identity mapping as deanonymizing record | High when built / none in MVP | Medium | Project lead |
+| R-23 | First-run disk and bandwidth doubling | Medium | High | Daemon implementer |
+| R-24 | Lost or compromised device; custody upgrade changing the principal | Medium | Medium / Low | Daemon implementer |
 
 ## Relationship to the other documents
 

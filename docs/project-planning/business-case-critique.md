@@ -1,7 +1,7 @@
 <!-- Template: antithesis_business_case_critique.md -->
 # ChainTorrent Business Case Critique
 
-Draft, 2026-09-23. A critical review of [business-case.md](business-case.md), read against the source documents it claims to derive from ([cryptography.md](../research/cryptography.md), [MVP Scope](../research/MVP%20Scope.md), [MVP Application Requirements](../research/MVP%20Application%20Requirements.md), [MVP Execution Trace](../research/MVP%20Execution%20Trace.md), the three cryptography research files, and the [workplan](../workplans/current/ChainTorrent%20MVP.md)) and against the companion planning documents ([feature-spec.md](feature-spec.md), [success-metrics.md](success-metrics.md), [technical-approach.md](technical-approach.md)). The review treats the business case's own reasoning as untrusted and re-derives each claim from the sources. Severity is stated per finding: **high** means a reader relying on the claim would make a wrong decision; **medium** means the claim is misleading or incomplete in a way that matters; **low** means precision or presentation.
+A critical review of [business-case.md](business-case.md), read against the source documents it claims to derive from ([cryptography.md](../research/cryptography.md), [MVP Scope](../research/MVP%20Scope.md), [MVP Application Requirements](../research/MVP%20Application%20Requirements.md), [MVP Execution Trace](../research/MVP%20Execution%20Trace.md), the three cryptography research files, and the [workplan](../workplans/current/ChainTorrent%20MVP.md)) and against the companion planning documents ([feature-spec.md](feature-spec.md), [success-metrics.md](success-metrics.md), [technical-approach.md](technical-approach.md)). The review treats the business case's own reasoning as untrusted and re-derives each claim from the sources. Severity is stated per finding: **high** means a reader relying on the claim would make a wrong decision; **medium** means the claim is misleading or incomplete in a way that matters; **low** means precision or presentation.
 
 # Executive Summary
 
@@ -70,7 +70,7 @@ Things that will slow or block the plan whether or not the argument is right.
 - **The completion boundary is unusually strict**: twenty-seven scenarios through packaged applications on clean machines, no mocked adapter, no off-chain-only verifier. That is correct and it is expensive.
 - **Platform breadth.** Signed installation, service lifecycle, credential stores, and firewall handling on every supported OS and architecture are each a body of work with no shared shortcut.
 - **External cryptographic review** has a lead time and a cost the document does not estimate.
-- **Legal drafting** of a source-available license with a conformance clause is on the release path and unstarted.
+- **Legal drafting** of a source-available license with a conformance clause is on the release path.
 - **The relayer grant pool** must exist before the first free onboarding and its source is unnamed.
 
 # Errors
@@ -134,9 +134,9 @@ Where the business case disagrees with the sources or with the companion plannin
 
 # Feasibility
 
-**Cryptographic feasibility: high.** The construction is closed at the research level with proof sketches, concrete loss terms, an independent re-derivation, and named assumptions. Every component is standard: a depth-one Boneh–Boyen KEM, ElGamal envelopes, generalized Schnorr under Fiat–Shamir, EVM precompiles. No primitive of unknown existence or efficiency is required. What is unmeasured is cost, and the harness is designed to measure it before anything depends on it.
+**Cryptographic feasibility: high.** The construction carries proof sketches, concrete loss terms, an independent re-derivation, and named assumptions. Every component is standard: a depth-one Boneh–Boyen KEM, ElGamal envelopes, generalized Schnorr under Fiat–Shamir, EVM precompiles. No primitive of unknown existence or efficiency is required. What is unmeasured is cost, and the harness is designed to measure it before anything depends on it.
 
-**Engineering feasibility: moderate, with high delivery risk from breadth.** Nothing in the module catalogue is novel engineering, but the surface is wide: 115 operational requirements each carrying a boundary-crossing proof, four control surfaces, multi-platform signed installation and service lifecycle, a contract suite with on-chain pairing verification, three services, and a demonstration harness. No code exists and no team is named. The workplan's sequence produces a demonstrable result at its sixth step, which is the right internal checkpoint, and the completion boundary is strict enough that the last third of the work, publishing, claims, and the transaction proof, is where schedules slip.
+**Engineering feasibility: moderate, with high delivery risk from breadth.** Nothing in the module catalogue is novel engineering, but the surface is wide: 115 operational requirements each carrying a boundary-crossing proof, four control surfaces, multi-platform signed installation and service lifecycle, a contract suite with on-chain pairing verification, three services, and a demonstration harness. The workplan's sequence produces a demonstrable result at its sixth step, which is the right internal checkpoint, and the completion boundary is strict enough that the last third of the work, publishing, claims, and the transaction proof, is where schedules slip.
 
 **Economic feasibility: undetermined by design.** The MVP is $0.00 and does not test willingness to pay. Cost per install becomes measurable; revenue per install does not. The relayer subsidy grows with adoption and is unfunded. The business case is right not to invent these figures and wrong not to say what it would take to obtain them.
 

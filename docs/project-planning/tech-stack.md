@@ -1,7 +1,7 @@
 <!-- Template: synthesis_tech_stack.md -->
 # Tech Stack Recommendations
 
-Draft, 2026-09-23. The technologies the ChainTorrent MVP is built with. Two kinds of statement appear and are marked throughout. **Fixed** means a source document decides it: the [MVP Application Requirements](../research/MVP%20Application%20Requirements.md) fix the languages and runtimes, [cryptography.md](../research/cryptography.md) and [MVP Scope](../research/MVP%20Scope.md) fix the primitives and standards, and the [product requirements](product-requirements.md) record the launch network and platform matrix. **Recommended** means this document proposes it and nothing in the sources decides it; each such choice is a candidate the first node to consume it may confirm or replace, and none becomes a requirement by appearing here. Crate names were checked against crates.io on 2026-09-23 with the latest version and last-update date noted, so that nothing is recommended from memory; those checks are external context, not repository facts.
+The technologies the ChainTorrent MVP is built with. Two kinds of statement appear and are marked throughout. **Fixed** means a source document decides it: the [MVP Application Requirements](../research/MVP%20Application%20Requirements.md) fix the languages and runtimes, [cryptography.md](../research/cryptography.md) and [MVP Scope](../research/MVP%20Scope.md) fix the primitives and standards, and the [product requirements](product-requirements.md) record the launch network and platform matrix. **Recommended** means this document proposes it and nothing in the sources decides it; each such choice is a candidate the first node to consume it may confirm or replace, and none becomes a requirement by appearing here. Crate versions are external context, not repository facts, and the node that pins a crate confirms its version.
 
 ## Frontend Stack
 
@@ -11,7 +11,7 @@ Draft, 2026-09-23. The technologies the ChainTorrent MVP is built with. Two kind
 
 | Surface | Choice | Note |
 | --- | --- | --- |
-| Desktop application | Tauri 2 stable | Tauri 3 is in alpha as of 2026-09; the MVP targets the stable line and migrates when 3 is stable. Tauri's Rust core hosts the same workflow crates the daemon uses; the webview shows state, it does not compute it |
+| Desktop application | Tauri 2 stable | The MVP targets the stable line. Tauri's Rust core hosts the same workflow crates the daemon uses; the webview shows state, it does not compute it |
 | Desktop webview UI | Plain TypeScript with a small component library, no framework mandated | The desktop surface is configuration, status, diagnostics, and consent; it does not need a large framework. Whichever is chosen, the UI calls Tauri commands that call shared Rust |
 | Visual Studio Code extension | TypeScript against the VS Code extension API, spawning or connecting to the daemon over the authenticated local IPC | The extension bundles or downloads the signed Rust installer and never reimplements it |
 | npm bootstrap package | A minimal `postinstall`-free package exposing a `bin` that invokes the signed Rust installer | Avoiding `postinstall` keeps the package from executing on transitive install; the developer runs the binary deliberately through `npx chaintorrent`, one command with no install-time script, which is the consent posture MVP Scope requires and the command SI-02 names |
@@ -25,12 +25,12 @@ Draft, 2026-09-23. The technologies the ChainTorrent MVP is built with. Two kind
 
 **Recommended.**
 
-| Concern | Choice | Verified | Note |
+| Concern | Choice | Basis | Note |
 | --- | --- | --- | --- |
-| Async runtime | `tokio` | Widely used; not re-verified | The daemon, seed host, relayer, verifier, and harness are all long-running async services |
+| Async runtime | `tokio` | Recommended | The daemon, seed host, relayer, verifier, and harness are all long-running async services |
 | Workspace layout | One Cargo workspace; a domain crate; a workflows crate; one crate per adapter family, the crate being the family's factory with its concretes private beneath it; one crate per deployable; each crate created by the node of the first module that lives in it, admitted by the manifest's glob members | Per the product requirements' Resolved Positions | Crate boundaries are the ring boundaries, so a domain crate that depends on Tauri or a chain SDK fails to compile rather than to review, and a consumer that names a concrete fails to compile because the concrete is private |
 | Local IPC | The `ipc` family: Unix domain sockets on macOS and Linux and named pipes on Windows as its concretes, with the request-authenticated framing, the principal rules, and the server as family-owned functions | Recommended | XA-02 requires authenticated least-privilege local APIs; the transport is per platform, the authentication is shared Rust |
-| EVM client | `alloy` 2.5.0, updated 2026-09-23, inside `chain/base`, `encoding/abi`, `signature/secp256k1`, and the harness's `verifier/evm` | Yes | Contract bindings, transaction submission, EIP-712 typed data, view calls, and event reads; the successor to ethers-rs and the maintained choice; no consumer names it |
+| EVM client | `alloy` 2.5.0, inside `chain/base`, `encoding/abi`, `signature/secp256k1`, and the harness's `verifier/evm` | Recommended | Contract bindings, transaction submission, EIP-712 typed data, view calls, and event reads; the successor to ethers-rs and the maintained choice; no consumer names it |
 | Solidity toolchain | Foundry: `forge` for build and test, `anvil` for a local chain, `cast` for scripting, inside `contracts/evm` | External context | Foundry's test harness is the natural place for the mutation and replay vectors the verifier must reject; Anvil provides the local chain before Base Sepolia |
 | Contract language | Solidity for the EVM suite, the on-chain concrete of the chain family, with the pairing library over the EIP-196, EIP-197, and EIP-2537 precompile addresses | Fixed language; library recommended | Constants and test vectors generated from the Rust reference by `harness-crypto/generate/evm`; a further chain form is a further suite with its own toolchain |
 | Canonical encoding | The `encoding` family: a factory owning `IEncoderAdapter` and `IDecoderAdapter` under one versioned encoding identifier, the repo-owned encoding contract that each encoded type implements in its own module, and the declaration; `encoding/abi` implementing both through `alloy`'s sol types, the only module naming `alloy` for encoding; one encoding for everything hashed, signed, stored, or framed over IPC | Per the product requirements' Resolved Positions | Canonical encoding is load-bearing for the delivery statement and the hash-card, and the contracts reproduce ABI encoding natively for every value they recompute; a later encoding is a further concrete named by the hash-card's encoding identifier |
@@ -43,13 +43,13 @@ Draft, 2026-09-23. The technologies the ChainTorrent MVP is built with. Two kind
 
 **Recommended.**
 
-| Store | Choice | Verified | Note |
+| Store | Choice | Basis | Note |
 | --- | --- | --- | --- |
-| Durable job store and local indexes | The `storage` family, its factory owning the key-value store interface with tables, transactions, and checkpoints; `storage/redb` over `redb` 4.3.0, updated 2026-09-15 | Yes | An embedded, transactional, pure-Rust key-value store; ACID transactions give the checkpointing that XA-03 and FF-03 require without an external database process; the job engine, configuration registry, and every index consume the factory and name no store library |
+| Durable job store and local indexes | The `storage` family, its factory owning the key-value store interface with tables, transactions, and checkpoints; `storage/redb` over `redb` 4.3.0 | Recommended | An embedded, transactional, pure-Rust key-value store; ACID transactions give the checkpointing that XA-03 and FF-03 require without an external database process; the job engine, configuration registry, and every index consume the factory and name no store library |
 | Plaintext CAS | The `cas` family, its factory owning commit, serve, pin, quota, eviction, and reuse metrics; `cas/filesystem` with a content-hash directory layout of verified tarballs, atomic rename on commit, and its index through the storage family; package managers extract per project and nothing links into the store | Recommended | PR-04's atomic commit is a temp-file-then-rename discipline; reuse is at the tarball, so no linker and no shared installed tree, which a pnpm-style store would need and the MVP does not promise |
 | Ciphertext store | Inside `seed-host/owned`, the filesystem keyed by ciphertext root with an index through the storage family recording holding reason | Recommended | SW-05 requires obligated versus voluntary holdings recorded; under `seed-host/rqbit` the store is whatever the rqbit application uses and the concrete translates |
-| Custody store | `custody/local_keystore` over the OS credential store through `keyring` 4.2.0, updated 2026-08-29, holding a wrapping key; envelope keys, identity keys, and per-entitlement envelopes encrypted under it on disk | Yes | The accepted default and the custody family's first concrete: a local keystore under Windows Credential Manager, macOS Keychain, or Linux Secret Service. Credential stores hold small secrets, so the pattern is a wrapping key in the store and an encrypted blob on disk; no other module touches the credential store |
-| Chain state reads | The chain family's quorum view over `chain/base`, `alloy` view calls against more than one configured Base RPC endpoint, aggregated and failing closed on disagreement | Yes | XA-06 |
+| Custody store | `custody/local_keystore` over the OS credential store through `keyring` 4.2.0, holding a wrapping key; envelope keys, identity keys, and per-entitlement envelopes encrypted under it on disk | Recommended | The accepted default and the custody family's first concrete: a local keystore under Windows Credential Manager, macOS Keychain, or Linux Secret Service. Credential stores hold small secrets, so the pattern is a wrapping key in the store and an encrypted blob on disk; no other module touches the credential store |
+| Chain state reads | The chain family's quorum view over `chain/base`, `alloy` view calls against more than one configured Base RPC endpoint, aggregated and failing closed on disagreement | Recommended | XA-06 |
 | Envelope recovery | Event and calldata reads from a full-history Base node through `chain/base` | Recommended | CD-04; a configured archive endpoint is an operating dependency to state |
 | Metrics store | `telemetry/local_metrics`, local append-only metrics under the daemon with the RO-03 schema over the storage family, exported through the diagnostics API | Recommended | No external metrics service is required by the sources |
 
@@ -59,9 +59,9 @@ Draft, 2026-09-23. The technologies the ChainTorrent MVP is built with. Two kind
 
 **Recommended.**
 
-| Concern | Choice | Verified | Note |
+| Concern | Choice | Basis | Note |
 | --- | --- | --- | --- |
-| Release packaging | `cargo-dist` 0.32.0, updated 2026-05-22 | Yes | Builds per-platform archives and installers for Rust binaries; the Tauri application uses Tauri's own bundler |
+| Release packaging | `cargo-dist` 0.32.0 | Recommended | Builds per-platform archives and installers for Rust binaries; the Tauri application uses Tauri's own bundler |
 | Platform service lifecycle | The `lifecycle` family, its factory owning the service-lifecycle interface and the single-instance lock; `lifecycle/systemd` on Linux, `lifecycle/launchd` on macOS, `lifecycle/windows_service`, and `lifecycle/scheduled_task` where elevation is unavailable | Recommended | SI-06 requires survival across reboot with a user-service fallback; each platform is a concrete beneath one factory |
 | Code signing | Apple Developer ID signing and notarization on macOS; Authenticode on Windows; Sigstore `cosign` signatures published alongside every artifact on all three platforms; verified on the installing machine through the `artifact-verifier` family with `artifact-verifier/sigstore`, `artifact-verifier/authenticode`, and `artifact-verifier/apple_notarization` | External context | SI-04 requires authentication before execution; platform signing satisfies the OS gate and Sigstore gives the installer a platform-independent verification path; each scheme is a concrete beneath one factory |
 | Continuous integration | GitHub Actions with a matrix over Windows, macOS, and Linux, running unit, integration, and the clean-machine end-to-end scenarios on ephemeral runners | Recommended | XA-07 requires the full suite on a clean machine; ephemeral runners are the clean machine |
@@ -86,7 +86,7 @@ Draft, 2026-09-23. The technologies the ChainTorrent MVP is built with. Two kind
 | Telemetry scanning | A test that greps every log, trace, metric, and crash artifact produced by the acceptance run for known secret encodings and fails on any hit | RO-03, AS-20 |
 | Secret-free diagnostics | A `domain` secret type that implements no formatting or serialization trait, exposes the wrapped value only through an explicit accessor, and zeroizes on drop, proven at compile time | Type-level enforcement rather than review; the tracing layer carries correlation and does no redaction |
 | Workspace lints | The manifest's lint table forbids `unsafe_code` and denies clippy's `unwrap_used`, `expect_used`, `panic`, and `as_conversions` in production code, exempting test modules and the `mocks` feature | The typing rules checked by `cargo clippy` on every edit |
-| Signing-key custody | Release signing keys under the same custody discipline as issuance material, held off the CI runner with a rotation path | The non-functional review's NF-S11 gap |
+| Signing-key custody | Release signing keys under the same custody discipline as issuance material, held off the CI runner with a rotation path | NF-S11, XA-08 |
 
 ## Shared Libraries
 
@@ -94,19 +94,19 @@ Draft, 2026-09-23. The technologies the ChainTorrent MVP is built with. Two kind
 
 **Recommended Rust libraries.**
 
-| Primitive | Crate | Verified | Note |
+| Primitive | Crate | Basis | Note |
 | --- | --- | --- | --- |
-| BLAKE3 | `blake3` 1.8.7, updated 2026-08-20, inside `hashing/blake3_bao` and `kdf/blake3_keyed` | Yes | The reference implementation |
-| Bao verified streaming | `bao` 0.13.1, updated 2025-04-07, inside `hashing/blake3_bao` | Yes | By the BLAKE3 authors; encoding, slicing, and outboard verification for ciphertext, sidecar, and plaintext roots and for random storage challenges. Its release cadence is slower than `blake3`'s and the concrete should pin it |
-| AES-256-CTR | RustCrypto `aes` and `ctr`, inside `cipher/aes_ctr` | Widely used; not re-verified | The counter layout is the protocol's: IV in the high 64 bits, block index in the low 64, fields not integer addition; the concrete constructs counter blocks itself and uses the crate only for the block cipher and keystream |
-| Ed25519 | `ed25519-dalek`, inside `signature/ed25519` | Widely used; not re-verified | With domain separation and complete-message binding supplied by the concrete |
-| secp256k1 | `k256` from RustCrypto, or `alloy`'s signer which wraps it, inside `signature/secp256k1` | Widely used; not re-verified | EIP-712 signing through `alloy` |
-| Pairing curves, arkworks | arkworks: `ark-bn254` 0.6.0 and `ark-bls12-381` 0.6.0, both updated 2026-04-26, over `ark-ec` and `ark-ff`, inside `pairing/bn254_arkworks` and `pairing/bls12_381_arkworks` | Yes | One API over both curves; multi-scalar multiplication and pairing-product evaluation provided; encodings adapted to the precompile formats inside each concrete |
-| Pairing curves, `halo2curves` | `halo2curves` 0.10.0, updated 2026-05-14, inside `pairing/bn254_halo2curves` and `pairing/bls12_381_halo2curves` | Yes | Covers both curves with performance-oriented implementations; `harness-crypto/benchmark` constructs every pairing concrete through the pairing factory, measures each, and records the default per curve; every concrete remains beneath the factory |
-| BLS12-381 only, not recommended | `blstrs` 0.7.1, last updated 2023-08-14 | Yes | High performance but two years without a release, and it covers one curve; named so it is not rediscovered |
+| BLAKE3 | `blake3` 1.8.7, inside `hashing/blake3_bao` and `kdf/blake3_keyed` | Recommended | The reference implementation |
+| Bao verified streaming | `bao` 0.13.1, inside `hashing/blake3_bao` | Recommended | By the BLAKE3 authors; encoding, slicing, and outboard verification for ciphertext, sidecar, and plaintext roots and for random storage challenges. Its release cadence is slower than `blake3`'s and the concrete should pin it |
+| AES-256-CTR | RustCrypto `aes` and `ctr`, inside `cipher/aes_ctr` | Recommended | The counter layout is the protocol's: IV in the high 64 bits, block index in the low 64, fields not integer addition; the concrete constructs counter blocks itself and uses the crate only for the block cipher and keystream |
+| Ed25519 | `ed25519-dalek`, inside `signature/ed25519` | Recommended | With domain separation and complete-message binding supplied by the concrete |
+| secp256k1 | `k256` from RustCrypto, or `alloy`'s signer which wraps it, inside `signature/secp256k1` | Recommended | EIP-712 signing through `alloy` |
+| Pairing curves, arkworks | arkworks: `ark-bn254` 0.6.0 and `ark-bls12-381` 0.6.0, over `ark-ec` and `ark-ff`, inside `pairing/bn254_arkworks` and `pairing/bls12_381_arkworks` | Recommended | One API over both curves; multi-scalar multiplication and pairing-product evaluation provided; encodings adapted to the precompile formats inside each concrete |
+| Pairing curves, `halo2curves` | `halo2curves` 0.10.0, inside `pairing/bn254_halo2curves` and `pairing/bls12_381_halo2curves` | Recommended | Covers both curves with performance-oriented implementations; `harness-crypto/benchmark` constructs every pairing concrete through the pairing factory, measures each, and records the default per curve; every concrete remains beneath the factory |
+| BLS12-381 only, not recommended | `blstrs` | Not recommended | High performance, but it covers one curve and its releases are infrequent; named so it is not rediscovered |
 | KDF | BLAKE3's key-derivation mode, `derive_key`, with one fixed context string per use and the canonical encoding of the inputs as key material, for every derivation a client performs off chain, as `kdf/blake3_keyed` beneath the `kdf` factory; not HKDF, which is a different construction | Fixed by the specification | Context strings, input serialization, output length, and the suite identifier are frozen at the `kdf/blake3_keyed` ticket, with known-answer vectors from an independent implementation as well as the Rust reference so a shared mistake cannot pass |
 | Hash-to-scalar and challenge | keccak256 under a domain tag, reduced modulo the group order, as `hash-to-scalar/keccak256` beneath the `hash-to-scalar` factory, for the identity mapping and the delivery proof's challenge, because the contract recomputes both and the EVM has no BLAKE3 precompile | Fixed by the specification | The construction is fixed at the `hash-to-scalar/keccak256` and `proof/schnorr_fs/challenge` tickets and mirrored in Solidity through the generated vectors |
-| Randomness | `rand_core` with the OS RNG through `getrandom`, inside `random/os` beneath the `random` factory, whose deterministic mock serves vectors and tests | Widely used | CR-05 requires a cryptographic source for First Finder lineage, and every production draw passes through the factory |
+| Randomness | `rand_core` with the OS RNG through `getrandom`, inside `random/os` beneath the `random` factory, whose deterministic mock serves vectors and tests | Recommended | CR-05 requires a cryptographic source for First Finder lineage, and every production draw passes through the factory |
 | DID Documents | `serde`-based types over the DID Core data model, in the identity factory's binding schema | Recommended | The on-chain fields are two storage words; the document is anchored by hash and resolved off chain |
 
 **Recommended Solidity libraries.** A project-owned pairing library over the precompile addresses in both verifier forms, with constants and vectors generated from the Rust reference; OpenZeppelin for ERC-721 inside the suite's entitlement concrete behind `IEntitlement`, and for access control, which are conventional; ERC-4337 EntryPoint v0.7 as deployed on Base for the paymaster integration.
@@ -136,7 +136,7 @@ Per deployable application, the stack it is built from.
 | Application | Stack |
 | --- | --- |
 | Local daemon and package host | Rust, `tokio`, the `package-host` family's npm concrete with its HTTP server for the registry protocol, the `ipc` family's authenticated transports, the job engine over the `storage` family, the `cas` family's filesystem concrete, shared workflow crates |
-| Swarm transport and seed host | Rust; `librqbit` 9.0.1, updated 2026-08-20, compiled into `transport/rqbit` as the MVP's sole transport concrete beneath the `transport` factory, carried as a soft fork through a `[patch.crates-io]` overlay onto tagged upstream releases with the commit pinned; uTP, magnet links, resume, rate limiting, and torrent creation come from the library, and its DHT, PEX, and trackers are `discovery` concretes reached through the transport's engine capability; the transport concrete owns root-to-infohash translation, torrent creation per object with each sidecar its own object and locator, Bao verification of every completed piece after the library's SHA-1 check, schedule and power policy, and seeder-map peer injection, while holding reason, quota, and eviction belong to `seed-host/owned`; a BLAKE3-native transport is a V2 concrete beneath the same factory |
+| Swarm transport and seed host | Rust; `librqbit` 9.0.1, compiled into `transport/rqbit` as the MVP's sole transport concrete beneath the `transport` factory, carried as a soft fork through a `[patch.crates-io]` overlay onto tagged upstream releases with the commit pinned; uTP, magnet links, resume, rate limiting, and torrent creation come from the library, and its DHT, PEX, and trackers are `discovery` concretes reached through the transport's engine capability; the transport concrete owns root-to-infohash translation, torrent creation per object with each sidecar its own object and locator, Bao verification of every completed piece after the library's SHA-1 check, schedule and power policy, and seeder-map peer injection, while holding reason, quota, and eviction belong to `seed-host/owned`; a BLAKE3-native transport is a V2 concrete beneath the same factory |
 | Cryptographic validation harness | Rust; the pairing, KDF, hash-to-scalar, KEM, envelope, and proof families constructed through their factories, the benchmark over every pairing concrete through the pairing factory; the harness's `generate` and `verifier` families with `evm` concretes, the verifier concrete using `alloy` against a Foundry-deployed verifier on Anvil and then Base Sepolia; `criterion`-style timing; output as release-evidence JSON |
 | Contract suite | Solidity with Foundry under `contracts/evm`; OpenZeppelin ERC-721 inside the entitlement concrete behind `IEntitlement`; project pairing library; `IAttestationVerifier` with the npm P-256 concrete; EntryPoint v0.7 integration; the on-chain adapter registry and factory |
 | Relayer or paymaster | Rust, `alloy`, the `bundler` factory with one concrete per provider, the `submission` family's sponsored concretes, rate-limit policy in configuration |
@@ -169,7 +169,7 @@ Feedback:
 
 Feedback:
 
-**Bundler and paymaster provider.** No provider chosen. Assumption if blank: evaluated during the relayer milestone against rate-limit and cost-reporting capabilities, as a concrete beneath the relayer's `bundler` factory.
+**Bundler and paymaster provider.** Assumption if blank: evaluated during the relayer milestone against rate-limit and cost-reporting capabilities, as a concrete beneath the relayer's `bundler` factory.
 
 Feedback:
 
@@ -181,7 +181,7 @@ Feedback:
 
 - Author each family's factory ticket before its concretes, so the declaration exists before any consumer or resolver reads it.
 - Author the pairing factory and its concretes per curve per library, then measure every concrete through the factory at the `harness-crypto/benchmark` ticket and record the default per curve there.
-- Pin each recommended crate at the version verified here in the concrete that first wraps it, with `cargo-deny` enforcing the license allowlist from the `workspace/cargo` ticket.
+- Pin each recommended crate in the concrete that first wraps it, with `cargo-deny` enforcing the license allowlist from the `workspace/cargo` ticket.
 - Configure Foundry at the `contracts/evm/PairingLib` ticket, and Anvil and the Base Sepolia deployment script at the `contracts/evm/deploy` ticket.
 - Begin Apple and Microsoft code-signing enrollment and generate Sigstore identities during the harness grouping.
 - Stand up the Windows, macOS, and Linux CI matrix with ephemeral runners at the `workspace/ci` ticket, so every ticket's proof runs where the completion boundary requires.
@@ -191,8 +191,8 @@ Feedback:
 
 ## Additional Content
 
-**Why nothing here is a requirement.** The Application Requirements fix languages, runtimes, primitives, standards, and structure, and they say that a later workplan may split or combine implementation units without changing a requirement. A library is an implementation unit. Naming one here records a recommendation and its verification date; the node that first consumes it makes the choice, and the standards that govern that node, not this document, decide whether it conforms.
+**Why nothing here is a requirement.** The Application Requirements fix languages, runtimes, primitives, standards, and structure, and they say that a later workplan may split or combine implementation units without changing a requirement. A library is an implementation unit. Naming one here records a recommendation; the node that first consumes it makes the choice, and the standards that govern that node, not this document, decide whether it conforms.
 
-**What was verified and how.** Twelve crate records were read from crates.io on 2026-09-23 for name, latest version, last update, and repository: `ark-bn254`, `ark-bls12-381`, `blstrs`, `bao`, `keyring`, `librqbit`, `alloy`, `tauri`, `cargo-dist`, `halo2curves`, `blake3`, and `redb`. Crates marked "widely used; not re-verified" are RustCrypto and dalek libraries whose status is well established but which were not fetched this session. Foundry, Slither, Sigstore, OpenZeppelin, the bundler providers, and the wallet providers are external context from general knowledge and from the peers' network review.
+**External context.** Crate versions, Foundry, Slither, Sigstore, OpenZeppelin, the bundler providers, and the wallet providers are external context, not repository facts.
 
 **Relationship to the other documents.** The technical approach's family table names the MVP concrete beneath each family's factory; this document names the libraries those concretes are built from, and each library appears only inside the concrete that wraps it. The dependency map's harness tickets consume the pairing, KDF, and EVM choices here first. The product requirements' Resolved Positions hold the decisions this document treats as fixed: Base, BLS12-381 primary with BN254 retained, Windows, macOS, and Linux, and the crate-per-family workspace in which each crate is its family's factory.

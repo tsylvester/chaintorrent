@@ -1,7 +1,7 @@
 <!-- Template: thesis_success_metrics.md -->
 # ChainTorrent MVP Success Metrics
 
-Draft, 2026-09-23. Derived from the Cost Instrumentation section of [MVP Scope](../research/MVP%20Scope.md), the Relaying and Observability requirements of [MVP Application Requirements](../research/MVP%20Application%20Requirements.md), and the acceptance scenarios both documents gate release on. Those sources are explicit that no cost, latency, or size figure may be asserted from formulas before it is measured, and that the interactive latency budget is declared before the measurement run so instrumentation produces a pass or a failure rather than a number. This document therefore defines every metric, its direction, its source, and the point at which its target is set. It states no target the sources do not, and it marks each threshold that is set at budget declaration as such.
+Derived from the Cost Instrumentation section of [MVP Scope](../research/MVP%20Scope.md), the Relaying and Observability requirements of [MVP Application Requirements](../research/MVP%20Application%20Requirements.md), and the acceptance scenarios both documents gate release on. Those sources are explicit that no cost, latency, or size figure may be asserted from formulas before it is measured, and that the interactive latency budget is declared before the measurement run so instrumentation produces a pass or a failure rather than a number. This document therefore defines every metric, its direction, its source, and the point at which its target is set. It states no target the sources do not, and it marks each threshold that is set at budget declaration as such.
 
 # Outcome Alignment
 
@@ -175,7 +175,7 @@ The sources name roles, not people. Ownership is assigned by role.
 
 # Additional Content
 
-**Why no targets appear for cost and cryptographic metrics.** The research closed with proof sketches and by-formula cost estimates and states that no byte, latency, proof, or settlement cost has been measured. MVP Scope requires that the piece-group size and curve be chosen from measurement, not asserted from formulas. Putting a target on an unmeasured quantity would reverse that ordering. These metrics are reported as observed values, the first observation becomes the baseline, and the only threshold in this document that can fail a run is the latency budget, which the project declares before measuring.
+**Why no targets appear for cost and cryptographic metrics.** The research carries proof sketches and by-formula cost estimates, and every byte, latency, proof, and settlement cost comes from measurement. MVP Scope requires that the piece-group size and curve be chosen from measurement, not asserted from formulas. Putting a target on an unmeasured quantity would reverse that ordering. These metrics are reported as observed values, the first observation becomes the baseline, and the only threshold in this document that can fail a run is the latency budget, which the project declares before measuring.
 
 **What the metrics do not cover, by design.** Willingness to pay, price discovery, resale volume, seeder compensation, Sybil resistance, retention enforcement, and the load profile of streaming content are deferred under MVP Scope and produce no observation in the MVP. The per-attempt mechanism is validated while its load profile is not, because install-once content crosses the attempt boundary rarely; decapsulation time per group is recorded precisely so that a later content class has a baseline.
 
