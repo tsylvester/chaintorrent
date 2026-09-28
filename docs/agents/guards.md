@@ -56,7 +56,7 @@ export function isOwnedObject(value: unknown): value is OwnedObject {
 ```
 ## Finding the imported guard — search the predicate, never a name
 
-You do not guess guard names. A wrong guess followed by "no guard exists" is a failed task. Guard names are guesses; type predicates are facts. Any guard for type `SomeType`, whatever it is named, contains `is SomeType` in its signature — that is what makes it a guard for that type. In Rust the guard is the `impl TryFrom<…> for SomeType`, and `for SomeType` is the invariant. Search on the **type** name, never the **property** name.
+You do not guess guard names. A wrong guess followed by "no guard exists" is a failed task. Guard names are guesses; type predicates are facts. Any guard for type `SomeType`, whatever it is named, contains `is SomeType` in its signature — that is what makes it a guard for that type. Search on the **type** name, never the **property** name.
 
 Run these in order; stop at the first hit:
 
@@ -133,8 +133,6 @@ This is the complete check, not a shortcut. The constructor is the type's only p
 **The shape check belongs on the constructor params.** That object type is where untrusted data actually enters, and it takes a full data guard — `isCompressionKeyConstructorParams` — checking presence, invariants, and the type of every property, per the per-property procedure above.
 
 A class instance is never a boundary type. Nothing arrives from a queue, JSON body, or DB row as an instance — serialization yields a plain object, which is params-shaped, not an instance. If you believe you are receiving an instance across a runtime boundary, you are receiving its params: guard those, then construct.
-
-The Rust form: an owned struct with private fields and a `try_new(params)` constructor is a member if and only if it was constructed, so it has no shape guard at all, and the `TryFrom` guard belongs on its constructor-params struct. An injected adapter is a trait object, and its guard is the trait bound the compiler already checks.
 
 ## Forbidden substitutes
 

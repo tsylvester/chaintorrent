@@ -23,14 +23,9 @@ The Rust form: the module's `mod.rs` keeps every element private and exposes `pr
 ```rust
 // mod.rs
 mod interface;
-mod guard;
 #[cfg(feature = "mocks")]
 mod mock;
 pub mod provides;
-#[cfg(test)]
-mod interface_test;
-#[cfg(test)]
-mod guard_test;
 #[cfg(test)]
 mod test;
 
@@ -39,7 +34,6 @@ pub(crate) fn enqueue_compress_jobs(…) -> EnqueueCompressJobsReturn { … }
 // provides.rs
 pub use super::enqueue_compress_jobs;
 pub use super::interface::*;
-pub use super::guard::*;
 #[cfg(feature = "mocks")]
 pub use super::mock::*;
 ```

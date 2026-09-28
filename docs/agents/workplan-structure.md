@@ -245,12 +245,12 @@ The template names elements with TypeScript suffixes. Each language realizes the
 
 | Element | TypeScript | Rust | Solidity |
 | --- | --- | --- | --- |
-| interface test | `[function].interface.test.ts` | `interface_test.rs`, a `#[cfg(test)]` module | `[Contract].interface.t.sol` in `contracts/test/` |
+| interface test | `[function].interface.test.ts` | — | `[Contract].interface.t.sol` in `contracts/test/` |
 | interface | `[function].interface.ts` | `interface.rs` | `I[Contract].sol` in `contracts/src/` |
 | interaction spec | `[function].interaction.spec` | `interaction.spec.md` | `interaction.spec.md` |
 | mock | `[function].mock.ts` | `mock.rs`, behind the `mocks` feature | `[Contract]Mock.sol` in `contracts/test/` |
-| guard test | `[function].guard.test.ts` | `guard_test.rs`, a `#[cfg(test)]` module | `[Contract].guard.t.sol` |
-| guard | `[function].guard.ts` | `guard.rs` | the contract's `require` and custom-error revert paths |
+| guard test | `[function].guard.test.ts` | — | `[Contract].guard.t.sol` |
+| guard | `[function].guard.ts` | — | the contract's `require` and custom-error revert paths |
 | unit test | `[function].test.ts` | `test.rs`, a `#[cfg(test)]` module, split by behavior as `test_*.rs` | `[Contract].t.sol` |
 | implementation | `[function].ts` | `mod.rs` | `[Contract].sol` |
 | provides | `[function].provides.ts` | `provides.rs`, the module's only `pub mod` | the contract's public ABI |
