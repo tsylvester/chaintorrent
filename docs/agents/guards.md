@@ -54,41 +54,6 @@ export function isOwnedObject(value: unknown): value is OwnedObject {
   return true;
 }
 ```
-
-The Rust form. A guard is a fallible conversion from the untrusted input type to the owned type, `impl TryFrom<serde_json::Value> for OwnedObject`, whose error is an owned enum in `interface.rs` naming what failed. Each property's check is the owning interface's `TryFrom`, called here:
-
-```rust
-// guard.rs
-use crate::some_path::provides::SomeType;                       // imported type → imported guard
-use super::interface::{LocalStatus, OwnedObject, OwnedObjectGuardError};
-
-impl TryFrom<serde_json::Value> for LocalStatus {                // owned → written here
-    type Error = OwnedObjectGuardError;
-    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
-        match value.as_str() {
-            Some("pending") => Ok(LocalStatus::Pending),
-            Some("complete") => Ok(LocalStatus::Complete),
-            _ => Err(OwnedObjectGuardError::LocalStatus),
-        }
-    }
-}
-
-impl TryFrom<serde_json::Value> for OwnedObject {
-    type Error = OwnedObjectGuardError;
-    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
-        let serde_json::Value::Object(mut fields) = value else {
-            return Err(OwnedObjectGuardError::NotAnObject);
-        };
-        let local_symbol = fields.remove("localSymbol").ok_or(OwnedObjectGuardError::MissingLocalSymbol)?;
-        let some_object = fields.remove("someObject").ok_or(OwnedObjectGuardError::MissingSomeObject)?;
-        Ok(OwnedObject {
-            local_symbol: LocalStatus::try_from(local_symbol)?,   // local type → local guard
-            some_object: SomeType::try_from(some_object)?,        // imported type → imported guard, CALLED here
-        })
-    }
-}
-```
-
 ## Finding the imported guard — search the predicate, never a name
 
 You do not guess guard names. A wrong guess followed by "no guard exists" is a failed task. Guard names are guesses; type predicates are facts. Any guard for type `SomeType`, whatever it is named, contains `is SomeType` in its signature — that is what makes it a guard for that type. In Rust the guard is the `impl TryFrom<…> for SomeType`, and `for SomeType` is the invariant. Search on the **type** name, never the **property** name.

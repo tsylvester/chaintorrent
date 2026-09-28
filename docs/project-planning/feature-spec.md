@@ -57,7 +57,7 @@ Turn either supported entry point, the Visual Studio Code extension or `npx chai
 Adapter Composition and Capability Resolution
 
 ## Feature Objective
-Resolve every protocol layer against declared adapter capabilities rather than implementation identity, validate the complete composition before any operation begins, and fail closed before any credential is exercised, chain mutation sent, or swarm transfer started.
+Resolve every protocol layer against declared adapter capabilities rather than implementation identity, through each family's factory, which owns the generic interface and the declaration and constructs the concrete a configuration or hash-card names; validate the complete composition before any operation begins, each factory admitting only a concrete whose declaration satisfies every downstream requirement; and fail closed before any credential is exercised, chain mutation sent, or swarm transfer started.
 
 ## User Stories
 - As a developer, an incompatible configuration is refused at startup with a message naming the capability that failed, never discovered mid-install.
@@ -65,10 +65,11 @@ Resolve every protocol layer against declared adapter capabilities rather than i
 - As an operator, I can see the resolved capability graph and compare it across machines.
 
 ## Acceptance Criteria
-- Every adapter declares capabilities, version, and compatibility (Composition Boundary).
+- Every adapter declares capabilities, version, and compatibility (Composition Boundary); every family is a factory crate that owns the generic interface and the declaration, its concretes are private beneath it, and a consumer can name only the factory, so adding an implementation touches one family and no consumer (MVP Scope, Adapter Composition; the product requirements' Resolved Positions).
+- Each factory refuses, at construction and with no side effect, a concrete whose declaration does not satisfy the requirements of the adapters that will consume it; the validation harness proves this for the cryptographic families and the daemon's resolver for the whole composition (IC-05; AS-17).
 - Installation resolves a compatible package-host, ingest, chain, pairing, credential-KEM, key-agreement, delivery-proof, wallet, identity, custody, settlement, entitlement, transport, discovery, and seed-host composition before reporting ready; substituting one incompatible declaration fails readiness before protected operations begin (SI-10; AS-17).
 - Invalid compositions create no network, chain, authorization, or secret side effects (IC-05).
-- The immutable deployment suite fixes the pairing adapter, credential-KEM adapter and live parameter sets, payload cipher and piece-group size, key-agreement adapter, delivery-proof adapter, KDF and hash-to-scalar mappings, delivery-statement version, attempt-rule parameters, and settlement tier; a client resolves only implementations declared compatible with every field, and a delivery-proof adapter only if it declares the chosen envelope algebra (MVP Scope, Adapter Composition).
+- The immutable deployment suite fixes the pairing adapter, credential-KEM adapter and live parameter sets, payload cipher and piece-group size, key-agreement adapter, delivery-proof adapter, commitment scheme, KDF and hash-to-scalar mappings, delivery-statement version, attempt-rule parameters, and settlement tier; a client resolves only implementations declared compatible with every field, and a delivery-proof adapter only if it declares the chosen envelope algebra (MVP Scope, Adapter Composition).
 - The credential KEM's identity scope is a declared capability fixed by the suite, entitlement scope for explicit-publisher deployments and asset scope for escrow deployments (CD-08).
 - The configuration registry owns defaults, overrides, secret references, and adapter capabilities without storing raw custody secrets, and round-trips identically through every control surface (IC-04).
 
@@ -249,7 +250,7 @@ When an asset is absent from the ledger, fetch the exact upstream artifact, veri
 Swarm Transport, Peer Discovery, and Seed Hosting
 
 ## Feature Objective
-Move ciphertext and sidecars between participants by authenticated root through replaceable transport adapters, with BitTorrent compatibility as one implementation; discover peers through multiple concurrent non-authoritative discovery adapters; and seed persistently from a machine-level host that survives editor and terminal sessions, holding a ciphertext store keyed by root and separately budgeted from the plaintext CAS.
+Move ciphertext and sidecars between participants by authenticated root through the transport family, with BitTorrent through embedded `librqbit` as the MVP concrete; discover peers through multiple concurrent non-authoritative concretes of the discovery family; and seed persistently from a machine-level host that survives editor and terminal sessions, holding a ciphertext store keyed by root and separately budgeted from the plaintext CAS.
 
 ## User Stories
 - As a participant, what I seed keeps seeding after I close my editor and after my machine restarts.
@@ -258,8 +259,8 @@ Move ciphertext and sidecars between participants by authenticated root through 
 - As a developer, the same deployment is retrievable over more than one transport and it is one object, not two.
 
 ## Acceptance Criteria
-- Transport adapters transfer ciphertext by authenticated root; the owned implementation and the BitTorrent compatibility adapter retrieve identical ciphertext roots (SW-01).
-- Multiple discovery adapters run concurrently, union and deduplicate, and treat no source as authoritative; overlapping, conflicting, unavailable, and malicious results aggregate deterministically and safely (SW-02).
+- Transport concretes transfer ciphertext by authenticated root, verifying every piece against the Bao root after any check the underlying library performs; the same deployment retrieved through the owned seed host and through a delegated external client yields identical ciphertext roots (SW-01).
+- Multiple discovery concretes run concurrently, union and deduplicate through the family's aggregation, and treat no source as authoritative; overlapping, conflicting, unavailable, and malicious results aggregate deterministically and safely (SW-02).
 - The owned seed host runs independently of editor and CLI sessions and resumes transfers and seeding after restart (SW-03; AS-18).
 - A delegated seed host translates roots to external identifiers and verifies custody with random Bao challenges; a false possession report is detected (SW-04).
 - Ciphertext storage is keyed by ciphertext root, shared across transports, separately budgeted from plaintext, and distinguishes voluntary from obligated holdings (SW-05).
@@ -284,7 +285,7 @@ Move ciphertext and sidecars between participants by authenticated root through 
 Entitlement Ledger, Contracts, and Settlement
 
 ## Feature Objective
-Deploy a Solidity contract suite on the Ethereum launch network representing canonical identities, authenticated deployments and hash-cards, parameter sets and their live or retired state, envelope-key registration, asset-bound entitlements with interval counters and envelope digests, issuance and transfer with delivery-proof verification through the pairing precompiles, escrow, identity binding, claims, and administrative authority, exposed to clients through chain, settlement, and entitlement-state adapters.
+Deploy the EVM contract suite in Solidity on the Ethereum launch network, the on-chain concrete of the chain family, representing canonical identities, authenticated deployments and hash-cards, parameter sets and their live or retired state, envelope-key registration, asset-bound entitlements with interval counters and envelope digests, issuance and transfer with delivery-proof verification through the pairing precompiles, attestation verification through the adapter bound per ingest source, escrow, identity binding, claims, and administrative authority, exposed to clients through the chain family's factory, its Base concrete, and the submission family.
 
 ## User Stories
 - As a buyer, my payment is locked against the exact entitlement, seller, price, and expiry, released only when the seller's delivery proof verifies, and refunded if no valid delivery arrives.
@@ -351,7 +352,7 @@ Create or import a protocol identity on first run as a contract account, bind it
 - Signature services support Ed25519 for protocol layers and secp256k1 for the EVM chain layer with domain separation and complete-message binding (CR-03).
 
 ## Dependencies
-- The local keystore under the OS credential store as the default `IKeyCustodyAdapter`.
+- The custody family, whose factory owns `IKeyCustodyAdapter` with its capability set, holder-seed derivation, device-key generation, and the in-place upgrade, and whose MVP concrete is the local keystore under the OS credential store; the wallet family for signing-only external wallets.
 - Relaying, for the binding transaction and device admission and revocation.
 - Ledger contracts, for the binding record and envelope-key registry.
 
@@ -620,7 +621,7 @@ Run a persistent first seeder of the core packages and their dependency closure,
 
 ## Additional Content
 
-**Cross-feature dependencies and build order.** The Application Requirements fix the dependency direction: protocol and domain, then application workflows, then adapters and host shells. The validation harness precedes every node that encrypts a registered deployment, because the piece-group size and attempt-rule parameters gate them. The payload cipher, the contracts, and the chain adapters follow, with hashing, signatures, and swarm hosting in parallel from the foundation onward; then the daemon, identity, package serving, First Finder bootstrap, credential delivery, and the demonstrable milestone; then onboarding shells, relaying, publishing and claims, the seed host and site, observability, and the demonstration harness; then the transaction flow proof and the completion gate.
+**Cross-feature dependencies and build order.** The Application Requirements fix the dependency direction: protocol and domain, then application workflows, then adapters and host shells. The validation harness precedes every node that encrypts a registered deployment, because the piece-group size and attempt-rule parameters gate them. The payload cipher, the contracts, and the chain and submission families follow, with hashing, signatures, and swarm hosting in parallel from the foundation onward, each family's factory before its concretes; then the daemon, identity, package serving, First Finder bootstrap, credential delivery, and the demonstrable milestone; then onboarding shells, relaying, publishing and claims, the seed host and site, observability, and the demonstration harness; then the transaction flow proof and the completion gate.
 
 **Features deliberately absent.** Git commit wrapping, an email bot for escrow, general paid monetization, a version alignment engine, arbitrary media and streaming, content flagging and advisory surfaces, per-entitlement variance, composable container objects, partial encryption, seeder compensation, retention enforcement, Sybil-resistant stake, and the website account, remote head, and hosted instance are deferred to V2 and architecturally protected as recorded in MVP Scope. None is a hidden dependency of any feature above.
 

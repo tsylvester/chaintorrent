@@ -32,7 +32,7 @@ The principle is stated in the specification and MVP Scope: free public distribu
 - Give a publisher, when the advisory mechanism is built, a visible channel for objection that conforming clients can act on locally.
 
 ## Notes
-- **Affected components:** `IIngestSourceAdapter` npm implementation, First Finder bootstrap workflow, seed hosts, MVP Scope's ingest section, business case; advisory backlinks in V2.
+- **Affected components:** `ingest/npm` beneath the ingest factory, First Finder bootstrap workflow, seed hosts, MVP Scope's ingest section, business case; advisory backlinks in V2.
 - **Dependencies:** none technical; a policy decision.
 - **Sequencing:** before the First Finder engine milestone.
 - **Guardrails:** no First Finder ingest from a source the public cannot retrieve at no charge.
@@ -65,7 +65,7 @@ Build the validation harness first and choose the piece-group size and curve fro
 - If no parameter within the specification's bounds meets the budget, report it as a finding against the design rather than relaxing the budget.
 
 ## Notes
-- **Affected components:** validation harness, encrypted consumption, settlement and entitlement-state adapters, deployment hash-card parameters.
+- **Affected components:** validation harness, encrypted consumption, the chain family's settlement and entitlement-state views, deployment hash-card parameters.
 - **Dependencies:** the harness on both curves.
 - **Sequencing:** the harness grouping, before any node that encrypts a registered deployment.
 - **Guardrails:** latency budget (RO-06).
@@ -98,7 +98,7 @@ External cryptographic review of the composition and the contract verifier befor
 - Gate the priced dogfood deployment on the review's result.
 
 ## Notes
-- **Affected components:** `SchnorrFsDeliveryProofAdapter`, `IPairingAdapter` implementations, contract suite, validation harness.
+- **Affected components:** `proof/schnorr_fs` beneath the proof factory, the pairing concretes, the EVM suite's pairing library and delivery verifier, the harness's generate and verifier families.
 - **Dependencies:** both verifier forms, BLS12-381 primary.
 - **Sequencing:** the harness grouping; the registry contracts milestone; review before the transaction flow proof.
 - **Guardrails:** zero accepted invalid deliveries.
@@ -257,7 +257,7 @@ Per-identity rate limits under relayer policy; short published lock expiries wit
 ## Notes
 - **Affected components:** relayer, entitlement contract, lock logic.
 - **Dependencies:** launch network for gas; ERC-4337 support.
-- **Sequencing:** the relayer milestone, entering on the chain adapters.
+- **Sequencing:** the relayer milestone, entering on the chain and submission families.
 - **Guardrails:** grant pool not drained by a flood.
 - **Signals:** subsidy consumption rising faster than identity creation.
 - **Open questions:** pool funding source and size; replacement path.
@@ -378,7 +378,7 @@ Chain behind an adapter with settlement expressed as tiers rather than confirmat
 - Monitor gas per mint and per transfer against the dogfood baseline.
 
 ## Notes
-- **Affected components:** chain adapter, settlement adapter, pairing adapter, relayer.
+- **Affected components:** the chain family and its Base concrete, the submission family, the pairing family, the relayer.
 - **Dependencies:** none.
 - **Sequencing:** the harness and ongoing.
 - **Guardrails:** attempts proceed with one node failed; halt on disagreement.

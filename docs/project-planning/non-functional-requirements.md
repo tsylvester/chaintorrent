@@ -91,7 +91,7 @@ The protocol's security posture is stated in cryptography.md's Security Properti
 
 | ID | Requirement | Source | Disposition |
 | --- | --- | --- | --- |
-| NF-M01 | Every cryptographic component and every external touchpoint is an adapter to an interface with declared capabilities; composition is validated at resolution and fails closed | cryptography.md, Adapter Composition; research requirements R15; SI-10, IC-05 | Stated |
+| NF-M01 | Every cryptographic component and every external touchpoint is an adapter family: a factory owning the generic interface and its capability declaration, with each implementation a private concrete beneath it, so a consumer names the factory and never an implementation; composition is validated at each factory and at resolution and fails closed | cryptography.md, Adapter Composition; research requirements R15; SI-10, IC-05; product requirements, Resolved Positions | Stated |
 | NF-M02 | Three dependency rings with dependencies pointing inward; the protocol and domain ring depends on no host, chain SDK, wallet, transport, or storage engine | Application Requirements, Composition Boundary | Stated |
 | NF-M03 | One Rust implementation of protocol rules, workflows, cryptography, storage, networking, and delivery shared by every surface; TypeScript only where a host imposes it and owning no protocol logic | Application Requirements, Implementation Language and Runtime Policy | Stated |
 | NF-M04 | Every requirement identifier maps to a proof class and a test facility; unit, integration, and end-to-end facilities ship with the repository | XA-07; MVP Scope, Test Facilities | Stated |
