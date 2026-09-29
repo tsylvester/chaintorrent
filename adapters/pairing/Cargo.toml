@@ -1,0 +1,25 @@
+[package]
+name = "pairing"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+domain = { path = "../../crates/domain" }
+zeroize = "1.9.0"
+ark-bn254 = "0.6.0"
+ark-bls12-381 = "0.6.0"
+ark-ec = "0.6.0"
+ark-ff = "0.6.0"
+halo2curves = "0.10.0"
+
+[dev-dependencies]
+domain = { path = "../../crates/domain", features = ["mocks"] }
+random = { path = "../random", features = ["mocks"] }
+hex = "0.4.3"
+
+[features]
+mocks = ["domain/mocks"]
+
+[lints]
+workspace = true

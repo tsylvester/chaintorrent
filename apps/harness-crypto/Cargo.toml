@@ -1,0 +1,19 @@
+[package]
+name = "harness-crypto"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+pairing = { path = "../../adapters/pairing" }
+random = { path = "../../adapters/random" }
+
+[dev-dependencies]
+pairing = { path = "../../adapters/pairing", features = ["mocks"] }
+random = { path = "../../adapters/random", features = ["mocks"] }
+
+[features]
+mocks = ["pairing/mocks", "random/mocks"]
+
+[lints]
+workspace = true
