@@ -6,9 +6,9 @@
 )]
 
 use random::{
-    CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayloadOverrides,
+    CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
     FillBytesParams, FillBytesPayloadOverrides, RandomSourceKind,
-    build_create_random_source_payload, build_fill_bytes_payload, create_random_source,
+    build_create_random_source_params, build_fill_bytes_payload, create_random_source,
 };
 use std::collections::HashSet;
 
@@ -16,7 +16,7 @@ use std::collections::HashSet;
 ///   Box<dyn IRandomSourceAdapter>, returns a draw of the requested length
 ///   filled by the generator — a production draw passes through the family's
 ///   surface (CR-05).
-/// Arrange: a payload built with `kind: Some(RandomSourceKind::OperatingSystem)`
+/// Arrange: params built with `kind: Some(RandomSourceKind::OperatingSystem)`
 ///   and a fill payload of `length: Some(64)`.
 /// Act:     `create_random_source` and then `fill_bytes` on the returned
 ///   adapter.
@@ -25,14 +25,14 @@ use std::collections::HashSet;
 #[test]
 fn a_source_from_the_factory_draws_random_bytes_through_the_family_trait() {
     // Arrange
-    let payload = build_create_random_source_payload(CreateRandomSourcePayloadOverrides {
+    let params = build_create_random_source_params(CreateRandomSourceParamsOverrides {
         kind: Some(RandomSourceKind::OperatingSystem),
     });
     let fill_payload = build_fill_bytes_payload(FillBytesPayloadOverrides { length: Some(64) });
 
     // Act
     let Ok(success) =
-        create_random_source(&CreateRandomSourceDeps, CreateRandomSourceParams, payload);
+        create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload);
     let adapter = success.adapter;
     let Ok(draw) = adapter.fill_bytes(FillBytesParams, fill_payload) else {
         panic!("the operating-system source draws through the family trait")

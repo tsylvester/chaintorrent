@@ -13,10 +13,10 @@ use interface::{
 
 pub fn create_random_source(
     _deps: &CreateRandomSourceDeps,
-    _params: CreateRandomSourceParams,
-    payload: CreateRandomSourcePayload,
+    params: CreateRandomSourceParams,
+    _payload: CreateRandomSourcePayload,
 ) -> CreateRandomSourceReturn {
-    match payload.kind {
+    match params.kind {
         RandomSourceKind::OperatingSystem => {
             let Ok(source) = OsRandomSource::try_new(OsRandomSourceConstructorParams);
             Ok(CreateRandomSourceSuccessReturn {

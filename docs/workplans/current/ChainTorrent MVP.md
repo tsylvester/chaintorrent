@@ -404,8 +404,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
   * `[✅]`   `adapters/random/src/factory/interface.rs`
     * `[✅]`   `CreateRandomSourceDeps`, the fieldless struct `pub struct CreateRandomSourceDeps;`
-    * `[✅]`   `CreateRandomSourceParams`, the fieldless struct `pub struct CreateRandomSourceParams;`
-    * `[✅]`   `CreateRandomSourcePayload`, a struct with `pub kind: RandomSourceKind`
+    * `[✅]`   `CreateRandomSourceParams`, a struct with `pub kind: RandomSourceKind`, the selection of the concrete to construct
+    * `[✅]`   `CreateRandomSourcePayload`, the fieldless struct `pub struct CreateRandomSourcePayload;`, since the factory operates on no data
     * `[✅]`   `CreateRandomSourceSuccessReturn`, a struct with `pub adapter: Box<dyn IRandomSourceAdapter>` and `pub declaration: RandomSourceDeclaration`
     * `[✅]`   `CreateRandomSourceErrorReturn`, an enum with the one variant `OperatingSystem(Infallible)`, the operating-system concrete's constructor error carried unchanged; each concrete's constructor error is its own variant
     * `[✅]`   `CreateRandomSourceReturn`, the type alias `Result<CreateRandomSourceSuccessReturn, CreateRandomSourceErrorReturn>`
@@ -413,27 +413,27 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the import of `core::convert::Infallible`; every item `random/os` authored in this file is unchanged
 
   * `[✅]`   `adapters/random/src/factory/interaction.spec.md`
-    * `[✅]`   `create_random_source`, operating system: condition: `payload.kind` is `RandomSourceKind::OperatingSystem`; decision: a `match` on `payload.kind`; dependency call: `OsRandomSource::try_new(OsRandomSourceConstructorParams)`, exactly once; outcome: `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source), declaration: OsRandomSource::DECLARATION })`
+    * `[✅]`   `create_random_source`, operating system: condition: `params.kind` is `RandomSourceKind::OperatingSystem`; decision: a `match` on `params.kind`; dependency call: `OsRandomSource::try_new(OsRandomSourceConstructorParams)`, exactly once; outcome: `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source), declaration: OsRandomSource::DECLARATION })`
     * `[✅]`   The operating-system constructor's error arm is uninhabited, so its success is destructured irrefutably and that branch has no failure outcome; `CreateRandomSourceErrorReturn::OperatingSystem` carries its error type in the return union
-    * `[✅]`   `deps` and `params` carry nothing and are not read; the `match` is exhaustive over `RandomSourceKind`, so a kind with no branch fails to compile
+    * `[✅]`   `params.kind` selects the concrete; `deps` and `payload` carry nothing and are not read; the `match` is exhaustive over `RandomSourceKind`, so a kind with no branch fails to compile
 
   * `[✅]`   `adapters/random/src/factory/mock.rs`
-    * `[✅]`   `CreateRandomSourcePayloadOverrides`, `#[derive(Default)]`, one field `pub kind: Option<RandomSourceKind>`; `build_create_random_source_payload(overrides: CreateRandomSourcePayloadOverrides) -> CreateRandomSourcePayload`, the kind defaulting to `RandomSourceKind::OperatingSystem`
+    * `[✅]`   `CreateRandomSourceParamsOverrides`, `#[derive(Default)]`, one field `pub kind: Option<RandomSourceKind>`; `build_create_random_source_params(overrides: CreateRandomSourceParamsOverrides) -> CreateRandomSourceParams`, the kind defaulting to `RandomSourceKind::OperatingSystem`
     * `[✅]`   `CreateRandomSourceSuccessReturnOverrides`, `#[derive(Default)]`, fields `pub adapter: Option<Box<dyn IRandomSourceAdapter>>` and `pub declaration: Option<RandomSourceDeclaration>`; `build_create_random_source_success_return(overrides: CreateRandomSourceSuccessReturnOverrides) -> CreateRandomSourceSuccessReturn`, the adapter defaulting to `Box::new(MockIRandomSourceAdapter)` and the declaration to `build_random_source_declaration(Default::default())`
     * `[✅]`   `mock_create_random_source(_deps: &CreateRandomSourceDeps, _params: CreateRandomSourceParams, _payload: CreateRandomSourcePayload) -> CreateRandomSourceReturn`, returning `Ok(build_create_random_source_success_return(Default::default()))`
-    * `[✅]`   No builder for the fieldless `CreateRandomSourceDeps` and `CreateRandomSourceParams`, used by their production values, or for the enum `CreateRandomSourceErrorReturn`; every symbol `random/os` authored in this file is unchanged
+    * `[✅]`   No builder for the fieldless `CreateRandomSourceDeps` and `CreateRandomSourcePayload`, used by their production values, or for the enum `CreateRandomSourceErrorReturn`; every symbol `random/os` authored in this file is unchanged
 
   * `[✅]`   `adapters/random/src/factory/test.rs`
-    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `create_random_source` from `super`, `CreateRandomSourceDeps`, `CreateRandomSourceParams`, `RandomSourceKind`, and `RANDOM_SOURCE_INTERFACE_VERSION` from `super::interface`, and `build_create_random_source_payload` and `CreateRandomSourcePayloadOverrides` from `super::mock`
-    * `[✅]`   `create_random_source_returns_the_operating_system_source_for_its_kind`: contract: the operating-system kind returns `Ok` with the operating-system concrete's declaration; arrange `build_create_random_source_payload` with `kind: Some(RandomSourceKind::OperatingSystem)`; act `create_random_source(&CreateRandomSourceDeps, CreateRandomSourceParams, payload)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.declaration.adapter_version` equals `1` and `success.declaration.interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `create_random_source` from `super`, `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, `RandomSourceKind`, and `RANDOM_SOURCE_INTERFACE_VERSION` from `super::interface`, and `build_create_random_source_params` and `CreateRandomSourceParamsOverrides` from `super::mock`
+    * `[✅]`   `create_random_source_returns_the_operating_system_source_for_its_kind`: contract: the operating-system kind returns `Ok` with the operating-system concrete's declaration; arrange `build_create_random_source_params` with `kind: Some(RandomSourceKind::OperatingSystem)`; act `create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.declaration.adapter_version` equals `1` and `success.declaration.interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
     * `[✅]`   The test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
 
   * `[✅]`   `construction`
-    * `[✅]`   The composition root calls `create_random_source` with `&CreateRandomSourceDeps`, `CreateRandomSourceParams`, and the configured `RandomSourceKind`, and places the returned `Box<dyn IRandomSourceAdapter>` in each consumer's deps; no consumer constructs a concrete
+    * `[✅]`   The composition root calls `create_random_source` with `&CreateRandomSourceDeps`, `CreateRandomSourceParams` holding the configured `RandomSourceKind`, and `CreateRandomSourcePayload`, and places the returned `Box<dyn IRandomSourceAdapter>` in each consumer's deps; no consumer constructs a concrete
 
   * `[✅]`   `adapters/random/src/factory/mod.rs`
     * `[✅]`   Adds `#[cfg(test)] mod test;` to the wiring `random/os` authored
-    * `[✅]`   `pub fn create_random_source(_deps: &CreateRandomSourceDeps, _params: CreateRandomSourceParams, payload: CreateRandomSourcePayload) -> CreateRandomSourceReturn`, a `match` on `payload.kind` whose `RandomSourceKind::OperatingSystem` arm binds the concrete by `let Ok(source) = OsRandomSource::try_new(OsRandomSourceConstructorParams);` and returns `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source), declaration: OsRandomSource::DECLARATION })`
+    * `[✅]`   `pub fn create_random_source(_deps: &CreateRandomSourceDeps, params: CreateRandomSourceParams, _payload: CreateRandomSourcePayload) -> CreateRandomSourceReturn`, a `match` on `params.kind` whose `RandomSourceKind::OperatingSystem` arm binds the concrete by `let Ok(source) = OsRandomSource::try_new(OsRandomSourceConstructorParams);` and returns `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source), declaration: OsRandomSource::DECLARATION })`
     * `[✅]`   Imports `OsRandomSource` and `OsRandomSourceConstructorParams` from `crate::os::provides`, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
@@ -441,8 +441,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds `pub use super::create_random_source;` to the re-exports `random/os` authored
 
   * `[✅]`   `adapters/random/tests/integration_test.rs`
-    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourceParams`, `RandomSourceKind`, `build_create_random_source_payload`, `CreateRandomSourcePayloadOverrides`, `FillBytesParams`, `build_fill_bytes_payload`, and `FillBytesPayloadOverrides` from `random`, and `HashSet` from `std::collections`; the builders are reached through the crate's `mocks` feature, which the workspace's test and check commands enable with `--all-features`
-    * `[✅]`   `a_source_from_the_factory_draws_random_bytes_through_the_family_trait`: contract: the factory's operating-system source, used only through `Box<dyn IRandomSourceAdapter>`, returns a draw of the requested length filled by the generator; arrange `build_create_random_source_payload` with `kind: Some(RandomSourceKind::OperatingSystem)` and `build_fill_bytes_payload` with `length: Some(64)`; act `create_random_source` and then `fill_bytes` on the returned adapter, each unpacked by `let Ok(…) = … else { panic!(…) };`; assert the exposed draw's length equals `64` and the `HashSet<u8>` of its bytes holds more than one value
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, `RandomSourceKind`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, `FillBytesParams`, `build_fill_bytes_payload`, and `FillBytesPayloadOverrides` from `random`, and `HashSet` from `std::collections`; the builders are reached through the crate's `mocks` feature, which the workspace's test and check commands enable with `--all-features`
+    * `[✅]`   `a_source_from_the_factory_draws_random_bytes_through_the_family_trait`: contract: the factory's operating-system source, used only through `Box<dyn IRandomSourceAdapter>`, returns a draw of the requested length filled by the generator; arrange `build_create_random_source_params` with `kind: Some(RandomSourceKind::OperatingSystem)` and `build_fill_bytes_payload` with `length: Some(64)`; act `create_random_source` and then `fill_bytes` on the returned adapter, each unpacked by `let Ok(…) = … else { panic!(…) };`; assert the exposed draw's length equals `64` and the `HashSet<u8>` of its bytes holds more than one value
     * `[✅]`   The test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers; nothing is mocked, since the operating system's generator is the outer edge
 
   * `[✅]`   `directionality`
@@ -459,6 +459,644 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Structural: the virtual workspace manifest with its lint table and `librqbit` overlay, `rust-toolchain.toml`, `deny.toml`, `.gitignore`, `.github/workflows/rust.yml`, the `domain` crate with its `secret` module, and the `random` crate with its `factory` module and `os` concrete
     * `[✅]`   Behavioral: secrets zeroize on drop and cannot be formatted, cloned, or copied; random bytes are drawn from the operating system's generator into a `Secret` through the family's factory
     * `[✅]`   Contract: `Secret` with `try_new` and `expose`; `IRandomSourceAdapter` with `fill_bytes`, its params, payload, and return types, `RandomSourceDeclaration`, and `RANDOM_SOURCE_INTERFACE_VERSION`; `create_random_source` with its signature and return types
+
+* **Cryptographic validation harness**
+
+## Pairing adapters and key derivation
+
+* `[ ]`   `pairing/bn254_arkworks` **BN254 pairing concrete on arkworks with EIP-196 and EIP-197 encodings; creates the `adapters/pairing` crate and authors the pairing family's generic interface, the scalar sampling bound, the declaration, and the mock**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: the credential KEM, the envelope, and the delivery proof compute in a Type-3 pairing group whose curve the launch chain's precompiles dictate, so every group operation, subgroup check, pairing-product check, and precompile encoding passes through one repo-owned interface and no module outside a concrete names a curve library (CR-10)
+    * `[ ]`   Functional: the family's generic interface exposes the generators of both source groups, addition, scalar multiplication, and multi-scalar multiplication in either source group, the pairing-product check, and decoding and encoding of group elements and scalars in the target chain's precompile format
+    * `[ ]`   Functional: the group-element and scalar types are associated types of the generic interface, so a consumer names them through the family without knowing which concrete produced them
+    * `[ ]`   Functional: every group element and scalar a concrete accepts from bytes is decoded by a fallible constructor that rejects a wrong length, a non-canonical field element, a point off the curve, and a point outside the prime-order subgroup, so no element that fails a check exists as a value
+    * `[ ]`   Functional: a scalar type is sampled from uniform bytes the randomness family drew, by reduction of a fixed-width input modulo the group order, and the sampled scalar is returned inside a `Secret`
+    * `[ ]`   Functional: every concrete declares its curve, whether the target chain's verifier has second-group arithmetic, its precompile encoding, its adapter version, and the interface version it implements, readable before any instance exists
+    * `[ ]`   Functional: the BN254 concrete encodes a first-group point as EIP-196's 64 bytes and a second-group point as EIP-197's 128 bytes, each coordinate a 32-byte big-endian integer, the second-group coordinates imaginary part first, and the point at infinity as all zero bytes; a scalar is 32 big-endian bytes
+    * `[ ]`   Non-functional: `ark-bn254`, `ark-ec`, and `ark-ff` are named only inside `adapters/pairing/src/bn254_arkworks`; the crate depends on no repository crate but `domain` at runtime
+
+  * `[ ]`   `role`
+    * `[ ]`   Adapter: the pairing family's first concrete, and the first source file that requires the family's generic interface, the scalar sampling bound, the declaration, and the family's mock, which it authors in the family's `factory` module as its producers
+    * `[ ]`   Creates `factory/mod.rs` with the module wiring alone and `factory/provides.rs` with the interface and mock surface alone; the factory function, its types, its interaction spec, its unit test, its re-export, and the family's integration test are `pairing/factory`'s
+    * `[ ]`   Does not author the BN254 `halo2curves` concrete or either BLS12-381 concrete; each is its own node beneath this factory, and each adds its variants to the declaration's enums
+    * `[ ]`   Does not hash to a group or to a scalar; `hash-to-scalar/keccak256` maps domain-tagged bytes to a scalar through this family's scalar type
+    * `[ ]`   Does not draw randomness; a consumer draws `UNIFORM_BYTES_LENGTH` bytes through the randomness family and hands the draw to the sampling bound
+    * `[ ]`   Does not compute in the target group except through the pairing-product check
+    * `[ ]`   Does not carry a commit
+
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `adapters/pairing` crate's `factory` module, holding the family's generic trait with its associated types and methods, every method's params, payload, success, error, and return types, the scalar sampling bound with its types, the declaration and its enums, the interface version, and the family's mock; and its private `bn254_arkworks` concrete, holding the adapter over arkworks' BN254, its scalar and group-element types over the library's elements, its constructor params, and the builder defaults for its owned types
+    * `[ ]`   Creates the crate at `adapters/pairing`, admitted by the workspace's `adapters/*` glob with no edit to the root manifest
+    * `[ ]`   Outside: which scalars are secret and who produces them, hashing to a scalar, the KEM, envelope, and proof algebra built on the family, the Solidity mirror of the encodings, and the factory's selection of a concrete
+
+  * `[ ]`   `deps`
+    * `[ ]`   `domain`, `crates/domain`, protocol and domain ring, path dependency; supplies `Secret` and `SecretConstructorParams`, the wrapper for uniform input, sampled scalars, and encoded scalars; direction inward, adapter ring on domain ring
+    * `[ ]`   `domain` with its `mocks` feature, as a dev-dependency and through this crate's `mocks` feature; supplies `build_secret` and `SecretConstructorParamsOverrides`
+    * `[ ]`   `zeroize` `1.9.0`, external crate, Apache-2.0 OR MIT, runtime dependency; supplies the `Zeroize` trait the sampling bound requires and the scalar implements; zeroization is a property of the type, not an external touchpoint, so no adapter wraps it
+    * `[ ]`   `ark-bn254` `0.6.0`, `ark-ec` `0.6.0`, and `ark-ff` `0.6.0`, external crates, MIT OR Apache-2.0, runtime dependencies named only in `bn254_arkworks`; supply the curve, the pairing, the group arithmetic, and the field arithmetic
+    * `[ ]`   `random`, `adapters/random`, adapter ring, dev-dependency with its `mocks` feature; supplies `create_random_source` and `fill_bytes` for the in-range draw test, the dependency map's edge from `random/factory` to this node; nothing at runtime
+    * `[ ]`   `hex` `0.4.3`, external crate, MIT OR Apache-2.0, dev-dependency only; supplies `hex::decode` for the test vectors
+    * `[ ]`   `core::convert::Infallible`, standard library, the error arm of every method that has no failure; `core::marker::PhantomData`, standard library, in `factory/mock.rs` only
+    * `[ ]`   No reverse dependency; nothing depends on this crate yet
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`, and `Secret::expose(&self) -> &T`
+    * `[ ]`   From `domain`'s mocks: `build_secret(SecretConstructorParamsOverrides<T>) -> Secret<T>` for `T: Zeroize + Default`
+    * `[ ]`   From `zeroize`: the `Zeroize` trait's `zeroize(&mut self)`, and its implementation for `Vec<Z: Zeroize>`
+    * `[ ]`   From `ark-bn254`: `Bn254`, `Fq`, `Fq2` with its public fields `c0` and `c1` and `Fq2::new(c0, c1)`, `Fr`, `G1Affine`, `G1Projective`, `G2Affine`, and `G2Projective`
+    * `[ ]`   From `ark-ec`: `AffineRepr` for `generator()` and `xy()`; the short-Weierstrass affine `identity()`, `new_unchecked(x, y)`, `is_on_curve()`, `is_in_correct_subgroup_assuming_on_curve()`, and `get_point_from_x_unchecked(x, greatest)`; the affine `+` and `* Fr` producing projective points; `CurveGroup::into_affine`; `VariableBaseMSM::msm_unchecked(bases, scalars)`; `pairing::Pairing::multi_pairing(a, b)` returning `PairingOutput`
+    * `[ ]`   From `ark-ff`: `PrimeField::from_be_bytes_mod_order(&[u8])` and `into_bigint()`, `BigInteger::to_bytes_be()`, `Zero::is_zero()` on `PairingOutput`, and `Fr::from(u64)` and `Fq::from(u64)`
+    * `[ ]`   From `random`: `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, `RandomSourceKind`, `IRandomSourceAdapter`, `FillBytesParams`, `build_fill_bytes_payload`, and `FillBytesPayloadOverrides`, in `bn254_arkworks/test.rs` only
+
+  * `[ ]`   `adapters/pairing/Cargo.toml`
+    * `[ ]`   `[package]` with `name = "pairing"`, `edition.workspace = true`, `rust-version.workspace = true`, and `publish.workspace = true`; no `version` key
+    * `[ ]`   `[dependencies]` with `domain = { path = "../../crates/domain" }`, `zeroize = "1.9.0"`, `ark-bn254 = "0.6.0"`, `ark-ec = "0.6.0"`, and `ark-ff = "0.6.0"`, each with default features
+    * `[ ]`   `[dev-dependencies]` with `domain = { path = "../../crates/domain", features = ["mocks"] }`, `random = { path = "../random", features = ["mocks"] }`, and `hex = "0.4.3"`
+    * `[ ]`   `[features]` with `mocks = ["domain/mocks"]`
+    * `[ ]`   `[lints]` with `workspace = true`
+    * `[ ]`   No other table
+
+  * `[ ]`   `adapters/pairing/src/lib.rs`
+    * `[ ]`   The crate barrel: `mod factory;`, `mod bn254_arkworks;`, and `pub use factory::provides::*;`, nothing else
+    * `[ ]`   Until `factory/mod.rs` and `bn254_arkworks/mod.rs` exist, `cargo check` reports the unresolved modules, which is the RED state for every element below that precedes them
+
+  * `[ ]`   `adapters/pairing/src/factory/interface.rs`
+    * `[ ]`   `PAIRING_INTERFACE_VERSION`, a `pub const` of type `u32` with value `1`
+    * `[ ]`   `PairingCurve`, an enum with the one variant `Bn254`; `VerifierGroupArithmetic`, an enum with the one variant `FirstGroupOnly`; `PrecompileEncoding`, an enum with the one variant `Eip196Eip197`
+    * `[ ]`   `PairingDeclaration`, a struct with `pub curve: PairingCurve`, `pub verifier_group_arithmetic: VerifierGroupArithmetic`, `pub precompile_encoding: PrecompileEncoding`, `pub adapter_version: u32`, and `pub interface_version: u32`
+    * `[ ]`   `ISampleUniformScalar`, the sampling bound, `pub trait ISampleUniformScalar: Zeroize + Sized` with `const UNIFORM_BYTES_LENGTH: usize;` and `fn sample_from_uniform_bytes(params: SampleUniformScalarParams, payload: SampleUniformScalarPayload) -> SampleUniformScalarReturn<Self>;`
+    * `[ ]`   The sampling bound's types: the fieldless `SampleUniformScalarParams`; `SampleUniformScalarPayload` with `pub uniform: Secret<Vec<u8>>`; `SampleUniformScalarSuccessReturn<S: Zeroize>` with `pub scalar: Secret<S>`; `SampleUniformScalarErrorReturn`, an enum with the one struct variant `WrongLength { expected: usize, actual: usize }`; `SampleUniformScalarReturn<S>`, the alias `Result<SampleUniformScalarSuccessReturn<S>, SampleUniformScalarErrorReturn>`
+    * `[ ]`   `IPairingAdapter`, a trait with `type Scalar: ISampleUniformScalar + Clone;`, `type G1: Clone;`, `type G2: Clone;`, and the methods below, each taking `&self`, its params, and its payload, and returning its own return alias
+    * `[ ]`   `g1_generator(&self, params: G1GeneratorParams, payload: G1GeneratorPayload) -> G1GeneratorReturn<Self::G1>`: the fieldless `G1GeneratorParams` and `G1GeneratorPayload`; `G1GeneratorSuccessReturn<G>` with `pub point: G`; `G1GeneratorReturn<G>`, the alias `Result<G1GeneratorSuccessReturn<G>, Infallible>`
+    * `[ ]`   `g2_generator`, the same shape under the `G2Generator` prefix over `Self::G2`
+    * `[ ]`   `add_g1(&self, params: AddG1Params, payload: AddG1Payload<Self::G1>) -> AddG1Return<Self::G1>`: the fieldless `AddG1Params`; `AddG1Payload<G>` with `pub left: G` and `pub right: G`; `AddG1SuccessReturn<G>` with `pub sum: G`; `AddG1Return<G>`, the alias `Result<AddG1SuccessReturn<G>, Infallible>`
+    * `[ ]`   `add_g2`, the same shape under the `AddG2` prefix over `Self::G2`
+    * `[ ]`   `mul_g1(&self, params: MulG1Params, payload: MulG1Payload<Self::G1, Self::Scalar>) -> MulG1Return<Self::G1>`: the fieldless `MulG1Params`; `MulG1Payload<G, S>` with `pub point: G` and `pub scalar: S`; `MulG1SuccessReturn<G>` with `pub product: G`; `MulG1Return<G>`, the alias `Result<MulG1SuccessReturn<G>, Infallible>`
+    * `[ ]`   `mul_g2`, the same shape under the `MulG2` prefix over `Self::G2` and `Self::Scalar`
+    * `[ ]`   `msm_g1(&self, params: MsmG1Params, payload: MsmG1Payload<Self::G1, Self::Scalar>) -> MsmG1Return<Self::G1>`: the fieldless `MsmG1Params`; `MsmG1Term<G, S>` with `pub base: G` and `pub scalar: S`; `MsmG1Payload<G, S>` with `pub terms: Vec<MsmG1Term<G, S>>`, so a base and its scalar cannot differ in count; `MsmG1SuccessReturn<G>` with `pub sum: G`; `MsmG1Return<G>`, the alias `Result<MsmG1SuccessReturn<G>, Infallible>`
+    * `[ ]`   `msm_g2`, the same shape under the `MsmG2` prefix, with `MsmG2Term<G, S>`, over `Self::G2` and `Self::Scalar`
+    * `[ ]`   `pairing_product_is_one(&self, params: PairingProductIsOneParams, payload: PairingProductIsOnePayload<Self::G1, Self::G2>) -> PairingProductIsOneReturn`: the fieldless `PairingProductIsOneParams`; `PairingProductTerm<G1, G2>` with `pub g1: G1` and `pub g2: G2`; `PairingProductIsOnePayload<G1, G2>` with `pub terms: Vec<PairingProductTerm<G1, G2>>`; `PairingProductIsOneSuccessReturn` with `pub is_one: bool`; `PairingProductIsOneReturn`, the alias `Result<PairingProductIsOneSuccessReturn, Infallible>`
+    * `[ ]`   `decode_g1(&self, params: DecodeG1Params, payload: &[u8]) -> DecodeG1Return<Self::G1>`, the validating form, its payload the untrusted wire bytes and its narrowing target `Self::G1`: the fieldless `DecodeG1Params`; `DecodeG1SuccessReturn<G>` with `pub point: G`; `DecodeG1ErrorReturn`, an enum with the variants `WrongLength { expected: usize, actual: usize }`, `NonCanonicalCoordinate`, `NotOnCurve`, and `NotInSubgroup`; `DecodeG1Return<G>`, the alias `Result<DecodeG1SuccessReturn<G>, DecodeG1ErrorReturn>`
+    * `[ ]`   `decode_g2`, the same shape under the `DecodeG2` prefix over `Self::G2`, with `DecodeG2ErrorReturn` carrying the same four variants
+    * `[ ]`   `decode_scalar(&self, params: DecodeScalarParams, payload: &[u8]) -> DecodeScalarReturn<Self::Scalar>`, the validating form: the fieldless `DecodeScalarParams`; `DecodeScalarSuccessReturn<S>` with `pub scalar: S`; `DecodeScalarErrorReturn`, an enum with the variants `WrongLength { expected: usize, actual: usize }` and `NonCanonical`; `DecodeScalarReturn<S>`, the alias `Result<DecodeScalarSuccessReturn<S>, DecodeScalarErrorReturn>`
+    * `[ ]`   `encode_g1(&self, params: EncodeG1Params, payload: EncodeG1Payload<Self::G1>) -> EncodeG1Return`: the fieldless `EncodeG1Params`; `EncodeG1Payload<G>` with `pub point: G`; `EncodeG1SuccessReturn` with `pub bytes: Vec<u8>`; `EncodeG1Return`, the alias `Result<EncodeG1SuccessReturn, Infallible>`
+    * `[ ]`   `encode_g2`, the same shape under the `EncodeG2` prefix over `Self::G2`
+    * `[ ]`   `encode_scalar(&self, params: EncodeScalarParams, payload: EncodeScalarPayload<Self::Scalar>) -> EncodeScalarReturn`: the fieldless `EncodeScalarParams`; `EncodeScalarPayload<S>` with `pub scalar: S`; `EncodeScalarSuccessReturn` with `pub bytes: Secret<Vec<u8>>`, since the scalar encoded may be secret; `EncodeScalarReturn`, the alias `Result<EncodeScalarSuccessReturn, Infallible>`
+    * `[ ]`   No derives on any type in this file; imports `domain::Secret`, `zeroize::Zeroize`, and `core::convert::Infallible`; names no vendor and no concrete
+
+  * `[ ]`   `adapters/pairing/src/bn254_arkworks/interface.rs`
+    * `[ ]`   `Bn254ArkworksPairing`, the unit struct `pub struct Bn254ArkworksPairing;`, the adapter over arkworks' BN254
+    * `[ ]`   `Bn254ArkworksPairingConstructorParams`, the fieldless struct `pub struct Bn254ArkworksPairingConstructorParams;`, the constructor's deps slot
+    * `[ ]`   `Bn254ArkworksPairingTryNewReturn`, the alias `Result<Bn254ArkworksPairing, Infallible>`; the error arm is uninhabited because the adapter takes no configuration
+    * `[ ]`   `Bn254ArkworksScalar`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bn254::Fr`
+    * `[ ]`   `Bn254ArkworksG1`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bn254::G1Affine`
+    * `[ ]`   `Bn254ArkworksG2`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bn254::G2Affine`
+    * `[ ]`   The `pub(super)` fields admit construction only inside `bn254_arkworks` and its child modules; imports `core::convert::Infallible`; declares nothing else
+
+  * `[ ]`   `adapters/pairing/src/bn254_arkworks/interaction.spec.md`
+    * `[ ]`   `Bn254ArkworksPairing::try_new(params: Bn254ArkworksPairingConstructorParams) -> Bn254ArkworksPairingTryNewReturn`: one branch; outcome `Ok(Bn254ArkworksPairing)`; the error arm has no branch
+    * `[ ]`   `Bn254ArkworksPairing::DECLARATION`: the inherent constant `PairingDeclaration { curve: PairingCurve::Bn254, verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly, precompile_encoding: PrecompileEncoding::Eip196Eip197, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
+    * `[ ]`   `g1_generator`, `g2_generator`: one branch each; dependency call `G1Affine::generator()` or `G2Affine::generator()`; outcome `Ok` holding the generator in the owned group type
+    * `[ ]`   `add_g1`, `add_g2`: one branch each; dependency call the affine `+` of the two payload points and `into_affine`; outcome `Ok` holding the sum
+    * `[ ]`   `mul_g1`, `mul_g2`: one branch each; dependency call the affine point `*` the scalar's `Fr` and `into_affine`; outcome `Ok` holding the product; the payload, holding the scalar, drops at the end of the call and the scalar is zeroized
+    * `[ ]`   `msm_g1`, `msm_g2`: one branch each; the terms are split into a `Vec` of affine bases and a `Vec<Fr>` of the same length; dependency call `G1Projective::msm_unchecked` or `G2Projective::msm_unchecked` over them and `into_affine`; the `Vec<Fr>` is zeroized after the call; outcome `Ok` holding the sum; an empty term list yields the identity
+    * `[ ]`   `pairing_product_is_one`: one branch; dependency call `Bn254::multi_pairing` over the terms' first-group elements and second-group elements in term order; outcome `Ok(PairingProductIsOneSuccessReturn { is_one })` where `is_one` is the output's `is_zero()`, the identity of the target group in arkworks' additive notation; an empty term list yields `is_one: true`, as EIP-197 does for empty input
+    * `[ ]`   `decode_g1`, wrong length: condition `payload.len() != 64`; outcome `Err(DecodeG1ErrorReturn::WrongLength { expected: 64, actual: payload.len() })`
+    * `[ ]`   `decode_g1`, non-canonical coordinate: condition either 32-byte half, read by `Fq::from_be_bytes_mod_order`, does not re-encode through `into_bigint().to_bytes_be()` to the same 32 bytes, that is, it is at least the base field modulus; outcome `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1`, identity: condition both coordinates are zero; outcome `Ok` holding `G1Affine::identity()`
+    * `[ ]`   `decode_g1`, off the curve: condition `G1Affine::new_unchecked(x, y).is_on_curve()` is false; outcome `Err(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g1`, outside the subgroup: condition `is_in_correct_subgroup_assuming_on_curve()` is false; outcome `Err(DecodeG1ErrorReturn::NotInSubgroup)`; BN254's first group has cofactor one, so no on-curve point takes this branch and it has no unit test, but the check runs on every decode
+    * `[ ]`   `decode_g1`, valid: every check passes; outcome `Ok` holding the point
+    * `[ ]`   `decode_g2`: the same branches in the same order over 128 bytes read as `x.c1`, `x.c0`, `y.c1`, `y.c0`, each 32 bytes, assembled by `Fq2::new(c0, c1)`, with `DecodeG2ErrorReturn`; the identity is all four coordinates zero; the subgroup branch is reachable, since BN254's second group has a nontrivial cofactor
+    * `[ ]`   `decode_scalar`, wrong length: condition `payload.len() != 32`; outcome `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
+    * `[ ]`   `decode_scalar`, non-canonical: condition the bytes, read by `Fr::from_be_bytes_mod_order`, do not re-encode to the same 32 bytes, that is, they are at least the group order; outcome `Err(DecodeScalarErrorReturn::NonCanonical)`
+    * `[ ]`   `decode_scalar`, valid: outcome `Ok` holding the scalar
+    * `[ ]`   `encode_g1`: one branch; the identity encodes to 64 zero bytes; any other point encodes `x` then `y`, each `into_bigint().to_bytes_be()`, from `xy()`
+    * `[ ]`   `encode_g2`: one branch; the identity encodes to 128 zero bytes; any other point encodes `x.c1`, `x.c0`, `y.c1`, `y.c0`, each 32 bytes big-endian
+    * `[ ]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's 32 big-endian bytes moved into a `Secret`
+    * `[ ]`   `Bn254ArkworksScalar::UNIFORM_BYTES_LENGTH`: `64`, twice the byte width of the group order, so the reduction's bias from uniform is below two to the minus two hundred fifty
+    * `[ ]`   `Bn254ArkworksScalar::sample_from_uniform_bytes`, wrong length: condition `payload.uniform.expose().len() != 64`; outcome `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
+    * `[ ]`   `Bn254ArkworksScalar::sample_from_uniform_bytes`, sampled: dependency call `Fr::from_be_bytes_mod_order` over the exposed bytes; outcome `Ok` holding the scalar moved into a `Secret`; the payload's `Secret` zeroizes the input when it drops
+    * `[ ]`   Zeroization: `Bn254ArkworksScalar` zeroizes its `Fr` through its `Zeroize` implementation and on drop, so every clone a consumer places in a payload is zeroized when the payload drops
+
+  * `[ ]`   `adapters/pairing/src/factory/mock.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[ ]`   `PairingDeclarationOverrides`, `#[derive(Default)]`, one `Option` per field; `build_pairing_declaration(overrides: PairingDeclarationOverrides) -> PairingDeclaration`, defaulting to `PairingCurve::Bn254`, `VerifierGroupArithmetic::FirstGroupOnly`, `PrecompileEncoding::Eip196Eip197`, `1`, and `PAIRING_INTERFACE_VERSION`
+    * `[ ]`   For each generic struct below, an overrides struct named by the type with the suffix `Overrides`, `#[derive(Default)]`, one `Option` per field over the struct's type parameters, and a builder `build_` followed by the type's name in snake case, taking the overrides and returning the production type, each type parameter bounded by `Default`, and by `Zeroize` where the production type requires it; an omitted field takes `Default::default()` of its type parameter unless stated
+    * `[ ]`   The generic builders: `G1GeneratorSuccessReturn`, `G2GeneratorSuccessReturn`, `AddG1Payload`, `AddG1SuccessReturn`, `AddG2Payload`, `AddG2SuccessReturn`, `MulG1Payload`, `MulG1SuccessReturn`, `MulG2Payload`, `MulG2SuccessReturn`, `MsmG1Term`, `MsmG1Payload` with `terms` defaulting to an empty `Vec`, `MsmG1SuccessReturn`, `MsmG2Term`, `MsmG2Payload` with `terms` defaulting to an empty `Vec`, `MsmG2SuccessReturn`, `PairingProductTerm`, `PairingProductIsOnePayload` with `terms` defaulting to an empty `Vec`, `DecodeG1SuccessReturn`, `DecodeG2SuccessReturn`, `DecodeScalarSuccessReturn`, `EncodeG1Payload`, `EncodeG2Payload`, `EncodeScalarPayload`, and `SampleUniformScalarSuccessReturn` with `scalar` defaulting to `build_secret(SecretConstructorParamsOverrides::default())`
+    * `[ ]`   The non-generic builders: `PairingProductIsOneSuccessReturnOverrides` with `build_pairing_product_is_one_success_return`, `is_one` defaulting to `true`; `EncodeG1SuccessReturnOverrides` with `build_encode_g1_success_return` and `EncodeG2SuccessReturnOverrides` with `build_encode_g2_success_return`, `bytes` defaulting to an empty `Vec`; `EncodeScalarSuccessReturnOverrides` with `build_encode_scalar_success_return`, `bytes` defaulting to `build_secret(SecretConstructorParamsOverrides::default())`; `SampleUniformScalarPayloadOverrides` with `build_sample_uniform_scalar_payload`, `uniform` defaulting to `build_secret` holding `vec![0u8; 64]`
+    * `[ ]`   `MockIPairingAdapter<S, G1, G2>`, a struct with `pub scalar: PhantomData<S>`, `pub g1: PhantomData<G1>`, and `pub g2: PhantomData<G2>`, implementing `IPairingAdapter` for `S: ISampleUniformScalar + Clone + Default`, `G1: Clone + Default`, and `G2: Clone + Default` with those as its associated types; every method returns `Ok` holding its success return's builder called with `Default::default()`, the decoders for any payload; a test needing other behavior implements the trait on its own local struct
+    * `[ ]`   No builder for the fieldless params and payloads or for the enums; no corruptions type and no invalidator, since no struct this interface owns arrives as untrusted data and the decoders take the untrusted bytes directly
+    * `[ ]`   Imports `Secret`, `build_secret`, and `SecretConstructorParamsOverrides` from `domain`, `zeroize::Zeroize`, `core::marker::PhantomData`, and this module's types from `super::interface`
+
+  * `[ ]`   `adapters/pairing/src/bn254_arkworks/mock.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[ ]`   The builder defaults for the concrete's owned types, which the family's generic builders and `MockIPairingAdapter` read through `Default`: `impl Default for Bn254ArkworksScalar` returning the scalar `Fr::from(1u64)`; `impl Default for Bn254ArkworksG1` returning `G1Affine::generator()`; `impl Default for Bn254ArkworksG2` returning `G2Affine::generator()`
+    * `[ ]`   Nothing else; the types are built as real values, so there is no overrides type, invalidator, or mock function here
+
+  * `[ ]`   `adapters/pairing/src/factory/mod.rs`
+    * `[ ]`   Module wiring only: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, and `pub mod provides;`, nothing else
+
+  * `[ ]`   `adapters/pairing/src/factory/provides.rs`
+    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
+
+  * `[ ]`   `adapters/pairing/src/bn254_arkworks/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports this module's types from `super::interface`, the family's names and builders from `crate::factory::provides`, `build_secret` and `SecretConstructorParamsOverrides` from `domain`, the `random` names the context slice lists, `hex::decode`, and `ark_bn254::{Fq, Fq2, G2Affine}` with `ark_ec::AffineRepr` and `ark_ff::{BigInteger, PrimeField}` for the non-subgroup vector; each test constructs the subject by `let Ok(pairing) = Bn254ArkworksPairing::try_new(Bn254ArkworksPairingConstructorParams);`, decodes hex by `let Ok(bytes) = decode(…) else { panic!(…) };`, and unpacks each call by `let Ok(…) = … else { panic!(…) };`
+    * `[ ]`   The vectors, as hex: the base field modulus `p` = `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47`; the group order `r` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001`; `r - 1` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000`; `r - 2` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff`; the EIP-196 first-group generator, 31 zero bytes and `01` followed by 31 zero bytes and `02`; the EIP-197 second-group generator, `198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2` then `1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed` then `090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b` then `12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa`; the scalars two, three, and five as 32 big-endian bytes
+    * `[ ]`   `g1_generator_encodes_to_the_eip_196_generator`: contract: the first-group generator's encoding is EIP-196's; act `encode_g1` over `g1_generator`; assert the bytes equal the first-group generator vector
+    * `[ ]`   `g2_generator_encodes_to_the_eip_197_generator`: contract: the second-group generator's encoding is EIP-197's, imaginary parts first; act `encode_g2` over `g2_generator`; assert the bytes equal the second-group generator vector
+    * `[ ]`   `decode_g1_round_trips_the_eip_196_generator`: arrange the first-group generator vector; act `decode_g1` then `encode_g1`; assert the bytes equal the vector
+    * `[ ]`   `decode_g2_round_trips_the_eip_197_generator`: arrange the second-group generator vector; act `decode_g2` then `encode_g2`; assert the bytes equal the vector
+    * `[ ]`   `decode_g1_reads_the_all_zero_encoding_as_the_identity`: arrange 64 zero bytes and the generator; act `decode_g1`, then `add_g1` of the generator and the decoded point, then `encode_g1`; assert the bytes equal the first-group generator vector
+    * `[ ]`   `decode_g2_reads_the_all_zero_encoding_as_the_identity`: the same over 128 zero bytes, `add_g2`, and the second-group generator vector
+    * `[ ]`   `decode_g1_rejects_a_wrong_length`: arrange 63 bytes; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::WrongLength { expected: 64, actual: 63 })`
+    * `[ ]`   `decode_g1_rejects_a_coordinate_equal_to_the_base_field_modulus`: arrange `p` followed by the 32-byte encoding of two; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_rejects_a_point_off_the_curve`: arrange the 32-byte encodings of one and three; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g2_rejects_a_wrong_length`: arrange 127 bytes; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::WrongLength { expected: 128, actual: 127 })`
+    * `[ ]`   `decode_g2_rejects_a_point_off_the_curve`: arrange the second-group generator vector with its last byte `aa` replaced by `ab`; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g2_rejects_a_point_outside_the_subgroup`: arrange the first on-curve point outside the subgroup found by `(1u64..).find_map` over `G2Affine::get_point_from_x_unchecked(Fq2::new(Fq::from(c0), Fq::from(0u64)), false)` filtered by `!is_in_correct_subgroup_assuming_on_curve()`, encoded from `xy()` as `x.c1`, `x.c0`, `y.c1`, `y.c0`, each `into_bigint().to_bytes_be()`; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_scalar_rejects_the_group_order`: arrange `r`; act `decode_scalar`; assert `Err(DecodeScalarErrorReturn::NonCanonical)`
+    * `[ ]`   `decode_scalar_round_trips_the_largest_canonical_scalar`: arrange `r - 1`; act `decode_scalar` then `encode_scalar`; assert the exposed bytes equal `r - 1`
+    * `[ ]`   `decode_scalar_rejects_a_wrong_length`: arrange 31 bytes; act `decode_scalar`; assert `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: 31 })`
+    * `[ ]`   `add_g1_of_the_generator_to_itself_equals_its_multiple_by_two`: arrange the generator and the decoded scalar two, payloads from `build_add_g1_payload` and `build_mul_g1_payload`; act `add_g1` and `mul_g1`, each encoded; assert the two encodings are equal and differ from the generator's
+    * `[ ]`   `add_g2_of_the_generator_to_itself_equals_its_multiple_by_two`: the same over the second group
+    * `[ ]`   `msm_g1_equals_the_multiple_by_the_sum_of_its_scalars`: arrange terms from `build_msm_g1_term` pairing the generator with two and with three, and the scalar five; act `msm_g1` and `mul_g1` by five, each encoded; assert the encodings are equal
+    * `[ ]`   `msm_g2_equals_the_multiple_by_the_sum_of_its_scalars`: the same over the second group
+    * `[ ]`   `pairing_product_is_one_for_a_pairing_and_its_inverse`: arrange terms `(g1, g2)` and `(g1 · (r - 1), g2)`; act `pairing_product_is_one`; assert `is_one` is `true`
+    * `[ ]`   `pairing_product_is_not_one_for_a_single_generator_pairing`: arrange the one term `(g1, g2)`; act `pairing_product_is_one`; assert `is_one` is `false`
+    * `[ ]`   `pairing_product_is_one_across_the_bilinear_exchange`: arrange terms `(g1 · 2, g2)` and `(g1, g2 · (r - 2))`; act `pairing_product_is_one`; assert `is_one` is `true`
+    * `[ ]`   `sample_from_uniform_bytes_rejects_a_wrong_length`: arrange `build_sample_uniform_scalar_payload` with `uniform` holding 63 bytes; act `Bn254ArkworksScalar::sample_from_uniform_bytes`; assert `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 63 })`
+    * `[ ]`   `sample_from_uniform_bytes_reduces_the_largest_input_into_the_scalar_field`: arrange `uniform` holding 64 bytes of `ff`; act `sample_from_uniform_bytes`, then `encode_scalar` of a clone of the exposed scalar, then `decode_scalar`; assert the decode returns `Ok`, the sampled scalar being below `r`
+    * `[ ]`   `sample_from_uniform_bytes_draws_an_in_range_scalar_from_the_operating_system_source`: arrange `create_random_source` for `RandomSourceKind::OperatingSystem` and `fill_bytes` with `length: Some(Bn254ArkworksScalar::UNIFORM_BYTES_LENGTH)`; act `sample_from_uniform_bytes` over the draw, then `encode_scalar` and `decode_scalar`; assert the decode returns `Ok`
+    * `[ ]`   `bn254_arkworks_pairing_declares_its_curve_arithmetic_encoding_and_versions`: act read `Bn254ArkworksPairing::DECLARATION`; assert `curve` matches `PairingCurve::Bn254`, `verifier_group_arithmetic` matches `VerifierGroupArithmetic::FirstGroupOnly`, `precompile_encoding` matches `PrecompileEncoding::Eip196Eip197`, `adapter_version` equals `1`, and `interface_version` equals `PAIRING_INTERFACE_VERSION`
+    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers; every payload is built through its family builder with only the overrides the test depends on
+
+  * `[ ]`   `construction`
+    * `[ ]`   `Bn254ArkworksPairing::try_new` is the concrete's only producer, and its only caller is the pairing factory, which reads `Bn254ArkworksPairing::DECLARATION` before constructing
+    * `[ ]`   A group element or scalar is produced only by the adapter's generators, arithmetic, and decoders, or by the scalar's sampling bound; no consumer constructs one from library values
+
+  * `[ ]`   `adapters/pairing/src/bn254_arkworks/mod.rs`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `impl Bn254ArkworksPairing` with `pub const DECLARATION: PairingDeclaration` and `pub fn try_new(_params: Bn254ArkworksPairingConstructorParams) -> Bn254ArkworksPairingTryNewReturn` returning `Ok(Bn254ArkworksPairing)`
+    * `[ ]`   `impl IPairingAdapter for Bn254ArkworksPairing` with `type Scalar = Bn254ArkworksScalar;`, `type G1 = Bn254ArkworksG1;`, `type G2 = Bn254ArkworksG2;`, and every method realizing its branches in the interaction spec, the decoders checking in the stated order and slicing the payload only after the length check
+    * `[ ]`   `impl Zeroize for Bn254ArkworksScalar` calling `self.value.zeroize()`; `impl Drop for Bn254ArkworksScalar` calling `self.value.zeroize()`
+    * `[ ]`   `impl ISampleUniformScalar for Bn254ArkworksScalar` with `const UNIFORM_BYTES_LENGTH: usize = 64;` and `sample_from_uniform_bytes` realizing its branches, the scalar moved into a `Secret` by `let Ok(scalar) = Secret::try_new(SecretConstructorParams { value });`
+    * `[ ]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::Zeroize`, the arkworks names the context slice lists, and this module's types from `interface`
+    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/pairing/src/bn254_arkworks/provides.rs`
+    * `[ ]`   `pub(crate) use super::interface::*;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate
+
+  * `[ ]`   `directionality`
+    * `[ ]`   `bn254_arkworks` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on the arkworks crates; the `factory` module depends on `domain` and `zeroize` and on no concrete; among repository crates the crate depends on `crates/domain` alone at runtime and on `adapters/random` for tests only, the dependency map's edge; nothing depends on the crate yet
+    * `[ ]`   `pairing/factory` adds the family form's recorded cycle when the factory function constructs this concrete
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `adapters/pairing/Cargo.toml` carries exactly the tables and keys stated above, and no `ark-` crate is named in the crate outside `adapters/pairing/src/bn254_arkworks`
+    * `[ ]`   `cargo check --all-targets --all-features`, `cargo fmt --check`, and `cargo deny check` complete without error; `cargo clippy --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `bn254_arkworks` concrete, which `pairing/factory` resolves by constructing the concrete
+    * `[ ]`   Every test in `bn254_arkworks/test.rs` passes: the generator encodings match EIP-196 and EIP-197, the decoders round-trip and reject a wrong length, a non-canonical coordinate or scalar, a point off the curve, and a second-group point outside the subgroup, the arithmetic and multi-scalar multiplication agree, the pairing-product check accepts a pairing with its inverse and the bilinear exchange and rejects a lone pairing, and sampling rejects a wrong length and returns a scalar below the group order from a production draw (CR-10 on BN254; CR-05 for the sampled scalar)
+    * `[ ]`   Code outside `adapters/pairing` naming `Bn254ArkworksPairing` or anything under `bn254_arkworks` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[ ]`   `pairing/bn254_halo2curves` **BN254 pairing concrete on halo2curves with EIP-196 and EIP-197 encodings, a further concrete beneath the pairing factory**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: the harness benchmark compares pairing libraries per curve through the factory, so BN254 needs a second concrete over a second library that satisfies the family's generic interface exactly as the arkworks concrete does (CR-10)
+    * `[ ]`   Functional: the concrete implements `IPairingAdapter` over `halo2curves`' BN256, which is BN254, with its own scalar and group-element types over the library's elements as the associated types
+    * `[ ]`   Functional: it encodes and decodes a first-group point as EIP-196's 64 bytes and a second-group point as EIP-197's 128 bytes, each coordinate a 32-byte big-endian integer, the second-group coordinates imaginary part first, the point at infinity as all zero bytes, and a scalar as 32 big-endian bytes, rejecting a wrong length, a non-canonical field element, a point off the curve, and a point outside the prime-order subgroup
+    * `[ ]`   Functional: its scalar type implements the family's sampling bound, reading the 64 uniform bytes as one big-endian integer reduced modulo the group order, so the same input bytes sample the same scalar under either BN254 concrete
+    * `[ ]`   Functional: it declares the BN254 curve, first-group-only arithmetic at the verifier, the EIP-196 and EIP-197 encoding, its adapter version, and the interface version it implements
+    * `[ ]`   Non-functional: `halo2curves` is named only inside `adapters/pairing/src/bn254_halo2curves`; the family's interface, declaration, builders, and mock are unchanged
+
+  * `[ ]`   `role`
+    * `[ ]`   Adapter: a further concrete of the pairing family, consuming the generic interface, sampling bound, declaration, and builders `pairing/bn254_arkworks` authored in the `factory` module
+    * `[ ]`   Adds its module line to `lib.rs` and its dependency line to the crate manifest; edits no file of the `factory` module, since its declaration uses the variants that already exist
+    * `[ ]`   Does not select between the BN254 concretes; `pairing/factory` constructs a concrete by the composition's request and `harness-crypto/benchmark` records the default per curve
+    * `[ ]`   Does not name, import, or compare against the arkworks concrete
+    * `[ ]`   Does not carry a commit
+
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the private `bn254_halo2curves` module of `adapters/pairing`, holding the adapter over `halo2curves`' BN256, its scalar and group-element types over the library's elements, its constructor params, and the builder defaults for its owned types
+    * `[ ]`   Outside: the family's generic interface and declaration, the arkworks concrete, and the factory's selection
+
+  * `[ ]`   `deps`
+    * `[ ]`   The `factory` module's surface, through `crate::factory::provides`: `IPairingAdapter` with its associated types and methods and every method's params, payload, success, error, and return types; `ISampleUniformScalar` and its types; `PairingDeclaration`, `PairingCurve`, `VerifierGroupArithmetic`, `PrecompileEncoding`, and `PAIRING_INTERFACE_VERSION`; and, in tests, the family's builders
+    * `[ ]`   `domain`, `crates/domain`, path dependency the crate already carries; supplies `Secret` and `SecretConstructorParams`; in tests `build_secret` and `SecretConstructorParamsOverrides`
+    * `[ ]`   `zeroize` `1.9.0`, which the crate already carries; supplies the `Zeroize` trait the sampling bound requires and the zeroization of the local 64-byte input copy
+    * `[ ]`   `halo2curves` `0.10.0`, external crate, MIT/Apache-2.0, runtime dependency named only in `bn254_halo2curves`, default features; supplies the curve, the pairing, the group arithmetic, the field arithmetic, and multi-scalar multiplication, and re-exports the `ff`, `group`, and `pairing` traits its types implement, so no separate trait crate is pinned
+    * `[ ]`   `random` with its `mocks` feature and `hex` `0.4.3`, dev-dependencies the crate already carries; supply the production draw and the test vectors
+    * `[ ]`   `core::convert::Infallible`, standard library, the constructor's error arm; `core::hint::black_box`, standard library, which keeps the clearing of a scalar from being removed as a dead store, since `halo2curves`' fields implement no `Zeroize`; `core::iter::successors`, standard library, in `test.rs` only
+    * `[ ]`   No reverse dependency; nothing depends on this concrete until `pairing/factory`
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From `halo2curves::bn256`: `Bn256`, `Fq`, `Fq2` with `Fq2::new(c0, c1)` and the accessors `c0()` and `c1()`, `Fr`, `G1`, `G1Affine`, `G2`, and `G2Affine`
+    * `[ ]`   From `halo2curves::ff`: `Field` for `ZERO`, `ONE`, `is_zero()`, `square()`, and `sqrt()`; `PrimeField` for `from_repr(repr) -> CtOption<Self>`, which reads 32 little-endian bytes and is none at or above the modulus, and `to_repr()`, the representation built from a `[u8; 32]` by `into()` and read by `as_ref()`; `FromUniformBytes::<64>::from_uniform_bytes(&[u8; 64])`, a little-endian wide reduction
+    * `[ ]`   From `halo2curves::group`: `Curve::to_affine`, `Group::is_identity`, `prime::PrimeCurveAffine` for `generator()`, `identity()`, and `to_curve()`, `cofactor::CofactorGroup::is_torsion_free`, and the projective `+` and `* Fr`
+    * `[ ]`   From `halo2curves`: `CurveAffine` for `from_xy(x, y) -> CtOption<Self>`, which is none off the curve, `coordinates() -> CtOption<Coordinates<Self>>`, and `b()`; `Coordinates` for `x()` and `y()`; `msm::msm_best(coeffs: &[C::Scalar], bases: &[C]) -> C::Curve`
+    * `[ ]`   From `halo2curves::pairing`: `MultiMillerLoop::multi_miller_loop(&[(&G1Affine, &G2Affine)])` on `Bn256`, and `MillerLoopResult::final_exponentiation` returning the target-group element, whose `is_identity()` is the check
+    * `[ ]`   A `Choice` becomes a `bool` by `bool::from`, and a `CtOption` becomes an `Option` by `Option::from`
+
+  * `[ ]`   `adapters/pairing/Cargo.toml`
+    * `[ ]`   Adds `halo2curves = "0.10.0"`, default features, to `[dependencies]`; every other table and key is unchanged
+
+  * `[ ]`   `adapters/pairing/src/lib.rs`
+    * `[ ]`   Adds `mod bn254_halo2curves;` to the barrel; every other line is unchanged
+    * `[ ]`   Until `bn254_halo2curves/mod.rs` exists, `cargo check` reports the unresolved module, which is the RED state for every element below that precedes it
+
+  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/interface.rs`
+    * `[ ]`   `Bn254Halo2curvesPairing`, the unit struct `pub struct Bn254Halo2curvesPairing;`, the adapter over `halo2curves`' BN256
+    * `[ ]`   `Bn254Halo2curvesPairingConstructorParams`, the fieldless struct `pub struct Bn254Halo2curvesPairingConstructorParams;`
+    * `[ ]`   `Bn254Halo2curvesPairingTryNewReturn`, the alias `Result<Bn254Halo2curvesPairing, Infallible>`; the error arm is uninhabited because the adapter takes no configuration
+    * `[ ]`   `Bn254Halo2curvesScalar`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bn256::Fr`
+    * `[ ]`   `Bn254Halo2curvesG1`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bn256::G1Affine`
+    * `[ ]`   `Bn254Halo2curvesG2`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bn256::G2Affine`
+    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
+
+  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/interaction.spec.md`
+    * `[ ]`   `Bn254Halo2curvesPairing::try_new(params: Bn254Halo2curvesPairingConstructorParams) -> Bn254Halo2curvesPairingTryNewReturn`: one branch; outcome `Ok(Bn254Halo2curvesPairing)`; the error arm has no branch
+    * `[ ]`   `Bn254Halo2curvesPairing::DECLARATION`: the inherent constant `PairingDeclaration { curve: PairingCurve::Bn254, verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly, precompile_encoding: PrecompileEncoding::Eip196Eip197, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
+    * `[ ]`   `g1_generator`, `g2_generator`: one branch each; dependency call `G1Affine::generator()` or `G2Affine::generator()`; outcome `Ok` holding the generator in the owned group type
+    * `[ ]`   `add_g1`, `add_g2`: one branch each; dependency call `to_curve()` on each payload point, the projective `+`, and `to_affine()`; outcome `Ok` holding the sum
+    * `[ ]`   `mul_g1`, `mul_g2`: one branch each; dependency call `to_curve()` on the point, the projective `*` the scalar's `Fr`, and `to_affine()`; outcome `Ok` holding the product; the payload, holding the scalar, drops at the end of the call and the scalar is cleared
+    * `[ ]`   `msm_g1`, `msm_g2`: one branch each; the terms are split into a `Vec` of affine bases and a `Vec<Fr>` of the same length; dependency call `msm_best(&scalars, &bases)` and `to_affine()`; every element of the `Vec<Fr>` is then set to `Fr::ZERO` and the vector passed to `black_box`; outcome `Ok` holding the sum; an empty term list yields the identity
+    * `[ ]`   `pairing_product_is_one`: one branch; dependency call `Bn256::multi_miller_loop` over the terms as a `Vec<(&G1Affine, &G2Affine)>` in term order, then `final_exponentiation()`; outcome `Ok(PairingProductIsOneSuccessReturn { is_one })` where `is_one` is `bool::from(is_identity())`; an empty term list yields `is_one: true`, as EIP-197 does for empty input
+    * `[ ]`   `decode_g1`, wrong length: condition `<[u8; 64]>::try_from(payload)` fails; outcome `Err(DecodeG1ErrorReturn::WrongLength { expected: 64, actual: payload.len() })`
+    * `[ ]`   `decode_g1`, non-canonical coordinate: condition either 32-byte half, reversed to little-endian and read by `Fq::from_repr`, is none, that is, it is at least the base field modulus; outcome `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1`, identity: condition both coordinates are zero; outcome `Ok` holding `G1Affine::identity()`
+    * `[ ]`   `decode_g1`, off the curve: condition `G1Affine::from_xy(x, y)` is none; outcome `Err(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g1`, outside the subgroup: condition `bool::from(point.to_curve().is_torsion_free())` is false; outcome `Err(DecodeG1ErrorReturn::NotInSubgroup)`; BN254's first group has cofactor one, so no on-curve point takes this branch and it has no unit test, but the check runs on every decode
+    * `[ ]`   `decode_g1`, valid: every check passes; outcome `Ok` holding the point
+    * `[ ]`   `decode_g2`: the same branches in the same order over 128 bytes read as `x.c1`, `x.c0`, `y.c1`, `y.c0`, each 32 bytes big-endian, assembled by `Fq2::new(c0, c1)`, with `DecodeG2ErrorReturn`; the identity is all four coordinates zero; the subgroup branch is reachable, since BN254's second group has a nontrivial cofactor
+    * `[ ]`   `decode_scalar`, wrong length: condition `<[u8; 32]>::try_from(payload)` fails; outcome `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
+    * `[ ]`   `decode_scalar`, non-canonical: condition the bytes, reversed to little-endian and read by `Fr::from_repr`, are none, that is, they are at least the group order; outcome `Err(DecodeScalarErrorReturn::NonCanonical)`
+    * `[ ]`   `decode_scalar`, valid: outcome `Ok` holding the scalar
+    * `[ ]`   `encode_g1`: one branch; a point whose `coordinates()` is none, the identity, encodes to 64 zero bytes; any other point encodes `x()` then `y()`, each `to_repr()` reversed to big-endian
+    * `[ ]`   `encode_g2`: one branch; the identity encodes to 128 zero bytes; any other point encodes `x().c1()`, `x().c0()`, `y().c1()`, `y().c0()`, each `to_repr()` reversed to big-endian
+    * `[ ]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's `to_repr()` reversed to 32 big-endian bytes, moved into a `Secret`
+    * `[ ]`   `Bn254Halo2curvesScalar::UNIFORM_BYTES_LENGTH`: `64`, twice the byte width of the group order
+    * `[ ]`   `Bn254Halo2curvesScalar::sample_from_uniform_bytes`, wrong length: condition `<&[u8; 64]>::try_from(payload.uniform.expose().as_slice())` fails; outcome `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
+    * `[ ]`   `Bn254Halo2curvesScalar::sample_from_uniform_bytes`, sampled: the 64 bytes are copied into a local `[u8; 64]` and reversed, so the big-endian integer the arkworks concrete reads is the little-endian integer `halo2curves` reads; dependency call `Fr::from_uniform_bytes` over the copy, which is then zeroized; outcome `Ok` holding the scalar moved into a `Secret`; the payload's `Secret` zeroizes the input when it drops
+    * `[ ]`   Clearing: `halo2curves`' `Fr` implements no `Zeroize`, so `Bn254Halo2curvesScalar`'s `Zeroize` implementation and its `Drop` set `value` to `Fr::ZERO` and pass `&self.value` to `black_box`; every clone a consumer places in a payload is cleared when the payload drops
+
+  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/mock.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[ ]`   The builder defaults for the concrete's owned types, which the family's generic builders and `MockIPairingAdapter` read through `Default`: `impl Default for Bn254Halo2curvesScalar` returning `Fr::ONE`; `impl Default for Bn254Halo2curvesG1` returning `G1Affine::generator()`; `impl Default for Bn254Halo2curvesG2` returning `G2Affine::generator()`
+    * `[ ]`   Nothing else; the types are built as real values, so there is no overrides type, invalidator, or mock function here
+
+  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports this module's types from `super::interface`, the family's names and builders from `crate::factory::provides`, `build_secret` and `SecretConstructorParamsOverrides` from `domain`, the `random` names `pairing/bn254_arkworks`'s test imports, `hex::decode`, `core::iter::successors`, and, for the non-subgroup vector, `halo2curves::bn256::{Fq, Fq2, G2Affine}`, `halo2curves::ff::{Field, PrimeField}`, `halo2curves::group::{cofactor::CofactorGroup, prime::PrimeCurveAffine}`, and `halo2curves::CurveAffine`; each test constructs the subject by `let Ok(pairing) = Bn254Halo2curvesPairing::try_new(Bn254Halo2curvesPairingConstructorParams);`, decodes hex by `let Ok(bytes) = decode(…) else { panic!(…) };`, and unpacks each call by `let Ok(…) = … else { panic!(…) };`
+    * `[ ]`   The vectors are `pairing/bn254_arkworks`'s, restated here as hex: `p` = `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47`; `r` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001`; `r - 1` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000`; `r - 2` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff`; the EIP-196 first-group generator, 31 zero bytes and `01` followed by 31 zero bytes and `02`; the EIP-197 second-group generator, `198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2` then `1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed` then `090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b` then `12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa`; the scalars two, three, and five as 32 big-endian bytes
+    * `[ ]`   `g1_generator_encodes_to_the_eip_196_generator`: contract: the first-group generator's encoding is EIP-196's; act `encode_g1` over `g1_generator`; assert the bytes equal the first-group generator vector
+    * `[ ]`   `g2_generator_encodes_to_the_eip_197_generator`: contract: the second-group generator's encoding is EIP-197's, imaginary parts first; act `encode_g2` over `g2_generator`; assert the bytes equal the second-group generator vector
+    * `[ ]`   `decode_g1_round_trips_the_eip_196_generator`: arrange the first-group generator vector; act `decode_g1` then `encode_g1`; assert the bytes equal the vector
+    * `[ ]`   `decode_g2_round_trips_the_eip_197_generator`: arrange the second-group generator vector; act `decode_g2` then `encode_g2`; assert the bytes equal the vector
+    * `[ ]`   `decode_g1_reads_the_all_zero_encoding_as_the_identity`: arrange 64 zero bytes and the generator; act `decode_g1`, then `add_g1` of the generator and the decoded point, then `encode_g1`; assert the bytes equal the first-group generator vector
+    * `[ ]`   `decode_g2_reads_the_all_zero_encoding_as_the_identity`: the same over 128 zero bytes, `add_g2`, and the second-group generator vector
+    * `[ ]`   `encode_g1_writes_the_identity_as_all_zero_bytes`: arrange the identity as `msm_g1` over an empty `build_msm_g1_payload`; act `encode_g1`; assert the bytes equal 64 zero bytes
+    * `[ ]`   `decode_g1_rejects_a_wrong_length`: arrange 63 bytes; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::WrongLength { expected: 64, actual: 63 })`
+    * `[ ]`   `decode_g1_rejects_a_coordinate_equal_to_the_base_field_modulus`: arrange `p` followed by the 32-byte encoding of two; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_rejects_a_point_off_the_curve`: arrange the 32-byte encodings of one and three; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g2_rejects_a_wrong_length`: arrange 127 bytes; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::WrongLength { expected: 128, actual: 127 })`
+    * `[ ]`   `decode_g2_rejects_a_point_off_the_curve`: arrange the second-group generator vector with its last byte `aa` replaced by `ab`; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g2_rejects_a_point_outside_the_subgroup`: arrange the first on-curve point outside the subgroup found by `successors(Some(Fq::ONE), |c0| Some(*c0 + Fq::ONE))` and `find_map`, taking `x = Fq2::new(c0, Fq::ZERO)`, `y` from `Option::from((x.square() * x + G2Affine::b()).sqrt())`, the point from `Option::from(G2Affine::from_xy(x, y))`, and keeping it when `bool::from(point.to_curve().is_torsion_free())` is false, encoded as `x.c1()`, `x.c0()`, `y.c1()`, `y.c0()`, each `to_repr()` reversed to big-endian; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_scalar_rejects_the_group_order`: arrange `r`; act `decode_scalar`; assert `Err(DecodeScalarErrorReturn::NonCanonical)`
+    * `[ ]`   `decode_scalar_round_trips_the_largest_canonical_scalar`: arrange `r - 1`; act `decode_scalar` then `encode_scalar`; assert the exposed bytes equal `r - 1`
+    * `[ ]`   `decode_scalar_rejects_a_wrong_length`: arrange 31 bytes; act `decode_scalar`; assert `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: 31 })`
+    * `[ ]`   `add_g1_of_the_generator_to_itself_equals_its_multiple_by_two`: arrange the generator and the decoded scalar two, payloads from `build_add_g1_payload` and `build_mul_g1_payload`; act `add_g1` and `mul_g1`, each encoded; assert the two encodings are equal and differ from the generator's
+    * `[ ]`   `add_g2_of_the_generator_to_itself_equals_its_multiple_by_two`: the same over the second group
+    * `[ ]`   `msm_g1_equals_the_multiple_by_the_sum_of_its_scalars`: arrange terms from `build_msm_g1_term` pairing the generator with two and with three, and the scalar five; act `msm_g1` and `mul_g1` by five, each encoded; assert the encodings are equal
+    * `[ ]`   `msm_g2_equals_the_multiple_by_the_sum_of_its_scalars`: the same over the second group
+    * `[ ]`   `pairing_product_is_one_for_a_pairing_and_its_inverse`: arrange terms `(g1, g2)` and `(g1 · (r - 1), g2)`; act `pairing_product_is_one`; assert `is_one` is `true`
+    * `[ ]`   `pairing_product_is_not_one_for_a_single_generator_pairing`: arrange the one term `(g1, g2)`; act `pairing_product_is_one`; assert `is_one` is `false`
+    * `[ ]`   `pairing_product_is_one_across_the_bilinear_exchange`: arrange terms `(g1 · 2, g2)` and `(g1, g2 · (r - 2))`; act `pairing_product_is_one`; assert `is_one` is `true`
+    * `[ ]`   `sample_from_uniform_bytes_rejects_a_wrong_length`: arrange `build_sample_uniform_scalar_payload` with `uniform` holding 63 bytes; act `Bn254Halo2curvesScalar::sample_from_uniform_bytes`; assert `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 63 })`
+    * `[ ]`   `sample_from_uniform_bytes_reads_its_input_as_a_big_endian_integer`: arrange `uniform` holding 63 zero bytes followed by `05`; act `sample_from_uniform_bytes`, then `encode_scalar` of a clone of the exposed scalar; assert the exposed bytes equal the 32-byte big-endian encoding of five
+    * `[ ]`   `sample_from_uniform_bytes_reduces_the_largest_input_into_the_scalar_field`: arrange `uniform` holding 64 bytes of `ff`; act `sample_from_uniform_bytes`, then `encode_scalar` of a clone of the exposed scalar, then `decode_scalar`; assert the decode returns `Ok`, the sampled scalar being below `r`
+    * `[ ]`   `sample_from_uniform_bytes_draws_an_in_range_scalar_from_the_operating_system_source`: arrange `create_random_source` for `RandomSourceKind::OperatingSystem` and `fill_bytes` with `length: Some(Bn254Halo2curvesScalar::UNIFORM_BYTES_LENGTH)`; act `sample_from_uniform_bytes` over the draw, then `encode_scalar` and `decode_scalar`; assert the decode returns `Ok`
+    * `[ ]`   `bn254_halo2curves_pairing_declares_its_curve_arithmetic_encoding_and_versions`: act read `Bn254Halo2curvesPairing::DECLARATION`; assert `curve` matches `PairingCurve::Bn254`, `verifier_group_arithmetic` matches `VerifierGroupArithmetic::FirstGroupOnly`, `precompile_encoding` matches `PrecompileEncoding::Eip196Eip197`, `adapter_version` equals `1`, and `interface_version` equals `PAIRING_INTERFACE_VERSION`
+    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers; every payload is built through its family builder with only the overrides the test depends on
+
+  * `[ ]`   `construction`
+    * `[ ]`   `Bn254Halo2curvesPairing::try_new` is the concrete's only producer, and its only caller is the pairing factory, which reads `Bn254Halo2curvesPairing::DECLARATION` before constructing
+    * `[ ]`   A group element or scalar is produced only by the adapter's generators, arithmetic, and decoders, or by the scalar's sampling bound; no consumer constructs one from library values
+
+  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/mod.rs`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `impl Bn254Halo2curvesPairing` with `pub const DECLARATION: PairingDeclaration` and `pub fn try_new(_params: Bn254Halo2curvesPairingConstructorParams) -> Bn254Halo2curvesPairingTryNewReturn` returning `Ok(Bn254Halo2curvesPairing)`
+    * `[ ]`   `impl IPairingAdapter for Bn254Halo2curvesPairing` with `type Scalar = Bn254Halo2curvesScalar;`, `type G1 = Bn254Halo2curvesG1;`, `type G2 = Bn254Halo2curvesG2;`, and every method realizing its branches in the interaction spec, the decoders checking in the stated order and copying each 32-byte coordinate out of the fixed-size array before reversing it
+    * `[ ]`   `impl Zeroize for Bn254Halo2curvesScalar` and `impl Drop for Bn254Halo2curvesScalar`, each setting `self.value` to `Fr::ZERO` and calling `black_box(&self.value)`
+    * `[ ]`   `impl ISampleUniformScalar for Bn254Halo2curvesScalar` with `const UNIFORM_BYTES_LENGTH: usize = 64;` and `sample_from_uniform_bytes` realizing its branches, the scalar moved into a `Secret` by `let Ok(scalar) = Secret::try_new(SecretConstructorParams { value });`
+    * `[ ]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::Zeroize`, `core::hint::black_box`, the `halo2curves` names the context slice lists, and this module's types from `interface`
+    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/provides.rs`
+    * `[ ]`   `pub(crate) use super::interface::*;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate
+
+  * `[ ]`   `directionality`
+    * `[ ]`   `bn254_halo2curves` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on `halo2curves`; it depends on no other concrete and no concrete depends on it; the `factory` module is unchanged and depends on no concrete; among repository crates the crate still depends on `crates/domain` alone at runtime
+    * `[ ]`   `pairing/factory` adds the family form's recorded cycle when the factory function constructs this concrete
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `adapters/pairing/Cargo.toml` differs from `pairing/bn254_arkworks`'s only by the `halo2curves` dependency, and `halo2curves` is named nowhere in the crate outside `adapters/pairing/src/bn254_halo2curves`
+    * `[ ]`   `cargo check --all-targets --all-features`, `cargo fmt --check`, and `cargo deny check` complete without error; `cargo clippy --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the two BN254 concretes, which `pairing/factory` resolves by constructing them
+    * `[ ]`   Every test in `bn254_halo2curves/test.rs` passes: the generator encodings match EIP-196 and EIP-197 and the identity encodes to zero bytes, the decoders round-trip and reject a wrong length, a non-canonical coordinate or scalar, a point off the curve, and a second-group point outside the subgroup, the arithmetic and multi-scalar multiplication agree, the pairing-product check accepts a pairing with its inverse and the bilinear exchange and rejects a lone pairing, and sampling rejects a wrong length, reads its input big-endian, and returns a scalar below the group order from a production draw (CR-10 on BN254; CR-05 for the sampled scalar)
+    * `[ ]`   Code outside `adapters/pairing` naming `Bn254Halo2curvesPairing` or anything under `bn254_halo2curves` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[ ]`   `pairing/bls12_381_arkworks` **BLS12-381 pairing concrete on arkworks with EIP-2537 encodings and subgroup checks on every input; adds the BLS12-381 variants to the family's declaration**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: BLS12-381 is the primary verifier form on Base through the EIP-2537 precompiles, so the pairing family needs a BLS12-381 concrete whose encodings and checks match those precompiles exactly (CR-10)
+    * `[ ]`   Functional: the concrete implements `IPairingAdapter` over arkworks' BLS12-381, with its own scalar and group-element types over the library's elements as the associated types
+    * `[ ]`   Functional: it encodes and decodes a base field element as EIP-2537's 64 bytes, sixteen zero bytes followed by the 48-byte big-endian integer, a first-group point as 128 bytes of `x` then `y`, a second-group point as 256 bytes of `x.c0`, `x.c1`, `y.c0`, `y.c1`, the point at infinity as all zero bytes, and a scalar as 32 big-endian bytes
+    * `[ ]`   Functional: decoding rejects a wrong length, a nonzero padding byte, a field element at or above the modulus, a point off the curve, and a point outside the prime-order subgroup in either group, since BLS12-381's first group has a nontrivial cofactor as well as its second
+    * `[ ]`   Functional: its scalar type implements the family's sampling bound, reading the 64 uniform bytes as one big-endian integer reduced modulo the group order
+    * `[ ]`   Functional: it declares the BLS12-381 curve, second-group arithmetic at the verifier, the EIP-2537 encoding, its adapter version, and the interface version it implements, so the proof factory selects the verifier form with direct second-group equations
+    * `[ ]`   Non-functional: `ark-bls12-381` is named only inside `adapters/pairing/src/bls12_381_arkworks`, and `ark-ec` and `ark-ff` only inside the arkworks concretes
+
+  * `[ ]`   `role`
+    * `[ ]`   Adapter: a further concrete of the pairing family, consuming the generic interface, sampling bound, declaration, and builders `pairing/bn254_arkworks` authored in the `factory` module
+    * `[ ]`   Adds the variants `PairingCurve::Bls12381`, `VerifierGroupArithmetic::BothGroups`, and `PrecompileEncoding::Eip2537` to `factory/interface.rs`, the producers its declaration needs; changes no other item of the `factory` module
+    * `[ ]`   Adds its module line to `lib.rs` and its dependency line to the crate manifest
+    * `[ ]`   Does not select between concretes; `pairing/factory` constructs a concrete by the composition's request and `harness-crypto/benchmark` records the default per curve
+    * `[ ]`   Does not name, import, or compare against another concrete
+    * `[ ]`   Does not carry a commit
+
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the private `bls12_381_arkworks` module of `adapters/pairing`, holding the adapter over arkworks' BLS12-381, its scalar and group-element types over the library's elements, its constructor params, and the builder defaults for its owned types; and the three declaration variants in the `factory` module
+    * `[ ]`   Outside: the rest of the family's generic interface, every other concrete, and the factory's selection
+
+  * `[ ]`   `deps`
+    * `[ ]`   The `factory` module's surface, through `crate::factory::provides`: `IPairingAdapter` with its associated types and methods and every method's params, payload, success, error, and return types; `ISampleUniformScalar` and its types; `PairingDeclaration`, `PairingCurve`, `VerifierGroupArithmetic`, `PrecompileEncoding`, and `PAIRING_INTERFACE_VERSION`; and, in tests, the family's builders
+    * `[ ]`   `domain`, `crates/domain`, path dependency the crate already carries; supplies `Secret` and `SecretConstructorParams`; in tests `build_secret` and `SecretConstructorParamsOverrides`
+    * `[ ]`   `zeroize` `1.9.0`, which the crate already carries; supplies the `Zeroize` trait the sampling bound requires and the scalar implements
+    * `[ ]`   `ark-bls12-381` `0.6.0`, external crate, MIT OR Apache-2.0, runtime dependency named only in `bls12_381_arkworks`, default features; supplies the curve and the pairing
+    * `[ ]`   `ark-ec` `0.6.0` and `ark-ff` `0.6.0`, which the crate already carries; supply the group and field arithmetic
+    * `[ ]`   `random` with its `mocks` feature and `hex` `0.4.3`, dev-dependencies the crate already carries; supply the production draw and the test vectors
+    * `[ ]`   `core::convert::Infallible`, standard library, the constructor's error arm
+    * `[ ]`   No reverse dependency; nothing depends on this concrete until `pairing/factory`
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From `ark-bls12-381`: `Bls12_381`, `Fq`, `Fq2` with its public fields `c0` and `c1` and `Fq2::new(c0, c1)`, `Fr`, `G1Affine`, `G1Projective`, `G2Affine`, and `G2Projective`
+    * `[ ]`   From `ark-ec`: `AffineRepr` for `generator()` and `xy()`; the short-Weierstrass affine `identity()`, `new_unchecked(x, y)`, `is_on_curve()`, `is_in_correct_subgroup_assuming_on_curve()`, and `get_point_from_x_unchecked(x, greatest)`; the affine `+` and `* Fr` producing projective points; `CurveGroup::into_affine`; `VariableBaseMSM::msm_unchecked(bases, scalars)`; `pairing::Pairing::multi_pairing(a, b)` returning `PairingOutput`
+    * `[ ]`   From `ark-ff`: `PrimeField::from_be_bytes_mod_order(&[u8])` and `into_bigint()`, `BigInteger::to_bytes_be()`, which yields 48 bytes for `Fq` and 32 for `Fr`, `Zero::is_zero()` on `PairingOutput`, and `Fr::from(u64)` and `Fq::from(u64)`
+
+  * `[ ]`   `adapters/pairing/Cargo.toml`
+    * `[ ]`   Adds `ark-bls12-381 = "0.6.0"`, default features, to `[dependencies]`; every other table and key is unchanged
+
+  * `[ ]`   `adapters/pairing/src/lib.rs`
+    * `[ ]`   Adds `mod bls12_381_arkworks;` to the barrel; every other line is unchanged
+    * `[ ]`   Until `bls12_381_arkworks/mod.rs` exists, `cargo check` reports the unresolved module, which is the RED state for every element below that precedes it
+
+  * `[ ]`   `adapters/pairing/src/factory/interface.rs`
+    * `[ ]`   `PairingCurve` gains the variant `Bls12381`; `VerifierGroupArithmetic` gains the variant `BothGroups`; `PrecompileEncoding` gains the variant `Eip2537`
+    * `[ ]`   Every other item is unchanged
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/interface.rs`
+    * `[ ]`   `Bls12381ArkworksPairing`, the unit struct `pub struct Bls12381ArkworksPairing;`, the adapter over arkworks' BLS12-381
+    * `[ ]`   `Bls12381ArkworksPairingConstructorParams`, the fieldless struct `pub struct Bls12381ArkworksPairingConstructorParams;`
+    * `[ ]`   `Bls12381ArkworksPairingTryNewReturn`, the alias `Result<Bls12381ArkworksPairing, Infallible>`; the error arm is uninhabited because the adapter takes no configuration
+    * `[ ]`   `Bls12381ArkworksScalar`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bls12_381::Fr`
+    * `[ ]`   `Bls12381ArkworksG1`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bls12_381::G1Affine`
+    * `[ ]`   `Bls12381ArkworksG2`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bls12_381::G2Affine`
+    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/interaction.spec.md`
+    * `[ ]`   `Bls12381ArkworksPairing::try_new(params: Bls12381ArkworksPairingConstructorParams) -> Bls12381ArkworksPairingTryNewReturn`: one branch; outcome `Ok(Bls12381ArkworksPairing)`; the error arm has no branch
+    * `[ ]`   `Bls12381ArkworksPairing::DECLARATION`: the inherent constant `PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
+    * `[ ]`   `g1_generator`, `g2_generator`: one branch each; dependency call `G1Affine::generator()` or `G2Affine::generator()`; outcome `Ok` holding the generator in the owned group type
+    * `[ ]`   `add_g1`, `add_g2`: one branch each; dependency call the affine `+` of the two payload points and `into_affine`; outcome `Ok` holding the sum
+    * `[ ]`   `mul_g1`, `mul_g2`: one branch each; dependency call the affine point `*` the scalar's `Fr` and `into_affine`; outcome `Ok` holding the product; the payload, holding the scalar, drops at the end of the call and the scalar is zeroized
+    * `[ ]`   `msm_g1`, `msm_g2`: one branch each; the terms are split into a `Vec` of affine bases and a `Vec<Fr>` of the same length; dependency call `G1Projective::msm_unchecked` or `G2Projective::msm_unchecked` over them and `into_affine`; the `Vec<Fr>` is zeroized after the call; outcome `Ok` holding the sum; an empty term list yields the identity
+    * `[ ]`   `pairing_product_is_one`: one branch; dependency call `Bls12_381::multi_pairing` over the terms' first-group elements and second-group elements in term order; outcome `Ok(PairingProductIsOneSuccessReturn { is_one })` where `is_one` is the output's `is_zero()`; an empty term list yields `is_one: true`
+    * `[ ]`   A coordinate, as read by every decoder below, is 64 bytes whose first 16 are zero and whose last 48, read by `Fq::from_be_bytes_mod_order`, re-encode through `into_bigint().to_bytes_be()` to the same 48 bytes; a nonzero byte among the first 16, or 48 bytes at or above the base field modulus, is non-canonical
+    * `[ ]`   `decode_g1`, wrong length: condition `payload.len() != 128`; outcome `Err(DecodeG1ErrorReturn::WrongLength { expected: 128, actual: payload.len() })`
+    * `[ ]`   `decode_g1`, non-canonical coordinate: condition either 64-byte coordinate is non-canonical; outcome `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1`, identity: condition both coordinates are zero; outcome `Ok` holding `G1Affine::identity()`
+    * `[ ]`   `decode_g1`, off the curve: condition `G1Affine::new_unchecked(x, y).is_on_curve()` is false; outcome `Err(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g1`, outside the subgroup: condition `is_in_correct_subgroup_assuming_on_curve()` is false; outcome `Err(DecodeG1ErrorReturn::NotInSubgroup)`; reachable, since BLS12-381's first group has a nontrivial cofactor
+    * `[ ]`   `decode_g1`, valid: every check passes; outcome `Ok` holding the point
+    * `[ ]`   `decode_g2`: the same branches in the same order over 256 bytes read as `x.c0`, `x.c1`, `y.c0`, `y.c1`, each a 64-byte coordinate, assembled by `Fq2::new(c0, c1)`, with `DecodeG2ErrorReturn` and an expected length of 256; the identity is all four coordinates zero
+    * `[ ]`   `decode_scalar`, wrong length: condition `payload.len() != 32`; outcome `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
+    * `[ ]`   `decode_scalar`, non-canonical: condition the bytes, read by `Fr::from_be_bytes_mod_order`, do not re-encode to the same 32 bytes, that is, they are at least the group order; outcome `Err(DecodeScalarErrorReturn::NonCanonical)`; EIP-2537's MSM accepts any 256-bit scalar, and this decoder, which produces an owned scalar, admits only the canonical ones
+    * `[ ]`   `decode_scalar`, valid: outcome `Ok` holding the scalar
+    * `[ ]`   `encode_g1`: one branch; the identity encodes to 128 zero bytes; any other point encodes `x` then `y` from `xy()`, each as 16 zero bytes followed by `into_bigint().to_bytes_be()`
+    * `[ ]`   `encode_g2`: one branch; the identity encodes to 256 zero bytes; any other point encodes `x.c0`, `x.c1`, `y.c0`, `y.c1`, each as 16 zero bytes followed by its 48 big-endian bytes
+    * `[ ]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's 32 big-endian bytes moved into a `Secret`
+    * `[ ]`   `Bls12381ArkworksScalar::UNIFORM_BYTES_LENGTH`: `64`, twice the byte width of the group order
+    * `[ ]`   `Bls12381ArkworksScalar::sample_from_uniform_bytes`, wrong length: condition `payload.uniform.expose().len() != 64`; outcome `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
+    * `[ ]`   `Bls12381ArkworksScalar::sample_from_uniform_bytes`, sampled: dependency call `Fr::from_be_bytes_mod_order` over the exposed bytes; outcome `Ok` holding the scalar moved into a `Secret`; the payload's `Secret` zeroizes the input when it drops
+    * `[ ]`   Zeroization: `Bls12381ArkworksScalar` zeroizes its `Fr` through its `Zeroize` implementation and on drop, so every clone a consumer places in a payload is zeroized when the payload drops
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/mock.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[ ]`   The builder defaults for the concrete's owned types, which the family's generic builders and `MockIPairingAdapter` read through `Default`: `impl Default for Bls12381ArkworksScalar` returning `Fr::from(1u64)`; `impl Default for Bls12381ArkworksG1` returning `G1Affine::generator()`; `impl Default for Bls12381ArkworksG2` returning `G2Affine::generator()`
+    * `[ ]`   Nothing else; the types are built as real values, so there is no overrides type, invalidator, or mock function here
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports this module's types from `super::interface`, the family's names and builders from `crate::factory::provides`, `build_secret` and `SecretConstructorParamsOverrides` from `domain`, the `random` names `pairing/bn254_arkworks`'s test imports, `hex::decode`, and, for the non-subgroup vectors, `ark_bls12_381::{Fq, Fq2, G1Affine, G2Affine}` with `ark_ec::AffineRepr` and `ark_ff::{BigInteger, PrimeField}`; each test constructs the subject by `let Ok(pairing) = Bls12381ArkworksPairing::try_new(Bls12381ArkworksPairingConstructorParams);`, decodes hex by `let Ok(bytes) = decode(…) else { panic!(…) };`, and unpacks each call by `let Ok(…) = … else { panic!(…) };`
+    * `[ ]`   The vectors, from EIP-2537, as hex, each coordinate written below as its 48 bytes and encoded in a vector as 16 zero bytes followed by them: the base field modulus `p` = `1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab`; the group order `r` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001`; `r - 1` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000000`; `r - 2` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffeffffffff`; the first-group generator `x` = `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb` and `y` = `08b3f481e3aaa0f1a09e30ed741d8ae4fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1`; the second-group generator `x.c0` = `024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8`, `x.c1` = `13e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e`, `y.c0` = `0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801`, and `y.c1` = `0606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab3f370d275cec1da1aaa9075ff05f79be`; the scalars two, three, and five as 32 big-endian bytes
+    * `[ ]`   `g1_generator_encodes_to_the_eip_2537_generator`: contract: the first-group generator's encoding is EIP-2537's; act `encode_g1` over `g1_generator`; assert the bytes equal the padded first-group generator vector
+    * `[ ]`   `g2_generator_encodes_to_the_eip_2537_generator`: contract: the second-group generator's encoding is EIP-2537's, `c0` before `c1`; act `encode_g2` over `g2_generator`; assert the bytes equal the padded second-group generator vector
+    * `[ ]`   `decode_g1_round_trips_the_eip_2537_generator`: arrange the first-group generator vector; act `decode_g1` then `encode_g1`; assert the bytes equal the vector
+    * `[ ]`   `decode_g2_round_trips_the_eip_2537_generator`: arrange the second-group generator vector; act `decode_g2` then `encode_g2`; assert the bytes equal the vector
+    * `[ ]`   `decode_g1_reads_the_all_zero_encoding_as_the_identity`: arrange 128 zero bytes and the generator; act `decode_g1`, then `add_g1` of the generator and the decoded point, then `encode_g1`; assert the bytes equal the first-group generator vector
+    * `[ ]`   `decode_g2_reads_the_all_zero_encoding_as_the_identity`: the same over 256 zero bytes, `add_g2`, and the second-group generator vector
+    * `[ ]`   `decode_g1_rejects_a_wrong_length`: arrange 127 bytes; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::WrongLength { expected: 128, actual: 127 })`
+    * `[ ]`   `decode_g1_rejects_a_nonzero_padding_byte`: arrange the first-group generator vector with its first byte set to `01`; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_rejects_a_coordinate_equal_to_the_base_field_modulus`: arrange `p` padded, followed by the generator's `y` padded; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_rejects_a_point_off_the_curve`: arrange the first-group generator vector with its last byte `e1` replaced by `e2`; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g1_rejects_a_point_outside_the_subgroup`: arrange the first on-curve point outside the subgroup found by `(1u64..).find_map` over `G1Affine::get_point_from_x_unchecked(Fq::from(c), false)` filtered by `!is_in_correct_subgroup_assuming_on_curve()`, encoded from `xy()` as `x` then `y`, each as 16 zero bytes followed by `into_bigint().to_bytes_be()`; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_g2_rejects_a_wrong_length`: arrange 255 bytes; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::WrongLength { expected: 256, actual: 255 })`
+    * `[ ]`   `decode_g2_rejects_a_point_off_the_curve`: arrange the second-group generator vector with its last byte `be` replaced by `bf`; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g2_rejects_a_point_outside_the_subgroup`: arrange the first on-curve point outside the subgroup found by `(1u64..).find_map` over `G2Affine::get_point_from_x_unchecked(Fq2::new(Fq::from(c0), Fq::from(0u64)), false)` filtered by `!is_in_correct_subgroup_assuming_on_curve()`, encoded as `x.c0`, `x.c1`, `y.c0`, `y.c1`, each as 16 zero bytes followed by `into_bigint().to_bytes_be()`; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_scalar_rejects_the_group_order`: arrange `r`; act `decode_scalar`; assert `Err(DecodeScalarErrorReturn::NonCanonical)`
+    * `[ ]`   `decode_scalar_round_trips_the_largest_canonical_scalar`: arrange `r - 1`; act `decode_scalar` then `encode_scalar`; assert the exposed bytes equal `r - 1`
+    * `[ ]`   `decode_scalar_rejects_a_wrong_length`: arrange 31 bytes; act `decode_scalar`; assert `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: 31 })`
+    * `[ ]`   `add_g1_of_the_generator_to_itself_equals_its_multiple_by_two`: arrange the generator and the decoded scalar two, payloads from `build_add_g1_payload` and `build_mul_g1_payload`; act `add_g1` and `mul_g1`, each encoded; assert the two encodings are equal and differ from the generator's
+    * `[ ]`   `add_g2_of_the_generator_to_itself_equals_its_multiple_by_two`: the same over the second group
+    * `[ ]`   `msm_g1_equals_the_multiple_by_the_sum_of_its_scalars`: arrange terms from `build_msm_g1_term` pairing the generator with two and with three, and the scalar five; act `msm_g1` and `mul_g1` by five, each encoded; assert the encodings are equal
+    * `[ ]`   `msm_g2_equals_the_multiple_by_the_sum_of_its_scalars`: the same over the second group
+    * `[ ]`   `pairing_product_is_one_for_a_pairing_and_its_inverse`: arrange terms `(g1, g2)` and `(g1 · (r - 1), g2)`; act `pairing_product_is_one`; assert `is_one` is `true`
+    * `[ ]`   `pairing_product_is_not_one_for_a_single_generator_pairing`: arrange the one term `(g1, g2)`; act `pairing_product_is_one`; assert `is_one` is `false`
+    * `[ ]`   `pairing_product_is_one_across_the_bilinear_exchange`: arrange terms `(g1 · 2, g2)` and `(g1, g2 · (r - 2))`; act `pairing_product_is_one`; assert `is_one` is `true`
+    * `[ ]`   `sample_from_uniform_bytes_rejects_a_wrong_length`: arrange `build_sample_uniform_scalar_payload` with `uniform` holding 63 bytes; act `Bls12381ArkworksScalar::sample_from_uniform_bytes`; assert `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 63 })`
+    * `[ ]`   `sample_from_uniform_bytes_reads_its_input_as_a_big_endian_integer`: arrange `uniform` holding 63 zero bytes followed by `05`; act `sample_from_uniform_bytes`, then `encode_scalar` of a clone of the exposed scalar; assert the exposed bytes equal the 32-byte big-endian encoding of five
+    * `[ ]`   `sample_from_uniform_bytes_reduces_the_largest_input_into_the_scalar_field`: arrange `uniform` holding 64 bytes of `ff`; act `sample_from_uniform_bytes`, then `encode_scalar` of a clone of the exposed scalar, then `decode_scalar`; assert the decode returns `Ok`, the sampled scalar being below `r`
+    * `[ ]`   `sample_from_uniform_bytes_draws_an_in_range_scalar_from_the_operating_system_source`: arrange `create_random_source` for `RandomSourceKind::OperatingSystem` and `fill_bytes` with `length: Some(Bls12381ArkworksScalar::UNIFORM_BYTES_LENGTH)`; act `sample_from_uniform_bytes` over the draw, then `encode_scalar` and `decode_scalar`; assert the decode returns `Ok`
+    * `[ ]`   `bls12_381_arkworks_pairing_declares_its_curve_arithmetic_encoding_and_versions`: act read `Bls12381ArkworksPairing::DECLARATION`; assert `curve` matches `PairingCurve::Bls12381`, `verifier_group_arithmetic` matches `VerifierGroupArithmetic::BothGroups`, `precompile_encoding` matches `PrecompileEncoding::Eip2537`, `adapter_version` equals `1`, and `interface_version` equals `PAIRING_INTERFACE_VERSION`
+    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers; every payload is built through its family builder with only the overrides the test depends on
+
+  * `[ ]`   `construction`
+    * `[ ]`   `Bls12381ArkworksPairing::try_new` is the concrete's only producer, and its only caller is the pairing factory, which reads `Bls12381ArkworksPairing::DECLARATION` before constructing
+    * `[ ]`   A group element or scalar is produced only by the adapter's generators, arithmetic, and decoders, or by the scalar's sampling bound; no consumer constructs one from library values
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/mod.rs`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `impl Bls12381ArkworksPairing` with `pub const DECLARATION: PairingDeclaration` and `pub fn try_new(_params: Bls12381ArkworksPairingConstructorParams) -> Bls12381ArkworksPairingTryNewReturn` returning `Ok(Bls12381ArkworksPairing)`
+    * `[ ]`   `impl IPairingAdapter for Bls12381ArkworksPairing` with `type Scalar = Bls12381ArkworksScalar;`, `type G1 = Bls12381ArkworksG1;`, `type G2 = Bls12381ArkworksG2;`, and every method realizing its branches in the interaction spec, the decoders checking in the stated order and slicing the payload only after the length check
+    * `[ ]`   `impl Zeroize for Bls12381ArkworksScalar` calling `self.value.zeroize()`; `impl Drop for Bls12381ArkworksScalar` calling `self.value.zeroize()`
+    * `[ ]`   `impl ISampleUniformScalar for Bls12381ArkworksScalar` with `const UNIFORM_BYTES_LENGTH: usize = 64;` and `sample_from_uniform_bytes` realizing its branches, the scalar moved into a `Secret` by `let Ok(scalar) = Secret::try_new(SecretConstructorParams { value });`
+    * `[ ]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::Zeroize`, the arkworks names the context slice lists, and this module's types from `interface`
+    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/provides.rs`
+    * `[ ]`   `pub(crate) use super::interface::*;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate
+
+  * `[ ]`   `directionality`
+    * `[ ]`   `bls12_381_arkworks` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on the arkworks crates; it depends on no other concrete and no concrete depends on it; the `factory` module gains three enum variants and still depends on no concrete; among repository crates the crate still depends on `crates/domain` alone at runtime
+    * `[ ]`   `pairing/factory` adds the family form's recorded cycle when the factory function constructs this concrete
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `adapters/pairing/Cargo.toml` gains only the `ark-bls12-381` dependency, and `ark-bls12-381` is named nowhere in the crate outside `adapters/pairing/src/bls12_381_arkworks`
+    * `[ ]`   `factory/interface.rs` differs from its prior state only by the three variants
+    * `[ ]`   `cargo check --all-targets --all-features`, `cargo fmt --check`, and `cargo deny check` complete without error; `cargo clippy --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the pairing concretes and the new variants, which `pairing/factory` resolves by constructing the concretes
+    * `[ ]`   Every test in `bls12_381_arkworks/test.rs` passes: the generator encodings match EIP-2537, the decoders round-trip and reject a wrong length, a nonzero padding byte, a non-canonical coordinate or scalar, a point off the curve, and a point outside the subgroup in both groups, the arithmetic and multi-scalar multiplication agree, the pairing-product check accepts a pairing with its inverse and the bilinear exchange and rejects a lone pairing, and sampling rejects a wrong length, reads its input big-endian, and returns a scalar below the group order from a production draw (CR-10 on BLS12-381; CR-05 for the sampled scalar)
+    * `[ ]`   Code outside `adapters/pairing` naming `Bls12381ArkworksPairing` or anything under `bls12_381_arkworks` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[ ]`   `pairing/bls12_381_halo2curves` **BLS12-381 pairing concrete on halo2curves with EIP-2537 encodings and subgroup checks on every input, a further concrete beneath the pairing factory**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: the harness benchmark compares pairing libraries per curve through the factory, so BLS12-381 needs a second concrete over a second library that satisfies the family's generic interface exactly as the arkworks BLS12-381 concrete does (CR-10)
+    * `[ ]`   Functional: the concrete implements `IPairingAdapter` over `halo2curves`' BLS12-381, with its own scalar and group-element types over the library's elements as the associated types
+    * `[ ]`   Functional: it encodes and decodes a base field element as EIP-2537's 64 bytes, sixteen zero bytes followed by the 48-byte big-endian integer, a first-group point as 128 bytes of `x` then `y`, a second-group point as 256 bytes of `x.c0`, `x.c1`, `y.c0`, `y.c1`, the point at infinity as all zero bytes, and a scalar as 32 big-endian bytes
+    * `[ ]`   Functional: decoding rejects a wrong length, a nonzero padding byte, a field element at or above the modulus, a point off the curve, and a point outside the prime-order subgroup in either group
+    * `[ ]`   Functional: its scalar type implements the family's sampling bound, reading the 64 uniform bytes as one big-endian integer reduced modulo the group order, so the same input bytes sample the same scalar under either BLS12-381 concrete
+    * `[ ]`   Functional: it declares the BLS12-381 curve, second-group arithmetic at the verifier, the EIP-2537 encoding, its adapter version, and the interface version it implements
+    * `[ ]`   Non-functional: `halo2curves` is named only inside the `halo2curves` concretes; the family's interface, declaration, builders, and mock are unchanged
+
+  * `[ ]`   `role`
+    * `[ ]`   Adapter: a further concrete of the pairing family, consuming the generic interface, sampling bound, declaration, and builders `pairing/bn254_arkworks` authored and the BLS12-381 declaration variants `pairing/bls12_381_arkworks` added
+    * `[ ]`   Adds its module line to `lib.rs`; the crate manifest already carries `halo2curves`, and no file of the `factory` module changes
+    * `[ ]`   Does not select between the BLS12-381 concretes; `pairing/factory` constructs a concrete by the composition's request and `harness-crypto/benchmark` records the default per curve
+    * `[ ]`   Does not name, import, or compare against another concrete
+    * `[ ]`   Does not carry a commit
+
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the private `bls12_381_halo2curves` module of `adapters/pairing`, holding the adapter over `halo2curves`' BLS12-381, its scalar and group-element types over the library's elements, its constructor params, and the builder defaults for its owned types
+    * `[ ]`   Outside: the family's generic interface and declaration, every other concrete, and the factory's selection
+
+  * `[ ]`   `deps`
+    * `[ ]`   The `factory` module's surface, through `crate::factory::provides`: `IPairingAdapter` with its associated types and methods and every method's params, payload, success, error, and return types; `ISampleUniformScalar` and its types; `PairingDeclaration`, `PairingCurve`, `VerifierGroupArithmetic`, `PrecompileEncoding`, and `PAIRING_INTERFACE_VERSION`; and, in tests, the family's builders
+    * `[ ]`   `domain`, `crates/domain`, path dependency the crate already carries; supplies `Secret` and `SecretConstructorParams`; in tests `build_secret` and `SecretConstructorParamsOverrides`
+    * `[ ]`   `zeroize` `1.9.0`, which the crate already carries; supplies the `Zeroize` trait the sampling bound requires and the zeroization of the local 64-byte input copy
+    * `[ ]`   `halo2curves` `0.10.0`, which the crate already carries; supplies the curve, the pairing, the group arithmetic, the field arithmetic, and multi-scalar multiplication, and re-exports the `ff`, `group`, and `pairing` traits its types implement
+    * `[ ]`   `random` with its `mocks` feature and `hex` `0.4.3`, dev-dependencies the crate already carries; supply the production draw and the test vectors
+    * `[ ]`   `core::convert::Infallible`, standard library, the constructor's error arm; `core::hint::black_box`, standard library, which keeps the clearing of a scalar from being removed as a dead store, since `halo2curves`' fields implement no `Zeroize`; `core::iter::successors`, standard library, in `test.rs` only
+    * `[ ]`   No reverse dependency; nothing depends on this concrete until `pairing/factory`
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From `halo2curves::bls12381`: `Bls12381`, the engine; `Fq`, whose representation is 48 bytes; `Fq2` with `Fq2::new(c0, c1)` and the accessors `c0()` and `c1()`; `Fr`, whose representation is 32 bytes; `G1`, `G1Affine`, `G2`, and `G2Affine`
+    * `[ ]`   From `halo2curves::ff`: `Field` for `ZERO`, `ONE`, `is_zero()`, `square()`, and `sqrt()`; `PrimeField` for `from_repr(repr) -> CtOption<Self>`, which reads little-endian bytes and is none at or above the modulus, and `to_repr()`, which writes little-endian bytes, the representation built from a `[u8; 48]` for `Fq` or a `[u8; 32]` for `Fr` by `into()` and read by `as_ref()`; `FromUniformBytes::<64>::from_uniform_bytes(&[u8; 64])` on `Fr`, a little-endian wide reduction
+    * `[ ]`   From `halo2curves::group`: `Curve::to_affine`, `Group::is_identity`, `prime::PrimeCurveAffine` for `generator()`, `identity()`, and `to_curve()`, `cofactor::CofactorGroup::is_torsion_free` on `G1` and on `G2`, and the projective `+` and `* Fr`
+    * `[ ]`   From `halo2curves`: `CurveAffine` for `from_xy(x, y) -> CtOption<Self>`, which is none off the curve, `coordinates() -> CtOption<Coordinates<Self>>`, and `b()`; `Coordinates` for `x()` and `y()`; `msm::msm_best(coeffs: &[C::Scalar], bases: &[C]) -> C::Curve`
+    * `[ ]`   From `halo2curves::pairing`: `MultiMillerLoop::multi_miller_loop(&[(&G1Affine, &G2Affine)])` on `Bls12381`, and `MillerLoopResult::final_exponentiation` returning the target-group element, whose `is_identity()` is the check
+    * `[ ]`   A `Choice` becomes a `bool` by `bool::from`, and a `CtOption` becomes an `Option` by `Option::from`
+
+  * `[ ]`   `adapters/pairing/src/lib.rs`
+    * `[ ]`   Adds `mod bls12_381_halo2curves;` to the barrel; every other line is unchanged
+    * `[ ]`   Until `bls12_381_halo2curves/mod.rs` exists, `cargo check` reports the unresolved module, which is the RED state for every element below that precedes it
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/interface.rs`
+    * `[ ]`   `Bls12381Halo2curvesPairing`, the unit struct `pub struct Bls12381Halo2curvesPairing;`, the adapter over `halo2curves`' BLS12-381
+    * `[ ]`   `Bls12381Halo2curvesPairingConstructorParams`, the fieldless struct `pub struct Bls12381Halo2curvesPairingConstructorParams;`
+    * `[ ]`   `Bls12381Halo2curvesPairingTryNewReturn`, the alias `Result<Bls12381Halo2curvesPairing, Infallible>`; the error arm is uninhabited because the adapter takes no configuration
+    * `[ ]`   `Bls12381Halo2curvesScalar`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bls12381::Fr`
+    * `[ ]`   `Bls12381Halo2curvesG1`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bls12381::G1Affine`
+    * `[ ]`   `Bls12381Halo2curvesG2`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bls12381::G2Affine`
+    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/interaction.spec.md`
+    * `[ ]`   `Bls12381Halo2curvesPairing::try_new(params: Bls12381Halo2curvesPairingConstructorParams) -> Bls12381Halo2curvesPairingTryNewReturn`: one branch; outcome `Ok(Bls12381Halo2curvesPairing)`; the error arm has no branch
+    * `[ ]`   `Bls12381Halo2curvesPairing::DECLARATION`: the inherent constant `PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
+    * `[ ]`   `g1_generator`, `g2_generator`: one branch each; dependency call `G1Affine::generator()` or `G2Affine::generator()`; outcome `Ok` holding the generator in the owned group type
+    * `[ ]`   `add_g1`, `add_g2`: one branch each; dependency call `to_curve()` on each payload point, the projective `+`, and `to_affine()`; outcome `Ok` holding the sum
+    * `[ ]`   `mul_g1`, `mul_g2`: one branch each; dependency call `to_curve()` on the point, the projective `*` the scalar's `Fr`, and `to_affine()`; outcome `Ok` holding the product; the payload, holding the scalar, drops at the end of the call and the scalar is cleared
+    * `[ ]`   `msm_g1`, `msm_g2`: one branch each; the terms are split into a `Vec` of affine bases and a `Vec<Fr>` of the same length; dependency call `msm_best(&scalars, &bases)` and `to_affine()`; every element of the `Vec<Fr>` is then set to `Fr::ZERO` and the vector passed to `black_box`; outcome `Ok` holding the sum; an empty term list yields the identity
+    * `[ ]`   `pairing_product_is_one`: one branch; dependency call `Bls12381::multi_miller_loop` over the terms as a `Vec<(&G1Affine, &G2Affine)>` in term order, then `final_exponentiation()`; outcome `Ok(PairingProductIsOneSuccessReturn { is_one })` where `is_one` is `bool::from(is_identity())`; an empty term list yields `is_one: true`
+    * `[ ]`   A coordinate, as read by every decoder below, is 64 bytes whose first 16 are zero and whose last 48, copied into a `[u8; 48]`, reversed to little-endian, and read by `Fq::from_repr`, are some; a nonzero byte among the first 16, or 48 bytes at or above the base field modulus, is non-canonical
+    * `[ ]`   `decode_g1`, wrong length: condition `<[u8; 128]>::try_from(payload)` fails; outcome `Err(DecodeG1ErrorReturn::WrongLength { expected: 128, actual: payload.len() })`
+    * `[ ]`   `decode_g1`, non-canonical coordinate: condition either 64-byte coordinate is non-canonical; outcome `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1`, identity: condition both coordinates are zero; outcome `Ok` holding `G1Affine::identity()`
+    * `[ ]`   `decode_g1`, off the curve: condition `G1Affine::from_xy(x, y)` is none; outcome `Err(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g1`, outside the subgroup: condition `bool::from(point.to_curve().is_torsion_free())` is false; outcome `Err(DecodeG1ErrorReturn::NotInSubgroup)`; reachable, since BLS12-381's first group has a nontrivial cofactor
+    * `[ ]`   `decode_g1`, valid: every check passes; outcome `Ok` holding the point
+    * `[ ]`   `decode_g2`: the same branches in the same order over 256 bytes, the length checked by `<[u8; 256]>::try_from(payload)`, read as `x.c0`, `x.c1`, `y.c0`, `y.c1`, each a 64-byte coordinate, assembled by `Fq2::new(c0, c1)`, with `DecodeG2ErrorReturn` and an expected length of 256; the identity is all four coordinates zero
+    * `[ ]`   `decode_scalar`, wrong length: condition `<[u8; 32]>::try_from(payload)` fails; outcome `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
+    * `[ ]`   `decode_scalar`, non-canonical: condition the bytes, reversed to little-endian and read by `Fr::from_repr`, are none, that is, they are at least the group order; outcome `Err(DecodeScalarErrorReturn::NonCanonical)`; EIP-2537's MSM accepts any 256-bit scalar, and this decoder, which produces an owned scalar, admits only the canonical ones
+    * `[ ]`   `decode_scalar`, valid: outcome `Ok` holding the scalar
+    * `[ ]`   `encode_g1`: one branch; a point whose `coordinates()` is none, the identity, encodes to 128 zero bytes; any other point encodes `x()` then `y()`, each as 16 zero bytes followed by `to_repr()` reversed to 48 big-endian bytes
+    * `[ ]`   `encode_g2`: one branch; the identity encodes to 256 zero bytes; any other point encodes `x().c0()`, `x().c1()`, `y().c0()`, `y().c1()`, each as 16 zero bytes followed by `to_repr()` reversed to 48 big-endian bytes
+    * `[ ]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's `to_repr()` reversed to 32 big-endian bytes, moved into a `Secret`
+    * `[ ]`   `Bls12381Halo2curvesScalar::UNIFORM_BYTES_LENGTH`: `64`, twice the byte width of the group order
+    * `[ ]`   `Bls12381Halo2curvesScalar::sample_from_uniform_bytes`, wrong length: condition `<&[u8; 64]>::try_from(payload.uniform.expose().as_slice())` fails; outcome `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
+    * `[ ]`   `Bls12381Halo2curvesScalar::sample_from_uniform_bytes`, sampled: the 64 bytes are copied into a local `[u8; 64]` and reversed, so the big-endian integer the arkworks concrete reads is the little-endian integer `halo2curves` reads; dependency call `Fr::from_uniform_bytes` over the copy, which is then zeroized; outcome `Ok` holding the scalar moved into a `Secret`; the payload's `Secret` zeroizes the input when it drops
+    * `[ ]`   Clearing: `halo2curves`' `Fr` implements no `Zeroize`, so `Bls12381Halo2curvesScalar`'s `Zeroize` implementation and its `Drop` set `value` to `Fr::ZERO` and pass `&self.value` to `black_box`; every clone a consumer places in a payload is cleared when the payload drops
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/mock.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[ ]`   The builder defaults for the concrete's owned types, which the family's generic builders and `MockIPairingAdapter` read through `Default`: `impl Default for Bls12381Halo2curvesScalar` returning `Fr::ONE`; `impl Default for Bls12381Halo2curvesG1` returning `G1Affine::generator()`; `impl Default for Bls12381Halo2curvesG2` returning `G2Affine::generator()`
+    * `[ ]`   Nothing else; the types are built as real values, so there is no overrides type, invalidator, or mock function here
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports this module's types from `super::interface`, the family's names and builders from `crate::factory::provides`, `build_secret` and `SecretConstructorParamsOverrides` from `domain`, the `random` names `pairing/bn254_arkworks`'s test imports, `hex::decode`, `core::iter::successors`, and, for the non-subgroup vectors, `halo2curves::bls12381::{Fq, Fq2, G1Affine, G2Affine}`, `halo2curves::ff::{Field, PrimeField}`, `halo2curves::group::{cofactor::CofactorGroup, prime::PrimeCurveAffine}`, and `halo2curves::CurveAffine`; each test constructs the subject by `let Ok(pairing) = Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);`, decodes hex by `let Ok(bytes) = decode(…) else { panic!(…) };`, and unpacks each call by `let Ok(…) = … else { panic!(…) };`
+    * `[ ]`   The vectors are `pairing/bls12_381_arkworks`'s, from EIP-2537, restated here as hex, each coordinate written below as its 48 bytes and encoded in a vector as 16 zero bytes followed by them: `p` = `1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab`; `r` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001`; `r - 1` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000000`; `r - 2` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffeffffffff`; the first-group generator `x` = `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb` and `y` = `08b3f481e3aaa0f1a09e30ed741d8ae4fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1`; the second-group generator `x.c0` = `024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8`, `x.c1` = `13e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e`, `y.c0` = `0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801`, and `y.c1` = `0606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab3f370d275cec1da1aaa9075ff05f79be`; the scalars two, three, and five as 32 big-endian bytes
+    * `[ ]`   `g1_generator_encodes_to_the_eip_2537_generator`: contract: the first-group generator's encoding is EIP-2537's; act `encode_g1` over `g1_generator`; assert the bytes equal the padded first-group generator vector
+    * `[ ]`   `g2_generator_encodes_to_the_eip_2537_generator`: contract: the second-group generator's encoding is EIP-2537's, `c0` before `c1`; act `encode_g2` over `g2_generator`; assert the bytes equal the padded second-group generator vector
+    * `[ ]`   `decode_g1_round_trips_the_eip_2537_generator`: arrange the first-group generator vector; act `decode_g1` then `encode_g1`; assert the bytes equal the vector
+    * `[ ]`   `decode_g2_round_trips_the_eip_2537_generator`: arrange the second-group generator vector; act `decode_g2` then `encode_g2`; assert the bytes equal the vector
+    * `[ ]`   `decode_g1_reads_the_all_zero_encoding_as_the_identity`: arrange 128 zero bytes and the generator; act `decode_g1`, then `add_g1` of the generator and the decoded point, then `encode_g1`; assert the bytes equal the first-group generator vector
+    * `[ ]`   `decode_g2_reads_the_all_zero_encoding_as_the_identity`: the same over 256 zero bytes, `add_g2`, and the second-group generator vector
+    * `[ ]`   `encode_g1_writes_the_identity_as_all_zero_bytes`: arrange the identity as `msm_g1` over an empty `build_msm_g1_payload`; act `encode_g1`; assert the bytes equal 128 zero bytes
+    * `[ ]`   `decode_g1_rejects_a_wrong_length`: arrange 127 bytes; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::WrongLength { expected: 128, actual: 127 })`
+    * `[ ]`   `decode_g1_rejects_a_nonzero_padding_byte`: arrange the first-group generator vector with its first byte set to `01`; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_rejects_a_coordinate_equal_to_the_base_field_modulus`: arrange `p` padded, followed by the generator's `y` padded; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_rejects_a_point_off_the_curve`: arrange the first-group generator vector with its last byte `e1` replaced by `e2`; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g1_rejects_a_point_outside_the_subgroup`: arrange the first on-curve point outside the subgroup found by `successors(Some(Fq::ONE), |x| Some(*x + Fq::ONE))` and `find_map`, taking `y` from `Option::from((x.square() * x + G1Affine::b()).sqrt())`, the point from `Option::from(G1Affine::from_xy(x, y))`, and keeping it when `bool::from(point.to_curve().is_torsion_free())` is false, encoded as `x` then `y`, each as 16 zero bytes followed by `to_repr()` reversed to big-endian; act `decode_g1`; assert `Err(DecodeG1ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_g2_rejects_a_wrong_length`: arrange 255 bytes; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::WrongLength { expected: 256, actual: 255 })`
+    * `[ ]`   `decode_g2_rejects_a_point_off_the_curve`: arrange the second-group generator vector with its last byte `be` replaced by `bf`; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g2_rejects_a_point_outside_the_subgroup`: arrange the first on-curve point outside the subgroup found by `successors(Some(Fq::ONE), |c0| Some(*c0 + Fq::ONE))` and `find_map`, taking `x = Fq2::new(c0, Fq::ZERO)`, `y` from `Option::from((x.square() * x + G2Affine::b()).sqrt())`, the point from `Option::from(G2Affine::from_xy(x, y))`, and keeping it when `bool::from(point.to_curve().is_torsion_free())` is false, encoded as `x.c0()`, `x.c1()`, `y.c0()`, `y.c1()`, each as 16 zero bytes followed by `to_repr()` reversed to big-endian; act `decode_g2`; assert `Err(DecodeG2ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_scalar_rejects_the_group_order`: arrange `r`; act `decode_scalar`; assert `Err(DecodeScalarErrorReturn::NonCanonical)`
+    * `[ ]`   `decode_scalar_round_trips_the_largest_canonical_scalar`: arrange `r - 1`; act `decode_scalar` then `encode_scalar`; assert the exposed bytes equal `r - 1`
+    * `[ ]`   `decode_scalar_rejects_a_wrong_length`: arrange 31 bytes; act `decode_scalar`; assert `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: 31 })`
+    * `[ ]`   `add_g1_of_the_generator_to_itself_equals_its_multiple_by_two`: arrange the generator and the decoded scalar two, payloads from `build_add_g1_payload` and `build_mul_g1_payload`; act `add_g1` and `mul_g1`, each encoded; assert the two encodings are equal and differ from the generator's
+    * `[ ]`   `add_g2_of_the_generator_to_itself_equals_its_multiple_by_two`: the same over the second group
+    * `[ ]`   `msm_g1_equals_the_multiple_by_the_sum_of_its_scalars`: arrange terms from `build_msm_g1_term` pairing the generator with two and with three, and the scalar five; act `msm_g1` and `mul_g1` by five, each encoded; assert the encodings are equal
+    * `[ ]`   `msm_g2_equals_the_multiple_by_the_sum_of_its_scalars`: the same over the second group
+    * `[ ]`   `pairing_product_is_one_for_a_pairing_and_its_inverse`: arrange terms `(g1, g2)` and `(g1 · (r - 1), g2)`; act `pairing_product_is_one`; assert `is_one` is `true`
+    * `[ ]`   `pairing_product_is_not_one_for_a_single_generator_pairing`: arrange the one term `(g1, g2)`; act `pairing_product_is_one`; assert `is_one` is `false`
+    * `[ ]`   `pairing_product_is_one_across_the_bilinear_exchange`: arrange terms `(g1 · 2, g2)` and `(g1, g2 · (r - 2))`; act `pairing_product_is_one`; assert `is_one` is `true`
+    * `[ ]`   `sample_from_uniform_bytes_rejects_a_wrong_length`: arrange `build_sample_uniform_scalar_payload` with `uniform` holding 63 bytes; act `Bls12381Halo2curvesScalar::sample_from_uniform_bytes`; assert `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 63 })`
+    * `[ ]`   `sample_from_uniform_bytes_reads_its_input_as_a_big_endian_integer`: arrange `uniform` holding 63 zero bytes followed by `05`; act `sample_from_uniform_bytes`, then `encode_scalar` of a clone of the exposed scalar; assert the exposed bytes equal the 32-byte big-endian encoding of five
+    * `[ ]`   `sample_from_uniform_bytes_reduces_the_largest_input_into_the_scalar_field`: arrange `uniform` holding 64 bytes of `ff`; act `sample_from_uniform_bytes`, then `encode_scalar` of a clone of the exposed scalar, then `decode_scalar`; assert the decode returns `Ok`, the sampled scalar being below `r`
+    * `[ ]`   `sample_from_uniform_bytes_draws_an_in_range_scalar_from_the_operating_system_source`: arrange `create_random_source` for `RandomSourceKind::OperatingSystem` and `fill_bytes` with `length: Some(Bls12381Halo2curvesScalar::UNIFORM_BYTES_LENGTH)`; act `sample_from_uniform_bytes` over the draw, then `encode_scalar` and `decode_scalar`; assert the decode returns `Ok`
+    * `[ ]`   `bls12_381_halo2curves_pairing_declares_its_curve_arithmetic_encoding_and_versions`: act read `Bls12381Halo2curvesPairing::DECLARATION`; assert `curve` matches `PairingCurve::Bls12381`, `verifier_group_arithmetic` matches `VerifierGroupArithmetic::BothGroups`, `precompile_encoding` matches `PrecompileEncoding::Eip2537`, `adapter_version` equals `1`, and `interface_version` equals `PAIRING_INTERFACE_VERSION`
+    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers; every payload is built through its family builder with only the overrides the test depends on
+
+  * `[ ]`   `construction`
+    * `[ ]`   `Bls12381Halo2curvesPairing::try_new` is the concrete's only producer, and its only caller is the pairing factory, which reads `Bls12381Halo2curvesPairing::DECLARATION` before constructing
+    * `[ ]`   A group element or scalar is produced only by the adapter's generators, arithmetic, and decoders, or by the scalar's sampling bound; no consumer constructs one from library values
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/mod.rs`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `impl Bls12381Halo2curvesPairing` with `pub const DECLARATION: PairingDeclaration` and `pub fn try_new(_params: Bls12381Halo2curvesPairingConstructorParams) -> Bls12381Halo2curvesPairingTryNewReturn` returning `Ok(Bls12381Halo2curvesPairing)`
+    * `[ ]`   `impl IPairingAdapter for Bls12381Halo2curvesPairing` with `type Scalar = Bls12381Halo2curvesScalar;`, `type G1 = Bls12381Halo2curvesG1;`, `type G2 = Bls12381Halo2curvesG2;`, and every method realizing its branches in the interaction spec, the decoders checking in the stated order and copying each 48-byte coordinate out of the fixed-size array before reversing it
+    * `[ ]`   `impl Zeroize for Bls12381Halo2curvesScalar` and `impl Drop for Bls12381Halo2curvesScalar`, each setting `self.value` to `Fr::ZERO` and calling `black_box(&self.value)`
+    * `[ ]`   `impl ISampleUniformScalar for Bls12381Halo2curvesScalar` with `const UNIFORM_BYTES_LENGTH: usize = 64;` and `sample_from_uniform_bytes` realizing its branches, the scalar moved into a `Secret` by `let Ok(scalar) = Secret::try_new(SecretConstructorParams { value });`
+    * `[ ]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::Zeroize`, `core::hint::black_box`, the `halo2curves` names the context slice lists, and this module's types from `interface`
+    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/provides.rs`
+    * `[ ]`   `pub(crate) use super::interface::*;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate
+
+  * `[ ]`   `directionality`
+    * `[ ]`   `bls12_381_halo2curves` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on `halo2curves`; it depends on no other concrete and no concrete depends on it; the `factory` module is unchanged and depends on no concrete; among repository crates the crate still depends on `crates/domain` alone at runtime
+    * `[ ]`   `pairing/factory` adds the family form's recorded cycle when the factory function constructs this concrete
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `adapters/pairing/Cargo.toml` is unchanged, and `halo2curves` is named nowhere in the crate outside `adapters/pairing/src/bn254_halo2curves` and `adapters/pairing/src/bls12_381_halo2curves`
+    * `[ ]`   `cargo check --all-targets --all-features`, `cargo fmt --check`, and `cargo deny check` complete without error; `cargo clippy --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the pairing concretes, which `pairing/factory` resolves by constructing them
+    * `[ ]`   Every test in `bls12_381_halo2curves/test.rs` passes: the generator encodings match EIP-2537 and the identity encodes to zero bytes, the decoders round-trip and reject a wrong length, a nonzero padding byte, a non-canonical coordinate or scalar, a point off the curve, and a point outside the subgroup in both groups, the arithmetic and multi-scalar multiplication agree, the pairing-product check accepts a pairing with its inverse and the bilinear exchange and rejects a lone pairing, and sampling rejects a wrong length, reads its input big-endian, and returns a scalar below the group order from a production draw (CR-10 on BLS12-381; CR-05 for the sampled scalar)
+    * `[ ]`   Code outside `adapters/pairing` naming `Bls12381Halo2curvesPairing` or anything under `bls12_381_halo2curves` fails to compile; the crate's public surface is the `factory` module's `provides`
 
 # To-Do List
 

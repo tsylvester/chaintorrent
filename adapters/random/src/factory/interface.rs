@@ -36,11 +36,11 @@ pub trait IRandomSourceAdapter {
 
 pub struct CreateRandomSourceDeps;
 
-pub struct CreateRandomSourceParams;
-
-pub struct CreateRandomSourcePayload {
+pub struct CreateRandomSourceParams {
     pub kind: RandomSourceKind,
 }
+
+pub struct CreateRandomSourcePayload;
 
 pub struct CreateRandomSourceSuccessReturn {
     pub adapter: Box<dyn IRandomSourceAdapter>,

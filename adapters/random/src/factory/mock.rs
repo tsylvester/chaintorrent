@@ -69,14 +69,14 @@ impl IRandomSourceAdapter for MockIRandomSourceAdapter {
 }
 
 #[derive(Default)]
-pub struct CreateRandomSourcePayloadOverrides {
+pub struct CreateRandomSourceParamsOverrides {
     pub kind: Option<RandomSourceKind>,
 }
 
-pub fn build_create_random_source_payload(
-    overrides: CreateRandomSourcePayloadOverrides,
-) -> CreateRandomSourcePayload {
-    CreateRandomSourcePayload {
+pub fn build_create_random_source_params(
+    overrides: CreateRandomSourceParamsOverrides,
+) -> CreateRandomSourceParams {
+    CreateRandomSourceParams {
         kind: overrides.kind.unwrap_or(RandomSourceKind::OperatingSystem),
     }
 }
