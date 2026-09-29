@@ -1,0 +1,20 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "adapters/*"]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.98"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+as_conversions = "deny"
+
+[patch.crates-io]
+librqbit = { git = "https://github.com/tsylvester/rqbit", branch = "chaintorrent-overlay" }

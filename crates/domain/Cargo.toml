@@ -1,0 +1,17 @@
+[package]
+name = "domain"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+zeroize = "1.9.0"
+
+[dev-dependencies]
+static_assertions = "1.1.0"
+
+[features]
+mocks = []
+
+[lints]
+workspace = true
