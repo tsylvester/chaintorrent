@@ -1403,550 +1403,550 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `try_new_reports_the_lowest_offending_version_byte_whatever_its_kind` and `try_new_reports_the_name_before_the_version` pass (PR-02, the refusal is deterministic)
     * `[✅]`   Code outside `crates/domain/src/asset_identity` reading the `name` or `version` field fails to compile
 
-* `[ ]`   `domain/deployment_identity` **Registry-assigned deployment identity, the 32 bytes of the Registry's `bytes32` deployment key, admitted only when it can name an assigned deployment**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: every derivation, capsule, sidecar, and escrow record is bound to one deployment by the Registry's globally unique, non-reusable `deployment_id`, the `bytes32` key its deployment and escrow records carry, so a value naming no deployment must be refused before anything is derived from it (CR-05; the nonce invariant of Deployment Cryptographic Setup)
-    * `[ ]`   Functional: one type holds the deployment identity's 32 bytes, reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the constructor takes exactly 32 bytes, so the length is a fact of the params type and never a runtime check
-    * `[ ]`   Functional: the constructor refuses the all-zero value, which is what an unassigned `bytes32` storage slot reads as, so it names no deployment the Registry assigned
-    * `[ ]`   Functional: every other 32-byte value is admitted and read back unchanged
-    * `[ ]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
-
-  * `[ ]`   `role`
-    * `[ ]`   Domain: an owned value type in the protocol and domain ring, the deployment every later derivation context, hash-card, and attempt context names
-    * `[ ]`   Does not assign, generate, or check the uniqueness of a deployment identity; the Registry assigns it, and uniqueness is a property of consensus
-    * `[ ]`   Does not decode a deployment identity from wire bytes of unknown length; the encoding family decodes a `bytes32` into the 32 bytes this constructor takes
-    * `[ ]`   Does not create any other module of the `domain` crate
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `deployment_identity` module of the `domain` crate, holding `DeploymentIdentity`, its length, its constructor params, and its constructor's error and return types
-    * `[ ]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
-    * `[ ]`   Outside: the Registry's assignment of identities, the deployment record and hash-card the identity keys, and the encoding of the identity on the wire
-
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret` or from `asset_identity`
-    * `[ ]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
-    * `[ ]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
-
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod secret;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, and `pub use secret::provides::*;`, nothing else
-    * `[ ]`   Until `deployment_identity/mod.rs` exists, `cargo check` reports the unresolved `mod deployment_identity`, which is the RED state for every element below that precedes the implementation
-
-  * `[ ]`   `crates/domain/src/deployment_identity/interface.rs`
-    * `[ ]`   `DEPLOYMENT_IDENTITY_LENGTH`, a `pub const` of type `usize` with value `32`, the width of the Registry's `bytes32` deployment key
-    * `[ ]`   `DeploymentIdentity`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: [u8; DEPLOYMENT_IDENTITY_LENGTH]`, so only the `deployment_identity` module and its children reach the field
-    * `[ ]`   `DeploymentIdentityConstructorParams`, a struct with the one field `pub bytes: [u8; DEPLOYMENT_IDENTITY_LENGTH]`; no derives
-    * `[ ]`   `DeploymentIdentityTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`
-    * `[ ]`   `DeploymentIdentityTryNewReturn`, the type alias `Result<DeploymentIdentity, DeploymentIdentityTryNewErrorReturn>`
-    * `[ ]`   Imports nothing; declares nothing else
-
-  * `[ ]`   `crates/domain/src/deployment_identity/interaction.spec.md`
-    * `[ ]`   `DeploymentIdentity::try_new(params: DeploymentIdentityConstructorParams) -> DeploymentIdentityTryNewReturn`, all zero: condition every byte of `params.bytes` is `0`; decision `params.bytes.iter().all(…)` over the byte equal to `0`; dependency call none; outcome `Err(DeploymentIdentityTryNewErrorReturn::AllZero)`
-    * `[ ]`   Admitted: condition some byte of `params.bytes` is nonzero; decision the same check; dependency call none; outcome `Ok(DeploymentIdentity { bytes })`, the array moved from the params
-    * `[ ]`   `DeploymentIdentity::as_bytes(&self) -> &[u8; DEPLOYMENT_IDENTITY_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
-    * `[ ]`   Invariants: every `DeploymentIdentity` holds exactly 32 bytes, not all zero; its only producer is `try_new`
-
-  * `[ ]`   `crates/domain/src/deployment_identity/mock.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
-    * `[ ]`   `DeploymentIdentityConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub bytes: Option<[u8; DEPLOYMENT_IDENTITY_LENGTH]>`
-    * `[ ]`   `build_deployment_identity_constructor_params(overrides: DeploymentIdentityConstructorParamsOverrides) -> DeploymentIdentityConstructorParams`, the bytes defaulting to `[0x11; DEPLOYMENT_IDENTITY_LENGTH]`
-    * `[ ]`   `build_deployment_identity(overrides: DeploymentIdentityConstructorParamsOverrides) -> DeploymentIdentity`, returning the real instance from `DeploymentIdentity::try_new(build_deployment_identity_constructor_params(overrides))` through `.expect("built deployment identity constructor params are admitted")`
-    * `[ ]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array, the one value the constructor refuses is an array the params builder's overrides carry, and the crate has no serialization dependency; no `DeploymentIdentity` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
-    * `[ ]`   Imports `DeploymentIdentity`, `DeploymentIdentityConstructorParams`, and `DEPLOYMENT_IDENTITY_LENGTH` from `super::interface`
-
-  * `[ ]`   `crates/domain/src/deployment_identity/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `DeploymentIdentity` and `DeploymentIdentityTryNewErrorReturn` from `super::interface`, and `build_deployment_identity_constructor_params` and `DeploymentIdentityConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_deployment_identity_constructor_params` with `bytes` overridden, acts `DeploymentIdentity::try_new(params)`, and unpacks the result by `let Ok(identity) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
-    * `[ ]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last`: contract: a value with any nonzero byte is admitted and read back unchanged, the last byte included; arrange `bytes: Some(…)` holding 31 zero bytes followed by `0x01`; act `try_new`; assert `identity.as_bytes()` equals an array of 31 zero bytes followed by `0x01`
-    * `[ ]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first`: contract: the zero check reads every byte, the first included; arrange `bytes: Some(…)` holding `0x80` followed by 31 zero bytes; act `try_new`; assert `identity.as_bytes()` equals an array of `0x80` followed by 31 zero bytes
-    * `[ ]`   `try_new_rejects_the_all_zero_identity`: contract: the value an unassigned slot reads as names no deployment; arrange `bytes: Some([0u8; 32])`; act `try_new`; assert `error` equals `DeploymentIdentityTryNewErrorReturn::AllZero`
-    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
-
-  * `[ ]`   `construction`
-    * `[ ]`   `DeploymentIdentity::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded `bytes32` passes it as `DeploymentIdentityConstructorParams` and handles the refusal arm
-
-  * `[ ]`   `crates/domain/src/deployment_identity/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl DeploymentIdentity` with `pub fn try_new(params: DeploymentIdentityConstructorParams) -> DeploymentIdentityTryNewReturn` realizing the branches of the interaction spec, and `pub fn as_bytes(&self) -> &[u8; DEPLOYMENT_IDENTITY_LENGTH]` returning `&self.bytes`
-    * `[ ]`   Imports `DeploymentIdentity`, `DeploymentIdentityConstructorParams`, `DeploymentIdentityTryNewErrorReturn`, `DeploymentIdentityTryNewReturn`, and `DEPLOYMENT_IDENTITY_LENGTH` from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `crates/domain/src/deployment_identity/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `deployment_identity` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `deployment_identity::provides`; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[ ]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last` and `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first` pass
-    * `[ ]`   `try_new_rejects_the_all_zero_identity` passes
-    * `[ ]`   Code outside `crates/domain/src/deployment_identity` reading the `bytes` field fails to compile
-
-* `[ ]`   `domain/suite_identifier` **Cryptographic suite identifier and version, the hash-card field that fixes a deployment's whole cryptographic composition, admitted only when both can name a registered suite**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: a deployment's hash-card names one immutable suite by its identifier and version, and that pair fixes the pairing, credential KEM, envelope, delivery proof, payload cipher, commitment scheme, KDF and hash-to-scalar mappings, delivery-statement version, and attempt-rule parameters every derivation and attempt resolves against, so a pair naming no suite must be refused before anything resolves from it (Adapter Composition; IC-09)
-    * `[ ]`   Functional: one type holds the suite identifier and the suite version, each reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the identifier is exactly 32 bytes, the width of the Registry's `bytes32` suite key, so its length is a fact of the params type and never a runtime check
-    * `[ ]`   Functional: the version is a `u16`, the width the hash-card gives its other version field, the delivery-statement version
-    * `[ ]`   Functional: the constructor refuses an all-zero identifier and a zero version, each the value an unassigned storage slot reads as, so neither names a registered suite
-    * `[ ]`   Functional: a refusal names the failed field, and the same input always yields the same refusal: the identifier is checked before the version
-    * `[ ]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
-
-  * `[ ]`   `role`
-    * `[ ]`   Domain: an owned value type in the protocol and domain ring, the suite every later derivation context, hash-card, and compatibility statement names
-    * `[ ]`   Does not resolve a suite to its adapters, decide compatibility, or hold a compatibility statement; the composition resolver and the release's compatibility statement do that from this value
-    * `[ ]`   Does not assign or register suite identifiers or versions
-    * `[ ]`   Does not decode a suite identifier or version from wire bytes; the encoding family decodes them into the typed values this constructor takes
-    * `[ ]`   Does not create any other module of the `domain` crate
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `suite_identifier` module of the `domain` crate, holding `SuiteIdentifier`, the identifier's length, its constructor params, and its constructor's error and return types
-    * `[ ]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
-    * `[ ]`   Outside: the suite's composition, its registration, the compatibility statement, and the encoding of the pair on the wire
-
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, or `deployment_identity`
-    * `[ ]`   The standard library: `u8`, `u16`, arrays, and `Iterator::all`, through the prelude
-    * `[ ]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
-
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
-    * `[ ]`   Until `suite_identifier/mod.rs` exists, `cargo check` reports the unresolved `mod suite_identifier`, which is the RED state for every element below that precedes the implementation
-
-  * `[ ]`   `crates/domain/src/suite_identifier/interface.rs`
-    * `[ ]`   `SUITE_IDENTIFIER_LENGTH`, a `pub const` of type `usize` with value `32`, the width of the Registry's `bytes32` suite key
-    * `[ ]`   `SuiteIdentifier`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub(super) identifier: [u8; SUITE_IDENTIFIER_LENGTH]` and `pub(super) version: u16`, so only the `suite_identifier` module and its children reach the fields
-    * `[ ]`   `SuiteIdentifierConstructorParams`, a struct with the fields `pub identifier: [u8; SUITE_IDENTIFIER_LENGTH]` and `pub version: u16`; no derives
-    * `[ ]`   `SuiteIdentifierTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `AllZeroIdentifier` and `ZeroVersion`
-    * `[ ]`   `SuiteIdentifierTryNewReturn`, the type alias `Result<SuiteIdentifier, SuiteIdentifierTryNewErrorReturn>`
-    * `[ ]`   Imports nothing; declares nothing else
-
-  * `[ ]`   `crates/domain/src/suite_identifier/interaction.spec.md`
-    * `[ ]`   `SuiteIdentifier::try_new(params: SuiteIdentifierConstructorParams) -> SuiteIdentifierTryNewReturn`, all-zero identifier: condition every byte of `params.identifier` is `0`; decision `params.identifier.iter().all(…)` over the byte equal to `0`; dependency call none; outcome `Err(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier)`
-    * `[ ]`   Zero version: condition the identifier passes and `params.version` is `0`; decision the equality check; dependency call none; outcome `Err(SuiteIdentifierTryNewErrorReturn::ZeroVersion)`
-    * `[ ]`   Admitted: condition some byte of the identifier is nonzero and the version is nonzero; decision the same two checks; dependency call none; outcome `Ok(SuiteIdentifier { identifier, version })`, both moved from the params
-    * `[ ]`   `SuiteIdentifier::identifier(&self) -> &[u8; SUITE_IDENTIFIER_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
-    * `[ ]`   `SuiteIdentifier::version(&self) -> u16`: one branch; outcome the held version
-    * `[ ]`   Ordering: the identifier's check precedes the version's; the same params always yield the same outcome
-    * `[ ]`   Invariants: every `SuiteIdentifier` holds a 32-byte identifier, not all zero, and a nonzero version; its only producer is `try_new`
-
-  * `[ ]`   `crates/domain/src/suite_identifier/mock.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
-    * `[ ]`   `SuiteIdentifierConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub identifier: Option<[u8; SUITE_IDENTIFIER_LENGTH]>` and `pub version: Option<u16>`
-    * `[ ]`   `build_suite_identifier_constructor_params(overrides: SuiteIdentifierConstructorParamsOverrides) -> SuiteIdentifierConstructorParams`, the identifier defaulting to `[0x22; SUITE_IDENTIFIER_LENGTH]` and the version to `1`
-    * `[ ]`   `build_suite_identifier(overrides: SuiteIdentifierConstructorParamsOverrides) -> SuiteIdentifier`, returning the real instance from `SuiteIdentifier::try_new(build_suite_identifier_constructor_params(overrides))` through `.expect("built suite identifier constructor params are admitted")`
-    * `[ ]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array and a `u16`, every value the constructor refuses is one the params builder's overrides carry, and the crate has no serialization dependency; no `SuiteIdentifier` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
-    * `[ ]`   Imports `SuiteIdentifier`, `SuiteIdentifierConstructorParams`, and `SUITE_IDENTIFIER_LENGTH` from `super::interface`
-
-  * `[ ]`   `crates/domain/src/suite_identifier/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `SuiteIdentifier` and `SuiteIdentifierTryNewErrorReturn` from `super::interface`, and `build_suite_identifier_constructor_params` and `SuiteIdentifierConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_suite_identifier_constructor_params` overriding only the fields it depends on, acts `SuiteIdentifier::try_new(params)`, and unpacks the result by `let Ok(suite) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one`: contract: an identifier with any nonzero byte, the last included, and the lowest nonzero version are admitted and read back unchanged; arrange `identifier: Some(…)` holding 31 zero bytes followed by `0x01`, and `version: Some(1)`; act `try_new`; assert `suite.identifier()` equals an array of 31 zero bytes followed by `0x01` and `suite.version()` equals `1`
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version`: contract: the zero check reads every identifier byte, the first included, and the version admits its full width; arrange `identifier: Some(…)` holding `0x80` followed by 31 zero bytes, and `version: Some(u16::MAX)`; act `try_new`; assert `suite.identifier()` equals an array of `0x80` followed by 31 zero bytes and `suite.version()` equals `65535`
-    * `[ ]`   `try_new_rejects_an_all_zero_identifier`: arrange `identifier: Some([0u8; 32])`; act `try_new`; assert `error` equals `SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier`
-    * `[ ]`   `try_new_rejects_a_zero_version`: arrange `version: Some(0)`; act `try_new`; assert `error` equals `SuiteIdentifierTryNewErrorReturn::ZeroVersion`
-    * `[ ]`   `try_new_reports_the_identifier_before_the_version`: contract: when both fields fail, the identifier's refusal is returned; arrange `identifier: Some([0u8; 32])` and `version: Some(0)`; act `try_new`; assert `error` equals `SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier`
-    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
-
-  * `[ ]`   `construction`
-    * `[ ]`   `SuiteIdentifier::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded identifier and version passes them as `SuiteIdentifierConstructorParams` and handles the refusal arm
-
-  * `[ ]`   `crates/domain/src/suite_identifier/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl SuiteIdentifier` with `pub fn try_new(params: SuiteIdentifierConstructorParams) -> SuiteIdentifierTryNewReturn` realizing the branches and ordering of the interaction spec, `pub fn identifier(&self) -> &[u8; SUITE_IDENTIFIER_LENGTH]` returning `&self.identifier`, and `pub fn version(&self) -> u16` returning `self.version`
-    * `[ ]`   Imports `SuiteIdentifier`, `SuiteIdentifierConstructorParams`, `SuiteIdentifierTryNewErrorReturn`, `SuiteIdentifierTryNewReturn`, and `SUITE_IDENTIFIER_LENGTH` from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `crates/domain/src/suite_identifier/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `suite_identifier` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `suite_identifier::provides`; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one` and `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version` pass
-    * `[ ]`   `try_new_rejects_an_all_zero_identifier`, `try_new_rejects_a_zero_version`, and `try_new_reports_the_identifier_before_the_version` pass
-    * `[ ]`   Code outside `crates/domain/src/suite_identifier` reading the `identifier` or `version` field fails to compile
-
-* `[ ]`   `domain/parameter_set_identifier` **Parameter-set identifier, the 32 bytes of the Registry's `bytes32` parameter-set key, admitted only when it can name a registered set**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: every capsule, sidecar, wrapping key, and entitlement is bound to one parameter set by the identifier the Registry keys it under, the `bytes32` that the parameter-set, entitlement, and escrow records and the sidecar list of a hash-card carry, so a value naming no set must be refused before anything is derived from it (CR-11; LC-09)
-    * `[ ]`   Functional: one type holds the parameter-set identifier's 32 bytes, reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the constructor takes exactly 32 bytes, so the length is a fact of the params type and never a runtime check
-    * `[ ]`   Functional: the constructor refuses the all-zero value, which is what an unassigned `bytes32` storage slot reads as, so it names no set the Registry holds
-    * `[ ]`   Functional: every other 32-byte value is admitted and read back unchanged
-    * `[ ]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
-
-  * `[ ]`   `role`
-    * `[ ]`   Domain: an owned value type in the protocol and domain ring, the parameter set every later derivation context, sidecar entry, and entitlement names
-    * `[ ]`   Does not hold, generate, or register a parameter set's public elements or its master scalar; the credential KEM family owns the parameter set and the Registry records it
-    * `[ ]`   Does not track whether a set is live or retired; the Registry holds liveness
-    * `[ ]`   Does not decode a parameter-set identifier from wire bytes of unknown length; the encoding family decodes a `bytes32` into the 32 bytes this constructor takes
-    * `[ ]`   Does not create any other module of the `domain` crate
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `parameter_set_identifier` module of the `domain` crate, holding `ParameterSetIdentifier`, its length, its constructor params, and its constructor's error and return types
-    * `[ ]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
-    * `[ ]`   Outside: the parameter set itself, its registration and liveness, and the encoding of the identifier on the wire
-
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, `deployment_identity`, or `suite_identifier`
-    * `[ ]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
-    * `[ ]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
-
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
-    * `[ ]`   Until `parameter_set_identifier/mod.rs` exists, `cargo check` reports the unresolved `mod parameter_set_identifier`, which is the RED state for every element below that precedes the implementation
-
-  * `[ ]`   `crates/domain/src/parameter_set_identifier/interface.rs`
-    * `[ ]`   `PARAMETER_SET_IDENTIFIER_LENGTH`, a `pub const` of type `usize` with value `32`, the width of the Registry's `bytes32` parameter-set key
-    * `[ ]`   `ParameterSetIdentifier`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: [u8; PARAMETER_SET_IDENTIFIER_LENGTH]`, so only the `parameter_set_identifier` module and its children reach the field
-    * `[ ]`   `ParameterSetIdentifierConstructorParams`, a struct with the one field `pub bytes: [u8; PARAMETER_SET_IDENTIFIER_LENGTH]`; no derives
-    * `[ ]`   `ParameterSetIdentifierTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`
-    * `[ ]`   `ParameterSetIdentifierTryNewReturn`, the type alias `Result<ParameterSetIdentifier, ParameterSetIdentifierTryNewErrorReturn>`
-    * `[ ]`   Imports nothing; declares nothing else
-
-  * `[ ]`   `crates/domain/src/parameter_set_identifier/interaction.spec.md`
-    * `[ ]`   `ParameterSetIdentifier::try_new(params: ParameterSetIdentifierConstructorParams) -> ParameterSetIdentifierTryNewReturn`, all zero: condition every byte of `params.bytes` is `0`; decision `params.bytes.iter().all(…)` over the byte equal to `0`; dependency call none; outcome `Err(ParameterSetIdentifierTryNewErrorReturn::AllZero)`
-    * `[ ]`   Admitted: condition some byte of `params.bytes` is nonzero; decision the same check; dependency call none; outcome `Ok(ParameterSetIdentifier { bytes })`, the array moved from the params
-    * `[ ]`   `ParameterSetIdentifier::as_bytes(&self) -> &[u8; PARAMETER_SET_IDENTIFIER_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
-    * `[ ]`   Invariants: every `ParameterSetIdentifier` holds exactly 32 bytes, not all zero; its only producer is `try_new`
-
-  * `[ ]`   `crates/domain/src/parameter_set_identifier/mock.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
-    * `[ ]`   `ParameterSetIdentifierConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub bytes: Option<[u8; PARAMETER_SET_IDENTIFIER_LENGTH]>`
-    * `[ ]`   `build_parameter_set_identifier_constructor_params(overrides: ParameterSetIdentifierConstructorParamsOverrides) -> ParameterSetIdentifierConstructorParams`, the bytes defaulting to `[0x33; PARAMETER_SET_IDENTIFIER_LENGTH]`
-    * `[ ]`   `build_parameter_set_identifier(overrides: ParameterSetIdentifierConstructorParamsOverrides) -> ParameterSetIdentifier`, returning the real instance from `ParameterSetIdentifier::try_new(build_parameter_set_identifier_constructor_params(overrides))` through `.expect("built parameter set identifier constructor params are admitted")`
-    * `[ ]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array, the one value the constructor refuses is an array the params builder's overrides carry, and the crate has no serialization dependency; no `ParameterSetIdentifier` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
-    * `[ ]`   Imports `ParameterSetIdentifier`, `ParameterSetIdentifierConstructorParams`, and `PARAMETER_SET_IDENTIFIER_LENGTH` from `super::interface`
-
-  * `[ ]`   `crates/domain/src/parameter_set_identifier/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `ParameterSetIdentifier` and `ParameterSetIdentifierTryNewErrorReturn` from `super::interface`, and `build_parameter_set_identifier_constructor_params` and `ParameterSetIdentifierConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_parameter_set_identifier_constructor_params` with `bytes` overridden, acts `ParameterSetIdentifier::try_new(params)`, and unpacks the result by `let Ok(identifier) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last`: contract: a value with any nonzero byte is admitted and read back unchanged, the last byte included; arrange `bytes: Some(…)` holding 31 zero bytes followed by `0x01`; act `try_new`; assert `identifier.as_bytes()` equals an array of 31 zero bytes followed by `0x01`
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first`: contract: the zero check reads every byte, the first included; arrange `bytes: Some(…)` holding `0x80` followed by 31 zero bytes; act `try_new`; assert `identifier.as_bytes()` equals an array of `0x80` followed by 31 zero bytes
-    * `[ ]`   `try_new_rejects_the_all_zero_identifier`: contract: the value an unassigned slot reads as names no set; arrange `bytes: Some([0u8; 32])`; act `try_new`; assert `error` equals `ParameterSetIdentifierTryNewErrorReturn::AllZero`
-    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
-
-  * `[ ]`   `construction`
-    * `[ ]`   `ParameterSetIdentifier::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded `bytes32` passes it as `ParameterSetIdentifierConstructorParams` and handles the refusal arm
-
-  * `[ ]`   `crates/domain/src/parameter_set_identifier/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl ParameterSetIdentifier` with `pub fn try_new(params: ParameterSetIdentifierConstructorParams) -> ParameterSetIdentifierTryNewReturn` realizing the branches of the interaction spec, and `pub fn as_bytes(&self) -> &[u8; PARAMETER_SET_IDENTIFIER_LENGTH]` returning `&self.bytes`
-    * `[ ]`   Imports `ParameterSetIdentifier`, `ParameterSetIdentifierConstructorParams`, `ParameterSetIdentifierTryNewErrorReturn`, `ParameterSetIdentifierTryNewReturn`, and `PARAMETER_SET_IDENTIFIER_LENGTH` from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `crates/domain/src/parameter_set_identifier/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `parameter_set_identifier` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `parameter_set_identifier::provides`; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last` and `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first` pass
-    * `[ ]`   `try_new_rejects_the_all_zero_identifier` passes
-    * `[ ]`   Code outside `crates/domain/src/parameter_set_identifier` reading the `bytes` field fails to compile
-
-* `[ ]`   `domain/group_index` **Piece-group index, the position of one piece group within a deployment's continuous stream, held as a distinct type so no other integer stands in for it**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: every capsule's randomness, every piece-group key, and every wrapping key is domain-separated by the group it belongs to, so the group index enters each derivation context as its own type and cannot be confused with a piece index, an interval, a version, or a count (CR-05; CR-11; the nonce invariant of Deployment Cryptographic Setup)
-    * `[ ]`   Functional: one type holds a piece-group index as a `u64`, reachable only through a read accessor, and its only producer is a constructor
-    * `[ ]`   Functional: every `u64` is admitted; a piece group spans at least one cipher block and the MVP cipher addresses at most two to the sixty-four blocks, so every index a deployment can carry fits the type, and the index's bound against one deployment's group count is enforced where that deployment's geometry is held, by `domain/derivation_context`
-    * `[ ]`   Functional: the admitted index is read back unchanged
-    * `[ ]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
-
-  * `[ ]`   `role`
-    * `[ ]`   Domain: an owned value type in the protocol and domain ring, the group every later derivation context, sidecar entry, and decryption attempt names
-    * `[ ]`   Does not know a deployment's piece size, piece-group size, extent, or group count, and does not bound the index against them; `domain/piece_geometry` holds the geometry and `domain/derivation_context` refuses an index outside its group count
-    * `[ ]`   Does not compute an index from a byte offset or a piece index
-    * `[ ]`   Does not create any other module of the `domain` crate
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `group_index` module of the `domain` crate, holding `GroupIndex`, its constructor params, and its constructor's return type
-    * `[ ]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
-    * `[ ]`   Outside: the deployment's geometry and group count, the mapping from offsets and pieces to groups, and the encoding of the index on the wire
-
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, `deployment_identity`, `suite_identifier`, or `parameter_set_identifier`
-    * `[ ]`   `core::convert::Infallible`, standard library, the constructor's error arm
-    * `[ ]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the standard library: `core::convert::Infallible` and `u64`; nothing else
-
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
-    * `[ ]`   Until `group_index/mod.rs` exists, `cargo check` reports the unresolved `mod group_index`, which is the RED state for every element below that precedes the implementation
-
-  * `[ ]`   `crates/domain/src/group_index/interface.rs`
-    * `[ ]`   `GroupIndex`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) value: u64`, so only the `group_index` module and its children reach the field
-    * `[ ]`   `GroupIndexConstructorParams`, a struct with the one field `pub value: u64`; no derives
-    * `[ ]`   `GroupIndexTryNewReturn`, the type alias `Result<GroupIndex, Infallible>`; the error arm is uninhabited because every `u64` is an index a deployment can carry
-    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
-
-  * `[ ]`   `crates/domain/src/group_index/interaction.spec.md`
-    * `[ ]`   `GroupIndex::try_new(params: GroupIndexConstructorParams) -> GroupIndexTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(GroupIndex { value })` holding `params.value`; the error arm has no branch
-    * `[ ]`   `GroupIndex::value(&self) -> u64`: one branch; outcome the held index, no side effect
-    * `[ ]`   Invariants: every `GroupIndex` holds one `u64`; its only producer is `try_new`; its bound against a deployment's group count is `domain/derivation_context`'s
-
-  * `[ ]`   `crates/domain/src/group_index/mock.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
-    * `[ ]`   `GroupIndexConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub value: Option<u64>`
-    * `[ ]`   `build_group_index_constructor_params(overrides: GroupIndexConstructorParamsOverrides) -> GroupIndexConstructorParams`, the value defaulting to `7`
-    * `[ ]`   `build_group_index(overrides: GroupIndexConstructorParamsOverrides) -> GroupIndex`, returning the real instance from `GroupIndex::try_new(build_group_index_constructor_params(overrides))` through the irrefutable pattern `let Ok(index) = …;`
-    * `[ ]`   No corruptions type and no invalidator: the constructor params are a typed `u64` and the constructor admits every value; no `GroupIndex` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
-    * `[ ]`   Imports `GroupIndex` and `GroupIndexConstructorParams` from `super::interface`
-
-  * `[ ]`   `crates/domain/src/group_index/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `GroupIndex` from `super::interface`, and `build_group_index_constructor_params` and `GroupIndexConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_group_index_constructor_params` with `value` overridden, acts `GroupIndex::try_new(params)`, and unpacks the result by the irrefutable pattern `let Ok(index) = …;`
-    * `[ ]`   `try_new_admits_index_zero`: contract: the lowest index is admitted and read back unchanged; arrange `value: Some(0)`, differing from the builder's default; act `try_new`; assert `index.value()` equals `0`
-    * `[ ]`   `try_new_admits_the_largest_index`: contract: the full width of the type is admitted and read back unchanged; arrange `value: Some(u64::MAX)`; act `try_new`; assert `index.value()` equals `18446744073709551615`
-    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
-
-  * `[ ]`   `construction`
-    * `[ ]`   `GroupIndex::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a group's position passes it as `GroupIndexConstructorParams`, and the derivation context that composes it bounds it against the deployment's group count
-
-  * `[ ]`   `crates/domain/src/group_index/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl GroupIndex` with `pub fn try_new(params: GroupIndexConstructorParams) -> GroupIndexTryNewReturn` returning `Ok(GroupIndex { value: params.value })`, and `pub fn value(&self) -> u64` returning `self.value`
-    * `[ ]`   Imports `GroupIndex`, `GroupIndexConstructorParams`, and `GroupIndexTryNewReturn` from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `crates/domain/src/group_index/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `group_index` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `group_index::provides`; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[ ]`   `try_new_admits_index_zero` and `try_new_admits_the_largest_index` pass
-    * `[ ]`   Code outside `crates/domain/src/group_index` reading the `value` field fails to compile
-
-* `[ ]`   `domain/piece_geometry` **Piece geometry, the piece size, piece-group size, and total extent a hash-card declares, admitted only when pieces align and groups are whole multiples of pieces, with the piece and group counts they imply**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: a hash-card's declared geometry drives every offset, counter, and key boundary, so it is untrusted until its sizes are mutually consistent, and a geometry that fails is refused before any piece-group key is derived (EC-01; CR-06; Manifest Bounds Validation)
-    * `[ ]`   Functional: one type holds the piece size and piece-group size as `u32` and the total extent as `u64`, the widths the hash-card's `pieceSize`, `pieceGroupSize`, and `totalExtent` fields carry, each reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the constructor refuses a piece size that is not a power of two, zero included, and a piece size below 16 KiB
-    * `[ ]`   Functional: the constructor refuses a zero piece-group size and a piece-group size that is not a whole multiple of the piece size, a group smaller than a piece included, so every group holds whole pieces
-    * `[ ]`   Functional: the constructor refuses a zero total extent, so every admitted geometry has at least one piece and one group
-    * `[ ]`   Functional: the admitted geometry reports its piece count and group count, each the total extent divided by the piece size or the piece-group size and rounded up, computed without overflow across the full width of the extent
-    * `[ ]`   Functional: a refusal names the failed check and the values it failed on, and the same input always yields the same refusal: piece size, then piece-group size, then total extent
-    * `[ ]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
-
-  * `[ ]`   `role`
-    * `[ ]`   Domain: an owned value type in the protocol and domain ring, the geometry every later derivation context, cipher call, and manifest gate reads
-    * `[ ]`   Does not check the extent against a cipher's declared `maxAddressableBytes` or the piece size against a cipher's block size; both are declared by the resolved cipher, so the manifest gate checks them against that declaration; a power of two of at least 16 KiB is already a multiple of every power-of-two block size up to 16 KiB
-    * `[ ]`   Does not bound a piece index or a group index; `domain/derivation_context` bounds the group index against this geometry's group count, and the transport bounds a piece index against its piece count
-    * `[ ]`   Does not hold the IV, the counter layout, or the cipher identifier
-    * `[ ]`   Does not choose the piece-group size; the hash-card declares it and the code reads it from the record
-    * `[ ]`   Does not create any other module of the `domain` crate
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `piece_geometry` module of the `domain` crate, holding `PieceGeometry`, the minimum piece size, its constructor params, its constructor's error and return types, and the counts the geometry implies
-    * `[ ]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
-    * `[ ]`   Outside: every cipher's declared extent and block size, the offset and counter arithmetic, index ranges, and the encoding of the geometry on the wire
-
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from any other module of the crate
-    * `[ ]`   The standard library: `u32::is_power_of_two`, `u64::from` over `u32`, and `u64::div_ceil`, through the prelude
-    * `[ ]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the standard library: `u32::is_power_of_two`, which is false for `0`; the `%` remainder over `u32`; `u64::from(u32)`, the lossless widening; and `u64::div_ceil`, rounding the quotient up
-
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
-    * `[ ]`   Until `piece_geometry/mod.rs` exists, `cargo check` reports the unresolved `mod piece_geometry`, which is the RED state for every element below that precedes the implementation
-
-  * `[ ]`   `crates/domain/src/piece_geometry/interface.rs`
-    * `[ ]`   `MINIMUM_PIECE_SIZE`, a `pub const` of type `u32` with value `16384`, 16 KiB
-    * `[ ]`   `PieceGeometry`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub(super) piece_size: u32`, `pub(super) piece_group_size: u32`, and `pub(super) total_extent: u64`, so only the `piece_geometry` module and its children reach the fields
-    * `[ ]`   `PieceGeometryConstructorParams`, a struct with the fields `pub piece_size: u32`, `pub piece_group_size: u32`, and `pub total_extent: u64`; no derives
-    * `[ ]`   `PieceGeometryTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `PieceSizeNotPowerOfTwo { piece_size: u32 }`, `PieceSizeBelowMinimum { piece_size: u32, minimum: u32 }`, `ZeroPieceGroupSize`, `PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: u32, piece_size: u32 }`, and `ZeroTotalExtent`
-    * `[ ]`   `PieceGeometryTryNewReturn`, the type alias `Result<PieceGeometry, PieceGeometryTryNewErrorReturn>`
-    * `[ ]`   Imports nothing; declares nothing else
-
-  * `[ ]`   `crates/domain/src/piece_geometry/interaction.spec.md`
-    * `[ ]`   `PieceGeometry::try_new(params: PieceGeometryConstructorParams) -> PieceGeometryTryNewReturn`, piece size not a power of two: condition `!params.piece_size.is_power_of_two()`, zero included; decision the power-of-two check; dependency call none; outcome `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size })`
-    * `[ ]`   Piece size below the minimum: condition the piece size is a power of two and `params.piece_size < MINIMUM_PIECE_SIZE`; decision the comparison; dependency call none; outcome `Err(PieceGeometryTryNewErrorReturn::PieceSizeBelowMinimum { piece_size, minimum: MINIMUM_PIECE_SIZE })`
-    * `[ ]`   Zero piece-group size: condition the piece size passes and `params.piece_group_size == 0`; decision the equality check; dependency call none; outcome `Err(PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize)`
-    * `[ ]`   Piece-group size not a multiple of the piece size: condition the piece size passes, the piece-group size is nonzero, and `params.piece_group_size % params.piece_size != 0`; decision the remainder check; dependency call none; outcome `Err(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size, piece_size })`
-    * `[ ]`   Zero total extent: condition both sizes pass and `params.total_extent == 0`; decision the equality check; dependency call none; outcome `Err(PieceGeometryTryNewErrorReturn::ZeroTotalExtent)`
-    * `[ ]`   Admitted: condition every check passes; decision none further; dependency call none; outcome `Ok(PieceGeometry { piece_size, piece_group_size, total_extent })`, each moved from the params
-    * `[ ]`   `PieceGeometry::piece_size(&self) -> u32`, `PieceGeometry::piece_group_size(&self) -> u32`, and `PieceGeometry::total_extent(&self) -> u64`: one branch each; outcome the held value
-    * `[ ]`   `PieceGeometry::piece_count(&self) -> u64`: one branch; outcome `self.total_extent.div_ceil(u64::from(self.piece_size))`, nonzero because both operands are
-    * `[ ]`   `PieceGeometry::group_count(&self) -> u64`: one branch; outcome `self.total_extent.div_ceil(u64::from(self.piece_group_size))`, nonzero because both operands are
-    * `[ ]`   Ordering: the piece size's checks precede the piece-group size's, which precede the total extent's; the same params always yield the same outcome
-    * `[ ]`   Invariants: every `PieceGeometry` holds a power-of-two piece size of at least 16 KiB, a nonzero piece-group size that is a whole multiple of it, and a nonzero total extent; its only producer is `try_new`
-
-  * `[ ]`   `crates/domain/src/piece_geometry/mock.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
-    * `[ ]`   `PieceGeometryConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub piece_size: Option<u32>`, `pub piece_group_size: Option<u32>`, and `pub total_extent: Option<u64>`
-    * `[ ]`   `build_piece_geometry_constructor_params(overrides: PieceGeometryConstructorParamsOverrides) -> PieceGeometryConstructorParams`, the piece size defaulting to `MINIMUM_PIECE_SIZE`, the piece-group size to `16384`, the configured default of 16 KiB, and the total extent to `1048576`
-    * `[ ]`   `build_piece_geometry(overrides: PieceGeometryConstructorParamsOverrides) -> PieceGeometry`, returning the real instance from `PieceGeometry::try_new(build_piece_geometry_constructor_params(overrides))` through `.expect("built piece geometry constructor params are admitted")`
-    * `[ ]`   No corruptions type and no invalidator: the constructor params are typed integers, every geometry the constructor refuses is a value the params builder's overrides carry, and the crate has no serialization dependency; no `PieceGeometry` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
-    * `[ ]`   Imports `PieceGeometry`, `PieceGeometryConstructorParams`, and `MINIMUM_PIECE_SIZE` from `super::interface`
-
-  * `[ ]`   `crates/domain/src/piece_geometry/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `PieceGeometry` and `PieceGeometryTryNewErrorReturn` from `super::interface`, and `build_piece_geometry_constructor_params` and `PieceGeometryConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_piece_geometry_constructor_params` overriding only the fields it depends on, acts `PieceGeometry::try_new(params)`, and unpacks the result by `let Ok(geometry) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
-    * `[ ]`   `try_new_admits_the_smallest_geometry`: contract: the minimum piece size, a group of one piece, and a one-byte extent are admitted, read back unchanged, and imply one piece and one group; arrange `piece_size: Some(16384)`, `piece_group_size: Some(16384)`, and `total_extent: Some(1)`; act `try_new`; assert `geometry.piece_size()` equals `16384`, `geometry.piece_group_size()` equals `16384`, `geometry.total_extent()` equals `1`, `geometry.piece_count()` equals `1`, and `geometry.group_count()` equals `1`
-    * `[ ]`   `piece_count_and_group_count_round_up_a_partial_piece_and_group`: contract: a trailing partial piece and a trailing partial group are each counted; arrange `piece_size: Some(16384)`, `piece_group_size: Some(32768)`, and `total_extent: Some(49153)`; act `try_new`; assert `geometry.piece_count()` equals `4` and `geometry.group_count()` equals `2`
-    * `[ ]`   `piece_count_and_group_count_do_not_round_up_an_exact_extent`: contract: an extent that is a whole number of groups adds no partial piece or group; arrange `piece_size: Some(16384)`, `piece_group_size: Some(32768)`, and `total_extent: Some(65536)`; act `try_new`; assert `geometry.piece_count()` equals `4` and `geometry.group_count()` equals `2`
-    * `[ ]`   `piece_count_and_group_count_hold_at_the_largest_extent`: contract: the counts are computed without overflow across the full width of the extent; arrange `piece_size: Some(2147483648)`, `piece_group_size: Some(2147483648)`, and `total_extent: Some(u64::MAX)`; act `try_new`; assert `geometry.piece_count()` equals `8589934592` and `geometry.group_count()` equals `8589934592`
-    * `[ ]`   `try_new_rejects_a_piece_size_that_is_not_a_power_of_two`: arrange `piece_size: Some(24576)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 24576 }`
-    * `[ ]`   `try_new_rejects_a_zero_piece_size`: arrange `piece_size: Some(0)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 0 }`
-    * `[ ]`   `try_new_rejects_a_piece_size_below_the_minimum`: arrange `piece_size: Some(8192)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceSizeBelowMinimum { piece_size: 8192, minimum: 16384 }`
-    * `[ ]`   `try_new_rejects_a_zero_piece_group_size`: arrange `piece_group_size: Some(0)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize`
-    * `[ ]`   `try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size`: arrange `piece_size: Some(32768)` and `piece_group_size: Some(49152)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 49152, piece_size: 32768 }`
-    * `[ ]`   `try_new_rejects_a_piece_group_smaller_than_a_piece`: contract: a group holds whole pieces, so a group smaller than one piece is refused; arrange `piece_size: Some(32768)` and `piece_group_size: Some(16384)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 16384, piece_size: 32768 }`
-    * `[ ]`   `try_new_rejects_a_zero_total_extent`: arrange `total_extent: Some(0)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::ZeroTotalExtent`
-    * `[ ]`   `try_new_reports_the_piece_size_before_the_total_extent`: contract: when several fields fail, the earliest check in the fixed order is returned; arrange `piece_size: Some(0)` and `total_extent: Some(0)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 0 }`
-    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
-
-  * `[ ]`   `construction`
-    * `[ ]`   `PieceGeometry::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a hash-card's decoded `pieceSize`, `pieceGroupSize`, and `totalExtent` passes them as `PieceGeometryConstructorParams` and handles the refusal arm
-
-  * `[ ]`   `crates/domain/src/piece_geometry/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl PieceGeometry` with `pub fn try_new(params: PieceGeometryConstructorParams) -> PieceGeometryTryNewReturn` realizing the branches and ordering of the interaction spec, and the accessors `pub fn piece_size(&self) -> u32`, `pub fn piece_group_size(&self) -> u32`, `pub fn total_extent(&self) -> u64`, `pub fn piece_count(&self) -> u64`, and `pub fn group_count(&self) -> u64` as the interaction spec states
-    * `[ ]`   Imports `PieceGeometry`, `PieceGeometryConstructorParams`, `PieceGeometryTryNewErrorReturn`, `PieceGeometryTryNewReturn`, and `MINIMUM_PIECE_SIZE` from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `crates/domain/src/piece_geometry/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `piece_geometry` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `piece_geometry::provides`; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[ ]`   `try_new_admits_the_smallest_geometry`, `piece_count_and_group_count_round_up_a_partial_piece_and_group`, `piece_count_and_group_count_do_not_round_up_an_exact_extent`, and `piece_count_and_group_count_hold_at_the_largest_extent` pass
-    * `[ ]`   `try_new_rejects_a_piece_size_that_is_not_a_power_of_two`, `try_new_rejects_a_zero_piece_size`, `try_new_rejects_a_piece_size_below_the_minimum`, `try_new_rejects_a_zero_piece_group_size`, `try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size`, `try_new_rejects_a_piece_group_smaller_than_a_piece`, `try_new_rejects_a_zero_total_extent`, and `try_new_reports_the_piece_size_before_the_total_extent` pass (EC-01, CR-06, a malformed geometry is refused before any key is derived)
-    * `[ ]`   Code outside `crates/domain/src/piece_geometry` reading the `piece_size`, `piece_group_size`, or `total_extent` field fails to compile
-
-* `[ ]`   `domain/derivation_context` **Derivation context, the asset, deployment, suite, parameter set, group index, and geometry every wrapping key and lineage derivation is domain-separated by, admitted only when the group index falls within the geometry's group count; the first encodable domain type**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: each parameter set's wrapping key is a domain-separated KDF of the encapsulated value and the context, asset, deployment, suite, parameter set, group index, and geometry, so those six values travel together as one type, and a context naming a group the deployment does not have is refused before any key is derived from it (CR-11; Credential KEM; Manifest Bounds Validation)
-    * `[ ]`   Functional: one type holds an `AssetIdentity`, a `DeploymentIdentity`, a `SuiteIdentifier`, a `ParameterSetIdentifier`, a `GroupIndex`, and a `PieceGeometry`, each reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the constructor refuses a group index at or beyond the geometry's group count, naming both values
-    * `[ ]`   Functional: every other combination of admitted components is admitted and read back unchanged
-    * `[ ]`   Non-functional: the module depends on the `domain` crate's own identifier and geometry modules and the standard library alone; the `domain` crate's dependencies are unchanged
-
-  * `[ ]`   `role`
-    * `[ ]`   Domain: an owned value type in the protocol and domain ring composing the domain's identifier and geometry types, the first encodable domain type, whose canonical description the encoding family authors next
-    * `[ ]`   Does not re-check any component's own invariants; each arrives as an admitted instance of its type
-    * `[ ]`   Does not encode itself, derive a key, or hash; `encoding/derivation_context` describes its canonical field sequence and `kdf/blake3_keyed` derives from the encoding
-    * `[ ]`   Does not check that the parameter set is live for the asset, that the deployment belongs to the asset, or that the suite admits the geometry; those are Registry state and suite declarations the manifest gate reads
-    * `[ ]`   Does not create any other module of the `domain` crate
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `derivation_context` module of the `domain` crate, holding `DerivationContext`, its constructor params, its constructor's error and return types, and the one cross-field rule between the group index and the geometry
-    * `[ ]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
-    * `[ ]`   Outside: each component's own invariants, the context's encoding, every derivation computed from it, and every Registry and suite rule
-
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/asset_identity`, same crate, protocol and domain ring, through `crate::asset_identity::provides`; supplies `AssetIdentity`, and in the crate's test build and under the `mocks` feature `build_asset_identity` and `AssetIdentityConstructorParamsOverrides`
-    * `[ ]`   `domain/deployment_identity`, through `crate::deployment_identity::provides`; supplies `DeploymentIdentity`, and in the crate's test build and under the `mocks` feature `build_deployment_identity` and `DeploymentIdentityConstructorParamsOverrides`
-    * `[ ]`   `domain/suite_identifier`, through `crate::suite_identifier::provides`; supplies `SuiteIdentifier`, and in the crate's test build and under the `mocks` feature `build_suite_identifier` and `SuiteIdentifierConstructorParamsOverrides`
-    * `[ ]`   `domain/parameter_set_identifier`, through `crate::parameter_set_identifier::provides`; supplies `ParameterSetIdentifier`, and in the crate's test build and under the `mocks` feature `build_parameter_set_identifier` and `ParameterSetIdentifierConstructorParamsOverrides`
-    * `[ ]`   `domain/group_index`, through `crate::group_index::provides`; supplies `GroupIndex` with `value()`, and in the crate's test build and under the `mocks` feature `build_group_index` and `GroupIndexConstructorParamsOverrides`
-    * `[ ]`   `domain/piece_geometry`, through `crate::piece_geometry::provides`; supplies `PieceGeometry` with `group_count()`, and in the crate's test build and under the `mocks` feature `build_piece_geometry` and `PieceGeometryConstructorParamsOverrides`
-    * `[ ]`   Each is a module of the same ring that this type composes; none depends on `derivation_context`, so no cycle forms; no external crate and no other repository crate; `crates/domain/Cargo.toml` is unchanged
-    * `[ ]`   No reverse dependency; `encoding/derivation_context` is this module's first consumer
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `group_index`: `GroupIndex::value(&self) -> u64`
-    * `[ ]`   From `piece_geometry`: `PieceGeometry::group_count(&self) -> u64`
-    * `[ ]`   From the other components: their types, moved into the context and returned by reference; no method is called on them
-    * `[ ]`   From each component's mocks: its builder, taking its constructor-params overrides and returning a real instance
-
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod derivation_context;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use derivation_context::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
-    * `[ ]`   Until `derivation_context/mod.rs` exists, `cargo check` reports the unresolved `mod derivation_context`, which is the RED state for every element below that precedes the implementation
-
-  * `[ ]`   `crates/domain/src/derivation_context/interface.rs`
-    * `[ ]`   `DerivationContext`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields, in this order, `pub(super) asset: AssetIdentity`, `pub(super) deployment: DeploymentIdentity`, `pub(super) suite: SuiteIdentifier`, `pub(super) parameter_set: ParameterSetIdentifier`, `pub(super) group_index: GroupIndex`, and `pub(super) geometry: PieceGeometry`, so only the `derivation_context` module and its children reach the fields
-    * `[ ]`   `DerivationContextConstructorParams`, a struct with the same fields in the same order, each `pub`; no derives
-    * `[ ]`   `DerivationContextTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `GroupIndexOutOfRange { group_index: u64, group_count: u64 }`
-    * `[ ]`   `DerivationContextTryNewReturn`, the type alias `Result<DerivationContext, DerivationContextTryNewErrorReturn>`
-    * `[ ]`   Imports `AssetIdentity`, `DeploymentIdentity`, `SuiteIdentifier`, `ParameterSetIdentifier`, `GroupIndex`, and `PieceGeometry` from their modules' `provides`; declares nothing else
-
-  * `[ ]`   `crates/domain/src/derivation_context/interaction.spec.md`
-    * `[ ]`   `DerivationContext::try_new(params: DerivationContextConstructorParams) -> DerivationContextTryNewReturn`, group index out of range: condition `params.group_index.value() >= params.geometry.group_count()`; decision the comparison; dependency call `GroupIndex::value` and `PieceGeometry::group_count`, once each; outcome `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index, group_count })` holding the two values compared
-    * `[ ]`   Admitted: condition the group index is below the group count; decision the same comparison; dependency call the same two reads; outcome `Ok(DerivationContext { asset, deployment, suite, parameter_set, group_index, geometry })`, every component moved from the params
-    * `[ ]`   `DerivationContext::asset(&self) -> &AssetIdentity`, `deployment(&self) -> &DeploymentIdentity`, `suite(&self) -> &SuiteIdentifier`, `parameter_set(&self) -> &ParameterSetIdentifier`, `group_index(&self) -> &GroupIndex`, and `geometry(&self) -> &PieceGeometry`: one branch each; outcome a shared reference to the held component, no copy, no side effect
-    * `[ ]`   Invariants: every `DerivationContext` holds six admitted components and a group index below its geometry's group count; its only producer is `try_new`
-
-  * `[ ]`   `crates/domain/src/derivation_context/mock.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
-    * `[ ]`   `DerivationContextConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub asset: Option<AssetIdentity>`, `pub deployment: Option<DeploymentIdentity>`, `pub suite: Option<SuiteIdentifier>`, `pub parameter_set: Option<ParameterSetIdentifier>`, `pub group_index: Option<GroupIndex>`, and `pub geometry: Option<PieceGeometry>`
-    * `[ ]`   `build_derivation_context_constructor_params(overrides: DerivationContextConstructorParamsOverrides) -> DerivationContextConstructorParams`, each omitted field defaulting to its component's builder called with `Default::default()`: `build_asset_identity`, `build_deployment_identity`, `build_suite_identifier`, `build_parameter_set_identifier`, `build_group_index`, and `build_piece_geometry`; the default group index `7` falls within the default geometry's `64` groups
-    * `[ ]`   `build_derivation_context(overrides: DerivationContextConstructorParamsOverrides) -> DerivationContext`, returning the real instance from `DerivationContext::try_new(build_derivation_context_constructor_params(overrides))` through `.expect("built derivation context constructor params are admitted")`
-    * `[ ]`   No corruptions type and no invalidator: every component arrives as an admitted instance, the one context the constructor refuses is a combination the params builder's overrides carry, and the crate has no serialization dependency; no `DerivationContext` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
-    * `[ ]`   Imports `DerivationContext` and `DerivationContextConstructorParams` from `super::interface`, and each component's type, builder, and constructor-params overrides from its module's `provides`, which re-exports its mocks in the crate's test build and under the `mocks` feature
-
-  * `[ ]`   `crates/domain/src/derivation_context/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `DerivationContext` and `DerivationContextTryNewErrorReturn` from `super::interface`, `build_derivation_context_constructor_params` and `DerivationContextConstructorParamsOverrides` from `super::mock`, and `build_asset_identity`, `build_deployment_identity`, `build_suite_identifier`, `build_parameter_set_identifier`, `build_group_index`, `GroupIndexConstructorParamsOverrides`, `build_piece_geometry`, and `PieceGeometryConstructorParamsOverrides` from their modules' `provides`; each test builds its params through `build_derivation_context_constructor_params` overriding only `group_index` and `geometry`, acts `DerivationContext::try_new(params)`, and unpacks the result by `let Ok(context) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
-    * `[ ]`   `try_new_admits_the_last_group_of_the_geometry`: contract: the highest index below the group count is admitted and every component reads back unchanged; arrange `geometry` from `build_piece_geometry` with `piece_size: Some(16384)`, `piece_group_size: Some(16384)`, and `total_extent: Some(32768)`, two groups, and `group_index` from `build_group_index` with `value: Some(1)`; act `try_new`; assert `context.group_index().value()` equals `1`, `context.geometry().group_count()` equals `2`, and `context.asset()`, `context.deployment()`, `context.suite()`, and `context.parameter_set()` equal `build_asset_identity(Default::default())`, `build_deployment_identity(Default::default())`, `build_suite_identifier(Default::default())`, and `build_parameter_set_identifier(Default::default())` respectively
-    * `[ ]`   `try_new_admits_index_zero_of_a_one_group_geometry`: contract: the smallest group count admits its only index; arrange `geometry` with `total_extent: Some(1)`, one group, and `group_index` with `value: Some(0)`; act `try_new`; assert `context.group_index().value()` equals `0`
-    * `[ ]`   `try_new_rejects_a_group_index_equal_to_the_group_count`: contract: the index one past the last group is refused, naming both values; arrange the two-group geometry of the admission test and `group_index` with `value: Some(2)`; act `try_new`; assert `error` equals `DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: 2, group_count: 2 }`
-    * `[ ]`   `try_new_rejects_the_largest_group_index`: contract: an index far beyond the group count is refused without overflow; arrange the two-group geometry and `group_index` with `value: Some(u64::MAX)`; act `try_new`; assert `error` equals `DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: 18446744073709551615, group_count: 2 }`
-    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
-
-  * `[ ]`   `construction`
-    * `[ ]`   `DerivationContext::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding admitted components passes them as `DerivationContextConstructorParams` and handles the refusal arm
-
-  * `[ ]`   `crates/domain/src/derivation_context/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl DerivationContext` with `pub fn try_new(params: DerivationContextConstructorParams) -> DerivationContextTryNewReturn` realizing the branches of the interaction spec, and the six accessors the interaction spec states, each returning `&self.` its field
-    * `[ ]`   Imports `DerivationContext`, `DerivationContextConstructorParams`, `DerivationContextTryNewErrorReturn`, and `DerivationContextTryNewReturn` from `interface`, and the component types from their modules' `provides`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `crates/domain/src/derivation_context/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `derivation_context` depends on `asset_identity`, `deployment_identity`, `suite_identifier`, `parameter_set_identifier`, `group_index`, and `piece_geometry` through their `provides`, and on the standard library; none of them depends on it; `domain` depends on no repository crate; `encoding/derivation_context` reaches it through `lib.rs`'s re-export of `derivation_context::provides`; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[ ]`   `try_new_admits_the_last_group_of_the_geometry` and `try_new_admits_index_zero_of_a_one_group_geometry` pass
-    * `[ ]`   `try_new_rejects_a_group_index_equal_to_the_group_count` and `try_new_rejects_the_largest_group_index` pass (CR-11, a context names only a group its deployment has)
-    * `[ ]`   Code outside `crates/domain/src/derivation_context` reading any field of `DerivationContext` fails to compile
+* `[✅]`   `domain/deployment_identity` **Registry-assigned deployment identity, the 32 bytes of the Registry's `bytes32` deployment key, admitted only when it can name an assigned deployment**
+
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: every derivation, capsule, sidecar, and escrow record is bound to one deployment by the Registry's globally unique, non-reusable `deployment_id`, the `bytes32` key its deployment and escrow records carry, so a value naming no deployment must be refused before anything is derived from it (CR-05; the nonce invariant of Deployment Cryptographic Setup)
+    * `[✅]`   Functional: one type holds the deployment identity's 32 bytes, reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[✅]`   Functional: the constructor takes exactly 32 bytes, so the length is a fact of the params type and never a runtime check
+    * `[✅]`   Functional: the constructor refuses the all-zero value, which is what an unassigned `bytes32` storage slot reads as, so it names no deployment the Registry assigned
+    * `[✅]`   Functional: every other 32-byte value is admitted and read back unchanged
+    * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
+
+  * `[✅]`   `role`
+    * `[✅]`   Domain: an owned value type in the protocol and domain ring, the deployment every later derivation context, hash-card, and attempt context names
+    * `[✅]`   Does not assign, generate, or check the uniqueness of a deployment identity; the Registry assigns it, and uniqueness is a property of consensus
+    * `[✅]`   Does not decode a deployment identity from wire bytes of unknown length; the encoding family decodes a `bytes32` into the 32 bytes this constructor takes
+    * `[✅]`   Does not create any other module of the `domain` crate
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `deployment_identity` module of the `domain` crate, holding `DeploymentIdentity`, its length, its constructor params, and its constructor's error and return types
+    * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
+    * `[✅]`   Outside: the Registry's assignment of identities, the deployment record and hash-card the identity keys, and the encoding of the identity on the wire
+
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret` or from `asset_identity`
+    * `[✅]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
+    * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
+    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
+
+  * `[✅]`   `context_slice`
+    * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
+
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod secret;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, and `pub use secret::provides::*;`, nothing else
+    * `[✅]`   Until `deployment_identity/mod.rs` exists, `cargo check` reports the unresolved `mod deployment_identity`, which is the RED state for every element below that precedes the implementation
+
+  * `[✅]`   `crates/domain/src/deployment_identity/interface.rs`
+    * `[✅]`   `DEPLOYMENT_IDENTITY_LENGTH`, a `pub const` of type `usize` with value `32`, the width of the Registry's `bytes32` deployment key
+    * `[✅]`   `DeploymentIdentity`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: [u8; DEPLOYMENT_IDENTITY_LENGTH]`, so only the `deployment_identity` module and its children reach the field
+    * `[✅]`   `DeploymentIdentityConstructorParams`, a struct with the one field `pub bytes: [u8; DEPLOYMENT_IDENTITY_LENGTH]`; no derives
+    * `[✅]`   `DeploymentIdentityTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`
+    * `[✅]`   `DeploymentIdentityTryNewReturn`, the type alias `Result<DeploymentIdentity, DeploymentIdentityTryNewErrorReturn>`
+    * `[✅]`   Imports nothing; declares nothing else
+
+  * `[✅]`   `crates/domain/src/deployment_identity/interaction.spec.md`
+    * `[✅]`   `DeploymentIdentity::try_new(params: DeploymentIdentityConstructorParams) -> DeploymentIdentityTryNewReturn`, all zero: condition every byte of `params.bytes` is `0`; decision `params.bytes.iter().all(…)` over the byte equal to `0`; dependency call none; outcome `Err(DeploymentIdentityTryNewErrorReturn::AllZero)`
+    * `[✅]`   Admitted: condition some byte of `params.bytes` is nonzero; decision the same check; dependency call none; outcome `Ok(DeploymentIdentity { bytes })`, the array moved from the params
+    * `[✅]`   `DeploymentIdentity::as_bytes(&self) -> &[u8; DEPLOYMENT_IDENTITY_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
+    * `[✅]`   Invariants: every `DeploymentIdentity` holds exactly 32 bytes, not all zero; its only producer is `try_new`
+
+  * `[✅]`   `crates/domain/src/deployment_identity/mock.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[✅]`   `DeploymentIdentityConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub bytes: Option<[u8; DEPLOYMENT_IDENTITY_LENGTH]>`
+    * `[✅]`   `build_deployment_identity_constructor_params(overrides: DeploymentIdentityConstructorParamsOverrides) -> DeploymentIdentityConstructorParams`, the bytes defaulting to `[0x11; DEPLOYMENT_IDENTITY_LENGTH]`
+    * `[✅]`   `build_deployment_identity(overrides: DeploymentIdentityConstructorParamsOverrides) -> DeploymentIdentity`, returning the real instance from `DeploymentIdentity::try_new(build_deployment_identity_constructor_params(overrides))` through `.expect("built deployment identity constructor params are admitted")`
+    * `[✅]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array, the one value the constructor refuses is an array the params builder's overrides carry, and the crate has no serialization dependency; no `DeploymentIdentity` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
+    * `[✅]`   Imports `DeploymentIdentity`, `DeploymentIdentityConstructorParams`, and `DEPLOYMENT_IDENTITY_LENGTH` from `super::interface`
+
+  * `[✅]`   `crates/domain/src/deployment_identity/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `DeploymentIdentity` and `DeploymentIdentityTryNewErrorReturn` from `super::interface`, and `build_deployment_identity_constructor_params` and `DeploymentIdentityConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_deployment_identity_constructor_params` with `bytes` overridden, acts `DeploymentIdentity::try_new(params)`, and unpacks the result by `let Ok(identity) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
+    * `[✅]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last`: contract: a value with any nonzero byte is admitted and read back unchanged, the last byte included; arrange `bytes: Some(…)` holding 31 zero bytes followed by `0x01`; act `try_new`; assert `identity.as_bytes()` equals an array of 31 zero bytes followed by `0x01`
+    * `[✅]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first`: contract: the zero check reads every byte, the first included; arrange `bytes: Some(…)` holding `0x80` followed by 31 zero bytes; act `try_new`; assert `identity.as_bytes()` equals an array of `0x80` followed by 31 zero bytes
+    * `[✅]`   `try_new_rejects_the_all_zero_identity`: contract: the value an unassigned slot reads as names no deployment; arrange `bytes: Some([0u8; 32])`; act `try_new`; assert `error` equals `DeploymentIdentityTryNewErrorReturn::AllZero`
+    * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
+
+  * `[✅]`   `construction`
+    * `[✅]`   `DeploymentIdentity::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded `bytes32` passes it as `DeploymentIdentityConstructorParams` and handles the refusal arm
+
+  * `[✅]`   `crates/domain/src/deployment_identity/mod.rs`
+    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[✅]`   `impl DeploymentIdentity` with `pub fn try_new(params: DeploymentIdentityConstructorParams) -> DeploymentIdentityTryNewReturn` realizing the branches of the interaction spec, and `pub fn as_bytes(&self) -> &[u8; DEPLOYMENT_IDENTITY_LENGTH]` returning `&self.bytes`
+    * `[✅]`   Imports `DeploymentIdentity`, `DeploymentIdentityConstructorParams`, `DeploymentIdentityTryNewErrorReturn`, `DeploymentIdentityTryNewReturn`, and `DEPLOYMENT_IDENTITY_LENGTH` from `interface`
+    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[✅]`   `crates/domain/src/deployment_identity/provides.rs`
+    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `deployment_identity` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `deployment_identity::provides`; no cycle
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
+    * `[✅]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last` and `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first` pass
+    * `[✅]`   `try_new_rejects_the_all_zero_identity` passes
+    * `[✅]`   Code outside `crates/domain/src/deployment_identity` reading the `bytes` field fails to compile
+
+* `[✅]`   `domain/suite_identifier` **Cryptographic suite identifier and version, the hash-card field that fixes a deployment's whole cryptographic composition, admitted only when both can name a registered suite**
+
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: a deployment's hash-card names one immutable suite by its identifier and version, and that pair fixes the pairing, credential KEM, envelope, delivery proof, payload cipher, commitment scheme, KDF and hash-to-scalar mappings, delivery-statement version, and attempt-rule parameters every derivation and attempt resolves against, so a pair naming no suite must be refused before anything resolves from it (Adapter Composition; IC-09)
+    * `[✅]`   Functional: one type holds the suite identifier and the suite version, each reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[✅]`   Functional: the identifier is exactly 32 bytes, the width of the Registry's `bytes32` suite key, so its length is a fact of the params type and never a runtime check
+    * `[✅]`   Functional: the version is a `u16`, the width the hash-card gives its other version field, the delivery-statement version
+    * `[✅]`   Functional: the constructor refuses an all-zero identifier and a zero version, each the value an unassigned storage slot reads as, so neither names a registered suite
+    * `[✅]`   Functional: a refusal names the failed field, and the same input always yields the same refusal: the identifier is checked before the version
+    * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
+
+  * `[✅]`   `role`
+    * `[✅]`   Domain: an owned value type in the protocol and domain ring, the suite every later derivation context, hash-card, and compatibility statement names
+    * `[✅]`   Does not resolve a suite to its adapters, decide compatibility, or hold a compatibility statement; the composition resolver and the release's compatibility statement do that from this value
+    * `[✅]`   Does not assign or register suite identifiers or versions
+    * `[✅]`   Does not decode a suite identifier or version from wire bytes; the encoding family decodes them into the typed values this constructor takes
+    * `[✅]`   Does not create any other module of the `domain` crate
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `suite_identifier` module of the `domain` crate, holding `SuiteIdentifier`, the identifier's length, its constructor params, and its constructor's error and return types
+    * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
+    * `[✅]`   Outside: the suite's composition, its registration, the compatibility statement, and the encoding of the pair on the wire
+
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, or `deployment_identity`
+    * `[✅]`   The standard library: `u8`, `u16`, arrays, and `Iterator::all`, through the prelude
+    * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
+    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
+
+  * `[✅]`   `context_slice`
+    * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
+
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+    * `[✅]`   Until `suite_identifier/mod.rs` exists, `cargo check` reports the unresolved `mod suite_identifier`, which is the RED state for every element below that precedes the implementation
+
+  * `[✅]`   `crates/domain/src/suite_identifier/interface.rs`
+    * `[✅]`   `SUITE_IDENTIFIER_LENGTH`, a `pub const` of type `usize` with value `32`, the width of the Registry's `bytes32` suite key
+    * `[✅]`   `SuiteIdentifier`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub(super) identifier: [u8; SUITE_IDENTIFIER_LENGTH]` and `pub(super) version: u16`, so only the `suite_identifier` module and its children reach the fields
+    * `[✅]`   `SuiteIdentifierConstructorParams`, a struct with the fields `pub identifier: [u8; SUITE_IDENTIFIER_LENGTH]` and `pub version: u16`; no derives
+    * `[✅]`   `SuiteIdentifierTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `AllZeroIdentifier` and `ZeroVersion`
+    * `[✅]`   `SuiteIdentifierTryNewReturn`, the type alias `Result<SuiteIdentifier, SuiteIdentifierTryNewErrorReturn>`
+    * `[✅]`   Imports nothing; declares nothing else
+
+  * `[✅]`   `crates/domain/src/suite_identifier/interaction.spec.md`
+    * `[✅]`   `SuiteIdentifier::try_new(params: SuiteIdentifierConstructorParams) -> SuiteIdentifierTryNewReturn`, all-zero identifier: condition every byte of `params.identifier` is `0`; decision `params.identifier.iter().all(…)` over the byte equal to `0`; dependency call none; outcome `Err(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier)`
+    * `[✅]`   Zero version: condition the identifier passes and `params.version` is `0`; decision the equality check; dependency call none; outcome `Err(SuiteIdentifierTryNewErrorReturn::ZeroVersion)`
+    * `[✅]`   Admitted: condition some byte of the identifier is nonzero and the version is nonzero; decision the same two checks; dependency call none; outcome `Ok(SuiteIdentifier { identifier, version })`, both moved from the params
+    * `[✅]`   `SuiteIdentifier::identifier(&self) -> &[u8; SUITE_IDENTIFIER_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
+    * `[✅]`   `SuiteIdentifier::version(&self) -> u16`: one branch; outcome the held version
+    * `[✅]`   Ordering: the identifier's check precedes the version's; the same params always yield the same outcome
+    * `[✅]`   Invariants: every `SuiteIdentifier` holds a 32-byte identifier, not all zero, and a nonzero version; its only producer is `try_new`
+
+  * `[✅]`   `crates/domain/src/suite_identifier/mock.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[✅]`   `SuiteIdentifierConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub identifier: Option<[u8; SUITE_IDENTIFIER_LENGTH]>` and `pub version: Option<u16>`
+    * `[✅]`   `build_suite_identifier_constructor_params(overrides: SuiteIdentifierConstructorParamsOverrides) -> SuiteIdentifierConstructorParams`, the identifier defaulting to `[0x22; SUITE_IDENTIFIER_LENGTH]` and the version to `1`
+    * `[✅]`   `build_suite_identifier(overrides: SuiteIdentifierConstructorParamsOverrides) -> SuiteIdentifier`, returning the real instance from `SuiteIdentifier::try_new(build_suite_identifier_constructor_params(overrides))` through `.expect("built suite identifier constructor params are admitted")`
+    * `[✅]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array and a `u16`, every value the constructor refuses is one the params builder's overrides carry, and the crate has no serialization dependency; no `SuiteIdentifier` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
+    * `[✅]`   Imports `SuiteIdentifier`, `SuiteIdentifierConstructorParams`, and `SUITE_IDENTIFIER_LENGTH` from `super::interface`
+
+  * `[✅]`   `crates/domain/src/suite_identifier/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `SuiteIdentifier` and `SuiteIdentifierTryNewErrorReturn` from `super::interface`, and `build_suite_identifier_constructor_params` and `SuiteIdentifierConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_suite_identifier_constructor_params` overriding only the fields it depends on, acts `SuiteIdentifier::try_new(params)`, and unpacks the result by `let Ok(suite) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one`: contract: an identifier with any nonzero byte, the last included, and the lowest nonzero version are admitted and read back unchanged; arrange `identifier: Some(…)` holding 31 zero bytes followed by `0x01`, and `version: Some(1)`; act `try_new`; assert `suite.identifier()` equals an array of 31 zero bytes followed by `0x01` and `suite.version()` equals `1`
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version`: contract: the zero check reads every identifier byte, the first included, and the version admits its full width; arrange `identifier: Some(…)` holding `0x80` followed by 31 zero bytes, and `version: Some(u16::MAX)`; act `try_new`; assert `suite.identifier()` equals an array of `0x80` followed by 31 zero bytes and `suite.version()` equals `65535`
+    * `[✅]`   `try_new_rejects_an_all_zero_identifier`: arrange `identifier: Some([0u8; 32])`; act `try_new`; assert `error` equals `SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier`
+    * `[✅]`   `try_new_rejects_a_zero_version`: arrange `version: Some(0)`; act `try_new`; assert `error` equals `SuiteIdentifierTryNewErrorReturn::ZeroVersion`
+    * `[✅]`   `try_new_reports_the_identifier_before_the_version`: contract: when both fields fail, the identifier's refusal is returned; arrange `identifier: Some([0u8; 32])` and `version: Some(0)`; act `try_new`; assert `error` equals `SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier`
+    * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
+
+  * `[✅]`   `construction`
+    * `[✅]`   `SuiteIdentifier::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded identifier and version passes them as `SuiteIdentifierConstructorParams` and handles the refusal arm
+
+  * `[✅]`   `crates/domain/src/suite_identifier/mod.rs`
+    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[✅]`   `impl SuiteIdentifier` with `pub fn try_new(params: SuiteIdentifierConstructorParams) -> SuiteIdentifierTryNewReturn` realizing the branches and ordering of the interaction spec, `pub fn identifier(&self) -> &[u8; SUITE_IDENTIFIER_LENGTH]` returning `&self.identifier`, and `pub fn version(&self) -> u16` returning `self.version`
+    * `[✅]`   Imports `SuiteIdentifier`, `SuiteIdentifierConstructorParams`, `SuiteIdentifierTryNewErrorReturn`, `SuiteIdentifierTryNewReturn`, and `SUITE_IDENTIFIER_LENGTH` from `interface`
+    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[✅]`   `crates/domain/src/suite_identifier/provides.rs`
+    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `suite_identifier` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `suite_identifier::provides`; no cycle
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one` and `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version` pass
+    * `[✅]`   `try_new_rejects_an_all_zero_identifier`, `try_new_rejects_a_zero_version`, and `try_new_reports_the_identifier_before_the_version` pass
+    * `[✅]`   Code outside `crates/domain/src/suite_identifier` reading the `identifier` or `version` field fails to compile
+
+* `[✅]`   `domain/parameter_set_identifier` **Parameter-set identifier, the 32 bytes of the Registry's `bytes32` parameter-set key, admitted only when it can name a registered set**
+
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: every capsule, sidecar, wrapping key, and entitlement is bound to one parameter set by the identifier the Registry keys it under, the `bytes32` that the parameter-set, entitlement, and escrow records and the sidecar list of a hash-card carry, so a value naming no set must be refused before anything is derived from it (CR-11; LC-09)
+    * `[✅]`   Functional: one type holds the parameter-set identifier's 32 bytes, reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[✅]`   Functional: the constructor takes exactly 32 bytes, so the length is a fact of the params type and never a runtime check
+    * `[✅]`   Functional: the constructor refuses the all-zero value, which is what an unassigned `bytes32` storage slot reads as, so it names no set the Registry holds
+    * `[✅]`   Functional: every other 32-byte value is admitted and read back unchanged
+    * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
+
+  * `[✅]`   `role`
+    * `[✅]`   Domain: an owned value type in the protocol and domain ring, the parameter set every later derivation context, sidecar entry, and entitlement names
+    * `[✅]`   Does not hold, generate, or register a parameter set's public elements or its master scalar; the credential KEM family owns the parameter set and the Registry records it
+    * `[✅]`   Does not track whether a set is live or retired; the Registry holds liveness
+    * `[✅]`   Does not decode a parameter-set identifier from wire bytes of unknown length; the encoding family decodes a `bytes32` into the 32 bytes this constructor takes
+    * `[✅]`   Does not create any other module of the `domain` crate
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `parameter_set_identifier` module of the `domain` crate, holding `ParameterSetIdentifier`, its length, its constructor params, and its constructor's error and return types
+    * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
+    * `[✅]`   Outside: the parameter set itself, its registration and liveness, and the encoding of the identifier on the wire
+
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, `deployment_identity`, or `suite_identifier`
+    * `[✅]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
+    * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
+    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
+
+  * `[✅]`   `context_slice`
+    * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
+
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+    * `[✅]`   Until `parameter_set_identifier/mod.rs` exists, `cargo check` reports the unresolved `mod parameter_set_identifier`, which is the RED state for every element below that precedes the implementation
+
+  * `[✅]`   `crates/domain/src/parameter_set_identifier/interface.rs`
+    * `[✅]`   `PARAMETER_SET_IDENTIFIER_LENGTH`, a `pub const` of type `usize` with value `32`, the width of the Registry's `bytes32` parameter-set key
+    * `[✅]`   `ParameterSetIdentifier`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: [u8; PARAMETER_SET_IDENTIFIER_LENGTH]`, so only the `parameter_set_identifier` module and its children reach the field
+    * `[✅]`   `ParameterSetIdentifierConstructorParams`, a struct with the one field `pub bytes: [u8; PARAMETER_SET_IDENTIFIER_LENGTH]`; no derives
+    * `[✅]`   `ParameterSetIdentifierTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`
+    * `[✅]`   `ParameterSetIdentifierTryNewReturn`, the type alias `Result<ParameterSetIdentifier, ParameterSetIdentifierTryNewErrorReturn>`
+    * `[✅]`   Imports nothing; declares nothing else
+
+  * `[✅]`   `crates/domain/src/parameter_set_identifier/interaction.spec.md`
+    * `[✅]`   `ParameterSetIdentifier::try_new(params: ParameterSetIdentifierConstructorParams) -> ParameterSetIdentifierTryNewReturn`, all zero: condition every byte of `params.bytes` is `0`; decision `params.bytes.iter().all(…)` over the byte equal to `0`; dependency call none; outcome `Err(ParameterSetIdentifierTryNewErrorReturn::AllZero)`
+    * `[✅]`   Admitted: condition some byte of `params.bytes` is nonzero; decision the same check; dependency call none; outcome `Ok(ParameterSetIdentifier { bytes })`, the array moved from the params
+    * `[✅]`   `ParameterSetIdentifier::as_bytes(&self) -> &[u8; PARAMETER_SET_IDENTIFIER_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
+    * `[✅]`   Invariants: every `ParameterSetIdentifier` holds exactly 32 bytes, not all zero; its only producer is `try_new`
+
+  * `[✅]`   `crates/domain/src/parameter_set_identifier/mock.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[✅]`   `ParameterSetIdentifierConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub bytes: Option<[u8; PARAMETER_SET_IDENTIFIER_LENGTH]>`
+    * `[✅]`   `build_parameter_set_identifier_constructor_params(overrides: ParameterSetIdentifierConstructorParamsOverrides) -> ParameterSetIdentifierConstructorParams`, the bytes defaulting to `[0x33; PARAMETER_SET_IDENTIFIER_LENGTH]`
+    * `[✅]`   `build_parameter_set_identifier(overrides: ParameterSetIdentifierConstructorParamsOverrides) -> ParameterSetIdentifier`, returning the real instance from `ParameterSetIdentifier::try_new(build_parameter_set_identifier_constructor_params(overrides))` through `.expect("built parameter set identifier constructor params are admitted")`
+    * `[✅]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array, the one value the constructor refuses is an array the params builder's overrides carry, and the crate has no serialization dependency; no `ParameterSetIdentifier` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
+    * `[✅]`   Imports `ParameterSetIdentifier`, `ParameterSetIdentifierConstructorParams`, and `PARAMETER_SET_IDENTIFIER_LENGTH` from `super::interface`
+
+  * `[✅]`   `crates/domain/src/parameter_set_identifier/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `ParameterSetIdentifier` and `ParameterSetIdentifierTryNewErrorReturn` from `super::interface`, and `build_parameter_set_identifier_constructor_params` and `ParameterSetIdentifierConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_parameter_set_identifier_constructor_params` with `bytes` overridden, acts `ParameterSetIdentifier::try_new(params)`, and unpacks the result by `let Ok(identifier) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last`: contract: a value with any nonzero byte is admitted and read back unchanged, the last byte included; arrange `bytes: Some(…)` holding 31 zero bytes followed by `0x01`; act `try_new`; assert `identifier.as_bytes()` equals an array of 31 zero bytes followed by `0x01`
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first`: contract: the zero check reads every byte, the first included; arrange `bytes: Some(…)` holding `0x80` followed by 31 zero bytes; act `try_new`; assert `identifier.as_bytes()` equals an array of `0x80` followed by 31 zero bytes
+    * `[✅]`   `try_new_rejects_the_all_zero_identifier`: contract: the value an unassigned slot reads as names no set; arrange `bytes: Some([0u8; 32])`; act `try_new`; assert `error` equals `ParameterSetIdentifierTryNewErrorReturn::AllZero`
+    * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
+
+  * `[✅]`   `construction`
+    * `[✅]`   `ParameterSetIdentifier::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded `bytes32` passes it as `ParameterSetIdentifierConstructorParams` and handles the refusal arm
+
+  * `[✅]`   `crates/domain/src/parameter_set_identifier/mod.rs`
+    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[✅]`   `impl ParameterSetIdentifier` with `pub fn try_new(params: ParameterSetIdentifierConstructorParams) -> ParameterSetIdentifierTryNewReturn` realizing the branches of the interaction spec, and `pub fn as_bytes(&self) -> &[u8; PARAMETER_SET_IDENTIFIER_LENGTH]` returning `&self.bytes`
+    * `[✅]`   Imports `ParameterSetIdentifier`, `ParameterSetIdentifierConstructorParams`, `ParameterSetIdentifierTryNewErrorReturn`, `ParameterSetIdentifierTryNewReturn`, and `PARAMETER_SET_IDENTIFIER_LENGTH` from `interface`
+    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[✅]`   `crates/domain/src/parameter_set_identifier/provides.rs`
+    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `parameter_set_identifier` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `parameter_set_identifier::provides`; no cycle
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last` and `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first` pass
+    * `[✅]`   `try_new_rejects_the_all_zero_identifier` passes
+    * `[✅]`   Code outside `crates/domain/src/parameter_set_identifier` reading the `bytes` field fails to compile
+
+* `[✅]`   `domain/group_index` **Piece-group index, the position of one piece group within a deployment's continuous stream, held as a distinct type so no other integer stands in for it**
+
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: every capsule's randomness, every piece-group key, and every wrapping key is domain-separated by the group it belongs to, so the group index enters each derivation context as its own type and cannot be confused with a piece index, an interval, a version, or a count (CR-05; CR-11; the nonce invariant of Deployment Cryptographic Setup)
+    * `[✅]`   Functional: one type holds a piece-group index as a `u64`, reachable only through a read accessor, and its only producer is a constructor
+    * `[✅]`   Functional: every `u64` is admitted; a piece group spans at least one cipher block and the MVP cipher addresses at most two to the sixty-four blocks, so every index a deployment can carry fits the type, and the index's bound against one deployment's group count is enforced where that deployment's geometry is held, by `domain/derivation_context`
+    * `[✅]`   Functional: the admitted index is read back unchanged
+    * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
+
+  * `[✅]`   `role`
+    * `[✅]`   Domain: an owned value type in the protocol and domain ring, the group every later derivation context, sidecar entry, and decryption attempt names
+    * `[✅]`   Does not know a deployment's piece size, piece-group size, extent, or group count, and does not bound the index against them; `domain/piece_geometry` holds the geometry and `domain/derivation_context` refuses an index outside its group count
+    * `[✅]`   Does not compute an index from a byte offset or a piece index
+    * `[✅]`   Does not create any other module of the `domain` crate
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `group_index` module of the `domain` crate, holding `GroupIndex`, its constructor params, and its constructor's return type
+    * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
+    * `[✅]`   Outside: the deployment's geometry and group count, the mapping from offsets and pieces to groups, and the encoding of the index on the wire
+
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, `deployment_identity`, `suite_identifier`, or `parameter_set_identifier`
+    * `[✅]`   `core::convert::Infallible`, standard library, the constructor's error arm
+    * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
+    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
+
+  * `[✅]`   `context_slice`
+    * `[✅]`   From the standard library: `core::convert::Infallible` and `u64`; nothing else
+
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+    * `[✅]`   Until `group_index/mod.rs` exists, `cargo check` reports the unresolved `mod group_index`, which is the RED state for every element below that precedes the implementation
+
+  * `[✅]`   `crates/domain/src/group_index/interface.rs`
+    * `[✅]`   `GroupIndex`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) value: u64`, so only the `group_index` module and its children reach the field
+    * `[✅]`   `GroupIndexConstructorParams`, a struct with the one field `pub value: u64`; no derives
+    * `[✅]`   `GroupIndexTryNewReturn`, the type alias `Result<GroupIndex, Infallible>`; the error arm is uninhabited because every `u64` is an index a deployment can carry
+    * `[✅]`   Imports `core::convert::Infallible`; declares nothing else
+
+  * `[✅]`   `crates/domain/src/group_index/interaction.spec.md`
+    * `[✅]`   `GroupIndex::try_new(params: GroupIndexConstructorParams) -> GroupIndexTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(GroupIndex { value })` holding `params.value`; the error arm has no branch
+    * `[✅]`   `GroupIndex::value(&self) -> u64`: one branch; outcome the held index, no side effect
+    * `[✅]`   Invariants: every `GroupIndex` holds one `u64`; its only producer is `try_new`; its bound against a deployment's group count is `domain/derivation_context`'s
+
+  * `[✅]`   `crates/domain/src/group_index/mock.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[✅]`   `GroupIndexConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub value: Option<u64>`
+    * `[✅]`   `build_group_index_constructor_params(overrides: GroupIndexConstructorParamsOverrides) -> GroupIndexConstructorParams`, the value defaulting to `7`
+    * `[✅]`   `build_group_index(overrides: GroupIndexConstructorParamsOverrides) -> GroupIndex`, returning the real instance from `GroupIndex::try_new(build_group_index_constructor_params(overrides))` through the irrefutable pattern `let Ok(index) = …;`
+    * `[✅]`   No corruptions type and no invalidator: the constructor params are a typed `u64` and the constructor admits every value; no `GroupIndex` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
+    * `[✅]`   Imports `GroupIndex` and `GroupIndexConstructorParams` from `super::interface`
+
+  * `[✅]`   `crates/domain/src/group_index/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `GroupIndex` from `super::interface`, and `build_group_index_constructor_params` and `GroupIndexConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_group_index_constructor_params` with `value` overridden, acts `GroupIndex::try_new(params)`, and unpacks the result by the irrefutable pattern `let Ok(index) = …;`
+    * `[✅]`   `try_new_admits_index_zero`: contract: the lowest index is admitted and read back unchanged; arrange `value: Some(0)`, differing from the builder's default; act `try_new`; assert `index.value()` equals `0`
+    * `[✅]`   `try_new_admits_the_largest_index`: contract: the full width of the type is admitted and read back unchanged; arrange `value: Some(u64::MAX)`; act `try_new`; assert `index.value()` equals `18446744073709551615`
+    * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
+
+  * `[✅]`   `construction`
+    * `[✅]`   `GroupIndex::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a group's position passes it as `GroupIndexConstructorParams`, and the derivation context that composes it bounds it against the deployment's group count
+
+  * `[✅]`   `crates/domain/src/group_index/mod.rs`
+    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[✅]`   `impl GroupIndex` with `pub fn try_new(params: GroupIndexConstructorParams) -> GroupIndexTryNewReturn` returning `Ok(GroupIndex { value: params.value })`, and `pub fn value(&self) -> u64` returning `self.value`
+    * `[✅]`   Imports `GroupIndex`, `GroupIndexConstructorParams`, and `GroupIndexTryNewReturn` from `interface`
+    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[✅]`   `crates/domain/src/group_index/provides.rs`
+    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `group_index` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `group_index::provides`; no cycle
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
+    * `[✅]`   `try_new_admits_index_zero` and `try_new_admits_the_largest_index` pass
+    * `[✅]`   Code outside `crates/domain/src/group_index` reading the `value` field fails to compile
+
+* `[✅]`   `domain/piece_geometry` **Piece geometry, the piece size, piece-group size, and total extent a hash-card declares, admitted only when pieces align and groups are whole multiples of pieces, with the piece and group counts they imply**
+
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: a hash-card's declared geometry drives every offset, counter, and key boundary, so it is untrusted until its sizes are mutually consistent, and a geometry that fails is refused before any piece-group key is derived (EC-01; CR-06; Manifest Bounds Validation)
+    * `[✅]`   Functional: one type holds the piece size and piece-group size as `u32` and the total extent as `u64`, the widths the hash-card's `pieceSize`, `pieceGroupSize`, and `totalExtent` fields carry, each reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[✅]`   Functional: the constructor refuses a piece size that is not a power of two, zero included, and a piece size below 16 KiB
+    * `[✅]`   Functional: the constructor refuses a zero piece-group size and a piece-group size that is not a whole multiple of the piece size, a group smaller than a piece included, so every group holds whole pieces
+    * `[✅]`   Functional: the constructor refuses a zero total extent, so every admitted geometry has at least one piece and one group
+    * `[✅]`   Functional: the admitted geometry reports its piece count and group count, each the total extent divided by the piece size or the piece-group size and rounded up, computed without overflow across the full width of the extent
+    * `[✅]`   Functional: a refusal names the failed check and the values it failed on, and the same input always yields the same refusal: piece size, then piece-group size, then total extent
+    * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
+
+  * `[✅]`   `role`
+    * `[✅]`   Domain: an owned value type in the protocol and domain ring, the geometry every later derivation context, cipher call, and manifest gate reads
+    * `[✅]`   Does not check the extent against a cipher's declared `maxAddressableBytes` or the piece size against a cipher's block size; both are declared by the resolved cipher, so the manifest gate checks them against that declaration; a power of two of at least 16 KiB is already a multiple of every power-of-two block size up to 16 KiB
+    * `[✅]`   Does not bound a piece index or a group index; `domain/derivation_context` bounds the group index against this geometry's group count, and the transport bounds a piece index against its piece count
+    * `[✅]`   Does not hold the IV, the counter layout, or the cipher identifier
+    * `[✅]`   Does not choose the piece-group size; the hash-card declares it and the code reads it from the record
+    * `[✅]`   Does not create any other module of the `domain` crate
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `piece_geometry` module of the `domain` crate, holding `PieceGeometry`, the minimum piece size, its constructor params, its constructor's error and return types, and the counts the geometry implies
+    * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
+    * `[✅]`   Outside: every cipher's declared extent and block size, the offset and counter arithmetic, index ranges, and the encoding of the geometry on the wire
+
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from any other module of the crate
+    * `[✅]`   The standard library: `u32::is_power_of_two`, `u64::from` over `u32`, and `u64::div_ceil`, through the prelude
+    * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
+    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
+
+  * `[✅]`   `context_slice`
+    * `[✅]`   From the standard library: `u32::is_power_of_two`, which is false for `0`; the `%` remainder over `u32`; `u64::from(u32)`, the lossless widening; and `u64::div_ceil`, rounding the quotient up
+
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+    * `[✅]`   Until `piece_geometry/mod.rs` exists, `cargo check` reports the unresolved `mod piece_geometry`, which is the RED state for every element below that precedes the implementation
+
+  * `[✅]`   `crates/domain/src/piece_geometry/interface.rs`
+    * `[✅]`   `MINIMUM_PIECE_SIZE`, a `pub const` of type `u32` with value `16384`, 16 KiB
+    * `[✅]`   `PieceGeometry`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub(super) piece_size: u32`, `pub(super) piece_group_size: u32`, and `pub(super) total_extent: u64`, so only the `piece_geometry` module and its children reach the fields
+    * `[✅]`   `PieceGeometryConstructorParams`, a struct with the fields `pub piece_size: u32`, `pub piece_group_size: u32`, and `pub total_extent: u64`; no derives
+    * `[✅]`   `PieceGeometryTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `PieceSizeNotPowerOfTwo { piece_size: u32 }`, `PieceSizeBelowMinimum { piece_size: u32, minimum: u32 }`, `ZeroPieceGroupSize`, `PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: u32, piece_size: u32 }`, and `ZeroTotalExtent`
+    * `[✅]`   `PieceGeometryTryNewReturn`, the type alias `Result<PieceGeometry, PieceGeometryTryNewErrorReturn>`
+    * `[✅]`   Imports nothing; declares nothing else
+
+  * `[✅]`   `crates/domain/src/piece_geometry/interaction.spec.md`
+    * `[✅]`   `PieceGeometry::try_new(params: PieceGeometryConstructorParams) -> PieceGeometryTryNewReturn`, piece size not a power of two: condition `!params.piece_size.is_power_of_two()`, zero included; decision the power-of-two check; dependency call none; outcome `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size })`
+    * `[✅]`   Piece size below the minimum: condition the piece size is a power of two and `params.piece_size < MINIMUM_PIECE_SIZE`; decision the comparison; dependency call none; outcome `Err(PieceGeometryTryNewErrorReturn::PieceSizeBelowMinimum { piece_size, minimum: MINIMUM_PIECE_SIZE })`
+    * `[✅]`   Zero piece-group size: condition the piece size passes and `params.piece_group_size == 0`; decision the equality check; dependency call none; outcome `Err(PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize)`
+    * `[✅]`   Piece-group size not a multiple of the piece size: condition the piece size passes, the piece-group size is nonzero, and `params.piece_group_size % params.piece_size != 0`; decision the remainder check; dependency call none; outcome `Err(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size, piece_size })`
+    * `[✅]`   Zero total extent: condition both sizes pass and `params.total_extent == 0`; decision the equality check; dependency call none; outcome `Err(PieceGeometryTryNewErrorReturn::ZeroTotalExtent)`
+    * `[✅]`   Admitted: condition every check passes; decision none further; dependency call none; outcome `Ok(PieceGeometry { piece_size, piece_group_size, total_extent })`, each moved from the params
+    * `[✅]`   `PieceGeometry::piece_size(&self) -> u32`, `PieceGeometry::piece_group_size(&self) -> u32`, and `PieceGeometry::total_extent(&self) -> u64`: one branch each; outcome the held value
+    * `[✅]`   `PieceGeometry::piece_count(&self) -> u64`: one branch; outcome `self.total_extent.div_ceil(u64::from(self.piece_size))`, nonzero because both operands are
+    * `[✅]`   `PieceGeometry::group_count(&self) -> u64`: one branch; outcome `self.total_extent.div_ceil(u64::from(self.piece_group_size))`, nonzero because both operands are
+    * `[✅]`   Ordering: the piece size's checks precede the piece-group size's, which precede the total extent's; the same params always yield the same outcome
+    * `[✅]`   Invariants: every `PieceGeometry` holds a power-of-two piece size of at least 16 KiB, a nonzero piece-group size that is a whole multiple of it, and a nonzero total extent; its only producer is `try_new`
+
+  * `[✅]`   `crates/domain/src/piece_geometry/mock.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[✅]`   `PieceGeometryConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub piece_size: Option<u32>`, `pub piece_group_size: Option<u32>`, and `pub total_extent: Option<u64>`
+    * `[✅]`   `build_piece_geometry_constructor_params(overrides: PieceGeometryConstructorParamsOverrides) -> PieceGeometryConstructorParams`, the piece size defaulting to `MINIMUM_PIECE_SIZE`, the piece-group size to `16384`, the configured default of 16 KiB, and the total extent to `1048576`
+    * `[✅]`   `build_piece_geometry(overrides: PieceGeometryConstructorParamsOverrides) -> PieceGeometry`, returning the real instance from `PieceGeometry::try_new(build_piece_geometry_constructor_params(overrides))` through `.expect("built piece geometry constructor params are admitted")`
+    * `[✅]`   No corruptions type and no invalidator: the constructor params are typed integers, every geometry the constructor refuses is a value the params builder's overrides carry, and the crate has no serialization dependency; no `PieceGeometry` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
+    * `[✅]`   Imports `PieceGeometry`, `PieceGeometryConstructorParams`, and `MINIMUM_PIECE_SIZE` from `super::interface`
+
+  * `[✅]`   `crates/domain/src/piece_geometry/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `PieceGeometry` and `PieceGeometryTryNewErrorReturn` from `super::interface`, and `build_piece_geometry_constructor_params` and `PieceGeometryConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_piece_geometry_constructor_params` overriding only the fields it depends on, acts `PieceGeometry::try_new(params)`, and unpacks the result by `let Ok(geometry) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
+    * `[✅]`   `try_new_admits_the_smallest_geometry`: contract: the minimum piece size, a group of one piece, and a one-byte extent are admitted, read back unchanged, and imply one piece and one group; arrange `piece_size: Some(16384)`, `piece_group_size: Some(16384)`, and `total_extent: Some(1)`; act `try_new`; assert `geometry.piece_size()` equals `16384`, `geometry.piece_group_size()` equals `16384`, `geometry.total_extent()` equals `1`, `geometry.piece_count()` equals `1`, and `geometry.group_count()` equals `1`
+    * `[✅]`   `piece_count_and_group_count_round_up_a_partial_piece_and_group`: contract: a trailing partial piece and a trailing partial group are each counted; arrange `piece_size: Some(16384)`, `piece_group_size: Some(32768)`, and `total_extent: Some(49153)`; act `try_new`; assert `geometry.piece_count()` equals `4` and `geometry.group_count()` equals `2`
+    * `[✅]`   `piece_count_and_group_count_do_not_round_up_an_exact_extent`: contract: an extent that is a whole number of groups adds no partial piece or group; arrange `piece_size: Some(16384)`, `piece_group_size: Some(32768)`, and `total_extent: Some(65536)`; act `try_new`; assert `geometry.piece_count()` equals `4` and `geometry.group_count()` equals `2`
+    * `[✅]`   `piece_count_and_group_count_hold_at_the_largest_extent`: contract: the counts are computed without overflow across the full width of the extent; arrange `piece_size: Some(2147483648)`, `piece_group_size: Some(2147483648)`, and `total_extent: Some(u64::MAX)`; act `try_new`; assert `geometry.piece_count()` equals `8589934592` and `geometry.group_count()` equals `8589934592`
+    * `[✅]`   `try_new_rejects_a_piece_size_that_is_not_a_power_of_two`: arrange `piece_size: Some(24576)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 24576 }`
+    * `[✅]`   `try_new_rejects_a_zero_piece_size`: arrange `piece_size: Some(0)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 0 }`
+    * `[✅]`   `try_new_rejects_a_piece_size_below_the_minimum`: arrange `piece_size: Some(8192)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceSizeBelowMinimum { piece_size: 8192, minimum: 16384 }`
+    * `[✅]`   `try_new_rejects_a_zero_piece_group_size`: arrange `piece_group_size: Some(0)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize`
+    * `[✅]`   `try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size`: arrange `piece_size: Some(32768)` and `piece_group_size: Some(49152)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 49152, piece_size: 32768 }`
+    * `[✅]`   `try_new_rejects_a_piece_group_smaller_than_a_piece`: contract: a group holds whole pieces, so a group smaller than one piece is refused; arrange `piece_size: Some(32768)` and `piece_group_size: Some(16384)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 16384, piece_size: 32768 }`
+    * `[✅]`   `try_new_rejects_a_zero_total_extent`: arrange `total_extent: Some(0)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::ZeroTotalExtent`
+    * `[✅]`   `try_new_reports_the_piece_size_before_the_total_extent`: contract: when several fields fail, the earliest check in the fixed order is returned; arrange `piece_size: Some(0)` and `total_extent: Some(0)`; act `try_new`; assert `error` equals `PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 0 }`
+    * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
+
+  * `[✅]`   `construction`
+    * `[✅]`   `PieceGeometry::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a hash-card's decoded `pieceSize`, `pieceGroupSize`, and `totalExtent` passes them as `PieceGeometryConstructorParams` and handles the refusal arm
+
+  * `[✅]`   `crates/domain/src/piece_geometry/mod.rs`
+    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[✅]`   `impl PieceGeometry` with `pub fn try_new(params: PieceGeometryConstructorParams) -> PieceGeometryTryNewReturn` realizing the branches and ordering of the interaction spec, and the accessors `pub fn piece_size(&self) -> u32`, `pub fn piece_group_size(&self) -> u32`, `pub fn total_extent(&self) -> u64`, `pub fn piece_count(&self) -> u64`, and `pub fn group_count(&self) -> u64` as the interaction spec states
+    * `[✅]`   Imports `PieceGeometry`, `PieceGeometryConstructorParams`, `PieceGeometryTryNewErrorReturn`, `PieceGeometryTryNewReturn`, and `MINIMUM_PIECE_SIZE` from `interface`
+    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[✅]`   `crates/domain/src/piece_geometry/provides.rs`
+    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `piece_geometry` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `piece_geometry::provides`; no cycle
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
+    * `[✅]`   `try_new_admits_the_smallest_geometry`, `piece_count_and_group_count_round_up_a_partial_piece_and_group`, `piece_count_and_group_count_do_not_round_up_an_exact_extent`, and `piece_count_and_group_count_hold_at_the_largest_extent` pass
+    * `[✅]`   `try_new_rejects_a_piece_size_that_is_not_a_power_of_two`, `try_new_rejects_a_zero_piece_size`, `try_new_rejects_a_piece_size_below_the_minimum`, `try_new_rejects_a_zero_piece_group_size`, `try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size`, `try_new_rejects_a_piece_group_smaller_than_a_piece`, `try_new_rejects_a_zero_total_extent`, and `try_new_reports_the_piece_size_before_the_total_extent` pass (EC-01, CR-06, a malformed geometry is refused before any key is derived)
+    * `[✅]`   Code outside `crates/domain/src/piece_geometry` reading the `piece_size`, `piece_group_size`, or `total_extent` field fails to compile
+
+* `[✅]`   `domain/derivation_context` **Derivation context, the asset, deployment, suite, parameter set, group index, and geometry every wrapping key and lineage derivation is domain-separated by, admitted only when the group index falls within the geometry's group count; the first encodable domain type**
+
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: each parameter set's wrapping key is a domain-separated KDF of the encapsulated value and the context, asset, deployment, suite, parameter set, group index, and geometry, so those six values travel together as one type, and a context naming a group the deployment does not have is refused before any key is derived from it (CR-11; Credential KEM; Manifest Bounds Validation)
+    * `[✅]`   Functional: one type holds an `AssetIdentity`, a `DeploymentIdentity`, a `SuiteIdentifier`, a `ParameterSetIdentifier`, a `GroupIndex`, and a `PieceGeometry`, each reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[✅]`   Functional: the constructor refuses a group index at or beyond the geometry's group count, naming both values
+    * `[✅]`   Functional: every other combination of admitted components is admitted and read back unchanged
+    * `[✅]`   Non-functional: the module depends on the `domain` crate's own identifier and geometry modules and the standard library alone; the `domain` crate's dependencies are unchanged
+
+  * `[✅]`   `role`
+    * `[✅]`   Domain: an owned value type in the protocol and domain ring composing the domain's identifier and geometry types, the first encodable domain type, whose canonical description the encoding family authors next
+    * `[✅]`   Does not re-check any component's own invariants; each arrives as an admitted instance of its type
+    * `[✅]`   Does not encode itself, derive a key, or hash; `encoding/derivation_context` describes its canonical field sequence and `kdf/blake3_keyed` derives from the encoding
+    * `[✅]`   Does not check that the parameter set is live for the asset, that the deployment belongs to the asset, or that the suite admits the geometry; those are Registry state and suite declarations the manifest gate reads
+    * `[✅]`   Does not create any other module of the `domain` crate
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `derivation_context` module of the `domain` crate, holding `DerivationContext`, its constructor params, its constructor's error and return types, and the one cross-field rule between the group index and the geometry
+    * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
+    * `[✅]`   Outside: each component's own invariants, the context's encoding, every derivation computed from it, and every Registry and suite rule
+
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/asset_identity`, same crate, protocol and domain ring, through `crate::asset_identity::provides`; supplies `AssetIdentity`, and in the crate's test build and under the `mocks` feature `build_asset_identity` and `AssetIdentityConstructorParamsOverrides`
+    * `[✅]`   `domain/deployment_identity`, through `crate::deployment_identity::provides`; supplies `DeploymentIdentity`, and in the crate's test build and under the `mocks` feature `build_deployment_identity` and `DeploymentIdentityConstructorParamsOverrides`
+    * `[✅]`   `domain/suite_identifier`, through `crate::suite_identifier::provides`; supplies `SuiteIdentifier`, and in the crate's test build and under the `mocks` feature `build_suite_identifier` and `SuiteIdentifierConstructorParamsOverrides`
+    * `[✅]`   `domain/parameter_set_identifier`, through `crate::parameter_set_identifier::provides`; supplies `ParameterSetIdentifier`, and in the crate's test build and under the `mocks` feature `build_parameter_set_identifier` and `ParameterSetIdentifierConstructorParamsOverrides`
+    * `[✅]`   `domain/group_index`, through `crate::group_index::provides`; supplies `GroupIndex` with `value()`, and in the crate's test build and under the `mocks` feature `build_group_index` and `GroupIndexConstructorParamsOverrides`
+    * `[✅]`   `domain/piece_geometry`, through `crate::piece_geometry::provides`; supplies `PieceGeometry` with `group_count()`, and in the crate's test build and under the `mocks` feature `build_piece_geometry` and `PieceGeometryConstructorParamsOverrides`
+    * `[✅]`   Each is a module of the same ring that this type composes; none depends on `derivation_context`, so no cycle forms; no external crate and no other repository crate; `crates/domain/Cargo.toml` is unchanged
+    * `[✅]`   No reverse dependency; `encoding/derivation_context` is this module's first consumer
+
+  * `[✅]`   `context_slice`
+    * `[✅]`   From `group_index`: `GroupIndex::value(&self) -> u64`
+    * `[✅]`   From `piece_geometry`: `PieceGeometry::group_count(&self) -> u64`
+    * `[✅]`   From the other components: their types, moved into the context and returned by reference; no method is called on them
+    * `[✅]`   From each component's mocks: its builder, taking its constructor-params overrides and returning a real instance
+
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod derivation_context;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use derivation_context::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+    * `[✅]`   Until `derivation_context/mod.rs` exists, `cargo check` reports the unresolved `mod derivation_context`, which is the RED state for every element below that precedes the implementation
+
+  * `[✅]`   `crates/domain/src/derivation_context/interface.rs`
+    * `[✅]`   `DerivationContext`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields, in this order, `pub(super) asset: AssetIdentity`, `pub(super) deployment: DeploymentIdentity`, `pub(super) suite: SuiteIdentifier`, `pub(super) parameter_set: ParameterSetIdentifier`, `pub(super) group_index: GroupIndex`, and `pub(super) geometry: PieceGeometry`, so only the `derivation_context` module and its children reach the fields
+    * `[✅]`   `DerivationContextConstructorParams`, a struct with the same fields in the same order, each `pub`; no derives
+    * `[✅]`   `DerivationContextTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `GroupIndexOutOfRange { group_index: u64, group_count: u64 }`
+    * `[✅]`   `DerivationContextTryNewReturn`, the type alias `Result<DerivationContext, DerivationContextTryNewErrorReturn>`
+    * `[✅]`   Imports `AssetIdentity`, `DeploymentIdentity`, `SuiteIdentifier`, `ParameterSetIdentifier`, `GroupIndex`, and `PieceGeometry` from their modules' `provides`; declares nothing else
+
+  * `[✅]`   `crates/domain/src/derivation_context/interaction.spec.md`
+    * `[✅]`   `DerivationContext::try_new(params: DerivationContextConstructorParams) -> DerivationContextTryNewReturn`, group index out of range: condition `params.group_index.value() >= params.geometry.group_count()`; decision the comparison; dependency call `GroupIndex::value` and `PieceGeometry::group_count`, once each; outcome `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index, group_count })` holding the two values compared
+    * `[✅]`   Admitted: condition the group index is below the group count; decision the same comparison; dependency call the same two reads; outcome `Ok(DerivationContext { asset, deployment, suite, parameter_set, group_index, geometry })`, every component moved from the params
+    * `[✅]`   `DerivationContext::asset(&self) -> &AssetIdentity`, `deployment(&self) -> &DeploymentIdentity`, `suite(&self) -> &SuiteIdentifier`, `parameter_set(&self) -> &ParameterSetIdentifier`, `group_index(&self) -> &GroupIndex`, and `geometry(&self) -> &PieceGeometry`: one branch each; outcome a shared reference to the held component, no copy, no side effect
+    * `[✅]`   Invariants: every `DerivationContext` holds six admitted components and a group index below its geometry's group count; its only producer is `try_new`
+
+  * `[✅]`   `crates/domain/src/derivation_context/mock.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[✅]`   `DerivationContextConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub asset: Option<AssetIdentity>`, `pub deployment: Option<DeploymentIdentity>`, `pub suite: Option<SuiteIdentifier>`, `pub parameter_set: Option<ParameterSetIdentifier>`, `pub group_index: Option<GroupIndex>`, and `pub geometry: Option<PieceGeometry>`
+    * `[✅]`   `build_derivation_context_constructor_params(overrides: DerivationContextConstructorParamsOverrides) -> DerivationContextConstructorParams`, each omitted field defaulting to its component's builder called with `Default::default()`: `build_asset_identity`, `build_deployment_identity`, `build_suite_identifier`, `build_parameter_set_identifier`, `build_group_index`, and `build_piece_geometry`; the default group index `7` falls within the default geometry's `64` groups
+    * `[✅]`   `build_derivation_context(overrides: DerivationContextConstructorParamsOverrides) -> DerivationContext`, returning the real instance from `DerivationContext::try_new(build_derivation_context_constructor_params(overrides))` through `.expect("built derivation context constructor params are admitted")`
+    * `[✅]`   No corruptions type and no invalidator: every component arrives as an admitted instance, the one context the constructor refuses is a combination the params builder's overrides carry, and the crate has no serialization dependency; no `DerivationContext` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
+    * `[✅]`   Imports `DerivationContext` and `DerivationContextConstructorParams` from `super::interface`, and each component's type, builder, and constructor-params overrides from its module's `provides`, which re-exports its mocks in the crate's test build and under the `mocks` feature
+
+  * `[✅]`   `crates/domain/src/derivation_context/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `DerivationContext` and `DerivationContextTryNewErrorReturn` from `super::interface`, `build_derivation_context_constructor_params` and `DerivationContextConstructorParamsOverrides` from `super::mock`, and `build_asset_identity`, `build_deployment_identity`, `build_suite_identifier`, `build_parameter_set_identifier`, `build_group_index`, `GroupIndexConstructorParamsOverrides`, `build_piece_geometry`, and `PieceGeometryConstructorParamsOverrides` from their modules' `provides`; each test builds its params through `build_derivation_context_constructor_params` overriding only `group_index` and `geometry`, acts `DerivationContext::try_new(params)`, and unpacks the result by `let Ok(context) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
+    * `[✅]`   `try_new_admits_the_last_group_of_the_geometry`: contract: the highest index below the group count is admitted and every component reads back unchanged; arrange `geometry` from `build_piece_geometry` with `piece_size: Some(16384)`, `piece_group_size: Some(16384)`, and `total_extent: Some(32768)`, two groups, and `group_index` from `build_group_index` with `value: Some(1)`; act `try_new`; assert `context.group_index().value()` equals `1`, `context.geometry().group_count()` equals `2`, and `context.asset()`, `context.deployment()`, `context.suite()`, and `context.parameter_set()` equal `build_asset_identity(Default::default())`, `build_deployment_identity(Default::default())`, `build_suite_identifier(Default::default())`, and `build_parameter_set_identifier(Default::default())` respectively
+    * `[✅]`   `try_new_admits_index_zero_of_a_one_group_geometry`: contract: the smallest group count admits its only index; arrange `geometry` with `total_extent: Some(1)`, one group, and `group_index` with `value: Some(0)`; act `try_new`; assert `context.group_index().value()` equals `0`
+    * `[✅]`   `try_new_rejects_a_group_index_equal_to_the_group_count`: contract: the index one past the last group is refused, naming both values; arrange the two-group geometry of the admission test and `group_index` with `value: Some(2)`; act `try_new`; assert `error` equals `DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: 2, group_count: 2 }`
+    * `[✅]`   `try_new_rejects_the_largest_group_index`: contract: an index far beyond the group count is refused without overflow; arrange the two-group geometry and `group_index` with `value: Some(u64::MAX)`; act `try_new`; assert `error` equals `DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: 18446744073709551615, group_count: 2 }`
+    * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
+
+  * `[✅]`   `construction`
+    * `[✅]`   `DerivationContext::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding admitted components passes them as `DerivationContextConstructorParams` and handles the refusal arm
+
+  * `[✅]`   `crates/domain/src/derivation_context/mod.rs`
+    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[✅]`   `impl DerivationContext` with `pub fn try_new(params: DerivationContextConstructorParams) -> DerivationContextTryNewReturn` realizing the branches of the interaction spec, and the six accessors the interaction spec states, each returning `&self.` its field
+    * `[✅]`   Imports `DerivationContext`, `DerivationContextConstructorParams`, `DerivationContextTryNewErrorReturn`, and `DerivationContextTryNewReturn` from `interface`, and the component types from their modules' `provides`
+    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[✅]`   `crates/domain/src/derivation_context/provides.rs`
+    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `derivation_context` depends on `asset_identity`, `deployment_identity`, `suite_identifier`, `parameter_set_identifier`, `group_index`, and `piece_geometry` through their `provides`, and on the standard library; none of them depends on it; `domain` depends on no repository crate; `encoding/derivation_context` reaches it through `lib.rs`'s re-export of `derivation_context::provides`; no cycle
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
+    * `[✅]`   `try_new_admits_the_last_group_of_the_geometry` and `try_new_admits_index_zero_of_a_one_group_geometry` pass
+    * `[✅]`   `try_new_rejects_a_group_index_equal_to_the_group_count` and `try_new_rejects_the_largest_group_index` pass (CR-11, a context names only a group its deployment has)
+    * `[✅]`   Code outside `crates/domain/src/derivation_context` reading any field of `DerivationContext` fails to compile
 
 # To-Do List
 
