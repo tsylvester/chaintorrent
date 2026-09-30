@@ -101,18 +101,18 @@ Grouped by ring. Each row names the module family in the Application Requirement
 
 | Family | The factory owns | MVP concretes | The declaration |
 | --- | --- | --- | --- |
-| `encoding` | `IEncoderAdapter`, `IDecoderAdapter`, the versioned encoding identifier, the vendor-free encoding contract, and one family-owned description per encoded domain type implementing it; the canonical encoding of everything hashed, signed, stored, or framed over IPC | `encoding/abi`, Ethereum ABI through `alloy`'s sol types | One shared versioned encoding identifier, named by the hash-card |
+| `encoding` | `IEncoderAdapter`, `IDecoderAdapter`, the versioned encoding identifier, the vendor-free encoding contract, the canonical-field contract a single form implements, and one family-owned description per encoded domain type implementing the encoding contract; the canonical encoding of everything hashed, signed, stored, or framed over IPC | `encoding/abi`, Ethereum ABI through `alloy`'s sol types | One shared versioned encoding identifier, named by the hash-card |
 | `random` | The interface that fills bytes | `random/os` | Source |
 | `cipher` | `IPayloadCipherAdapter` | `cipher/aes_ctr`, 64-bit IV, 64-bit counter | Counter layouts, `maxAddressableBytes` |
 | `hashing` | The commitment interface: root and outboard, streaming and random-access verification, random challenge and response; the root, outboard, path, and chunk types | `hashing/blake3_bao` | Commitment scheme, chunk granularity |
 | `pairing` | `IPairingAdapter`, the group-element and scalar associated types with the sampling bound on the scalar type, the default per curve | `pairing/bls12_381_arkworks`, `pairing/bls12_381_halo2curves`, `pairing/bn254_arkworks`, `pairing/bn254_halo2curves`; BLS12-381 primary, BN254 retained; one concrete per curve per library, each owning its scalar and group-element types over its library's elements; the arkworks concrete the default per curve until the benchmark records otherwise | Curve, second-group arithmetic at the verifier, encodings |
 | `kdf` | The derivation interface, the context types | `kdf/blake3_keyed` | KDF identifier |
-| `hash-to-scalar` | The interface mapping domain-tagged bytes to a scalar | `hash-to-scalar/keccak256` | Hash-to-scalar identifier |
+| `hash-to-scalar` | The interface mapping domain-tagged bytes to a scalar, for every value the contract recomputes: the identity mapping, the challenge, the parameter-set digest, and the envelope digest | `hash-to-scalar/keccak256` | Hash-to-scalar identifier |
 | `kem` | `ICredentialKemAdapter`, with the parameter-set, credential, capsule, and identity-element types as associated types | `kem/bb1_depth_one` | Identity scope: entitlement for explicit publishers, asset for escrow |
 | `envelope` | `IKeyAgreementAdapter`, with the key-pair and envelope types as associated types | `envelope/pairing_elgamal` | Envelope algebra |
-| `proof` | `IDeliveryProofAdapter`, the statement types, the context schema, the statement version | `proof/schnorr_fs`, owning its challenge | Supported envelope algebras, both verifier forms |
+| `proof` | `IDeliveryProofAdapter`, the algebraic statement types, and one family-owned transcript description per relation and per delivery-statement version, generic over the chain family's forms and admitted by the version the hash-card names | `proof/schnorr_fs`, owning its challenge | Supported envelope algebras, both verifier forms, delivery-statement versions |
 | `signature` | `ISignatureAdapter`, the signature types | `signature/ed25519` at handshake and content layers, `signature/secp256k1` at the chain layer | Scheme per layer |
-| `chain` | The chain interface, `ISettlementAdapter`, `IEntitlementStateAdapter`, and the family-owned quorum view of two of three configured nodes at a common reference | `chain/base`: the client, Base's tier mapping with INCLUDED sequencer inclusion, SOFT safe head, HARD L1-finalized, and SETTLED fault-proof resolution, the entitlement-state views single and paginated, the events reader | Tier vocabulary, reference age, precompile sets, batch ceiling, entitlement semantics |
+| `chain` | The chain interface, `ISettlementAdapter`, `IEntitlementStateAdapter`, the identity, entitlement, interval, and chain-identifier forms as associated types, each bounded by the encoding family's canonical-field contract, the entitlement contract taking the identity form, and the family-owned quorum view of two of three configured nodes at a common reference, the form interface authored by the proof family's first transcript description and the rest by `chain/base` | `chain/base`: the client, Base's tier mapping with INCLUDED sequencer inclusion, SOFT safe head, HARD L1-finalized, and SETTLED fault-proof resolution, the entitlement-state views single and paginated, the events reader | Tier vocabulary, reference age, precompile sets, batch ceiling, entitlement semantics |
 | `submission` | The interface for submitting a signed intent | `submission/self_funded`, `submission/relayer`, `submission/paymaster` | Sponsorship path |
 | `identity` | `IIdentityAdapter` and the binding schema with the DID Document types and anchor hash | `identity/publisher_authority`, `identity/escrow` | Proof classes |
 | `publisher-proof` | `IPublisherProofAdapter` | `publisher-proof/provenance`, `publisher-proof/maintainer_oauth`, resolved in strength order | Proof class, strength |
@@ -372,13 +372,14 @@ IKeyAgreementAdapter
     unwrap(recipientPrivkey, cyphertext) -> plaintext
 
 ICredentialKemAdapter
-    setup() -> (parameterSet, masterScalar)
-    issue(masterScalar, entitlementId) -> credential
-    rerandomize(credential) -> credential
-    isValid(parameterSet, entitlementId, credential) -> bool
+    setup(scope) -> (parameterSet, masterScalar)
+    deriveIdentity(parameterSet, identityBytes) -> identityElement
+    issue(masterScalar, parameterSet, identityElement) -> credential
+    rerandomize(parameterSet, identityElement, credential) -> credential
+    isValid(parameterSet, identityElement, credential) -> bool
     encapsulate(parameterSet) -> (capsule, K)
     isWellFormed(parameterSet, capsule) -> bool
-    decapsulate(credential, entitlementId, capsule) -> K
+    decapsulate(identityElement, credential, capsule) -> K
 
 IDeliveryProofAdapter
     proveMint(masterScalar, coins, statement) -> proof
@@ -435,6 +436,7 @@ Resolution is the security property, not a convenience. It runs once at installa
 - **Two verifier forms, one shipped.** Both are built and measured; BLS12-381 ships on Base; BN254 is retained.
 - **Every factory follows its concretes.** A family's interface and declaration are authored in its first ticket, so the declarations exist from the family's first ticket; the factory, which constructs the concretes, is authored once after them and revised in place when a later milestone adds one; the harness and the resolver construct through the factories.
 - **The harness reaches the verifier through a family of its own.** The daemon never submits a proof to the verifier, since the contracts call it inside mint, grant, and delivery, so the harness's `verifier` family with its `evm` concrete is the only verifier client and no chain concrete carries one.
+- **The chain family's interface is authored in the harness by its first consumer.** The proof family's transcript descriptions are generic over the chain family's identity, entitlement, interval, and chain-identifier forms, so the first description authors the family's form interface and the forms' mock and creates its crate with that interface alone; `chain/base` authors the settlement and entitlement-state interfaces and the declaration, implements the form interface, and supplies Base's forms in the chain sprint.
 - **The library-backed discovery sources share the transport's engine** through a capability the transport factory's surface exposes, so no discovery concrete depends on the transport concrete.
 - **The hashing, signature, and swarm tickets precede the contract sprints by dependency and run beside the harness from the encoding family's closure onward.** Their first tickets encode, so they start once `encoding/factory` closes; the dependency map records the parallelism; the groupings are by role.
 - **The demonstrable milestone follows credential delivery**, because resolving against the swarm with the registry down needs a second identity to hold a credential.
@@ -522,7 +524,7 @@ The independence claims, made precise per operation. A cell that says nobody or 
 
 # Compliance Controls
 
-Ingest eligibility is free public distribution by the rights holder's choice, implemented as public npm availability, with the residual, unauthorized public redistribution and irrevocability, stated rather than denied revenue; a license check at ingest is a later policy decision. Entitlement records are public by design for public content, and the individual case is disclosed at first run and mitigated by own-node reads. The escrow record publishes no bare hash of an enumerable email; the salt commitment is dropped by default. Telemetry records no secrets and no identifying data beyond what the ledger publishes. User interaction is limited to the permitted consent set and a consent trace fails on anything else. Governance is advisory metadata against a local trust set; no takedown. The software license is source-available with a conformance clause; legal review of the license, the eligibility principle, priced entitlements, the paymaster, and export constraints runs in parallel with the harness. Accessibility baselines for the desktop and extension are a proposed non-functional requirement.
+Ingest eligibility is free public distribution by the rights holder's choice, implemented as public npm availability, with the residual, unauthorized public redistribution and irrevocability, stated rather than denied revenue; a license check at ingest is a later policy decision. Entitlement records are public by design for public content, and the individual case is disclosed at first run and mitigated by own-node reads. The escrow record carries no maintainer commitment and no salt custodian exists, so no maintainer-derived field reaches the chain. Telemetry records no secrets and no identifying data beyond what the ledger publishes. User interaction is limited to the permitted consent set and a consent trace fails on anything else. Governance is advisory metadata against a local trust set; no takedown. The software license is source-available with a conformance clause; legal review of the license, the eligibility principle, priced entitlements, the paymaster, and export constraints runs in parallel with the harness. Accessibility baselines for the desktop and extension are IC-10.
 
 # Open Questions
 
