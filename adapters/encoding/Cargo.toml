@@ -1,0 +1,19 @@
+[package]
+name = "encoding"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+domain = { path = "../../crates/domain" }
+alloy = { version = "2.5.0", default-features = false, features = ["std", "dyn-abi"] }
+
+[dev-dependencies]
+domain = { path = "../../crates/domain", features = ["mocks"] }
+hex = "0.4.3"
+
+[features]
+mocks = []
+
+[lints]
+workspace = true

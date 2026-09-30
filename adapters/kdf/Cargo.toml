@@ -1,0 +1,21 @@
+[package]
+name = "kdf"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+domain = { path = "../../crates/domain" }
+zeroize = "1.9.0"
+blake3 = { version = "1.8.7", features = ["zeroize"] }
+
+[dev-dependencies]
+domain = { path = "../../crates/domain", features = ["mocks"] }
+encoding = { path = "../encoding", features = ["mocks"] }
+hex = "0.4.3"
+
+[features]
+mocks = ["domain/mocks"]
+
+[lints]
+workspace = true
