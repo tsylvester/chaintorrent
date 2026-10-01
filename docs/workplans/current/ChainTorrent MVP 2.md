@@ -916,7 +916,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `hash_to_scalar_binds_the_tag_length`, `hash_to_scalar_separates_domains`, and `keccak256_hash_to_scalar_declares_its_identifier_and_versions` pass
     * `[✅]`   Code outside `adapters/hash-to-scalar` naming `Keccak256HashToScalar` or anything under `keccak256` fails to compile; the crate's public surface is the `domain_tag` and `factory` modules' `provides`
 
-* `[ ]`   `hash-to-scalar/factory` **Hash-to-scalar factory constructing the concrete the configuration names, admitted against the hash-to-scalar identifier the hash-card requires, and returning it behind the family's trait for the pairing scalar type asked for; carries the family's integration test and the milestone's commit**
+* `[✅]`   `hash-to-scalar/factory` **Hash-to-scalar factory constructing the concrete the configuration names, admitted against the hash-to-scalar identifier the hash-card requires, and returning it behind the family's trait for the pairing scalar type asked for; carries the family's integration test and the milestone's commit**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a consumer obtains a hash-to-scalar adapter only through the family's generic surface, never by naming a concrete, for the scalar type of the pairing it resolved, and the mapping it uses is the one the deployment's hash-card names, so a concrete that does not declare the required identifier is refused before anything is constructed (CR-08; CR-09; CR-11; Composition Boundary)
@@ -1022,443 +1022,483 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `sha3` is named nowhere outside `adapters/hash-to-scalar/src/keccak256`, and no code outside `adapters/hash-to-scalar` can name `Keccak256HashToScalar`
     * `[✅]`   The pairing adapters and key derivation milestone's exit holds: CR-10 on both curves through the pairing factory, the benchmark's record, the domain identifiers and derivation context, the derivation context's ABI encoding against its known-answer vector, and CR-11's derivation and hash-to-scalar against independent implementations' vectors, every crate building and passing the Rust CI definition on Windows, macOS, and Linux
 
-  * `[ ]`   **Commit** `feat(harness): pairing, encoding, key-derivation, and hash-to-scalar families with the domain identifiers and derivation context`
-    * `[ ]`   Structural: the `adapters/pairing` crate with its factory and four concretes; the `apps/harness-crypto` crate with its benchmark; the `domain` crate's asset identity, deployment identity, suite identifier, parameter-set identifier, group index, piece geometry, and derivation context modules; the `adapters/encoding` crate with its factory, ABI concrete, and derivation-context description; the `adapters/kdf` crate with its factory and BLAKE3 keyed concrete; the `adapters/hash-to-scalar` crate with its factory, domain tag, and Keccak-256 concrete
-    * `[ ]`   Behavioral: group arithmetic, precompile encodings, and scalar sampling on BN254 and BLS12-381 across arkworks and halo2curves; the pairing benchmark; the domain identifiers and the derivation context admitted only under their invariants; the derivation context encoded and decoded in its one ABI byte form; keys derived under a fixed context string per purpose; domain-tagged messages mapped to scalars on either curve
-    * `[ ]`   Contract: `IPairingAdapter` with `ISampleUniformScalar` and `create_pairing`; `IEncodingContract`, `IEncoderAdapter`, `IDecoderAdapter`, and `create_encoding`; `IKeyDerivationAdapter` with `DerivationPurpose` and `create_key_derivation`; `DomainTag`, `IHashToScalarAdapter`, and `create_hash_to_scalar`; each family's identifier, declaration, and interface version
+  * `[✅]`   **Commit** `feat(harness): pairing, encoding, key-derivation, and hash-to-scalar families with the domain identifiers and derivation context`
+    * `[✅]`   Structural: the `adapters/pairing` crate with its factory and four concretes; the `apps/harness-crypto` crate with its benchmark; the `domain` crate's asset identity, deployment identity, suite identifier, parameter-set identifier, group index, piece geometry, and derivation context modules; the `adapters/encoding` crate with its factory, ABI concrete, and derivation-context description; the `adapters/kdf` crate with its factory and BLAKE3 keyed concrete; the `adapters/hash-to-scalar` crate with its factory, domain tag, and Keccak-256 concrete
+    * `[✅]`   Behavioral: group arithmetic, precompile encodings, and scalar sampling on BN254 and BLS12-381 across arkworks and halo2curves; the pairing benchmark; the domain identifiers and the derivation context admitted only under their invariants; the derivation context encoded and decoded in its one ABI byte form; keys derived under a fixed context string per purpose; domain-tagged messages mapped to scalars on either curve
+    * `[✅]`   Contract: `IPairingAdapter` with `ISampleUniformScalar` and `create_pairing`; `IEncodingContract`, `IEncoderAdapter`, `IDecoderAdapter`, and `create_encoding`; `IKeyDerivationAdapter` with `DerivationPurpose` and `create_key_derivation`; `DomainTag`, `IHashToScalarAdapter`, and `create_hash_to_scalar`; each family's identifier, declaration, and interface version
 
 ## Credential KEM
 
-* `[ ]`   `pairing/bn254_arkworks` **BN254 arkworks concrete gains the scalar-field arithmetic, source-group negation, identity tests, pairing into the target group, and target-group encoding the credential KEM, the envelope, and the delivery proof compute with; authors the pairing family's arithmetic trait and its mock**
+* `[ ]`   `pairing/bn254_arkworks` **BN254 arkworks concrete gains the scalar-field arithmetic, source-group negation, identity tests, pairing into the target group, and target-group encoding the credential KEM, the envelope, and the delivery proof compute with; authors the pairing family's arithmetic trait and its mock, and the family's target-group encoding identifier, which it declares and proves against the independent vector**
+
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: the credential KEM encapsulates and decapsulates a target-group value `K` the key-derivation family consumes as bytes, checks validity and well-formedness as pairing equations whose sides are divided, and refuses a trivial identity element; the envelope decrypts by removing a masked source-group element and rejects identity-element keys; the delivery proof computes Schnorr responses in the scalar field; and the decrypted credential is a pair of source-group elements that must be zeroized; the family's generic interface offers none of these, so every one passes through the family, and no module outside a concrete names a curve library (CR-04; CR-07; CR-08; CR-09; `docs/research/cryptography.md`'s Credential KEM, Key Agreement, and Delivery Proof statements)
+    * `[✅]`   Functional: the family's arithmetic trait extends the generic interface with the scalar field's addition, multiplication, and negation modulo the group order
+    * `[✅]`   Functional: it negates a point in either source group, the identity negating to the identity
+    * `[✅]`   Functional: it reports whether a point in either source group is the identity
+    * `[✅]`   Functional: it computes the product of the pairings of a list of first-group and second-group pairs as a value of the target group, an empty list yielding the target group's identity; division is realized by negating a first-group input, so no target-group arithmetic exists above the concrete
+    * `[✅]`   Functional: it encodes a target-group value as its twelve base-field coefficients in the tower order of the degree-twelve extension, `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, each the coefficient's big-endian canonical integer at the base field's byte width, returned inside a `Secret`, since `K` is decrypt-capable
+    * `[ ]`   Functional: the family's declaration names a target-group encoding identifier, the pairing map, the generators, and the coefficient serialization a concrete's target-group encoding realizes, and this concrete declares `TargetGroupEncodingIdentifier::Bn254V1`: the optimal ate pairing over the EIP-197 generators, serialized as the twelve tower coefficients above (CR-10; `docs/research/cryptography.md`'s pairing adapter capability declaration and hash-card target-group encoding identifier; the product requirements' canonical target-group value position)
+    * `[ ]`   Functional: the concrete's encoding of the pairing of the two generators equals the known-answer vector derived from the identifier's definition, an explicit computation of the exact exponent independent of arkworks and halo2curves and confirmed by a second independent computation, so the value this concrete derives keys from is the protocol's and not the library's; the library's reduced pairing is the Fuentes-Castañeda multiple of the exact value, by its own source, so this concrete realizes the identifier inside `pairing_product` by the exponent that inverts the multiple, which the vector proves
+    * `[✅]`   Functional: the trait requires the source-group types to implement `Zeroize` and its target-group type to implement `Zeroize`, and the BN254 arkworks concrete's first-group, second-group, and target-group types zeroize their value through `Zeroize` and on drop
+    * `[ ]`   Non-functional: `ark-bn254`, `ark-ec`, and `ark-ff` remain named only inside `adapters/pairing/src/bn254_arkworks`; the arithmetic trait is a separate trait so the other concretes keep compiling until each implements it; the generic interface and the factory function are unchanged; the declaration gains the target-group encoding identifier
+
+  * `[✅]`   `role`
+    * `[✅]`   Adapter: the pairing family's first concrete, and the first source file that requires the family's arithmetic trait and its mock, which it authors in the family's `factory` module as its producers
+    * `[✅]`   Does not change `IPairingAdapter`, `IPairingConsumer`, `create_pairing`, or any existing method's behavior, and does not bind the arithmetic trait into the factory; `pairing/factory` requires it of every concrete a consumer receives once every concrete implements it
+    * `[✅]`   Does not implement the arithmetic trait for the BN254 `halo2curves` concrete or either BLS12-381 concrete; each is its own node
+    * `[✅]`   Does not compute in the target group beyond the pairing product and its encoding: no target-group multiplication, exponentiation, or inversion is exposed
+    * `[✅]`   Does not map a target-group value to a key; the key-derivation family derives from the encoding
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[ ]`   Bounded context: the `factory` module's arithmetic trait with its target-group associated type, every method's params, payload, success, and return types, and its mock; the family's `TargetGroupEncodingIdentifier` and the declaration's field for it; the `bn254_arkworks` concrete's target-group type, its implementation of the arithmetic trait, its declared identifier, its reference vector, its source-group and target-group zeroization, and the builder default for its target-group type
+    * `[✅]`   Edits `adapters/pairing/src/factory/interface.rs`, `adapters/pairing/src/factory/mock.rs`, and the `bn254_arkworks` module's `interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, and `mod.rs`; the crate's manifest, barrel, `provides` files, and `factory/mod.rs` are unchanged
+    * `[✅]`   Outside: the KEM, envelope, and proof algebra built on the trait, the key derivation from the target-group encoding, the cross-library agreement of the encoding, and the factory's binding of the trait
+
+  * `[✅]`   `deps`
+    * `[✅]`   The `factory` module's existing interface, same crate: `IPairingAdapter` with its associated types `Scalar`, `G1`, and `G2`, and `PairingProductTerm`, which the pairing product reuses for its terms
+    * `[✅]`   `domain`, the existing runtime dependency: `Secret` and `SecretConstructorParams` for the target-group encoding; `build_secret` and `SecretConstructorParamsOverrides` through the existing `mocks` feature for the encoding's builder
+    * `[✅]`   `zeroize`, the existing runtime dependency: the `Zeroize` trait the arithmetic trait's bounds name, its implementation for `Vec<Z: Zeroize>`, and its implementations for arkworks' short-Weierstrass affine points and `PairingOutput`
+    * `[✅]`   `ark-bn254`, `ark-ec`, and `ark-ff`, the existing runtime dependencies, named only in `bn254_arkworks`
+    * `[✅]`   `hex`, the existing dev-dependency, for the vectors
+    * `[✅]`   `core::convert::Infallible`, standard library, the error arm of every new method; `core::marker::PhantomData`, standard library, in `factory/mock.rs`
+    * `[✅]`   No new external crate; `adapters/pairing/Cargo.toml` is unchanged; no reverse dependency
+
+  * `[✅]`   `context_slice`
+    * `[✅]`   From `ark-ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; the public fields `c0` and `c1` of the degree-two and degree-twelve extensions and `c0`, `c1`, and `c2` of the degree-six extension; `PrimeField::into_bigint()` and `BigInteger::to_bytes_be()` on `Fq`
+    * `[ ]`   From `ark-ec`: unary `-` on the short-Weierstrass affine point, returning `(x, -y)` and the identity for the identity; `AffineRepr::is_zero()`, true exactly for the identity; `pairing::Pairing::multi_pairing(a, b)` over iterators of borrowed affine points, returning `PairingOutput<Bn254>`, whose public field `0` is the `Fq12` value and whose identity is `Fq12::one()`; `Mul<Fr> for PairingOutput<Bn254>`, the exponentiation of a target-group value by a scalar, which the library realizes as a cyclotomic exponentiation; `Pairing::pairing(p, q)`; `Zeroize` for `Affine` and for `PairingOutput`; from `ark-ff`, `MontFp!` for the inverse constant as a compile-time `Fr`
+    * `[✅]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`, and `Secret::expose(&self) -> &T`
+
+  * `[✅]`   `adapters/pairing/src/factory/interface.rs`
+    * `[✅]`   `add_scalar(&self, params: AddScalarParams, payload: AddScalarPayload<Self::Scalar>) -> AddScalarReturn<Self::Scalar>`: the fieldless `AddScalarParams`; `AddScalarPayload<S>` with `pub left: S` and `pub right: S`; `AddScalarSuccessReturn<S>` with `pub sum: S`; `AddScalarReturn<S>`, the alias `Result<AddScalarSuccessReturn<S>, Infallible>`
+    * `[✅]`   `mul_scalar`, the same shape under the `MulScalar` prefix, its success return holding `pub product: S`
+    * `[✅]`   `neg_scalar(&self, params: NegScalarParams, payload: NegScalarPayload<Self::Scalar>) -> NegScalarReturn<Self::Scalar>`: the fieldless `NegScalarParams`; `NegScalarPayload<S>` with `pub scalar: S`; `NegScalarSuccessReturn<S>` with `pub negation: S`; `NegScalarReturn<S>`, the alias `Result<NegScalarSuccessReturn<S>, Infallible>`
+    * `[✅]`   `neg_g1(&self, params: NegG1Params, payload: NegG1Payload<Self::G1>) -> NegG1Return<Self::G1>`: the fieldless `NegG1Params`; `NegG1Payload<G>` with `pub point: G`; `NegG1SuccessReturn<G>` with `pub negation: G`; `NegG1Return<G>`, the alias `Result<NegG1SuccessReturn<G>, Infallible>`
+    * `[✅]`   `neg_g2`, the same shape under the `NegG2` prefix over `Self::G2`
+    * `[✅]`   `is_identity_g1(&self, params: IsIdentityG1Params, payload: IsIdentityG1Payload<Self::G1>) -> IsIdentityG1Return`: the fieldless `IsIdentityG1Params`; `IsIdentityG1Payload<G>` with `pub point: G`; `IsIdentityG1SuccessReturn` with `pub is_identity: bool`; `IsIdentityG1Return`, the alias `Result<IsIdentityG1SuccessReturn, Infallible>`
+    * `[✅]`   `is_identity_g2`, the same shape under the `IsIdentityG2` prefix over `Self::G2`
+    * `[✅]`   `pairing_product(&self, params: PairingProductParams, payload: PairingProductPayload<Self::G1, Self::G2>) -> PairingProductReturn<Self::Gt>`: the fieldless `PairingProductParams`; `PairingProductPayload<G1, G2>` with `pub terms: Vec<PairingProductTerm<G1, G2>>`; `PairingProductSuccessReturn<T>` with `pub product: T`; `PairingProductReturn<T>`, the alias `Result<PairingProductSuccessReturn<T>, Infallible>`
+    * `[✅]`   `encode_gt(&self, params: EncodeGtParams, payload: EncodeGtPayload<Self::Gt>) -> EncodeGtReturn`: the fieldless `EncodeGtParams`; `EncodeGtPayload<T>` with `pub value: T`; `EncodeGtSuccessReturn` with `pub bytes: Secret<Vec<u8>>`; `EncodeGtReturn`, the alias `Result<EncodeGtSuccessReturn, Infallible>`
+    * `[✅]`   `IPairingArithmetic`, the arithmetic trait, `pub trait IPairingArithmetic: IPairingAdapter<G1: Zeroize, G2: Zeroize>` with `type Gt: Zeroize;` and the methods above, each taking `&self`, its params, and its payload, and returning its own return alias
+    * `[ ]`   `TargetGroupEncodingIdentifier`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variants `Bn254V1`, the optimal ate pairing as EIP-197 fixes it over the EIP-197 generators on the tower `Fp6 = Fp2[v] / (v^3 - (u + 9))`, serialized as twelve 32-byte big-endian tower coefficients, and `Bls12381V1`, the optimal ate pairing as the CFRG pairing-friendly-curves draft fixes it over the EIP-2537 generators on the tower `Fp6 = Fp2[v] / (v^3 - (u + 1))`, serialized as twelve 48-byte big-endian tower coefficients, each variant's value the Miller loop's value raised to the exact exponent `(p^12 - 1) / r`, not a fixed multiple of it, and each variant's doc comment stating its standard, its tower, and its exact exponent as `docs/research/cryptography.md`'s pairing adapter capability declaration states them; `PairingDeclaration` gains the field `pub target_group_encoding: TargetGroupEncodingIdentifier`
+    * `[ ]`   No derives on any new type beyond the identifier's; every item already in this file is unchanged except `PairingDeclaration`, which gains the field; the file's existing imports of `domain::Secret`, `zeroize::Zeroize`, and `core::convert::Infallible` serve the new items; names no vendor and no concrete
+
+  * `[✅]`   `adapters/pairing/src/bn254_arkworks/interface.rs`
+    * `[✅]`   `Bn254ArkworksGt`, a struct with no derives and one field `pub(super) value: ark_ec::pairing::PairingOutput<ark_bn254::Bn254>`, the target-group value
+    * `[✅]`   Every item already in this file is unchanged
+
+  * `[✅]`   `adapters/pairing/src/bn254_arkworks/interaction.spec.md`
+    * `[✅]`   Adds a section per new method in the file's existing table form, below the existing sections and above `Ordering and edges`
+    * `[✅]`   `add_scalar`: one branch; dependency call `Fr`'s `+` over `payload.left.value` and `payload.right.value`; outcome `Ok(AddScalarSuccessReturn { sum })`, the sum modulo the group order in the owned scalar type; the payload, holding both scalars, drops at the end of the call and both are zeroized
+    * `[✅]`   `mul_scalar`: one branch; dependency call `Fr`'s `*`; outcome `Ok(MulScalarSuccessReturn { product })` modulo the group order; the payload's scalars are zeroized as it drops
+    * `[✅]`   `neg_scalar`: one branch; dependency call `Fr`'s unary `-`; outcome `Ok(NegScalarSuccessReturn { negation })`, the group order minus the scalar, and zero for zero
+    * `[✅]`   `neg_g1`: one branch; dependency call the affine point's unary `-`; outcome `Ok(NegG1SuccessReturn { negation })`, `(x, p - y)` for a point `(x, y)` and the identity for the identity
+    * `[✅]`   `neg_g2`: the same over the second group
+    * `[✅]`   `is_identity_g1`: one branch; dependency call `AffineRepr::is_zero()` on the payload point; outcome `Ok(IsIdentityG1SuccessReturn { is_identity })`, `true` exactly for the identity
+    * `[✅]`   `is_identity_g2`: the same over the second group
+    * `[ ]`   `pairing_product`: one branch; the terms are split into a `Vec<G1Affine>` and a `Vec<G2Affine>` in term order; dependency call `Bn254::multi_pairing(&g1s, &g2s)`, then the `PairingOutput` multiplied by the inverse constant this node's `mod.rs` states, the exponentiation that brings the library's reduced pairing to the identifier's exact value, then `zeroize` on both vectors; outcome `Ok(PairingProductSuccessReturn { product })` holding the exponentiated `PairingOutput` in the owned target-group type; an empty term list yields the target group's identity, which the exponentiation preserves
+    * `[✅]`   `encode_gt`: one branch; dependency call `into_bigint().to_bytes_be()` on each of the twelve `Fq` coefficients of `payload.value.value.0` in the tower order the objective states, appended in that order into one buffer of 384 bytes; outcome `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`; the target group's identity encodes as 31 zero bytes, `01`, and 352 zero bytes
+    * `[✅]`   Zeroization: `Bn254ArkworksG1`, `Bn254ArkworksG2`, and `Bn254ArkworksGt` each zeroize their `value` through their `Zeroize` implementation and on drop, as `Bn254ArkworksScalar` does, so every clone a consumer places in a payload is zeroized when the payload drops
+    * `[✅]`   `params` carries no control and is not read in any new method
+
+  * `[✅]`   `adapters/pairing/src/factory/mock.rs`
+    * `[✅]`   For each new generic struct, an overrides struct named by the type with the suffix `Overrides`, `#[derive(Default)]`, one `Option` per field over the struct's type parameters, and a builder `build_` followed by the type's name in snake case, taking the overrides and returning the production type, each type parameter bounded by `Default`, an omitted field taking `Default::default()` of its type parameter unless stated: `AddScalarPayload`, `AddScalarSuccessReturn`, `MulScalarPayload`, `MulScalarSuccessReturn`, `NegScalarPayload`, `NegScalarSuccessReturn`, `NegG1Payload`, `NegG1SuccessReturn`, `NegG2Payload`, `NegG2SuccessReturn`, `IsIdentityG1Payload`, `IsIdentityG2Payload`, `PairingProductPayload` with `terms` defaulting to an empty `Vec`, `PairingProductSuccessReturn`, and `EncodeGtPayload`
+    * `[✅]`   The new non-generic builders: `IsIdentityG1SuccessReturnOverrides` with `build_is_identity_g1_success_return` and `IsIdentityG2SuccessReturnOverrides` with `build_is_identity_g2_success_return`, `is_identity` defaulting to `false`; `EncodeGtSuccessReturnOverrides` with `build_encode_gt_success_return`, `bytes` defaulting to `build_secret(SecretConstructorParamsOverrides::default())`
+    * `[✅]`   `MockIPairingAdapter` gains the type parameter `Gt` and the field `pub gt: PhantomData<Gt>`, becoming `MockIPairingAdapter<S, G1, G2, Gt>`; its implementation of `IPairingAdapter` keeps its bounds and places none on `Gt`
+    * `[✅]`   `impl<S, G1, G2, Gt> IPairingArithmetic for MockIPairingAdapter<S, G1, G2, Gt>` for `S: ISampleUniformScalar + Clone + Default`, `G1: Zeroize + Clone + Default`, `G2: Zeroize + Clone + Default`, and `Gt: Zeroize + Default`, with `type Gt = Gt;` and every method returning `Ok` holding its success return's builder called with `Default::default()`; a test needing other behavior implements the trait on its own local struct
+    * `[✅]`   `ConsumePairingPayloadOverrides` gains the type parameter `Gt`, its `adapter` field becoming `Option<MockIPairingAdapter<S, G1, G2, Gt>>`; `build_consume_pairing_payload` gains the type parameter `Gt` and returns `ConsumePairingPayload<MockIPairingAdapter<S, G1, G2, Gt>>`, its default adapter setting `gt: PhantomData`
+    * `[✅]`   No builder for the new fieldless params; no corruptions type and no invalidator, since no new struct arrives as untrusted data
+    * `[ ]`   The declaration's overrides struct gains `pub target_group_encoding: Option<TargetGroupEncodingIdentifier>` and its builder defaults the field to `TargetGroupEncodingIdentifier::Bn254V1`; no builder for the enum, used by its production value
+    * `[ ]`   Every other symbol in this file is unchanged; the file's imports gain the new types, `TargetGroupEncodingIdentifier`, and `IPairingArithmetic` from `super::interface`
+
+  * `[✅]`   `adapters/pairing/src/bn254_arkworks/mock.rs`
+    * `[ ]`   `impl Default for Bn254ArkworksGt` returning the library's reduced pairing of the two generators, `Bn254::pairing(G1Affine::generator(), G2Affine::generator())`, a non-identity target-group value whose exact bytes no test asserts and which is not the identifier's value of that pairing, the builder default the family's generic builders and `MockIPairingAdapter` read through `Default`
+    * `[✅]`   The file's imports gain `ark_bn254::Bn254` and `ark_ec::pairing::Pairing`; every existing default is unchanged
+
+  * `[✅]`   `adapters/pairing/src/bn254_arkworks/test.rs`
+    * `[✅]`   Every existing test and constant is unchanged; the new tests are appended; the imports gain `IPairingArithmetic` and the new params, overrides, and builders from `crate::factory::provides`
+    * `[✅]`   The new constants, as hex: zero, 32 zero bytes; one, 31 zero bytes and `01`; six, 31 zero bytes and `06`; the negated first-group generator, 31 zero bytes and `01` followed by `p - 2` = `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45`; the target group's identity encoding is written in each test that uses it as `vec![0u8; 384]` with index `31` set to `1`
+    * `[ ]`   `GENERATOR_PAIRING_ENCODING_HEX`, the 384-byte encoding of the pairing of the two generators under `TargetGroupEncodingIdentifier::Bn254V1`, in the tower coefficient order the objective states, derived from the identifier's definition as gnark-crypto's `bn254.MillerLoop` over the `G1Affine` and `G2Affine` generators raised through `E12.Exp` to the integer `(p^12 - 1) / r` computed from `fp.Modulus()` and `fr.Modulus()`, each `fp.Element` written through `Bytes()`, and equal to go-ethereum's `crypto/bn256/cloudflare` reduced pairing of its generators with the twelve words of `GT.Marshal` reversed into tower order, since that package's final exponentiation is the exact exponent by its own definition; neither library's own reduced pairing is the vector; each library's version and the authoring script are recorded here beside the value; its value is recorded in this node before implementation, as `kdf/blake3_keyed` records its independent vectors
+    * `[ ]`   `pairing_product_of_the_generators_encodes_to_the_reference_vector`: contract: the concrete's target-group value and serialization are the protocol's, not the library's (CR-10); arrange the one term `(g1, g2)` from `build_pairing_product_term`; act `pairing_product`, then `encode_gt`; assert the exposed bytes equal `GENERATOR_PAIRING_ENCODING_HEX` decoded
+    * `[ ]`   `declaration_names_the_bn254_target_group_encoding`: contract: the concrete declares the identifier the suite admits it by; act read `Bn254ArkworksPairing::DECLARATION`; assert `target_group_encoding` equals `TargetGroupEncodingIdentifier::Bn254V1`
+    * `[✅]`   `add_scalar_of_two_and_three_is_five`: contract: the sum of two scalars is their sum in the scalar field; arrange the decoded scalars two and three in `build_add_scalar_payload`; act `add_scalar`, then `encode_scalar`; assert the exposed bytes equal five
+    * `[✅]`   `add_scalar_reduces_modulo_the_group_order`: contract: a sum at or above the group order wraps; arrange `r - 1` and two; act `add_scalar`, then `encode_scalar`; assert the exposed bytes equal one
+    * `[✅]`   `mul_scalar_of_two_and_three_is_six`: arrange two and three in `build_mul_scalar_payload`; act `mul_scalar`, then `encode_scalar`; assert the exposed bytes equal six
+    * `[✅]`   `mul_scalar_reduces_modulo_the_group_order`: contract: a product at or above the group order wraps; arrange `r - 1` twice; act `mul_scalar`, then `encode_scalar`; assert the exposed bytes equal one, since `(r - 1)^2` is one modulo `r`
+    * `[✅]`   `neg_scalar_of_one_is_the_group_order_minus_one`: arrange one in `build_neg_scalar_payload`; act `neg_scalar`, then `encode_scalar`; assert the exposed bytes equal `r - 1`
+    * `[✅]`   `neg_scalar_of_zero_is_zero`: arrange zero; act `neg_scalar`, then `encode_scalar`; assert the exposed bytes equal zero
+    * `[✅]`   `neg_g1_of_the_generator_negates_its_y_coordinate`: contract: a point's negation keeps `x` and replaces `y` by `p - y`; arrange the generator in `build_neg_g1_payload`; act `neg_g1`, then `encode_g1`; assert the bytes equal the negated first-group generator vector
+    * `[✅]`   `neg_g1_of_the_identity_is_the_identity`: arrange the point `decode_g1` reads from 64 zero bytes; act `neg_g1`, then `encode_g1`; assert the bytes are 64 zero bytes
+    * `[✅]`   `neg_g2_of_the_generator_sums_with_the_generator_to_the_identity`: contract: a second-group point plus its negation is the identity; arrange the second-group generator; act `neg_g2`, then `add_g2` of the generator and the negation, then `encode_g2`; assert the bytes are 128 zero bytes
+    * `[✅]`   `is_identity_g1_is_true_for_the_identity`: arrange the point `decode_g1` reads from 64 zero bytes in `build_is_identity_g1_payload`; act `is_identity_g1`; assert `is_identity` is `true`
+    * `[✅]`   `is_identity_g1_is_false_for_the_generator`: arrange the first-group generator; act `is_identity_g1`; assert `is_identity` is `false`
+    * `[✅]`   `is_identity_g2_is_true_for_the_identity`: the same over the point `decode_g2` reads from 128 zero bytes and `is_identity_g2`
+    * `[✅]`   `is_identity_g2_is_false_for_the_generator`: the same over the second-group generator
+    * `[✅]`   `pairing_product_of_no_terms_encodes_as_the_target_group_identity`: contract: the empty product is the target group's identity, which encodes with the coefficient `c0.c0.c0` first; arrange `build_pairing_product_payload` with its default empty terms; act `pairing_product`, then `encode_gt`; assert the exposed bytes equal the target group's identity encoding
+    * `[✅]`   `pairing_product_of_the_generators_is_not_the_target_group_identity`: contract: the pairing is non-degenerate; arrange the one term `(g1, g2)` from `build_pairing_product_term`; act `pairing_product`, then `encode_gt`; assert the exposed bytes are 384 bytes and differ from the target group's identity encoding
+    * `[✅]`   `pairing_product_is_bilinear`: contract: a scalar moves between the arguments of a pairing; arrange the terms `(g1 · 2, g2 · 3)`, `(g1 · 6, g2)`, and `(g1 · 5, g2)`, each a single-term product; act `pairing_product` over each, then `encode_gt` over each; assert the first two encodings are equal and differ from the third
+    * `[✅]`   `pairing_product_multiplies_its_terms`: contract: a list of terms yields the product of their pairings; arrange the terms `(g1, g2)` twice as one list, `(g1 · 2, g2)` as a single-term list, and `(g1, g2)` as a single-term list; act `pairing_product` over each, then `encode_gt` over each; assert the first two encodings are equal and differ from the third
+    * `[✅]`   `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`: contract: negating a first-group input divides by its pairing; arrange the terms `(g1, g2)` and `(-g1, g2)`, the negation from `neg_g1`; act `pairing_product`, then `encode_gt`; assert the exposed bytes equal the target group's identity encoding
+    * `[✅]`   Every new test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers; every payload is built through its family builder with only the overrides the test depends on; scalars come from `decode_scalar` over the vectors and points from the generators, `mul_g1`, `mul_g2`, or `decode_g1` and `decode_g2`
+
+  * `[✅]`   `construction`
+    * `[✅]`   A target-group value is produced only by `pairing_product`; scalars and points produced by the new arithmetic are produced by the adapter alone; no consumer constructs any of them from library values
+
+  * `[✅]`   `adapters/pairing/src/bn254_arkworks/mod.rs`
+    * `[✅]`   `impl IPairingArithmetic for Bn254ArkworksPairing` with `type Gt = Bn254ArkworksGt;` and every method realizing its branch in the interaction spec
+    * `[ ]`   `Bn254ArkworksPairing::DECLARATION` gains `target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1`; `pairing_product` realizes that identifier over the library's reduced pairing, which `ark-ec`'s BN final exponentiation states as the exact value raised to `2z(6z^2 + 3z + 1)` for the curve seed `z`, by raising the library's value to that multiple's inverse modulo the group order, a constant this node derives from the seed and the order and records beside the vector once the comparison against the vector confirms the multiple; the constant is definitional for this library and identifier, never configured, and lives in this concrete and nowhere else; the comparison's outcome, the multiple confirmed or a different adaptation found, is recorded here before implementation
+    * `[✅]`   `impl Zeroize for Bn254ArkworksG1` and `impl Zeroize for Bn254ArkworksG2`, each calling `self.value.zeroize()`; `impl Drop` for each calling `self.value.zeroize()`
+    * `[✅]`   `impl Zeroize for Bn254ArkworksGt` calling `self.value.zeroize()`; `impl Drop for Bn254ArkworksGt` calling `self.value.zeroize()`
+    * `[ ]`   The imports gain `IPairingArithmetic` and the new types from `crate::factory::provides`, `Bn254ArkworksGt` from `interface`, `ark_bn254::Fr`, and `ark_ff::MontFp`; the inverse constant is a private `const` of type `Fr` in this file, named for what it is, with the derivation stated in its doc comment
+    * `[✅]`   Every existing item is unchanged; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `bn254_arkworks` depends on the `factory` module's surface, on `domain`, on `zeroize`, and on the arkworks crates, as before; `IPairingArithmetic` depends on `IPairingAdapter` within the `factory` module; no new edge between crates and no new cycle
+    * `[✅]`   `pairing/bn254_halo2curves`, `pairing/bls12_381_arkworks`, and `pairing/bls12_381_halo2curves` each implement `IPairingArithmetic`; `pairing/factory` then requires it of the concrete a consumer receives, and `kem/bb1_depth_one` consumes it
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `adapters/pairing/Cargo.toml` is unchanged, and no `ark-` crate is named in the crate outside `adapters/pairing/src/bn254_arkworks`
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, with the other pairing concretes, the factory, and every crate that consumes the pairing family compiling unchanged
+    * `[✅]`   Every existing test in `bn254_arkworks/test.rs`, `factory/test.rs`, and `adapters/pairing/tests/integration_test.rs` passes unchanged
+    * `[✅]`   `add_scalar_of_two_and_three_is_five`, `add_scalar_reduces_modulo_the_group_order`, `mul_scalar_of_two_and_three_is_six`, `mul_scalar_reduces_modulo_the_group_order`, `neg_scalar_of_one_is_the_group_order_minus_one`, and `neg_scalar_of_zero_is_zero` pass (CR-09, the scalar arithmetic the delivery proof's responses use)
+    * `[✅]`   `neg_g1_of_the_generator_negates_its_y_coordinate`, `neg_g1_of_the_identity_is_the_identity`, `neg_g2_of_the_generator_sums_with_the_generator_to_the_identity`, `is_identity_g1_is_true_for_the_identity`, `is_identity_g1_is_false_for_the_generator`, `is_identity_g2_is_true_for_the_identity`, and `is_identity_g2_is_false_for_the_generator` pass (CR-04 envelope decryption and identity-key rejection; CR-08 trivial identity-element refusal)
+    * `[✅]`   `pairing_product_of_no_terms_encodes_as_the_target_group_identity`, `pairing_product_of_the_generators_is_not_the_target_group_identity`, `pairing_product_is_bilinear`, `pairing_product_multiplies_its_terms`, and `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity` pass (CR-08, the encapsulated value and the validity, well-formedness, and decapsulation equations)
+    * `[ ]`   `pairing_product_of_the_generators_encodes_to_the_reference_vector` and `declaration_names_the_bn254_target_group_encoding` pass (CR-10, the target-group value and its serialization fixed by the protocol against an independent reference)
+    * `[✅]`   `Bn254ArkworksG1`, `Bn254ArkworksG2`, and `Bn254ArkworksGt` implement `Zeroize` and `Drop`, fixed by their implementations (CR-07)
+    * `[✅]`   Code outside `adapters/pairing` naming `Bn254ArkworksGt` or anything under `bn254_arkworks` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[✅]`   `workspace/cargo` **The `halo2curves` overlay: the workspace resolves `halo2curves` from the project's `gt-accessor` branch, and the dependency policy admits that source**
+
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: the pairing family's arithmetic trait encodes a target-group value as its base-field coefficients, and `halo2curves` 0.10.0 declares its target-group type as `pub struct Gt(pub(crate) Fq12)` with no public way to read the `Fq12`, so the `halo2curves` concretes cannot implement the trait against the published crate (CR-08; CR-10)
+    * `[✅]`   Functional: every workspace member that depends on `halo2curves` `0.10.0` resolves it from the branch `gt-accessor` of `https://github.com/tsylvester/halo2curves`, with no edit to any member's manifest, and `Cargo.lock` pins the branch's commit
+    * `[✅]`   Functional: `cargo-deny` admits that git source and continues to deny every other unlisted registry or git source
+    * `[✅]`   Non-functional: the overlay is carried as the `librqbit` overlay is: the branch tracks the tagged upstream `0.10.0` release, its one change is submitted upstream as a pull request, and the overlay entry is removed when the change merges and a release carries it
+
+  * `[✅]`   `role`
+    * `[✅]`   Infrastructure: edits to two configuration files with no types and no tests, exempt from the support-file structure
+    * `[✅]`   Does not add, remove, or pin any dependency in any member's manifest; `adapters/pairing/Cargo.toml` keeps `halo2curves = "0.10.0"`, which the patch satisfies
+    * `[✅]`   Does not author the accessor; the branch carrying it is external setup, as the `librqbit` overlay branch is: `impl_gt!` in `src/derive/pairing.rs` gains, inside its `impl $target` block, `pub fn inner(&self) -> &$base` returning `&self.0`, the one change on the branch; `pairing/bn254_halo2curves` and `pairing/bls12_381_halo2curves` consume it, and this node's build proof does not
+    * `[✅]`   Does not edit `rust-toolchain.toml`, `.gitignore`, or `.github/workflows/rust.yml`
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the repository root's `[patch.crates-io]` table in `Cargo.toml` and the `[sources]` table in `deny.toml`
+    * `[✅]`   Outside: every member's manifest, the branch's contents, the concretes that consume the accessor, and the upstream pull request
+
+  * `[✅]`   `deps`
+    * `[✅]`   The branch `gt-accessor` of `https://github.com/tsylvester/halo2curves`, external git source, package `halo2curves` at version `0.10.0`, license MIT OR Apache-2.0, cut from the upstream `0.10.0` release; the patch's version must equal the version members require, which it does
+    * `[✅]`   `cargo`, which reads `[patch.crates-io]`, and `cargo-deny`, which reads `[sources]`; no repository file is a dependency and no reverse dependency exists
+
+  * `[✅]`   `Cargo.toml`
+    * `[✅]`   `[patch.crates-io]` gains, after the `librqbit` entry, `halo2curves = { git = "https://github.com/tsylvester/halo2curves", branch = "gt-accessor" }`
+    * `[✅]`   Every other table and key is unchanged
+
+  * `[✅]`   `deny.toml`
+    * `[✅]`   `[sources]` has `allow-git = ["https://github.com/tsylvester/rqbit", "https://github.com/tsylvester/halo2curves"]`
+    * `[✅]`   Every other table and key is unchanged
+
+  * `[✅]`   `directionality`
+    * `[✅]`   The root configuration names the external source and nothing names the configuration; members depend on `halo2curves` through their own manifests as before; no cycle
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `Cargo.toml` and `deny.toml` carry exactly the entries stated above, and every other key of both files is unchanged
+    * `[✅]`   `Cargo.lock` records `halo2curves` `0.10.0` from `git+https://github.com/tsylvester/halo2curves?branch=gt-accessor` at a pinned commit, and no `halo2curves` from crates.io
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning on Windows, macOS, and Linux
+    * `[✅]`   Every existing test in the workspace passes unchanged, the branch's crate behaving as the published `0.10.0` in everything the workspace already calls
+
+* `[ ]`   `pairing/bn254_halo2curves` **BN254 halo2curves concrete implements the pairing family's arithmetic trait: scalar-field arithmetic, source-group negation, identity tests, pairing into the target group, and target-group encoding under the family's declared identifier, proven against the independent vector**
 
   * `[ ]`   `objective`
-    * `[ ]`   Problem: the credential KEM encapsulates and decapsulates a target-group value `K` the key-derivation family consumes as bytes, checks validity and well-formedness as pairing equations whose sides are divided, and refuses a trivial identity element; the envelope decrypts by removing a masked source-group element and rejects identity-element keys; the delivery proof computes Schnorr responses in the scalar field; and the decrypted credential is a pair of source-group elements that must be zeroized; the family's generic interface offers none of these, so every one passes through the family, and no module outside a concrete names a curve library (CR-04; CR-07; CR-08; CR-09; `docs/research/cryptography.md`'s Credential KEM, Key Agreement, and Delivery Proof statements)
-    * `[ ]`   Functional: the family's arithmetic trait extends the generic interface with the scalar field's addition, multiplication, and negation modulo the group order
-    * `[ ]`   Functional: it negates a point in either source group, the identity negating to the identity
-    * `[ ]`   Functional: it reports whether a point in either source group is the identity
-    * `[ ]`   Functional: it computes the product of the pairings of a list of first-group and second-group pairs as a value of the target group, an empty list yielding the target group's identity; division is realized by negating a first-group input, so no target-group arithmetic exists above the concrete
-    * `[ ]`   Functional: it encodes a target-group value as its twelve base-field coefficients in the tower order of the degree-twelve extension, `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, each the coefficient's big-endian canonical integer at the base field's byte width, returned inside a `Secret`, since `K` is decrypt-capable
-    * `[ ]`   Functional: the trait requires the source-group types to implement `Zeroize` and its target-group type to implement `Zeroize`, and the BN254 arkworks concrete's first-group, second-group, and target-group types zeroize their value through `Zeroize` and on drop
-    * `[ ]`   Non-functional: `ark-bn254`, `ark-ec`, and `ark-ff` remain named only inside `adapters/pairing/src/bn254_arkworks`; the arithmetic trait is a separate trait so the other concretes keep compiling until each implements it; the generic interface, the factory function, and the declaration are unchanged
+    * `[ ]`   Problem: the KEM, the envelope, and the delivery proof consume the pairing family's arithmetic trait through whichever concrete the factory resolves, so the BN254 halo2curves concrete implements it with target-group encodings equal to the reference vector, and therefore to the arkworks concrete's, under the one identifier both declare (CR-04; CR-07; CR-08; CR-09; CR-10)
+    * `[✅]`   Functional: `Bn254Halo2curvesPairing` implements `IPairingArithmetic` with every method's behavior as `pairing/bn254_arkworks` states it for the trait
+    * `[ ]`   Functional: the target-group encoding reads the `Fq12` through `Gt::inner`, which the `halo2curves` overlay the `workspace/cargo` node binds supplies, and writes its twelve coefficients in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, each 32 bytes big-endian; halo2curves' BN256 tower, `Fq6 = Fq2[v] / (v^3 - (u + 9))` and `Fq12 = Fq6[w] / (w^2 - v)`, is arkworks' tower, so equal values encode to equal bytes; whether the library computes the protocol's value for the protocol's inputs is proven against the reference vector, never assumed from the tower
+    * `[ ]`   Functional: the concrete declares `TargetGroupEncodingIdentifier::Bn254V1`, and its encoding of the pairing of the two generators equals the vector `pairing/bn254_arkworks` derives from the identifier's definition; the library's final exponentiation is the exact exponent by its own source, so no adaptation is expected, and where the comparison against the vector shows otherwise this concrete realizes the identifier inside its `pairing_product` or `encode_gt`, since the identifier, not the library, fixes the bytes
+    * `[✅]`   Functional: `Bn254Halo2curvesG1`, `Bn254Halo2curvesG2`, and `Bn254Halo2curvesGt` clear their value through `Zeroize` and on drop
+    * `[✅]`   Non-functional: `halo2curves` remains named only inside `adapters/pairing/src/bn254_halo2curves`; the family's interface, mock, and factory are unchanged
+
+  * `[✅]`   `role`
+    * `[✅]`   Adapter: a further concrete implementing the trait `pairing/bn254_arkworks` authored
+    * `[✅]`   Does not edit `factory/interface.rs`, `factory/mock.rs`, or any other concrete
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `bn254_halo2curves` concrete's target-group type, its implementation of `IPairingArithmetic`, its source-group and target-group clearing, and the builder default for its target-group type
+    * `[✅]`   Edits the `bn254_halo2curves` module's `interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, and `mod.rs`; nothing else in the crate changes
+
+  * `[✅]`   `deps`
+    * `[✅]`   The `factory` module's surface, same crate, through `crate::factory::provides`: `IPairingArithmetic` and its params, payloads, success returns, and builders, as `pairing/bn254_arkworks` authors them
+    * `[✅]`   `halo2curves` `0.10.0` from the overlay branch `gt-accessor`, the existing runtime dependency, resolved through the `workspace/cargo` node's patch; supplies `Gt::inner(&self) -> &Fq12`
+    * `[✅]`   `domain`, the existing runtime dependency: `Secret` and `SecretConstructorParams`
+    * `[✅]`   `hex`, the existing dev-dependency, for the vectors
+    * `[✅]`   `core::hint::black_box`, standard library, the existing clearing idiom
+    * `[✅]`   No new external crate; `adapters/pairing/Cargo.toml` is unchanged
+
+  * `[✅]`   `context_slice`
+    * `[✅]`   From `halo2curves::ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `PrimeField::to_repr()` on `Fq`, 32 little-endian bytes
+    * `[✅]`   From `halo2curves`: unary `-` on `G1Affine` and `G2Affine`; `PrimeCurveAffine::is_identity()` returning a `Choice`; `PrimeCurveAffine::identity()`; `Bn256::multi_miller_loop(&[(&G1Affine, &G2Affine)])` and `MillerLoopResult::final_exponentiation()` returning `Gt`; `Gt::identity()`; `Gt::inner()`; `c0()` and `c1()` on the degree-two and degree-twelve extensions and `c0()`, `c1()`, and `c2()` on the degree-six extension; `pairing::Engine::pairing(&G1Affine, &G2Affine)` for the builder default
+    * `[✅]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`
+
+  * `[✅]`   `adapters/pairing/src/bn254_halo2curves/interface.rs`
+    * `[✅]`   `Bn254Halo2curvesGt`, a struct with no derives and one field `pub(super) value: halo2curves::bn256::Gt`
+    * `[✅]`   Every item already in this file is unchanged
+
+  * `[✅]`   `adapters/pairing/src/bn254_halo2curves/interaction.spec.md`
+    * `[✅]`   Adds a section per new method in the file's existing table form, below the existing sections and above `Ordering and edges`
+    * `[✅]`   `add_scalar`, `mul_scalar`: one branch each; dependency call `Fr`'s `+` or `*` over the payload scalars' values; outcome `Ok` holding the sum or product modulo the group order; the payload's scalars are cleared as it drops
+    * `[✅]`   `neg_scalar`: one branch; dependency call `Fr`'s unary `-`; outcome `Ok` holding the group order minus the scalar, and zero for zero
+    * `[✅]`   `neg_g1`, `neg_g2`: one branch each; dependency call the affine point's unary `-`; outcome `Ok` holding the negation, the identity for the identity
+    * `[✅]`   `is_identity_g1`, `is_identity_g2`: one branch each; dependency call `is_identity()` on the payload point; outcome `Ok` holding `bool::from` of the `Choice`
+    * `[✅]`   `pairing_product`: one branch; the terms as a `Vec<(&G1Affine, &G2Affine)>` in term order; dependency call `Bn256::multi_miller_loop`, then `final_exponentiation()`; outcome `Ok(PairingProductSuccessReturn { product })` holding the `Gt` in the owned target-group type; an empty term list yields the target group's identity
+    * `[✅]`   `encode_gt`: one branch; dependency call `inner()` on the payload's `Gt`, then each of the twelve `Fq` coefficients' `to_repr()` reversed to 32 big-endian bytes, appended in the tower order into one 384-byte buffer; outcome `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`
+    * `[✅]`   `Ordering and edges` gains: halo2curves' affine points and `Gt` implement no `Zeroize`, so `Bn254Halo2curvesG1`, `Bn254Halo2curvesG2`, and `Bn254Halo2curvesGt` clear by setting `value` to `G1Affine::identity()`, `G2Affine::identity()`, or `Gt::identity()` and passing `&self.value` to `black_box`, in their `Zeroize` implementations and their `Drop`
+
+  * `[✅]`   `adapters/pairing/src/bn254_halo2curves/mock.rs`
+    * `[✅]`   `impl Default for Bn254Halo2curvesGt` returning `Bn256::pairing(&G1Affine::generator(), &G2Affine::generator())`, the library's reduced pairing of the two generators, a non-identity target-group value whose exact bytes no test asserts
+    * `[✅]`   The imports gain `halo2curves::bn256::Bn256` and `halo2curves::pairing::Engine`; every existing default is unchanged
+
+  * `[✅]`   `adapters/pairing/src/bn254_halo2curves/test.rs`
+    * `[✅]`   Every existing test and constant is unchanged; the new tests are appended; the imports gain `IPairingArithmetic` and the new params, overrides, and builders from `crate::factory::provides`
+    * `[ ]`   The new constants, as hex, are those `pairing/bn254_arkworks` adds: zero, one, six, the negated first-group generator, 31 zero bytes and `01` followed by `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45`, and `GENERATOR_PAIRING_ENCODING_HEX`, the same 384-byte reference vector; the target group's identity encoding is `vec![0u8; 384]` with index `31` set to `1`
+    * `[ ]`   `pairing_product_of_the_generators_encodes_to_the_reference_vector` and `declaration_names_the_bn254_target_group_encoding`, as `pairing/bn254_arkworks` states them, over this concrete's subject and `Bn254Halo2curvesPairing::DECLARATION`
+    * `[✅]`   The new tests carry the names, arrangements, acts, and assertions `pairing/bn254_arkworks` states, with the subject constructed by `let Ok(pairing) = Bn254Halo2curvesPairing::try_new(Bn254Halo2curvesPairingConstructorParams);`: `add_scalar_of_two_and_three_is_five`, `add_scalar_reduces_modulo_the_group_order`, `mul_scalar_of_two_and_three_is_six`, `mul_scalar_reduces_modulo_the_group_order`, `neg_scalar_of_one_is_the_group_order_minus_one`, `neg_scalar_of_zero_is_zero`, `neg_g1_of_the_generator_negates_its_y_coordinate`, `neg_g1_of_the_identity_is_the_identity`, `neg_g2_of_the_generator_sums_with_the_generator_to_the_identity`, `is_identity_g1_is_true_for_the_identity`, `is_identity_g1_is_false_for_the_generator`, `is_identity_g2_is_true_for_the_identity`, `is_identity_g2_is_false_for_the_generator`, `pairing_product_of_no_terms_encodes_as_the_target_group_identity`, `pairing_product_of_the_generators_is_not_the_target_group_identity`, `pairing_product_is_bilinear`, `pairing_product_multiplies_its_terms`, and `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`
+    * `[✅]`   Every new test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
+
+  * `[✅]`   `construction`
+    * `[✅]`   A target-group value is produced only by `pairing_product`; no consumer constructs one from library values
+
+  * `[✅]`   `adapters/pairing/src/bn254_halo2curves/mod.rs`
+    * `[✅]`   `impl IPairingArithmetic for Bn254Halo2curvesPairing` with `type Gt = Bn254Halo2curvesGt;` and every method realizing its branch in the interaction spec
+    * `[ ]`   `Bn254Halo2curvesPairing::DECLARATION` gains `target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1`; `pairing_product` and `encode_gt` realize that identifier, so the output equals the vector for the reference inputs; the library's final exponentiation is the exact exponent, so the expected adaptation is none; the comparison's outcome is recorded here before implementation, and any adaptation it shows lives in this concrete and nowhere else
+    * `[✅]`   `impl Zeroize` and `impl Drop` for `Bn254Halo2curvesG1`, `Bn254Halo2curvesG2`, and `Bn254Halo2curvesGt`, each setting `value` to its type's identity and calling `black_box(&self.value)`
+    * `[✅]`   The imports gain `IPairingArithmetic` and the new types from `crate::factory::provides`, `halo2curves::bn256::Gt`, and `Bn254Halo2curvesGt` from `interface`
+    * `[✅]`   Every existing item is unchanged; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `bn254_halo2curves` depends on the `factory` module's surface, on `domain`, on `zeroize`, and on `halo2curves`, as before; no new edge and no cycle
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning
+    * `[✅]`   Every existing test in the crate passes unchanged, and every new test named above passes (CR-04, CR-08, CR-09 on BN254 over halo2curves)
+    * `[ ]`   `pairing_product_of_the_generators_encodes_to_the_reference_vector` and `declaration_names_the_bn254_target_group_encoding` pass (CR-10, the target-group value fixed by the protocol against an independent reference)
+    * `[✅]`   `Bn254Halo2curvesG1`, `Bn254Halo2curvesG2`, and `Bn254Halo2curvesGt` implement `Zeroize` and `Drop` (CR-07)
+    * `[✅]`   `halo2curves` is named nowhere in the crate outside `adapters/pairing/src/bn254_halo2curves` and `adapters/pairing/src/bls12_381_halo2curves`
+
+* `[ ]`   `pairing/bls12_381_arkworks` **BLS12-381 arkworks concrete implements the pairing family's arithmetic trait: scalar-field arithmetic, source-group negation, identity tests, pairing into the target group, and target-group encoding under the family's declared identifier, proven against the independent vector**
+
+  * `[ ]`   `objective`
+    * `[✅]`   Problem: the KEM, the envelope, and the delivery proof consume the pairing family's arithmetic trait through whichever concrete the factory resolves, and BLS12-381 is the primary verifier form on Base, so the BLS12-381 arkworks concrete implements it (CR-04; CR-07; CR-08; CR-09)
+    * `[ ]`   Functional: the concrete declares `TargetGroupEncodingIdentifier::Bls12381V1`, the optimal ate pairing as the CFRG pairing-friendly-curves draft fixes it over the EIP-2537 generators serialized as the twelve 48-byte tower coefficients below, and its encoding of the pairing of the two generators equals the known-answer vector derived from the identifier's definition, the pairing of the base points the CFRG draft publishes, confirmed by an explicit computation of the exact exponent independent of arkworks and halo2curves (CR-10); the library's reduced pairing is the Hayashida multiple of the exact value, by its own source, so this concrete realizes the identifier inside `pairing_product` by the exponent that inverts the multiple, which the vector proves
+    * `[✅]`   Functional: `Bls12381ArkworksPairing` implements `IPairingArithmetic` with every method's behavior as `pairing/bn254_arkworks` states it for the trait
+    * `[✅]`   Functional: the target-group encoding writes the twelve `Fq` coefficients of the `Fq12` in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, each 48 bytes big-endian, BLS12-381's base-field byte width, 576 bytes in all, without the 16-byte padding EIP-2537 adds to source-group coordinates
+    * `[✅]`   Functional: `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt` zeroize their value through `Zeroize` and on drop
+    * `[✅]`   Non-functional: `ark-bls12-381`, `ark-ec`, and `ark-ff` remain named only inside the arkworks concretes; the family's interface, mock, and factory are unchanged
+
+  * `[✅]`   `role`
+    * `[✅]`   Adapter: a further concrete implementing the trait `pairing/bn254_arkworks` authored
+    * `[✅]`   Does not edit `factory/interface.rs`, `factory/mock.rs`, or any other concrete
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `bls12_381_arkworks` concrete's target-group type, its implementation of `IPairingArithmetic`, its source-group and target-group zeroization, and the builder default for its target-group type
+    * `[✅]`   Edits the `bls12_381_arkworks` module's `interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, and `mod.rs`; nothing else in the crate changes
+
+  * `[✅]`   `deps`
+    * `[✅]`   The `factory` module's surface, same crate, through `crate::factory::provides`: `IPairingArithmetic` and its params, payloads, success returns, and builders, as `pairing/bn254_arkworks` authors them
+    * `[✅]`   `ark-bls12-381`, `ark-ec`, and `ark-ff`, the existing runtime dependencies; `domain` and `zeroize`, the existing runtime dependencies; `hex`, the existing dev-dependency
+    * `[✅]`   No new external crate; `adapters/pairing/Cargo.toml` is unchanged
+
+  * `[✅]`   `context_slice`
+    * `[✅]`   From `ark-ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; the public fields `c0` and `c1` of the degree-two and degree-twelve extensions and `c0`, `c1`, and `c2` of the degree-six extension; `PrimeField::into_bigint()` and `BigInteger::to_bytes_be()` on `Fq`, 48 bytes
+    * `[ ]`   From `ark-ec`: unary `-` on the short-Weierstrass affine point; `AffineRepr::is_zero()`; `pairing::Pairing::multi_pairing` over iterators of borrowed affine points, returning `PairingOutput<Bls12_381>` with public field `0`; `Mul<Fr> for PairingOutput<Bls12_381>`, the exponentiation of a target-group value by a scalar; `Pairing::pairing(p, q)`; `Zeroize` for `Affine` and for `PairingOutput`; from `ark-ff`, `MontFp!` for the inverse constant as a compile-time `Fr`
+    * `[✅]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`
+
+  * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/interface.rs`
+    * `[✅]`   `Bls12381ArkworksGt`, a struct with no derives and one field `pub(super) value: ark_ec::pairing::PairingOutput<ark_bls12_381::Bls12_381>`
+    * `[✅]`   Every item already in this file is unchanged
+
+  * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/interaction.spec.md`
+    * `[✅]`   Adds a section per new method, in the file's existing form, below the existing sections and above its ordering and edges
+    * `[✅]`   `add_scalar`, `mul_scalar`: one branch each; dependency call `Fr`'s `+` or `*`; outcome `Ok` holding the sum or product modulo the group order; the payload's scalars are zeroized as it drops
+    * `[✅]`   `neg_scalar`: one branch; dependency call `Fr`'s unary `-`; outcome `Ok` holding the group order minus the scalar, and zero for zero
+    * `[✅]`   `neg_g1`, `neg_g2`: one branch each; dependency call the affine point's unary `-`; outcome `Ok` holding the negation, the identity for the identity
+    * `[✅]`   `is_identity_g1`, `is_identity_g2`: one branch each; dependency call `AffineRepr::is_zero()`; outcome `Ok` holding `is_identity`
+    * `[ ]`   `pairing_product`: one branch; the terms split into a `Vec<G1Affine>` and a `Vec<G2Affine>` in term order; dependency call `Bls12_381::multi_pairing(&g1s, &g2s)`, then the `PairingOutput` multiplied by the inverse constant this node's `mod.rs` states, the exponentiation that brings the library's reduced pairing to the identifier's exact value, then `zeroize` on both vectors; outcome `Ok(PairingProductSuccessReturn { product })` holding the exponentiated `PairingOutput` in the owned target-group type; an empty term list yields the target group's identity, which the exponentiation preserves
+    * `[✅]`   `encode_gt`: one branch; dependency call `into_bigint().to_bytes_be()` on each of the twelve `Fq` coefficients of `payload.value.value.0` in the tower order, appended into one 576-byte buffer; outcome `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`; the target group's identity encodes as 47 zero bytes, `01`, and 528 zero bytes
+    * `[✅]`   Zeroization: `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt` each zeroize their `value` through their `Zeroize` implementation and on drop
+
+  * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/mock.rs`
+    * `[ ]`   `impl Default for Bls12381ArkworksGt` returning `Bls12_381::pairing(G1Affine::generator(), G2Affine::generator())`, the library's reduced pairing of the two generators, a non-identity target-group value whose exact bytes no test asserts and which is not the identifier's value of that pairing
+    * `[✅]`   The imports gain `ark_bls12_381::Bls12_381` and `ark_ec::pairing::Pairing`; every existing default is unchanged
+
+  * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/test.rs`
+    * `[✅]`   Every existing test and constant is unchanged; the new tests are appended; the imports gain `IPairingArithmetic` and the new params, overrides, and builders from `crate::factory::provides`
+    * `[✅]`   The new constants, as hex: zero, 32 zero bytes; one, 31 zero bytes and `01`; six, 31 zero bytes and `06`; the negated first-group generator in EIP-2537's 128 bytes, 16 zero bytes and `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`, then 16 zero bytes and `114d1d6855d545a8aa7d76c8cf2e21f267816aef1db507c96655b9d5caac42364e6f38ba0ecb751bad54dcd6b939c2ca`, the generator's `y` subtracted from the base field modulus; the target group's identity encoding is `vec![0u8; 576]` with index `47` set to `1`
+    * `[ ]`   `GENERATOR_PAIRING_ENCODING_HEX`, the 576-byte encoding of the pairing of the two generators under `TargetGroupEncodingIdentifier::Bls12381V1`, in the tower coefficient order the objective states, derived from the identifier's definition as the twelve coefficients `e_0` through `e_11` of the pairing of the base points in the CFRG pairing-friendly-curves draft's test-vector appendix, concatenated in order, the draft's inductive octet rule being this order, and equal to gnark-crypto's `bls12381.MillerLoop` over its generators raised through `E12.Exp` to the integer `(p^12 - 1) / r` with each `fp.Element` written through `Bytes()`, which confirms the order; no library's own reduced pairing is the vector; the draft's revision, gnark-crypto's version, and the authoring script are recorded here beside the value; its value is recorded in this node before implementation, as `kdf/blake3_keyed` records its independent vectors
+    * `[ ]`   `pairing_product_of_the_generators_encodes_to_the_reference_vector` and `declaration_names_the_bls12_381_target_group_encoding`, as `pairing/bn254_arkworks` states their BN254 forms, over this concrete's subject, `GENERATOR_PAIRING_ENCODING_HEX`, `Bls12381ArkworksPairing::DECLARATION`, and `TargetGroupEncodingIdentifier::Bls12381V1`
+    * `[✅]`   The new tests carry the names, arrangements, acts, and assertions `pairing/bn254_arkworks` states, over this concrete's vectors, `r - 1` the existing `GROUP_ORDER_MINUS_ONE_HEX`, the first-group identity from 128 zero bytes, and the second-group identity from 256 zero bytes, with the subject constructed by `let Ok(pairing) = Bls12381ArkworksPairing::try_new(Bls12381ArkworksPairingConstructorParams);`: `add_scalar_of_two_and_three_is_five`, `add_scalar_reduces_modulo_the_group_order`, `mul_scalar_of_two_and_three_is_six`, `mul_scalar_reduces_modulo_the_group_order`, `neg_scalar_of_one_is_the_group_order_minus_one`, `neg_scalar_of_zero_is_zero`, `neg_g1_of_the_generator_negates_its_y_coordinate`, `neg_g1_of_the_identity_is_the_identity`, `neg_g2_of_the_generator_sums_with_the_generator_to_the_identity`, `is_identity_g1_is_true_for_the_identity`, `is_identity_g1_is_false_for_the_generator`, `is_identity_g2_is_true_for_the_identity`, `is_identity_g2_is_false_for_the_generator`, `pairing_product_of_no_terms_encodes_as_the_target_group_identity`, `pairing_product_of_the_generators_is_not_the_target_group_identity` asserting 576 bytes, `pairing_product_is_bilinear`, `pairing_product_multiplies_its_terms`, and `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`
+    * `[✅]`   Every new test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
+
+  * `[✅]`   `construction`
+    * `[✅]`   A target-group value is produced only by `pairing_product`; no consumer constructs one from library values
+
+  * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/mod.rs`
+    * `[✅]`   `impl IPairingArithmetic for Bls12381ArkworksPairing` with `type Gt = Bls12381ArkworksGt;` and every method realizing its branch in the interaction spec
+    * `[ ]`   `Bls12381ArkworksPairing::DECLARATION` gains `target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1`; `pairing_product` realizes that identifier over the library's reduced pairing, which `ark-ec`'s BLS12 final exponentiation computes as the Hayashida multiple of the exact value, by raising the library's value to that multiple's inverse modulo the group order, a constant this node derives from the standard's parameters and records beside the vector once the comparison against the vector confirms the multiple; the constant is definitional for this library and identifier, never configured, and lives in this concrete and nowhere else; the comparison's outcome is recorded here before implementation
+    * `[✅]`   `impl Zeroize` and `impl Drop` for `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt`, each calling `self.value.zeroize()`
+    * `[ ]`   The imports gain `IPairingArithmetic` and the new types from `crate::factory::provides`, `Bls12381ArkworksGt` from `interface`, `ark_bls12_381::Fr`, and `ark_ff::MontFp`; the inverse constant is a private `const` of type `Fr` in this file, named for what it is, with the derivation stated in its doc comment
+    * `[✅]`   Every existing item is unchanged; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `bls12_381_arkworks` depends on the `factory` module's surface, on `domain`, on `zeroize`, and on the arkworks crates, as before; no new edge and no cycle
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning
+    * `[✅]`   Every existing test in the crate passes unchanged, and every new test named above passes (CR-04, CR-08, CR-09 on BLS12-381 over arkworks)
+    * `[ ]`   `pairing_product_of_the_generators_encodes_to_the_reference_vector` and `declaration_names_the_bls12_381_target_group_encoding` pass (CR-10, the target-group value fixed by the protocol against an independent reference)
+    * `[✅]`   `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt` implement `Zeroize` and `Drop` (CR-07)
+
+* `[ ]`   `pairing/bls12_381_halo2curves` **BLS12-381 halo2curves concrete implements the pairing family's arithmetic trait: scalar-field arithmetic, source-group negation, identity tests, pairing into the target group, and target-group encoding under the family's declared identifier, proven against the independent vector**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: the KEM, the envelope, and the delivery proof consume the pairing family's arithmetic trait through whichever concrete the factory resolves, so the BLS12-381 halo2curves concrete implements it with target-group encodings equal to the reference vector, and therefore to the BLS12-381 arkworks concrete's, under the one identifier both declare (CR-04; CR-07; CR-08; CR-09; CR-10)
+    * `[ ]`   Functional: the concrete declares `TargetGroupEncodingIdentifier::Bls12381V1`, and its encoding of the pairing of the two generators equals the vector `pairing/bls12_381_arkworks` derives from the identifier's definition; the library's reduced pairing is the Hayashida multiple of the exact value, by its own source, so this concrete realizes the identifier inside `pairing_product` by the exponent that inverts the multiple, as `pairing/bls12_381_arkworks` states it, which the vector proves
+    * `[✅]`   Functional: `Bls12381Halo2curvesPairing` implements `IPairingArithmetic` with every method's behavior as `pairing/bn254_arkworks` states it for the trait
+    * `[✅]`   Functional: the target-group encoding reads the `Fq12` through `Gt::inner`, which the `halo2curves` overlay the `workspace/cargo` node binds supplies, and writes its twelve coefficients in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, each 48 bytes big-endian, 576 bytes in all; halo2curves' BLS12-381 tower, `Fq2 = Fq[u] / (u^2 + 1)`, `Fq6 = Fq2[v] / (v^3 - (u + 1))`, and `Fq12 = Fq6[w] / (w^2 - v)`, is arkworks' tower, so equal values encode to equal bytes; whether the library computes the protocol's value for the protocol's inputs is proven against the reference vector, never assumed from the tower
+    * `[✅]`   Functional: `Bls12381Halo2curvesG1`, `Bls12381Halo2curvesG2`, and `Bls12381Halo2curvesGt` clear their value through `Zeroize` and on drop
+    * `[✅]`   Non-functional: `halo2curves` remains named only inside the halo2curves concretes; the family's interface, mock, and factory are unchanged
+
+  * `[✅]`   `role`
+    * `[✅]`   Adapter: a further concrete implementing the trait `pairing/bn254_arkworks` authored; the last concrete to implement it, so every concrete beneath the factory implements it when this node completes
+    * `[✅]`   Does not edit `factory/interface.rs`, `factory/mock.rs`, or any other concrete
+    * `[✅]`   Does not carry a commit
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `bls12_381_halo2curves` concrete's target-group type, its implementation of `IPairingArithmetic`, its source-group and target-group clearing, and the builder default for its target-group type
+    * `[✅]`   Edits the `bls12_381_halo2curves` module's `interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, and `mod.rs`; nothing else in the crate changes
+
+  * `[✅]`   `deps`
+    * `[✅]`   The `factory` module's surface, same crate, through `crate::factory::provides`: `IPairingArithmetic` and its params, payloads, success returns, and builders, as `pairing/bn254_arkworks` authors them
+    * `[✅]`   `halo2curves` `0.10.0` from the overlay branch `gt-accessor`, the existing runtime dependency, resolved through the `workspace/cargo` node's patch; supplies `Gt::inner(&self) -> &Fq12`
+    * `[✅]`   `domain`, the existing runtime dependency: `Secret` and `SecretConstructorParams`; `hex`, the existing dev-dependency
+    * `[✅]`   `core::hint::black_box`, standard library, the existing clearing idiom
+    * `[✅]`   No new external crate; `adapters/pairing/Cargo.toml` is unchanged
+
+  * `[✅]`   `context_slice`
+    * `[✅]`   From `halo2curves::ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `PrimeField::to_repr()` on `Fq`, 48 little-endian bytes
+    * `[ ]`   From `halo2curves`: unary `-` on `G1Affine` and `G2Affine`; `PrimeCurveAffine::is_identity()` returning a `Choice`; `PrimeCurveAffine::identity()`; `Bls12381::multi_miller_loop(&[(&G1Affine, &G2Affine)])` and `MillerLoopResult::final_exponentiation()` returning `Gt`; `Mul<&Fr> for &Gt`, the exponentiation of a target-group value by a scalar, which the library realizes as constant-time double-and-add over the group written additively; `Fr::from_raw` for the inverse constant as a compile-time `Fr`; `Gt::identity()`; `Gt::inner()`; `c0()` and `c1()` on the degree-two and degree-twelve extensions and `c0()`, `c1()`, and `c2()` on the degree-six extension; `pairing::Engine::pairing(&G1Affine, &G2Affine)` for the builder default
+    * `[✅]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`
+
+  * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/interface.rs`
+    * `[✅]`   `Bls12381Halo2curvesGt`, a struct with no derives and one field `pub(super) value: halo2curves::bls12381::Gt`
+    * `[✅]`   Every item already in this file is unchanged
+
+  * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/interaction.spec.md`
+    * `[✅]`   Adds a section per new method in the file's existing table form, below the existing sections and above `Ordering and edges`
+    * `[✅]`   `add_scalar`, `mul_scalar`: one branch each; dependency call `Fr`'s `+` or `*` over the payload scalars' values; outcome `Ok` holding the sum or product modulo the group order; the payload's scalars are cleared as it drops
+    * `[✅]`   `neg_scalar`: one branch; dependency call `Fr`'s unary `-`; outcome `Ok` holding the group order minus the scalar, and zero for zero
+    * `[✅]`   `neg_g1`, `neg_g2`: one branch each; dependency call the affine point's unary `-`; outcome `Ok` holding the negation, the identity for the identity
+    * `[✅]`   `is_identity_g1`, `is_identity_g2`: one branch each; dependency call `is_identity()` on the payload point; outcome `Ok` holding `bool::from` of the `Choice`
+    * `[ ]`   `pairing_product`: one branch; the terms as a `Vec<(&G1Affine, &G2Affine)>` in term order; dependency call `Bls12381::multi_miller_loop`, then `final_exponentiation()`, then the `Gt` multiplied by the inverse constant this node's `mod.rs` states, the exponentiation that brings the library's reduced pairing to the identifier's exact value; outcome `Ok(PairingProductSuccessReturn { product })` holding the exponentiated `Gt` in the owned target-group type; an empty term list yields the target group's identity, which the exponentiation preserves
+    * `[✅]`   `encode_gt`: one branch; dependency call `inner()` on the payload's `Gt`, then each of the twelve `Fq` coefficients' `to_repr()` reversed to 48 big-endian bytes, appended in the tower order into one 576-byte buffer; outcome `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`
+    * `[✅]`   `Ordering and edges` gains: halo2curves' affine points and `Gt` implement no `Zeroize`, so `Bls12381Halo2curvesG1`, `Bls12381Halo2curvesG2`, and `Bls12381Halo2curvesGt` clear by setting `value` to `G1Affine::identity()`, `G2Affine::identity()`, or `Gt::identity()` and passing `&self.value` to `black_box`, in their `Zeroize` implementations and their `Drop`
+
+  * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/mock.rs`
+    * `[ ]`   `impl Default for Bls12381Halo2curvesGt` returning `Bls12381::pairing(&G1Affine::generator(), &G2Affine::generator())`, the library's reduced pairing of the two generators, a non-identity target-group value whose exact bytes no test asserts and which is not the identifier's value of that pairing
+    * `[✅]`   The imports gain `halo2curves::bls12381::Bls12381` and `halo2curves::pairing::Engine`; every existing default is unchanged
+
+  * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/test.rs`
+    * `[✅]`   Every existing test and constant is unchanged; the new tests are appended; the imports gain `IPairingArithmetic` and the new params, overrides, and builders from `crate::factory::provides`
+    * `[✅]`   The new constants are those `pairing/bls12_381_arkworks` adds: zero, one, and six as 32-byte scalars, and the negated first-group generator in EIP-2537's 128 bytes, 16 zero bytes and `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`, then 16 zero bytes and `114d1d6855d545a8aa7d76c8cf2e21f267816aef1db507c96655b9d5caac42364e6f38ba0ecb751bad54dcd6b939c2ca`, and `GENERATOR_PAIRING_ENCODING_HEX`, the same 576-byte reference vector; the target group's identity encoding is `vec![0u8; 576]` with index `47` set to `1`
+    * `[ ]`   `pairing_product_of_the_generators_encodes_to_the_reference_vector` and `declaration_names_the_bls12_381_target_group_encoding`, as `pairing/bls12_381_arkworks` states them, over this concrete's subject and `Bls12381Halo2curvesPairing::DECLARATION`
+    * `[✅]`   The new tests carry the names, arrangements, acts, and assertions `pairing/bls12_381_arkworks` states, over the same vectors, the first-group identity from 128 zero bytes, and the second-group identity from 256 zero bytes, with the subject constructed by `let Ok(pairing) = Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);`: `add_scalar_of_two_and_three_is_five`, `add_scalar_reduces_modulo_the_group_order`, `mul_scalar_of_two_and_three_is_six`, `mul_scalar_reduces_modulo_the_group_order`, `neg_scalar_of_one_is_the_group_order_minus_one`, `neg_scalar_of_zero_is_zero`, `neg_g1_of_the_generator_negates_its_y_coordinate`, `neg_g1_of_the_identity_is_the_identity`, `neg_g2_of_the_generator_sums_with_the_generator_to_the_identity`, `is_identity_g1_is_true_for_the_identity`, `is_identity_g1_is_false_for_the_generator`, `is_identity_g2_is_true_for_the_identity`, `is_identity_g2_is_false_for_the_generator`, `pairing_product_of_no_terms_encodes_as_the_target_group_identity`, `pairing_product_of_the_generators_is_not_the_target_group_identity` asserting 576 bytes, `pairing_product_is_bilinear`, `pairing_product_multiplies_its_terms`, and `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`
+    * `[✅]`   Every new test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
+
+  * `[✅]`   `construction`
+    * `[✅]`   A target-group value is produced only by `pairing_product`; no consumer constructs one from library values
+
+  * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/mod.rs`
+    * `[✅]`   `impl IPairingArithmetic for Bls12381Halo2curvesPairing` with `type Gt = Bls12381Halo2curvesGt;` and every method realizing its branch in the interaction spec
+    * `[ ]`   `Bls12381Halo2curvesPairing::DECLARATION` gains `target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1`; `pairing_product` realizes that identifier over the library's reduced pairing, which `halo2curves`' BLS12-381 final exponentiation computes as the Hayashida multiple of the exact value, by raising the library's value to the same inverse constant `pairing/bls12_381_arkworks` derives, once the comparison against the vector confirms the multiple for this library too; the constant lives in this concrete and nowhere else; the comparison's outcome is recorded here before implementation
+    * `[✅]`   `impl Zeroize` and `impl Drop` for `Bls12381Halo2curvesG1`, `Bls12381Halo2curvesG2`, and `Bls12381Halo2curvesGt`, each setting `value` to its type's identity and calling `black_box(&self.value)`
+    * `[ ]`   The imports gain `IPairingArithmetic` and the new types from `crate::factory::provides`, `halo2curves::bls12381::Gt`, `halo2curves::bls12381::Fr`, and `Bls12381Halo2curvesGt` from `interface`; the inverse constant is a private `const` of type `Fr` in this file through `Fr::from_raw`, named for what it is, with the derivation stated in its doc comment
+    * `[✅]`   Every existing item is unchanged; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `bls12_381_halo2curves` depends on the `factory` module's surface, on `domain`, on `zeroize`, and on `halo2curves`, as before; no new edge and no cycle
+    * `[✅]`   Every concrete beneath the pairing factory now implements `IPairingArithmetic`; `pairing/factory` requires it of the concrete a consumer receives
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning
+    * `[✅]`   Every existing test in the crate passes unchanged, and every new test named above passes (CR-04, CR-08, CR-09 on BLS12-381 over halo2curves)
+    * `[ ]`   `pairing_product_of_the_generators_encodes_to_the_reference_vector` and `declaration_names_the_bls12_381_target_group_encoding` pass (CR-10, the target-group value fixed by the protocol against an independent reference)
+    * `[✅]`   `Bls12381Halo2curvesG1`, `Bls12381Halo2curvesG2`, and `Bls12381Halo2curvesGt` implement `Zeroize` and `Drop` (CR-07)
+
+* `[ ]`   `pairing/factory` **The pairing factory hands every consumer a concrete that implements the arithmetic trait, admitted only when it declares the target-group encoding identifier the suite requires; carries the integration test proving both libraries on each curve encode the target group identically**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: the KEM, the envelope, and the delivery proof reach a pairing concrete only through `create_pairing` and `IPairingConsumer`, whose consumer is bounded by `IPairingAdapter` alone, so the arithmetic trait every concrete now implements is unreachable through the factory; a capsule encapsulated under one library must decapsulate to the same wrapping key under the other, so both libraries on a curve must encode a target-group value to the same bytes; and the bytes are fixed by the suite's target-group encoding identifier, so the factory admits a concrete only when it declares that identifier, as the KEM factory admits by scope and the delivery-proof factory by algebra, form, and version (CR-08; CR-10; CR-11; the product requirements' canonical target-group value position)
+    * `[✅]`   Functional: `IPairingConsumer::consume_pairing` is bounded by `IPairingArithmetic`, so a consumer calls the arithmetic trait and, through its supertrait, the generic interface on whichever concrete `create_pairing` constructs
+    * `[✅]`   Functional: a consumer whose `consume_pairing` is written against `IPairingAdapter` alone remains a valid implementation, so every existing consumer compiles unchanged
+    * `[✅]`   Functional: the arkworks and halo2curves concretes on BN254 encode the pairing of the same inputs to the same bytes, and likewise on BLS12-381
+    * `[ ]`   Functional: given the target-group encoding identifier the suite requires, the factory refuses a concrete whose declaration does not carry it, with no construction and no call to the consumer, and admits one that does
+    * `[ ]`   Non-functional: `create_pairing`'s payload and return types are unchanged; its params gain the required identifier, the admission rule gains the identifier check, and the error union gains the refusal
 
   * `[ ]`   `role`
-    * `[ ]`   Adapter: the pairing family's first concrete, and the first source file that requires the family's arithmetic trait and its mock, which it authors in the family's `factory` module as its producers
-    * `[ ]`   Does not change `IPairingAdapter`, `IPairingConsumer`, `create_pairing`, or any existing method's behavior, and does not bind the arithmetic trait into the factory; `pairing/factory` requires it of every concrete a consumer receives once every concrete implements it
-    * `[ ]`   Does not implement the arithmetic trait for the BN254 `halo2curves` concrete or either BLS12-381 concrete; each is its own node
-    * `[ ]`   Does not compute in the target group beyond the pairing product and its encoding: no target-group multiplication, exponentiation, or inversion is exposed
-    * `[ ]`   Does not map a target-group value to a key; the key-derivation family derives from the encoding
-    * `[ ]`   Does not carry a commit
+    * `[✅]`   Adapter family factory: binds the arithmetic trait into the consumer surface once every concrete implements it, and carries the family's integration test for the arithmetic trait
+    * `[ ]`   Admits by the chain's precompile encodings and by the suite's target-group encoding identifier, read before any construction
+    * `[ ]`   Does not change the concretes; `MockIPairingConsumer` keeps its `IPairingAdapter`-bounded method, a valid implementation of the tightened trait
+    * `[✅]`   Does not carry a commit; the credential KEM milestone's commit sits on the last node of that milestone's chain
 
   * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `factory` module's arithmetic trait with its target-group associated type, every method's params, payload, success, and return types, and its mock; the `bn254_arkworks` concrete's target-group type, its implementation of the arithmetic trait, its source-group and target-group zeroization, and the builder default for its target-group type
-    * `[ ]`   Edits `adapters/pairing/src/factory/interface.rs`, `adapters/pairing/src/factory/mock.rs`, and the `bn254_arkworks` module's `interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, and `mod.rs`; the crate's manifest, barrel, `provides` files, and `factory/mod.rs` are unchanged
-    * `[ ]`   Outside: the KEM, envelope, and proof algebra built on the trait, the key derivation from the target-group encoding, the cross-library agreement of the encoding, and the factory's binding of the trait
+    * `[ ]`   Bounded context: `IPairingConsumer`, `CreatePairingParams`, and `CreatePairingErrorReturn` in the `factory` module's interface, the params builder in its mock, the admission in its implementation and interaction spec and their unit test, and the crate's integration test under `adapters/pairing/tests`
+    * `[ ]`   Edits `adapters/pairing/src/factory/interface.rs`, `mock.rs`, `interaction.spec.md`, `test.rs`, and `mod.rs`, and `adapters/pairing/tests/integration_test.rs`; nothing else changes
 
-  * `[ ]`   `deps`
-    * `[ ]`   The `factory` module's existing interface, same crate: `IPairingAdapter` with its associated types `Scalar`, `G1`, and `G2`, and `PairingProductTerm`, which the pairing product reuses for its terms
-    * `[ ]`   `domain`, the existing runtime dependency: `Secret` and `SecretConstructorParams` for the target-group encoding; `build_secret` and `SecretConstructorParamsOverrides` through the existing `mocks` feature for the encoding's builder
-    * `[ ]`   `zeroize`, the existing runtime dependency: the `Zeroize` trait the arithmetic trait's bounds name, its implementation for `Vec<Z: Zeroize>`, and its implementations for arkworks' short-Weierstrass affine points and `PairingOutput`
-    * `[ ]`   `ark-bn254`, `ark-ec`, and `ark-ff`, the existing runtime dependencies, named only in `bn254_arkworks`
-    * `[ ]`   `hex`, the existing dev-dependency, for the vectors
-    * `[ ]`   `core::convert::Infallible`, standard library, the error arm of every new method; `core::marker::PhantomData`, standard library, in `factory/mock.rs`
-    * `[ ]`   No new external crate; `adapters/pairing/Cargo.toml` is unchanged; no reverse dependency
+  * `[✅]`   `deps`
+    * `[✅]`   The `factory` module's own interface: `IPairingArithmetic` as `pairing/bn254_arkworks` authors it, and `IPairingConsumer`
+    * `[✅]`   Every concrete's implementation of `IPairingArithmetic`, as `pairing/bn254_arkworks`, `pairing/bn254_halo2curves`, `pairing/bls12_381_arkworks`, and `pairing/bls12_381_halo2curves` state them; `create_pairing` constructs each and so requires each to satisfy the tightened bound
+    * `[✅]`   No new external crate; `adapters/pairing/Cargo.toml` is unchanged
 
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `ark-ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; the public fields `c0` and `c1` of the degree-two and degree-twelve extensions and `c0`, `c1`, and `c2` of the degree-six extension; `PrimeField::into_bigint()` and `BigInteger::to_bytes_be()` on `Fq`
-    * `[ ]`   From `ark-ec`: unary `-` on the short-Weierstrass affine point, returning `(x, -y)` and the identity for the identity; `AffineRepr::is_zero()`, true exactly for the identity; `pairing::Pairing::multi_pairing(a, b)` over iterators of borrowed affine points, returning `PairingOutput<Bn254>`, whose public field `0` is the `Fq12` value and whose identity is `Fq12::one()`; `Pairing::pairing(p, q)`; `Zeroize` for `Affine` and for `PairingOutput`
-    * `[ ]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`, and `Secret::expose(&self) -> &T`
+  * `[✅]`   `context_slice`
+    * `[✅]`   From `IPairingArithmetic`, in the integration test: `pairing_product(&self, PairingProductParams, PairingProductPayload { terms }) -> Result<PairingProductSuccessReturn<Self::Gt>, Infallible>` and `encode_gt(&self, EncodeGtParams, EncodeGtPayload { value }) -> Result<EncodeGtSuccessReturn, Infallible>` with `bytes: Secret<Vec<u8>>`
+    * `[✅]`   From `IPairingAdapter`, in the integration test: `g1_generator`, `g2_generator`, `decode_scalar`, `mul_g1` with `MulG1Payload { point, scalar }`, and `mul_g2` with `MulG2Payload { point, scalar }`
 
   * `[ ]`   `adapters/pairing/src/factory/interface.rs`
-    * `[ ]`   `add_scalar(&self, params: AddScalarParams, payload: AddScalarPayload<Self::Scalar>) -> AddScalarReturn<Self::Scalar>`: the fieldless `AddScalarParams`; `AddScalarPayload<S>` with `pub left: S` and `pub right: S`; `AddScalarSuccessReturn<S>` with `pub sum: S`; `AddScalarReturn<S>`, the alias `Result<AddScalarSuccessReturn<S>, Infallible>`
-    * `[ ]`   `mul_scalar`, the same shape under the `MulScalar` prefix, its success return holding `pub product: S`
-    * `[ ]`   `neg_scalar(&self, params: NegScalarParams, payload: NegScalarPayload<Self::Scalar>) -> NegScalarReturn<Self::Scalar>`: the fieldless `NegScalarParams`; `NegScalarPayload<S>` with `pub scalar: S`; `NegScalarSuccessReturn<S>` with `pub negation: S`; `NegScalarReturn<S>`, the alias `Result<NegScalarSuccessReturn<S>, Infallible>`
-    * `[ ]`   `neg_g1(&self, params: NegG1Params, payload: NegG1Payload<Self::G1>) -> NegG1Return<Self::G1>`: the fieldless `NegG1Params`; `NegG1Payload<G>` with `pub point: G`; `NegG1SuccessReturn<G>` with `pub negation: G`; `NegG1Return<G>`, the alias `Result<NegG1SuccessReturn<G>, Infallible>`
-    * `[ ]`   `neg_g2`, the same shape under the `NegG2` prefix over `Self::G2`
-    * `[ ]`   `is_identity_g1(&self, params: IsIdentityG1Params, payload: IsIdentityG1Payload<Self::G1>) -> IsIdentityG1Return`: the fieldless `IsIdentityG1Params`; `IsIdentityG1Payload<G>` with `pub point: G`; `IsIdentityG1SuccessReturn` with `pub is_identity: bool`; `IsIdentityG1Return`, the alias `Result<IsIdentityG1SuccessReturn, Infallible>`
-    * `[ ]`   `is_identity_g2`, the same shape under the `IsIdentityG2` prefix over `Self::G2`
-    * `[ ]`   `pairing_product(&self, params: PairingProductParams, payload: PairingProductPayload<Self::G1, Self::G2>) -> PairingProductReturn<Self::Gt>`: the fieldless `PairingProductParams`; `PairingProductPayload<G1, G2>` with `pub terms: Vec<PairingProductTerm<G1, G2>>`; `PairingProductSuccessReturn<T>` with `pub product: T`; `PairingProductReturn<T>`, the alias `Result<PairingProductSuccessReturn<T>, Infallible>`
-    * `[ ]`   `encode_gt(&self, params: EncodeGtParams, payload: EncodeGtPayload<Self::Gt>) -> EncodeGtReturn`: the fieldless `EncodeGtParams`; `EncodeGtPayload<T>` with `pub value: T`; `EncodeGtSuccessReturn` with `pub bytes: Secret<Vec<u8>>`; `EncodeGtReturn`, the alias `Result<EncodeGtSuccessReturn, Infallible>`
-    * `[ ]`   `IPairingArithmetic`, the arithmetic trait, `pub trait IPairingArithmetic: IPairingAdapter<G1: Zeroize, G2: Zeroize>` with `type Gt: Zeroize;` and the methods above, each taking `&self`, its params, and its payload, and returning its own return alias
-    * `[ ]`   No derives on any new type; every item already in this file is unchanged; the file's existing imports of `domain::Secret`, `zeroize::Zeroize`, and `core::convert::Infallible` serve the new items; names no vendor and no concrete
-
-  * `[ ]`   `adapters/pairing/src/bn254_arkworks/interface.rs`
-    * `[ ]`   `Bn254ArkworksGt`, a struct with no derives and one field `pub(super) value: ark_ec::pairing::PairingOutput<ark_bn254::Bn254>`, the target-group value
-    * `[ ]`   Every item already in this file is unchanged
-
-  * `[ ]`   `adapters/pairing/src/bn254_arkworks/interaction.spec.md`
-    * `[ ]`   Adds a section per new method in the file's existing table form, below the existing sections and above `Ordering and edges`
-    * `[ ]`   `add_scalar`: one branch; dependency call `Fr`'s `+` over `payload.left.value` and `payload.right.value`; outcome `Ok(AddScalarSuccessReturn { sum })`, the sum modulo the group order in the owned scalar type; the payload, holding both scalars, drops at the end of the call and both are zeroized
-    * `[ ]`   `mul_scalar`: one branch; dependency call `Fr`'s `*`; outcome `Ok(MulScalarSuccessReturn { product })` modulo the group order; the payload's scalars are zeroized as it drops
-    * `[ ]`   `neg_scalar`: one branch; dependency call `Fr`'s unary `-`; outcome `Ok(NegScalarSuccessReturn { negation })`, the group order minus the scalar, and zero for zero
-    * `[ ]`   `neg_g1`: one branch; dependency call the affine point's unary `-`; outcome `Ok(NegG1SuccessReturn { negation })`, `(x, p - y)` for a point `(x, y)` and the identity for the identity
-    * `[ ]`   `neg_g2`: the same over the second group
-    * `[ ]`   `is_identity_g1`: one branch; dependency call `AffineRepr::is_zero()` on the payload point; outcome `Ok(IsIdentityG1SuccessReturn { is_identity })`, `true` exactly for the identity
-    * `[ ]`   `is_identity_g2`: the same over the second group
-    * `[ ]`   `pairing_product`: one branch; the terms are split into a `Vec<G1Affine>` and a `Vec<G2Affine>` in term order; dependency call `Bn254::multi_pairing(&g1s, &g2s)`, then `zeroize` on both vectors; outcome `Ok(PairingProductSuccessReturn { product })` holding the `PairingOutput` in the owned target-group type; an empty term list yields the target group's identity
-    * `[ ]`   `encode_gt`: one branch; dependency call `into_bigint().to_bytes_be()` on each of the twelve `Fq` coefficients of `payload.value.value.0` in the tower order the objective states, appended in that order into one buffer of 384 bytes; outcome `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`; the target group's identity encodes as 31 zero bytes, `01`, and 352 zero bytes
-    * `[ ]`   Zeroization: `Bn254ArkworksG1`, `Bn254ArkworksG2`, and `Bn254ArkworksGt` each zeroize their `value` through their `Zeroize` implementation and on drop, as `Bn254ArkworksScalar` does, so every clone a consumer places in a payload is zeroized when the payload drops
-    * `[ ]`   `params` carries no control and is not read in any new method
-
-  * `[ ]`   `adapters/pairing/src/factory/mock.rs`
-    * `[ ]`   For each new generic struct, an overrides struct named by the type with the suffix `Overrides`, `#[derive(Default)]`, one `Option` per field over the struct's type parameters, and a builder `build_` followed by the type's name in snake case, taking the overrides and returning the production type, each type parameter bounded by `Default`, an omitted field taking `Default::default()` of its type parameter unless stated: `AddScalarPayload`, `AddScalarSuccessReturn`, `MulScalarPayload`, `MulScalarSuccessReturn`, `NegScalarPayload`, `NegScalarSuccessReturn`, `NegG1Payload`, `NegG1SuccessReturn`, `NegG2Payload`, `NegG2SuccessReturn`, `IsIdentityG1Payload`, `IsIdentityG2Payload`, `PairingProductPayload` with `terms` defaulting to an empty `Vec`, `PairingProductSuccessReturn`, and `EncodeGtPayload`
-    * `[ ]`   The new non-generic builders: `IsIdentityG1SuccessReturnOverrides` with `build_is_identity_g1_success_return` and `IsIdentityG2SuccessReturnOverrides` with `build_is_identity_g2_success_return`, `is_identity` defaulting to `false`; `EncodeGtSuccessReturnOverrides` with `build_encode_gt_success_return`, `bytes` defaulting to `build_secret(SecretConstructorParamsOverrides::default())`
-    * `[ ]`   `MockIPairingAdapter` gains the type parameter `Gt` and the field `pub gt: PhantomData<Gt>`, becoming `MockIPairingAdapter<S, G1, G2, Gt>`; its implementation of `IPairingAdapter` keeps its bounds and places none on `Gt`
-    * `[ ]`   `impl<S, G1, G2, Gt> IPairingArithmetic for MockIPairingAdapter<S, G1, G2, Gt>` for `S: ISampleUniformScalar + Clone + Default`, `G1: Zeroize + Clone + Default`, `G2: Zeroize + Clone + Default`, and `Gt: Zeroize + Default`, with `type Gt = Gt;` and every method returning `Ok` holding its success return's builder called with `Default::default()`; a test needing other behavior implements the trait on its own local struct
-    * `[ ]`   `ConsumePairingPayloadOverrides` gains the type parameter `Gt`, its `adapter` field becoming `Option<MockIPairingAdapter<S, G1, G2, Gt>>`; `build_consume_pairing_payload` gains the type parameter `Gt` and returns `ConsumePairingPayload<MockIPairingAdapter<S, G1, G2, Gt>>`, its default adapter setting `gt: PhantomData`
-    * `[ ]`   No builder for the new fieldless params; no corruptions type and no invalidator, since no new struct arrives as untrusted data
-    * `[ ]`   Every other symbol in this file is unchanged; the file's imports gain the new types and `IPairingArithmetic` from `super::interface`
-
-  * `[ ]`   `adapters/pairing/src/bn254_arkworks/mock.rs`
-    * `[ ]`   `impl Default for Bn254ArkworksGt` returning the pairing of the two generators, `Bn254::pairing(G1Affine::generator(), G2Affine::generator())`, the builder default the family's generic builders and `MockIPairingAdapter` read through `Default`
-    * `[ ]`   The file's imports gain `ark_bn254::Bn254` and `ark_ec::pairing::Pairing`; every existing default is unchanged
-
-  * `[ ]`   `adapters/pairing/src/bn254_arkworks/test.rs`
-    * `[ ]`   Every existing test and constant is unchanged; the new tests are appended; the imports gain `IPairingArithmetic` and the new params, overrides, and builders from `crate::factory::provides`
-    * `[ ]`   The new constants, as hex: zero, 32 zero bytes; one, 31 zero bytes and `01`; six, 31 zero bytes and `06`; the negated first-group generator, 31 zero bytes and `01` followed by `p - 2` = `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45`; the target group's identity encoding is written in each test that uses it as `vec![0u8; 384]` with index `31` set to `1`
-    * `[ ]`   `add_scalar_of_two_and_three_is_five`: contract: the sum of two scalars is their sum in the scalar field; arrange the decoded scalars two and three in `build_add_scalar_payload`; act `add_scalar`, then `encode_scalar`; assert the exposed bytes equal five
-    * `[ ]`   `add_scalar_reduces_modulo_the_group_order`: contract: a sum at or above the group order wraps; arrange `r - 1` and two; act `add_scalar`, then `encode_scalar`; assert the exposed bytes equal one
-    * `[ ]`   `mul_scalar_of_two_and_three_is_six`: arrange two and three in `build_mul_scalar_payload`; act `mul_scalar`, then `encode_scalar`; assert the exposed bytes equal six
-    * `[ ]`   `mul_scalar_reduces_modulo_the_group_order`: contract: a product at or above the group order wraps; arrange `r - 1` twice; act `mul_scalar`, then `encode_scalar`; assert the exposed bytes equal one, since `(r - 1)^2` is one modulo `r`
-    * `[ ]`   `neg_scalar_of_one_is_the_group_order_minus_one`: arrange one in `build_neg_scalar_payload`; act `neg_scalar`, then `encode_scalar`; assert the exposed bytes equal `r - 1`
-    * `[ ]`   `neg_scalar_of_zero_is_zero`: arrange zero; act `neg_scalar`, then `encode_scalar`; assert the exposed bytes equal zero
-    * `[ ]`   `neg_g1_of_the_generator_negates_its_y_coordinate`: contract: a point's negation keeps `x` and replaces `y` by `p - y`; arrange the generator in `build_neg_g1_payload`; act `neg_g1`, then `encode_g1`; assert the bytes equal the negated first-group generator vector
-    * `[ ]`   `neg_g1_of_the_identity_is_the_identity`: arrange the point `decode_g1` reads from 64 zero bytes; act `neg_g1`, then `encode_g1`; assert the bytes are 64 zero bytes
-    * `[ ]`   `neg_g2_of_the_generator_sums_with_the_generator_to_the_identity`: contract: a second-group point plus its negation is the identity; arrange the second-group generator; act `neg_g2`, then `add_g2` of the generator and the negation, then `encode_g2`; assert the bytes are 128 zero bytes
-    * `[ ]`   `is_identity_g1_is_true_for_the_identity`: arrange the point `decode_g1` reads from 64 zero bytes in `build_is_identity_g1_payload`; act `is_identity_g1`; assert `is_identity` is `true`
-    * `[ ]`   `is_identity_g1_is_false_for_the_generator`: arrange the first-group generator; act `is_identity_g1`; assert `is_identity` is `false`
-    * `[ ]`   `is_identity_g2_is_true_for_the_identity`: the same over the point `decode_g2` reads from 128 zero bytes and `is_identity_g2`
-    * `[ ]`   `is_identity_g2_is_false_for_the_generator`: the same over the second-group generator
-    * `[ ]`   `pairing_product_of_no_terms_encodes_as_the_target_group_identity`: contract: the empty product is the target group's identity, which encodes with the coefficient `c0.c0.c0` first; arrange `build_pairing_product_payload` with its default empty terms; act `pairing_product`, then `encode_gt`; assert the exposed bytes equal the target group's identity encoding
-    * `[ ]`   `pairing_product_of_the_generators_is_not_the_target_group_identity`: contract: the pairing is non-degenerate; arrange the one term `(g1, g2)` from `build_pairing_product_term`; act `pairing_product`, then `encode_gt`; assert the exposed bytes are 384 bytes and differ from the target group's identity encoding
-    * `[ ]`   `pairing_product_is_bilinear`: contract: a scalar moves between the arguments of a pairing; arrange the terms `(g1 · 2, g2 · 3)`, `(g1 · 6, g2)`, and `(g1 · 5, g2)`, each a single-term product; act `pairing_product` over each, then `encode_gt` over each; assert the first two encodings are equal and differ from the third
-    * `[ ]`   `pairing_product_multiplies_its_terms`: contract: a list of terms yields the product of their pairings; arrange the terms `(g1, g2)` twice as one list, `(g1 · 2, g2)` as a single-term list, and `(g1, g2)` as a single-term list; act `pairing_product` over each, then `encode_gt` over each; assert the first two encodings are equal and differ from the third
-    * `[ ]`   `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`: contract: negating a first-group input divides by its pairing; arrange the terms `(g1, g2)` and `(-g1, g2)`, the negation from `neg_g1`; act `pairing_product`, then `encode_gt`; assert the exposed bytes equal the target group's identity encoding
-    * `[ ]`   Every new test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers; every payload is built through its family builder with only the overrides the test depends on; scalars come from `decode_scalar` over the vectors and points from the generators, `mul_g1`, `mul_g2`, or `decode_g1` and `decode_g2`
-
-  * `[ ]`   `construction`
-    * `[ ]`   A target-group value is produced only by `pairing_product`; scalars and points produced by the new arithmetic are produced by the adapter alone; no consumer constructs any of them from library values
-
-  * `[ ]`   `adapters/pairing/src/bn254_arkworks/mod.rs`
-    * `[ ]`   `impl IPairingArithmetic for Bn254ArkworksPairing` with `type Gt = Bn254ArkworksGt;` and every method realizing its branch in the interaction spec
-    * `[ ]`   `impl Zeroize for Bn254ArkworksG1` and `impl Zeroize for Bn254ArkworksG2`, each calling `self.value.zeroize()`; `impl Drop` for each calling `self.value.zeroize()`
-    * `[ ]`   `impl Zeroize for Bn254ArkworksGt` calling `self.value.zeroize()`; `impl Drop for Bn254ArkworksGt` calling `self.value.zeroize()`
-    * `[ ]`   The imports gain `IPairingArithmetic` and the new types from `crate::factory::provides` and `Bn254ArkworksGt` from `interface`
-    * `[ ]`   Every existing item is unchanged; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `bn254_arkworks` depends on the `factory` module's surface, on `domain`, on `zeroize`, and on the arkworks crates, as before; `IPairingArithmetic` depends on `IPairingAdapter` within the `factory` module; no new edge between crates and no new cycle
-    * `[ ]`   `pairing/bn254_halo2curves`, `pairing/bls12_381_arkworks`, and `pairing/bls12_381_halo2curves` each implement `IPairingArithmetic`; `pairing/factory` then requires it of the concrete a consumer receives, and `kem/bb1_depth_one` consumes it
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `adapters/pairing/Cargo.toml` is unchanged, and no `ark-` crate is named in the crate outside `adapters/pairing/src/bn254_arkworks`
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, with the other pairing concretes, the factory, and every crate that consumes the pairing family compiling unchanged
-    * `[ ]`   Every existing test in `bn254_arkworks/test.rs`, `factory/test.rs`, and `adapters/pairing/tests/integration_test.rs` passes unchanged
-    * `[ ]`   `add_scalar_of_two_and_three_is_five`, `add_scalar_reduces_modulo_the_group_order`, `mul_scalar_of_two_and_three_is_six`, `mul_scalar_reduces_modulo_the_group_order`, `neg_scalar_of_one_is_the_group_order_minus_one`, and `neg_scalar_of_zero_is_zero` pass (CR-09, the scalar arithmetic the delivery proof's responses use)
-    * `[ ]`   `neg_g1_of_the_generator_negates_its_y_coordinate`, `neg_g1_of_the_identity_is_the_identity`, `neg_g2_of_the_generator_sums_with_the_generator_to_the_identity`, `is_identity_g1_is_true_for_the_identity`, `is_identity_g1_is_false_for_the_generator`, `is_identity_g2_is_true_for_the_identity`, and `is_identity_g2_is_false_for_the_generator` pass (CR-04 envelope decryption and identity-key rejection; CR-08 trivial identity-element refusal)
-    * `[ ]`   `pairing_product_of_no_terms_encodes_as_the_target_group_identity`, `pairing_product_of_the_generators_is_not_the_target_group_identity`, `pairing_product_is_bilinear`, `pairing_product_multiplies_its_terms`, and `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity` pass (CR-08, the encapsulated value and the validity, well-formedness, and decapsulation equations)
-    * `[ ]`   `Bn254ArkworksG1`, `Bn254ArkworksG2`, and `Bn254ArkworksGt` implement `Zeroize` and `Drop`, fixed by their implementations (CR-07)
-    * `[ ]`   Code outside `adapters/pairing` naming `Bn254ArkworksGt` or anything under `bn254_arkworks` fails to compile; the crate's public surface is the `factory` module's `provides`
-
-* `[ ]`   `workspace/cargo` **The `halo2curves` overlay: the workspace resolves `halo2curves` from the project's `gt-accessor` branch, and the dependency policy admits that source**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: the pairing family's arithmetic trait encodes a target-group value as its base-field coefficients, and `halo2curves` 0.10.0 declares its target-group type as `pub struct Gt(pub(crate) Fq12)` with no public way to read the `Fq12`, so the `halo2curves` concretes cannot implement the trait against the published crate (CR-08; CR-10)
-    * `[ ]`   Functional: every workspace member that depends on `halo2curves` `0.10.0` resolves it from the branch `gt-accessor` of `https://github.com/tsylvester/halo2curves`, with no edit to any member's manifest, and `Cargo.lock` pins the branch's commit
-    * `[ ]`   Functional: `cargo-deny` admits that git source and continues to deny every other unlisted registry or git source
-    * `[ ]`   Non-functional: the overlay is carried as the `librqbit` overlay is: the branch tracks the tagged upstream `0.10.0` release, its one change is submitted upstream as a pull request, and the overlay entry is removed when the change merges and a release carries it
-
-  * `[ ]`   `role`
-    * `[ ]`   Infrastructure: edits to two configuration files with no types and no tests, exempt from the support-file structure
-    * `[ ]`   Does not add, remove, or pin any dependency in any member's manifest; `adapters/pairing/Cargo.toml` keeps `halo2curves = "0.10.0"`, which the patch satisfies
-    * `[ ]`   Does not author the accessor; the branch carrying it is external setup, as the `librqbit` overlay branch is: `impl_gt!` in `src/derive/pairing.rs` gains, inside its `impl $target` block, `pub fn inner(&self) -> &$base` returning `&self.0`, the one change on the branch; `pairing/bn254_halo2curves` and `pairing/bls12_381_halo2curves` consume it, and this node's build proof does not
-    * `[ ]`   Does not edit `rust-toolchain.toml`, `.gitignore`, or `.github/workflows/rust.yml`
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the repository root's `[patch.crates-io]` table in `Cargo.toml` and the `[sources]` table in `deny.toml`
-    * `[ ]`   Outside: every member's manifest, the branch's contents, the concretes that consume the accessor, and the upstream pull request
-
-  * `[ ]`   `deps`
-    * `[ ]`   The branch `gt-accessor` of `https://github.com/tsylvester/halo2curves`, external git source, package `halo2curves` at version `0.10.0`, license MIT OR Apache-2.0, cut from the upstream `0.10.0` release; the patch's version must equal the version members require, which it does
-    * `[ ]`   `cargo`, which reads `[patch.crates-io]`, and `cargo-deny`, which reads `[sources]`; no repository file is a dependency and no reverse dependency exists
-
-  * `[ ]`   `Cargo.toml`
-    * `[ ]`   `[patch.crates-io]` gains, after the `librqbit` entry, `halo2curves = { git = "https://github.com/tsylvester/halo2curves", branch = "gt-accessor" }`
-    * `[ ]`   Every other table and key is unchanged
-
-  * `[ ]`   `deny.toml`
-    * `[ ]`   `[sources]` has `allow-git = ["https://github.com/tsylvester/rqbit", "https://github.com/tsylvester/halo2curves"]`
-    * `[ ]`   Every other table and key is unchanged
-
-  * `[ ]`   `directionality`
-    * `[ ]`   The root configuration names the external source and nothing names the configuration; members depend on `halo2curves` through their own manifests as before; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `Cargo.toml` and `deny.toml` carry exactly the entries stated above, and every other key of both files is unchanged
-    * `[ ]`   `Cargo.lock` records `halo2curves` `0.10.0` from `git+https://github.com/tsylvester/halo2curves?branch=gt-accessor` at a pinned commit, and no `halo2curves` from crates.io
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning on Windows, macOS, and Linux
-    * `[ ]`   Every existing test in the workspace passes unchanged, the branch's crate behaving as the published `0.10.0` in everything the workspace already calls
-
-* `[ ]`   `pairing/bn254_halo2curves` **BN254 halo2curves concrete implements the pairing family's arithmetic trait: scalar-field arithmetic, source-group negation, identity tests, pairing into the target group, and target-group encoding**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: the KEM, the envelope, and the delivery proof consume the pairing family's arithmetic trait through whichever concrete the factory resolves, so the BN254 halo2curves concrete implements it with byte-identical target-group encodings to the arkworks concrete (CR-04; CR-07; CR-08; CR-09)
-    * `[ ]`   Functional: `Bn254Halo2curvesPairing` implements `IPairingArithmetic` with every method's behavior as `pairing/bn254_arkworks` states it for the trait
-    * `[ ]`   Functional: the target-group encoding reads the `Fq12` through `Gt::inner`, which the `halo2curves` overlay the `workspace/cargo` node binds supplies, and writes its twelve coefficients in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, each 32 bytes big-endian; halo2curves' BN256 tower, `Fq6 = Fq2[v] / (v^3 - (u + 9))` and `Fq12 = Fq6[w] / (w^2 - v)`, is arkworks' tower, so equal values encode to equal bytes
-    * `[ ]`   Functional: `Bn254Halo2curvesG1`, `Bn254Halo2curvesG2`, and `Bn254Halo2curvesGt` clear their value through `Zeroize` and on drop
-    * `[ ]`   Non-functional: `halo2curves` remains named only inside `adapters/pairing/src/bn254_halo2curves`; the family's interface, mock, and factory are unchanged
-
-  * `[ ]`   `role`
-    * `[ ]`   Adapter: a further concrete implementing the trait `pairing/bn254_arkworks` authored
-    * `[ ]`   Does not edit `factory/interface.rs`, `factory/mock.rs`, or any other concrete
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `bn254_halo2curves` concrete's target-group type, its implementation of `IPairingArithmetic`, its source-group and target-group clearing, and the builder default for its target-group type
-    * `[ ]`   Edits the `bn254_halo2curves` module's `interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, and `mod.rs`; nothing else in the crate changes
-
-  * `[ ]`   `deps`
-    * `[ ]`   The `factory` module's surface, same crate, through `crate::factory::provides`: `IPairingArithmetic` and its params, payloads, success returns, and builders, as `pairing/bn254_arkworks` authors them
-    * `[ ]`   `halo2curves` `0.10.0` from the overlay branch `gt-accessor`, the existing runtime dependency, resolved through the `workspace/cargo` node's patch; supplies `Gt::inner(&self) -> &Fq12`
-    * `[ ]`   `domain`, the existing runtime dependency: `Secret` and `SecretConstructorParams`
-    * `[ ]`   `hex`, the existing dev-dependency, for the vectors
-    * `[ ]`   `core::hint::black_box`, standard library, the existing clearing idiom
-    * `[ ]`   No new external crate; `adapters/pairing/Cargo.toml` is unchanged
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `halo2curves::ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `PrimeField::to_repr()` on `Fq`, 32 little-endian bytes
-    * `[ ]`   From `halo2curves`: unary `-` on `G1Affine` and `G2Affine`; `PrimeCurveAffine::is_identity()` returning a `Choice`; `PrimeCurveAffine::identity()`; `Bn256::multi_miller_loop(&[(&G1Affine, &G2Affine)])` and `MillerLoopResult::final_exponentiation()` returning `Gt`; `Gt::identity()`; `Gt::inner()`; `c0()` and `c1()` on the degree-two and degree-twelve extensions and `c0()`, `c1()`, and `c2()` on the degree-six extension; `pairing::Engine::pairing(&G1Affine, &G2Affine)` for the builder default
-    * `[ ]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`
-
-  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/interface.rs`
-    * `[ ]`   `Bn254Halo2curvesGt`, a struct with no derives and one field `pub(super) value: halo2curves::bn256::Gt`
-    * `[ ]`   Every item already in this file is unchanged
-
-  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/interaction.spec.md`
-    * `[ ]`   Adds a section per new method in the file's existing table form, below the existing sections and above `Ordering and edges`
-    * `[ ]`   `add_scalar`, `mul_scalar`: one branch each; dependency call `Fr`'s `+` or `*` over the payload scalars' values; outcome `Ok` holding the sum or product modulo the group order; the payload's scalars are cleared as it drops
-    * `[ ]`   `neg_scalar`: one branch; dependency call `Fr`'s unary `-`; outcome `Ok` holding the group order minus the scalar, and zero for zero
-    * `[ ]`   `neg_g1`, `neg_g2`: one branch each; dependency call the affine point's unary `-`; outcome `Ok` holding the negation, the identity for the identity
-    * `[ ]`   `is_identity_g1`, `is_identity_g2`: one branch each; dependency call `is_identity()` on the payload point; outcome `Ok` holding `bool::from` of the `Choice`
-    * `[ ]`   `pairing_product`: one branch; the terms as a `Vec<(&G1Affine, &G2Affine)>` in term order; dependency call `Bn256::multi_miller_loop`, then `final_exponentiation()`; outcome `Ok(PairingProductSuccessReturn { product })` holding the `Gt` in the owned target-group type; an empty term list yields the target group's identity
-    * `[ ]`   `encode_gt`: one branch; dependency call `inner()` on the payload's `Gt`, then each of the twelve `Fq` coefficients' `to_repr()` reversed to 32 big-endian bytes, appended in the tower order into one 384-byte buffer; outcome `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`
-    * `[ ]`   `Ordering and edges` gains: halo2curves' affine points and `Gt` implement no `Zeroize`, so `Bn254Halo2curvesG1`, `Bn254Halo2curvesG2`, and `Bn254Halo2curvesGt` clear by setting `value` to `G1Affine::identity()`, `G2Affine::identity()`, or `Gt::identity()` and passing `&self.value` to `black_box`, in their `Zeroize` implementations and their `Drop`
-
-  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/mock.rs`
-    * `[ ]`   `impl Default for Bn254Halo2curvesGt` returning `Bn256::pairing(&G1Affine::generator(), &G2Affine::generator())`
-    * `[ ]`   The imports gain `halo2curves::bn256::Bn256` and `halo2curves::pairing::Engine`; every existing default is unchanged
-
-  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/test.rs`
-    * `[ ]`   Every existing test and constant is unchanged; the new tests are appended; the imports gain `IPairingArithmetic` and the new params, overrides, and builders from `crate::factory::provides`
-    * `[ ]`   The new constants, as hex, are those `pairing/bn254_arkworks` adds: zero, one, six, and the negated first-group generator, 31 zero bytes and `01` followed by `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45`; the target group's identity encoding is `vec![0u8; 384]` with index `31` set to `1`
-    * `[ ]`   The new tests carry the names, arrangements, acts, and assertions `pairing/bn254_arkworks` states, with the subject constructed by `let Ok(pairing) = Bn254Halo2curvesPairing::try_new(Bn254Halo2curvesPairingConstructorParams);`: `add_scalar_of_two_and_three_is_five`, `add_scalar_reduces_modulo_the_group_order`, `mul_scalar_of_two_and_three_is_six`, `mul_scalar_reduces_modulo_the_group_order`, `neg_scalar_of_one_is_the_group_order_minus_one`, `neg_scalar_of_zero_is_zero`, `neg_g1_of_the_generator_negates_its_y_coordinate`, `neg_g1_of_the_identity_is_the_identity`, `neg_g2_of_the_generator_sums_with_the_generator_to_the_identity`, `is_identity_g1_is_true_for_the_identity`, `is_identity_g1_is_false_for_the_generator`, `is_identity_g2_is_true_for_the_identity`, `is_identity_g2_is_false_for_the_generator`, `pairing_product_of_no_terms_encodes_as_the_target_group_identity`, `pairing_product_of_the_generators_is_not_the_target_group_identity`, `pairing_product_is_bilinear`, `pairing_product_multiplies_its_terms`, and `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`
-    * `[ ]`   Every new test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
-
-  * `[ ]`   `construction`
-    * `[ ]`   A target-group value is produced only by `pairing_product`; no consumer constructs one from library values
-
-  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/mod.rs`
-    * `[ ]`   `impl IPairingArithmetic for Bn254Halo2curvesPairing` with `type Gt = Bn254Halo2curvesGt;` and every method realizing its branch in the interaction spec
-    * `[ ]`   `impl Zeroize` and `impl Drop` for `Bn254Halo2curvesG1`, `Bn254Halo2curvesG2`, and `Bn254Halo2curvesGt`, each setting `value` to its type's identity and calling `black_box(&self.value)`
-    * `[ ]`   The imports gain `IPairingArithmetic` and the new types from `crate::factory::provides`, `halo2curves::bn256::Gt`, and `Bn254Halo2curvesGt` from `interface`
-    * `[ ]`   Every existing item is unchanged; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `bn254_halo2curves` depends on the `factory` module's surface, on `domain`, on `zeroize`, and on `halo2curves`, as before; no new edge and no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning
-    * `[ ]`   Every existing test in the crate passes unchanged, and every new test named above passes (CR-04, CR-08, CR-09 on BN254 over halo2curves)
-    * `[ ]`   `Bn254Halo2curvesG1`, `Bn254Halo2curvesG2`, and `Bn254Halo2curvesGt` implement `Zeroize` and `Drop` (CR-07)
-    * `[ ]`   `halo2curves` is named nowhere in the crate outside `adapters/pairing/src/bn254_halo2curves` and `adapters/pairing/src/bls12_381_halo2curves`
-
-* `[ ]`   `pairing/bls12_381_arkworks` **BLS12-381 arkworks concrete implements the pairing family's arithmetic trait: scalar-field arithmetic, source-group negation, identity tests, pairing into the target group, and target-group encoding**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: the KEM, the envelope, and the delivery proof consume the pairing family's arithmetic trait through whichever concrete the factory resolves, and BLS12-381 is the primary verifier form on Base, so the BLS12-381 arkworks concrete implements it (CR-04; CR-07; CR-08; CR-09)
-    * `[ ]`   Functional: `Bls12381ArkworksPairing` implements `IPairingArithmetic` with every method's behavior as `pairing/bn254_arkworks` states it for the trait
-    * `[ ]`   Functional: the target-group encoding writes the twelve `Fq` coefficients of the `Fq12` in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, each 48 bytes big-endian, BLS12-381's base-field byte width, 576 bytes in all, without the 16-byte padding EIP-2537 adds to source-group coordinates
-    * `[ ]`   Functional: `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt` zeroize their value through `Zeroize` and on drop
-    * `[ ]`   Non-functional: `ark-bls12-381`, `ark-ec`, and `ark-ff` remain named only inside the arkworks concretes; the family's interface, mock, and factory are unchanged
-
-  * `[ ]`   `role`
-    * `[ ]`   Adapter: a further concrete implementing the trait `pairing/bn254_arkworks` authored
-    * `[ ]`   Does not edit `factory/interface.rs`, `factory/mock.rs`, or any other concrete
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `bls12_381_arkworks` concrete's target-group type, its implementation of `IPairingArithmetic`, its source-group and target-group zeroization, and the builder default for its target-group type
-    * `[ ]`   Edits the `bls12_381_arkworks` module's `interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, and `mod.rs`; nothing else in the crate changes
-
-  * `[ ]`   `deps`
-    * `[ ]`   The `factory` module's surface, same crate, through `crate::factory::provides`: `IPairingArithmetic` and its params, payloads, success returns, and builders, as `pairing/bn254_arkworks` authors them
-    * `[ ]`   `ark-bls12-381`, `ark-ec`, and `ark-ff`, the existing runtime dependencies; `domain` and `zeroize`, the existing runtime dependencies; `hex`, the existing dev-dependency
-    * `[ ]`   No new external crate; `adapters/pairing/Cargo.toml` is unchanged
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `ark-ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; the public fields `c0` and `c1` of the degree-two and degree-twelve extensions and `c0`, `c1`, and `c2` of the degree-six extension; `PrimeField::into_bigint()` and `BigInteger::to_bytes_be()` on `Fq`, 48 bytes
-    * `[ ]`   From `ark-ec`: unary `-` on the short-Weierstrass affine point; `AffineRepr::is_zero()`; `pairing::Pairing::multi_pairing` over iterators of borrowed affine points, returning `PairingOutput<Bls12_381>` with public field `0`; `Pairing::pairing(p, q)`; `Zeroize` for `Affine` and for `PairingOutput`
-    * `[ ]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`
-
-  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/interface.rs`
-    * `[ ]`   `Bls12381ArkworksGt`, a struct with no derives and one field `pub(super) value: ark_ec::pairing::PairingOutput<ark_bls12_381::Bls12_381>`
-    * `[ ]`   Every item already in this file is unchanged
-
-  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/interaction.spec.md`
-    * `[ ]`   Adds a section per new method, in the file's existing form, below the existing sections and above its ordering and edges
-    * `[ ]`   `add_scalar`, `mul_scalar`: one branch each; dependency call `Fr`'s `+` or `*`; outcome `Ok` holding the sum or product modulo the group order; the payload's scalars are zeroized as it drops
-    * `[ ]`   `neg_scalar`: one branch; dependency call `Fr`'s unary `-`; outcome `Ok` holding the group order minus the scalar, and zero for zero
-    * `[ ]`   `neg_g1`, `neg_g2`: one branch each; dependency call the affine point's unary `-`; outcome `Ok` holding the negation, the identity for the identity
-    * `[ ]`   `is_identity_g1`, `is_identity_g2`: one branch each; dependency call `AffineRepr::is_zero()`; outcome `Ok` holding `is_identity`
-    * `[ ]`   `pairing_product`: one branch; the terms split into a `Vec<G1Affine>` and a `Vec<G2Affine>` in term order; dependency call `Bls12_381::multi_pairing(&g1s, &g2s)`, then `zeroize` on both vectors; outcome `Ok(PairingProductSuccessReturn { product })` holding the `PairingOutput` in the owned target-group type; an empty term list yields the target group's identity
-    * `[ ]`   `encode_gt`: one branch; dependency call `into_bigint().to_bytes_be()` on each of the twelve `Fq` coefficients of `payload.value.value.0` in the tower order, appended into one 576-byte buffer; outcome `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`; the target group's identity encodes as 47 zero bytes, `01`, and 528 zero bytes
-    * `[ ]`   Zeroization: `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt` each zeroize their `value` through their `Zeroize` implementation and on drop
-
-  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/mock.rs`
-    * `[ ]`   `impl Default for Bls12381ArkworksGt` returning `Bls12_381::pairing(G1Affine::generator(), G2Affine::generator())`
-    * `[ ]`   The imports gain `ark_bls12_381::Bls12_381` and `ark_ec::pairing::Pairing`; every existing default is unchanged
-
-  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/test.rs`
-    * `[ ]`   Every existing test and constant is unchanged; the new tests are appended; the imports gain `IPairingArithmetic` and the new params, overrides, and builders from `crate::factory::provides`
-    * `[ ]`   The new constants, as hex: zero, 32 zero bytes; one, 31 zero bytes and `01`; six, 31 zero bytes and `06`; the negated first-group generator in EIP-2537's 128 bytes, 16 zero bytes and `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`, then 16 zero bytes and `114d1d6855d545a8aa7d76c8cf2e21f267816aef1db507c96655b9d5caac42364e6f38ba0ecb751bad54dcd6b939c2ca`, the generator's `y` subtracted from the base field modulus; the target group's identity encoding is `vec![0u8; 576]` with index `47` set to `1`
-    * `[ ]`   The new tests carry the names, arrangements, acts, and assertions `pairing/bn254_arkworks` states, over this concrete's vectors, `r - 1` the existing `GROUP_ORDER_MINUS_ONE_HEX`, the first-group identity from 128 zero bytes, and the second-group identity from 256 zero bytes, with the subject constructed by `let Ok(pairing) = Bls12381ArkworksPairing::try_new(Bls12381ArkworksPairingConstructorParams);`: `add_scalar_of_two_and_three_is_five`, `add_scalar_reduces_modulo_the_group_order`, `mul_scalar_of_two_and_three_is_six`, `mul_scalar_reduces_modulo_the_group_order`, `neg_scalar_of_one_is_the_group_order_minus_one`, `neg_scalar_of_zero_is_zero`, `neg_g1_of_the_generator_negates_its_y_coordinate`, `neg_g1_of_the_identity_is_the_identity`, `neg_g2_of_the_generator_sums_with_the_generator_to_the_identity`, `is_identity_g1_is_true_for_the_identity`, `is_identity_g1_is_false_for_the_generator`, `is_identity_g2_is_true_for_the_identity`, `is_identity_g2_is_false_for_the_generator`, `pairing_product_of_no_terms_encodes_as_the_target_group_identity`, `pairing_product_of_the_generators_is_not_the_target_group_identity` asserting 576 bytes, `pairing_product_is_bilinear`, `pairing_product_multiplies_its_terms`, and `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`
-    * `[ ]`   Every new test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
-
-  * `[ ]`   `construction`
-    * `[ ]`   A target-group value is produced only by `pairing_product`; no consumer constructs one from library values
-
-  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/mod.rs`
-    * `[ ]`   `impl IPairingArithmetic for Bls12381ArkworksPairing` with `type Gt = Bls12381ArkworksGt;` and every method realizing its branch in the interaction spec
-    * `[ ]`   `impl Zeroize` and `impl Drop` for `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt`, each calling `self.value.zeroize()`
-    * `[ ]`   The imports gain `IPairingArithmetic` and the new types from `crate::factory::provides` and `Bls12381ArkworksGt` from `interface`
-    * `[ ]`   Every existing item is unchanged; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `bls12_381_arkworks` depends on the `factory` module's surface, on `domain`, on `zeroize`, and on the arkworks crates, as before; no new edge and no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning
-    * `[ ]`   Every existing test in the crate passes unchanged, and every new test named above passes (CR-04, CR-08, CR-09 on BLS12-381 over arkworks)
-    * `[ ]`   `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt` implement `Zeroize` and `Drop` (CR-07)
-
-* `[ ]`   `pairing/bls12_381_halo2curves` **BLS12-381 halo2curves concrete implements the pairing family's arithmetic trait: scalar-field arithmetic, source-group negation, identity tests, pairing into the target group, and target-group encoding**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: the KEM, the envelope, and the delivery proof consume the pairing family's arithmetic trait through whichever concrete the factory resolves, so the BLS12-381 halo2curves concrete implements it with byte-identical target-group encodings to the BLS12-381 arkworks concrete (CR-04; CR-07; CR-08; CR-09)
-    * `[ ]`   Functional: `Bls12381Halo2curvesPairing` implements `IPairingArithmetic` with every method's behavior as `pairing/bn254_arkworks` states it for the trait
-    * `[ ]`   Functional: the target-group encoding reads the `Fq12` through `Gt::inner`, which the `halo2curves` overlay the `workspace/cargo` node binds supplies, and writes its twelve coefficients in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, each 48 bytes big-endian, 576 bytes in all; halo2curves' BLS12-381 tower, `Fq2 = Fq[u] / (u^2 + 1)`, `Fq6 = Fq2[v] / (v^3 - (u + 1))`, and `Fq12 = Fq6[w] / (w^2 - v)`, is arkworks' tower, so equal values encode to equal bytes
-    * `[ ]`   Functional: `Bls12381Halo2curvesG1`, `Bls12381Halo2curvesG2`, and `Bls12381Halo2curvesGt` clear their value through `Zeroize` and on drop
-    * `[ ]`   Non-functional: `halo2curves` remains named only inside the halo2curves concretes; the family's interface, mock, and factory are unchanged
-
-  * `[ ]`   `role`
-    * `[ ]`   Adapter: a further concrete implementing the trait `pairing/bn254_arkworks` authored; the last concrete to implement it, so every concrete beneath the factory implements it when this node completes
-    * `[ ]`   Does not edit `factory/interface.rs`, `factory/mock.rs`, or any other concrete
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `bls12_381_halo2curves` concrete's target-group type, its implementation of `IPairingArithmetic`, its source-group and target-group clearing, and the builder default for its target-group type
-    * `[ ]`   Edits the `bls12_381_halo2curves` module's `interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, and `mod.rs`; nothing else in the crate changes
-
-  * `[ ]`   `deps`
-    * `[ ]`   The `factory` module's surface, same crate, through `crate::factory::provides`: `IPairingArithmetic` and its params, payloads, success returns, and builders, as `pairing/bn254_arkworks` authors them
-    * `[ ]`   `halo2curves` `0.10.0` from the overlay branch `gt-accessor`, the existing runtime dependency, resolved through the `workspace/cargo` node's patch; supplies `Gt::inner(&self) -> &Fq12`
-    * `[ ]`   `domain`, the existing runtime dependency: `Secret` and `SecretConstructorParams`; `hex`, the existing dev-dependency
-    * `[ ]`   `core::hint::black_box`, standard library, the existing clearing idiom
-    * `[ ]`   No new external crate; `adapters/pairing/Cargo.toml` is unchanged
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `halo2curves::ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `PrimeField::to_repr()` on `Fq`, 48 little-endian bytes
-    * `[ ]`   From `halo2curves`: unary `-` on `G1Affine` and `G2Affine`; `PrimeCurveAffine::is_identity()` returning a `Choice`; `PrimeCurveAffine::identity()`; `Bls12381::multi_miller_loop(&[(&G1Affine, &G2Affine)])` and `MillerLoopResult::final_exponentiation()` returning `Gt`; `Gt::identity()`; `Gt::inner()`; `c0()` and `c1()` on the degree-two and degree-twelve extensions and `c0()`, `c1()`, and `c2()` on the degree-six extension; `pairing::Engine::pairing(&G1Affine, &G2Affine)` for the builder default
-    * `[ ]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`
-
-  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/interface.rs`
-    * `[ ]`   `Bls12381Halo2curvesGt`, a struct with no derives and one field `pub(super) value: halo2curves::bls12381::Gt`
-    * `[ ]`   Every item already in this file is unchanged
-
-  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/interaction.spec.md`
-    * `[ ]`   Adds a section per new method in the file's existing table form, below the existing sections and above `Ordering and edges`
-    * `[ ]`   `add_scalar`, `mul_scalar`: one branch each; dependency call `Fr`'s `+` or `*` over the payload scalars' values; outcome `Ok` holding the sum or product modulo the group order; the payload's scalars are cleared as it drops
-    * `[ ]`   `neg_scalar`: one branch; dependency call `Fr`'s unary `-`; outcome `Ok` holding the group order minus the scalar, and zero for zero
-    * `[ ]`   `neg_g1`, `neg_g2`: one branch each; dependency call the affine point's unary `-`; outcome `Ok` holding the negation, the identity for the identity
-    * `[ ]`   `is_identity_g1`, `is_identity_g2`: one branch each; dependency call `is_identity()` on the payload point; outcome `Ok` holding `bool::from` of the `Choice`
-    * `[ ]`   `pairing_product`: one branch; the terms as a `Vec<(&G1Affine, &G2Affine)>` in term order; dependency call `Bls12381::multi_miller_loop`, then `final_exponentiation()`; outcome `Ok(PairingProductSuccessReturn { product })` holding the `Gt` in the owned target-group type; an empty term list yields the target group's identity
-    * `[ ]`   `encode_gt`: one branch; dependency call `inner()` on the payload's `Gt`, then each of the twelve `Fq` coefficients' `to_repr()` reversed to 48 big-endian bytes, appended in the tower order into one 576-byte buffer; outcome `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`
-    * `[ ]`   `Ordering and edges` gains: halo2curves' affine points and `Gt` implement no `Zeroize`, so `Bls12381Halo2curvesG1`, `Bls12381Halo2curvesG2`, and `Bls12381Halo2curvesGt` clear by setting `value` to `G1Affine::identity()`, `G2Affine::identity()`, or `Gt::identity()` and passing `&self.value` to `black_box`, in their `Zeroize` implementations and their `Drop`
-
-  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/mock.rs`
-    * `[ ]`   `impl Default for Bls12381Halo2curvesGt` returning `Bls12381::pairing(&G1Affine::generator(), &G2Affine::generator())`
-    * `[ ]`   The imports gain `halo2curves::bls12381::Bls12381` and `halo2curves::pairing::Engine`; every existing default is unchanged
-
-  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/test.rs`
-    * `[ ]`   Every existing test and constant is unchanged; the new tests are appended; the imports gain `IPairingArithmetic` and the new params, overrides, and builders from `crate::factory::provides`
-    * `[ ]`   The new constants are those `pairing/bls12_381_arkworks` adds: zero, one, and six as 32-byte scalars, and the negated first-group generator in EIP-2537's 128 bytes, 16 zero bytes and `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`, then 16 zero bytes and `114d1d6855d545a8aa7d76c8cf2e21f267816aef1db507c96655b9d5caac42364e6f38ba0ecb751bad54dcd6b939c2ca`; the target group's identity encoding is `vec![0u8; 576]` with index `47` set to `1`
-    * `[ ]`   The new tests carry the names, arrangements, acts, and assertions `pairing/bls12_381_arkworks` states, over the same vectors, the first-group identity from 128 zero bytes, and the second-group identity from 256 zero bytes, with the subject constructed by `let Ok(pairing) = Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);`: `add_scalar_of_two_and_three_is_five`, `add_scalar_reduces_modulo_the_group_order`, `mul_scalar_of_two_and_three_is_six`, `mul_scalar_reduces_modulo_the_group_order`, `neg_scalar_of_one_is_the_group_order_minus_one`, `neg_scalar_of_zero_is_zero`, `neg_g1_of_the_generator_negates_its_y_coordinate`, `neg_g1_of_the_identity_is_the_identity`, `neg_g2_of_the_generator_sums_with_the_generator_to_the_identity`, `is_identity_g1_is_true_for_the_identity`, `is_identity_g1_is_false_for_the_generator`, `is_identity_g2_is_true_for_the_identity`, `is_identity_g2_is_false_for_the_generator`, `pairing_product_of_no_terms_encodes_as_the_target_group_identity`, `pairing_product_of_the_generators_is_not_the_target_group_identity` asserting 576 bytes, `pairing_product_is_bilinear`, `pairing_product_multiplies_its_terms`, and `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`
-    * `[ ]`   Every new test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
-
-  * `[ ]`   `construction`
-    * `[ ]`   A target-group value is produced only by `pairing_product`; no consumer constructs one from library values
-
-  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/mod.rs`
-    * `[ ]`   `impl IPairingArithmetic for Bls12381Halo2curvesPairing` with `type Gt = Bls12381Halo2curvesGt;` and every method realizing its branch in the interaction spec
-    * `[ ]`   `impl Zeroize` and `impl Drop` for `Bls12381Halo2curvesG1`, `Bls12381Halo2curvesG2`, and `Bls12381Halo2curvesGt`, each setting `value` to its type's identity and calling `black_box(&self.value)`
-    * `[ ]`   The imports gain `IPairingArithmetic` and the new types from `crate::factory::provides`, `halo2curves::bls12381::Gt`, and `Bls12381Halo2curvesGt` from `interface`
-    * `[ ]`   Every existing item is unchanged; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `bls12_381_halo2curves` depends on the `factory` module's surface, on `domain`, on `zeroize`, and on `halo2curves`, as before; no new edge and no cycle
-    * `[ ]`   Every concrete beneath the pairing factory now implements `IPairingArithmetic`; `pairing/factory` requires it of the concrete a consumer receives
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning
-    * `[ ]`   Every existing test in the crate passes unchanged, and every new test named above passes (CR-04, CR-08, CR-09 on BLS12-381 over halo2curves)
-    * `[ ]`   `Bls12381Halo2curvesG1`, `Bls12381Halo2curvesG2`, and `Bls12381Halo2curvesGt` implement `Zeroize` and `Drop` (CR-07)
-
-* `[ ]`   `pairing/factory` **The pairing factory hands every consumer a concrete that implements the arithmetic trait; carries the integration test proving both libraries on each curve encode the target group identically**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: the KEM, the envelope, and the delivery proof reach a pairing concrete only through `create_pairing` and `IPairingConsumer`, whose consumer is bounded by `IPairingAdapter` alone, so the arithmetic trait every concrete now implements is unreachable through the factory; and a capsule encapsulated under one library must decapsulate to the same wrapping key under the other, so both libraries on a curve must encode a target-group value to the same bytes (CR-08; CR-10; CR-11)
-    * `[ ]`   Functional: `IPairingConsumer::consume_pairing` is bounded by `IPairingArithmetic`, so a consumer calls the arithmetic trait and, through its supertrait, the generic interface on whichever concrete `create_pairing` constructs
-    * `[ ]`   Functional: a consumer whose `consume_pairing` is written against `IPairingAdapter` alone remains a valid implementation, so every existing consumer compiles unchanged
-    * `[ ]`   Functional: the arkworks and halo2curves concretes on BN254 encode the pairing of the same inputs to the same bytes, and likewise on BLS12-381
-    * `[ ]`   Non-functional: `create_pairing`, its params, payload, and return types, the admission rule, and the declaration are unchanged
-
-  * `[ ]`   `role`
-    * `[ ]`   Adapter family factory: binds the arithmetic trait into the consumer surface once every concrete implements it, and carries the family's integration test for the arithmetic trait
-    * `[ ]`   Does not change `create_pairing`'s body, the concretes, or `factory/mock.rs`; `MockIPairingConsumer` keeps its `IPairingAdapter`-bounded method, a valid implementation of the tightened trait
-    * `[ ]`   Does not carry a commit; the credential KEM milestone's commit sits on the last node of that milestone's chain
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: `IPairingConsumer` in the `factory` module's interface, and the crate's integration test under `adapters/pairing/tests`
-    * `[ ]`   Edits `adapters/pairing/src/factory/interface.rs` and `adapters/pairing/tests/integration_test.rs`; nothing else changes
-
-  * `[ ]`   `deps`
-    * `[ ]`   The `factory` module's own interface: `IPairingArithmetic` as `pairing/bn254_arkworks` authors it, and `IPairingConsumer`
-    * `[ ]`   Every concrete's implementation of `IPairingArithmetic`, as `pairing/bn254_arkworks`, `pairing/bn254_halo2curves`, `pairing/bls12_381_arkworks`, and `pairing/bls12_381_halo2curves` state them; `create_pairing` constructs each and so requires each to satisfy the tightened bound
-    * `[ ]`   No new external crate; `adapters/pairing/Cargo.toml` is unchanged
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `IPairingArithmetic`, in the integration test: `pairing_product(&self, PairingProductParams, PairingProductPayload { terms }) -> Result<PairingProductSuccessReturn<Self::Gt>, Infallible>` and `encode_gt(&self, EncodeGtParams, EncodeGtPayload { value }) -> Result<EncodeGtSuccessReturn, Infallible>` with `bytes: Secret<Vec<u8>>`
-    * `[ ]`   From `IPairingAdapter`, in the integration test: `g1_generator`, `g2_generator`, `decode_scalar`, `mul_g1` with `MulG1Payload { point, scalar }`, and `mul_g2` with `MulG2Payload { point, scalar }`
-
-  * `[ ]`   `adapters/pairing/src/factory/interface.rs`
-    * `[ ]`   `IPairingConsumer::consume_pairing` reads `fn consume_pairing<P: IPairingArithmetic>(&self, params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> Self::Output;`
+    * `[✅]`   `IPairingConsumer::consume_pairing` reads `fn consume_pairing<P: IPairingArithmetic>(&self, params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> Self::Output;`
+    * `[ ]`   `CreatePairingParams` gains `pub target_group_encoding: TargetGroupEncodingIdentifier`, the identifier the suite requires; `CreatePairingErrorReturn` gains the variant `UnsupportedTargetGroupEncoding`, the named concrete not declaring it
     * `[ ]`   Every other item in this file is unchanged
 
-  * `[ ]`   `adapters/pairing/tests/integration_test.rs`
-    * `[ ]`   Every existing item and test is unchanged; the new items are appended; the imports gain `IPairingArithmetic`, `MulG2Params`, `MulG2Payload`, `PairingProductParams`, `PairingProductPayload`, `EncodeGtParams`, and `EncodeGtPayload` from `pairing`
-    * `[ ]`   A test-local `TargetGroupEncoding`, the unit struct implementing `IPairingConsumer` with `type Output = Vec<u8>;` and a `consume_pairing<P: IPairingArithmetic>` that, through `payload.adapter` alone, decodes the scalars two and three from their 32 big-endian bytes, multiplies the first-group generator by two and the second-group generator by three, computes `pairing_product` over the one term of those products, encodes it through `encode_gt`, each call unpacked by `let Ok(…) = … else { panic!(…) };`, and returns the exposed bytes cloned into a `Vec<u8>`
-    * `[ ]`   `the_bn254_concretes_encode_the_same_pairing_to_the_same_bytes`: contract: the arkworks and halo2curves BN254 concretes, each constructed by the factory and used only through the family traits, encode `e(g1 · 2, g2 · 3)` to identical bytes; arrange `CreatePairingDeps { consumer: TargetGroupEncoding }` and `build_create_pairing_params` with `concrete` overridden by `PairingConcrete::Bn254Arkworks` and then by `PairingConcrete::Bn254Halo2curves`; act `create_pairing` for each, unpacked by `let Ok(success) = … else { panic!(…) };`; assert the two outputs are equal, are 384 bytes, and differ from the target group's identity encoding, `vec![0u8; 384]` with index `31` set to `1`
-    * `[ ]`   `the_bls12_381_concretes_encode_the_same_pairing_to_the_same_bytes`: the same with `PairingConcrete::Bls12381Arkworks` and `PairingConcrete::Bls12381Halo2curves`, asserting 576 bytes and difference from `vec![0u8; 576]` with index `47` set to `1`
-    * `[ ]`   Every new test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header, the inline markers, and the `Boundary` and `Mocked` lines the existing tests carry; nothing is mocked, since the curve libraries are the outer edge
+  * `[ ]`   `adapters/pairing/src/factory/interaction.spec.md`
+    * `[ ]`   `create_pairing`, unsupported target-group encoding: condition the named concrete's `DECLARATION.target_group_encoding` is not `params.target_group_encoding`; decision equality, read after the encoding admission and before any construction; dependency call none; outcome `Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding)`, with nothing constructed and the consumer not called
+    * `[ ]`   Ordering: the precompile-encoding admission, then the target-group encoding admission, then construction, then the consumer; every existing branch is otherwise unchanged
 
-  * `[ ]`   `directionality`
-    * `[ ]`   `IPairingConsumer` now names `IPairingArithmetic` within the `factory` module; the factory's recorded cycle with its concretes is unchanged; no new edge between crates
-    * `[ ]`   `kem/bb1_depth_one` consumes the family through `create_pairing` and an `IPairingConsumer` bounded by `IPairingArithmetic`
+  * `[ ]`   `adapters/pairing/src/factory/mock.rs`
+    * `[ ]`   `CreatePairingParamsOverrides` gains `pub target_group_encoding: Option<TargetGroupEncodingIdentifier>`; `build_create_pairing_params` defaults it to the identifier of the curve the `concrete` field names after its own default or override is applied, `Bn254V1` for `Bn254Arkworks` and `Bn254Halo2curves` and `Bls12381V1` for `Bls12381Arkworks` and `Bls12381Halo2curves`, so an arrangement naming a concrete alone still admits and only an arrangement proving refusal overrides the identifier; every other symbol is unchanged
+
+  * `[ ]`   `adapters/pairing/src/factory/test.rs`
+    * `[ ]`   Every existing test is unchanged, since the params builder defaults the identifier to the named concrete's curve
+    * `[ ]`   `create_pairing_refuses_a_concrete_whose_target_group_encoding_the_suite_does_not_require`: contract: the identifier check refuses before construction with no side effect; arrange `build_create_pairing_params` with `concrete: Some(PairingConcrete::Bn254Arkworks)` and `target_group_encoding: Some(TargetGroupEncodingIdentifier::Bls12381V1)` and a consumer that panics if called; act `create_pairing`; assert the error is `CreatePairingErrorReturn::UnsupportedTargetGroupEncoding`
+
+  * `[ ]`   `adapters/pairing/src/factory/mod.rs`
+    * `[ ]`   `create_pairing` realizes the new branch and ordering of the interaction spec in every concrete's arm; every other item is unchanged
+
+  * `[ ]`   `adapters/pairing/tests/integration_test.rs`
+    * `[✅]`   Every existing item and test is unchanged, since the params builder defaults the identifier to the named concrete's curve; the new items are appended; the imports gain `IPairingArithmetic`, `MulG2Params`, `MulG2Payload`, `PairingProductParams`, `PairingProductPayload`, `EncodeGtParams`, and `EncodeGtPayload` from `pairing`
+    * `[✅]`   A test-local `TargetGroupEncoding`, the unit struct implementing `IPairingConsumer` with `type Output = Vec<u8>;` and a `consume_pairing<P: IPairingArithmetic>` that, through `payload.adapter` alone, decodes the scalars two and three from their 32 big-endian bytes, multiplies the first-group generator by two and the second-group generator by three, computes `pairing_product` over the one term of those products, encodes it through `encode_gt`, each call unpacked by `let Ok(…) = … else { panic!(…) };`, and returns the exposed bytes cloned into a `Vec<u8>`
+    * `[✅]`   `the_bn254_concretes_encode_the_same_pairing_to_the_same_bytes`: contract: the arkworks and halo2curves BN254 concretes, each constructed by the factory and used only through the family traits, encode `e(g1 · 2, g2 · 3)` to identical bytes; arrange `CreatePairingDeps { consumer: TargetGroupEncoding }` and `build_create_pairing_params` with `concrete` overridden by `PairingConcrete::Bn254Arkworks` and then by `PairingConcrete::Bn254Halo2curves`; act `create_pairing` for each, unpacked by `let Ok(success) = … else { panic!(…) };`; assert the two outputs are equal, are 384 bytes, and differ from the target group's identity encoding, `vec![0u8; 384]` with index `31` set to `1`
+    * `[✅]`   `the_bls12_381_concretes_encode_the_same_pairing_to_the_same_bytes`: the same with `PairingConcrete::Bls12381Arkworks` and `PairingConcrete::Bls12381Halo2curves`, asserting 576 bytes and difference from `vec![0u8; 576]` with index `47` set to `1`
+    * `[✅]`   Every new test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header, the inline markers, and the `Boundary` and `Mocked` lines the existing tests carry; nothing is mocked, since the curve libraries are the outer edge
+
+  * `[✅]`   `directionality`
+    * `[✅]`   `IPairingConsumer` now names `IPairingArithmetic` within the `factory` module; the factory's recorded cycle with its concretes is unchanged; no new edge between crates
+    * `[✅]`   `kem/bb1_depth_one` consumes the family through `create_pairing` and an `IPairingConsumer` bounded by `IPairingArithmetic`
 
   * `[ ]`   `requirements`
     * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, with `apps/harness-crypto`'s benchmark, the factory's unit tests, and every other existing consumer compiling unchanged
     * `[ ]`   Every existing test in `adapters/pairing` and `apps/harness-crypto` passes unchanged
-    * `[ ]`   `the_bn254_concretes_encode_the_same_pairing_to_the_same_bytes` and `the_bls12_381_concretes_encode_the_same_pairing_to_the_same_bytes` pass (CR-08 cross-holder agreement across libraries; CR-11 the encapsulated value's serialization fixed across the family)
+    * `[ ]`   `the_bn254_concretes_encode_the_same_pairing_to_the_same_bytes` and `the_bls12_381_concretes_encode_the_same_pairing_to_the_same_bytes` pass (CR-08 cross-holder agreement across libraries; CR-11 the encapsulated value's serialization fixed across the family), each concrete's vector test in its own node having passed first, since agreement between the libraries follows from each agreeing with the vector and is not itself the proof
+    * `[ ]`   `create_pairing_refuses_a_concrete_whose_target_group_encoding_the_suite_does_not_require` passes (CR-10, admission by the suite's identifier with no side effect)
 
 * `[ ]`   `kem/bb1_depth_one` **Depth-one Boneh–Boyen credential KEM concrete over any pairing concrete: setup under either identity scope, identity mapping with trivial-element refusal, issuance, seller-side rerandomization, the public validity check, encapsulation, well-formedness, and decapsulation to the encapsulated value, with every value exposed as and rebuilt from its pairing components and the issuance and rerandomization scalars returned for the delivery proof; creates the `adapters/kem` crate and authors the credential KEM family's generic interface, identifier, scope declaration, components, and mock**
 

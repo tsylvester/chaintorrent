@@ -89,9 +89,11 @@ External cryptographic review of the composition and the contract verifier befor
 - The BN254 batched pairing-product check is implemented unweighted, which the research notes is not equivalent to three separate equalities; a crafted proof passes.
 - The challenge hash omits one context field, and a proof transplants to a second settlement.
 - A registered `G2` key on BLS12-381 is accepted without an MSM or pairing check and is off the prime-order subgroup.
+- Two libraries of one curve, both bilinear and both on the same field tower, encode the pairing of the same inputs to different bytes, so a capsule encapsulated under one derives a different wrapping key under the other; nothing above the pairing family detects it, since neither library is wrong on its own terms.
 
 ## Mitigation Plan
 - Implement the verifier in Rust and Solidity from the same statement of the relations; treat the Rust verifier as the reference and the contract as its port.
+- Declare the target-group encoding identifier in the pairing family, require it in the suite, and prove every pairing concrete against a known-answer vector of the pairing of the generators derived from the identifier's definition, including its exact final exponent, by computations independent of both libraries, since a library's reduced pairing may be a fixed multiple of the exact value and still pass every pairing-equation check.
 - Mutation and replay test suite over every statement field, both curve forms.
 - Commission external review in parallel with the harness, scoped to the composition claims and the verifier.
 - Gate the priced dogfood deployment on the review's result.

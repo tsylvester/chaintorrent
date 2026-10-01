@@ -115,7 +115,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
   * `[✅]`   `role`
     * `[✅]`   Infrastructure: one configuration file with no types and no tests, exempt from the support-file structure
-    * `[✅]`   Does not create the Solidity, TypeScript, fuzz, or end-to-end workflow definitions, each a separate file created once by the ticket that first needs it, `contracts/evm/PairingLib` for `forge build` and `forge fmt --check`, the first shell or webview ticket for the TypeScript linter, the first fuzz target for `cargo-fuzz`, and the first end-to-end scenario for the clean-runner job; no later ticket edits `rust.yml`
+    * `[✅]`   Does not create the Solidity, TypeScript, fuzz, or end-to-end workflow definitions, each a separate file created once by the ticket that first needs it, `contracts/evm/PairingLib` for `forge build`, `forge fmt --check`, and `forge test`, the first shell or webview ticket for the TypeScript linter, the first fuzz target for `cargo-fuzz`, and the first end-to-end scenario for the clean-runner job; no later ticket edits `rust.yml`
     * `[✅]`   Does not edit `.github/workflows/npm-publish.yml`
     * `[✅]`   Does not package, sign, release, or publish, and reads no secret
     * `[✅]`   Does not carry a commit; the grouping's integration test and commit are carried by `random/factory`
@@ -1212,7 +1212,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   App module: an `IPairingConsumer` the harness passes to `create_pairing` once per `PairingConcrete`; it is a class in the adapter role, implementing a repo-owned trait and wrapping the operating system's monotonic clock
     * `[✅]`   Creates the `apps/harness-crypto` crate as a library crate and adds `"apps/*"` to the root manifest's `members`, the member glob `workspace/cargo` specifies, so the crate is admitted
     * `[✅]`   Returns the timings of the concrete it is handed and selects nothing; the harness run constructs it for each concrete and records the timings, and the configured default per curve is set from them
-    * `[✅]`   Does not author `main.rs`; the harness node that first runs end to end authors the binary entry
+    * `[✅]`   Does not author `main.rs`; `harness-crypto/main` authors the binary entry, reading `harness-crypto/config` and composing every family through its factory
     * `[✅]`   Does not time decoding, encoding, or sampling
     * `[✅]`   Does not carry a commit
 
