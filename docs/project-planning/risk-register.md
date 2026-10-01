@@ -93,7 +93,7 @@ External cryptographic review of the composition and the contract verifier befor
 
 ## Mitigation Plan
 - Implement the verifier in Rust and Solidity from the same statement of the relations; treat the Rust verifier as the reference and the contract as its port.
-- Declare the target-group encoding identifier in the pairing family, require it in the suite, and prove every pairing concrete against a known-answer vector of the pairing of the generators derived from the identifier's definition, including its exact final exponent, by computations independent of both libraries, since a library's reduced pairing may be a fixed multiple of the exact value and still pass every pairing-equation check.
+- Declare the target-group encoding identifier in the pairing family, require it in the suite, and prove every pairing concrete by executing the identifier's definition in its tests, including its exact final exponent, and prove the two concretes of each curve equal to each other, since a library's reduced pairing may be a fixed multiple of the exact value and still pass every pairing-equation check.
 - Mutation and replay test suite over every statement field, both curve forms.
 - Commission external review in parallel with the harness, scoped to the composition claims and the verifier.
 - Gate the priced dogfood deployment on the review's result.
