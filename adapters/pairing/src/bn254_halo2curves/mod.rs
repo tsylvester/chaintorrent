@@ -7,33 +7,42 @@ mod test;
 
 use crate::factory::provides::{
     AddG1Params, AddG1Payload, AddG1Return, AddG1SuccessReturn, AddG2Params, AddG2Payload,
-    AddG2Return, AddG2SuccessReturn, DecodeG1ErrorReturn, DecodeG1Params, DecodeG1Return,
+    AddG2Return, AddG2SuccessReturn, AddScalarParams, AddScalarPayload, AddScalarReturn,
+    AddScalarSuccessReturn, DecodeG1ErrorReturn, DecodeG1Params, DecodeG1Return,
     DecodeG1SuccessReturn, DecodeG2ErrorReturn, DecodeG2Params, DecodeG2Return,
     DecodeG2SuccessReturn, DecodeScalarErrorReturn, DecodeScalarParams, DecodeScalarReturn,
     DecodeScalarSuccessReturn, EncodeG1Params, EncodeG1Payload, EncodeG1Return,
     EncodeG1SuccessReturn, EncodeG2Params, EncodeG2Payload, EncodeG2Return, EncodeG2SuccessReturn,
-    EncodeScalarParams, EncodeScalarPayload, EncodeScalarReturn, EncodeScalarSuccessReturn,
-    G1GeneratorParams, G1GeneratorPayload, G1GeneratorReturn, G1GeneratorSuccessReturn,
-    G2GeneratorParams, G2GeneratorPayload, G2GeneratorReturn, G2GeneratorSuccessReturn,
-    IPairingAdapter, ISampleUniformScalar, MsmG1Params, MsmG1Payload, MsmG1Return,
+    EncodeGtParams, EncodeGtPayload, EncodeGtReturn, EncodeGtSuccessReturn, EncodeScalarParams,
+    EncodeScalarPayload, EncodeScalarReturn, EncodeScalarSuccessReturn, G1GeneratorParams,
+    G1GeneratorPayload, G1GeneratorReturn, G1GeneratorSuccessReturn, G2GeneratorParams,
+    G2GeneratorPayload, G2GeneratorReturn, G2GeneratorSuccessReturn, IPairingAdapter,
+    IPairingArithmetic, ISampleUniformScalar, IsIdentityG1Params, IsIdentityG1Payload,
+    IsIdentityG1Return, IsIdentityG1SuccessReturn, IsIdentityG2Params, IsIdentityG2Payload,
+    IsIdentityG2Return, IsIdentityG2SuccessReturn, MsmG1Params, MsmG1Payload, MsmG1Return,
     MsmG1SuccessReturn, MsmG2Params, MsmG2Payload, MsmG2Return, MsmG2SuccessReturn, MulG1Params,
     MulG1Payload, MulG1Return, MulG1SuccessReturn, MulG2Params, MulG2Payload, MulG2Return,
-    MulG2SuccessReturn, PAIRING_INTERFACE_VERSION, PairingCurve, PairingDeclaration,
+    MulG2SuccessReturn, MulScalarParams, MulScalarPayload, MulScalarReturn, MulScalarSuccessReturn,
+    NegG1Params, NegG1Payload, NegG1Return, NegG1SuccessReturn, NegG2Params, NegG2Payload,
+    NegG2Return, NegG2SuccessReturn, NegScalarParams, NegScalarPayload, NegScalarReturn,
+    NegScalarSuccessReturn, PAIRING_INTERFACE_VERSION, PairingCurve, PairingDeclaration,
     PairingProductIsOneParams, PairingProductIsOnePayload, PairingProductIsOneReturn,
-    PairingProductIsOneSuccessReturn, PrecompileEncoding, SampleUniformScalarErrorReturn,
-    SampleUniformScalarParams, SampleUniformScalarPayload, SampleUniformScalarReturn,
-    SampleUniformScalarSuccessReturn, VerifierGroupArithmetic,
+    PairingProductIsOneSuccessReturn, PairingProductParams, PairingProductPayload,
+    PairingProductReturn, PairingProductSuccessReturn, PrecompileEncoding,
+    SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
+    SampleUniformScalarReturn, SampleUniformScalarSuccessReturn, TargetGroupEncodingIdentifier,
+    VerifierGroupArithmetic,
 };
 use core::hint::black_box;
 use domain::{Secret, SecretConstructorParams};
-use halo2curves::bn256::{Bn256, Fq, Fq2, Fr, G1Affine, G2Affine};
+use halo2curves::bn256::{Bn256, Fq, Fq2, Fr, G1Affine, G2Affine, Gt};
 use halo2curves::ff::{Field, FromUniformBytes, PrimeField};
 use halo2curves::group::{Curve, Group, cofactor::CofactorGroup, prime::PrimeCurveAffine};
 use halo2curves::msm::msm_best;
 use halo2curves::pairing::{MillerLoopResult, MultiMillerLoop};
 use halo2curves::{Coordinates, CurveAffine};
 use interface::{
-    Bn254Halo2curvesG1, Bn254Halo2curvesG2, Bn254Halo2curvesPairing,
+    Bn254Halo2curvesG1, Bn254Halo2curvesG2, Bn254Halo2curvesGt, Bn254Halo2curvesPairing,
     Bn254Halo2curvesPairingConstructorParams, Bn254Halo2curvesPairingTryNewReturn,
     Bn254Halo2curvesScalar,
 };
@@ -44,6 +53,7 @@ impl Bn254Halo2curvesPairing {
         curve: PairingCurve::Bn254,
         verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly,
         precompile_encoding: PrecompileEncoding::Eip196Eip197,
+        target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1,
         adapter_version: 1,
         interface_version: PAIRING_INTERFACE_VERSION,
     };
@@ -350,6 +360,134 @@ impl IPairingAdapter for Bn254Halo2curvesPairing {
     }
 }
 
+impl IPairingArithmetic for Bn254Halo2curvesPairing {
+    type Gt = Bn254Halo2curvesGt;
+
+    fn add_scalar(
+        &self,
+        _params: AddScalarParams,
+        payload: AddScalarPayload<Self::Scalar>,
+    ) -> AddScalarReturn<Self::Scalar> {
+        Ok(AddScalarSuccessReturn {
+            sum: Bn254Halo2curvesScalar {
+                value: payload.left.value + payload.right.value,
+            },
+        })
+    }
+
+    fn mul_scalar(
+        &self,
+        _params: MulScalarParams,
+        payload: MulScalarPayload<Self::Scalar>,
+    ) -> MulScalarReturn<Self::Scalar> {
+        Ok(MulScalarSuccessReturn {
+            product: Bn254Halo2curvesScalar {
+                value: payload.left.value * payload.right.value,
+            },
+        })
+    }
+
+    fn neg_scalar(
+        &self,
+        _params: NegScalarParams,
+        payload: NegScalarPayload<Self::Scalar>,
+    ) -> NegScalarReturn<Self::Scalar> {
+        Ok(NegScalarSuccessReturn {
+            negation: Bn254Halo2curvesScalar {
+                value: -payload.scalar.value,
+            },
+        })
+    }
+
+    fn neg_g1(
+        &self,
+        _params: NegG1Params,
+        payload: NegG1Payload<Self::G1>,
+    ) -> NegG1Return<Self::G1> {
+        Ok(NegG1SuccessReturn {
+            negation: Bn254Halo2curvesG1 {
+                value: -payload.point.value,
+            },
+        })
+    }
+
+    fn neg_g2(
+        &self,
+        _params: NegG2Params,
+        payload: NegG2Payload<Self::G2>,
+    ) -> NegG2Return<Self::G2> {
+        Ok(NegG2SuccessReturn {
+            negation: Bn254Halo2curvesG2 {
+                value: -payload.point.value,
+            },
+        })
+    }
+
+    fn is_identity_g1(
+        &self,
+        _params: IsIdentityG1Params,
+        payload: IsIdentityG1Payload<Self::G1>,
+    ) -> IsIdentityG1Return {
+        Ok(IsIdentityG1SuccessReturn {
+            is_identity: bool::from(payload.point.value.is_identity()),
+        })
+    }
+
+    fn is_identity_g2(
+        &self,
+        _params: IsIdentityG2Params,
+        payload: IsIdentityG2Payload<Self::G2>,
+    ) -> IsIdentityG2Return {
+        Ok(IsIdentityG2SuccessReturn {
+            is_identity: bool::from(payload.point.value.is_identity()),
+        })
+    }
+
+    fn pairing_product(
+        &self,
+        _params: PairingProductParams,
+        payload: PairingProductPayload<Self::G1, Self::G2>,
+    ) -> PairingProductReturn<Self::Gt> {
+        let terms: Vec<(&G1Affine, &G2Affine)> = payload
+            .terms
+            .iter()
+            .map(|term| (&term.g1.value, &term.g2.value))
+            .collect();
+        let product = Bn256::multi_miller_loop(&terms).final_exponentiation();
+        Ok(PairingProductSuccessReturn {
+            product: Bn254Halo2curvesGt { value: product },
+        })
+    }
+
+    fn encode_gt(
+        &self,
+        _params: EncodeGtParams,
+        payload: EncodeGtPayload<Self::Gt>,
+    ) -> EncodeGtReturn {
+        let value = payload.value.value.inner();
+        let coefficients = [
+            value.c0().c0().c0(),
+            value.c0().c0().c1(),
+            value.c0().c1().c0(),
+            value.c0().c1().c1(),
+            value.c0().c2().c0(),
+            value.c0().c2().c1(),
+            value.c1().c0().c0(),
+            value.c1().c0().c1(),
+            value.c1().c1().c0(),
+            value.c1().c1().c1(),
+            value.c1().c2().c0(),
+            value.c1().c2().c1(),
+        ];
+        let mut buffer = Vec::with_capacity(384);
+        for coefficient in coefficients {
+            buffer.extend(coefficient.to_repr().as_ref().iter().rev());
+        }
+        let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });
+        Ok(EncodeGtSuccessReturn { bytes })
+    }
+}
+
 impl Zeroize for Bn254Halo2curvesScalar {
     fn zeroize(&mut self) {
         self.value = Fr::ZERO;
@@ -360,6 +498,48 @@ impl Zeroize for Bn254Halo2curvesScalar {
 impl Drop for Bn254Halo2curvesScalar {
     fn drop(&mut self) {
         self.value = Fr::ZERO;
+        black_box(&self.value);
+    }
+}
+
+impl Zeroize for Bn254Halo2curvesG1 {
+    fn zeroize(&mut self) {
+        self.value = G1Affine::identity();
+        black_box(&self.value);
+    }
+}
+
+impl Drop for Bn254Halo2curvesG1 {
+    fn drop(&mut self) {
+        self.value = G1Affine::identity();
+        black_box(&self.value);
+    }
+}
+
+impl Zeroize for Bn254Halo2curvesG2 {
+    fn zeroize(&mut self) {
+        self.value = G2Affine::identity();
+        black_box(&self.value);
+    }
+}
+
+impl Drop for Bn254Halo2curvesG2 {
+    fn drop(&mut self) {
+        self.value = G2Affine::identity();
+        black_box(&self.value);
+    }
+}
+
+impl Zeroize for Bn254Halo2curvesGt {
+    fn zeroize(&mut self) {
+        self.value = Gt::identity();
+        black_box(&self.value);
+    }
+}
+
+impl Drop for Bn254Halo2curvesGt {
+    fn drop(&mut self) {
+        self.value = Gt::identity();
         black_box(&self.value);
     }
 }

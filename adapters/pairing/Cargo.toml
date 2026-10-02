@@ -17,6 +17,7 @@ halo2curves = "0.10.0"
 domain = { path = "../../crates/domain", features = ["mocks"] }
 random = { path = "../random", features = ["mocks"] }
 hex = "0.4.3"
+num-bigint = "0.4.8"
 
 [features]
 mocks = ["domain/mocks"]

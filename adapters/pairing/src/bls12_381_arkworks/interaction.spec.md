@@ -6,7 +6,7 @@ Branch contract for the `bls12_381_arkworks` module of the `pairing` crate: the 
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| construct | any params | none | none | `Ok(Bls12381ArkworksPairing)` |
+| construct | any params | none | `Fr::from(3u64)` as `multiple`; `let mut exponent = Fr::MODULUS;` then `let _ = exponent.sub_with_borrow(&BigInt::from(2u64));`, the group order minus two; `multiple.pow(exponent)` as `reduced_pairing_correction` | `Ok(Bls12381ArkworksPairing { reduced_pairing_correction })` |
 
 The error arm has no branch: the adapter takes no configuration, so `Infallible` is uninhabited.
 
@@ -14,7 +14,7 @@ The error arm has no branch: the adapter takes no configuration, so `Infallible`
 
 An inherent constant, readable from the type before any instance exists:
 
-`PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
+`PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
 
 ## `g1_generator(&self, params: G1GeneratorParams, payload: G1GeneratorPayload) -> G1GeneratorReturn<Bls12381ArkworksG1>`
 
@@ -128,9 +128,63 @@ EIP-2537's MSM accepts any 256-bit scalar; this decoder, which produces an owned
 | wrong length | `payload.uniform.expose().len() != 64` | the length check | `Secret::expose` | `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })` |
 | sampled | the length is 64 | none | `Fr::from_be_bytes_mod_order` over the exposed bytes | `Ok(SampleUniformScalarSuccessReturn { scalar })`, the scalar moved into a `Secret`; the payload's `Secret` zeroizes the input when it drops |
 
+## `add_scalar(&self, params: AddScalarParams, payload: AddScalarPayload<Bls12381ArkworksScalar>) -> AddScalarReturn<Bls12381ArkworksScalar>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| summed | any | none | `Fr`'s `+` over `payload.left.value` and `payload.right.value` | `Ok(AddScalarSuccessReturn { sum })`, the sum modulo the group order in the owned scalar type; the payload, holding both scalars, drops at the end of the call and both are zeroized |
+
+## `mul_scalar(&self, params: MulScalarParams, payload: MulScalarPayload<Bls12381ArkworksScalar>) -> MulScalarReturn<Bls12381ArkworksScalar>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| multiplied | any | none | `Fr`'s `*` over `payload.left.value` and `payload.right.value` | `Ok(MulScalarSuccessReturn { product })`, the product modulo the group order in the owned scalar type; the payload's scalars are zeroized as it drops |
+
+## `neg_scalar(&self, params: NegScalarParams, payload: NegScalarPayload<Bls12381ArkworksScalar>) -> NegScalarReturn<Bls12381ArkworksScalar>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| negated | any | none | `Fr`'s unary `-` over `payload.scalar.value` | `Ok(NegScalarSuccessReturn { negation })`, the group order minus the scalar, and zero for zero |
+
+## `neg_g1(&self, params: NegG1Params, payload: NegG1Payload<Bls12381ArkworksG1>) -> NegG1Return<Bls12381ArkworksG1>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| negated | any | none | the affine point's unary `-` over `payload.point.value` | `Ok(NegG1SuccessReturn { negation })`, `(x, p - y)` for a point `(x, y)` and the identity for the identity |
+
+## `neg_g2(&self, params: NegG2Params, payload: NegG2Payload<Bls12381ArkworksG2>) -> NegG2Return<Bls12381ArkworksG2>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| negated | any | none | the affine point's unary `-` over `payload.point.value` | `Ok(NegG2SuccessReturn { negation })`, `(x, p - y)` for a point `(x, y)` and the identity for the identity |
+
+## `is_identity_g1(&self, params: IsIdentityG1Params, payload: IsIdentityG1Payload<Bls12381ArkworksG1>) -> IsIdentityG1Return`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| tested | any | none | `AffineRepr::is_zero()` on `payload.point.value` | `Ok(IsIdentityG1SuccessReturn { is_identity })`, `true` exactly for the identity |
+
+## `is_identity_g2(&self, params: IsIdentityG2Params, payload: IsIdentityG2Payload<Bls12381ArkworksG2>) -> IsIdentityG2Return`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| tested | any | none | `AffineRepr::is_zero()` on `payload.point.value` | `Ok(IsIdentityG2SuccessReturn { is_identity })`, `true` exactly for the identity |
+
+## `pairing_product(&self, params: PairingProductParams, payload: PairingProductPayload<Bls12381ArkworksG1, Bls12381ArkworksG2>) -> PairingProductReturn<Bls12381ArkworksGt>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| evaluated | any | none | split the terms into a `Vec<G1Affine>` and a `Vec<G2Affine>` in term order, then `Bls12_381::multi_pairing(&g1s, &g2s)`, then the `PairingOutput` `*` `self.reduced_pairing_correction`, the exponentiation that brings the library's cubed value to the identifier's exact value, then `zeroize` on both vectors | `Ok(PairingProductSuccessReturn { product })` holding the corrected `PairingOutput` in the owned target-group type; an empty term list yields the target group's identity, which the exponentiation preserves |
+
+## `encode_gt(&self, params: EncodeGtParams, payload: EncodeGtPayload<Bls12381ArkworksGt>) -> EncodeGtReturn`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| encoded | any | none | `into_bigint().to_bytes_be()` on each of the twelve `Fq` coefficients of `payload.value.value.0` in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, appended in that order into one buffer of 576 bytes | `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`; the target group's identity encodes as 47 zero bytes, `01`, and 528 zero bytes |
+
 ## Ordering and edges
 
 - Every decoder checks in the stated order — length, then canonicality, then identity, then curve, then subgroup — and slices the payload only after the length check.
 - An empty `msm` term list yields the identity; an empty `pairing_product_is_one` term list yields `is_one: true`, as EIP-2537 does for empty input.
-- Zeroization: `Bls12381ArkworksScalar` zeroizes its `Fr` through its `Zeroize` implementation and on drop, so every clone a consumer places in a payload is zeroized when the payload drops.
+- Zeroization: `Bls12381ArkworksScalar`, `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt` each zeroize their `value` through their `Zeroize` implementation and on drop, so every clone a consumer places in a payload is zeroized when the payload drops.
 - `params` carries no control and is not read in any method.

@@ -20,3 +20,7 @@ pub struct Bn254Halo2curvesG1 {
 pub struct Bn254Halo2curvesG2 {
     pub(super) value: halo2curves::bn256::G2Affine,
 }
+
+pub struct Bn254Halo2curvesGt {
+    pub(super) value: halo2curves::bn256::Gt,
+}

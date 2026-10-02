@@ -20,10 +20,31 @@ pub enum PrecompileEncoding {
     Eip2537,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TargetGroupEncodingIdentifier {
+    /// The optimal ate pairing as EIP-197 fixes it, over the EIP-197
+    /// generators, on the tower `Fp2 = Fp[u] / (u^2 + 1)`,
+    /// `Fp6 = Fp2[v] / (v^3 - (u + 9))`, `Fp12 = Fp6[w] / (w^2 - v)`; the
+    /// pairing value is the Miller loop's value raised to the exact exponent
+    /// `(p^12 - 1) / r`, not a fixed multiple of it; a target-group element is
+    /// serialized as its twelve base-field coefficients in tower order, each
+    /// the coefficient's 32-byte big-endian canonical integer.
+    Bn254V1,
+    /// The optimal ate pairing as the CFRG pairing-friendly-curves draft fixes
+    /// it, over the EIP-2537 generators, on the tower `Fp2 = Fp[u] / (u^2 + 1)`,
+    /// `Fp6 = Fp2[v] / (v^3 - (u + 1))`, `Fp12 = Fp6[w] / (w^2 - v)`; the
+    /// pairing value is the Miller loop's value raised to the exact exponent
+    /// `(p^12 - 1) / r`, not a fixed multiple of it; a target-group element is
+    /// serialized as its twelve base-field coefficients in tower order, each
+    /// the coefficient's 48-byte big-endian canonical integer.
+    Bls12381V1,
+}
+
 pub struct PairingDeclaration {
     pub curve: PairingCurve,
     pub verifier_group_arithmetic: VerifierGroupArithmetic,
     pub precompile_encoding: PrecompileEncoding,
+    pub target_group_encoding: TargetGroupEncodingIdentifier,
     pub adapter_version: u32,
     pub interface_version: u32,
 }
@@ -256,6 +277,116 @@ pub struct EncodeScalarSuccessReturn {
 
 pub type EncodeScalarReturn = Result<EncodeScalarSuccessReturn, Infallible>;
 
+pub struct AddScalarParams;
+
+pub struct AddScalarPayload<S> {
+    pub left: S,
+    pub right: S,
+}
+
+pub struct AddScalarSuccessReturn<S> {
+    pub sum: S,
+}
+
+pub type AddScalarReturn<S> = Result<AddScalarSuccessReturn<S>, Infallible>;
+
+pub struct MulScalarParams;
+
+pub struct MulScalarPayload<S> {
+    pub left: S,
+    pub right: S,
+}
+
+pub struct MulScalarSuccessReturn<S> {
+    pub product: S,
+}
+
+pub type MulScalarReturn<S> = Result<MulScalarSuccessReturn<S>, Infallible>;
+
+pub struct NegScalarParams;
+
+pub struct NegScalarPayload<S> {
+    pub scalar: S,
+}
+
+pub struct NegScalarSuccessReturn<S> {
+    pub negation: S,
+}
+
+pub type NegScalarReturn<S> = Result<NegScalarSuccessReturn<S>, Infallible>;
+
+pub struct NegG1Params;
+
+pub struct NegG1Payload<G> {
+    pub point: G,
+}
+
+pub struct NegG1SuccessReturn<G> {
+    pub negation: G,
+}
+
+pub type NegG1Return<G> = Result<NegG1SuccessReturn<G>, Infallible>;
+
+pub struct NegG2Params;
+
+pub struct NegG2Payload<G> {
+    pub point: G,
+}
+
+pub struct NegG2SuccessReturn<G> {
+    pub negation: G,
+}
+
+pub type NegG2Return<G> = Result<NegG2SuccessReturn<G>, Infallible>;
+
+pub struct IsIdentityG1Params;
+
+pub struct IsIdentityG1Payload<G> {
+    pub point: G,
+}
+
+pub struct IsIdentityG1SuccessReturn {
+    pub is_identity: bool,
+}
+
+pub type IsIdentityG1Return = Result<IsIdentityG1SuccessReturn, Infallible>;
+
+pub struct IsIdentityG2Params;
+
+pub struct IsIdentityG2Payload<G> {
+    pub point: G,
+}
+
+pub struct IsIdentityG2SuccessReturn {
+    pub is_identity: bool,
+}
+
+pub type IsIdentityG2Return = Result<IsIdentityG2SuccessReturn, Infallible>;
+
+pub struct PairingProductParams;
+
+pub struct PairingProductPayload<G1, G2> {
+    pub terms: Vec<PairingProductTerm<G1, G2>>,
+}
+
+pub struct PairingProductSuccessReturn<T> {
+    pub product: T,
+}
+
+pub type PairingProductReturn<T> = Result<PairingProductSuccessReturn<T>, Infallible>;
+
+pub struct EncodeGtParams;
+
+pub struct EncodeGtPayload<T> {
+    pub value: T,
+}
+
+pub struct EncodeGtSuccessReturn {
+    pub bytes: Secret<Vec<u8>>,
+}
+
+pub type EncodeGtReturn = Result<EncodeGtSuccessReturn, Infallible>;
+
 pub trait IPairingAdapter {
     type Scalar: ISampleUniformScalar + Clone;
     type G1: Clone;
@@ -338,6 +469,58 @@ pub trait IPairingAdapter {
     ) -> EncodeScalarReturn;
 }
 
+pub trait IPairingArithmetic: IPairingAdapter<G1: Zeroize, G2: Zeroize> {
+    type Gt: Zeroize;
+
+    fn add_scalar(
+        &self,
+        params: AddScalarParams,
+        payload: AddScalarPayload<Self::Scalar>,
+    ) -> AddScalarReturn<Self::Scalar>;
+
+    fn mul_scalar(
+        &self,
+        params: MulScalarParams,
+        payload: MulScalarPayload<Self::Scalar>,
+    ) -> MulScalarReturn<Self::Scalar>;
+
+    fn neg_scalar(
+        &self,
+        params: NegScalarParams,
+        payload: NegScalarPayload<Self::Scalar>,
+    ) -> NegScalarReturn<Self::Scalar>;
+
+    fn neg_g1(&self, params: NegG1Params, payload: NegG1Payload<Self::G1>)
+    -> NegG1Return<Self::G1>;
+
+    fn neg_g2(&self, params: NegG2Params, payload: NegG2Payload<Self::G2>)
+    -> NegG2Return<Self::G2>;
+
+    fn is_identity_g1(
+        &self,
+        params: IsIdentityG1Params,
+        payload: IsIdentityG1Payload<Self::G1>,
+    ) -> IsIdentityG1Return;
+
+    fn is_identity_g2(
+        &self,
+        params: IsIdentityG2Params,
+        payload: IsIdentityG2Payload<Self::G2>,
+    ) -> IsIdentityG2Return;
+
+    fn pairing_product(
+        &self,
+        params: PairingProductParams,
+        payload: PairingProductPayload<Self::G1, Self::G2>,
+    ) -> PairingProductReturn<Self::Gt>;
+
+    fn encode_gt(
+        &self,
+        params: EncodeGtParams,
+        payload: EncodeGtPayload<Self::Gt>,
+    ) -> EncodeGtReturn;
+}
+
 pub enum PairingConcrete {
     Bn254Arkworks,
     Bn254Halo2curves,
@@ -348,7 +531,7 @@ pub enum PairingConcrete {
 pub trait IPairingConsumer {
     type Output;
 
-    fn consume_pairing<P: IPairingAdapter>(
+    fn consume_pairing<P: IPairingArithmetic>(
         &self,
         params: ConsumePairingParams,
         payload: ConsumePairingPayload<P>,
@@ -369,6 +552,7 @@ pub struct CreatePairingDeps<C> {
 pub struct CreatePairingParams {
     pub concrete: PairingConcrete,
     pub supported_encodings: Vec<PrecompileEncoding>,
+    pub target_group_encoding: TargetGroupEncodingIdentifier,
 }
 
 pub struct CreatePairingPayload;
@@ -379,6 +563,7 @@ pub struct CreatePairingSuccessReturn<O> {
 
 pub enum CreatePairingErrorReturn {
     UnsupportedPrecompileEncoding,
+    UnsupportedTargetGroupEncoding,
     Bn254Arkworks(Infallible),
     Bn254Halo2curves(Infallible),
     Bls12381Arkworks(Infallible),

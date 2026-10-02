@@ -7,23 +7,32 @@
 
 use super::interface::{
     AddG1Params, AddG1Payload, AddG1Return, AddG1SuccessReturn, AddG2Params, AddG2Payload,
-    AddG2Return, AddG2SuccessReturn, ConsumePairingParams, ConsumePairingPayload,
-    CreatePairingDeps, CreatePairingParams, CreatePairingPayload, CreatePairingReturn,
-    CreatePairingSuccessReturn, DecodeG1Params, DecodeG1Return, DecodeG1SuccessReturn,
-    DecodeG2Params, DecodeG2Return, DecodeG2SuccessReturn, DecodeScalarParams, DecodeScalarReturn,
-    DecodeScalarSuccessReturn, EncodeG1Params, EncodeG1Payload, EncodeG1Return,
-    EncodeG1SuccessReturn, EncodeG2Params, EncodeG2Payload, EncodeG2Return, EncodeG2SuccessReturn,
-    EncodeScalarParams, EncodeScalarPayload, EncodeScalarReturn, EncodeScalarSuccessReturn,
-    G1GeneratorParams, G1GeneratorPayload, G1GeneratorReturn, G1GeneratorSuccessReturn,
-    G2GeneratorParams, G2GeneratorPayload, G2GeneratorReturn, G2GeneratorSuccessReturn,
-    IPairingAdapter, IPairingConsumer, ISampleUniformScalar, MsmG1Params, MsmG1Payload,
-    MsmG1Return, MsmG1SuccessReturn, MsmG1Term, MsmG2Params, MsmG2Payload, MsmG2Return,
-    MsmG2SuccessReturn, MsmG2Term, MulG1Params, MulG1Payload, MulG1Return, MulG1SuccessReturn,
-    MulG2Params, MulG2Payload, MulG2Return, MulG2SuccessReturn, PAIRING_INTERFACE_VERSION,
-    PairingConcrete, PairingCurve, PairingDeclaration, PairingProductIsOneParams,
-    PairingProductIsOnePayload, PairingProductIsOneReturn, PairingProductIsOneSuccessReturn,
-    PairingProductTerm, PrecompileEncoding, SampleUniformScalarPayload,
-    SampleUniformScalarSuccessReturn, VerifierGroupArithmetic,
+    AddG2Return, AddG2SuccessReturn, AddScalarParams, AddScalarPayload, AddScalarReturn,
+    AddScalarSuccessReturn, ConsumePairingParams, ConsumePairingPayload, CreatePairingDeps,
+    CreatePairingParams, CreatePairingPayload, CreatePairingReturn, CreatePairingSuccessReturn,
+    DecodeG1Params, DecodeG1Return, DecodeG1SuccessReturn, DecodeG2Params, DecodeG2Return,
+    DecodeG2SuccessReturn, DecodeScalarParams, DecodeScalarReturn, DecodeScalarSuccessReturn,
+    EncodeG1Params, EncodeG1Payload, EncodeG1Return, EncodeG1SuccessReturn, EncodeG2Params,
+    EncodeG2Payload, EncodeG2Return, EncodeG2SuccessReturn, EncodeGtParams, EncodeGtPayload,
+    EncodeGtReturn, EncodeGtSuccessReturn, EncodeScalarParams, EncodeScalarPayload,
+    EncodeScalarReturn, EncodeScalarSuccessReturn, G1GeneratorParams, G1GeneratorPayload,
+    G1GeneratorReturn, G1GeneratorSuccessReturn, G2GeneratorParams, G2GeneratorPayload,
+    G2GeneratorReturn, G2GeneratorSuccessReturn, IPairingAdapter, IPairingArithmetic,
+    IPairingConsumer, ISampleUniformScalar, IsIdentityG1Params, IsIdentityG1Payload,
+    IsIdentityG1Return, IsIdentityG1SuccessReturn, IsIdentityG2Params, IsIdentityG2Payload,
+    IsIdentityG2Return, IsIdentityG2SuccessReturn, MsmG1Params, MsmG1Payload, MsmG1Return,
+    MsmG1SuccessReturn, MsmG1Term, MsmG2Params, MsmG2Payload, MsmG2Return, MsmG2SuccessReturn,
+    MsmG2Term, MulG1Params, MulG1Payload, MulG1Return, MulG1SuccessReturn, MulG2Params,
+    MulG2Payload, MulG2Return, MulG2SuccessReturn, MulScalarParams, MulScalarPayload,
+    MulScalarReturn, MulScalarSuccessReturn, NegG1Params, NegG1Payload, NegG1Return,
+    NegG1SuccessReturn, NegG2Params, NegG2Payload, NegG2Return, NegG2SuccessReturn,
+    NegScalarParams, NegScalarPayload, NegScalarReturn, NegScalarSuccessReturn,
+    PAIRING_INTERFACE_VERSION, PairingConcrete, PairingCurve, PairingDeclaration,
+    PairingProductIsOneParams, PairingProductIsOnePayload, PairingProductIsOneReturn,
+    PairingProductIsOneSuccessReturn, PairingProductParams, PairingProductPayload,
+    PairingProductReturn, PairingProductSuccessReturn, PairingProductTerm, PrecompileEncoding,
+    SampleUniformScalarPayload, SampleUniformScalarSuccessReturn, TargetGroupEncodingIdentifier,
+    VerifierGroupArithmetic,
 };
 use core::marker::PhantomData;
 use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
@@ -34,6 +43,7 @@ pub struct PairingDeclarationOverrides {
     pub curve: Option<PairingCurve>,
     pub verifier_group_arithmetic: Option<VerifierGroupArithmetic>,
     pub precompile_encoding: Option<PrecompileEncoding>,
+    pub target_group_encoding: Option<TargetGroupEncodingIdentifier>,
     pub adapter_version: Option<u32>,
     pub interface_version: Option<u32>,
 }
@@ -47,6 +57,9 @@ pub fn build_pairing_declaration(overrides: PairingDeclarationOverrides) -> Pair
         precompile_encoding: overrides
             .precompile_encoding
             .unwrap_or(PrecompileEncoding::Eip196Eip197),
+        target_group_encoding: overrides
+            .target_group_encoding
+            .unwrap_or(TargetGroupEncodingIdentifier::Bn254V1),
         adapter_version: overrides.adapter_version.unwrap_or(1),
         interface_version: overrides
             .interface_version
@@ -431,6 +444,242 @@ pub fn build_encode_scalar_success_return(
 }
 
 #[derive(Default)]
+pub struct AddScalarPayloadOverrides<S> {
+    pub left: Option<S>,
+    pub right: Option<S>,
+}
+
+pub fn build_add_scalar_payload<S: Default>(
+    overrides: AddScalarPayloadOverrides<S>,
+) -> AddScalarPayload<S> {
+    AddScalarPayload {
+        left: overrides.left.unwrap_or_default(),
+        right: overrides.right.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct AddScalarSuccessReturnOverrides<S> {
+    pub sum: Option<S>,
+}
+
+pub fn build_add_scalar_success_return<S: Default>(
+    overrides: AddScalarSuccessReturnOverrides<S>,
+) -> AddScalarSuccessReturn<S> {
+    AddScalarSuccessReturn {
+        sum: overrides.sum.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct MulScalarPayloadOverrides<S> {
+    pub left: Option<S>,
+    pub right: Option<S>,
+}
+
+pub fn build_mul_scalar_payload<S: Default>(
+    overrides: MulScalarPayloadOverrides<S>,
+) -> MulScalarPayload<S> {
+    MulScalarPayload {
+        left: overrides.left.unwrap_or_default(),
+        right: overrides.right.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct MulScalarSuccessReturnOverrides<S> {
+    pub product: Option<S>,
+}
+
+pub fn build_mul_scalar_success_return<S: Default>(
+    overrides: MulScalarSuccessReturnOverrides<S>,
+) -> MulScalarSuccessReturn<S> {
+    MulScalarSuccessReturn {
+        product: overrides.product.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct NegScalarPayloadOverrides<S> {
+    pub scalar: Option<S>,
+}
+
+pub fn build_neg_scalar_payload<S: Default>(
+    overrides: NegScalarPayloadOverrides<S>,
+) -> NegScalarPayload<S> {
+    NegScalarPayload {
+        scalar: overrides.scalar.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct NegScalarSuccessReturnOverrides<S> {
+    pub negation: Option<S>,
+}
+
+pub fn build_neg_scalar_success_return<S: Default>(
+    overrides: NegScalarSuccessReturnOverrides<S>,
+) -> NegScalarSuccessReturn<S> {
+    NegScalarSuccessReturn {
+        negation: overrides.negation.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct NegG1PayloadOverrides<G> {
+    pub point: Option<G>,
+}
+
+pub fn build_neg_g1_payload<G: Default>(overrides: NegG1PayloadOverrides<G>) -> NegG1Payload<G> {
+    NegG1Payload {
+        point: overrides.point.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct NegG1SuccessReturnOverrides<G> {
+    pub negation: Option<G>,
+}
+
+pub fn build_neg_g1_success_return<G: Default>(
+    overrides: NegG1SuccessReturnOverrides<G>,
+) -> NegG1SuccessReturn<G> {
+    NegG1SuccessReturn {
+        negation: overrides.negation.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct NegG2PayloadOverrides<G> {
+    pub point: Option<G>,
+}
+
+pub fn build_neg_g2_payload<G: Default>(overrides: NegG2PayloadOverrides<G>) -> NegG2Payload<G> {
+    NegG2Payload {
+        point: overrides.point.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct NegG2SuccessReturnOverrides<G> {
+    pub negation: Option<G>,
+}
+
+pub fn build_neg_g2_success_return<G: Default>(
+    overrides: NegG2SuccessReturnOverrides<G>,
+) -> NegG2SuccessReturn<G> {
+    NegG2SuccessReturn {
+        negation: overrides.negation.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct IsIdentityG1PayloadOverrides<G> {
+    pub point: Option<G>,
+}
+
+pub fn build_is_identity_g1_payload<G: Default>(
+    overrides: IsIdentityG1PayloadOverrides<G>,
+) -> IsIdentityG1Payload<G> {
+    IsIdentityG1Payload {
+        point: overrides.point.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct IsIdentityG1SuccessReturnOverrides {
+    pub is_identity: Option<bool>,
+}
+
+pub fn build_is_identity_g1_success_return(
+    overrides: IsIdentityG1SuccessReturnOverrides,
+) -> IsIdentityG1SuccessReturn {
+    IsIdentityG1SuccessReturn {
+        is_identity: overrides.is_identity.unwrap_or(false),
+    }
+}
+
+#[derive(Default)]
+pub struct IsIdentityG2PayloadOverrides<G> {
+    pub point: Option<G>,
+}
+
+pub fn build_is_identity_g2_payload<G: Default>(
+    overrides: IsIdentityG2PayloadOverrides<G>,
+) -> IsIdentityG2Payload<G> {
+    IsIdentityG2Payload {
+        point: overrides.point.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct IsIdentityG2SuccessReturnOverrides {
+    pub is_identity: Option<bool>,
+}
+
+pub fn build_is_identity_g2_success_return(
+    overrides: IsIdentityG2SuccessReturnOverrides,
+) -> IsIdentityG2SuccessReturn {
+    IsIdentityG2SuccessReturn {
+        is_identity: overrides.is_identity.unwrap_or(false),
+    }
+}
+
+#[derive(Default)]
+pub struct PairingProductPayloadOverrides<G1, G2> {
+    pub terms: Option<Vec<PairingProductTerm<G1, G2>>>,
+}
+
+pub fn build_pairing_product_payload<G1: Default, G2: Default>(
+    overrides: PairingProductPayloadOverrides<G1, G2>,
+) -> PairingProductPayload<G1, G2> {
+    PairingProductPayload {
+        terms: overrides.terms.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct PairingProductSuccessReturnOverrides<T> {
+    pub product: Option<T>,
+}
+
+pub fn build_pairing_product_success_return<T: Default>(
+    overrides: PairingProductSuccessReturnOverrides<T>,
+) -> PairingProductSuccessReturn<T> {
+    PairingProductSuccessReturn {
+        product: overrides.product.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct EncodeGtPayloadOverrides<T> {
+    pub value: Option<T>,
+}
+
+pub fn build_encode_gt_payload<T: Default>(
+    overrides: EncodeGtPayloadOverrides<T>,
+) -> EncodeGtPayload<T> {
+    EncodeGtPayload {
+        value: overrides.value.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct EncodeGtSuccessReturnOverrides {
+    pub bytes: Option<Secret<Vec<u8>>>,
+}
+
+pub fn build_encode_gt_success_return(
+    overrides: EncodeGtSuccessReturnOverrides,
+) -> EncodeGtSuccessReturn {
+    EncodeGtSuccessReturn {
+        bytes: overrides.bytes.unwrap_or_else(|| {
+            build_secret::<Vec<u8>>(SecretConstructorParamsOverrides::default())
+        }),
+    }
+}
+
+#[derive(Default)]
 pub struct SampleUniformScalarPayloadOverrides {
     pub uniform: Option<Secret<Vec<u8>>>,
 }
@@ -462,13 +711,14 @@ pub fn build_sample_uniform_scalar_success_return<S: Zeroize + Default>(
     }
 }
 
-pub struct MockIPairingAdapter<S, G1, G2> {
+pub struct MockIPairingAdapter<S, G1, G2, Gt> {
     pub scalar: PhantomData<S>,
     pub g1: PhantomData<G1>,
     pub g2: PhantomData<G2>,
+    pub gt: PhantomData<Gt>,
 }
 
-impl<S, G1, G2> IPairingAdapter for MockIPairingAdapter<S, G1, G2>
+impl<S, G1, G2, Gt> IPairingAdapter for MockIPairingAdapter<S, G1, G2, Gt>
 where
     S: ISampleUniformScalar + Clone + Default,
     G1: Clone + Default,
@@ -593,21 +843,114 @@ where
     }
 }
 
+impl<S, G1, G2, Gt> IPairingArithmetic for MockIPairingAdapter<S, G1, G2, Gt>
+where
+    S: ISampleUniformScalar + Clone + Default,
+    G1: Zeroize + Clone + Default,
+    G2: Zeroize + Clone + Default,
+    Gt: Zeroize + Default,
+{
+    type Gt = Gt;
+
+    fn add_scalar(
+        &self,
+        _params: AddScalarParams,
+        _payload: AddScalarPayload<Self::Scalar>,
+    ) -> AddScalarReturn<Self::Scalar> {
+        Ok(build_add_scalar_success_return(Default::default()))
+    }
+
+    fn mul_scalar(
+        &self,
+        _params: MulScalarParams,
+        _payload: MulScalarPayload<Self::Scalar>,
+    ) -> MulScalarReturn<Self::Scalar> {
+        Ok(build_mul_scalar_success_return(Default::default()))
+    }
+
+    fn neg_scalar(
+        &self,
+        _params: NegScalarParams,
+        _payload: NegScalarPayload<Self::Scalar>,
+    ) -> NegScalarReturn<Self::Scalar> {
+        Ok(build_neg_scalar_success_return(Default::default()))
+    }
+
+    fn neg_g1(
+        &self,
+        _params: NegG1Params,
+        _payload: NegG1Payload<Self::G1>,
+    ) -> NegG1Return<Self::G1> {
+        Ok(build_neg_g1_success_return(Default::default()))
+    }
+
+    fn neg_g2(
+        &self,
+        _params: NegG2Params,
+        _payload: NegG2Payload<Self::G2>,
+    ) -> NegG2Return<Self::G2> {
+        Ok(build_neg_g2_success_return(Default::default()))
+    }
+
+    fn is_identity_g1(
+        &self,
+        _params: IsIdentityG1Params,
+        _payload: IsIdentityG1Payload<Self::G1>,
+    ) -> IsIdentityG1Return {
+        Ok(build_is_identity_g1_success_return(Default::default()))
+    }
+
+    fn is_identity_g2(
+        &self,
+        _params: IsIdentityG2Params,
+        _payload: IsIdentityG2Payload<Self::G2>,
+    ) -> IsIdentityG2Return {
+        Ok(build_is_identity_g2_success_return(Default::default()))
+    }
+
+    fn pairing_product(
+        &self,
+        _params: PairingProductParams,
+        _payload: PairingProductPayload<Self::G1, Self::G2>,
+    ) -> PairingProductReturn<Self::Gt> {
+        Ok(build_pairing_product_success_return(Default::default()))
+    }
+
+    fn encode_gt(
+        &self,
+        _params: EncodeGtParams,
+        _payload: EncodeGtPayload<Self::Gt>,
+    ) -> EncodeGtReturn {
+        Ok(build_encode_gt_success_return(Default::default()))
+    }
+}
+
 #[derive(Default)]
 pub struct CreatePairingParamsOverrides {
     pub concrete: Option<PairingConcrete>,
     pub supported_encodings: Option<Vec<PrecompileEncoding>>,
+    pub target_group_encoding: Option<TargetGroupEncodingIdentifier>,
 }
 
 pub fn build_create_pairing_params(overrides: CreatePairingParamsOverrides) -> CreatePairingParams {
+    let concrete = overrides.concrete.unwrap_or(PairingConcrete::Bn254Arkworks);
+    let target_group_encoding = overrides.target_group_encoding.unwrap_or(match concrete {
+        PairingConcrete::Bn254Arkworks | PairingConcrete::Bn254Halo2curves => {
+            TargetGroupEncodingIdentifier::Bn254V1
+        }
+        PairingConcrete::Bls12381Arkworks | PairingConcrete::Bls12381Halo2curves => {
+            TargetGroupEncodingIdentifier::Bls12381V1
+        }
+    });
     CreatePairingParams {
-        concrete: overrides.concrete.unwrap_or(PairingConcrete::Bn254Arkworks),
+        concrete,
         supported_encodings: overrides.supported_encodings.unwrap_or_else(|| {
             vec![
                 PrecompileEncoding::Eip196Eip197,
                 PrecompileEncoding::Eip2537,
             ]
         }),
+        target_group_encoding,
     }
 }
 
@@ -625,19 +968,20 @@ pub fn build_create_pairing_success_return<O: Default>(
 }
 
 #[derive(Default)]
-pub struct ConsumePairingPayloadOverrides<S, G1, G2> {
-    pub adapter: Option<MockIPairingAdapter<S, G1, G2>>,
+pub struct ConsumePairingPayloadOverrides<S, G1, G2, Gt> {
+    pub adapter: Option<MockIPairingAdapter<S, G1, G2, Gt>>,
     pub declaration: Option<PairingDeclaration>,
 }
 
-pub fn build_consume_pairing_payload<S, G1, G2>(
-    overrides: ConsumePairingPayloadOverrides<S, G1, G2>,
-) -> ConsumePairingPayload<MockIPairingAdapter<S, G1, G2>> {
+pub fn build_consume_pairing_payload<S, G1, G2, Gt>(
+    overrides: ConsumePairingPayloadOverrides<S, G1, G2, Gt>,
+) -> ConsumePairingPayload<MockIPairingAdapter<S, G1, G2, Gt>> {
     ConsumePairingPayload {
         adapter: overrides.adapter.unwrap_or(MockIPairingAdapter {
             scalar: PhantomData,
             g1: PhantomData,
             g2: PhantomData,
+            gt: PhantomData,
         }),
         declaration: overrides
             .declaration

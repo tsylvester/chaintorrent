@@ -36,6 +36,11 @@ pub fn create_pairing<C: IPairingConsumer>(
             {
                 return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
             }
+            if Bn254ArkworksPairing::DECLARATION.target_group_encoding
+                != params.target_group_encoding
+            {
+                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
+            }
             let Ok(adapter) = Bn254ArkworksPairing::try_new(Bn254ArkworksPairingConstructorParams);
             Ok(CreatePairingSuccessReturn {
                 output: deps.consumer.consume_pairing(
@@ -53,6 +58,11 @@ pub fn create_pairing<C: IPairingConsumer>(
                 .contains(&Bn254Halo2curvesPairing::DECLARATION.precompile_encoding)
             {
                 return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
+            }
+            if Bn254Halo2curvesPairing::DECLARATION.target_group_encoding
+                != params.target_group_encoding
+            {
+                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
             }
             let Ok(adapter) =
                 Bn254Halo2curvesPairing::try_new(Bn254Halo2curvesPairingConstructorParams);
@@ -73,6 +83,11 @@ pub fn create_pairing<C: IPairingConsumer>(
             {
                 return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
             }
+            if Bls12381ArkworksPairing::DECLARATION.target_group_encoding
+                != params.target_group_encoding
+            {
+                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
+            }
             let Ok(adapter) =
                 Bls12381ArkworksPairing::try_new(Bls12381ArkworksPairingConstructorParams);
             Ok(CreatePairingSuccessReturn {
@@ -91,6 +106,11 @@ pub fn create_pairing<C: IPairingConsumer>(
                 .contains(&Bls12381Halo2curvesPairing::DECLARATION.precompile_encoding)
             {
                 return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
+            }
+            if Bls12381Halo2curvesPairing::DECLARATION.target_group_encoding
+                != params.target_group_encoding
+            {
+                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
             }
             let Ok(adapter) =
                 Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);

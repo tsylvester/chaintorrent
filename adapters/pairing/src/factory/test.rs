@@ -9,7 +9,8 @@ use super::create_pairing;
 use super::interface::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingDeps, CreatePairingErrorReturn,
     CreatePairingPayload, IPairingAdapter, IPairingConsumer, PairingConcrete, PairingCurve,
-    PairingDeclaration, PrecompileEncoding, VerifierGroupArithmetic,
+    PairingDeclaration, PrecompileEncoding, TargetGroupEncodingIdentifier,
+    VerifierGroupArithmetic,
 };
 use super::mock::{CreatePairingParamsOverrides, build_create_pairing_params};
 use core::cell::Cell;
@@ -209,6 +210,7 @@ fn create_pairing_refuses_a_concrete_whose_encoding_the_chain_does_not_deploy() 
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Arkworks),
         supported_encodings: Some(vec![PrecompileEncoding::Eip196Eip197]),
+        ..Default::default()
     });
 
     // Act
@@ -218,6 +220,44 @@ fn create_pairing_refuses_a_concrete_whose_encoding_the_chain_does_not_deploy() 
     assert!(matches!(
         result,
         Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)
+    ));
+    assert!(!deps.consumer.called.get());
+}
+
+/// Contract: unsupported target-group encoding — the named concrete's declared
+///   `DECLARATION.target_group_encoding` is not equal to
+///   `params.target_group_encoding`, so the factory refuses before construction
+///   with `Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding)`,
+///   nothing constructed and the consumer not called (CR-10).
+/// Arrange: params naming `PairingConcrete::Bn254Arkworks` with
+///   `target_group_encoding` overridden to
+///   `TargetGroupEncodingIdentifier::Bls12381V1`; a `CallProbe` consumer
+///   recording whether it was called.
+/// Act:     `create_pairing` over the deps and params.
+/// Assert:  the return is
+///   `Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding)` and the
+///   consumer's `called` is still `false`.
+#[test]
+fn create_pairing_refuses_a_concrete_whose_target_group_encoding_the_suite_does_not_require() {
+    // Arrange
+    let deps = CreatePairingDeps {
+        consumer: CallProbe {
+            called: Cell::new(false),
+        },
+    };
+    let params = build_create_pairing_params(CreatePairingParamsOverrides {
+        concrete: Some(PairingConcrete::Bn254Arkworks),
+        target_group_encoding: Some(TargetGroupEncodingIdentifier::Bls12381V1),
+        ..Default::default()
+    });
+
+    // Act
+    let result = create_pairing(&deps, params, CreatePairingPayload);
+
+    // Assert
+    assert!(matches!(
+        result,
+        Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding)
     ));
     assert!(!deps.consumer.called.get());
 }

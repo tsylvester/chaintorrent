@@ -1,6 +1,10 @@
 use core::convert::Infallible;
 
-pub struct Bls12381Halo2curvesPairing;
+/// The inverse of three in the scalar field, the multiple by which the
+/// library's reduced pairing exceeds the identifier's exact value.
+pub struct Bls12381Halo2curvesPairing {
+    pub(super) reduced_pairing_correction: halo2curves::bls12381::Fr,
+}
 
 pub struct Bls12381Halo2curvesPairingConstructorParams;
 
@@ -19,4 +23,8 @@ pub struct Bls12381Halo2curvesG1 {
 #[derive(Clone)]
 pub struct Bls12381Halo2curvesG2 {
     pub(super) value: halo2curves::bls12381::G2Affine,
+}
+
+pub struct Bls12381Halo2curvesGt {
+    pub(super) value: halo2curves::bls12381::Gt,
 }

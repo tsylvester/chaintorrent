@@ -6,7 +6,7 @@ Branch contract for the `bls12_381_halo2curves` module of the `pairing` crate: t
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| construct | any params | none | none | `Ok(Bls12381Halo2curvesPairing)` |
+| construct | any params | none | `Fr::from(3u64).pow_vartime(BLS12_381_GROUP_ORDER_MINUS_TWO)` as `reduced_pairing_correction`, the inverse of three by Fermat, the exponent being the group order minus two as little-endian limbs | `Ok(Bls12381Halo2curvesPairing { reduced_pairing_correction })` |
 
 The error arm has no branch: the adapter takes no configuration, so `Infallible` is uninhabited.
 
@@ -14,7 +14,7 @@ The error arm has no branch: the adapter takes no configuration, so `Infallible`
 
 An inherent constant, readable from the type before any instance exists:
 
-`PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
+`PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
 
 ## `g1_generator(&self, params: G1GeneratorParams, payload: G1GeneratorPayload) -> G1GeneratorReturn<Bls12381Halo2curvesG1>`
 
@@ -128,9 +128,63 @@ EIP-2537's MSM accepts any 256-bit scalar; this decoder, which produces an owned
 | wrong length | `<&[u8; 64]>::try_from(payload.uniform.expose().as_slice())` fails | the length check | `Secret::expose` | `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })` |
 | sampled | the length is 64 | none | the 64 bytes are copied into a local `[u8; 64]` and reversed, so the big-endian integer the arkworks concrete reads is the little-endian integer halo2curves reads; `Fr::from_uniform_bytes` over the copy, which is then zeroized | `Ok(SampleUniformScalarSuccessReturn { scalar })`, the scalar moved into a `Secret`; the payload's `Secret` zeroizes the input when it drops |
 
+## `add_scalar(&self, params: AddScalarParams, payload: AddScalarPayload<Bls12381Halo2curvesScalar>) -> AddScalarReturn<Bls12381Halo2curvesScalar>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| summed | any | none | `Fr`'s `+` over `payload.left.value` and `payload.right.value` | `Ok(AddScalarSuccessReturn { sum })`, the sum modulo the group order in the owned scalar type; the payload's scalars are cleared as it drops |
+
+## `mul_scalar(&self, params: MulScalarParams, payload: MulScalarPayload<Bls12381Halo2curvesScalar>) -> MulScalarReturn<Bls12381Halo2curvesScalar>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| multiplied | any | none | `Fr`'s `*` over `payload.left.value` and `payload.right.value` | `Ok(MulScalarSuccessReturn { product })`, the product modulo the group order in the owned scalar type; the payload's scalars are cleared as it drops |
+
+## `neg_scalar(&self, params: NegScalarParams, payload: NegScalarPayload<Bls12381Halo2curvesScalar>) -> NegScalarReturn<Bls12381Halo2curvesScalar>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| negated | any | none | `Fr`'s unary `-` over `payload.scalar.value` | `Ok(NegScalarSuccessReturn { negation })`, the group order minus the scalar, and zero for zero |
+
+## `neg_g1(&self, params: NegG1Params, payload: NegG1Payload<Bls12381Halo2curvesG1>) -> NegG1Return<Bls12381Halo2curvesG1>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| negated | any | none | the affine point's unary `-` over `payload.point.value` | `Ok(NegG1SuccessReturn { negation })`, `(x, p - y)` for a point `(x, y)` and the identity for the identity |
+
+## `neg_g2(&self, params: NegG2Params, payload: NegG2Payload<Bls12381Halo2curvesG2>) -> NegG2Return<Bls12381Halo2curvesG2>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| negated | any | none | the affine point's unary `-` over `payload.point.value` | `Ok(NegG2SuccessReturn { negation })`, `(x, p - y)` for a point `(x, y)` and the identity for the identity |
+
+## `is_identity_g1(&self, params: IsIdentityG1Params, payload: IsIdentityG1Payload<Bls12381Halo2curvesG1>) -> IsIdentityG1Return`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| tested | any | none | `is_identity()` on `payload.point.value` | `Ok(IsIdentityG1SuccessReturn { is_identity })`, `bool::from` of the returned `Choice` — `true` exactly for the identity |
+
+## `is_identity_g2(&self, params: IsIdentityG2Params, payload: IsIdentityG2Payload<Bls12381Halo2curvesG2>) -> IsIdentityG2Return`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| tested | any | none | `is_identity()` on `payload.point.value` | `Ok(IsIdentityG2SuccessReturn { is_identity })`, `bool::from` of the returned `Choice` — `true` exactly for the identity |
+
+## `pairing_product(&self, params: PairingProductParams, payload: PairingProductPayload<Bls12381Halo2curvesG1, Bls12381Halo2curvesG2>) -> PairingProductReturn<Bls12381Halo2curvesGt>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| evaluated | any | none | `Bls12381::multi_miller_loop` over the terms as a `Vec<(&G1Affine, &G2Affine)>` in term order, then `final_exponentiation()` as `gt`, then `&gt * &self.reduced_pairing_correction`, the exponentiation that brings the library's cubed value to the identifier's exact value | `Ok(PairingProductSuccessReturn { product })` holding the corrected `Gt` in the owned target-group type; an empty term list yields the target group's identity, which the exponentiation preserves |
+
+## `encode_gt(&self, params: EncodeGtParams, payload: EncodeGtPayload<Bls12381Halo2curvesGt>) -> EncodeGtReturn`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| encoded | any | none | `inner()` on `payload.value.value`, then each of the twelve `Fq` coefficients' `to_repr()` reversed to 48 big-endian bytes, appended in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1` into one buffer of 576 bytes | `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`; the target group's identity encodes as 47 zero bytes, `01`, and 528 zero bytes |
+
 ## Ordering and edges
 
 - Every decoder checks in the stated order — length, then canonicality, then identity, then curve, then subgroup — and copies each 48-byte coordinate out of the fixed-size array before reversing it to little-endian.
 - An empty `msm` term list yields the identity; an empty `pairing_product_is_one` term list yields `is_one: true`, as EIP-2537 does for empty input.
-- Clearing: halo2curves' `Fr` implements no `Zeroize`, so `Bls12381Halo2curvesScalar`'s `Zeroize` implementation and its `Drop` set `value` to `Fr::ZERO` and pass `&self.value` to `black_box`, which keeps the clearing from being removed as a dead store; every clone a consumer places in a payload is cleared when the payload drops. The same zero-then-`black_box` treatment clears the `Vec<Fr>` an `msm` builds.
+- Clearing: halo2curves' `Fr` implements no `Zeroize`, so `Bls12381Halo2curvesScalar`'s `Zeroize` implementation and its `Drop` set `value` to `Fr::ZERO` and pass `&self.value` to `black_box`, which keeps the clearing from being removed as a dead store; every clone a consumer places in a payload is cleared when the payload drops. The same zero-then-`black_box` treatment clears the `Vec<Fr>` an `msm` builds. halo2curves' affine points and `Gt` likewise implement no `Zeroize`, so `Bls12381Halo2curvesG1`, `Bls12381Halo2curvesG2`, and `Bls12381Halo2curvesGt` clear by setting `value` to `G1Affine::identity()`, `G2Affine::identity()`, or `Gt::identity()` and passing `&self.value` to `black_box`, in their `Zeroize` implementations and their `Drop`.
 - `params` carries no control and is not read in any method.

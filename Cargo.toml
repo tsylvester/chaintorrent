@@ -18,3 +18,4 @@ as_conversions = "deny"
 
 [patch.crates-io]
 librqbit = { git = "https://github.com/tsylvester/rqbit", branch = "chaintorrent-overlay" }
+halo2curves = { git = "https://github.com/tsylvester/halo2curves", branch = "gt-accessor" }

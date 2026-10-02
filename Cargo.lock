@@ -1550,8 +1550,7 @@ dependencies = [
 [[package]]
 name = "halo2curves"
 version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d124fcb02bccc7a9253a8aaa99a365f47f0f8b5a363b26a494f06f4a221bd4b7"
+source = "git+https://github.com/tsylvester/halo2curves?branch=gt-accessor#c0bcb37fb3bd66f365baece9e7bc39556acdd49a"
 dependencies = [
  "digest 0.10.7",
  "ff",
@@ -1574,8 +1573,7 @@ dependencies = [
 [[package]]
 name = "halo2derive"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0d74794c1b24716c5abf5d6bfd98ee3c2d346bc67da374ba21d80adb38c336c"
+source = "git+https://github.com/tsylvester/halo2curves?branch=gt-accessor#c0bcb37fb3bd66f365baece9e7bc39556acdd49a"
 dependencies = [
  "num-bigint",
  "num-integer",
@@ -1893,6 +1891,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "kem"
+version = "0.0.0"
+dependencies = [
+ "domain",
+ "hash-to-scalar",
+ "pairing 0.0.0",
+ "zeroize",
+]
+
+[[package]]
 name = "konst"
 version = "0.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2027,6 +2035,7 @@ dependencies = [
  "domain",
  "halo2curves",
  "hex",
+ "num-bigint",
  "random",
  "zeroize",
 ]
