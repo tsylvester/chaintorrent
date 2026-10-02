@@ -9,8 +9,7 @@ use super::create_pairing;
 use super::interface::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingDeps, CreatePairingErrorReturn,
     CreatePairingPayload, IPairingAdapter, IPairingConsumer, PairingConcrete, PairingCurve,
-    PairingDeclaration, PrecompileEncoding, TargetGroupEncodingIdentifier,
-    VerifierGroupArithmetic,
+    PairingDeclaration, PrecompileEncoding, TargetGroupEncodingIdentifier, VerifierGroupArithmetic,
 };
 use super::mock::{CreatePairingParamsOverrides, build_create_pairing_params};
 use core::cell::Cell;

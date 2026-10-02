@@ -1,0 +1,23 @@
+[package]
+name = "kem"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+domain = { path = "../../crates/domain" }
+zeroize = "1.9.0"
+pairing = { path = "../pairing" }
+hash-to-scalar = { path = "../hash-to-scalar" }
+
+[dev-dependencies]
+domain = { path = "../../crates/domain", features = ["mocks"] }
+pairing = { path = "../pairing", features = ["mocks"] }
+hash-to-scalar = { path = "../hash-to-scalar", features = ["mocks"] }
+random = { path = "../random", features = ["mocks"] }
+
+[features]
+mocks = ["domain/mocks"]
+
+[lints]
+workspace = true
