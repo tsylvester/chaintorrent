@@ -245,11 +245,11 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   A production `unwrap`, `expect`, `panic!`, numeric `as`, or `unsafe` block in the first production crate, `domain/secret`, is rejected by `cargo clippy` under the inherited lint table
     * `[✅]`   `cargo check`, `cargo clippy`, and `cargo fmt --check` at the repository root complete without error
 
-* `[✅]`   `random/os` **Operating-system randomness concrete, the one source every production draw passes through; creates the `adapters/random` crate and authors the randomness family's generic interface, declaration, and mock**
+* `[ ]`   `random/os` **Operating-system randomness concrete, the one source every production draw passes through; creates the `adapters/random` crate and authors the randomness family's generic interface, declaration, and mock**
 
-  * `[✅]`   `objective`
+  * `[ ]`   `objective`
     * `[✅]`   Problem: master scalars, capsule randomness, piece-group keys, and IVs come from a cryptographic random source (CR-05), and every production path draws through one repo-owned interface, so no module outside the concrete names the generator's library
-    * `[✅]`   Functional: the family's generic interface draws a requested number of bytes and returns them inside a `Secret`, so every draw is zeroized when dropped whether or not the caller keeps it
+    * `[ ]`   Functional: the family's generic interface draws a requested number of bytes and returns exactly that many bytes inside a `Secret`, including zero for a zero-length request, so every draw is zeroized when dropped whether or not the caller keeps it; every implementation, including the default mock, obeys the requested length
     * `[✅]`   Functional: every concrete declares its source kind, its adapter version, and the interface version it implements, readable from the type before any instance exists
     * `[✅]`   Functional: the operating-system concrete draws from the operating system's generator through `getrandom` and returns the generator's error unchanged in its error arm
     * `[✅]`   Functional: repeated draws of a fixed width are pairwise distinct across a fixed count, and a draw of a fixed length holds more than one distinct byte value
@@ -293,7 +293,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The crate barrel: `mod factory;`, `mod os;`, and `pub use factory::provides::*;`, nothing else
     * `[✅]`   Until `factory/mod.rs` and `os/mod.rs` exist, `cargo check` reports the unresolved modules, which is the RED state for every element below that precedes them
 
-  * `[✅]`   `adapters/random/src/factory/interface.rs`
+  * `[ ]`   `adapters/random/src/factory/interface.rs`
     * `[✅]`   `RANDOM_SOURCE_INTERFACE_VERSION`, a `pub const` of type `u32` with value `1`, the version of this interface a concrete declares it implements
     * `[✅]`   `RandomSourceKind`, an enum with the one variant `OperatingSystem`; no derives
     * `[✅]`   `RandomSourceDeclaration`, a struct with `pub source: RandomSourceKind`, `pub adapter_version: u32`, and `pub interface_version: u32`; no derives
@@ -302,7 +302,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `FillBytesSuccessReturn`, a struct with `pub bytes: Secret<Vec<u8>>`
     * `[✅]`   `FillBytesErrorReturn`, an enum with the one variant `OperatingSystem(OsRandomSourceFillBytesErrorReturn)`, the operating-system concrete's error carried unchanged; each concrete's error is its own variant
     * `[✅]`   `FillBytesReturn`, the type alias `Result<FillBytesSuccessReturn, FillBytesErrorReturn>`
-    * `[✅]`   `IRandomSourceAdapter`, a trait with the one method `fn fill_bytes(&self, params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn;`
+    * `[ ]`   `IRandomSourceAdapter`, an object-safe trait with `fn declaration(&self) -> RandomSourceDeclaration;` and `fn fill_bytes(&self, params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn;`; the declaration comes from the adapter itself, including through `Box<dyn IRandomSourceAdapter>`
     * `[✅]`   Imports `domain::Secret` and `OsRandomSourceFillBytesErrorReturn` from `crate::os::provides`; names no vendor
 
   * `[✅]`   `adapters/random/src/os/interface.rs`
@@ -320,37 +320,38 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Ordering: the buffer is moved into a `Secret` after `getrandom::fill` returns and before its result is inspected, so the buffer is zeroized on both branches
     * `[✅]`   A `payload.length` of zero takes the drawn branch with an empty buffer; `params` carries no control and is not read
 
-  * `[✅]`   `adapters/random/src/factory/mock.rs`
+  * `[ ]`   `adapters/random/src/factory/mock.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
     * `[✅]`   `RandomSourceDeclarationOverrides`, `#[derive(Default)]`, fields `pub source: Option<RandomSourceKind>`, `pub adapter_version: Option<u32>`, and `pub interface_version: Option<u32>`; `build_random_source_declaration(overrides: RandomSourceDeclarationOverrides) -> RandomSourceDeclaration`, defaulting to `RandomSourceKind::OperatingSystem`, `1`, and `RANDOM_SOURCE_INTERFACE_VERSION`
     * `[✅]`   `FillBytesPayloadOverrides`, `#[derive(Default)]`, one field `pub length: Option<usize>`; `build_fill_bytes_payload(overrides: FillBytesPayloadOverrides) -> FillBytesPayload`, the length defaulting to `32`
-    * `[✅]`   `FillBytesSuccessReturnOverrides`, `#[derive(Default)]`, one field `pub bytes: Option<Secret<Vec<u8>>>`; `build_fill_bytes_success_return(overrides: FillBytesSuccessReturnOverrides) -> FillBytesSuccessReturn`, the bytes defaulting to `build_secret::<Vec<u8>>(SecretConstructorParamsOverrides::default())`, an empty draw
-    * `[✅]`   `MockIRandomSourceAdapter`, the unit struct `pub struct MockIRandomSourceAdapter;`, implementing `IRandomSourceAdapter` with `fill_bytes` returning `Ok(build_fill_bytes_success_return(Default::default()))` for any params and payload; a test needing a failing source implements the trait on its own local struct
+    * `[ ]`   `FillBytesSuccessReturnOverrides`, `#[derive(Default)]`, one field `pub bytes: Option<Secret<Vec<u8>>>`; `build_fill_bytes_success_return(overrides: FillBytesSuccessReturnOverrides) -> FillBytesSuccessReturn`, the bytes defaulting to `build_secret(SecretConstructorParamsOverrides { value: Some(vec![0u8; 32]) })`, matching the payload builder's default length; tests needing another length supply an override
+    * `[ ]`   `MockIRandomSourceAdapter`, the unit struct `pub struct MockIRandomSourceAdapter;`, implementing `IRandomSourceAdapter` with `declaration()` returning the default `build_random_source_declaration(Default::default())` and `fill_bytes` returning `Ok(build_fill_bytes_success_return(FillBytesSuccessReturnOverrides { bytes: Some(build_secret(SecretConstructorParamsOverrides { value: Some(vec![0u8; payload.length]) })) }))`; the default mock returns exactly the requested length, including zero, and a test needing a failing or malformed source implements the trait on its own local struct
     * `[✅]`   No builder for `FillBytesParams`, which is fieldless and used by its production value, or for `RandomSourceKind`, an enum; no corruptions type and no invalidator, since no value this interface owns arrives as untrusted data
     * `[✅]`   Imports `Secret`, `build_secret`, and `SecretConstructorParamsOverrides` from `domain`, and this module's types from `super::interface`
 
-  * `[✅]`   `adapters/random/src/factory/mod.rs`
+  * `[ ]`   `adapters/random/src/factory/mod.rs`
     * `[✅]`   Module wiring only: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, and `pub mod provides;`, nothing else
 
   * `[✅]`   `adapters/random/src/factory/provides.rs`
     * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
 
-  * `[✅]`   `adapters/random/src/os/test.rs`
-    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `OsRandomSource` and `OsRandomSourceConstructorParams` from `super::interface`, `IRandomSourceAdapter`, `FillBytesParams`, `FillBytesPayloadOverrides`, `build_fill_bytes_payload`, and `RANDOM_SOURCE_INTERFACE_VERSION` from `crate::factory::provides`, and `HashSet` from `std::collections`; each test constructs the subject by `let Ok(source) = OsRandomSource::try_new(OsRandomSourceConstructorParams);` in its arrangement and unpacks a draw by `let Ok(success) = … else { panic!(…) };`
+  * `[ ]`   `adapters/random/src/os/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `OsRandomSource` and `OsRandomSourceConstructorParams` from `super::interface`, `IRandomSourceAdapter`, `MockIRandomSourceAdapter`, `FillBytesParams`, `FillBytesPayloadOverrides`, `build_fill_bytes_payload`, and `RANDOM_SOURCE_INTERFACE_VERSION` from `crate::factory::provides`, and `HashSet` from `std::collections`; production tests construct the subject by `let Ok(source) = OsRandomSource::try_new(OsRandomSourceConstructorParams);` in their arrangement, and each test unpacks a draw by `let Ok(success) = … else { panic!(…) };`
     * `[✅]`   `fill_bytes_returns_the_number_of_bytes_requested`: contract: a payload length selects the draw's length; arrange the subject and `build_fill_bytes_payload` with `length: Some(48)`, differing from the builder's default; act `source.fill_bytes(FillBytesParams, payload)`; assert `success.bytes.expose().len()` equals `48`
     * `[✅]`   `fill_bytes_returns_an_empty_draw_for_a_zero_length`: contract: a zero length takes the drawn branch with an empty buffer; arrange the subject and `build_fill_bytes_payload` with `length: Some(0)`; act `source.fill_bytes(FillBytesParams, payload)`; assert the call returns `Ok` and `success.bytes.expose().is_empty()`
+    * `[ ]`   `mock_fill_bytes_honors_the_requested_length`: contract: the default family mock obeys the same length contract as the operating-system source; arrange `MockIRandomSourceAdapter` and payloads of zero and 48 bytes; act `fill_bytes` for each; assert the exposed draws have lengths zero and 48 respectively
     * `[✅]`   `fill_bytes_draws_pairwise_distinct_values_across_repeated_draws`: contract: draws from the generator do not repeat (CR-05); arrange the subject and an empty `HashSet<Vec<u8>>`; act `source.fill_bytes(FillBytesParams, build_fill_bytes_payload(Default::default()))` sixteen times, inserting a copy of each exposed draw into the set; assert the set holds sixteen entries
     * `[✅]`   `fill_bytes_fills_a_draw_with_more_than_one_distinct_byte_value`: contract: a draw is filled by the generator rather than left at its zero initialization (CR-05); arrange the subject and `build_fill_bytes_payload` with `length: Some(1024)`; act `source.fill_bytes(FillBytesParams, payload)`; assert the `HashSet<u8>` of the exposed draw's bytes holds more than one value
     * `[✅]`   `os_random_source_declares_its_adapter_and_interface_versions`: contract: the concrete's declaration names its adapter version and the interface version it implements; arrange nothing; act read `OsRandomSource::DECLARATION`; assert `adapter_version` equals `1` and `interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
     * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
 
-  * `[✅]`   `construction`
-    * `[✅]`   `OsRandomSource::try_new` is the concrete's only producer, and its only caller is the randomness factory, which reads `OsRandomSource::DECLARATION` before constructing and returns the concrete to consumers as `Box<dyn IRandomSourceAdapter>` beside its declaration
+  * `[ ]`   `construction`
+    * `[ ]`   `OsRandomSource::try_new` is the concrete's only producer, and its only caller is the randomness factory, which returns it as `Box<dyn IRandomSourceAdapter>`; the boxed adapter reports its declaration through `IRandomSourceAdapter::declaration`
 
-  * `[✅]`   `adapters/random/src/os/mod.rs`
+  * `[ ]`   `adapters/random/src/os/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
     * `[✅]`   `impl OsRandomSource` with `pub const DECLARATION: RandomSourceDeclaration` as the interaction spec states, and `pub fn try_new(_params: OsRandomSourceConstructorParams) -> OsRandomSourceTryNewReturn` returning `Ok(OsRandomSource)`
-    * `[✅]`   `impl IRandomSourceAdapter for OsRandomSource` with `fn fill_bytes(&self, _params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn`, which allocates `vec![0u8; payload.length]`, calls `getrandom::fill` on it, moves the buffer into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`, and then matches the fill result into the two branches of the interaction spec
+    * `[ ]`   `impl IRandomSourceAdapter for OsRandomSource` with `declaration()` returning `Self::DECLARATION` and `fn fill_bytes(&self, _params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn`, which allocates `vec![0u8; payload.length]`, calls `getrandom::fill` on it, moves the buffer into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`, and then matches the fill result into the two branches of the interaction spec
     * `[✅]`   Imports the factory's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
@@ -361,18 +362,20 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `os` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, and on `getrandom`; the `factory` module depends on `domain` and on `os`'s error type through `crate::os::provides`; among repository crates the crate depends on `crates/domain` alone, inward; nothing depends on the crate yet
     * `[✅]`   The mutual dependency between the `factory` module and `os` is the family form's recorded cycle: a concrete implements the factory's trait, the factory's error enum carries the concrete's error, and the factory function constructs the concrete
 
-  * `[✅]`   `requirements`
+  * `[ ]`   `requirements`
     * `[✅]`   `adapters/random/Cargo.toml` carries exactly the tables and keys stated above, and `getrandom` is named nowhere in the crate outside `adapters/random/src/os`
+    * `[ ]`   `MockIRandomSourceAdapter` returns exactly the requested length for zero and nonzero requests; the success-return builder's default matches the payload builder's default width
     * `[✅]`   `cargo check --all-targets --all-features` and `cargo fmt --check` complete without error; `cargo clippy --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `os` concrete, which `random/factory` resolves by constructing the concrete
     * `[✅]`   `fill_bytes_returns_the_number_of_bytes_requested` passes
     * `[✅]`   `fill_bytes_returns_an_empty_draw_for_a_zero_length` passes
+    * `[ ]`   `mock_fill_bytes_honors_the_requested_length` passes
     * `[✅]`   `fill_bytes_draws_pairwise_distinct_values_across_repeated_draws` passes (CR-05, the source's non-repetition)
     * `[✅]`   `fill_bytes_fills_a_draw_with_more_than_one_distinct_byte_value` passes (CR-05, the source fills what it is asked to fill)
     * `[✅]`   `os_random_source_declares_its_adapter_and_interface_versions` passes
     * `[✅]`   A generator failure is returned as `FillBytesErrorReturn::OperatingSystem` holding `OsRandomSourceFillBytesErrorReturn::OperatingSystem` with the `getrandom::Error` unchanged, fixed by the error arm's type; the failure branch has no unit test, since the operating system's generator cannot be driven to fail from a test and the vendor is not mocked
     * `[✅]`   Code outside `adapters/random` naming `OsRandomSource` or anything under `os` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* `[✅]`   `random/factory` **Randomness factory constructing the concrete a configuration names and returning it behind the family's trait with its declaration; carries the family's integration test and the grouping's commit**
+* `[ ]`   `random/factory` **Randomness factory constructing the concrete a configuration names and returning it behind the family's trait, which reports its declaration; carries the family's integration test and the grouping's commit**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a consumer obtains a randomness source only through the family's generic surface, never by naming a concrete, and the composition reads what was constructed from its declaration (CR-05; Composition Boundary)
@@ -402,38 +405,38 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `context_slice`
     * `[✅]`   From `os`: `OsRandomSource::try_new(OsRandomSourceConstructorParams) -> Result<OsRandomSource, Infallible>`, the inherent constant `OsRandomSource::DECLARATION: RandomSourceDeclaration`, and `OsRandomSource`'s implementation of `IRandomSourceAdapter`
 
-  * `[✅]`   `adapters/random/src/factory/interface.rs`
+  * `[ ]`   `adapters/random/src/factory/interface.rs`
     * `[✅]`   `CreateRandomSourceDeps`, the fieldless struct `pub struct CreateRandomSourceDeps;`
     * `[✅]`   `CreateRandomSourceParams`, a struct with `pub kind: RandomSourceKind`, the selection of the concrete to construct
     * `[✅]`   `CreateRandomSourcePayload`, the fieldless struct `pub struct CreateRandomSourcePayload;`, since the factory operates on no data
-    * `[✅]`   `CreateRandomSourceSuccessReturn`, a struct with `pub adapter: Box<dyn IRandomSourceAdapter>` and `pub declaration: RandomSourceDeclaration`
+    * `[ ]`   `CreateRandomSourceSuccessReturn`, a struct with `pub adapter: Box<dyn IRandomSourceAdapter>`; callers read its declaration through `adapter.declaration()`, so no separate declaration can be paired with the boxed source
     * `[✅]`   `CreateRandomSourceErrorReturn`, an enum with the one variant `OperatingSystem(Infallible)`, the operating-system concrete's constructor error carried unchanged; each concrete's constructor error is its own variant
     * `[✅]`   `CreateRandomSourceReturn`, the type alias `Result<CreateRandomSourceSuccessReturn, CreateRandomSourceErrorReturn>`
     * `[✅]`   `CreateRandomSourceFn`, the type alias `fn(&CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload) -> CreateRandomSourceReturn`
     * `[✅]`   Adds the import of `core::convert::Infallible`; every item `random/os` authored in this file is unchanged
 
-  * `[✅]`   `adapters/random/src/factory/interaction.spec.md`
-    * `[✅]`   `create_random_source`, operating system: condition: `params.kind` is `RandomSourceKind::OperatingSystem`; decision: a `match` on `params.kind`; dependency call: `OsRandomSource::try_new(OsRandomSourceConstructorParams)`, exactly once; outcome: `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source), declaration: OsRandomSource::DECLARATION })`
+  * `[ ]`   `adapters/random/src/factory/interaction.spec.md`
+    * `[ ]`   `create_random_source`, operating system: condition: `params.kind` is `RandomSourceKind::OperatingSystem`; decision: a `match` on `params.kind`; dependency call: `OsRandomSource::try_new(OsRandomSourceConstructorParams)`, exactly once; outcome: `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source) })`; the boxed source reports `OsRandomSource::DECLARATION` through the trait method
     * `[✅]`   The operating-system constructor's error arm is uninhabited, so its success is destructured irrefutably and that branch has no failure outcome; `CreateRandomSourceErrorReturn::OperatingSystem` carries its error type in the return union
     * `[✅]`   `params.kind` selects the concrete; `deps` and `payload` carry nothing and are not read; the `match` is exhaustive over `RandomSourceKind`, so a kind with no branch fails to compile
 
-  * `[✅]`   `adapters/random/src/factory/mock.rs`
+  * `[ ]`   `adapters/random/src/factory/mock.rs`
     * `[✅]`   `CreateRandomSourceParamsOverrides`, `#[derive(Default)]`, one field `pub kind: Option<RandomSourceKind>`; `build_create_random_source_params(overrides: CreateRandomSourceParamsOverrides) -> CreateRandomSourceParams`, the kind defaulting to `RandomSourceKind::OperatingSystem`
-    * `[✅]`   `CreateRandomSourceSuccessReturnOverrides`, `#[derive(Default)]`, fields `pub adapter: Option<Box<dyn IRandomSourceAdapter>>` and `pub declaration: Option<RandomSourceDeclaration>`; `build_create_random_source_success_return(overrides: CreateRandomSourceSuccessReturnOverrides) -> CreateRandomSourceSuccessReturn`, the adapter defaulting to `Box::new(MockIRandomSourceAdapter)` and the declaration to `build_random_source_declaration(Default::default())`
+    * `[ ]`   `CreateRandomSourceSuccessReturnOverrides`, `#[derive(Default)]`, with `pub adapter: Option<Box<dyn IRandomSourceAdapter>>`; `build_create_random_source_success_return(overrides: CreateRandomSourceSuccessReturnOverrides) -> CreateRandomSourceSuccessReturn`, the adapter defaulting to `Box::new(MockIRandomSourceAdapter)`; a test needing another declaration provides an adapter whose `declaration()` returns it
     * `[✅]`   `mock_create_random_source(_deps: &CreateRandomSourceDeps, _params: CreateRandomSourceParams, _payload: CreateRandomSourcePayload) -> CreateRandomSourceReturn`, returning `Ok(build_create_random_source_success_return(Default::default()))`
     * `[✅]`   No builder for the fieldless `CreateRandomSourceDeps` and `CreateRandomSourcePayload`, used by their production values, or for the enum `CreateRandomSourceErrorReturn`; every symbol `random/os` authored in this file is unchanged
 
-  * `[✅]`   `adapters/random/src/factory/test.rs`
+  * `[ ]`   `adapters/random/src/factory/test.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `create_random_source` from `super`, `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, `RandomSourceKind`, and `RANDOM_SOURCE_INTERFACE_VERSION` from `super::interface`, and `build_create_random_source_params` and `CreateRandomSourceParamsOverrides` from `super::mock`
-    * `[✅]`   `create_random_source_returns_the_operating_system_source_for_its_kind`: contract: the operating-system kind returns `Ok` with the operating-system concrete's declaration; arrange `build_create_random_source_params` with `kind: Some(RandomSourceKind::OperatingSystem)`; act `create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.declaration.adapter_version` equals `1` and `success.declaration.interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
+    * `[ ]`   `create_random_source_returns_the_operating_system_source_for_its_kind`: contract: the operating-system kind returns `Ok` with an adapter that reports its own declaration; arrange `build_create_random_source_params` with `kind: Some(RandomSourceKind::OperatingSystem)`; act `create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.adapter.declaration().source` matches `RandomSourceKind::OperatingSystem`, `adapter_version` equals `1`, and `interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
     * `[✅]`   The test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
 
   * `[✅]`   `construction`
     * `[✅]`   The composition root calls `create_random_source` with `&CreateRandomSourceDeps`, `CreateRandomSourceParams` holding the configured `RandomSourceKind`, and `CreateRandomSourcePayload`, and places the returned `Box<dyn IRandomSourceAdapter>` in each consumer's deps; no consumer constructs a concrete
 
-  * `[✅]`   `adapters/random/src/factory/mod.rs`
+  * `[ ]`   `adapters/random/src/factory/mod.rs`
     * `[✅]`   Adds `#[cfg(test)] mod test;` to the wiring `random/os` authored
-    * `[✅]`   `pub fn create_random_source(_deps: &CreateRandomSourceDeps, params: CreateRandomSourceParams, _payload: CreateRandomSourcePayload) -> CreateRandomSourceReturn`, a `match` on `params.kind` whose `RandomSourceKind::OperatingSystem` arm binds the concrete by `let Ok(source) = OsRandomSource::try_new(OsRandomSourceConstructorParams);` and returns `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source), declaration: OsRandomSource::DECLARATION })`
+    * `[ ]`   `pub fn create_random_source(_deps: &CreateRandomSourceDeps, params: CreateRandomSourceParams, _payload: CreateRandomSourcePayload) -> CreateRandomSourceReturn`, a `match` on `params.kind` whose `RandomSourceKind::OperatingSystem` arm binds the concrete by `let Ok(source) = OsRandomSource::try_new(OsRandomSourceConstructorParams);` and returns `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source) })`
     * `[✅]`   Imports `OsRandomSource` and `OsRandomSourceConstructorParams` from `crate::os::provides`, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
@@ -448,8 +451,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `directionality`
     * `[✅]`   The `factory` module depends on `os` through `crate::os::provides` and on its own interface; `os` depends on the `factory` module's surface, the family form's recorded cycle; the crate's public surface is the `factory` module's `provides`; nothing depends on the crate yet
 
-  * `[✅]`   `requirements`
-    * `[✅]`   `create_random_source_returns_the_operating_system_source_for_its_kind` passes
+  * `[ ]`   `requirements`
+    * `[ ]`   `create_random_source_returns_the_operating_system_source_for_its_kind` passes
     * `[✅]`   `a_source_from_the_factory_draws_random_bytes_through_the_family_trait` passes (CR-05, a production draw passes through the factory's surface)
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning in every target, the `os` concrete's unused-item warnings having no remaining cause
     * `[✅]`   `getrandom` is named nowhere outside `adapters/random/src/os`, and no code outside `adapters/random` can name `OsRandomSource`
@@ -464,12 +467,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
 ## Pairing adapters and key derivation
 
-* `[✅]`   `pairing/bn254_arkworks` **BN254 pairing concrete on arkworks with EIP-196 and EIP-197 encodings; creates the `adapters/pairing` crate and authors the pairing family's generic interface, the scalar sampling bound, the declaration, and the mock**
+* `[ ]`   `pairing/bn254_arkworks` **BN254 pairing concrete on arkworks with EIP-196 and EIP-197 encodings; creates the `adapters/pairing` crate and authors the pairing family's generic interface, the scalar sampling bound, the declaration, and the mock**
 
-  * `[✅]`   `objective`
+  * `[ ]`   `objective`
     * `[✅]`   Problem: the credential KEM, the envelope, and the delivery proof compute in a Type-3 pairing group whose curve the launch chain's precompiles dictate, so every group operation, subgroup check, pairing-product check, and precompile encoding passes through one repo-owned interface and no module outside a concrete names a curve library (CR-10)
     * `[✅]`   Functional: the family's generic interface exposes the generators of both source groups, addition, scalar multiplication, and multi-scalar multiplication in either source group, the pairing-product check, and decoding and encoding of group elements and scalars in the target chain's precompile format
-    * `[✅]`   Functional: the group-element and scalar types are associated types of the generic interface, so a consumer names them through the family without knowing which concrete produced them
+    * `[ ]`   Functional: the group-element, scalar, and encoded G1, G2, and scalar types are associated types of the generic interface, so a consumer names them through the family without knowing which concrete produced them; an encoder returns a distinct owned encoded type for each group and concrete, preserving the group and curve until the caller deliberately borrows its wire bytes
     * `[✅]`   Functional: every group element and scalar a concrete accepts from bytes is decoded by a fallible constructor that rejects a wrong length, a non-canonical field element, a point off the curve, and a point outside the prime-order subgroup, so no element that fails a check exists as a value
     * `[✅]`   Functional: a scalar type is sampled from uniform bytes the randomness family drew, by reduction of a fixed-width input modulo the group order, and the sampled scalar is returned inside a `Secret`
     * `[✅]`   Functional: every concrete declares its curve, whether the target chain's verifier has second-group arithmetic, its precompile encoding, its adapter version, and the interface version it implements, readable before any instance exists
@@ -521,13 +524,13 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The crate barrel: `mod factory;`, `mod bn254_arkworks;`, and `pub use factory::provides::*;`, nothing else
     * `[✅]`   Until `factory/mod.rs` and `bn254_arkworks/mod.rs` exist, `cargo check` reports the unresolved modules, which is the RED state for every element below that precedes them
 
-  * `[✅]`   `adapters/pairing/src/factory/interface.rs`
+  * `[ ]`   `adapters/pairing/src/factory/interface.rs`
     * `[✅]`   `PAIRING_INTERFACE_VERSION`, a `pub const` of type `u32` with value `1`
-    * `[✅]`   `PairingCurve`, an enum with the one variant `Bn254`; `VerifierGroupArithmetic`, an enum with the one variant `FirstGroupOnly`; `PrecompileEncoding`, an enum with the one variant `Eip196Eip197`
+    * `[✅]`   `PairingCurve`, an enum with the one variant `Bn254`; `VerifierGroupArithmetic`, an enum with the one variant `FirstGroupOnly`; `PrecompileEncoding`, an enum with the one variant `Eip196Eip197`; `PairingConcrete`, an enum with `Bn254Arkworks`, `Bn254Halo2curves`, `Bls12381Arkworks`, and `Bls12381Halo2curves`, deriving `Clone`, `Copy`, `PartialEq`, and `Eq`, so `IPairingAdapter::CONCRETE` names an already-produced type
     * `[✅]`   `PairingDeclaration`, a struct with `pub curve: PairingCurve`, `pub verifier_group_arithmetic: VerifierGroupArithmetic`, `pub precompile_encoding: PrecompileEncoding`, `pub adapter_version: u32`, and `pub interface_version: u32`
-    * `[✅]`   `ISampleUniformScalar`, the sampling bound, `pub trait ISampleUniformScalar: Zeroize + Sized` with `const UNIFORM_BYTES_LENGTH: usize;` and `fn sample_from_uniform_bytes(params: SampleUniformScalarParams, payload: SampleUniformScalarPayload) -> SampleUniformScalarReturn<Self>;`
+    * `[✅]`   `ISampleUniformScalar`, the sampling bound, `pub trait ISampleUniformScalar: Zeroize + ZeroizeOnDrop + Sized` with `const UNIFORM_BYTES_LENGTH: usize;` and `fn sample_from_uniform_bytes(params: SampleUniformScalarParams, payload: SampleUniformScalarPayload) -> SampleUniformScalarReturn<Self>;`
     * `[✅]`   The sampling bound's types: the fieldless `SampleUniformScalarParams`; `SampleUniformScalarPayload` with `pub uniform: Secret<Vec<u8>>`; `SampleUniformScalarSuccessReturn<S: Zeroize>` with `pub scalar: Secret<S>`; `SampleUniformScalarErrorReturn`, an enum with the one struct variant `WrongLength { expected: usize, actual: usize }`; `SampleUniformScalarReturn<S>`, the alias `Result<SampleUniformScalarSuccessReturn<S>, SampleUniformScalarErrorReturn>`
-    * `[✅]`   `IPairingAdapter`, a trait with `type Scalar: ISampleUniformScalar + Clone;`, `type G1: Clone;`, `type G2: Clone;`, and the methods below, each taking `&self`, its params, and its payload, and returning its own return alias
+    * `[ ]`   `IPairingAdapter`, a trait with `const DECLARATION: PairingDeclaration;` and `const CONCRETE: PairingConcrete;`, each supplied by its implementing concrete rather than by a consumer payload; `type Scalar: ISampleUniformScalar + Clone;`, `type G1: Clone;`, `type G2: Clone;`, `type EncodedG1: AsRef<[u8]> + Clone + PartialEq + Eq;`, `type EncodedG2: AsRef<[u8]> + Clone + PartialEq + Eq;`, and `type EncodedScalar: AsRef<[u8]> + Zeroize;`; the encoded types are concrete-owned, distinct from each other and from the encoded types of another concrete; each method below takes `&self`, its params, and its payload, and returns its own return alias
     * `[✅]`   `g1_generator(&self, params: G1GeneratorParams, payload: G1GeneratorPayload) -> G1GeneratorReturn<Self::G1>`: the fieldless `G1GeneratorParams` and `G1GeneratorPayload`; `G1GeneratorSuccessReturn<G>` with `pub point: G`; `G1GeneratorReturn<G>`, the alias `Result<G1GeneratorSuccessReturn<G>, Infallible>`
     * `[✅]`   `g2_generator`, the same shape under the `G2Generator` prefix over `Self::G2`
     * `[✅]`   `add_g1(&self, params: AddG1Params, payload: AddG1Payload<Self::G1>) -> AddG1Return<Self::G1>`: the fieldless `AddG1Params`; `AddG1Payload<G>` with `pub left: G` and `pub right: G`; `AddG1SuccessReturn<G>` with `pub sum: G`; `AddG1Return<G>`, the alias `Result<AddG1SuccessReturn<G>, Infallible>`
@@ -540,21 +543,23 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `decode_g1(&self, params: DecodeG1Params, payload: &[u8]) -> DecodeG1Return<Self::G1>`, the validating form, its payload the untrusted wire bytes and its narrowing target `Self::G1`: the fieldless `DecodeG1Params`; `DecodeG1SuccessReturn<G>` with `pub point: G`; `DecodeG1ErrorReturn`, an enum with the variants `WrongLength { expected: usize, actual: usize }`, `NonCanonicalCoordinate`, `NotOnCurve`, and `NotInSubgroup`; `DecodeG1Return<G>`, the alias `Result<DecodeG1SuccessReturn<G>, DecodeG1ErrorReturn>`
     * `[✅]`   `decode_g2`, the same shape under the `DecodeG2` prefix over `Self::G2`, with `DecodeG2ErrorReturn` carrying the same four variants
     * `[✅]`   `decode_scalar(&self, params: DecodeScalarParams, payload: &[u8]) -> DecodeScalarReturn<Self::Scalar>`, the validating form: the fieldless `DecodeScalarParams`; `DecodeScalarSuccessReturn<S>` with `pub scalar: S`; `DecodeScalarErrorReturn`, an enum with the variants `WrongLength { expected: usize, actual: usize }` and `NonCanonical`; `DecodeScalarReturn<S>`, the alias `Result<DecodeScalarSuccessReturn<S>, DecodeScalarErrorReturn>`
-    * `[✅]`   `encode_g1(&self, params: EncodeG1Params, payload: EncodeG1Payload<Self::G1>) -> EncodeG1Return`: the fieldless `EncodeG1Params`; `EncodeG1Payload<G>` with `pub point: G`; `EncodeG1SuccessReturn` with `pub bytes: Vec<u8>`; `EncodeG1Return`, the alias `Result<EncodeG1SuccessReturn, Infallible>`
-    * `[✅]`   `encode_g2`, the same shape under the `EncodeG2` prefix over `Self::G2`
-    * `[✅]`   `encode_scalar(&self, params: EncodeScalarParams, payload: EncodeScalarPayload<Self::Scalar>) -> EncodeScalarReturn`: the fieldless `EncodeScalarParams`; `EncodeScalarPayload<S>` with `pub scalar: S`; `EncodeScalarSuccessReturn` with `pub bytes: Secret<Vec<u8>>`, since the scalar encoded may be secret; `EncodeScalarReturn`, the alias `Result<EncodeScalarSuccessReturn, Infallible>`
-    * `[✅]`   No derives on any type in this file; imports `domain::Secret`, `zeroize::Zeroize`, and `core::convert::Infallible`; names no vendor and no concrete
+    * `[ ]`   `encode_g1(&self, params: EncodeG1Params, payload: EncodeG1Payload<Self::G1>) -> EncodeG1Return<Self::EncodedG1>`: the fieldless `EncodeG1Params`; `EncodeG1Payload<G>` with `pub point: G`; `EncodeG1SuccessReturn<E>` with `pub bytes: E`; `EncodeG1Return<E>`, the alias `Result<EncodeG1SuccessReturn<E>, Infallible>`
+    * `[ ]`   `encode_g2`, the same shape under the `EncodeG2` prefix over `Self::G2`, returning `EncodeG2Return<Self::EncodedG2>`
+    * `[ ]`   `encode_scalar(&self, params: EncodeScalarParams, payload: EncodeScalarPayload<Self::Scalar>) -> EncodeScalarReturn<Self::EncodedScalar>`: the fieldless `EncodeScalarParams`; `EncodeScalarPayload<S>` with `pub scalar: S`; `EncodeScalarSuccessReturn<E: Zeroize>` with `pub bytes: Secret<E>`, since the scalar encoded may be secret; `EncodeScalarReturn<E: Zeroize>`, the alias `Result<EncodeScalarSuccessReturn<E>, Infallible>`
+    * `[✅]`   No derives on any type in this file except `PairingConcrete`; imports `domain::Secret`, `zeroize::{Zeroize, ZeroizeOnDrop}`, and `core::convert::Infallible`; names no vendor
 
-  * `[✅]`   `adapters/pairing/src/bn254_arkworks/interface.rs`
+  * `[ ]`   `adapters/pairing/src/bn254_arkworks/interface.rs`
     * `[✅]`   `Bn254ArkworksPairing`, the unit struct `pub struct Bn254ArkworksPairing;`, the adapter over arkworks' BN254
     * `[✅]`   `Bn254ArkworksPairingConstructorParams`, the fieldless struct `pub struct Bn254ArkworksPairingConstructorParams;`, the constructor's deps slot
     * `[✅]`   `Bn254ArkworksPairingTryNewReturn`, the alias `Result<Bn254ArkworksPairing, Infallible>`; the error arm is uninhabited because the adapter takes no configuration
     * `[✅]`   `Bn254ArkworksScalar`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bn254::Fr`
     * `[✅]`   `Bn254ArkworksG1`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bn254::G1Affine`
     * `[✅]`   `Bn254ArkworksG2`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bn254::G2Affine`
+    * `[ ]`   `Bn254ArkworksEncodedG1` and `Bn254ArkworksEncodedG2`, distinct `pub struct`s with `pub(super)` fixed-width byte arrays `[u8; 64]` and `[u8; 128]`; each derives `Clone`, `PartialEq`, and `Eq` and implements `AsRef<[u8]>` without exposing a mutable reference
+    * `[ ]`   `Bn254ArkworksEncodedScalar`, a `pub struct` with a `pub(super)` `[u8; 32]` array, implementing `AsRef<[u8]>` and `Zeroize`; it is returned only inside `Secret`, without a public constructor or mutable byte access
     * `[✅]`   The `pub(super)` fields admit construction only inside `bn254_arkworks` and its child modules; imports `core::convert::Infallible`; declares nothing else
 
-  * `[✅]`   `adapters/pairing/src/bn254_arkworks/interaction.spec.md`
+  * `[ ]`   `adapters/pairing/src/bn254_arkworks/interaction.spec.md`
     * `[✅]`   `Bn254ArkworksPairing::try_new(params: Bn254ArkworksPairingConstructorParams) -> Bn254ArkworksPairingTryNewReturn`: one branch; outcome `Ok(Bn254ArkworksPairing)`; the error arm has no branch
     * `[✅]`   `Bn254ArkworksPairing::DECLARATION`: the inherent constant `PairingDeclaration { curve: PairingCurve::Bn254, verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly, precompile_encoding: PrecompileEncoding::Eip196Eip197, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
     * `[✅]`   `g1_generator`, `g2_generator`: one branch each; dependency call `G1Affine::generator()` or `G2Affine::generator()`; outcome `Ok` holding the generator in the owned group type
@@ -572,21 +577,22 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `decode_scalar`, wrong length: condition `payload.len() != 32`; outcome `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
     * `[✅]`   `decode_scalar`, non-canonical: condition the bytes, read by `Fr::from_be_bytes_mod_order`, do not re-encode to the same 32 bytes, that is, they are at least the group order; outcome `Err(DecodeScalarErrorReturn::NonCanonical)`
     * `[✅]`   `decode_scalar`, valid: outcome `Ok` holding the scalar
-    * `[✅]`   `encode_g1`: one branch; the identity encodes to 64 zero bytes; any other point encodes `x` then `y`, each `into_bigint().to_bytes_be()`, from `xy()`
-    * `[✅]`   `encode_g2`: one branch; the identity encodes to 128 zero bytes; any other point encodes `x.c1`, `x.c0`, `y.c1`, `y.c0`, each 32 bytes big-endian
-    * `[✅]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's 32 big-endian bytes moved into a `Secret`
+    * `[ ]`   `encode_g1`: one branch; the identity encodes to 64 zero bytes; any other point encodes `x` then `y`, each `into_bigint().to_bytes_be()`, from `xy()`; the exact 64 bytes are moved into `Bn254ArkworksEncodedG1`
+    * `[ ]`   `encode_g2`: one branch; the identity encodes to 128 zero bytes; any other point encodes `x.c1`, `x.c0`, `y.c1`, `y.c0`, each 32 bytes big-endian; the exact 128 bytes are moved into `Bn254ArkworksEncodedG2`
+    * `[ ]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's 32 big-endian bytes in `Bn254ArkworksEncodedScalar` moved into a `Secret`
     * `[✅]`   `Bn254ArkworksScalar::UNIFORM_BYTES_LENGTH`: `64`, twice the byte width of the group order, so the reduction's bias from uniform is below two to the minus two hundred fifty
     * `[✅]`   `Bn254ArkworksScalar::sample_from_uniform_bytes`, wrong length: condition `payload.uniform.expose().len() != 64`; outcome `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
     * `[✅]`   `Bn254ArkworksScalar::sample_from_uniform_bytes`, sampled: dependency call `Fr::from_be_bytes_mod_order` over the exposed bytes; outcome `Ok` holding the scalar moved into a `Secret`; the payload's `Secret` zeroizes the input when it drops
     * `[✅]`   Zeroization: `Bn254ArkworksScalar` zeroizes its `Fr` through its `Zeroize` implementation and on drop, so every clone a consumer places in a payload is zeroized when the payload drops
 
-  * `[✅]`   `adapters/pairing/src/factory/mock.rs`
+  * `[ ]`   `adapters/pairing/src/factory/mock.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
     * `[✅]`   `PairingDeclarationOverrides`, `#[derive(Default)]`, one `Option` per field; `build_pairing_declaration(overrides: PairingDeclarationOverrides) -> PairingDeclaration`, defaulting to `PairingCurve::Bn254`, `VerifierGroupArithmetic::FirstGroupOnly`, `PrecompileEncoding::Eip196Eip197`, `1`, and `PAIRING_INTERFACE_VERSION`
     * `[✅]`   For each generic struct below, an overrides struct named by the type with the suffix `Overrides`, `#[derive(Default)]`, one `Option` per field over the struct's type parameters, and a builder `build_` followed by the type's name in snake case, taking the overrides and returning the production type, each type parameter bounded by `Default`, and by `Zeroize` where the production type requires it; an omitted field takes `Default::default()` of its type parameter unless stated
-    * `[✅]`   The generic builders: `G1GeneratorSuccessReturn`, `G2GeneratorSuccessReturn`, `AddG1Payload`, `AddG1SuccessReturn`, `AddG2Payload`, `AddG2SuccessReturn`, `MulG1Payload`, `MulG1SuccessReturn`, `MulG2Payload`, `MulG2SuccessReturn`, `MsmG1Term`, `MsmG1Payload` with `terms` defaulting to an empty `Vec`, `MsmG1SuccessReturn`, `MsmG2Term`, `MsmG2Payload` with `terms` defaulting to an empty `Vec`, `MsmG2SuccessReturn`, `PairingProductTerm`, `PairingProductIsOnePayload` with `terms` defaulting to an empty `Vec`, `DecodeG1SuccessReturn`, `DecodeG2SuccessReturn`, `DecodeScalarSuccessReturn`, `EncodeG1Payload`, `EncodeG2Payload`, `EncodeScalarPayload`, and `SampleUniformScalarSuccessReturn` with `scalar` defaulting to `build_secret(SecretConstructorParamsOverrides::default())`
-    * `[✅]`   The non-generic builders: `PairingProductIsOneSuccessReturnOverrides` with `build_pairing_product_is_one_success_return`, `is_one` defaulting to `true`; `EncodeG1SuccessReturnOverrides` with `build_encode_g1_success_return` and `EncodeG2SuccessReturnOverrides` with `build_encode_g2_success_return`, `bytes` defaulting to an empty `Vec`; `EncodeScalarSuccessReturnOverrides` with `build_encode_scalar_success_return`, `bytes` defaulting to `build_secret(SecretConstructorParamsOverrides::default())`; `SampleUniformScalarPayloadOverrides` with `build_sample_uniform_scalar_payload`, `uniform` defaulting to `build_secret` holding `vec![0u8; 64]`
-    * `[✅]`   `MockIPairingAdapter<S, G1, G2>`, a struct with `pub scalar: PhantomData<S>`, `pub g1: PhantomData<G1>`, and `pub g2: PhantomData<G2>`, implementing `IPairingAdapter` for `S: ISampleUniformScalar + Clone + Default`, `G1: Clone + Default`, and `G2: Clone + Default` with those as its associated types; every method returns `Ok` holding its success return's builder called with `Default::default()`, the decoders for any payload; a test needing other behavior implements the trait on its own local struct
+    * `[ ]`   The generic builders: `G1GeneratorSuccessReturn`, `G2GeneratorSuccessReturn`, `AddG1Payload`, `AddG1SuccessReturn`, `AddG2Payload`, `AddG2SuccessReturn`, `MulG1Payload`, `MulG1SuccessReturn`, `MulG2Payload`, `MulG2SuccessReturn`, `MsmG1Term`, `MsmG1Payload` with `terms` defaulting to an empty `Vec`, `MsmG1SuccessReturn`, `MsmG2Term`, `MsmG2Payload` with `terms` defaulting to an empty `Vec`, `MsmG2SuccessReturn`, `PairingProductTerm`, `PairingProductIsOnePayload` with `terms` defaulting to an empty `Vec`, `DecodeG1SuccessReturn`, `DecodeG2SuccessReturn`, `DecodeScalarSuccessReturn`, `EncodeG1Payload`, `EncodeG2Payload`, `EncodeScalarPayload`, `EncodeG1SuccessReturn<E>`, `EncodeG2SuccessReturn<E>`, `EncodeScalarSuccessReturn<E: Zeroize>` with `bytes` defaulting to `build_secret` holding `E::default()`, and `SampleUniformScalarSuccessReturn` with `scalar` defaulting to `build_secret(SecretConstructorParamsOverrides::default())`
+    * `[ ]`   The non-generic builders: `PairingProductIsOneSuccessReturnOverrides` with `build_pairing_product_is_one_success_return`, `is_one` defaulting to `true`; `SampleUniformScalarPayloadOverrides` with `build_sample_uniform_scalar_payload`, `uniform` defaulting to `build_secret` holding `vec![0u8; 64]`
+    * `[ ]`   `MockEncodedG1`, `MockEncodedG2`, and `MockEncodedScalar` are separate `pub struct` mock byte types with private fixed-width arrays `[u8; 64]`, `[u8; 128]`, and `[u8; 32]`; the group types derive `Clone`, `PartialEq`, `Eq`, and `Default` and implement `AsRef<[u8]>`; the scalar type implements `Default`, `AsRef<[u8]>`, and `Zeroize`; these satisfy the mock adapter's associated encoding types without erasing their roles
+    * `[ ]`   `MockIPairingAdapter<P: IPairingAdapter>`, a struct with `pub adapter: PhantomData<P>`, implementing `IPairingAdapter` for `P: IPairingAdapter` whose `Scalar`, `G1`, and `G2` implement `Default`, with `const DECLARATION: PairingDeclaration = P::DECLARATION;`, `const CONCRETE: PairingConcrete = P::CONCRETE;`, `type Scalar = P::Scalar;`, `type G1 = P::G1;`, and `type G2 = P::G2;`; its encoded associated types remain the distinct test-only `MockEncodedG1`, `MockEncodedG2`, and `MockEncodedScalar`. Every method returns `Ok` holding its success return's builder called with `Default::default()`, the decoders for any payload; the mock encodings are fixtures and are not evidence of `P`'s production byte format. A test needing other behavior implements the trait on its own local struct
     * `[✅]`   No builder for the fieldless params and payloads or for the enums; no corruptions type and no invalidator, since no struct this interface owns arrives as untrusted data and the decoders take the untrusted bytes directly
     * `[✅]`   Imports `Secret`, `build_secret`, and `SecretConstructorParamsOverrides` from `domain`, `zeroize::Zeroize`, `core::marker::PhantomData`, and this module's types from `super::interface`
 
@@ -601,7 +607,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `adapters/pairing/src/factory/provides.rs`
     * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
 
-  * `[✅]`   `adapters/pairing/src/bn254_arkworks/test.rs`
+  * `[ ]`   `adapters/pairing/src/bn254_arkworks/test.rs`
+    * `[ ]`   Compile-time drop contract: require `Bn254ArkworksScalar: ZeroizeOnDrop` in a generic assertion; the concrete's `Drop` implementation above clears its held field, including every clone placed in an owned payload
+    * `[ ]`   Compile-time typing contract: bind the three encoder results to `Bn254ArkworksEncodedG1`, `Bn254ArkworksEncodedG2`, and `Secret<Bn254ArkworksEncodedScalar>` respectively; the concrete's types remain distinct, and byte-vector assertions borrow `as_ref()` only at the comparison boundary
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports this module's types from `super::interface`, the family's names and builders from `crate::factory::provides`, `build_secret` and `SecretConstructorParamsOverrides` from `domain`, the `random` names the context slice lists, `hex::decode`, and `ark_bn254::{Fq, Fq2, G2Affine}` with `ark_ec::AffineRepr` and `ark_ff::{BigInteger, PrimeField}` for the non-subgroup vector; each test constructs the subject by `let Ok(pairing) = Bn254ArkworksPairing::try_new(Bn254ArkworksPairingConstructorParams);`, decodes hex by `let Ok(bytes) = decode(…) else { panic!(…) };`, and unpacks each call by `let Ok(…) = … else { panic!(…) };`
     * `[✅]`   The vectors, as hex: the base field modulus `p` = `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47`; the group order `r` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001`; `r - 1` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000`; `r - 2` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff`; the EIP-196 first-group generator, 31 zero bytes and `01` followed by 31 zero bytes and `02`; the EIP-197 second-group generator, `198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2` then `1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed` then `090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b` then `12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa`; the scalars two, three, and five as 32 big-endian bytes
     * `[✅]`   `g1_generator_encodes_to_the_eip_196_generator`: contract: the first-group generator's encoding is EIP-196's; act `encode_g1` over `g1_generator`; assert the bytes equal the first-group generator vector
@@ -636,13 +644,13 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `Bn254ArkworksPairing::try_new` is the concrete's only producer, and its only caller is the pairing factory, which reads `Bn254ArkworksPairing::DECLARATION` before constructing
     * `[✅]`   A group element or scalar is produced only by the adapter's generators, arithmetic, and decoders, or by the scalar's sampling bound; no consumer constructs one from library values
 
-  * `[✅]`   `adapters/pairing/src/bn254_arkworks/mod.rs`
+  * `[ ]`   `adapters/pairing/src/bn254_arkworks/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
     * `[✅]`   `impl Bn254ArkworksPairing` with `pub const DECLARATION: PairingDeclaration` and `pub fn try_new(_params: Bn254ArkworksPairingConstructorParams) -> Bn254ArkworksPairingTryNewReturn` returning `Ok(Bn254ArkworksPairing)`
-    * `[✅]`   `impl IPairingAdapter for Bn254ArkworksPairing` with `type Scalar = Bn254ArkworksScalar;`, `type G1 = Bn254ArkworksG1;`, `type G2 = Bn254ArkworksG2;`, and every method realizing its branches in the interaction spec, the decoders checking in the stated order and slicing the payload only after the length check
-    * `[✅]`   `impl Zeroize for Bn254ArkworksScalar` calling `self.value.zeroize()`; `impl Drop for Bn254ArkworksScalar` calling `self.value.zeroize()`
+    * `[ ]`   `impl IPairingAdapter for Bn254ArkworksPairing` with `const DECLARATION: PairingDeclaration = Bn254ArkworksPairing::DECLARATION;`, `const CONCRETE: PairingConcrete = PairingConcrete::Bn254Arkworks;`, `type Scalar = Bn254ArkworksScalar;`, `type G1 = Bn254ArkworksG1;`, `type G2 = Bn254ArkworksG2;`, `type EncodedG1 = Bn254ArkworksEncodedG1;`, `type EncodedG2 = Bn254ArkworksEncodedG2;`, and `type EncodedScalar = Bn254ArkworksEncodedScalar;`; every method realizes its interaction spec, and the decoders check in the stated order and slice the payload only after the length check; implement `AsRef<[u8]>` on each encoded type and `Zeroize` on the encoded scalar
+    * `[✅]`   `impl Zeroize for Bn254ArkworksScalar` calling `self.value.zeroize()`; `impl Drop for Bn254ArkworksScalar` calling `self.value.zeroize()`; `impl ZeroizeOnDrop for Bn254ArkworksScalar {}` marks the independently verified drop behavior for the generic sampling bound
     * `[✅]`   `impl ISampleUniformScalar for Bn254ArkworksScalar` with `const UNIFORM_BYTES_LENGTH: usize = 64;` and `sample_from_uniform_bytes` realizing its branches, the scalar moved into a `Secret` by `let Ok(scalar) = Secret::try_new(SecretConstructorParams { value });`
-    * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::Zeroize`, the arkworks names the context slice lists, and this module's types from `interface`
+    * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::{Zeroize, ZeroizeOnDrop}`, the arkworks names the context slice lists, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[✅]`   `adapters/pairing/src/bn254_arkworks/provides.rs`
@@ -652,15 +660,16 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `bn254_arkworks` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on the arkworks crates; the `factory` module depends on `domain` and `zeroize` and on no concrete; among repository crates the crate depends on `crates/domain` alone at runtime and on `adapters/random` for tests only, the dependency map's edge; nothing depends on the crate yet
     * `[✅]`   `pairing/factory` adds the family form's recorded cycle when the factory function constructs this concrete
 
-  * `[✅]`   `requirements`
+  * `[ ]`   `requirements`
     * `[✅]`   `adapters/pairing/Cargo.toml` carries exactly the tables and keys stated above, and no `ark-` crate is named in the crate outside `adapters/pairing/src/bn254_arkworks`
+    * `[ ]`   The family encoding interface and BN254 arkworks implementation return distinct owned fixed-width types for G1, G2, and scalar; scalar bytes remain inside `Secret` and the types expose only immutable wire-byte views
     * `[✅]`   `cargo check --all-targets --all-features`, `cargo fmt --check`, and `cargo deny check` complete without error; `cargo clippy --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `bn254_arkworks` concrete, which `pairing/factory` resolves by constructing the concrete
     * `[✅]`   Every test in `bn254_arkworks/test.rs` passes: the generator encodings match EIP-196 and EIP-197, the decoders round-trip and reject a wrong length, a non-canonical coordinate or scalar, a point off the curve, and a second-group point outside the subgroup, the arithmetic and multi-scalar multiplication agree, the pairing-product check accepts a pairing with its inverse and the bilinear exchange and rejects a lone pairing, and sampling rejects a wrong length and returns a scalar below the group order from a production draw (CR-10 on BN254; CR-05 for the sampled scalar)
     * `[✅]`   Code outside `adapters/pairing` naming `Bn254ArkworksPairing` or anything under `bn254_arkworks` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* `[✅]`   `pairing/bn254_halo2curves` **BN254 pairing concrete on halo2curves with EIP-196 and EIP-197 encodings, a further concrete beneath the pairing factory**
+* `[ ]`   `pairing/bn254_halo2curves` **BN254 pairing concrete on halo2curves with EIP-196 and EIP-197 encodings, a further concrete beneath the pairing factory**
 
-  * `[✅]`   `objective`
+  * `[ ]`   `objective`
     * `[✅]`   Problem: the harness benchmark compares pairing libraries per curve through the factory, so BN254 needs a second concrete over a second library that satisfies the family's generic interface exactly as the arkworks concrete does (CR-10)
     * `[✅]`   Functional: the concrete implements `IPairingAdapter` over `halo2curves`' BN256, which is BN254, with its own scalar and group-element types over the library's elements as the associated types
     * `[✅]`   Functional: it encodes and decodes a first-group point as EIP-196's 64 bytes and a second-group point as EIP-197's 128 bytes, each coordinate a 32-byte big-endian integer, the second-group coordinates imaginary part first, the point at infinity as all zero bytes, and a scalar as 32 big-endian bytes, rejecting a wrong length, a non-canonical field element, a point off the curve, and a point outside the prime-order subgroup
@@ -703,16 +712,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds `mod bn254_halo2curves;` to the barrel; every other line is unchanged
     * `[✅]`   Until `bn254_halo2curves/mod.rs` exists, `cargo check` reports the unresolved module, which is the RED state for every element below that precedes it
 
-  * `[✅]`   `adapters/pairing/src/bn254_halo2curves/interface.rs`
+  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/interface.rs`
     * `[✅]`   `Bn254Halo2curvesPairing`, the unit struct `pub struct Bn254Halo2curvesPairing;`, the adapter over `halo2curves`' BN256
     * `[✅]`   `Bn254Halo2curvesPairingConstructorParams`, the fieldless struct `pub struct Bn254Halo2curvesPairingConstructorParams;`
     * `[✅]`   `Bn254Halo2curvesPairingTryNewReturn`, the alias `Result<Bn254Halo2curvesPairing, Infallible>`; the error arm is uninhabited because the adapter takes no configuration
     * `[✅]`   `Bn254Halo2curvesScalar`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bn256::Fr`
     * `[✅]`   `Bn254Halo2curvesG1`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bn256::G1Affine`
     * `[✅]`   `Bn254Halo2curvesG2`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bn256::G2Affine`
+    * `[ ]`   `Bn254Halo2curvesEncodedG1`, `Bn254Halo2curvesEncodedG2`, and `Bn254Halo2curvesEncodedScalar` are three distinct concrete-owned `pub struct`s holding `pub(super)` `[u8; 64]`, `[u8; 128]`, and `[u8; 32]` respectively; both group encodings derive `Clone`, `PartialEq`, and `Eq` and implement `AsRef<[u8]>`; the scalar encoding implements `AsRef<[u8]>` and `Zeroize` and is returned only inside `Secret`; none exposes mutable bytes or a public constructor
     * `[✅]`   Imports `core::convert::Infallible`; declares nothing else
 
-  * `[✅]`   `adapters/pairing/src/bn254_halo2curves/interaction.spec.md`
+  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/interaction.spec.md`
     * `[✅]`   `Bn254Halo2curvesPairing::try_new(params: Bn254Halo2curvesPairingConstructorParams) -> Bn254Halo2curvesPairingTryNewReturn`: one branch; outcome `Ok(Bn254Halo2curvesPairing)`; the error arm has no branch
     * `[✅]`   `Bn254Halo2curvesPairing::DECLARATION`: the inherent constant `PairingDeclaration { curve: PairingCurve::Bn254, verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly, precompile_encoding: PrecompileEncoding::Eip196Eip197, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
     * `[✅]`   `g1_generator`, `g2_generator`: one branch each; dependency call `G1Affine::generator()` or `G2Affine::generator()`; outcome `Ok` holding the generator in the owned group type
@@ -730,9 +740,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `decode_scalar`, wrong length: condition `<[u8; 32]>::try_from(payload)` fails; outcome `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
     * `[✅]`   `decode_scalar`, non-canonical: condition the bytes, reversed to little-endian and read by `Fr::from_repr`, are none, that is, they are at least the group order; outcome `Err(DecodeScalarErrorReturn::NonCanonical)`
     * `[✅]`   `decode_scalar`, valid: outcome `Ok` holding the scalar
-    * `[✅]`   `encode_g1`: one branch; a point whose `coordinates()` is none, the identity, encodes to 64 zero bytes; any other point encodes `x()` then `y()`, each `to_repr()` reversed to big-endian
-    * `[✅]`   `encode_g2`: one branch; the identity encodes to 128 zero bytes; any other point encodes `x().c1()`, `x().c0()`, `y().c1()`, `y().c0()`, each `to_repr()` reversed to big-endian
-    * `[✅]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's `to_repr()` reversed to 32 big-endian bytes, moved into a `Secret`
+    * `[ ]`   `encode_g1`: one branch; a point whose `coordinates()` is none, the identity, encodes to 64 zero bytes; any other point encodes `x()` then `y()`, each `to_repr()` reversed to big-endian; the exact bytes are moved into `Bn254Halo2curvesEncodedG1`
+    * `[ ]`   `encode_g2`: one branch; the identity encodes to 128 zero bytes; any other point encodes `x().c1()`, `x().c0()`, `y().c1()`, `y().c0()`, each `to_repr()` reversed to big-endian; the exact bytes are moved into `Bn254Halo2curvesEncodedG2`
+    * `[ ]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's `to_repr()` reversed to 32 big-endian bytes in `Bn254Halo2curvesEncodedScalar` moved into a `Secret`
     * `[✅]`   `Bn254Halo2curvesScalar::UNIFORM_BYTES_LENGTH`: `64`, twice the byte width of the group order
     * `[✅]`   `Bn254Halo2curvesScalar::sample_from_uniform_bytes`, wrong length: condition `<&[u8; 64]>::try_from(payload.uniform.expose().as_slice())` fails; outcome `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
     * `[✅]`   `Bn254Halo2curvesScalar::sample_from_uniform_bytes`, sampled: the 64 bytes are copied into a local `[u8; 64]` and reversed, so the big-endian integer the arkworks concrete reads is the little-endian integer `halo2curves` reads; dependency call `Fr::from_uniform_bytes` over the copy, which is then zeroized; outcome `Ok` holding the scalar moved into a `Secret`; the payload's `Secret` zeroizes the input when it drops
@@ -743,7 +753,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The builder defaults for the concrete's owned types, which the family's generic builders and `MockIPairingAdapter` read through `Default`: `impl Default for Bn254Halo2curvesScalar` returning `Fr::ONE`; `impl Default for Bn254Halo2curvesG1` returning `G1Affine::generator()`; `impl Default for Bn254Halo2curvesG2` returning `G2Affine::generator()`
     * `[✅]`   Nothing else; the types are built as real values, so there is no overrides type, invalidator, or mock function here
 
-  * `[✅]`   `adapters/pairing/src/bn254_halo2curves/test.rs`
+  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/test.rs`
+    * `[ ]`   Compile-time drop contract: require `Bn254Halo2curvesScalar: ZeroizeOnDrop` in a generic assertion; the concrete's `Drop` implementation above clears its held field, including every clone placed in an owned payload
+    * `[ ]`   Compile-time typing contract: bind the three encoder results to `Bn254Halo2curvesEncodedG1`, `Bn254Halo2curvesEncodedG2`, and `Secret<Bn254Halo2curvesEncodedScalar>` respectively; byte-vector assertions borrow `as_ref()` only at the comparison boundary
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports this module's types from `super::interface`, the family's names and builders from `crate::factory::provides`, `build_secret` and `SecretConstructorParamsOverrides` from `domain`, the `random` names `pairing/bn254_arkworks`'s test imports, `hex::decode`, `core::iter::successors`, and, for the non-subgroup vector, `halo2curves::bn256::{Fq, Fq2, G2Affine}`, `halo2curves::ff::{Field, PrimeField}`, `halo2curves::group::{cofactor::CofactorGroup, prime::PrimeCurveAffine}`, and `halo2curves::CurveAffine`; each test constructs the subject by `let Ok(pairing) = Bn254Halo2curvesPairing::try_new(Bn254Halo2curvesPairingConstructorParams);`, decodes hex by `let Ok(bytes) = decode(…) else { panic!(…) };`, and unpacks each call by `let Ok(…) = … else { panic!(…) };`
     * `[✅]`   The vectors are `pairing/bn254_arkworks`'s, restated here as hex: `p` = `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47`; `r` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001`; `r - 1` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000`; `r - 2` = `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff`; the EIP-196 first-group generator, 31 zero bytes and `01` followed by 31 zero bytes and `02`; the EIP-197 second-group generator, `198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2` then `1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed` then `090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b` then `12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa`; the scalars two, three, and five as 32 big-endian bytes
     * `[✅]`   `g1_generator_encodes_to_the_eip_196_generator`: contract: the first-group generator's encoding is EIP-196's; act `encode_g1` over `g1_generator`; assert the bytes equal the first-group generator vector
@@ -776,33 +788,34 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `bn254_halo2curves_pairing_declares_its_curve_arithmetic_encoding_and_versions`: act read `Bn254Halo2curvesPairing::DECLARATION`; assert `curve` matches `PairingCurve::Bn254`, `verifier_group_arithmetic` matches `VerifierGroupArithmetic::FirstGroupOnly`, `precompile_encoding` matches `PrecompileEncoding::Eip196Eip197`, `adapter_version` equals `1`, and `interface_version` equals `PAIRING_INTERFACE_VERSION`
     * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers; every payload is built through its family builder with only the overrides the test depends on
 
-  * `[✅]`   `construction`
+  * `[ ]`   `construction`
     * `[✅]`   `Bn254Halo2curvesPairing::try_new` is the concrete's only producer, and its only caller is the pairing factory, which reads `Bn254Halo2curvesPairing::DECLARATION` before constructing
     * `[✅]`   A group element or scalar is produced only by the adapter's generators, arithmetic, and decoders, or by the scalar's sampling bound; no consumer constructs one from library values
 
-  * `[✅]`   `adapters/pairing/src/bn254_halo2curves/mod.rs`
+  * `[ ]`   `adapters/pairing/src/bn254_halo2curves/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
     * `[✅]`   `impl Bn254Halo2curvesPairing` with `pub const DECLARATION: PairingDeclaration` and `pub fn try_new(_params: Bn254Halo2curvesPairingConstructorParams) -> Bn254Halo2curvesPairingTryNewReturn` returning `Ok(Bn254Halo2curvesPairing)`
-    * `[✅]`   `impl IPairingAdapter for Bn254Halo2curvesPairing` with `type Scalar = Bn254Halo2curvesScalar;`, `type G1 = Bn254Halo2curvesG1;`, `type G2 = Bn254Halo2curvesG2;`, and every method realizing its branches in the interaction spec, the decoders checking in the stated order and copying each 32-byte coordinate out of the fixed-size array before reversing it
-    * `[✅]`   `impl Zeroize for Bn254Halo2curvesScalar` and `impl Drop for Bn254Halo2curvesScalar`, each setting `self.value` to `Fr::ZERO` and calling `black_box(&self.value)`
+    * `[ ]`   `impl IPairingAdapter for Bn254Halo2curvesPairing` with `const DECLARATION: PairingDeclaration = Bn254Halo2curvesPairing::DECLARATION;`, `const CONCRETE: PairingConcrete = PairingConcrete::Bn254Halo2curves;`, `type Scalar = Bn254Halo2curvesScalar;`, `type G1 = Bn254Halo2curvesG1;`, `type G2 = Bn254Halo2curvesG2;`, `type EncodedG1 = Bn254Halo2curvesEncodedG1;`, `type EncodedG2 = Bn254Halo2curvesEncodedG2;`, and `type EncodedScalar = Bn254Halo2curvesEncodedScalar;`; every method realizes its interaction spec, the decoders check in the stated order and copy each 32-byte coordinate out of the fixed-size array before reversing it; implement `AsRef<[u8]>` on each encoded type and `Zeroize` on the encoded scalar
+    * `[✅]`   `impl Zeroize for Bn254Halo2curvesScalar` and `impl Drop for Bn254Halo2curvesScalar`, each setting `self.value` to `Fr::ZERO` and calling `black_box(&self.value)`; `impl ZeroizeOnDrop for Bn254Halo2curvesScalar {}` marks the independently verified drop behavior for the generic sampling bound
     * `[✅]`   `impl ISampleUniformScalar for Bn254Halo2curvesScalar` with `const UNIFORM_BYTES_LENGTH: usize = 64;` and `sample_from_uniform_bytes` realizing its branches, the scalar moved into a `Secret` by `let Ok(scalar) = Secret::try_new(SecretConstructorParams { value });`
-    * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::Zeroize`, `core::hint::black_box`, the `halo2curves` names the context slice lists, and this module's types from `interface`
+    * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::{Zeroize, ZeroizeOnDrop}`, `core::hint::black_box`, the `halo2curves` names the context slice lists, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[✅]`   `adapters/pairing/src/bn254_halo2curves/provides.rs`
     * `[✅]`   `pub(crate) use super::interface::*;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate
 
-  * `[✅]`   `directionality`
+  * `[ ]`   `directionality`
     * `[✅]`   `bn254_halo2curves` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on `halo2curves`; it depends on no other concrete and no concrete depends on it; the `factory` module is unchanged and depends on no concrete; among repository crates the crate still depends on `crates/domain` alone at runtime
     * `[✅]`   `pairing/factory` adds the family form's recorded cycle when the factory function constructs this concrete
 
-  * `[✅]`   `requirements`
+  * `[ ]`   `requirements`
     * `[✅]`   `adapters/pairing/Cargo.toml` differs from `pairing/bn254_arkworks`'s only by the `halo2curves` dependency, and `halo2curves` is named nowhere in the crate outside `adapters/pairing/src/bn254_halo2curves`
+    * `[ ]`   BN254 halo2curves returns its own distinct fixed-width encoded G1, G2, and scalar types through the family's associated types
     * `[✅]`   `cargo check --all-targets --all-features`, `cargo fmt --check`, and `cargo deny check` complete without error; `cargo clippy --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the two BN254 concretes, which `pairing/factory` resolves by constructing them
     * `[✅]`   Every test in `bn254_halo2curves/test.rs` passes: the generator encodings match EIP-196 and EIP-197 and the identity encodes to zero bytes, the decoders round-trip and reject a wrong length, a non-canonical coordinate or scalar, a point off the curve, and a second-group point outside the subgroup, the arithmetic and multi-scalar multiplication agree, the pairing-product check accepts a pairing with its inverse and the bilinear exchange and rejects a lone pairing, and sampling rejects a wrong length, reads its input big-endian, and returns a scalar below the group order from a production draw (CR-10 on BN254; CR-05 for the sampled scalar)
     * `[✅]`   Code outside `adapters/pairing` naming `Bn254Halo2curvesPairing` or anything under `bn254_halo2curves` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* `[✅]`   `pairing/bls12_381_arkworks` **BLS12-381 pairing concrete on arkworks with EIP-2537 encodings and subgroup checks on every input; adds the BLS12-381 variants to the family's declaration**
+* `[ ]`   `pairing/bls12_381_arkworks` **BLS12-381 pairing concrete on arkworks with EIP-2537 encodings and subgroup checks on every input; adds the BLS12-381 variants to the family's declaration**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: BLS12-381 is the primary verifier form on Base through the EIP-2537 precompiles, so the pairing family needs a BLS12-381 concrete whose encodings and checks match those precompiles exactly (CR-10)
@@ -851,16 +864,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `PairingCurve` gains the variant `Bls12381`; `VerifierGroupArithmetic` gains the variant `BothGroups`; `PrecompileEncoding` gains the variant `Eip2537`
     * `[✅]`   Every other item is unchanged
 
-  * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/interface.rs`
+  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/interface.rs`
     * `[✅]`   `Bls12381ArkworksPairing`, the unit struct `pub struct Bls12381ArkworksPairing;`, the adapter over arkworks' BLS12-381
     * `[✅]`   `Bls12381ArkworksPairingConstructorParams`, the fieldless struct `pub struct Bls12381ArkworksPairingConstructorParams;`
     * `[✅]`   `Bls12381ArkworksPairingTryNewReturn`, the alias `Result<Bls12381ArkworksPairing, Infallible>`; the error arm is uninhabited because the adapter takes no configuration
     * `[✅]`   `Bls12381ArkworksScalar`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bls12_381::Fr`
     * `[✅]`   `Bls12381ArkworksG1`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bls12_381::G1Affine`
     * `[✅]`   `Bls12381ArkworksG2`, a struct with `#[derive(Clone)]` and one field `pub(super) value: ark_bls12_381::G2Affine`
+    * `[ ]`   `Bls12381ArkworksEncodedG1`, `Bls12381ArkworksEncodedG2`, and `Bls12381ArkworksEncodedScalar` are three distinct concrete-owned `pub struct`s holding `pub(super)` `[u8; 128]`, `[u8; 256]`, and `[u8; 32]` respectively; both group encodings derive `Clone`, `PartialEq`, and `Eq` and implement `AsRef<[u8]>`; the scalar encoding implements `AsRef<[u8]>` and `Zeroize` and is returned only inside `Secret`; none exposes mutable bytes or a public constructor
     * `[✅]`   Imports `core::convert::Infallible`; declares nothing else
 
-  * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/interaction.spec.md`
+  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/interaction.spec.md`
     * `[✅]`   `Bls12381ArkworksPairing::try_new(params: Bls12381ArkworksPairingConstructorParams) -> Bls12381ArkworksPairingTryNewReturn`: one branch; outcome `Ok(Bls12381ArkworksPairing)`; the error arm has no branch
     * `[✅]`   `Bls12381ArkworksPairing::DECLARATION`: the inherent constant `PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
     * `[✅]`   `g1_generator`, `g2_generator`: one branch each; dependency call `G1Affine::generator()` or `G2Affine::generator()`; outcome `Ok` holding the generator in the owned group type
@@ -879,9 +893,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `decode_scalar`, wrong length: condition `payload.len() != 32`; outcome `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
     * `[✅]`   `decode_scalar`, non-canonical: condition the bytes, read by `Fr::from_be_bytes_mod_order`, do not re-encode to the same 32 bytes, that is, they are at least the group order; outcome `Err(DecodeScalarErrorReturn::NonCanonical)`; EIP-2537's MSM accepts any 256-bit scalar, and this decoder, which produces an owned scalar, admits only the canonical ones
     * `[✅]`   `decode_scalar`, valid: outcome `Ok` holding the scalar
-    * `[✅]`   `encode_g1`: one branch; the identity encodes to 128 zero bytes; any other point encodes `x` then `y` from `xy()`, each as 16 zero bytes followed by `into_bigint().to_bytes_be()`
-    * `[✅]`   `encode_g2`: one branch; the identity encodes to 256 zero bytes; any other point encodes `x.c0`, `x.c1`, `y.c0`, `y.c1`, each as 16 zero bytes followed by its 48 big-endian bytes
-    * `[✅]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's 32 big-endian bytes moved into a `Secret`
+    * `[ ]`   `encode_g1`: one branch; the identity encodes to 128 zero bytes; any other point encodes `x` then `y` from `xy()`, each as 16 zero bytes followed by `into_bigint().to_bytes_be()`; the exact bytes are moved into `Bls12381ArkworksEncodedG1`
+    * `[ ]`   `encode_g2`: one branch; the identity encodes to 256 zero bytes; any other point encodes `x.c0`, `x.c1`, `y.c0`, `y.c1`, each as 16 zero bytes followed by its 48 big-endian bytes; the exact bytes are moved into `Bls12381ArkworksEncodedG2`
+    * `[ ]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's 32 big-endian bytes in `Bls12381ArkworksEncodedScalar` moved into a `Secret`
     * `[✅]`   `Bls12381ArkworksScalar::UNIFORM_BYTES_LENGTH`: `64`, twice the byte width of the group order
     * `[✅]`   `Bls12381ArkworksScalar::sample_from_uniform_bytes`, wrong length: condition `payload.uniform.expose().len() != 64`; outcome `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
     * `[✅]`   `Bls12381ArkworksScalar::sample_from_uniform_bytes`, sampled: dependency call `Fr::from_be_bytes_mod_order` over the exposed bytes; outcome `Ok` holding the scalar moved into a `Secret`; the payload's `Secret` zeroizes the input when it drops
@@ -892,7 +906,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The builder defaults for the concrete's owned types, which the family's generic builders and `MockIPairingAdapter` read through `Default`: `impl Default for Bls12381ArkworksScalar` returning `Fr::from(1u64)`; `impl Default for Bls12381ArkworksG1` returning `G1Affine::generator()`; `impl Default for Bls12381ArkworksG2` returning `G2Affine::generator()`
     * `[✅]`   Nothing else; the types are built as real values, so there is no overrides type, invalidator, or mock function here
 
-  * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/test.rs`
+  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/test.rs`
+    * `[ ]`   Compile-time drop contract: require `Bls12381ArkworksScalar: ZeroizeOnDrop` in a generic assertion; the concrete's `Drop` implementation above clears its held field, including every clone placed in an owned payload
+    * `[ ]`   Compile-time typing contract: bind the three encoder results to `Bls12381ArkworksEncodedG1`, `Bls12381ArkworksEncodedG2`, and `Secret<Bls12381ArkworksEncodedScalar>` respectively; byte-vector assertions borrow `as_ref()` only at the comparison boundary
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports this module's types from `super::interface`, the family's names and builders from `crate::factory::provides`, `build_secret` and `SecretConstructorParamsOverrides` from `domain`, the `random` names `pairing/bn254_arkworks`'s test imports, `hex::decode`, and, for the non-subgroup vectors, `ark_bls12_381::{Fq, Fq2, G1Affine, G2Affine}` with `ark_ec::AffineRepr` and `ark_ff::{BigInteger, PrimeField}`; each test constructs the subject by `let Ok(pairing) = Bls12381ArkworksPairing::try_new(Bls12381ArkworksPairingConstructorParams);`, decodes hex by `let Ok(bytes) = decode(…) else { panic!(…) };`, and unpacks each call by `let Ok(…) = … else { panic!(…) };`
     * `[✅]`   The vectors, from EIP-2537, as hex, each coordinate written below as its 48 bytes and encoded in a vector as 16 zero bytes followed by them: the base field modulus `p` = `1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab`; the group order `r` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001`; `r - 1` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000000`; `r - 2` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffeffffffff`; the first-group generator `x` = `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb` and `y` = `08b3f481e3aaa0f1a09e30ed741d8ae4fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1`; the second-group generator `x.c0` = `024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8`, `x.c1` = `13e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e`, `y.c0` = `0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801`, and `y.c1` = `0606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab3f370d275cec1da1aaa9075ff05f79be`; the scalars two, three, and five as 32 big-endian bytes
     * `[✅]`   `g1_generator_encodes_to_the_eip_2537_generator`: contract: the first-group generator's encoding is EIP-2537's; act `encode_g1` over `g1_generator`; assert the bytes equal the padded first-group generator vector
@@ -930,30 +946,31 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `Bls12381ArkworksPairing::try_new` is the concrete's only producer, and its only caller is the pairing factory, which reads `Bls12381ArkworksPairing::DECLARATION` before constructing
     * `[✅]`   A group element or scalar is produced only by the adapter's generators, arithmetic, and decoders, or by the scalar's sampling bound; no consumer constructs one from library values
 
-  * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/mod.rs`
+  * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
     * `[✅]`   `impl Bls12381ArkworksPairing` with `pub const DECLARATION: PairingDeclaration` and `pub fn try_new(_params: Bls12381ArkworksPairingConstructorParams) -> Bls12381ArkworksPairingTryNewReturn` returning `Ok(Bls12381ArkworksPairing)`
-    * `[✅]`   `impl IPairingAdapter for Bls12381ArkworksPairing` with `type Scalar = Bls12381ArkworksScalar;`, `type G1 = Bls12381ArkworksG1;`, `type G2 = Bls12381ArkworksG2;`, and every method realizing its branches in the interaction spec, the decoders checking in the stated order and slicing the payload only after the length check
-    * `[✅]`   `impl Zeroize for Bls12381ArkworksScalar` calling `self.value.zeroize()`; `impl Drop for Bls12381ArkworksScalar` calling `self.value.zeroize()`
+    * `[ ]`   `impl IPairingAdapter for Bls12381ArkworksPairing` with `const DECLARATION: PairingDeclaration = Bls12381ArkworksPairing::DECLARATION;`, `const CONCRETE: PairingConcrete = PairingConcrete::Bls12381Arkworks;`, `type Scalar = Bls12381ArkworksScalar;`, `type G1 = Bls12381ArkworksG1;`, `type G2 = Bls12381ArkworksG2;`, `type EncodedG1 = Bls12381ArkworksEncodedG1;`, `type EncodedG2 = Bls12381ArkworksEncodedG2;`, and `type EncodedScalar = Bls12381ArkworksEncodedScalar;`; every method realizes its interaction spec, and the decoders check in the stated order and slice the payload only after the length check; implement `AsRef<[u8]>` on each encoded type and `Zeroize` on the encoded scalar
+    * `[✅]`   `impl Zeroize for Bls12381ArkworksScalar` calling `self.value.zeroize()`; `impl Drop for Bls12381ArkworksScalar` calling `self.value.zeroize()`; `impl ZeroizeOnDrop for Bls12381ArkworksScalar {}` marks the independently verified drop behavior for the generic sampling bound
     * `[✅]`   `impl ISampleUniformScalar for Bls12381ArkworksScalar` with `const UNIFORM_BYTES_LENGTH: usize = 64;` and `sample_from_uniform_bytes` realizing its branches, the scalar moved into a `Secret` by `let Ok(scalar) = Secret::try_new(SecretConstructorParams { value });`
-    * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::Zeroize`, the arkworks names the context slice lists, and this module's types from `interface`
+    * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::{Zeroize, ZeroizeOnDrop}`, the arkworks names the context slice lists, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/provides.rs`
     * `[✅]`   `pub(crate) use super::interface::*;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate
 
   * `[✅]`   `directionality`
-    * `[✅]`   `bls12_381_arkworks` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on the arkworks crates; it depends on no other concrete and no concrete depends on it; the `factory` module gains three enum variants and still depends on no concrete; among repository crates the crate still depends on `crates/domain` alone at runtime
+    * `[✅]`   `bls12_381_arkworks` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on the arkworks crates; it depends on no other concrete and no concrete depends on it; the already-defined `PairingConcrete` has all four variants; the factory module still depends on no concrete; among repository crates the crate still depends on `crates/domain` alone at runtime
     * `[✅]`   `pairing/factory` adds the family form's recorded cycle when the factory function constructs this concrete
 
-  * `[✅]`   `requirements`
+  * `[ ]`   `requirements`
     * `[✅]`   `adapters/pairing/Cargo.toml` gains only the `ark-bls12-381` dependency, and `ark-bls12-381` is named nowhere in the crate outside `adapters/pairing/src/bls12_381_arkworks`
+    * `[ ]`   BLS12-381 arkworks returns its own distinct fixed-width encoded G1, G2, and scalar types through the family's associated types
     * `[✅]`   `factory/interface.rs` differs from its prior state only by the three variants
     * `[✅]`   `cargo check --all-targets --all-features`, `cargo fmt --check`, and `cargo deny check` complete without error; `cargo clippy --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the pairing concretes and the new variants, which `pairing/factory` resolves by constructing the concretes
     * `[✅]`   Every test in `bls12_381_arkworks/test.rs` passes: the generator encodings match EIP-2537, the decoders round-trip and reject a wrong length, a nonzero padding byte, a non-canonical coordinate or scalar, a point off the curve, and a point outside the subgroup in both groups, the arithmetic and multi-scalar multiplication agree, the pairing-product check accepts a pairing with its inverse and the bilinear exchange and rejects a lone pairing, and sampling rejects a wrong length, reads its input big-endian, and returns a scalar below the group order from a production draw (CR-10 on BLS12-381; CR-05 for the sampled scalar)
     * `[✅]`   Code outside `adapters/pairing` naming `Bls12381ArkworksPairing` or anything under `bls12_381_arkworks` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* `[✅]`   `pairing/bls12_381_halo2curves` **BLS12-381 pairing concrete on halo2curves with EIP-2537 encodings and subgroup checks on every input, a further concrete beneath the pairing factory**
+* `[ ]`   `pairing/bls12_381_halo2curves` **BLS12-381 pairing concrete on halo2curves with EIP-2537 encodings and subgroup checks on every input, a further concrete beneath the pairing factory**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: the harness benchmark compares pairing libraries per curve through the factory, so BLS12-381 needs a second concrete over a second library that satisfies the family's generic interface exactly as the arkworks BLS12-381 concrete does (CR-10)
@@ -996,16 +1013,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds `mod bls12_381_halo2curves;` to the barrel; every other line is unchanged
     * `[✅]`   Until `bls12_381_halo2curves/mod.rs` exists, `cargo check` reports the unresolved module, which is the RED state for every element below that precedes it
 
-  * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/interface.rs`
+  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/interface.rs`
     * `[✅]`   `Bls12381Halo2curvesPairing`, the unit struct `pub struct Bls12381Halo2curvesPairing;`, the adapter over `halo2curves`' BLS12-381
     * `[✅]`   `Bls12381Halo2curvesPairingConstructorParams`, the fieldless struct `pub struct Bls12381Halo2curvesPairingConstructorParams;`
     * `[✅]`   `Bls12381Halo2curvesPairingTryNewReturn`, the alias `Result<Bls12381Halo2curvesPairing, Infallible>`; the error arm is uninhabited because the adapter takes no configuration
     * `[✅]`   `Bls12381Halo2curvesScalar`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bls12381::Fr`
     * `[✅]`   `Bls12381Halo2curvesG1`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bls12381::G1Affine`
     * `[✅]`   `Bls12381Halo2curvesG2`, a struct with `#[derive(Clone)]` and one field `pub(super) value: halo2curves::bls12381::G2Affine`
+    * `[ ]`   `Bls12381Halo2curvesEncodedG1`, `Bls12381Halo2curvesEncodedG2`, and `Bls12381Halo2curvesEncodedScalar` are three distinct concrete-owned `pub struct`s holding `pub(super)` `[u8; 128]`, `[u8; 256]`, and `[u8; 32]` respectively; both group encodings derive `Clone`, `PartialEq`, and `Eq` and implement `AsRef<[u8]>`; the scalar encoding implements `AsRef<[u8]>` and `Zeroize` and is returned only inside `Secret`; none exposes mutable bytes or a public constructor
     * `[✅]`   Imports `core::convert::Infallible`; declares nothing else
 
-  * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/interaction.spec.md`
+  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/interaction.spec.md`
     * `[✅]`   `Bls12381Halo2curvesPairing::try_new(params: Bls12381Halo2curvesPairingConstructorParams) -> Bls12381Halo2curvesPairingTryNewReturn`: one branch; outcome `Ok(Bls12381Halo2curvesPairing)`; the error arm has no branch
     * `[✅]`   `Bls12381Halo2curvesPairing::DECLARATION`: the inherent constant `PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
     * `[✅]`   `g1_generator`, `g2_generator`: one branch each; dependency call `G1Affine::generator()` or `G2Affine::generator()`; outcome `Ok` holding the generator in the owned group type
@@ -1024,9 +1042,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `decode_scalar`, wrong length: condition `<[u8; 32]>::try_from(payload)` fails; outcome `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
     * `[✅]`   `decode_scalar`, non-canonical: condition the bytes, reversed to little-endian and read by `Fr::from_repr`, are none, that is, they are at least the group order; outcome `Err(DecodeScalarErrorReturn::NonCanonical)`; EIP-2537's MSM accepts any 256-bit scalar, and this decoder, which produces an owned scalar, admits only the canonical ones
     * `[✅]`   `decode_scalar`, valid: outcome `Ok` holding the scalar
-    * `[✅]`   `encode_g1`: one branch; a point whose `coordinates()` is none, the identity, encodes to 128 zero bytes; any other point encodes `x()` then `y()`, each as 16 zero bytes followed by `to_repr()` reversed to 48 big-endian bytes
-    * `[✅]`   `encode_g2`: one branch; the identity encodes to 256 zero bytes; any other point encodes `x().c0()`, `x().c1()`, `y().c0()`, `y().c1()`, each as 16 zero bytes followed by `to_repr()` reversed to 48 big-endian bytes
-    * `[✅]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's `to_repr()` reversed to 32 big-endian bytes, moved into a `Secret`
+    * `[ ]`   `encode_g1`: one branch; a point whose `coordinates()` is none, the identity, encodes to 128 zero bytes; any other point encodes `x()` then `y()`, each as 16 zero bytes followed by `to_repr()` reversed to 48 big-endian bytes; the exact bytes are moved into `Bls12381Halo2curvesEncodedG1`
+    * `[ ]`   `encode_g2`: one branch; the identity encodes to 256 zero bytes; any other point encodes `x().c0()`, `x().c1()`, `y().c0()`, `y().c1()`, each as 16 zero bytes followed by `to_repr()` reversed to 48 big-endian bytes; the exact bytes are moved into `Bls12381Halo2curvesEncodedG2`
+    * `[ ]`   `encode_scalar`: one branch; outcome `Ok` holding the scalar's `to_repr()` reversed to 32 big-endian bytes in `Bls12381Halo2curvesEncodedScalar` moved into a `Secret`
     * `[✅]`   `Bls12381Halo2curvesScalar::UNIFORM_BYTES_LENGTH`: `64`, twice the byte width of the group order
     * `[✅]`   `Bls12381Halo2curvesScalar::sample_from_uniform_bytes`, wrong length: condition `<&[u8; 64]>::try_from(payload.uniform.expose().as_slice())` fails; outcome `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
     * `[✅]`   `Bls12381Halo2curvesScalar::sample_from_uniform_bytes`, sampled: the 64 bytes are copied into a local `[u8; 64]` and reversed, so the big-endian integer the arkworks concrete reads is the little-endian integer `halo2curves` reads; dependency call `Fr::from_uniform_bytes` over the copy, which is then zeroized; outcome `Ok` holding the scalar moved into a `Secret`; the payload's `Secret` zeroizes the input when it drops
@@ -1037,7 +1055,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The builder defaults for the concrete's owned types, which the family's generic builders and `MockIPairingAdapter` read through `Default`: `impl Default for Bls12381Halo2curvesScalar` returning `Fr::ONE`; `impl Default for Bls12381Halo2curvesG1` returning `G1Affine::generator()`; `impl Default for Bls12381Halo2curvesG2` returning `G2Affine::generator()`
     * `[✅]`   Nothing else; the types are built as real values, so there is no overrides type, invalidator, or mock function here
 
-  * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/test.rs`
+  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/test.rs`
+    * `[ ]`   Compile-time drop contract: require `Bls12381Halo2curvesScalar: ZeroizeOnDrop` in a generic assertion; the concrete's `Drop` implementation above clears its held field, including every clone placed in an owned payload
+    * `[ ]`   Compile-time typing contract: bind the three encoder results to `Bls12381Halo2curvesEncodedG1`, `Bls12381Halo2curvesEncodedG2`, and `Secret<Bls12381Halo2curvesEncodedScalar>` respectively; byte-vector assertions borrow `as_ref()` only at the comparison boundary
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports this module's types from `super::interface`, the family's names and builders from `crate::factory::provides`, `build_secret` and `SecretConstructorParamsOverrides` from `domain`, the `random` names `pairing/bn254_arkworks`'s test imports, `hex::decode`, `core::iter::successors`, and, for the non-subgroup vectors, `halo2curves::bls12381::{Fq, Fq2, G1Affine, G2Affine}`, `halo2curves::ff::{Field, PrimeField}`, `halo2curves::group::{cofactor::CofactorGroup, prime::PrimeCurveAffine}`, and `halo2curves::CurveAffine`; each test constructs the subject by `let Ok(pairing) = Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);`, decodes hex by `let Ok(bytes) = decode(…) else { panic!(…) };`, and unpacks each call by `let Ok(…) = … else { panic!(…) };`
     * `[✅]`   The vectors are `pairing/bls12_381_arkworks`'s, from EIP-2537, restated here as hex, each coordinate written below as its 48 bytes and encoded in a vector as 16 zero bytes followed by them: `p` = `1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab`; `r` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001`; `r - 1` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000000`; `r - 2` = `73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffeffffffff`; the first-group generator `x` = `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb` and `y` = `08b3f481e3aaa0f1a09e30ed741d8ae4fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1`; the second-group generator `x.c0` = `024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8`, `x.c1` = `13e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e`, `y.c0` = `0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801`, and `y.c1` = `0606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab3f370d275cec1da1aaa9075ff05f79be`; the scalars two, three, and five as 32 big-endian bytes
     * `[✅]`   `g1_generator_encodes_to_the_eip_2537_generator`: contract: the first-group generator's encoding is EIP-2537's; act `encode_g1` over `g1_generator`; assert the bytes equal the padded first-group generator vector
@@ -1076,13 +1096,13 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `Bls12381Halo2curvesPairing::try_new` is the concrete's only producer, and its only caller is the pairing factory, which reads `Bls12381Halo2curvesPairing::DECLARATION` before constructing
     * `[✅]`   A group element or scalar is produced only by the adapter's generators, arithmetic, and decoders, or by the scalar's sampling bound; no consumer constructs one from library values
 
-  * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/mod.rs`
+  * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
     * `[✅]`   `impl Bls12381Halo2curvesPairing` with `pub const DECLARATION: PairingDeclaration` and `pub fn try_new(_params: Bls12381Halo2curvesPairingConstructorParams) -> Bls12381Halo2curvesPairingTryNewReturn` returning `Ok(Bls12381Halo2curvesPairing)`
-    * `[✅]`   `impl IPairingAdapter for Bls12381Halo2curvesPairing` with `type Scalar = Bls12381Halo2curvesScalar;`, `type G1 = Bls12381Halo2curvesG1;`, `type G2 = Bls12381Halo2curvesG2;`, and every method realizing its branches in the interaction spec, the decoders checking in the stated order and copying each 48-byte coordinate out of the fixed-size array before reversing it
-    * `[✅]`   `impl Zeroize for Bls12381Halo2curvesScalar` and `impl Drop for Bls12381Halo2curvesScalar`, each setting `self.value` to `Fr::ZERO` and calling `black_box(&self.value)`
+    * `[ ]`   `impl IPairingAdapter for Bls12381Halo2curvesPairing` with `const DECLARATION: PairingDeclaration = Bls12381Halo2curvesPairing::DECLARATION;`, `const CONCRETE: PairingConcrete = PairingConcrete::Bls12381Halo2curves;`, `type Scalar = Bls12381Halo2curvesScalar;`, `type G1 = Bls12381Halo2curvesG1;`, `type G2 = Bls12381Halo2curvesG2;`, `type EncodedG1 = Bls12381Halo2curvesEncodedG1;`, `type EncodedG2 = Bls12381Halo2curvesEncodedG2;`, and `type EncodedScalar = Bls12381Halo2curvesEncodedScalar;`; every method realizes its interaction spec, the decoders check in the stated order and copy each 48-byte coordinate out of the fixed-size array before reversing it; implement `AsRef<[u8]>` on each encoded type and `Zeroize` on the encoded scalar
+    * `[✅]`   `impl Zeroize for Bls12381Halo2curvesScalar` and `impl Drop for Bls12381Halo2curvesScalar`, each setting `self.value` to `Fr::ZERO` and calling `black_box(&self.value)`; `impl ZeroizeOnDrop for Bls12381Halo2curvesScalar {}` marks the independently verified drop behavior for the generic sampling bound
     * `[✅]`   `impl ISampleUniformScalar for Bls12381Halo2curvesScalar` with `const UNIFORM_BYTES_LENGTH: usize = 64;` and `sample_from_uniform_bytes` realizing its branches, the scalar moved into a `Secret` by `let Ok(scalar) = Secret::try_new(SecretConstructorParams { value });`
-    * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::Zeroize`, `core::hint::black_box`, the `halo2curves` names the context slice lists, and this module's types from `interface`
+    * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::{Zeroize, ZeroizeOnDrop}`, `core::hint::black_box`, the `halo2curves` names the context slice lists, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/provides.rs`
@@ -1092,18 +1112,19 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `bls12_381_halo2curves` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on `halo2curves`; it depends on no other concrete and no concrete depends on it; the `factory` module is unchanged and depends on no concrete; among repository crates the crate still depends on `crates/domain` alone at runtime
     * `[✅]`   `pairing/factory` adds the family form's recorded cycle when the factory function constructs this concrete
 
-  * `[✅]`   `requirements`
+  * `[ ]`   `requirements`
     * `[✅]`   `adapters/pairing/Cargo.toml` is unchanged, and `halo2curves` is named nowhere in the crate outside `adapters/pairing/src/bn254_halo2curves` and `adapters/pairing/src/bls12_381_halo2curves`
+    * `[ ]`   BLS12-381 halo2curves returns its own distinct fixed-width encoded G1, G2, and scalar types through the family's associated types
     * `[✅]`   `cargo check --all-targets --all-features`, `cargo fmt --check`, and `cargo deny check` complete without error; `cargo clippy --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the pairing concretes, which `pairing/factory` resolves by constructing them
     * `[✅]`   Every test in `bls12_381_halo2curves/test.rs` passes: the generator encodings match EIP-2537 and the identity encodes to zero bytes, the decoders round-trip and reject a wrong length, a nonzero padding byte, a non-canonical coordinate or scalar, a point off the curve, and a point outside the subgroup in both groups, the arithmetic and multi-scalar multiplication agree, the pairing-product check accepts a pairing with its inverse and the bilinear exchange and rejects a lone pairing, and sampling rejects a wrong length, reads its input big-endian, and returns a scalar below the group order from a production draw (CR-10 on BLS12-381; CR-05 for the sampled scalar)
     * `[✅]`   Code outside `adapters/pairing` naming `Bls12381Halo2curvesPairing` or anything under `bls12_381_halo2curves` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* `[✅]`   `pairing/factory` **Pairing factory constructing the concrete the composition names, admitted against the chain's precompile encodings, and handing it to a consumer generic over the family's trait; carries the family's integration test**
+* `[ ]`   `pairing/factory` **Pairing factory constructing the concrete the composition names, admitted against the chain's precompile encodings, and handing it to a consumer generic over the family's trait; carries the family's integration test**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a consumer obtains a pairing adapter only through the family's generic surface, never by naming a concrete, and a concrete whose precompile encoding the target chain does not deploy is refused before anything is constructed (CR-10; Composition Boundary)
     * `[✅]`   Functional: given the concrete the composition names and the precompile encodings the chain declares, the factory refuses a concrete whose declared encoding is not among them, with no construction and no call to the consumer
-    * `[✅]`   Functional: an admitted concrete is constructed and handed, with its declaration, to a consumer that is generic over `IPairingAdapter`, and the consumer's output is returned; the consumer never names the concrete
+    * `[ ]`   Functional: an admitted concrete is constructed and handed to a consumer generic over `IPairingAdapter` that reads `P::DECLARATION` and `P::CONCRETE`, and the consumer's output is returned; the consumer never names the concrete
     * `[✅]`   Functional: a concrete's constructor error is returned unchanged in the factory's error arm, one variant per concrete
     * `[✅]`   Functional: every concrete obtained from the factory computes through the family's trait
     * `[✅]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, and its branch here; no consumer changes
@@ -1129,12 +1150,11 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `context_slice`
     * `[✅]`   From each concrete: `try_new(ConstructorParams) -> Result<Concrete, Infallible>`, the inherent constant `DECLARATION: PairingDeclaration`, and the concrete's implementation of `IPairingAdapter`
 
-  * `[✅]`   `adapters/pairing/src/factory/interface.rs`
-    * `[✅]`   `PrecompileEncoding` gains `#[derive(PartialEq, Eq)]`, so the admission compares a declared encoding with the chain's
-    * `[✅]`   `PairingConcrete`, an enum with the variants `Bn254Arkworks`, `Bn254Halo2curves`, `Bls12381Arkworks`, and `Bls12381Halo2curves`, the selection of the concrete to construct
+  * `[ ]`   `adapters/pairing/src/factory/interface.rs`
+    * `[✅]`   `PrecompileEncoding` gains `#[derive(PartialEq, Eq)]`, so the admission compares a declared encoding with the chain's; the factory uses the already-defined `PairingConcrete` for selection without redefining it
     * `[✅]`   `IPairingConsumer`, a trait with `type Output;` and `fn consume_pairing<P: IPairingAdapter>(&self, params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> Self::Output;`, the work a composition performs with whichever concrete the factory constructs
     * `[✅]`   `ConsumePairingParams`, the fieldless struct `pub struct ConsumePairingParams;`
-    * `[✅]`   `ConsumePairingPayload<P>`, a struct with `pub adapter: P` and `pub declaration: PairingDeclaration`
+    * `[ ]`   `ConsumePairingPayload<P: IPairingAdapter>`, a struct with only `pub adapter: P`; the consumer reads `P::DECLARATION` and `P::CONCRETE`, so neither metadata value can be independently paired with another adapter
     * `[✅]`   `CreatePairingDeps<C>`, a struct with `pub consumer: C`, the collaborator the factory hands the concrete to
     * `[✅]`   `CreatePairingParams`, a struct with `pub concrete: PairingConcrete` and `pub supported_encodings: Vec<PrecompileEncoding>`, the selection and the encodings the chain declares
     * `[✅]`   `CreatePairingPayload`, the fieldless struct `pub struct CreatePairingPayload;`, since the factory operates on no data
@@ -1144,38 +1164,38 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `CreatePairingFn<C>`, the alias `fn(&CreatePairingDeps<C>, CreatePairingParams, CreatePairingPayload) -> CreatePairingReturn<<C as IPairingConsumer>::Output>`
     * `[✅]`   Every item the concrete nodes authored in this file is unchanged except the derive on `PrecompileEncoding`
 
-  * `[✅]`   `adapters/pairing/src/factory/interaction.spec.md`
+  * `[ ]`   `adapters/pairing/src/factory/interaction.spec.md`
     * `[✅]`   `create_pairing<C: IPairingConsumer>(deps: &CreatePairingDeps<C>, params: CreatePairingParams, payload: CreatePairingPayload) -> CreatePairingReturn<C::Output>`: decision a `match` on `params.concrete`, one arm per `PairingConcrete` variant, exhaustive so a variant with no arm fails to compile
     * `[✅]`   Unsupported encoding: condition the named concrete's `DECLARATION.precompile_encoding` is not in `params.supported_encodings`; decision `contains`, read before any construction; dependency call none; outcome `Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)`, with nothing constructed and the consumer not called
-    * `[✅]`   Admitted: condition the declared encoding is in `params.supported_encodings`; dependency calls the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited, then `deps.consumer.consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter, declaration })` with the concrete's `DECLARATION`, exactly once; outcome `Ok(CreatePairingSuccessReturn { output })` holding the consumer's output
+    * `[ ]`   Admitted: condition the declared encoding is in `params.supported_encodings`; dependency calls the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited, then `deps.consumer.consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter })` exactly once; the consumer obtains the concrete's inherent declaration through `P::DECLARATION` and its selected library identity through `P::CONCRETE`; outcome `Ok(CreatePairingSuccessReturn { output })` holding the consumer's output
     * `[✅]`   Each concrete's variant of `CreatePairingErrorReturn` carries its constructor's uninhabited error type in the return union, so no branch produces it
     * `[✅]`   `params.concrete` selects and `params.supported_encodings` admits; `payload` carries nothing and is not read
 
-  * `[✅]`   `adapters/pairing/src/factory/mock.rs`
+  * `[ ]`   `adapters/pairing/src/factory/mock.rs`
     * `[✅]`   `CreatePairingParamsOverrides`, `#[derive(Default)]`, fields `pub concrete: Option<PairingConcrete>` and `pub supported_encodings: Option<Vec<PrecompileEncoding>>`; `build_create_pairing_params(overrides: CreatePairingParamsOverrides) -> CreatePairingParams`, defaulting to `PairingConcrete::Bn254Arkworks` and `vec![PrecompileEncoding::Eip196Eip197, PrecompileEncoding::Eip2537]`
     * `[✅]`   `CreatePairingSuccessReturnOverrides<O>`, `#[derive(Default)]`, one field `pub output: Option<O>`; `build_create_pairing_success_return<O: Default>(overrides: CreatePairingSuccessReturnOverrides<O>) -> CreatePairingSuccessReturn<O>`
-    * `[✅]`   `ConsumePairingPayloadOverrides<S, G1, G2>`, `#[derive(Default)]`, fields `pub adapter: Option<MockIPairingAdapter<S, G1, G2>>` and `pub declaration: Option<PairingDeclaration>`; `build_consume_pairing_payload<S, G1, G2>(overrides: ConsumePairingPayloadOverrides<S, G1, G2>) -> ConsumePairingPayload<MockIPairingAdapter<S, G1, G2>>`, the adapter defaulting to `MockIPairingAdapter { scalar: PhantomData, g1: PhantomData, g2: PhantomData }` and the declaration to `build_pairing_declaration(Default::default())`
+    * `[ ]`   `ConsumePairingPayloadOverrides<P>`, with `impl<P: IPairingAdapter> Default` initializing its only field to `None`, and only `pub adapter: Option<MockIPairingAdapter<P>>`; `build_consume_pairing_payload<P: IPairingAdapter>(overrides: ConsumePairingPayloadOverrides<P>) -> ConsumePairingPayload<MockIPairingAdapter<P>>` under the mock's associated-value `Default` bounds, the adapter defaulting to `MockIPairingAdapter { adapter: PhantomData }`; its declaration, concrete identity, scalar, and group types come from the one adapter type `P`, with no independent metadata or value-type overrides
     * `[✅]`   `MockIPairingConsumer`, the unit struct `pub struct MockIPairingConsumer;`, implementing `IPairingConsumer` with `type Output = ();` and `consume_pairing` returning `()` for any adapter; a test needing other behavior implements the trait on its own local struct
     * `[✅]`   `mock_create_pairing<C: IPairingConsumer>(_deps: &CreatePairingDeps<C>, _params: CreatePairingParams, _payload: CreatePairingPayload) -> CreatePairingReturn<C::Output>` for `C::Output: Default`, returning `Ok(build_create_pairing_success_return(Default::default()))`
     * `[✅]`   No builder for the fieldless `ConsumePairingParams` and `CreatePairingPayload`, used by their production values, for `CreatePairingDeps`, whose one field is the consumer the test supplies, or for the enums; every symbol the concrete nodes authored in this file is unchanged
 
-  * `[✅]`   `adapters/pairing/src/factory/test.rs`
+  * `[ ]`   `adapters/pairing/src/factory/test.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `create_pairing` from `super`, this module's types from `super::interface`, `build_create_pairing_params` and `CreatePairingParamsOverrides` from `super::mock`, and `core::cell::Cell`
-    * `[✅]`   A test-local `DeclarationProbe`, the unit struct implementing `IPairingConsumer` with `type Output = PairingDeclaration;` and `consume_pairing` returning `payload.declaration`
+    * `[ ]`   A test-local `SelectedPairing` struct with named `declaration: PairingDeclaration` and `concrete: PairingConcrete` fields; `SelectionProbe`, the unit struct implementing `IPairingConsumer` with `type Output = SelectedPairing;` and `consume_pairing<P: IPairingAdapter>` returning `SelectedPairing { declaration: P::DECLARATION, concrete: P::CONCRETE }`; the payload carries only the adapter
     * `[✅]`   A test-local `CallProbe`, a struct with `called: Cell<bool>`, implementing `IPairingConsumer` with `type Output = ();` and `consume_pairing` setting `called` to `true`
-    * `[✅]`   `create_pairing_hands_the_consumer_the_bn254_arkworks_concrete_and_its_declaration`: contract: the named concrete, admitted, reaches the consumer with its declaration; arrange `build_create_pairing_params` with `concrete: Some(PairingConcrete::Bn254Arkworks)` and `CreatePairingDeps { consumer: DeclarationProbe }`; act `create_pairing(&deps, params, CreatePairingPayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.output.curve` matches `PairingCurve::Bn254` and `success.output.precompile_encoding` matches `PrecompileEncoding::Eip196Eip197`
-    * `[✅]`   `create_pairing_hands_the_consumer_the_bn254_halo2curves_concrete_and_its_declaration`: the same with `PairingConcrete::Bn254Halo2curves`
-    * `[✅]`   `create_pairing_hands_the_consumer_the_bls12_381_arkworks_concrete_and_its_declaration`: the same with `PairingConcrete::Bls12381Arkworks`, asserting `PairingCurve::Bls12381`, `VerifierGroupArithmetic::BothGroups`, and `PrecompileEncoding::Eip2537`
-    * `[✅]`   `create_pairing_hands_the_consumer_the_bls12_381_halo2curves_concrete_and_its_declaration`: the same with `PairingConcrete::Bls12381Halo2curves`
+    * `[ ]`   `create_pairing_hands_the_consumer_the_bn254_arkworks_concrete_and_its_declaration`: contract: the named concrete, admitted, reaches the consumer with its declaration and concrete identity; arrange `build_create_pairing_params` with `concrete: Some(PairingConcrete::Bn254Arkworks)` and `CreatePairingDeps { consumer: SelectionProbe }`; act `create_pairing(&deps, params, CreatePairingPayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.output.declaration.curve` matches `PairingCurve::Bn254`, `success.output.declaration.precompile_encoding` matches `PrecompileEncoding::Eip196Eip197`, and `success.output.concrete == PairingConcrete::Bn254Arkworks`
+    * `[ ]`   `create_pairing_hands_the_consumer_the_bn254_halo2curves_concrete_and_its_declaration`: the same with `PairingConcrete::Bn254Halo2curves`, asserting that exact concrete in the output
+    * `[ ]`   `create_pairing_hands_the_consumer_the_bls12_381_arkworks_concrete_and_its_declaration`: the same with `PairingConcrete::Bls12381Arkworks`, asserting `PairingCurve::Bls12381`, `VerifierGroupArithmetic::BothGroups`, `PrecompileEncoding::Eip2537`, and that exact concrete in the output
+    * `[ ]`   `create_pairing_hands_the_consumer_the_bls12_381_halo2curves_concrete_and_its_declaration`: the same with `PairingConcrete::Bls12381Halo2curves`, asserting that exact concrete in the output
     * `[✅]`   `create_pairing_refuses_a_concrete_whose_encoding_the_chain_does_not_deploy`: contract: an encoding outside the chain's declared set is refused before construction and the consumer is not called; arrange `build_create_pairing_params` with `concrete: Some(PairingConcrete::Bls12381Arkworks)` and `supported_encodings: Some(vec![PrecompileEncoding::Eip196Eip197])`, and `CreatePairingDeps { consumer: CallProbe { called: Cell::new(false) } }`; act `create_pairing`; assert the return matches `Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)` and `deps.consumer.called.get()` is `false`
     * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
 
   * `[✅]`   `construction`
     * `[✅]`   The composition root writes its pairing-dependent work once as an `IPairingConsumer`, generic over `P: IPairingAdapter`, and calls `create_pairing` with `CreatePairingDeps { consumer }`, `CreatePairingParams` holding the configured `PairingConcrete` and the chain's declared encodings, and `CreatePairingPayload`; no consumer constructs or names a concrete
 
-  * `[✅]`   `adapters/pairing/src/factory/mod.rs`
+  * `[ ]`   `adapters/pairing/src/factory/mod.rs`
     * `[✅]`   Adds `#[cfg(test)] mod test;` to the wiring the concrete nodes authored
-    * `[✅]`   `pub fn create_pairing<C: IPairingConsumer>(deps: &CreatePairingDeps<C>, params: CreatePairingParams, _payload: CreatePairingPayload) -> CreatePairingReturn<C::Output>`, a `match` on `params.concrete` whose each arm checks the concrete's `DECLARATION.precompile_encoding` against `params.supported_encodings`, returning the refusal when absent, then binds the concrete by `let Ok(adapter) = <Concrete>::try_new(<Concrete>ConstructorParams);` and returns `Ok(CreatePairingSuccessReturn { output: deps.consumer.consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter, declaration: <Concrete>::DECLARATION }) })`
+    * `[ ]`   `pub fn create_pairing<C: IPairingConsumer>(deps: &CreatePairingDeps<C>, params: CreatePairingParams, _payload: CreatePairingPayload) -> CreatePairingReturn<C::Output>`, a `match` on `params.concrete` whose each arm checks the concrete's `DECLARATION.precompile_encoding` against `params.supported_encodings`, returning the refusal when absent, then binds the concrete by `let Ok(adapter) = <Concrete>::try_new(<Concrete>ConstructorParams);` and returns `Ok(CreatePairingSuccessReturn { output: deps.consumer.consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter }) })`; the arm's selected variant must equal `<Concrete as IPairingAdapter>::CONCRETE`
     * `[✅]`   Imports each concrete and its constructor params from `crate::bn254_arkworks::provides`, `crate::bn254_halo2curves::provides`, `crate::bls12_381_arkworks::provides`, and `crate::bls12_381_halo2curves::provides`, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
@@ -1193,25 +1213,26 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `directionality`
     * `[✅]`   The `factory` module depends on each concrete through its `provides` and on its own interface; each concrete depends on the `factory` module's surface, the family form's recorded cycle; the crate's public surface is the `factory` module's `provides`; nothing depends on the crate yet
 
-  * `[✅]`   `requirements`
-    * `[✅]`   Each `create_pairing_hands_the_consumer_…_concrete_and_its_declaration` test passes, and `create_pairing_refuses_a_concrete_whose_encoding_the_chain_does_not_deploy` passes (CR-10; the factory refuses a concrete the chain's encodings do not admit, with no side effect)
+  * `[ ]`   `requirements`
+    * `[ ]`   Each `create_pairing_hands_the_consumer_…_concrete_and_its_declaration` test passes, and `create_pairing_refuses_a_concrete_whose_encoding_the_chain_does_not_deploy` passes (CR-10; the factory refuses a concrete the chain's encodings do not admit, with no side effect)
+    * `[ ]`   Each factory selection test proves that both the declaration and the exact selected `PairingConcrete` reach the consumer
     * `[✅]`   Each `the_…_concrete_from_the_factory_computes_through_the_family_trait` test passes (CR-10, every concrete computes through the family's surface)
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --check`, and `cargo deny check` complete without error or warning in every target, the pairing concretes' unused-item warnings having no remaining cause
     * `[✅]`   No `ark-` crate or `halo2curves` is named outside its concretes, and no code outside `adapters/pairing` can name a concrete
 
-* `[✅]`   `harness-crypto/benchmark` **Pairing benchmark timing scalar multiplication, multi-scalar multiplication, and the pairing-product check on whichever concrete the pairing factory hands it; creates the `apps/harness-crypto` crate**
+* `[ ]`   `harness-crypto/benchmark` **Pairing benchmark timing scalar multiplication, multi-scalar multiplication, and the pairing-product check on whichever concrete the pairing factory hands it; creates the `apps/harness-crypto` crate**
 
-  * `[✅]`   `objective`
+  * `[ ]`   `objective`
     * `[✅]`   Problem: the default pairing concrete per curve is a configured value set from measurement, so each concrete's cost for the operations the KEM, envelope, and proof perform is measured through the factory, with no module naming a library
     * `[✅]`   Functional: handed any concrete by `create_pairing`, the benchmark draws two scalars from the randomness family, samples them through the concrete's sampling bound, and times first-group and second-group scalar multiplication, first-group and second-group multi-scalar multiplication over two terms, and the pairing-product check over two terms
-    * `[✅]`   Functional: each timing is the mean over a configured number of iterations, returned per operation
+    * `[ ]`   Functional: each timing is the mean over a configured number of iterations, returned per operation with the exact `PairingConcrete` measured and the nonzero iteration count used to compute it
     * `[✅]`   Functional: a failed draw or a failed sampling is returned unchanged in the error arm, before anything is timed
     * `[✅]`   Non-functional: the benchmark names no curve library and no concrete; it reaches every concrete only through `create_pairing` and `IPairingAdapter`
 
-  * `[✅]`   `role`
+  * `[ ]`   `role`
     * `[✅]`   App module: an `IPairingConsumer` the harness passes to `create_pairing` once per `PairingConcrete`; it is a class in the adapter role, implementing a repo-owned trait and wrapping the operating system's monotonic clock
     * `[✅]`   Creates the `apps/harness-crypto` crate as a library crate and adds `"apps/*"` to the root manifest's `members`, the member glob `workspace/cargo` specifies, so the crate is admitted
-    * `[✅]`   Returns the timings of the concrete it is handed and selects nothing; the harness run constructs it for each concrete and records the timings, and the configured default per curve is set from them
+    * `[ ]`   Returns the timings, concrete identity, and iteration count of the concrete it is handed and selects nothing; the harness run constructs it for each concrete and records the measurements, and the configured default per curve is set from them
     * `[✅]`   Does not author `main.rs`; `harness-crypto/main` authors the binary entry, reading `harness-crypto/config` and composing every family through its factory
     * `[✅]`   Does not time decoding, encoding, or sampling
     * `[✅]`   Does not carry a commit
@@ -1223,13 +1244,13 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
   * `[✅]`   `deps`
     * `[✅]`   `pairing`, `adapters/pairing`, adapter ring, path dependency; supplies `IPairingConsumer`, `ConsumePairingParams`, `ConsumePairingPayload`, `IPairingAdapter`, `ISampleUniformScalar`, `SampleUniformScalarParams`, `SampleUniformScalarPayload`, `SampleUniformScalarErrorReturn`, and every method's params and payload types used below; in tests `create_pairing`, `CreatePairingDeps`, `CreatePairingPayload`, `PairingConcrete`, `build_create_pairing_params`, and `CreatePairingParamsOverrides`; direction inward, app on adapter
-    * `[✅]`   `random`, `adapters/random`, adapter ring, path dependency; supplies `IRandomSourceAdapter`, `FillBytesParams`, `FillBytesPayload`, and `FillBytesErrorReturn`; in tests `create_random_source`, `CreateRandomSourcePayload`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, `RandomSourceKind`, and `MockIRandomSourceAdapter`
+    * `[ ]`   `random`, `adapters/random`, adapter ring, path dependency; supplies `IRandomSourceAdapter`, `FillBytesParams`, `FillBytesPayload`, and `FillBytesErrorReturn`; in tests `create_random_source`, `CreateRandomSourcePayload`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `RandomSourceKind`; the default `MockIRandomSourceAdapter` is used only by the benchmark builder, while a test-local malformed source exercises the sampling error
     * `[✅]`   `pairing` and `random` with their `mocks` features, as dev-dependencies and through this crate's `mocks` feature
     * `[✅]`   `std::time::Instant` and `core::time::Duration`, standard library, the monotonic clock and its measure; `core::num::NonZeroU32`, standard library, the iteration count, so the mean never divides by zero; `core::convert::Infallible`, standard library, the constructor's error arm
     * `[✅]`   No external crate; no reverse dependency
 
-  * `[✅]`   `context_slice`
-    * `[✅]`   From `pairing`: `IPairingConsumer` with `type Output` and `consume_pairing<P: IPairingAdapter>(&self, ConsumePairingParams, ConsumePairingPayload<P>) -> Self::Output`; `ConsumePairingPayload<P>` with `adapter` and `declaration`; the adapter methods `g1_generator`, `g2_generator`, `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one`, each returning `Result<_, Infallible>`; `ISampleUniformScalar` with `UNIFORM_BYTES_LENGTH` and `sample_from_uniform_bytes`
+  * `[ ]`   `context_slice`
+    * `[ ]`   From `pairing`: `IPairingConsumer` with `type Output` and `consume_pairing<P: IPairingAdapter>(&self, ConsumePairingParams, ConsumePairingPayload<P>) -> Self::Output`; `ConsumePairingPayload<P>` with only `adapter`, and `P::DECLARATION` and `P::CONCRETE` read from the trait; the adapter methods `g1_generator`, `g2_generator`, `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one`, each returning `Result<_, Infallible>`; `ISampleUniformScalar` with `UNIFORM_BYTES_LENGTH` and `sample_from_uniform_bytes`
     * `[✅]`   From `random`: `IRandomSourceAdapter::fill_bytes(&self, FillBytesParams, FillBytesPayload) -> Result<FillBytesSuccessReturn, FillBytesErrorReturn>`, the draw inside a `Secret`
     * `[✅]`   From the standard library: `Instant::now()` and `Instant::elapsed()`, `Duration`'s division by `u32`, and `NonZeroU32::get()`
 
@@ -1248,44 +1269,44 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The crate barrel: `mod benchmark;` and `pub use benchmark::provides::*;`, nothing else
     * `[✅]`   Until `benchmark/mod.rs` exists, `cargo check` reports the unresolved module, which is the RED state for every element below that precedes it
 
-  * `[✅]`   `apps/harness-crypto/src/benchmark/interface.rs`
+  * `[ ]`   `apps/harness-crypto/src/benchmark/interface.rs`
     * `[✅]`   `PairingBenchmark`, a struct with `pub(super) random: Box<dyn IRandomSourceAdapter>` and `pub(super) iterations: NonZeroU32`
     * `[✅]`   `PairingBenchmarkConstructorParams`, a struct with `pub random: Box<dyn IRandomSourceAdapter>` and `pub iterations: NonZeroU32`, the constructor's deps slot
     * `[✅]`   `PairingBenchmarkTryNewReturn`, the alias `Result<PairingBenchmark, Infallible>`; the error arm is uninhabited because `NonZeroU32` already excludes the one invalid count
     * `[✅]`   `PairingOperationTimings`, a struct with `pub mul_g1: Duration`, `pub mul_g2: Duration`, `pub msm_g1: Duration`, `pub msm_g2: Duration`, and `pub pairing_product: Duration`, each the mean time of one call
-    * `[✅]`   `PairingBenchmarkSuccessReturn`, a struct with `pub timings: PairingOperationTimings`
+    * `[ ]`   `PairingBenchmarkSuccessReturn`, a struct with `pub concrete: PairingConcrete`, `pub iterations: NonZeroU32`, and `pub timings: PairingOperationTimings`; a measurement carries the selected library and the count used to compute each mean
     * `[✅]`   `PairingBenchmarkErrorReturn`, an enum with the variants `FillBytes(FillBytesErrorReturn)` and `SampleScalar(SampleUniformScalarErrorReturn)`, each carrying its callee's error unchanged
     * `[✅]`   `PairingBenchmarkReturn`, the alias `Result<PairingBenchmarkSuccessReturn, PairingBenchmarkErrorReturn>`, the consumer's `Output`
-    * `[✅]`   Imports `IRandomSourceAdapter` and `FillBytesErrorReturn` from `random`, `SampleUniformScalarErrorReturn` from `pairing`, `core::num::NonZeroU32`, `core::time::Duration`, and `core::convert::Infallible`; no derives
+    * `[ ]`   Imports `IRandomSourceAdapter` and `FillBytesErrorReturn` from `random`, `SampleUniformScalarErrorReturn` and `PairingConcrete` from `pairing`, `core::num::NonZeroU32`, `core::time::Duration`, and `core::convert::Infallible`; no derives
 
-  * `[✅]`   `apps/harness-crypto/src/benchmark/interaction.spec.md`
+  * `[ ]`   `apps/harness-crypto/src/benchmark/interaction.spec.md`
     * `[✅]`   `PairingBenchmark::try_new(params: PairingBenchmarkConstructorParams) -> PairingBenchmarkTryNewReturn`: one branch; outcome `Ok(PairingBenchmark)` holding the random source and the iteration count; the error arm has no branch
     * `[✅]`   `consume_pairing<P: IPairingAdapter>(&self, _params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> PairingBenchmarkReturn`, draw failed: condition `self.random.fill_bytes(FillBytesParams, FillBytesPayload { length: P::Scalar::UNIFORM_BYTES_LENGTH })` returns `Err(error)` for either scalar; outcome `Err(PairingBenchmarkErrorReturn::FillBytes(error))`; nothing is timed
     * `[✅]`   Sampling failed: condition `P::Scalar::sample_from_uniform_bytes(SampleUniformScalarParams, SampleUniformScalarPayload { uniform: draw.bytes })` returns `Err(error)` for either scalar; outcome `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`; nothing is timed
-    * `[✅]`   Measured: both scalars `a` and `b` sampled; the setup takes the generators `g1` and `g2` and computes `p1 = g1 · a` and `p2 = g2 · b` through `mul_g1` and `mul_g2`, untimed; then, for each operation in turn, `Instant::now()` is read, the operation runs `self.iterations.get()` times, and `elapsed()` divided by `self.iterations.get()` is its mean: `mul_g1` of a clone of `p1` by a clone of `a`; `mul_g2` of a clone of `p2` by a clone of `b`; `msm_g1` over the terms `(p1, a)` and `(g1, b)`; `msm_g2` over the terms `(p2, b)` and `(g2, a)`; `pairing_product_is_one` over the terms `(p1, g2)` and `(g1, p2)`, each term's elements cloned per call; outcome `Ok(PairingBenchmarkSuccessReturn { timings })`
+    * `[ ]`   Measured: both scalars `a` and `b` sampled; the setup takes the generators `g1` and `g2` and computes `p1 = g1 · a` and `p2 = g2 · b` through `mul_g1` and `mul_g2`, untimed; then, for each operation in turn, `Instant::now()` is read, the operation runs `self.iterations.get()` times, and `elapsed()` divided by `self.iterations.get()` is its mean: `mul_g1` of a clone of `p1` by a clone of `a`; `mul_g2` of a clone of `p2` by a clone of `b`; `msm_g1` over the terms `MsmG1Term { base: p1, scalar: a }` and `MsmG1Term { base: g1, scalar: b }`; `msm_g2` over the corresponding `MsmG2Term` values; `pairing_product_is_one` over the terms `(p1, g2)` and `(g1, p2)`, each term's elements cloned per call; outcome `Ok(PairingBenchmarkSuccessReturn { concrete: P::CONCRETE, iterations: self.iterations, timings })`
     * `[✅]`   Every adapter call returns `Result<_, Infallible>` and is unpacked irrefutably; the scalars are cloned from their `Secret`s by `expose().clone()`, and each clone is cleared when the payload holding it drops
-    * `[✅]`   Ordering: both draws and both samplings precede any timing, so a failure returns before the clock is read; `payload.declaration` is not read
+    * `[ ]`   Ordering: both draws and both samplings precede any timing, so a failure returns before the clock is read; `P::CONCRETE` is carried into the result; no independently supplied metadata is read
 
-  * `[✅]`   `apps/harness-crypto/src/benchmark/mock.rs`
+  * `[ ]`   `apps/harness-crypto/src/benchmark/mock.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
     * `[✅]`   `PairingBenchmarkConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub random: Option<Box<dyn IRandomSourceAdapter>>` and `pub iterations: Option<NonZeroU32>`; `build_pairing_benchmark_constructor_params(overrides: PairingBenchmarkConstructorParamsOverrides) -> PairingBenchmarkConstructorParams`, defaulting to `Box::new(MockIRandomSourceAdapter)` and `NonZeroU32::MIN`
     * `[✅]`   `build_pairing_benchmark(overrides: PairingBenchmarkConstructorParamsOverrides) -> PairingBenchmark`, returning the real instance from `PairingBenchmark::try_new(build_pairing_benchmark_constructor_params(overrides))` through the irrefutable pattern `let Ok(benchmark) = …;`
     * `[✅]`   `PairingOperationTimingsOverrides`, `#[derive(Default)]`, one `Option<Duration>` per field; `build_pairing_operation_timings(overrides: PairingOperationTimingsOverrides) -> PairingOperationTimings`, each field defaulting to `Duration::ZERO`
-    * `[✅]`   `PairingBenchmarkSuccessReturnOverrides`, `#[derive(Default)]`, one field `pub timings: Option<PairingOperationTimings>`; `build_pairing_benchmark_success_return(overrides: PairingBenchmarkSuccessReturnOverrides) -> PairingBenchmarkSuccessReturn`, defaulting to `build_pairing_operation_timings(Default::default())`
+    * `[ ]`   `PairingBenchmarkSuccessReturnOverrides`, `#[derive(Default)]`, fields `pub concrete: Option<PairingConcrete>`, `pub iterations: Option<NonZeroU32>`, and `pub timings: Option<PairingOperationTimings>`; `build_pairing_benchmark_success_return(overrides: PairingBenchmarkSuccessReturnOverrides) -> PairingBenchmarkSuccessReturn`, defaulting to `PairingConcrete::Bn254Arkworks`, `NonZeroU32::MIN`, and `build_pairing_operation_timings(Default::default())`
     * `[✅]`   No mock of `PairingBenchmark` or of `consume_pairing`: it is injected as an `IPairingConsumer`, whose mock `pairing` owns; no corruptions type and no invalidator, since nothing this interface owns arrives as untrusted data
     * `[✅]`   Imports `IRandomSourceAdapter` and `MockIRandomSourceAdapter` from `random`, the standard-library names above, and this module's types from `super::interface`
 
-  * `[✅]`   `apps/harness-crypto/src/benchmark/test.rs`
-    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports this module's types from `super::interface`, `build_pairing_benchmark` and `PairingBenchmarkConstructorParamsOverrides` from `super::mock`, the `pairing` and `random` test names the deps list, `core::num::NonZeroU32`, and `core::time::Duration`; each test builds the random source by `create_random_source` with `build_create_random_source_params` for `RandomSourceKind::OperatingSystem`, or uses `MockIRandomSourceAdapter`, obtains the iteration count by `let Some(iterations) = NonZeroU32::new(4) else { panic!(…) };`, and unpacks each call by `let Ok(…) = … else { panic!(…) };`
-    * `[✅]`   `consume_pairing_times_every_operation_on_the_bn254_arkworks_concrete`: contract: handed a concrete by the factory, the benchmark returns a nonzero mean time for each of the five operations; arrange `build_pairing_benchmark` with the operating-system source and four iterations, and `build_create_pairing_params` with `concrete: Some(PairingConcrete::Bn254Arkworks)`; act `create_pairing(&CreatePairingDeps { consumer: benchmark }, params, CreatePairingPayload)`, then its output; assert each of `timings.mul_g1`, `timings.mul_g2`, `timings.msm_g1`, `timings.msm_g2`, and `timings.pairing_product` is greater than `Duration::ZERO`
-    * `[✅]`   `consume_pairing_times_every_operation_on_the_bn254_halo2curves_concrete`, `consume_pairing_times_every_operation_on_the_bls12_381_arkworks_concrete`, and `consume_pairing_times_every_operation_on_the_bls12_381_halo2curves_concrete`: the same with their `PairingConcrete` variant
-    * `[✅]`   `consume_pairing_returns_the_sampling_error_for_a_draw_of_the_wrong_length`: contract: a draw the sampling bound rejects is returned in the error arm before anything is timed; arrange `build_pairing_benchmark` with its default `MockIRandomSourceAdapter`, whose draw is empty, and `build_create_pairing_params` with `concrete: Some(PairingConcrete::Bn254Arkworks)`; act `create_pairing` and take its output; assert the output matches `Err(PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 0 }))`
+  * `[ ]`   `apps/harness-crypto/src/benchmark/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports this module's types from `super::interface`, `build_pairing_benchmark` and `PairingBenchmarkConstructorParamsOverrides` from `super::mock`, the `pairing` and `random` test names the deps list, `core::num::NonZeroU32`, and `core::time::Duration`; timing tests build the random source by `create_random_source` with `build_create_random_source_params` for `RandomSourceKind::OperatingSystem`; the malformed-draw test uses a test-local `WrongLengthRandomSource` implementing `IRandomSourceAdapter`, returning the default source declaration through `declaration()` and deliberately returning an empty `Secret<Vec<u8>>` for a nonzero request; each test obtains the iteration count by `let Some(iterations) = NonZeroU32::new(4) else { panic!(…) };` and unpacks each call by `let Ok(…) = … else { panic!(…) };`
+    * `[ ]`   `consume_pairing_times_every_operation_on_the_bn254_arkworks_concrete`: contract: handed a concrete by the factory, the benchmark returns a nonzero mean time for each of the five operations together with the selection and iteration count; arrange `build_pairing_benchmark` with the operating-system source and four iterations, and `build_create_pairing_params` with `concrete: Some(PairingConcrete::Bn254Arkworks)`; act `create_pairing(&CreatePairingDeps { consumer: benchmark }, params, CreatePairingPayload)`, then its output; assert `output.concrete == PairingConcrete::Bn254Arkworks`, `output.iterations == iterations`, and each of `timings.mul_g1`, `timings.mul_g2`, `timings.msm_g1`, `timings.msm_g2`, and `timings.pairing_product` is greater than `Duration::ZERO`
+    * `[ ]`   `consume_pairing_times_every_operation_on_the_bn254_halo2curves_concrete`, `consume_pairing_times_every_operation_on_the_bls12_381_arkworks_concrete`, and `consume_pairing_times_every_operation_on_the_bls12_381_halo2curves_concrete`: the same with their `PairingConcrete` variant, asserting the exact variant and iteration count in each output
+    * `[ ]`   `consume_pairing_returns_the_sampling_error_for_a_draw_of_the_wrong_length`: contract: a deliberately malformed draw the sampling bound rejects is returned in the error arm before anything is timed; arrange `build_pairing_benchmark` with the test-local `WrongLengthRandomSource` and `build_create_pairing_params` with `concrete: Some(PairingConcrete::Bn254Arkworks)`; act `create_pairing` and take its output; assert the output matches `Err(PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 0 }))`
     * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers; the failed-draw branch has no unit test, since the operating system's generator cannot be driven to fail and the vendor is not mocked
 
   * `[✅]`   `construction`
     * `[✅]`   `PairingBenchmark::try_new` is the only producer; the harness run constructs one per concrete from the random source `create_random_source` returns and the configured iteration count, and passes it as `CreatePairingDeps { consumer }`
 
-  * `[✅]`   `apps/harness-crypto/src/benchmark/mod.rs`
+  * `[ ]`   `apps/harness-crypto/src/benchmark/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
     * `[✅]`   `impl PairingBenchmark` with `pub fn try_new(params: PairingBenchmarkConstructorParams) -> PairingBenchmarkTryNewReturn` returning `Ok(PairingBenchmark { random: params.random, iterations: params.iterations })`
     * `[✅]`   `impl IPairingConsumer for PairingBenchmark` with `type Output = PairingBenchmarkReturn;` and `consume_pairing` realizing the branches and ordering of the interaction spec
@@ -1298,21 +1319,23 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `directionality`
     * `[✅]`   `benchmark` depends on `pairing`'s and `random`'s public surfaces and on the standard library; it names no concrete and no curve library; nothing depends on the crate yet; no cycle
 
-  * `[✅]`   `requirements`
+  * `[ ]`   `requirements`
     * `[✅]`   The root `Cargo.toml` lists `members = ["crates/*", "adapters/*", "apps/*"]` and is otherwise unchanged; `apps/harness-crypto/Cargo.toml` carries exactly the tables and keys stated above
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --check`, and `cargo deny check` complete without error or warning
     * `[✅]`   Each `consume_pairing_times_every_operation_on_the_…_concrete` test passes, and `consume_pairing_returns_the_sampling_error_for_a_draw_of_the_wrong_length` passes
+    * `[ ]`   Each successful measurement includes the exact `PairingConcrete` passed by the factory and the `NonZeroU32` iteration count used for its five mean durations
     * `[✅]`   No module of `apps/harness-crypto` names `ark-`, `halo2curves`, or a pairing concrete
 
-* `[✅]`   `domain/asset_identity` **Canonical asset identity, the package name and version whose `name@version` join is the input to the Registry's identity hash, admitted only when that join names exactly one coordinate in exactly one byte form**
+* `[ ]`   `domain/asset_identity` **Canonical asset identity, the package name and version whose `name@version` join is the input to the Registry's identity hash, admitted only when that join names exactly one coordinate in exactly one byte form**
 
-  * `[✅]`   `objective`
+  * `[ ]`   `objective`
     * `[✅]`   Problem: every record, hash-card, and derivation names an asset, and the Registry keys the asset by `BLAKE3(name@version)`, so equivalent coordinates must yield one identity and a malformed coordinate must be refused deterministically, in every process, before anything is derived from it (PR-02)
     * `[✅]`   Functional: one type holds an asset's name and version, reachable only through read accessors, and its only producer is a fallible constructor
     * `[✅]`   Functional: the constructor refuses an empty name and an empty version
     * `[✅]`   Functional: the constructor refuses any byte of the name or the version outside visible ASCII, `0x21` through `0x7E`, so no coordinate has a second byte form through whitespace, control characters, or Unicode normalization
     * `[✅]`   Functional: the constructor refuses a version containing the separator `@`, so the join `name@version` splits at its last `@` into exactly one name and one version; a name may contain `@`, as a scoped npm name does
     * `[✅]`   Functional: a refusal names the failed check and the index and byte where it failed, and the same input always yields the same refusal: the name is checked before the version, and within each string the lowest offending index decides
+    * `[ ]`   Functional: `AssetIdentity` is the sole producer of the canonical `name@version` hash preimage, returned as an owned `AssetCoordinate`; a consumer borrows its bytes when hashing and never repeats the join
     * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
 
   * `[✅]`   `role`
@@ -1323,8 +1346,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Does not create any other module of the `domain` crate
     * `[✅]`   Does not carry a commit
 
-  * `[✅]`   `module`
-    * `[✅]`   Bounded context: the `asset_identity` module of the `domain` crate, holding `AssetIdentity`, its constructor params, its constructor's error and return types, the coordinate separator, and the invariants a coordinate satisfies in every ecosystem
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `asset_identity` module of the `domain` crate, holding `AssetIdentity`, its constructor params, its constructor's error and return types, its derived `AssetCoordinate`, the coordinate separator, and the invariants a coordinate satisfies in every ecosystem
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: the identity hash, the Registry record the hash keys, the resolution of a package-manager request into a name and a version, and every ecosystem's own naming rules
 
@@ -1341,23 +1364,24 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod secret;`, `pub use asset_identity::provides::*;`, and `pub use secret::provides::*;`, nothing else
     * `[✅]`   Until `asset_identity/mod.rs` exists, `cargo check` reports the unresolved `mod asset_identity`, which is the RED state for every element below that precedes the implementation
 
-  * `[✅]`   `crates/domain/src/asset_identity/interface.rs`
+  * `[ ]`   `crates/domain/src/asset_identity/interface.rs`
     * `[✅]`   `ASSET_COORDINATE_SEPARATOR`, a `pub const` of type `u8` with value `b'@'`, the byte that joins name and version in the identity hash's input
-    * `[✅]`   `AssetIdentity`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub(super) name: String` and `pub(super) version: String`, so only the `asset_identity` module and its children reach the fields
+    * `[ ]`   `AssetIdentity`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub(super) name: String` and `pub(super) version: String`, so only the `asset_identity` module and its children reach the fields; raw strings are admitted only by its constructor, and display accessors remain borrowed `&str`
+    * `[ ]`   `AssetCoordinate`, a struct with `pub(super) bytes: Vec<u8>` and no public constructor or mutable byte access, deriving `Clone`, `Debug`, `PartialEq`, and `Eq` and implementing `AsRef<[u8]>`; the field is visible only to the owning module and its children, and the type denotes the canonical Registry identity-hash preimage
     * `[✅]`   `AssetIdentityConstructorParams`, a struct with the fields `pub name: String` and `pub version: String`; no derives
     * `[✅]`   `AssetIdentityTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `EmptyName`, `NameByteOutsideVisibleAscii { index: usize, byte: u8 }`, `EmptyVersion`, `VersionByteOutsideVisibleAscii { index: usize, byte: u8 }`, and `VersionContainsSeparator { index: usize }`
     * `[✅]`   `AssetIdentityTryNewReturn`, the type alias `Result<AssetIdentity, AssetIdentityTryNewErrorReturn>`
     * `[✅]`   Imports nothing; declares nothing else
 
-  * `[✅]`   `crates/domain/src/asset_identity/interaction.spec.md`
+  * `[ ]`   `crates/domain/src/asset_identity/interaction.spec.md`
     * `[✅]`   `AssetIdentity::try_new(params: AssetIdentityConstructorParams) -> AssetIdentityTryNewReturn`, empty name: condition `params.name.is_empty()`; decision the emptiness check; dependency call none; outcome `Err(AssetIdentityTryNewErrorReturn::EmptyName)`
     * `[✅]`   Name byte outside visible ASCII: condition the name is non-empty and some byte of `params.name.bytes()` fails `is_ascii_graphic`; decision the first such byte by index; dependency call none; outcome `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })` for the lowest such index
     * `[✅]`   Empty version: condition the name passes and `params.version.is_empty()`; decision the emptiness check; dependency call none; outcome `Err(AssetIdentityTryNewErrorReturn::EmptyVersion)`
     * `[✅]`   Version byte outside visible ASCII or equal to the separator: condition the name passes, the version is non-empty, and some byte of `params.version.bytes()` fails `is_ascii_graphic` or equals `ASSET_COORDINATE_SEPARATOR`; decision the first such byte by index, scanned once left to right; dependency call none; outcome `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })` when that byte fails `is_ascii_graphic`, and `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index })` when it is the separator
     * `[✅]`   Admitted: condition every check passes; decision none further; dependency call none; outcome `Ok(AssetIdentity { name, version })`, both strings moved from the params without copy
-    * `[✅]`   `AssetIdentity::name(&self) -> &str` and `AssetIdentity::version(&self) -> &str`: one branch each; outcome a shared reference to the held string, no copy, no side effect
+    * `[ ]`   `AssetIdentity::name(&self) -> &str` and `AssetIdentity::version(&self) -> &str`: one branch each; outcome a shared reference to the held string, no copy, no side effect; `AssetIdentity::coordinate(&self) -> AssetCoordinate` allocates exactly `name.len() + 1 + version.len()` bytes and appends the name's ASCII bytes, `ASSET_COORDINATE_SEPARATOR`, and the version's ASCII bytes in that order, with no alternate join or normalization
     * `[✅]`   Ordering: the name's checks precede the version's; within each string the lowest offending index decides; the same params always yield the same outcome
-    * `[✅]`   Invariants: every `AssetIdentity` holds a non-empty name and a non-empty version of visible ASCII, the version free of `@`; its only producer is `try_new`
+    * `[ ]`   Invariants: every `AssetIdentity` holds a non-empty name and a non-empty version of visible ASCII, the version free of `@`; its only producer is `try_new`; every `AssetCoordinate` comes from an admitted `AssetIdentity` and has exactly one `name@version` byte form
 
   * `[✅]`   `crates/domain/src/asset_identity/mock.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
@@ -1367,9 +1391,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No corruptions type and no invalidator: the constructor params are typed strings, every coordinate the constructor refuses is a string value the params builder's overrides carry, and the crate has no serialization dependency; no `AssetIdentity` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
     * `[✅]`   Imports `AssetIdentity` and `AssetIdentityConstructorParams` from `super::interface`
 
-  * `[✅]`   `crates/domain/src/asset_identity/test.rs`
+  * `[ ]`   `crates/domain/src/asset_identity/test.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `AssetIdentity` and `AssetIdentityTryNewErrorReturn` from `super::interface`, and `build_asset_identity_constructor_params` and `AssetIdentityConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_asset_identity_constructor_params` overriding only the field it depends on, acts `AssetIdentity::try_new(params)`, and unpacks the result by `let Ok(identity) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
     * `[✅]`   `try_new_admits_a_scoped_name_and_a_prerelease_version`: contract: a name containing `@` and a version with prerelease and build metadata are admitted and read back unchanged; arrange `name: Some("@scope/example-package".to_string())` and `version: Some("2.1.0-beta.3+build.7".to_string())`; act `try_new`; assert `identity.name()` equals `"@scope/example-package"` and `identity.version()` equals `"2.1.0-beta.3+build.7"`
+    * `[ ]`   `coordinate_writes_the_only_registry_hash_preimage`: arrange the admitted scoped name `"@scope/example-package"` and version `"2.1.0-beta.3+build.7"`; act `identity.coordinate()`; assert its immutable byte view equals `b"@scope/example-package@2.1.0-beta.3+build.7"`, including the separator after the last `@`
     * `[✅]`   `try_new_rejects_an_empty_name`: arrange `name: Some(String::new())`; act `try_new`; assert `error` equals `AssetIdentityTryNewErrorReturn::EmptyName`
     * `[✅]`   `try_new_rejects_the_lowest_name_byte_outside_visible_ascii`: contract: of several offending name bytes, the lowest index is reported; arrange `name: Some("example package\tx".to_string())`, a space at index 7 and a tab at index 15; act `try_new`; assert `error` equals `AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 7, byte: 0x20 }`
     * `[✅]`   `try_new_rejects_a_non_ascii_name`: contract: a name with a non-ASCII character is refused at its first UTF-8 byte; arrange `name: Some("exämple".to_string())`, whose `ä` encodes as `0xC3 0xA4` at index 2; act `try_new`; assert `error` equals `AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 2, byte: 0xC3 }`
@@ -1380,13 +1405,13 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `try_new_reports_the_name_before_the_version`: contract: when both strings fail, the name's refusal is returned; arrange `name: Some(String::new())` and `version: Some(String::new())`; act `try_new`; assert `error` equals `AssetIdentityTryNewErrorReturn::EmptyName`
     * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
 
-  * `[✅]`   `construction`
-    * `[✅]`   `AssetIdentity::try_new` is the only producer; no `Default`, `From`, `FromStr`, or other constructor exists; a caller holding a name and a version from any source passes them as `AssetIdentityConstructorParams` and handles the refusal arm
+  * `[ ]`   `construction`
+    * `[ ]`   `AssetIdentity::try_new` is the only producer of `AssetIdentity`; no `Default`, `From`, `FromStr`, or other constructor exists; a caller holding a name and a version from any source passes them as `AssetIdentityConstructorParams` and handles the refusal arm; `AssetIdentity::coordinate` is the only producer of `AssetCoordinate`
 
-  * `[✅]`   `crates/domain/src/asset_identity/mod.rs`
+  * `[ ]`   `crates/domain/src/asset_identity/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[✅]`   `impl AssetIdentity` with `pub fn try_new(params: AssetIdentityConstructorParams) -> AssetIdentityTryNewReturn` realizing the branches and ordering of the interaction spec, each scan by `bytes().enumerate().find(…)`, and `pub fn name(&self) -> &str` returning `&self.name` and `pub fn version(&self) -> &str` returning `&self.version`
-    * `[✅]`   Imports `AssetIdentity`, `AssetIdentityConstructorParams`, `AssetIdentityTryNewErrorReturn`, `AssetIdentityTryNewReturn`, and `ASSET_COORDINATE_SEPARATOR` from `interface`
+    * `[ ]`   `impl AssetIdentity` with `pub fn try_new(params: AssetIdentityConstructorParams) -> AssetIdentityTryNewReturn` realizing the branches and ordering of the interaction spec, each scan by `bytes().enumerate().find(…)`, `pub fn name(&self) -> &str` returning `&self.name`, `pub fn version(&self) -> &str` returning `&self.version`, and `pub fn coordinate(&self) -> AssetCoordinate` realizing the one canonical join; `impl AsRef<[u8]> for AssetCoordinate` borrows its private bytes
+    * `[ ]`   Imports `AssetIdentity`, `AssetCoordinate`, `AssetIdentityConstructorParams`, `AssetIdentityTryNewErrorReturn`, `AssetIdentityTryNewReturn`, and `ASSET_COORDINATE_SEPARATOR` from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[✅]`   `crates/domain/src/asset_identity/provides.rs`
@@ -1395,8 +1420,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `directionality`
     * `[✅]`   `asset_identity` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `asset_identity::provides`; no cycle
 
-  * `[✅]`   `requirements`
+  * `[ ]`   `requirements`
     * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
+    * `[ ]`   `coordinate_writes_the_only_registry_hash_preimage` passes, and downstream Registry hashing consumes `AssetCoordinate::as_ref()` instead of joining the two strings again
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
     * `[✅]`   `try_new_admits_a_scoped_name_and_a_prerelease_version` passes
     * `[✅]`   `try_new_rejects_an_empty_name`, `try_new_rejects_the_lowest_name_byte_outside_visible_ascii`, `try_new_rejects_a_non_ascii_name`, `try_new_rejects_an_empty_version`, `try_new_rejects_a_version_byte_outside_visible_ascii`, and `try_new_rejects_a_version_containing_the_separator` pass (PR-02, a malformed coordinate is refused)
