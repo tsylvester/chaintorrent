@@ -28,3 +28,21 @@ pub struct Bls12381Halo2curvesG2 {
 pub struct Bls12381Halo2curvesGt {
     pub(super) value: halo2curves::bls12381::Gt,
 }
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct Bls12381Halo2curvesEncodedG1 {
+    pub(super) bytes: [u8; 128],
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct Bls12381Halo2curvesEncodedG2 {
+    pub(super) bytes: [u8; 256],
+}
+
+pub struct Bls12381Halo2curvesEncodedScalar {
+    pub(super) bytes: [u8; 32],
+}
+
+pub struct Bls12381Halo2curvesEncodedGt {
+    pub(super) bytes: [u8; 576],
+}

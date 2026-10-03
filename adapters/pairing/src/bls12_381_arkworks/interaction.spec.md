@@ -16,6 +16,12 @@ An inherent constant, readable from the type before any instance exists:
 
 `PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
 
+The trait constant `IPairingAdapter::DECLARATION` is this constant.
+
+## `Bls12381ArkworksPairing::CONCRETE`
+
+The trait constant `PairingConcrete::Bls12381Arkworks`.
+
 ## `g1_generator(&self, params: G1GeneratorParams, payload: G1GeneratorPayload) -> G1GeneratorReturn<Bls12381ArkworksG1>`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
@@ -99,23 +105,23 @@ The same branches in the same order over 256 bytes read as `x.c0`, `x.c1`, `y.c0
 
 EIP-2537's MSM accepts any 256-bit scalar; this decoder, which produces an owned scalar, admits only the canonical ones.
 
-## `encode_g1(&self, params: EncodeG1Params, payload: EncodeG1Payload<Bls12381ArkworksG1>) -> EncodeG1Return`
+## `encode_g1(&self, params: EncodeG1Params, payload: EncodeG1Payload<Bls12381ArkworksG1>) -> EncodeG1Return<Bls12381ArkworksEncodedG1>`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| encoded | any | the identity check: the identity encodes to 128 zero bytes | `xy()`, then `into_bigint().to_bytes_be()` per coordinate | `Ok(EncodeG1SuccessReturn { bytes })` — 128 zero bytes for the identity; otherwise `x` then `y`, each 16 zero bytes followed by its 48 big-endian bytes |
+| encoded | any | the identity check: the identity encodes to 128 zero bytes | `xy()`, then `into_bigint().to_bytes_be()` per coordinate, each written after its 16 zero bytes to its fixed 64-byte position | `Ok(EncodeG1SuccessReturn { bytes })` holding `Bls12381ArkworksEncodedG1`— 128 zero bytes for the identity; otherwise `x` then `y`, each 16 zero bytes followed by its 48 big-endian bytes |
 
-## `encode_g2(&self, params: EncodeG2Params, payload: EncodeG2Payload<Bls12381ArkworksG2>) -> EncodeG2Return`
-
-| Branch | Condition | Decision | Dependency call | Outcome |
-|---|---|---|---|---|
-| encoded | any | the identity check: the identity encodes to 256 zero bytes | `xy()`, then `into_bigint().to_bytes_be()` per coordinate | `Ok(EncodeG2SuccessReturn { bytes })` — 256 zero bytes for the identity; otherwise `x.c0`, `x.c1`, `y.c0`, `y.c1`, each 16 zero bytes followed by its 48 big-endian bytes |
-
-## `encode_scalar(&self, params: EncodeScalarParams, payload: EncodeScalarPayload<Bls12381ArkworksScalar>) -> EncodeScalarReturn`
+## `encode_g2(&self, params: EncodeG2Params, payload: EncodeG2Payload<Bls12381ArkworksG2>) -> EncodeG2Return<Bls12381ArkworksEncodedG2>`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| encoded | any | none | `into_bigint().to_bytes_be()` | `Ok(EncodeScalarSuccessReturn { bytes })`, the scalar's 32 big-endian bytes moved into a `Secret` |
+| encoded | any | the identity check: the identity encodes to 256 zero bytes | `xy()`, then `into_bigint().to_bytes_be()` per coordinate, each written after its 16 zero bytes to its fixed 64-byte position | `Ok(EncodeG2SuccessReturn { bytes })` holding `Bls12381ArkworksEncodedG2`— 256 zero bytes for the identity; otherwise `x.c0`, `x.c1`, `y.c0`, `y.c1`, each 16 zero bytes followed by its 48 big-endian bytes |
+
+## `encode_scalar(&self, params: EncodeScalarParams, payload: EncodeScalarPayload<Bls12381ArkworksScalar>) -> EncodeScalarReturn<Bls12381ArkworksEncodedScalar>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| encoded | any | none | `into_bigint().to_bytes_be()` | `Ok(EncodeScalarSuccessReturn { bytes })`, the scalar's 32 big-endian bytes in `Bls12381ArkworksEncodedScalar` moved into a `Secret` |
 
 ## `Bls12381ArkworksScalar::UNIFORM_BYTES_LENGTH`
 
@@ -176,15 +182,40 @@ EIP-2537's MSM accepts any 256-bit scalar; this decoder, which produces an owned
 |---|---|---|---|---|
 | evaluated | any | none | split the terms into a `Vec<G1Affine>` and a `Vec<G2Affine>` in term order, then `Bls12_381::multi_pairing(&g1s, &g2s)`, then the `PairingOutput` `*` `self.reduced_pairing_correction`, the exponentiation that brings the library's cubed value to the identifier's exact value, then `zeroize` on both vectors | `Ok(PairingProductSuccessReturn { product })` holding the corrected `PairingOutput` in the owned target-group type; an empty term list yields the target group's identity, which the exponentiation preserves |
 
-## `encode_gt(&self, params: EncodeGtParams, payload: EncodeGtPayload<Bls12381ArkworksGt>) -> EncodeGtReturn`
+## `encode_gt(&self, params: EncodeGtParams, payload: EncodeGtPayload<Bls12381ArkworksGt>) -> EncodeGtReturn<Bls12381ArkworksEncodedGt>`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| encoded | any | none | `into_bigint().to_bytes_be()` on each of the twelve `Fq` coefficients of `payload.value.value.0` in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, appended in that order into one buffer of 576 bytes | `Ok(EncodeGtSuccessReturn { bytes })`, the buffer moved into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`; the target group's identity encodes as 47 zero bytes, `01`, and 528 zero bytes |
+| encoded | any | none | `into_bigint().to_bytes_be()` on each of the twelve `Fq` coefficients of `payload.value.value.0` in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, each written to its fixed 48-byte position in a 576-byte buffer | `Ok(EncodeGtSuccessReturn { bytes })`, a `Secret<Bls12381ArkworksEncodedGt>` built from the complete buffer with no variable-width intermediate; the target group's identity encodes as 47 zero bytes, `01`, and 528 zero bytes |
+
+## `scalar_field_order(&self, params: ScalarFieldOrderParams, payload: ScalarFieldOrderPayload) -> ScalarFieldOrderReturn`
+
+|| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+|| read | any | none | `Fr::MODULUS.to_bytes_be()` | `Ok(ScalarFieldOrderSuccessReturn { bytes })`, the group order's 32 big-endian bytes |
+
+The error arm has no branch.
+
+## `g1_outside_subgroup_encoding(&self, params: G1OutsideSubgroupEncodingParams, payload: G1OutsideSubgroupEncodingPayload) -> G1OutsideSubgroupEncodingReturn<Bls12381ArkworksEncodedG1>`
+
+|| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+|| exhausted | `(1u64..).find_map(…)` over the search below returns `None` | the search's result | the search | `Err(G1OutsideSubgroupEncodingErrorReturn::SearchExhausted)` |
+|| found | the search returns a point and its `y` | per `x` in ascending order, `G1Affine::get_point_from_x_unchecked(Fq::from(x), false)`, kept when `is_in_correct_subgroup_assuming_on_curve()` is false, its `y` read through `xy()` inside the search so a value yielding no coordinates continues the search; then, with `negated = -y`, the point is kept when `y.into_bigint()` is not greater than `negated.into_bigint()` and replaced by its affine negation otherwise | `self.encode_g1(EncodeG1Params, EncodeG1Payload { point: Bls12381ArkworksG1 { value } })`, unpacked irrefutably | `Ok(G1OutsideSubgroupEncodingSuccessReturn { bytes: Some(bytes) })`, the `Bls12381ArkworksEncodedG1` `encode_g1` returns |
+
+The first group's cofactor exceeds one, so the search ends among the least values of `x`; no input takes the exhausted branch and it has no unit test.
+
+## `g2_outside_subgroup_encoding(&self, params: G2OutsideSubgroupEncodingParams, payload: G2OutsideSubgroupEncodingPayload) -> G2OutsideSubgroupEncodingReturn<Bls12381ArkworksEncodedG2>`
+
+|| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+|| exhausted | `(1u64..).find_map(…)` over the search below returns `None` | the search's result | the search | `Err(G2OutsideSubgroupEncodingErrorReturn::SearchExhausted)` |
+|| found | the search returns a point and its `y` | per `c0` in ascending order, `G2Affine::get_point_from_x_unchecked(Fq2::new(Fq::from(c0), Fq::from(0u64)), false)`, kept when `is_in_correct_subgroup_assuming_on_curve()` is false, its `y` read through `xy()` inside the search so a value yielding no coordinates continues the search; then, with `negated = -y`, the point is kept when `(y.c1.into_bigint(), y.c0.into_bigint())` is not greater than `(negated.c1.into_bigint(), negated.c0.into_bigint())` and replaced by its affine negation otherwise | `self.encode_g2(EncodeG2Params, EncodeG2Payload { point: Bls12381ArkworksG2 { value } })`, unpacked irrefutably | `Ok(G2OutsideSubgroupEncodingSuccessReturn { bytes })`, the `Bls12381ArkworksEncodedG2` `encode_g2` returns |
 
 ## Ordering and edges
 
 - Every decoder checks in the stated order — length, then canonicality, then identity, then curve, then subgroup — and slices the payload only after the length check.
 - An empty `msm` term list yields the identity; an empty `pairing_product_is_one` term list yields `is_one: true`, as EIP-2537 does for empty input.
 - Zeroization: `Bls12381ArkworksScalar`, `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt` each zeroize their `value` through their `Zeroize` implementation and on drop, so every clone a consumer places in a payload is zeroized when the payload drops.
-- `params` carries no control and is not read in any method.
+- Each outside-the-subgroup search is ascending from one and stops at the first on-curve point outside the subgroup; the choice between a point and its negation follows the search and precedes the encoding, and the same call always returns the same bytes.
+- `params` carries no control and is not read in any method, and no reference method reads its payload.

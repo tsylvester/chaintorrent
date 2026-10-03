@@ -14,12 +14,13 @@ use super::mock::{CreateRandomSourceParamsOverrides, build_create_random_source_
 
 /// Contract: given params.kind is RandomSourceKind::OperatingSystem, the
 ///   factory calls OsRandomSource::try_new once and returns Ok holding the
-///   concrete boxed as dyn IRandomSourceAdapter beside OsRandomSource::DECLARATION.
+///   concrete boxed as dyn IRandomSourceAdapter, which reports its own
+///   declaration through the trait.
 /// Arrange: params built with `kind: Some(RandomSourceKind::OperatingSystem)`.
 /// Act:     `create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)`.
-/// Assert:  `success.declaration.adapter_version` equals 1 and
-///   `success.declaration.interface_version` equals
-///   `RANDOM_SOURCE_INTERFACE_VERSION`.
+/// Assert:  `success.adapter.declaration().source` matches
+///   `RandomSourceKind::OperatingSystem`, `adapter_version` equals 1, and
+///   `interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`.
 #[test]
 fn create_random_source_returns_the_operating_system_source_for_its_kind() {
     // Arrange
@@ -32,9 +33,14 @@ fn create_random_source_returns_the_operating_system_source_for_its_kind() {
         create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload);
 
     // Assert
-    assert_eq!(success.declaration.adapter_version, 1);
+    let declaration = success.adapter.declaration();
+    assert!(matches!(
+        declaration.source,
+        RandomSourceKind::OperatingSystem
+    ));
+    assert_eq!(declaration.adapter_version, 1);
     assert_eq!(
-        success.declaration.interface_version,
+        declaration.interface_version,
         RANDOM_SOURCE_INTERFACE_VERSION
     );
 }

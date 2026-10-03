@@ -28,3 +28,21 @@ pub struct Bls12381ArkworksG2 {
 pub struct Bls12381ArkworksGt {
     pub(super) value: ark_ec::pairing::PairingOutput<ark_bls12_381::Bls12_381>,
 }
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct Bls12381ArkworksEncodedG1 {
+    pub(super) bytes: [u8; 128],
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct Bls12381ArkworksEncodedG2 {
+    pub(super) bytes: [u8; 256],
+}
+
+pub struct Bls12381ArkworksEncodedScalar {
+    pub(super) bytes: [u8; 32],
+}
+
+pub struct Bls12381ArkworksEncodedGt {
+    pub(super) bytes: [u8; 576],
+}

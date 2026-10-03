@@ -31,6 +31,7 @@ pub enum FillBytesErrorReturn {
 pub type FillBytesReturn = Result<FillBytesSuccessReturn, FillBytesErrorReturn>;
 
 pub trait IRandomSourceAdapter {
+    fn declaration(&self) -> RandomSourceDeclaration;
     fn fill_bytes(&self, params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn;
 }
 
@@ -44,7 +45,6 @@ pub struct CreateRandomSourcePayload;
 
 pub struct CreateRandomSourceSuccessReturn {
     pub adapter: Box<dyn IRandomSourceAdapter>,
-    pub declaration: RandomSourceDeclaration,
 }
 
 pub enum CreateRandomSourceErrorReturn {

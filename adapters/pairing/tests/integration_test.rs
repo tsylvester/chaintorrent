@@ -5,14 +5,18 @@
     clippy::as_conversions
 )]
 
+use hex::decode;
 use pairing::{
     AddG1Params, AddG1Payload, ConsumePairingParams, ConsumePairingPayload, CreatePairingDeps,
-    CreatePairingParamsOverrides, CreatePairingPayload, DecodeScalarParams, EncodeG1Params,
-    EncodeG1Payload, EncodeGtParams, EncodeGtPayload, G1GeneratorParams, G1GeneratorPayload,
-    G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingArithmetic, IPairingConsumer,
-    MulG1Params, MulG1Payload, MulG2Params, MulG2Payload, PairingConcrete,
-    PairingProductIsOneParams, PairingProductIsOnePayload, PairingProductParams,
-    PairingProductPayload, PairingProductTerm, build_create_pairing_params, create_pairing,
+    CreatePairingParamsOverrides, CreatePairingPayload, DecodeG1ErrorReturn, DecodeG1Params,
+    DecodeG2ErrorReturn, DecodeG2Params, DecodeScalarParams, EncodeG1Params, EncodeG1Payload,
+    EncodeGtParams, EncodeGtPayload, G1GeneratorParams, G1GeneratorPayload,
+    G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload, G2GeneratorParams,
+    G2GeneratorPayload, G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload,
+    IPairingAdapter, IPairingArithmetic, IPairingConsumer, IPairingReference, MulG1Params,
+    MulG1Payload, MulG2Params, MulG2Payload, PairingConcrete, PairingProductIsOneParams,
+    PairingProductIsOnePayload, PairingProductParams, PairingProductPayload, PairingProductTerm,
+    ScalarFieldOrderParams, ScalarFieldOrderPayload, build_create_pairing_params, create_pairing,
 };
 
 struct FamilyCheckResult {
@@ -280,7 +284,7 @@ impl IPairingConsumer for TargetGroupEncoding {
                 value: product.product,
             },
         );
-        encoded.bytes.expose().clone()
+        encoded.bytes.expose().as_ref().to_vec()
     }
 }
 
@@ -370,4 +374,194 @@ fn the_bls12_381_concretes_encode_the_same_pairing_to_the_same_bytes() {
     let mut identity = vec![0u8; 576];
     identity[47] = 1;
     assert_ne!(arkworks.output, identity);
+}
+
+struct ReferenceValuesResult {
+    scalar_field_order: Vec<u8>,
+    g1_outside_subgroup: Option<Vec<u8>>,
+    g2_outside_subgroup: Vec<u8>,
+    g1_decoder_refuses_it: bool,
+    g2_decoder_refuses_it: bool,
+}
+
+struct ReferenceValues;
+
+impl IPairingConsumer for ReferenceValues {
+    type Output = ReferenceValuesResult;
+
+    fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        &self,
+        _params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output {
+        let adapter = payload.adapter;
+
+        let Ok(order) = adapter.scalar_field_order(ScalarFieldOrderParams, ScalarFieldOrderPayload);
+        let Ok(g1_encoding) = adapter.g1_outside_subgroup_encoding(
+            G1OutsideSubgroupEncodingParams,
+            G1OutsideSubgroupEncodingPayload,
+        ) else {
+            panic!("the first group's outside-the-subgroup encoding is produced");
+        };
+        let Ok(g2_encoding) = adapter.g2_outside_subgroup_encoding(
+            G2OutsideSubgroupEncodingParams,
+            G2OutsideSubgroupEncodingPayload,
+        ) else {
+            panic!("the second group's outside-the-subgroup encoding is produced");
+        };
+
+        let g1_decoder_refuses_it = match g1_encoding.bytes.as_ref() {
+            None => true,
+            Some(bytes) => matches!(
+                adapter.decode_g1(DecodeG1Params, bytes.as_ref()),
+                Err(DecodeG1ErrorReturn::NotInSubgroup)
+            ),
+        };
+        let g2_decoder_refuses_it = matches!(
+            adapter.decode_g2(DecodeG2Params, g2_encoding.bytes.as_ref()),
+            Err(DecodeG2ErrorReturn::NotInSubgroup)
+        );
+
+        ReferenceValuesResult {
+            scalar_field_order: order.bytes,
+            g1_outside_subgroup: g1_encoding.bytes.map(|bytes| bytes.as_ref().to_vec()),
+            g2_outside_subgroup: g2_encoding.bytes.as_ref().to_vec(),
+            g1_decoder_refuses_it,
+            g2_decoder_refuses_it,
+        }
+    }
+}
+
+/// Contract: the arkworks and halo2curves BN254 concretes, each constructed by
+///   the factory and used only through the family traits, return BN254's group
+///   order and the same outside-the-subgroup encodings, absent in the first
+///   group and refused by `decode_g2` in the second.
+/// Arrange: params naming `PairingConcrete::Bn254Arkworks` and then
+///   `PairingConcrete::Bn254Halo2curves` with the default admitted encodings; a
+///   `ReferenceValues` consumer.
+/// Act:     `create_pairing` for each concrete.
+/// Assert:  the `scalar_field_order` values are equal and equal the published
+///   BN254 group order, both `g1_outside_subgroup` values are `None`, the
+///   `g2_outside_subgroup` values are equal and 128 bytes, and
+///   `g1_decoder_refuses_it` and `g2_decoder_refuses_it` are `true` for each.
+/// Boundary: the crate's public surface — `create_pairing` constructs the real
+///   arkworks and halo2curves BN254 concretes and the consumer exercises them
+///   through `IPairingArithmetic`, `IPairingReference`, and their supertrait.
+/// Mocked:   nothing; the curve libraries are the outer edge.
+#[test]
+fn the_bn254_concretes_return_the_same_scalar_field_order_and_outside_subgroup_encodings() {
+    // Arrange
+    let deps = CreatePairingDeps {
+        consumer: ReferenceValues,
+    };
+    let arkworks_params = build_create_pairing_params(CreatePairingParamsOverrides {
+        concrete: Some(PairingConcrete::Bn254Arkworks),
+        ..Default::default()
+    });
+    let halo2curves_params = build_create_pairing_params(CreatePairingParamsOverrides {
+        concrete: Some(PairingConcrete::Bn254Halo2curves),
+        ..Default::default()
+    });
+
+    // Act
+    let Ok(arkworks) = create_pairing(&deps, arkworks_params, CreatePairingPayload) else {
+        panic!("an admitted concrete is constructed and consumed");
+    };
+    let Ok(halo2curves) = create_pairing(&deps, halo2curves_params, CreatePairingPayload) else {
+        panic!("an admitted concrete is constructed and consumed");
+    };
+
+    // Assert
+    assert_eq!(
+        arkworks.output.scalar_field_order,
+        halo2curves.output.scalar_field_order
+    );
+    let Ok(expected_order) =
+        decode("30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001")
+    else {
+        panic!("the published BN254 group order decodes from its hex");
+    };
+    assert_eq!(arkworks.output.scalar_field_order, expected_order);
+    assert!(arkworks.output.g1_outside_subgroup.is_none());
+    assert!(halo2curves.output.g1_outside_subgroup.is_none());
+    assert_eq!(
+        arkworks.output.g2_outside_subgroup,
+        halo2curves.output.g2_outside_subgroup
+    );
+    assert_eq!(arkworks.output.g2_outside_subgroup.len(), 128);
+    assert!(arkworks.output.g1_decoder_refuses_it);
+    assert!(halo2curves.output.g1_decoder_refuses_it);
+    assert!(arkworks.output.g2_decoder_refuses_it);
+    assert!(halo2curves.output.g2_decoder_refuses_it);
+}
+
+/// Contract: the arkworks and halo2curves BLS12-381 concretes, each constructed
+///   by the factory and used only through the family traits, return
+///   BLS12-381's group order and the same outside-the-subgroup encodings, each
+///   refused by its group's decoder.
+/// Arrange: params naming `PairingConcrete::Bls12381Arkworks` and then
+///   `PairingConcrete::Bls12381Halo2curves` with the default admitted
+///   encodings; a `ReferenceValues` consumer.
+/// Act:     `create_pairing` for each concrete.
+/// Assert:  the `scalar_field_order` values are equal and equal the published
+///   BLS12-381 group order, the `g1_outside_subgroup` values are equal,
+///   `Some`, and 128 bytes, the `g2_outside_subgroup` values are equal and 256
+///   bytes, and `g1_decoder_refuses_it` and `g2_decoder_refuses_it` are `true`
+///   for each.
+/// Boundary: the crate's public surface — `create_pairing` constructs the real
+///   arkworks and halo2curves BLS12-381 concretes and the consumer exercises
+///   them through `IPairingArithmetic`, `IPairingReference`, and their
+///   supertrait.
+/// Mocked:   nothing; the curve libraries are the outer edge.
+#[test]
+fn the_bls12_381_concretes_return_the_same_scalar_field_order_and_outside_subgroup_encodings() {
+    // Arrange
+    let deps = CreatePairingDeps {
+        consumer: ReferenceValues,
+    };
+    let arkworks_params = build_create_pairing_params(CreatePairingParamsOverrides {
+        concrete: Some(PairingConcrete::Bls12381Arkworks),
+        ..Default::default()
+    });
+    let halo2curves_params = build_create_pairing_params(CreatePairingParamsOverrides {
+        concrete: Some(PairingConcrete::Bls12381Halo2curves),
+        ..Default::default()
+    });
+
+    // Act
+    let Ok(arkworks) = create_pairing(&deps, arkworks_params, CreatePairingPayload) else {
+        panic!("an admitted concrete is constructed and consumed");
+    };
+    let Ok(halo2curves) = create_pairing(&deps, halo2curves_params, CreatePairingPayload) else {
+        panic!("an admitted concrete is constructed and consumed");
+    };
+
+    // Assert
+    assert_eq!(
+        arkworks.output.scalar_field_order,
+        halo2curves.output.scalar_field_order
+    );
+    let Ok(expected_order) =
+        decode("73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+    else {
+        panic!("the published BLS12-381 group order decodes from its hex");
+    };
+    assert_eq!(arkworks.output.scalar_field_order, expected_order);
+    assert_eq!(
+        arkworks.output.g1_outside_subgroup,
+        halo2curves.output.g1_outside_subgroup
+    );
+    assert_eq!(
+        arkworks.output.g1_outside_subgroup.as_ref().map(Vec::len),
+        Some(128)
+    );
+    assert_eq!(
+        arkworks.output.g2_outside_subgroup,
+        halo2curves.output.g2_outside_subgroup
+    );
+    assert_eq!(arkworks.output.g2_outside_subgroup.len(), 256);
+    assert!(arkworks.output.g1_decoder_refuses_it);
+    assert!(halo2curves.output.g1_decoder_refuses_it);
+    assert!(arkworks.output.g2_decoder_refuses_it);
+    assert!(halo2curves.output.g2_decoder_refuses_it);
 }

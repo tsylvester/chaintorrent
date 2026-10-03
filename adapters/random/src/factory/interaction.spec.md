@@ -6,7 +6,7 @@ Branch contract for `create_random_source` in the `factory` module of the `rando
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| operating system | `params.kind` is `RandomSourceKind::OperatingSystem` | a `match` on `params.kind` | `OsRandomSource::try_new(OsRandomSourceConstructorParams)`, exactly once | `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source), declaration: OsRandomSource::DECLARATION })` |
+| operating system | `params.kind` is `RandomSourceKind::OperatingSystem` | a `match` on `params.kind` | `OsRandomSource::try_new(OsRandomSourceConstructorParams)`, exactly once | `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source) })`; the boxed source reports `OsRandomSource::DECLARATION` through the trait method |
 
 ## Invariants and edges
 

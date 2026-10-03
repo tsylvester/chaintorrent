@@ -21,7 +21,6 @@ pub fn create_random_source(
             let Ok(source) = OsRandomSource::try_new(OsRandomSourceConstructorParams);
             Ok(CreateRandomSourceSuccessReturn {
                 adapter: Box::new(source),
-                declaration: OsRandomSource::DECLARATION,
             })
         }
     }

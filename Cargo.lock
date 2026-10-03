@@ -1897,6 +1897,7 @@ dependencies = [
  "domain",
  "hash-to-scalar",
  "pairing 0.0.0",
+ "random",
  "zeroize",
 ]
 

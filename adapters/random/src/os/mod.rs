@@ -27,6 +27,10 @@ impl OsRandomSource {
 }
 
 impl IRandomSourceAdapter for OsRandomSource {
+    fn declaration(&self) -> RandomSourceDeclaration {
+        Self::DECLARATION
+    }
+
     fn fill_bytes(&self, _params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn {
         let mut buffer = vec![0u8; payload.length];
         let result = getrandom::fill(&mut buffer);

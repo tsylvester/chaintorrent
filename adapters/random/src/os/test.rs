@@ -7,7 +7,7 @@
 
 use super::interface::{OsRandomSource, OsRandomSourceConstructorParams};
 use crate::factory::provides::{
-    FillBytesParams, FillBytesPayloadOverrides, IRandomSourceAdapter,
+    FillBytesParams, FillBytesPayloadOverrides, IRandomSourceAdapter, MockIRandomSourceAdapter,
     RANDOM_SOURCE_INTERFACE_VERSION, build_fill_bytes_payload,
 };
 use std::collections::HashSet;
@@ -125,4 +125,30 @@ fn os_random_source_declares_its_adapter_and_interface_versions() {
         declaration.interface_version,
         RANDOM_SOURCE_INTERFACE_VERSION
     );
+}
+
+/// Contract: the default family mock obeys the same length contract as the
+///   operating-system source — a payload length selects the draw's length,
+///   including zero.
+/// Arrange: `MockIRandomSourceAdapter` and payloads of zero and 48 bytes.
+/// Act:     `fill_bytes` for each payload.
+/// Assert:  the exposed draws have lengths zero and 48 respectively.
+#[test]
+fn mock_fill_bytes_honors_the_requested_length() {
+    // Arrange
+    let source = MockIRandomSourceAdapter;
+    let empty = build_fill_bytes_payload(FillBytesPayloadOverrides { length: Some(0) });
+    let forty_eight = build_fill_bytes_payload(FillBytesPayloadOverrides { length: Some(48) });
+
+    // Act
+    let Ok(empty_success) = source.fill_bytes(FillBytesParams, empty) else {
+        panic!("the default mock draws successfully")
+    };
+    let Ok(success) = source.fill_bytes(FillBytesParams, forty_eight) else {
+        panic!("the default mock draws successfully")
+    };
+
+    // Assert
+    assert!(empty_success.bytes.expose().is_empty());
+    assert_eq!(success.bytes.expose().len(), 48);
 }

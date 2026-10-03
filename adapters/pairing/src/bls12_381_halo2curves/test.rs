@@ -6,6 +6,7 @@
 )]
 
 use super::interface::{
+    Bls12381Halo2curvesEncodedG1, Bls12381Halo2curvesEncodedG2, Bls12381Halo2curvesEncodedScalar,
     Bls12381Halo2curvesPairing, Bls12381Halo2curvesPairingConstructorParams,
     Bls12381Halo2curvesScalar,
 };
@@ -15,16 +16,19 @@ use crate::factory::provides::{
     DecodeG2Params, DecodeScalarErrorReturn, DecodeScalarParams, EncodeG1Params,
     EncodeG1PayloadOverrides, EncodeG2Params, EncodeG2PayloadOverrides, EncodeGtParams,
     EncodeGtPayloadOverrides, EncodeScalarParams, EncodeScalarPayloadOverrides, G1GeneratorParams,
-    G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingArithmetic,
+    G1GeneratorPayload, G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload,
+    G2GeneratorParams, G2GeneratorPayload, G2OutsideSubgroupEncodingParams,
+    G2OutsideSubgroupEncodingPayload, IPairingAdapter, IPairingArithmetic, IPairingReference,
     ISampleUniformScalar, IsIdentityG1Params, IsIdentityG1PayloadOverrides, IsIdentityG2Params,
     IsIdentityG2PayloadOverrides, MsmG1Params, MsmG1PayloadOverrides, MsmG1TermOverrides,
     MsmG2Params, MsmG2PayloadOverrides, MsmG2TermOverrides, MulG1Params, MulG1PayloadOverrides,
     MulG2Params, MulG2PayloadOverrides, MulScalarParams, MulScalarPayloadOverrides, NegG1Params,
     NegG1PayloadOverrides, NegG2Params, NegG2PayloadOverrides, NegScalarParams,
-    NegScalarPayloadOverrides, PAIRING_INTERFACE_VERSION, PairingCurve, PairingProductIsOneParams,
-    PairingProductIsOnePayloadOverrides, PairingProductParams, PairingProductPayloadOverrides,
-    PairingProductTermOverrides, PrecompileEncoding, SampleUniformScalarErrorReturn,
-    SampleUniformScalarParams, SampleUniformScalarPayloadOverrides, TargetGroupEncodingIdentifier,
+    NegScalarPayloadOverrides, PAIRING_INTERFACE_VERSION, PairingConcrete, PairingCurve,
+    PairingProductIsOneParams, PairingProductIsOnePayloadOverrides, PairingProductParams,
+    PairingProductPayloadOverrides, PairingProductTermOverrides, PrecompileEncoding,
+    SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayloadOverrides,
+    ScalarFieldOrderParams, ScalarFieldOrderPayload, TargetGroupEncodingIdentifier,
     VerifierGroupArithmetic, build_add_g1_payload, build_add_g2_payload, build_add_scalar_payload,
     build_encode_g1_payload, build_encode_g2_payload, build_encode_gt_payload,
     build_encode_scalar_payload, build_is_identity_g1_payload, build_is_identity_g2_payload,
@@ -34,7 +38,7 @@ use crate::factory::provides::{
     build_pairing_product_payload, build_pairing_product_term, build_sample_uniform_scalar_payload,
 };
 use core::iter::successors;
-use domain::{SecretConstructorParamsOverrides, build_secret};
+use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
 use halo2curves::CurveAffine;
 use halo2curves::bls12381::{Bls12381, Fq, Fq2, Fq12, Fr, G1Affine, G2Affine};
 use halo2curves::ff::{Field, PrimeField};
@@ -47,6 +51,7 @@ use random::{
     FillBytesParams, FillBytesPayloadOverrides, RandomSourceKind,
     build_create_random_source_params, build_fill_bytes_payload, create_random_source,
 };
+use zeroize::ZeroizeOnDrop;
 
 const BASE_FIELD_MODULUS_PADDED_HEX: &str = "00000000000000000000000000000000\
      1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab";
@@ -133,6 +138,75 @@ fn tower_bytes(value: &Fq12) -> Vec<u8> {
     bytes
 }
 
+fn requires_zeroize_on_drop<T: ZeroizeOnDrop>() {}
+
+/// Contract: the scalar satisfies the sampling bound's drop requirement —
+///   its `Drop` clears its held field, so every clone placed in an owned
+///   payload is zeroized when the payload drops (CR-07).
+/// Arrange: nothing.
+/// Act:     `requires_zeroize_on_drop::<Bls12381Halo2curvesScalar>()`.
+/// Assert:  the block compiles.
+#[test]
+fn bls12_381_halo2curves_scalar_zeroizes_on_drop() {
+    // Arrange
+
+    // Act
+    requires_zeroize_on_drop::<Bls12381Halo2curvesScalar>();
+
+    // Assert
+}
+
+/// Contract: each encoder returns this concrete's own encoded type, distinct
+///   per group.
+/// Arrange: the pairing adapter, both generators, and the decoded scalar one.
+/// Act:     `encode_g1`, `encode_g2`, and `encode_scalar`.
+/// Assert:  the results bind as `Bls12381Halo2curvesEncodedG1`,
+///   `Bls12381Halo2curvesEncodedG2`, and
+///   `Secret<Bls12381Halo2curvesEncodedScalar>`; the wire views are 128, 256,
+///   and 32 bytes.
+#[test]
+fn encoders_return_the_concrete_encoded_types() {
+    // Arrange
+    let Ok(pairing) =
+        Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);
+    let Ok(one_bytes) = decode(SCALAR_ONE_HEX) else {
+        panic!("the vector decodes")
+    };
+    let Ok(g1) = pairing.g1_generator(G1GeneratorParams, G1GeneratorPayload);
+    let Ok(g2) = pairing.g2_generator(G2GeneratorParams, G2GeneratorPayload);
+    let Ok(one) = pairing.decode_scalar(DecodeScalarParams, &one_bytes) else {
+        panic!("the scalar decodes")
+    };
+
+    // Act
+    let Ok(encoded_g1) = pairing.encode_g1(
+        EncodeG1Params,
+        build_encode_g1_payload(EncodeG1PayloadOverrides {
+            point: Some(g1.point),
+        }),
+    );
+    let Ok(encoded_g2) = pairing.encode_g2(
+        EncodeG2Params,
+        build_encode_g2_payload(EncodeG2PayloadOverrides {
+            point: Some(g2.point),
+        }),
+    );
+    let Ok(encoded_scalar) = pairing.encode_scalar(
+        EncodeScalarParams,
+        build_encode_scalar_payload(EncodeScalarPayloadOverrides {
+            scalar: Some(one.scalar),
+        }),
+    );
+
+    // Assert
+    let g1: Bls12381Halo2curvesEncodedG1 = encoded_g1.bytes;
+    let g2: Bls12381Halo2curvesEncodedG2 = encoded_g2.bytes;
+    let scalar: Secret<Bls12381Halo2curvesEncodedScalar> = encoded_scalar.bytes;
+    assert_eq!(g1.as_ref().len(), 128);
+    assert_eq!(g2.as_ref().len(), 256);
+    assert_eq!(scalar.expose().as_ref().len(), 32);
+}
+
 /// Contract: the generated branch returns the first-group generator, whose
 ///   precompile encoding is EIP-2537's 128 bytes — the 64-byte x then the
 ///   64-byte y of the generator, each sixteen zero bytes followed by the
@@ -159,7 +233,7 @@ fn g1_generator_encodes_to_the_eip_2537_generator() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes, expected);
+    assert_eq!(encoded.bytes.as_ref(), expected.as_slice());
 }
 
 /// Contract: the generated branch returns the second-group generator, whose
@@ -187,7 +261,7 @@ fn g2_generator_encodes_to_the_eip_2537_generator() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes, expected);
+    assert_eq!(encoded.bytes.as_ref(), expected.as_slice());
 }
 
 /// Contract: the valid branch of `decode_g1` holds the point, which
@@ -217,7 +291,7 @@ fn decode_g1_round_trips_the_eip_2537_generator() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes, bytes);
+    assert_eq!(encoded.bytes.as_ref(), bytes.as_slice());
 }
 
 /// Contract: the valid branch of `decode_g2` holds the point, which
@@ -247,7 +321,7 @@ fn decode_g2_round_trips_the_eip_2537_generator() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes, bytes);
+    assert_eq!(encoded.bytes.as_ref(), bytes.as_slice());
 }
 
 /// Contract: the identity branch of `decode_g1` — both coordinates zero —
@@ -287,7 +361,7 @@ fn decode_g1_reads_the_all_zero_encoding_as_the_identity() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes, expected);
+    assert_eq!(encoded.bytes.as_ref(), expected.as_slice());
 }
 
 /// Contract: the identity branch of `decode_g2` — all four coordinates
@@ -327,7 +401,7 @@ fn decode_g2_reads_the_all_zero_encoding_as_the_identity() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes, expected);
+    assert_eq!(encoded.bytes.as_ref(), expected.as_slice());
 }
 
 /// Contract: the encoded branch of `encode_g1` — a point whose `coordinates()`
@@ -356,7 +430,7 @@ fn encode_g1_writes_the_identity_as_all_zero_bytes() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes, expected);
+    assert_eq!(encoded.bytes.as_ref(), expected.as_slice());
 }
 
 /// Contract: the wrong-length branch of `decode_g1` returns
@@ -636,7 +710,7 @@ fn decode_scalar_round_trips_the_largest_canonical_scalar() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &bytes);
+    assert_eq!(encoded.bytes.expose().as_ref(), bytes.as_slice());
 }
 
 /// Contract: the wrong-length branch of `decode_scalar` returns
@@ -718,8 +792,8 @@ fn add_g1_of_the_generator_to_itself_equals_its_multiple_by_two() {
     );
 
     // Assert
-    assert_eq!(sum_encoded.bytes, product_encoded.bytes);
-    assert_ne!(sum_encoded.bytes, generator_bytes);
+    assert_eq!(sum_encoded.bytes.as_ref(), product_encoded.bytes.as_ref());
+    assert_ne!(sum_encoded.bytes.as_ref(), generator_bytes.as_slice());
 }
 
 /// Contract: the summed branch of `add_g2` returns the point's group sum —
@@ -775,8 +849,8 @@ fn add_g2_of_the_generator_to_itself_equals_its_multiple_by_two() {
     );
 
     // Assert
-    assert_eq!(sum_encoded.bytes, product_encoded.bytes);
-    assert_ne!(sum_encoded.bytes, generator_bytes);
+    assert_eq!(sum_encoded.bytes.as_ref(), product_encoded.bytes.as_ref());
+    assert_ne!(sum_encoded.bytes.as_ref(), generator_bytes.as_slice());
 }
 
 /// Contract: the summed branch of `msm_g1` returns the terms' linear
@@ -849,7 +923,7 @@ fn msm_g1_equals_the_multiple_by_the_sum_of_its_scalars() {
     );
 
     // Assert
-    assert_eq!(sum_encoded.bytes, product_encoded.bytes);
+    assert_eq!(sum_encoded.bytes.as_ref(), product_encoded.bytes.as_ref());
 }
 
 /// Contract: the summed branch of `msm_g2` returns the terms' linear
@@ -922,7 +996,7 @@ fn msm_g2_equals_the_multiple_by_the_sum_of_its_scalars() {
     );
 
     // Assert
-    assert_eq!(sum_encoded.bytes, product_encoded.bytes);
+    assert_eq!(sum_encoded.bytes.as_ref(), product_encoded.bytes.as_ref());
 }
 
 /// Contract: the evaluated branch of `pairing_product_is_one` — a pairing
@@ -1137,7 +1211,7 @@ fn sample_from_uniform_bytes_reads_its_input_as_a_big_endian_integer() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &expected);
+    assert_eq!(encoded.bytes.expose().as_ref(), expected.as_slice());
 }
 
 /// Contract: the sampled branch of `sample_from_uniform_bytes` reduces the
@@ -1172,7 +1246,7 @@ fn sample_from_uniform_bytes_reduces_the_largest_input_into_the_scalar_field() {
             scalar: Some(sampled.scalar.expose().clone()),
         }),
     );
-    let result = pairing.decode_scalar(DecodeScalarParams, encoded.bytes.expose());
+    let result = pairing.decode_scalar(DecodeScalarParams, encoded.bytes.expose().as_ref());
 
     // Assert
     assert!(result.is_ok());
@@ -1222,28 +1296,33 @@ fn sample_from_uniform_bytes_draws_an_in_range_scalar_from_the_operating_system_
             scalar: Some(sampled.scalar.expose().clone()),
         }),
     );
-    let result = pairing.decode_scalar(DecodeScalarParams, encoded.bytes.expose());
+    let result = pairing.decode_scalar(DecodeScalarParams, encoded.bytes.expose().as_ref());
 
     // Assert
     assert!(result.is_ok());
 }
 
 /// Contract: the concrete's declaration names its curve, the verifier's
-///   group arithmetic, its precompile encoding, its adapter version, and
-///   the interface version it implements, readable from the type before any
-///   instance exists.
+///   group arithmetic, its precompile encoding, its target-group encoding
+///   identifier, its adapter version, and the interface version it
+///   implements, and the concrete's identity is readable from the type
+///   before any instance exists (CR-10).
 /// Arrange: nothing.
-/// Act:     read `Bls12381Halo2curvesPairing::DECLARATION`.
+/// Act:     read `Bls12381Halo2curvesPairing::DECLARATION` and
+///   `<Bls12381Halo2curvesPairing as IPairingAdapter>::CONCRETE`.
 /// Assert:  `curve` is `PairingCurve::Bls12381`, `verifier_group_arithmetic`
 ///   is `VerifierGroupArithmetic::BothGroups`, `precompile_encoding` is
-///   `PrecompileEncoding::Eip2537`, `adapter_version` equals 1, and
-///   `interface_version` equals `PAIRING_INTERFACE_VERSION`.
+///   `PrecompileEncoding::Eip2537`, `target_group_encoding` is
+///   `TargetGroupEncodingIdentifier::Bls12381V1`, `adapter_version` equals 1,
+///   `interface_version` equals `PAIRING_INTERFACE_VERSION`, and the concrete
+///   is `PairingConcrete::Bls12381Halo2curves`.
 #[test]
-fn bls12_381_halo2curves_pairing_declares_its_curve_arithmetic_encoding_and_versions() {
+fn bls12_381_halo2curves_pairing_declares_its_curve_arithmetic_encodings_versions_and_concrete() {
     // Arrange
 
     // Act
     let declaration = Bls12381Halo2curvesPairing::DECLARATION;
+    let concrete = <Bls12381Halo2curvesPairing as IPairingAdapter>::CONCRETE;
 
     // Assert
     assert!(matches!(declaration.curve, PairingCurve::Bls12381));
@@ -1255,8 +1334,13 @@ fn bls12_381_halo2curves_pairing_declares_its_curve_arithmetic_encoding_and_vers
         declaration.precompile_encoding,
         PrecompileEncoding::Eip2537
     ));
+    assert!(matches!(
+        declaration.target_group_encoding,
+        TargetGroupEncodingIdentifier::Bls12381V1
+    ));
     assert_eq!(declaration.adapter_version, 1);
     assert_eq!(declaration.interface_version, PAIRING_INTERFACE_VERSION);
+    assert!(matches!(concrete, PairingConcrete::Bls12381Halo2curves));
 }
 
 /// Contract: the summed branch of `add_scalar` returns the operands' sum in
@@ -1301,7 +1385,7 @@ fn add_scalar_of_two_and_three_is_five() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &five_bytes);
+    assert_eq!(encoded.bytes.expose().as_ref(), five_bytes.as_slice());
 }
 
 /// Contract: the summed branch of `add_scalar` reduces modulo the group order
@@ -1346,7 +1430,7 @@ fn add_scalar_reduces_modulo_the_group_order() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &one_bytes);
+    assert_eq!(encoded.bytes.expose().as_ref(), one_bytes.as_slice());
 }
 
 /// Contract: the multiplied branch of `mul_scalar` returns the operands'
@@ -1391,7 +1475,7 @@ fn mul_scalar_of_two_and_three_is_six() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &six_bytes);
+    assert_eq!(encoded.bytes.expose().as_ref(), six_bytes.as_slice());
 }
 
 /// Contract: the multiplied branch of `mul_scalar` reduces modulo the group
@@ -1430,7 +1514,7 @@ fn mul_scalar_reduces_modulo_the_group_order() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &one_bytes);
+    assert_eq!(encoded.bytes.expose().as_ref(), one_bytes.as_slice());
 }
 
 /// Contract: the negated branch of `neg_scalar` returns the group order minus
@@ -1468,7 +1552,10 @@ fn neg_scalar_of_one_is_the_group_order_minus_one() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &r_minus_one_bytes);
+    assert_eq!(
+        encoded.bytes.expose().as_ref(),
+        r_minus_one_bytes.as_slice()
+    );
 }
 
 /// Contract: the negated branch of `neg_scalar` over zero is zero.
@@ -1502,7 +1589,7 @@ fn neg_scalar_of_zero_is_zero() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &zero_bytes);
+    assert_eq!(encoded.bytes.expose().as_ref(), zero_bytes.as_slice());
 }
 
 /// Contract: the negated branch of `neg_g1` keeps `x` and replaces `y` by
@@ -1537,7 +1624,7 @@ fn neg_g1_of_the_generator_negates_its_y_coordinate() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes, expected);
+    assert_eq!(encoded.bytes.as_ref(), expected.as_slice());
 }
 
 /// Contract: the negated branch of `neg_g1` over the identity is the
@@ -1571,7 +1658,7 @@ fn neg_g1_of_the_identity_is_the_identity() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes, zeros);
+    assert_eq!(encoded.bytes.as_ref(), zeros.as_slice());
 }
 
 /// Contract: a second-group point plus its negation is the identity — the
@@ -1610,7 +1697,7 @@ fn neg_g2_of_the_generator_sums_with_the_generator_to_the_identity() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes, zeros);
+    assert_eq!(encoded.bytes.as_ref(), zeros.as_slice());
 }
 
 /// Contract: the tested branch of `is_identity_g1` over the identity reports
@@ -1746,7 +1833,7 @@ fn pairing_product_of_no_terms_encodes_as_the_target_group_identity() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &identity);
+    assert_eq!(encoded.bytes.expose().as_ref(), identity.as_slice());
 }
 
 /// Contract: the pairing is non-degenerate — the evaluated branch of
@@ -1784,8 +1871,8 @@ fn pairing_product_of_the_generators_is_not_the_target_group_identity() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose().len(), 576);
-    assert_ne!(encoded.bytes.expose(), &identity);
+    assert_eq!(encoded.bytes.expose().as_ref().len(), 576);
+    assert_ne!(encoded.bytes.expose().as_ref(), identity.as_slice());
 }
 
 /// Contract: the evaluated branch of `pairing_product` is bilinear — a scalar
@@ -1910,8 +1997,14 @@ fn pairing_product_is_bilinear() {
     );
 
     // Assert
-    assert_eq!(first_encoded.bytes.expose(), second_encoded.bytes.expose());
-    assert_ne!(first_encoded.bytes.expose(), third_encoded.bytes.expose());
+    assert_eq!(
+        first_encoded.bytes.expose().as_ref(),
+        second_encoded.bytes.expose().as_ref()
+    );
+    assert_ne!(
+        first_encoded.bytes.expose().as_ref(),
+        third_encoded.bytes.expose().as_ref()
+    );
 }
 
 /// Contract: the evaluated branch of `pairing_product` multiplies its terms —
@@ -2000,8 +2093,14 @@ fn pairing_product_multiplies_its_terms() {
     );
 
     // Assert
-    assert_eq!(first_encoded.bytes.expose(), second_encoded.bytes.expose());
-    assert_ne!(first_encoded.bytes.expose(), third_encoded.bytes.expose());
+    assert_eq!(
+        first_encoded.bytes.expose().as_ref(),
+        second_encoded.bytes.expose().as_ref()
+    );
+    assert_ne!(
+        first_encoded.bytes.expose().as_ref(),
+        third_encoded.bytes.expose().as_ref()
+    );
 }
 
 /// Contract: the evaluated branch of `pairing_product` divides by a term when
@@ -2051,27 +2150,7 @@ fn pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &identity);
-}
-
-/// Contract: the concrete declares `TargetGroupEncodingIdentifier::Bls12381V1`,
-///   the identifier the suite admits it by.
-/// Arrange: nothing.
-/// Act:     read `Bls12381Halo2curvesPairing::DECLARATION`.
-/// Assert:  `target_group_encoding` is
-///   `TargetGroupEncodingIdentifier::Bls12381V1`.
-#[test]
-fn declaration_names_the_bls12_381_target_group_encoding() {
-    // Arrange
-
-    // Act
-    let declaration = Bls12381Halo2curvesPairing::DECLARATION;
-
-    // Assert
-    assert!(matches!(
-        declaration.target_group_encoding,
-        TargetGroupEncodingIdentifier::Bls12381V1
-    ));
+    assert_eq!(encoded.bytes.expose().as_ref(), identity.as_slice());
 }
 
 /// Contract: the evaluated branch of `pairing_product` returns the
@@ -2112,7 +2191,7 @@ fn pairing_product_of_the_generators_equals_the_definition() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &expected);
+    assert_eq!(encoded.bytes.expose().as_ref(), expected.as_slice());
 }
 
 /// Contract: the evaluated branch of `pairing_product` over `(g1, g2)` encodes
@@ -2151,7 +2230,7 @@ fn pairing_product_of_the_generators_encodes_to_the_published_vector() {
     );
 
     // Assert
-    assert_eq!(encoded.bytes.expose(), &expected);
+    assert_eq!(encoded.bytes.expose().as_ref(), expected.as_slice());
 }
 
 /// Contract: `reduced_pairing_correction` is the inverse in the scalar field
@@ -2170,4 +2249,154 @@ fn reduced_pairing_correction_inverts_three() {
 
     // Assert
     assert_eq!(Fr::from(3u64) * correction, Fr::ONE);
+}
+
+/// Contract: the read branch of `scalar_field_order` returns the group
+///   order's 32 big-endian bytes (CR-11).
+/// Arrange: the pairing adapter and the group-order vector decoded.
+/// Act:     `pairing.scalar_field_order`.
+/// Assert:  `bytes` equals the vector.
+#[test]
+fn scalar_field_order_is_the_group_order() {
+    // Arrange
+    let Ok(pairing) =
+        Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);
+    let Ok(expected) = decode(GROUP_ORDER_HEX) else {
+        panic!("the vector decodes")
+    };
+
+    // Act
+    let Ok(read) = pairing.scalar_field_order(ScalarFieldOrderParams, ScalarFieldOrderPayload);
+
+    // Assert
+    assert_eq!(read.bytes, expected);
+}
+
+/// Contract: the found branch of `g1_outside_subgroup_encoding` returns a
+///   canonical encoding of an on-curve point outside the subgroup, which the
+///   decoder reaches only after its length, canonicality, identity, and
+///   curve checks pass (CR-10).
+/// Arrange: the pairing adapter.
+/// Act:     `pairing.g1_outside_subgroup_encoding`, then `pairing.decode_g1`
+///   over the encoding's wire view.
+/// Assert:  the decode is `Err(DecodeG1ErrorReturn::NotInSubgroup)`.
+#[test]
+fn g1_outside_subgroup_encoding_is_refused_by_decode_g1_as_outside_the_subgroup() {
+    // Arrange
+    let Ok(pairing) =
+        Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);
+
+    // Act
+    let Ok(found) = pairing.g1_outside_subgroup_encoding(
+        G1OutsideSubgroupEncodingParams,
+        G1OutsideSubgroupEncodingPayload,
+    ) else {
+        panic!("the reference is present")
+    };
+    let Some(bytes) = found.bytes else {
+        panic!("the first group has an outside-the-subgroup point")
+    };
+    let result = pairing.decode_g1(DecodeG1Params, bytes.as_ref());
+
+    // Assert
+    assert!(matches!(result, Err(DecodeG1ErrorReturn::NotInSubgroup)));
+}
+
+/// Contract: of the two roots the found branch takes the lesser integer —
+///   the `y` the family's rule names, the one not greater than its negation.
+/// Arrange: the pairing adapter and `p` as `BigUint` of the base field
+///   modulus.
+/// Act:     `pairing.g1_outside_subgroup_encoding`, then read `y` at bytes
+///   `64..128` of the wire view.
+/// Assert:  `y` is not greater than `(p - y) mod p`.
+#[test]
+fn g1_outside_subgroup_encoding_takes_the_lesser_root() {
+    // Arrange
+    let Ok(pairing) =
+        Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);
+    let Ok(modulus_bytes) = decode(BASE_FIELD_MODULUS_PADDED_HEX) else {
+        panic!("the vector decodes")
+    };
+    let p = BigUint::from_bytes_be(&modulus_bytes);
+
+    // Act
+    let Ok(found) = pairing.g1_outside_subgroup_encoding(
+        G1OutsideSubgroupEncodingParams,
+        G1OutsideSubgroupEncodingPayload,
+    ) else {
+        panic!("the reference is present")
+    };
+    let Some(bytes) = found.bytes else {
+        panic!("the first group has an outside-the-subgroup point")
+    };
+    let y = BigUint::from_bytes_be(&bytes.as_ref()[64..128]);
+    let negated_y = (p.clone() - &y) % &p;
+
+    // Assert
+    assert!(y <= negated_y);
+}
+
+/// Contract: the found branch of `g2_outside_subgroup_encoding` returns a
+///   canonical encoding of an on-curve point outside the subgroup, which the
+///   decoder reaches only after its length, canonicality, identity, and
+///   curve checks pass (CR-10).
+/// Arrange: the pairing adapter.
+/// Act:     `pairing.g2_outside_subgroup_encoding`, then `pairing.decode_g2`
+///   over the encoding's wire view.
+/// Assert:  the decode is `Err(DecodeG2ErrorReturn::NotInSubgroup)`.
+#[test]
+fn g2_outside_subgroup_encoding_is_refused_by_decode_g2_as_outside_the_subgroup() {
+    // Arrange
+    let Ok(pairing) =
+        Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);
+
+    // Act
+    let Ok(found) = pairing.g2_outside_subgroup_encoding(
+        G2OutsideSubgroupEncodingParams,
+        G2OutsideSubgroupEncodingPayload,
+    ) else {
+        panic!("the reference is present")
+    };
+    let result = pairing.decode_g2(DecodeG2Params, found.bytes.as_ref());
+
+    // Assert
+    assert!(matches!(result, Err(DecodeG2ErrorReturn::NotInSubgroup)));
+}
+
+/// Contract: the found branch's point has `x = (c0, 0)` and, of the two
+///   roots, the `y` the family's rule names — the one not greater than its
+///   negation.
+/// Arrange: the pairing adapter and `p` as `BigUint` of the base field
+///   modulus.
+/// Act:     `pairing.g2_outside_subgroup_encoding`, then read `x.c1` at bytes
+///   `64..128` and `y`'s `c0` and `c1` at bytes `128..192` and `192..256` of
+///   the wire view.
+/// Assert:  `x.c1` is all zero and `(c1, c0)` is not greater than
+///   `((p - c1) mod p, (p - c0) mod p)`, compared as a tuple.
+#[test]
+fn g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root() {
+    // Arrange
+    let Ok(pairing) =
+        Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);
+    let Ok(modulus_bytes) = decode(BASE_FIELD_MODULUS_PADDED_HEX) else {
+        panic!("the vector decodes")
+    };
+    let p = BigUint::from_bytes_be(&modulus_bytes);
+
+    // Act
+    let Ok(found) = pairing.g2_outside_subgroup_encoding(
+        G2OutsideSubgroupEncodingParams,
+        G2OutsideSubgroupEncodingPayload,
+    ) else {
+        panic!("the reference is present")
+    };
+    let bytes = found.bytes.as_ref();
+    let c0 = BigUint::from_bytes_be(&bytes[128..192]);
+    let c1 = BigUint::from_bytes_be(&bytes[192..256]);
+    let negated_c1 = (p.clone() - &c1) % &p;
+    let negated_c0 = (p.clone() - &c0) % &p;
+
+    // Assert
+    assert!(bytes[64..128].iter().all(|byte| *byte == 0u8));
+    assert!((c1, c0) <= (negated_c1, negated_c0));
 }

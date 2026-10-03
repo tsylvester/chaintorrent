@@ -14,17 +14,25 @@ use super::interface::{
 use super::mock::{CreatePairingParamsOverrides, build_create_pairing_params};
 use core::cell::Cell;
 
-struct DeclarationProbe;
+struct SelectedPairing {
+    declaration: PairingDeclaration,
+    concrete: PairingConcrete,
+}
 
-impl IPairingConsumer for DeclarationProbe {
-    type Output = PairingDeclaration;
+struct SelectionProbe;
+
+impl IPairingConsumer for SelectionProbe {
+    type Output = SelectedPairing;
 
     fn consume_pairing<P: IPairingAdapter>(
         &self,
         _params: ConsumePairingParams,
-        payload: ConsumePairingPayload<P>,
+        _payload: ConsumePairingPayload<P>,
     ) -> Self::Output {
-        payload.declaration
+        SelectedPairing {
+            declaration: P::DECLARATION,
+            concrete: P::CONCRETE,
+        }
     }
 }
 
@@ -46,18 +54,20 @@ impl IPairingConsumer for CallProbe {
 
 /// Contract: admitted — the named concrete's declared encoding is among
 ///   `params.supported_encodings`, so the concrete is constructed once and
-///   handed, with its `DECLARATION`, to the consumer, whose output is returned
-///   in `Ok(CreatePairingSuccessReturn { output })`.
+///   handed to the consumer, which reads `P::DECLARATION` and `P::CONCRETE`,
+///   whose output is returned in `Ok(CreatePairingSuccessReturn { output })`.
 /// Arrange: params naming `PairingConcrete::Bn254Arkworks` with the default
-///   admitted encodings; a `DeclarationProbe` consumer.
+///   admitted encodings; a `SelectionProbe` consumer.
 /// Act:     `create_pairing` over the deps and params.
-/// Assert:  `success.output.curve` is `PairingCurve::Bn254` and
-///   `success.output.precompile_encoding` is `PrecompileEncoding::Eip196Eip197`.
+/// Assert:  `success.output.declaration.curve` is `PairingCurve::Bn254`,
+///   `success.output.declaration.precompile_encoding` is
+///   `PrecompileEncoding::Eip196Eip197`, and `success.output.concrete` is
+///   `PairingConcrete::Bn254Arkworks`.
 #[test]
 fn create_pairing_hands_the_consumer_the_bn254_arkworks_concrete_and_its_declaration() {
     // Arrange
     let deps = CreatePairingDeps {
-        consumer: DeclarationProbe,
+        consumer: SelectionProbe,
     };
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Arkworks),
@@ -70,11 +80,15 @@ fn create_pairing_hands_the_consumer_the_bn254_arkworks_concrete_and_its_declara
     };
 
     // Assert
-    assert!(matches!(success.output.curve, PairingCurve::Bn254));
     assert!(matches!(
-        success.output.precompile_encoding,
+        success.output.declaration.curve,
+        PairingCurve::Bn254
+    ));
+    assert!(matches!(
+        success.output.declaration.precompile_encoding,
         PrecompileEncoding::Eip196Eip197
     ));
+    assert!(success.output.concrete == PairingConcrete::Bn254Arkworks);
 }
 
 /// Contract: admitted — the named concrete's declared encoding is among
@@ -82,15 +96,17 @@ fn create_pairing_hands_the_consumer_the_bn254_arkworks_concrete_and_its_declara
 ///   handed, with its `DECLARATION`, to the consumer, whose output is returned
 ///   in `Ok(CreatePairingSuccessReturn { output })`.
 /// Arrange: params naming `PairingConcrete::Bn254Halo2curves` with the default
-///   admitted encodings; a `DeclarationProbe` consumer.
+///   admitted encodings; a `SelectionProbe` consumer.
 /// Act:     `create_pairing` over the deps and params.
-/// Assert:  `success.output.curve` is `PairingCurve::Bn254` and
-///   `success.output.precompile_encoding` is `PrecompileEncoding::Eip196Eip197`.
+/// Assert:  `success.output.declaration.curve` is `PairingCurve::Bn254`,
+///   `success.output.declaration.precompile_encoding` is
+///   `PrecompileEncoding::Eip196Eip197`, and `success.output.concrete` is
+///   `PairingConcrete::Bn254Halo2curves`.
 #[test]
 fn create_pairing_hands_the_consumer_the_bn254_halo2curves_concrete_and_its_declaration() {
     // Arrange
     let deps = CreatePairingDeps {
-        consumer: DeclarationProbe,
+        consumer: SelectionProbe,
     };
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Halo2curves),
@@ -103,11 +119,15 @@ fn create_pairing_hands_the_consumer_the_bn254_halo2curves_concrete_and_its_decl
     };
 
     // Assert
-    assert!(matches!(success.output.curve, PairingCurve::Bn254));
     assert!(matches!(
-        success.output.precompile_encoding,
+        success.output.declaration.curve,
+        PairingCurve::Bn254
+    ));
+    assert!(matches!(
+        success.output.declaration.precompile_encoding,
         PrecompileEncoding::Eip196Eip197
     ));
+    assert!(success.output.concrete == PairingConcrete::Bn254Halo2curves);
 }
 
 /// Contract: admitted — the named concrete's declared encoding is among
@@ -115,17 +135,19 @@ fn create_pairing_hands_the_consumer_the_bn254_halo2curves_concrete_and_its_decl
 ///   handed, with its `DECLARATION`, to the consumer, whose output is returned
 ///   in `Ok(CreatePairingSuccessReturn { output })`.
 /// Arrange: params naming `PairingConcrete::Bls12381Arkworks` with the default
-///   admitted encodings; a `DeclarationProbe` consumer.
+///   admitted encodings; a `SelectionProbe` consumer.
 /// Act:     `create_pairing` over the deps and params.
-/// Assert:  `success.output.curve` is `PairingCurve::Bls12381`,
-///   `success.output.verifier_group_arithmetic` is
-///   `VerifierGroupArithmetic::BothGroups`, and
-///   `success.output.precompile_encoding` is `PrecompileEncoding::Eip2537`.
+/// Assert:  `success.output.declaration.curve` is `PairingCurve::Bls12381`,
+///   `success.output.declaration.verifier_group_arithmetic` is
+///   `VerifierGroupArithmetic::BothGroups`,
+///   `success.output.declaration.precompile_encoding` is
+///   `PrecompileEncoding::Eip2537`, and `success.output.concrete` is
+///   `PairingConcrete::Bls12381Arkworks`.
 #[test]
 fn create_pairing_hands_the_consumer_the_bls12_381_arkworks_concrete_and_its_declaration() {
     // Arrange
     let deps = CreatePairingDeps {
-        consumer: DeclarationProbe,
+        consumer: SelectionProbe,
     };
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Arkworks),
@@ -138,15 +160,19 @@ fn create_pairing_hands_the_consumer_the_bls12_381_arkworks_concrete_and_its_dec
     };
 
     // Assert
-    assert!(matches!(success.output.curve, PairingCurve::Bls12381));
     assert!(matches!(
-        success.output.verifier_group_arithmetic,
+        success.output.declaration.curve,
+        PairingCurve::Bls12381
+    ));
+    assert!(matches!(
+        success.output.declaration.verifier_group_arithmetic,
         VerifierGroupArithmetic::BothGroups
     ));
     assert!(matches!(
-        success.output.precompile_encoding,
+        success.output.declaration.precompile_encoding,
         PrecompileEncoding::Eip2537
     ));
+    assert!(success.output.concrete == PairingConcrete::Bls12381Arkworks);
 }
 
 /// Contract: admitted — the named concrete's declared encoding is among
@@ -154,17 +180,19 @@ fn create_pairing_hands_the_consumer_the_bls12_381_arkworks_concrete_and_its_dec
 ///   handed, with its `DECLARATION`, to the consumer, whose output is returned
 ///   in `Ok(CreatePairingSuccessReturn { output })`.
 /// Arrange: params naming `PairingConcrete::Bls12381Halo2curves` with the
-///   default admitted encodings; a `DeclarationProbe` consumer.
+///   default admitted encodings; a `SelectionProbe` consumer.
 /// Act:     `create_pairing` over the deps and params.
-/// Assert:  `success.output.curve` is `PairingCurve::Bls12381`,
-///   `success.output.verifier_group_arithmetic` is
-///   `VerifierGroupArithmetic::BothGroups`, and
-///   `success.output.precompile_encoding` is `PrecompileEncoding::Eip2537`.
+/// Assert:  `success.output.declaration.curve` is `PairingCurve::Bls12381`,
+///   `success.output.declaration.verifier_group_arithmetic` is
+///   `VerifierGroupArithmetic::BothGroups`,
+///   `success.output.declaration.precompile_encoding` is
+///   `PrecompileEncoding::Eip2537`, and `success.output.concrete` is
+///   `PairingConcrete::Bls12381Halo2curves`.
 #[test]
 fn create_pairing_hands_the_consumer_the_bls12_381_halo2curves_concrete_and_its_declaration() {
     // Arrange
     let deps = CreatePairingDeps {
-        consumer: DeclarationProbe,
+        consumer: SelectionProbe,
     };
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Halo2curves),
@@ -177,15 +205,19 @@ fn create_pairing_hands_the_consumer_the_bls12_381_halo2curves_concrete_and_its_
     };
 
     // Assert
-    assert!(matches!(success.output.curve, PairingCurve::Bls12381));
     assert!(matches!(
-        success.output.verifier_group_arithmetic,
+        success.output.declaration.curve,
+        PairingCurve::Bls12381
+    ));
+    assert!(matches!(
+        success.output.declaration.verifier_group_arithmetic,
         VerifierGroupArithmetic::BothGroups
     ));
     assert!(matches!(
-        success.output.precompile_encoding,
+        success.output.declaration.precompile_encoding,
         PrecompileEncoding::Eip2537
     ));
+    assert!(success.output.concrete == PairingConcrete::Bls12381Halo2curves);
 }
 
 /// Contract: unsupported encoding — the named concrete's declared encoding is

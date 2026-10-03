@@ -15,25 +15,32 @@ use crate::factory::provides::{
     EncodeG1SuccessReturn, EncodeG2Params, EncodeG2Payload, EncodeG2Return, EncodeG2SuccessReturn,
     EncodeGtParams, EncodeGtPayload, EncodeGtReturn, EncodeGtSuccessReturn, EncodeScalarParams,
     EncodeScalarPayload, EncodeScalarReturn, EncodeScalarSuccessReturn, G1GeneratorParams,
-    G1GeneratorPayload, G1GeneratorReturn, G1GeneratorSuccessReturn, G2GeneratorParams,
-    G2GeneratorPayload, G2GeneratorReturn, G2GeneratorSuccessReturn, IPairingAdapter,
-    IPairingArithmetic, ISampleUniformScalar, IsIdentityG1Params, IsIdentityG1Payload,
-    IsIdentityG1Return, IsIdentityG1SuccessReturn, IsIdentityG2Params, IsIdentityG2Payload,
-    IsIdentityG2Return, IsIdentityG2SuccessReturn, MsmG1Params, MsmG1Payload, MsmG1Return,
-    MsmG1SuccessReturn, MsmG2Params, MsmG2Payload, MsmG2Return, MsmG2SuccessReturn, MulG1Params,
-    MulG1Payload, MulG1Return, MulG1SuccessReturn, MulG2Params, MulG2Payload, MulG2Return,
-    MulG2SuccessReturn, MulScalarParams, MulScalarPayload, MulScalarReturn, MulScalarSuccessReturn,
-    NegG1Params, NegG1Payload, NegG1Return, NegG1SuccessReturn, NegG2Params, NegG2Payload,
-    NegG2Return, NegG2SuccessReturn, NegScalarParams, NegScalarPayload, NegScalarReturn,
-    NegScalarSuccessReturn, PAIRING_INTERFACE_VERSION, PairingCurve, PairingDeclaration,
+    G1GeneratorPayload, G1GeneratorReturn, G1GeneratorSuccessReturn,
+    G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload,
+    G1OutsideSubgroupEncodingReturn, G1OutsideSubgroupEncodingSuccessReturn, G2GeneratorParams,
+    G2GeneratorPayload, G2GeneratorReturn, G2GeneratorSuccessReturn,
+    G2OutsideSubgroupEncodingErrorReturn, G2OutsideSubgroupEncodingParams,
+    G2OutsideSubgroupEncodingPayload, G2OutsideSubgroupEncodingReturn,
+    G2OutsideSubgroupEncodingSuccessReturn, IPairingAdapter, IPairingArithmetic, IPairingReference,
+    ISampleUniformScalar, IsIdentityG1Params, IsIdentityG1Payload, IsIdentityG1Return,
+    IsIdentityG1SuccessReturn, IsIdentityG2Params, IsIdentityG2Payload, IsIdentityG2Return,
+    IsIdentityG2SuccessReturn, MsmG1Params, MsmG1Payload, MsmG1Return, MsmG1SuccessReturn,
+    MsmG2Params, MsmG2Payload, MsmG2Return, MsmG2SuccessReturn, MulG1Params, MulG1Payload,
+    MulG1Return, MulG1SuccessReturn, MulG2Params, MulG2Payload, MulG2Return, MulG2SuccessReturn,
+    MulScalarParams, MulScalarPayload, MulScalarReturn, MulScalarSuccessReturn, NegG1Params,
+    NegG1Payload, NegG1Return, NegG1SuccessReturn, NegG2Params, NegG2Payload, NegG2Return,
+    NegG2SuccessReturn, NegScalarParams, NegScalarPayload, NegScalarReturn, NegScalarSuccessReturn,
+    PAIRING_INTERFACE_VERSION, PairingConcrete, PairingCurve, PairingDeclaration,
     PairingProductIsOneParams, PairingProductIsOnePayload, PairingProductIsOneReturn,
     PairingProductIsOneSuccessReturn, PairingProductParams, PairingProductPayload,
     PairingProductReturn, PairingProductSuccessReturn, PrecompileEncoding,
     SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
-    SampleUniformScalarReturn, SampleUniformScalarSuccessReturn, TargetGroupEncodingIdentifier,
-    VerifierGroupArithmetic,
+    SampleUniformScalarReturn, SampleUniformScalarSuccessReturn, ScalarFieldOrderParams,
+    ScalarFieldOrderPayload, ScalarFieldOrderReturn, ScalarFieldOrderSuccessReturn,
+    TargetGroupEncodingIdentifier, VerifierGroupArithmetic,
 };
 use core::hint::black_box;
+use core::iter::successors;
 use domain::{Secret, SecretConstructorParams};
 use halo2curves::bn256::{Bn256, Fq, Fq2, Fr, G1Affine, G2Affine, Gt};
 use halo2curves::ff::{Field, FromUniformBytes, PrimeField};
@@ -42,11 +49,12 @@ use halo2curves::msm::msm_best;
 use halo2curves::pairing::{MillerLoopResult, MultiMillerLoop};
 use halo2curves::{Coordinates, CurveAffine};
 use interface::{
-    Bn254Halo2curvesG1, Bn254Halo2curvesG2, Bn254Halo2curvesGt, Bn254Halo2curvesPairing,
-    Bn254Halo2curvesPairingConstructorParams, Bn254Halo2curvesPairingTryNewReturn,
-    Bn254Halo2curvesScalar,
+    Bn254Halo2curvesEncodedG1, Bn254Halo2curvesEncodedG2, Bn254Halo2curvesEncodedGt,
+    Bn254Halo2curvesEncodedScalar, Bn254Halo2curvesG1, Bn254Halo2curvesG2, Bn254Halo2curvesGt,
+    Bn254Halo2curvesPairing, Bn254Halo2curvesPairingConstructorParams,
+    Bn254Halo2curvesPairingTryNewReturn, Bn254Halo2curvesScalar,
 };
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 impl Bn254Halo2curvesPairing {
     pub const DECLARATION: PairingDeclaration = PairingDeclaration {
@@ -66,9 +74,14 @@ impl Bn254Halo2curvesPairing {
 }
 
 impl IPairingAdapter for Bn254Halo2curvesPairing {
+    const DECLARATION: PairingDeclaration = Bn254Halo2curvesPairing::DECLARATION;
+    const CONCRETE: PairingConcrete = PairingConcrete::Bn254Halo2curves;
     type Scalar = Bn254Halo2curvesScalar;
     type G1 = Bn254Halo2curvesG1;
     type G2 = Bn254Halo2curvesG2;
+    type EncodedG1 = Bn254Halo2curvesEncodedG1;
+    type EncodedG2 = Bn254Halo2curvesEncodedG2;
+    type EncodedScalar = Bn254Halo2curvesEncodedScalar;
 
     fn g1_generator(
         &self,
@@ -311,57 +324,69 @@ impl IPairingAdapter for Bn254Halo2curvesPairing {
         &self,
         _params: EncodeG1Params,
         payload: EncodeG1Payload<Self::G1>,
-    ) -> EncodeG1Return {
-        let mut bytes = Vec::with_capacity(64);
-        match Option::<Coordinates<G1Affine>>::from(payload.point.value.coordinates()) {
-            None => bytes.extend_from_slice(&[0u8; 64]),
-            Some(coordinates) => {
-                bytes.extend(coordinates.x().to_repr().as_ref().iter().rev());
-                bytes.extend(coordinates.y().to_repr().as_ref().iter().rev());
-            }
+    ) -> EncodeG1Return<Self::EncodedG1> {
+        let mut bytes = [0u8; 64];
+        if let Some(coordinates) =
+            Option::<Coordinates<G1Affine>>::from(payload.point.value.coordinates())
+        {
+            let mut x = coordinates.x().to_repr();
+            x.as_mut().reverse();
+            bytes[0..32].copy_from_slice(x.as_ref());
+            let mut y = coordinates.y().to_repr();
+            y.as_mut().reverse();
+            bytes[32..64].copy_from_slice(y.as_ref());
         }
-        Ok(EncodeG1SuccessReturn { bytes })
+        Ok(EncodeG1SuccessReturn {
+            bytes: Bn254Halo2curvesEncodedG1 { bytes },
+        })
     }
 
     fn encode_g2(
         &self,
         _params: EncodeG2Params,
         payload: EncodeG2Payload<Self::G2>,
-    ) -> EncodeG2Return {
-        let mut bytes = Vec::with_capacity(128);
-        match Option::<Coordinates<G2Affine>>::from(payload.point.value.coordinates()) {
-            None => bytes.extend_from_slice(&[0u8; 128]),
-            Some(coordinates) => {
-                bytes.extend(coordinates.x().c1().to_repr().as_ref().iter().rev());
-                bytes.extend(coordinates.x().c0().to_repr().as_ref().iter().rev());
-                bytes.extend(coordinates.y().c1().to_repr().as_ref().iter().rev());
-                bytes.extend(coordinates.y().c0().to_repr().as_ref().iter().rev());
-            }
+    ) -> EncodeG2Return<Self::EncodedG2> {
+        let mut bytes = [0u8; 128];
+        if let Some(coordinates) =
+            Option::<Coordinates<G2Affine>>::from(payload.point.value.coordinates())
+        {
+            let mut x_c1 = coordinates.x().c1().to_repr();
+            x_c1.as_mut().reverse();
+            bytes[0..32].copy_from_slice(x_c1.as_ref());
+            let mut x_c0 = coordinates.x().c0().to_repr();
+            x_c0.as_mut().reverse();
+            bytes[32..64].copy_from_slice(x_c0.as_ref());
+            let mut y_c1 = coordinates.y().c1().to_repr();
+            y_c1.as_mut().reverse();
+            bytes[64..96].copy_from_slice(y_c1.as_ref());
+            let mut y_c0 = coordinates.y().c0().to_repr();
+            y_c0.as_mut().reverse();
+            bytes[96..128].copy_from_slice(y_c0.as_ref());
         }
-        Ok(EncodeG2SuccessReturn { bytes })
+        Ok(EncodeG2SuccessReturn {
+            bytes: Bn254Halo2curvesEncodedG2 { bytes },
+        })
     }
 
     fn encode_scalar(
         &self,
         _params: EncodeScalarParams,
         payload: EncodeScalarPayload<Self::Scalar>,
-    ) -> EncodeScalarReturn {
-        let bytes: Vec<u8> = payload
-            .scalar
-            .value
-            .to_repr()
-            .as_ref()
-            .iter()
-            .rev()
-            .copied()
-            .collect();
-        let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: bytes });
+    ) -> EncodeScalarReturn<Self::EncodedScalar> {
+        let mut repr = payload.scalar.value.to_repr();
+        repr.as_mut().reverse();
+        let mut bytes = [0u8; 32];
+        bytes.copy_from_slice(repr.as_ref());
+        let Ok(bytes) = Secret::try_new(SecretConstructorParams {
+            value: Bn254Halo2curvesEncodedScalar { bytes },
+        });
         Ok(EncodeScalarSuccessReturn { bytes })
     }
 }
 
 impl IPairingArithmetic for Bn254Halo2curvesPairing {
     type Gt = Bn254Halo2curvesGt;
+    type EncodedGt = Bn254Halo2curvesEncodedGt;
 
     fn add_scalar(
         &self,
@@ -463,7 +488,7 @@ impl IPairingArithmetic for Bn254Halo2curvesPairing {
         &self,
         _params: EncodeGtParams,
         payload: EncodeGtPayload<Self::Gt>,
-    ) -> EncodeGtReturn {
+    ) -> EncodeGtReturn<Self::EncodedGt> {
         let value = payload.value.value.inner();
         let coefficients = [
             value.c0().c0().c0(),
@@ -479,12 +504,115 @@ impl IPairingArithmetic for Bn254Halo2curvesPairing {
             value.c1().c2().c0(),
             value.c1().c2().c1(),
         ];
-        let mut buffer = Vec::with_capacity(384);
-        for coefficient in coefficients {
-            buffer.extend(coefficient.to_repr().as_ref().iter().rev());
+        let mut bytes = [0u8; 384];
+        for (position, coefficient) in coefficients.iter().enumerate() {
+            let mut repr = coefficient.to_repr();
+            repr.as_mut().reverse();
+            bytes[position * 32..(position + 1) * 32].copy_from_slice(repr.as_ref());
         }
-        let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });
+        let Ok(bytes) = Secret::try_new(SecretConstructorParams {
+            value: Bn254Halo2curvesEncodedGt { bytes },
+        });
         Ok(EncodeGtSuccessReturn { bytes })
+    }
+}
+
+impl IPairingReference for Bn254Halo2curvesPairing {
+    fn scalar_field_order(
+        &self,
+        _params: ScalarFieldOrderParams,
+        _payload: ScalarFieldOrderPayload,
+    ) -> ScalarFieldOrderReturn {
+        let mut bytes = (-Fr::ONE).to_repr();
+        bytes.as_mut().reverse();
+        bytes.as_mut()[31] |= 1;
+        Ok(ScalarFieldOrderSuccessReturn {
+            bytes: bytes.as_ref().to_vec(),
+        })
+    }
+
+    fn g1_outside_subgroup_encoding(
+        &self,
+        _params: G1OutsideSubgroupEncodingParams,
+        _payload: G1OutsideSubgroupEncodingPayload,
+    ) -> G1OutsideSubgroupEncodingReturn<Self::EncodedG1> {
+        Ok(G1OutsideSubgroupEncodingSuccessReturn { bytes: None })
+    }
+
+    fn g2_outside_subgroup_encoding(
+        &self,
+        _params: G2OutsideSubgroupEncodingParams,
+        _payload: G2OutsideSubgroupEncodingPayload,
+    ) -> G2OutsideSubgroupEncodingReturn<Self::EncodedG2> {
+        let Some(value) = successors(Some(Fq::ONE), |c0| Some(*c0 + Fq::ONE)).find_map(|c0| {
+            let x = Fq2::new(c0, Fq::ZERO);
+            let y = Option::<Fq2>::from((x.square() * x + G2Affine::b()).sqrt())?;
+            let point = Option::<G2Affine>::from(G2Affine::from_xy(x, y))?;
+            if bool::from(point.to_curve().is_torsion_free()) {
+                return None;
+            }
+            let negated = -y;
+            let mut y_c1 = y.c1().to_repr();
+            y_c1.as_mut().reverse();
+            let mut y_c0 = y.c0().to_repr();
+            y_c0.as_mut().reverse();
+            let mut negated_c1 = negated.c1().to_repr();
+            negated_c1.as_mut().reverse();
+            let mut negated_c0 = negated.c0().to_repr();
+            negated_c0.as_mut().reverse();
+            if (y_c1.as_ref(), y_c0.as_ref()) <= (negated_c1.as_ref(), negated_c0.as_ref()) {
+                Some(point)
+            } else {
+                Some(-point)
+            }
+        }) else {
+            return Err(G2OutsideSubgroupEncodingErrorReturn::SearchExhausted);
+        };
+        let Ok(encoded) = self.encode_g2(
+            EncodeG2Params,
+            EncodeG2Payload {
+                point: Bn254Halo2curvesG2 { value },
+            },
+        );
+        Ok(G2OutsideSubgroupEncodingSuccessReturn {
+            bytes: encoded.bytes,
+        })
+    }
+}
+
+impl AsRef<[u8]> for Bn254Halo2curvesEncodedG1 {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
+impl AsRef<[u8]> for Bn254Halo2curvesEncodedG2 {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
+impl AsRef<[u8]> for Bn254Halo2curvesEncodedScalar {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
+impl AsRef<[u8]> for Bn254Halo2curvesEncodedGt {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
+impl Zeroize for Bn254Halo2curvesEncodedScalar {
+    fn zeroize(&mut self) {
+        self.bytes.zeroize();
+    }
+}
+
+impl Zeroize for Bn254Halo2curvesEncodedGt {
+    fn zeroize(&mut self) {
+        self.bytes.zeroize();
     }
 }
 
@@ -501,6 +629,8 @@ impl Drop for Bn254Halo2curvesScalar {
         black_box(&self.value);
     }
 }
+
+impl ZeroizeOnDrop for Bn254Halo2curvesScalar {}
 
 impl Zeroize for Bn254Halo2curvesG1 {
     fn zeroize(&mut self) {
@@ -562,9 +692,8 @@ impl ISampleUniformScalar for Bn254Halo2curvesScalar {
         copy.reverse();
         let value = Fr::from_uniform_bytes(&copy);
         copy.zeroize();
-        let Ok(scalar) = Secret::try_new(SecretConstructorParams {
-            value: Bn254Halo2curvesScalar { value },
-        });
+        let value = Bn254Halo2curvesScalar { value };
+        let Ok(scalar) = Secret::try_new(SecretConstructorParams { value });
         Ok(SampleUniformScalarSuccessReturn { scalar })
     }
 }

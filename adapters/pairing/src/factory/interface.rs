@@ -1,6 +1,6 @@
 use core::convert::Infallible;
 use domain::Secret;
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 pub const PAIRING_INTERFACE_VERSION: u32 = 1;
 
@@ -66,7 +66,7 @@ pub enum SampleUniformScalarErrorReturn {
 pub type SampleUniformScalarReturn<S> =
     Result<SampleUniformScalarSuccessReturn<S>, SampleUniformScalarErrorReturn>;
 
-pub trait ISampleUniformScalar: Zeroize + Sized {
+pub trait ISampleUniformScalar: Zeroize + ZeroizeOnDrop + Sized {
     const UNIFORM_BYTES_LENGTH: usize;
 
     fn sample_from_uniform_bytes(
@@ -247,11 +247,11 @@ pub struct EncodeG1Payload<G> {
     pub point: G,
 }
 
-pub struct EncodeG1SuccessReturn {
-    pub bytes: Vec<u8>,
+pub struct EncodeG1SuccessReturn<E> {
+    pub bytes: E,
 }
 
-pub type EncodeG1Return = Result<EncodeG1SuccessReturn, Infallible>;
+pub type EncodeG1Return<E> = Result<EncodeG1SuccessReturn<E>, Infallible>;
 
 pub struct EncodeG2Params;
 
@@ -259,11 +259,11 @@ pub struct EncodeG2Payload<G> {
     pub point: G,
 }
 
-pub struct EncodeG2SuccessReturn {
-    pub bytes: Vec<u8>,
+pub struct EncodeG2SuccessReturn<E> {
+    pub bytes: E,
 }
 
-pub type EncodeG2Return = Result<EncodeG2SuccessReturn, Infallible>;
+pub type EncodeG2Return<E> = Result<EncodeG2SuccessReturn<E>, Infallible>;
 
 pub struct EncodeScalarParams;
 
@@ -271,11 +271,11 @@ pub struct EncodeScalarPayload<S> {
     pub scalar: S,
 }
 
-pub struct EncodeScalarSuccessReturn {
-    pub bytes: Secret<Vec<u8>>,
+pub struct EncodeScalarSuccessReturn<E: Zeroize> {
+    pub bytes: Secret<E>,
 }
 
-pub type EncodeScalarReturn = Result<EncodeScalarSuccessReturn, Infallible>;
+pub type EncodeScalarReturn<E> = Result<EncodeScalarSuccessReturn<E>, Infallible>;
 
 pub struct AddScalarParams;
 
@@ -381,16 +381,22 @@ pub struct EncodeGtPayload<T> {
     pub value: T,
 }
 
-pub struct EncodeGtSuccessReturn {
-    pub bytes: Secret<Vec<u8>>,
+pub struct EncodeGtSuccessReturn<E: Zeroize> {
+    pub bytes: Secret<E>,
 }
 
-pub type EncodeGtReturn = Result<EncodeGtSuccessReturn, Infallible>;
+pub type EncodeGtReturn<E> = Result<EncodeGtSuccessReturn<E>, Infallible>;
 
 pub trait IPairingAdapter {
+    const DECLARATION: PairingDeclaration;
+    const CONCRETE: PairingConcrete;
+
     type Scalar: ISampleUniformScalar + Clone;
     type G1: Clone;
     type G2: Clone;
+    type EncodedG1: AsRef<[u8]> + Clone + PartialEq + Eq;
+    type EncodedG2: AsRef<[u8]> + Clone + PartialEq + Eq;
+    type EncodedScalar: AsRef<[u8]> + Zeroize;
 
     fn g1_generator(
         &self,
@@ -454,23 +460,24 @@ pub trait IPairingAdapter {
         &self,
         params: EncodeG1Params,
         payload: EncodeG1Payload<Self::G1>,
-    ) -> EncodeG1Return;
+    ) -> EncodeG1Return<Self::EncodedG1>;
 
     fn encode_g2(
         &self,
         params: EncodeG2Params,
         payload: EncodeG2Payload<Self::G2>,
-    ) -> EncodeG2Return;
+    ) -> EncodeG2Return<Self::EncodedG2>;
 
     fn encode_scalar(
         &self,
         params: EncodeScalarParams,
         payload: EncodeScalarPayload<Self::Scalar>,
-    ) -> EncodeScalarReturn;
+    ) -> EncodeScalarReturn<Self::EncodedScalar>;
 }
 
 pub trait IPairingArithmetic: IPairingAdapter<G1: Zeroize, G2: Zeroize> {
     type Gt: Zeroize;
+    type EncodedGt: AsRef<[u8]> + Zeroize;
 
     fn add_scalar(
         &self,
@@ -518,9 +525,10 @@ pub trait IPairingArithmetic: IPairingAdapter<G1: Zeroize, G2: Zeroize> {
         &self,
         params: EncodeGtParams,
         payload: EncodeGtPayload<Self::Gt>,
-    ) -> EncodeGtReturn;
+    ) -> EncodeGtReturn<Self::EncodedGt>;
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum PairingConcrete {
     Bn254Arkworks,
     Bn254Halo2curves,
@@ -528,10 +536,78 @@ pub enum PairingConcrete {
     Bls12381Halo2curves,
 }
 
+pub struct ScalarFieldOrderParams;
+
+pub struct ScalarFieldOrderPayload;
+
+pub struct ScalarFieldOrderSuccessReturn {
+    pub bytes: Vec<u8>,
+}
+
+pub type ScalarFieldOrderReturn = Result<ScalarFieldOrderSuccessReturn, Infallible>;
+
+pub struct G1OutsideSubgroupEncodingParams;
+
+pub struct G1OutsideSubgroupEncodingPayload;
+
+pub struct G1OutsideSubgroupEncodingSuccessReturn<E> {
+    pub bytes: Option<E>,
+}
+
+pub enum G1OutsideSubgroupEncodingErrorReturn {
+    SearchExhausted,
+}
+
+pub type G1OutsideSubgroupEncodingReturn<E> =
+    Result<G1OutsideSubgroupEncodingSuccessReturn<E>, G1OutsideSubgroupEncodingErrorReturn>;
+
+pub struct G2OutsideSubgroupEncodingParams;
+
+pub struct G2OutsideSubgroupEncodingPayload;
+
+pub struct G2OutsideSubgroupEncodingSuccessReturn<E> {
+    pub bytes: E,
+}
+
+pub enum G2OutsideSubgroupEncodingErrorReturn {
+    SearchExhausted,
+}
+
+pub type G2OutsideSubgroupEncodingReturn<E> =
+    Result<G2OutsideSubgroupEncodingSuccessReturn<E>, G2OutsideSubgroupEncodingErrorReturn>;
+
+/// The family's outside-the-subgroup point of a source group is the on-curve
+/// point outside the prime-order subgroup with the least first coordinate in
+/// an ascending search — `x = 1, 2, 3, …` in the first group and `x = (c0, 0)`
+/// with `c0 = 1, 2, 3, …` in the second — and, of the two points sharing that
+/// `x`, the one whose `y` is the lesser: in the first group the lesser
+/// integer, and in the second the `y` whose `c1` is the lesser integer, or
+/// whose `c0` is the lesser where both `c1` are zero. The rule is the
+/// family's, so every library of one curve yields the same bytes.
+pub trait IPairingReference: IPairingAdapter {
+    fn scalar_field_order(
+        &self,
+        params: ScalarFieldOrderParams,
+        payload: ScalarFieldOrderPayload,
+    ) -> ScalarFieldOrderReturn;
+
+    fn g1_outside_subgroup_encoding(
+        &self,
+        params: G1OutsideSubgroupEncodingParams,
+        payload: G1OutsideSubgroupEncodingPayload,
+    ) -> G1OutsideSubgroupEncodingReturn<Self::EncodedG1>;
+
+    fn g2_outside_subgroup_encoding(
+        &self,
+        params: G2OutsideSubgroupEncodingParams,
+        payload: G2OutsideSubgroupEncodingPayload,
+    ) -> G2OutsideSubgroupEncodingReturn<Self::EncodedG2>;
+}
+
 pub trait IPairingConsumer {
     type Output;
 
-    fn consume_pairing<P: IPairingArithmetic>(
+    fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
         &self,
         params: ConsumePairingParams,
         payload: ConsumePairingPayload<P>,
@@ -540,9 +616,8 @@ pub trait IPairingConsumer {
 
 pub struct ConsumePairingParams;
 
-pub struct ConsumePairingPayload<P> {
+pub struct ConsumePairingPayload<P: IPairingAdapter> {
     pub adapter: P,
-    pub declaration: PairingDeclaration,
 }
 
 pub struct CreatePairingDeps<C> {

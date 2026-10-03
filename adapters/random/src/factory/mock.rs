@@ -55,7 +55,9 @@ pub fn build_fill_bytes_success_return(
 ) -> FillBytesSuccessReturn {
     FillBytesSuccessReturn {
         bytes: overrides.bytes.unwrap_or_else(|| {
-            build_secret::<Vec<u8>>(SecretConstructorParamsOverrides::default())
+            build_secret::<Vec<u8>>(SecretConstructorParamsOverrides {
+                value: Some(vec![0u8; 32]),
+            })
         }),
     }
 }
@@ -63,8 +65,18 @@ pub fn build_fill_bytes_success_return(
 pub struct MockIRandomSourceAdapter;
 
 impl IRandomSourceAdapter for MockIRandomSourceAdapter {
-    fn fill_bytes(&self, _params: FillBytesParams, _payload: FillBytesPayload) -> FillBytesReturn {
-        Ok(build_fill_bytes_success_return(Default::default()))
+    fn declaration(&self) -> RandomSourceDeclaration {
+        build_random_source_declaration(Default::default())
+    }
+
+    fn fill_bytes(&self, _params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn {
+        Ok(build_fill_bytes_success_return(
+            FillBytesSuccessReturnOverrides {
+                bytes: Some(build_secret(SecretConstructorParamsOverrides {
+                    value: Some(vec![0u8; payload.length]),
+                })),
+            },
+        ))
     }
 }
 
@@ -84,7 +96,6 @@ pub fn build_create_random_source_params(
 #[derive(Default)]
 pub struct CreateRandomSourceSuccessReturnOverrides {
     pub adapter: Option<Box<dyn IRandomSourceAdapter>>,
-    pub declaration: Option<RandomSourceDeclaration>,
 }
 
 pub fn build_create_random_source_success_return(
@@ -94,9 +105,6 @@ pub fn build_create_random_source_success_return(
         adapter: overrides
             .adapter
             .unwrap_or_else(|| Box::new(MockIRandomSourceAdapter)),
-        declaration: overrides
-            .declaration
-            .unwrap_or_else(|| build_random_source_declaration(Default::default())),
     }
 }
 
