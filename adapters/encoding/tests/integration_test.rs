@@ -63,7 +63,9 @@ impl IEncodingConsumer for RoundTripCheck {
                 description: &description,
             },
             &self.context,
-        );
+        ) else {
+            panic!("the reference context encodes through the family's encoder trait")
+        };
         let Ok(decoded) = payload.adapter.decode(
             DecodeParams {
                 description: &description,

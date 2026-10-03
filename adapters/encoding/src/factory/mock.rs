@@ -124,6 +124,12 @@ pub fn build_decode_success_return<T: Default>(
 pub struct MockIEncoderAdapter;
 
 impl IEncoderAdapter for MockIEncoderAdapter {
+    const DECLARATION: EncodingDeclaration = EncodingDeclaration {
+        identifier: EncodingIdentifier::EthereumAbiV1,
+        adapter_version: 1,
+        interface_version: ENCODING_INTERFACE_VERSION,
+    };
+
     fn encode<D: IEncodingContract>(
         &self,
         _params: EncodeParams<'_, D>,
@@ -186,17 +192,13 @@ pub fn build_create_encoding_success_return<O: Default>(
 #[derive(Default)]
 pub struct ConsumeEncodingPayloadOverrides<E> {
     pub adapter: Option<E>,
-    pub declaration: Option<EncodingDeclaration>,
 }
 
-pub fn build_consume_encoding_payload<E: Default>(
+pub fn build_consume_encoding_payload<E: IEncoderAdapter + Default>(
     overrides: ConsumeEncodingPayloadOverrides<E>,
 ) -> ConsumeEncodingPayload<E> {
     ConsumeEncodingPayload {
         adapter: overrides.adapter.unwrap_or_default(),
-        declaration: overrides
-            .declaration
-            .unwrap_or_else(|| build_encoding_declaration(Default::default())),
     }
 }
 

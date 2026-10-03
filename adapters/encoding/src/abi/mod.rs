@@ -5,8 +5,8 @@ mod test;
 
 use crate::factory::provides::{
     CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, DecodeErrorReturn, DecodeParams,
-    DecodeReturn, DecodeSuccessReturn, ENCODING_INTERFACE_VERSION, EncodeParams, EncodeReturn,
-    EncodeSuccessReturn, EncodingDeclaration, EncodingIdentifier, FromFieldsParams,
+    DecodeReturn, DecodeSuccessReturn, ENCODING_INTERFACE_VERSION, EncodeErrorReturn, EncodeParams,
+    EncodeReturn, EncodeSuccessReturn, EncodingDeclaration, EncodingIdentifier, FromFieldsParams,
     IDecoderAdapter, IEncoderAdapter, IEncodingContract, ToFieldsParams,
 };
 use alloy::dyn_abi::{DynSolType, DynSolValue};
@@ -28,15 +28,41 @@ impl AbiEncoding {
 }
 
 impl IEncoderAdapter for AbiEncoding {
+    const DECLARATION: EncodingDeclaration = AbiEncoding::DECLARATION;
+
     fn encode<D: IEncodingContract>(
         &self,
         params: EncodeParams<'_, D>,
         payload: &D::Described,
     ) -> EncodeReturn {
         let Ok(success) = params.description.to_fields(ToFieldsParams, payload);
-        let items = success
-            .fields
-            .values
+        let values = success.fields.values;
+        if values.len() != D::FIELDS.len() {
+            return Err(EncodeErrorReturn::FieldCount {
+                expected: D::FIELDS.len(),
+                actual: values.len(),
+            });
+        }
+        for (index, (value, expected)) in values.iter().zip(D::FIELDS.iter()).enumerate() {
+            let actual = match value {
+                CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
+                CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
+                CanonicalFieldValue::Unsigned32(_) => CanonicalFieldKind::Unsigned32,
+                CanonicalFieldValue::Unsigned64(_) => CanonicalFieldKind::Unsigned64,
+                CanonicalFieldValue::Text(_) => CanonicalFieldKind::Text,
+                CanonicalFieldValue::Bytes(_) => CanonicalFieldKind::Bytes,
+                CanonicalFieldValue::FixedBytes20(_) => CanonicalFieldKind::FixedBytes20,
+                CanonicalFieldValue::Unsigned256(_) => CanonicalFieldKind::Unsigned256,
+            };
+            if actual != *expected {
+                return Err(EncodeErrorReturn::FieldKind {
+                    index,
+                    expected: *expected,
+                    actual,
+                });
+            }
+        }
+        let items = values
             .into_iter()
             .map(|value| match value {
                 CanonicalFieldValue::FixedBytes32(bytes) => {
@@ -240,13 +266,16 @@ impl IDecoderAdapter for AbiEncoding {
             Err(error) => return Err(DecodeErrorReturn::Description(error)),
         };
 
-        let Ok(re_encoded) = self.encode(
+        let re_encoded = match self.encode(
             EncodeParams {
                 description: params.description,
             },
             &described,
-        );
-        if re_encoded.bytes != payload {
+        ) {
+            Ok(success) => success.bytes,
+            Err(error) => return Err(DecodeErrorReturn::EncoderContract(error)),
+        };
+        if re_encoded != payload {
             return Err(DecodeErrorReturn::Abi(AbiDecoderErrorReturn::NonCanonical));
         }
         Ok(DecodeSuccessReturn { described })

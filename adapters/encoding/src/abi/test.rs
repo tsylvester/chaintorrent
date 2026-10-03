@@ -12,9 +12,9 @@ use crate::derivation_context::provides::{
 };
 use crate::factory::provides::{
     CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, DecodeErrorReturn, DecodeParams,
-    ENCODING_INTERFACE_VERSION, EncodeParams, EncodingIdentifier, FromFieldsParams,
-    FromFieldsReturn, FromFieldsSuccessReturn, IDecoderAdapter, IEncoderAdapter, IEncodingContract,
-    ToFieldsParams, ToFieldsReturn, ToFieldsSuccessReturn,
+    ENCODING_INTERFACE_VERSION, EncodeErrorReturn, EncodeParams, EncodingIdentifier,
+    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IDecoderAdapter, IEncoderAdapter,
+    IEncodingContract, ToFieldsParams, ToFieldsReturn, ToFieldsSuccessReturn,
 };
 use domain::{
     AssetIdentityConstructorParamsOverrides, DeploymentIdentityConstructorParamsOverrides,
@@ -238,7 +238,9 @@ fn encode_writes_the_reference_context_as_its_abi_parameter_encoding() {
             description: &description,
         },
         &context,
-    );
+    ) else {
+        panic!("a described value encodes as its ABI parameter encoding")
+    };
 
     // Assert
     assert_eq!(success.bytes, bytes);
@@ -600,7 +602,9 @@ fn encode_writes_a_byte_string_in_the_dynamic_tail() {
             description: &BytesProbeDescription,
         },
         &value,
-    );
+    ) else {
+        panic!("a byte string encodes as its ABI parameter encoding")
+    };
 
     // Assert
     assert_eq!(success.bytes, bytes);
@@ -693,7 +697,9 @@ fn encode_writes_the_width_kinds_as_bytes20_and_uint256() {
             description: &WidthsProbeDescription,
         },
         &value,
-    );
+    ) else {
+        panic!("the width kinds encode as their ABI parameter encoding")
+    };
 
     // Assert
     assert_eq!(success.bytes, bytes);
@@ -760,5 +766,195 @@ fn decode_rejects_nonzero_fixed_bytes20_padding() {
     assert!(matches!(
         error,
         DecodeErrorReturn::Abi(AbiDecoderErrorReturn::NonCanonical)
+    ));
+}
+
+struct CountMismatchDescription;
+
+impl IEncodingContract for CountMismatchDescription {
+    type Described = BytesProbe;
+    type FromFieldsErrorReturn = BytesProbeFromFieldsErrorReturn;
+    const FIELDS: &'static [CanonicalFieldKind] =
+        &[CanonicalFieldKind::Bytes, CanonicalFieldKind::FixedBytes32];
+
+    fn to_fields(&self, _params: ToFieldsParams, payload: &Self::Described) -> ToFieldsReturn {
+        Ok(ToFieldsSuccessReturn {
+            fields: CanonicalFields {
+                values: vec![CanonicalFieldValue::Bytes(payload.bytes.clone())],
+            },
+        })
+    }
+
+    fn fields_to_value(
+        &self,
+        _params: FromFieldsParams,
+        payload: CanonicalFields,
+    ) -> FromFieldsReturn<BytesProbe, BytesProbeFromFieldsErrorReturn> {
+        let Ok([bytes_value, word_value]): Result<
+            [CanonicalFieldValue; 2],
+            Vec<CanonicalFieldValue>,
+        > = payload.values.try_into() else {
+            return Err(BytesProbeFromFieldsErrorReturn::Shape);
+        };
+        let CanonicalFieldValue::Bytes(bytes) = bytes_value else {
+            return Err(BytesProbeFromFieldsErrorReturn::Shape);
+        };
+        let CanonicalFieldValue::FixedBytes32(word) = word_value else {
+            return Err(BytesProbeFromFieldsErrorReturn::Shape);
+        };
+        Ok(FromFieldsSuccessReturn {
+            described: BytesProbe { bytes, word },
+        })
+    }
+}
+
+struct KindMismatchDescription;
+
+impl IEncodingContract for KindMismatchDescription {
+    type Described = BytesProbe;
+    type FromFieldsErrorReturn = BytesProbeFromFieldsErrorReturn;
+    const FIELDS: &'static [CanonicalFieldKind] =
+        &[CanonicalFieldKind::Bytes, CanonicalFieldKind::FixedBytes32];
+
+    fn to_fields(&self, _params: ToFieldsParams, payload: &Self::Described) -> ToFieldsReturn {
+        Ok(ToFieldsSuccessReturn {
+            fields: CanonicalFields {
+                values: vec![
+                    CanonicalFieldValue::Bytes(payload.bytes.clone()),
+                    CanonicalFieldValue::Bytes(payload.word.to_vec()),
+                ],
+            },
+        })
+    }
+
+    fn fields_to_value(
+        &self,
+        _params: FromFieldsParams,
+        payload: CanonicalFields,
+    ) -> FromFieldsReturn<BytesProbe, BytesProbeFromFieldsErrorReturn> {
+        let Ok([bytes_value, word_value]): Result<
+            [CanonicalFieldValue; 2],
+            Vec<CanonicalFieldValue>,
+        > = payload.values.try_into() else {
+            return Err(BytesProbeFromFieldsErrorReturn::Shape);
+        };
+        let CanonicalFieldValue::Bytes(bytes) = bytes_value else {
+            return Err(BytesProbeFromFieldsErrorReturn::Shape);
+        };
+        let CanonicalFieldValue::FixedBytes32(word) = word_value else {
+            return Err(BytesProbeFromFieldsErrorReturn::Shape);
+        };
+        Ok(FromFieldsSuccessReturn {
+            described: BytesProbe { bytes, word },
+        })
+    }
+}
+
+/// Contract: a description emitting a field count other than its declared
+///   schema's is refused before ABI encoding, naming both counts.
+/// Arrange: `CountMismatchDescription`, declaring two kinds and emitting
+///   one, and the byte-string value.
+/// Act:     `encoding.encode(EncodeParams { description: &CountMismatchDescription }, &value)`.
+/// Assert:  `error` matches `EncodeErrorReturn::FieldCount { expected: 2,
+///   actual: 1 }`.
+#[test]
+fn encode_rejects_a_description_emitting_the_wrong_count() {
+    // Arrange
+    let Ok(encoding) = AbiEncoding::try_new(AbiEncodingConstructorParams);
+    let value = BytesProbe {
+        bytes: vec![0x01, 0x02, 0x03, 0x04, 0x05],
+        word: [0x0d; 32],
+    };
+
+    // Act
+    let Err(error) = encoding.encode(
+        EncodeParams {
+            description: &CountMismatchDescription,
+        },
+        &value,
+    ) else {
+        panic!("a description emitting the wrong count is refused")
+    };
+
+    // Assert
+    assert!(matches!(
+        error,
+        EncodeErrorReturn::FieldCount {
+            expected: 2,
+            actual: 1
+        }
+    ));
+}
+
+/// Contract: a description emitting a field whose kind differs from its
+///   declared schema's is refused before ABI encoding, naming the index
+///   and both kinds.
+/// Arrange: `KindMismatchDescription`, declaring Bytes then FixedBytes32
+///   and emitting Bytes then Bytes, and the byte-string value.
+/// Act:     `encoding.encode(EncodeParams { description: &KindMismatchDescription }, &value)`.
+/// Assert:  `error` matches `EncodeErrorReturn::FieldKind { index: 1,
+///   expected: CanonicalFieldKind::FixedBytes32, actual:
+///   CanonicalFieldKind::Bytes }`.
+#[test]
+fn encode_rejects_a_description_emitting_the_wrong_kind() {
+    // Arrange
+    let Ok(encoding) = AbiEncoding::try_new(AbiEncodingConstructorParams);
+    let value = BytesProbe {
+        bytes: vec![0x01, 0x02, 0x03, 0x04, 0x05],
+        word: [0x0d; 32],
+    };
+
+    // Act
+    let Err(error) = encoding.encode(
+        EncodeParams {
+            description: &KindMismatchDescription,
+        },
+        &value,
+    ) else {
+        panic!("a description emitting the wrong kind is refused")
+    };
+
+    // Assert
+    assert!(matches!(
+        error,
+        EncodeErrorReturn::FieldKind {
+            index: 1,
+            expected: CanonicalFieldKind::FixedBytes32,
+            actual: CanonicalFieldKind::Bytes
+        }
+    ));
+}
+
+/// Contract: a description that admits a canonically decoded value but
+///   emits a field list disagreeing with its declared schema reports the
+///   encoder's schema refusal, not a malformed input.
+/// Arrange: `CountMismatchDescription`, admitting the decoded fields and
+///   emitting one field against two declared, and the byte-string vector,
+///   canonical for the declared schema.
+/// Act:     `encoding.decode(DecodeParams { description: &CountMismatchDescription }, &bytes)`.
+/// Assert:  `error` matches `DecodeErrorReturn::EncoderContract(
+///   EncodeErrorReturn::FieldCount { .. })`.
+#[test]
+fn decode_reports_a_description_whose_reencoding_disagrees_with_its_schema() {
+    // Arrange
+    let Ok(encoding) = AbiEncoding::try_new(AbiEncodingConstructorParams);
+    let Ok(bytes) = decode(BYTES_PROBE_VECTOR_HEX) else {
+        panic!("the byte-string vector is valid hex")
+    };
+
+    // Act
+    let Err(error) = encoding.decode(
+        DecodeParams {
+            description: &CountMismatchDescription,
+        },
+        &bytes,
+    ) else {
+        panic!("a description whose re-encoding disagrees with its schema is reported")
+    };
+
+    // Assert
+    assert!(matches!(
+        error,
+        DecodeErrorReturn::EncoderContract(EncodeErrorReturn::FieldCount { .. })
     ));
 }

@@ -82,9 +82,24 @@ pub struct EncodeSuccessReturn {
     pub bytes: Vec<u8>,
 }
 
-pub type EncodeReturn = Result<EncodeSuccessReturn, Infallible>;
+#[derive(Debug, PartialEq, Eq)]
+pub enum EncodeErrorReturn {
+    FieldCount {
+        expected: usize,
+        actual: usize,
+    },
+    FieldKind {
+        index: usize,
+        expected: CanonicalFieldKind,
+        actual: CanonicalFieldKind,
+    },
+}
+
+pub type EncodeReturn = Result<EncodeSuccessReturn, EncodeErrorReturn>;
 
 pub trait IEncoderAdapter {
+    const DECLARATION: EncodingDeclaration;
+
     fn encode<D: IEncodingContract>(
         &self,
         params: EncodeParams<'_, D>,
@@ -104,6 +119,7 @@ pub struct DecodeSuccessReturn<T> {
 pub enum DecodeErrorReturn<E> {
     Abi(AbiDecoderErrorReturn),
     Description(E),
+    EncoderContract(EncodeErrorReturn),
 }
 
 pub type DecodeReturn<T, E> = Result<DecodeSuccessReturn<T>, DecodeErrorReturn<E>>;
@@ -133,9 +149,8 @@ pub trait IEncodingConsumer {
 
 pub struct ConsumeEncodingParams;
 
-pub struct ConsumeEncodingPayload<E> {
+pub struct ConsumeEncodingPayload<E: IEncoderAdapter> {
     pub adapter: E,
-    pub declaration: EncodingDeclaration,
 }
 
 pub struct CreateEncodingDeps<C> {

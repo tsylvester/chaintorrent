@@ -25,10 +25,7 @@ pub fn create_encoding<C: IEncodingConsumer>(
             let Ok(adapter) = AbiEncoding::try_new(AbiEncodingConstructorParams);
             let output = deps.consumer.consume_encoding(
                 ConsumeEncodingParams,
-                ConsumeEncodingPayload {
-                    adapter,
-                    declaration: AbiEncoding::DECLARATION,
-                },
+                ConsumeEncodingPayload { adapter },
             );
             Ok(CreateEncodingSuccessReturn { output })
         }

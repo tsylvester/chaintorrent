@@ -21,9 +21,9 @@ impl IEncodingConsumer for DeclarationProbe {
     fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
         &self,
         _params: ConsumeEncodingParams,
-        payload: ConsumeEncodingPayload<E>,
+        _payload: ConsumeEncodingPayload<E>,
     ) -> Self::Output {
-        payload.declaration
+        E::DECLARATION
     }
 }
 
