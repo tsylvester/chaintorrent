@@ -1,7 +1,7 @@
 use core::convert::Infallible;
 use core::num::NonZeroU32;
 use core::time::Duration;
-use pairing::SampleUniformScalarErrorReturn;
+use pairing::{PairingConcrete, SampleUniformScalarErrorReturn};
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
 pub struct PairingBenchmark {
@@ -25,6 +25,8 @@ pub struct PairingOperationTimings {
 }
 
 pub struct PairingBenchmarkSuccessReturn {
+    pub concrete: PairingConcrete,
+    pub iterations: NonZeroU32,
     pub timings: PairingOperationTimings,
 }
 

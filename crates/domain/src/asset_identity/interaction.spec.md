@@ -1,7 +1,8 @@
 # asset_identity interactions
 
 `AssetIdentity` is an owned value type: a fallible constructor `try_new` is its
-only producer, and the read accessors `name` and `version` are its only views.
+only producer, the read accessors `name` and `version` are its only string
+views, and `coordinate` is the only producer of `AssetCoordinate`.
 There are no dependency calls; every decision is a byte-level check on the
 params.
 
@@ -33,6 +34,14 @@ params.
 |---|---|---|---|---|
 | read | none | none | none | `&self.version`, a shared reference to the held string — no copy, no side effect |
 
+## `AssetIdentity::coordinate`
+
+`AssetIdentity::coordinate(&self) -> AssetCoordinate`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| join | none | none | none | an `AssetCoordinate` whose bytes are exactly the name's ASCII bytes, `ASSET_COORDINATE_SEPARATOR`, and the version's ASCII bytes in that order, allocated at exactly `name.len() + 1 + version.len()` bytes — no alternate join, no normalization |
+
 ## Invariants and ordering
 
 - Ordering: the name's checks precede the version's; within each string the
@@ -47,3 +56,7 @@ params.
   one version.
 - `try_new` is the only producer; `Clone` copies only an already-admitted
   value, so no admitted form exists outside the constructor's invariants.
+- Every `AssetCoordinate` comes from an admitted `AssetIdentity` through
+  `coordinate`, so it has exactly one `name@version` byte form — the canonical
+  Registry identity-hash preimage a consumer borrows through `AsRef<[u8]>`
+  and never re-joins.

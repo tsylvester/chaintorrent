@@ -6,6 +6,11 @@ pub struct AssetIdentity {
     pub(super) version: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AssetCoordinate {
+    pub(super) bytes: Vec<u8>,
+}
+
 pub struct AssetIdentityConstructorParams {
     pub name: String,
     pub version: String,

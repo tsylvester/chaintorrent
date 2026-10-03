@@ -241,3 +241,32 @@ fn try_new_reports_the_name_before_the_version() {
     // Assert
     assert_eq!(error, AssetIdentityTryNewErrorReturn::EmptyName);
 }
+
+/// Contract: the admitted coordinate's byte view is the one canonical
+///   `name@version` preimage — the name's ASCII bytes, the separator, and the
+///   version's ASCII bytes in that order.
+/// Arrange: params built with `name: Some("@scope/example-package")` and
+///   `version: Some("2.1.0-beta.3+build.7")`.
+/// Act:     `AssetIdentity::try_new(params)` then `identity.coordinate()`.
+/// Assert:  the coordinate's immutable byte view equals
+///   `b"@scope/example-package@2.1.0-beta.3+build.7"`.
+#[test]
+fn coordinate_writes_the_only_registry_hash_preimage() {
+    // Arrange
+    let params = build_asset_identity_constructor_params(AssetIdentityConstructorParamsOverrides {
+        name: Some("@scope/example-package".to_string()),
+        version: Some("2.1.0-beta.3+build.7".to_string()),
+    });
+
+    // Act
+    let Ok(identity) = AssetIdentity::try_new(params) else {
+        panic!("a scoped name and a prerelease version are admitted")
+    };
+    let coordinate = identity.coordinate();
+
+    // Assert
+    assert_eq!(
+        coordinate.as_ref(),
+        b"@scope/example-package@2.1.0-beta.3+build.7"
+    );
+}

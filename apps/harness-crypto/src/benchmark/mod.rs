@@ -185,6 +185,8 @@ impl IPairingConsumer for PairingBenchmark {
         let pairing_product = start.elapsed() / iterations;
 
         Ok(PairingBenchmarkSuccessReturn {
+            concrete: P::CONCRETE,
+            iterations: self.iterations,
             timings: PairingOperationTimings {
                 mul_g1,
                 mul_g2,

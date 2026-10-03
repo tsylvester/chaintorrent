@@ -6,7 +6,7 @@ pub mod provides;
 mod test;
 
 use interface::{
-    ASSET_COORDINATE_SEPARATOR, AssetIdentity, AssetIdentityConstructorParams,
+    ASSET_COORDINATE_SEPARATOR, AssetCoordinate, AssetIdentity, AssetIdentityConstructorParams,
     AssetIdentityTryNewErrorReturn, AssetIdentityTryNewReturn,
 };
 
@@ -52,5 +52,19 @@ impl AssetIdentity {
 
     pub fn version(&self) -> &str {
         &self.version
+    }
+
+    pub fn coordinate(&self) -> AssetCoordinate {
+        let mut bytes = Vec::with_capacity(self.name.len() + 1 + self.version.len());
+        bytes.extend_from_slice(self.name.as_bytes());
+        bytes.push(ASSET_COORDINATE_SEPARATOR);
+        bytes.extend_from_slice(self.version.as_bytes());
+        AssetCoordinate { bytes }
+    }
+}
+
+impl AsRef<[u8]> for AssetCoordinate {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes
     }
 }
