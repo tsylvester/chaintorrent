@@ -265,7 +265,7 @@ fn wrap_derives_from_the_encapsulated_value_and_the_encoded_context() {
 /// Arrange: `MockIKeyDerivationAdapter`, whose key is empty, and the
 ///   admitted piece-group key `[0x33; 32]`.
 /// Act:     `wrap_piece_group_key` over the payload.
-/// Assert:  `error` matches `WrapPieceGroupKeyErrorReturn::WrappingKeyLength
+/// Assert:  `error` equals `WrapPieceGroupKeyErrorReturn::WrappingKeyLength
 ///   { expected: 32, actual: 0 }`.
 #[test]
 fn wrap_refuses_a_wrapping_key_of_another_length() {
@@ -300,11 +300,13 @@ fn wrap_refuses_a_wrapping_key_of_another_length() {
     };
 
     // Assert
-    let WrapPieceGroupKeyErrorReturn::WrappingKeyLength { expected, actual } = error else {
-        panic!("the refusal is the wrapping-key length")
-    };
-    assert_eq!(expected, PIECE_GROUP_KEY_LENGTH);
-    assert_eq!(actual, 0);
+    assert_eq!(
+        error,
+        WrapPieceGroupKeyErrorReturn::WrappingKeyLength {
+            expected: 32,
+            actual: 0
+        }
+    );
 }
 
 /// Contract: a secret shorter than the piece-group key's length is refused,
@@ -332,9 +334,13 @@ fn piece_group_key_rejects_a_short_secret() {
     };
 
     // Assert
-    let PieceGroupKeyErrorReturn::WrongLength { expected, actual } = error;
-    assert_eq!(expected, PIECE_GROUP_KEY_LENGTH);
-    assert_eq!(actual, 31);
+    assert_eq!(
+        error,
+        PieceGroupKeyErrorReturn::WrongLength {
+            expected: PIECE_GROUP_KEY_LENGTH,
+            actual: 31
+        }
+    );
     let bytes: &[u8; 32] = key.expose();
     assert_eq!(bytes, &[0x77; 32]);
 }
@@ -360,9 +366,13 @@ fn wrapped_piece_group_key_rejects_a_short_sidecar_value() {
     };
 
     // Assert
-    let WrappedPieceGroupKeyErrorReturn::WrongLength { expected, actual } = error;
-    assert_eq!(expected, PIECE_GROUP_KEY_LENGTH);
-    assert_eq!(actual, 31);
+    assert_eq!(
+        error,
+        WrappedPieceGroupKeyErrorReturn::WrongLength {
+            expected: PIECE_GROUP_KEY_LENGTH,
+            actual: 31
+        }
+    );
     let bytes: &[u8; 32] = wrapped.as_bytes();
     assert_eq!(bytes, &[0x5a; 32]);
 }
@@ -409,15 +419,12 @@ fn wrap_returns_an_encoder_contract_refusal() {
     };
 
     // Assert
-    let WrapPieceGroupKeyErrorReturn::Encoding(inner) = error else {
-        panic!("the refusal is the encoding arm")
-    };
     assert_eq!(
-        inner,
-        EncodeErrorReturn::FieldCount {
+        error,
+        WrapPieceGroupKeyErrorReturn::Encoding(EncodeErrorReturn::FieldCount {
             expected: 10,
             actual: 9
-        }
+        })
     );
     assert!(kdf.calls.borrow().is_empty());
 }

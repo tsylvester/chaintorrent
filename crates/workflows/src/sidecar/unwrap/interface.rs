@@ -21,6 +21,7 @@ pub struct UnwrapPieceGroupKeySuccessReturn {
     pub piece_group_key: PieceGroupKey,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum UnwrapPieceGroupKeyErrorReturn {
     Encoding(EncodeErrorReturn),
     KeyDerivation(DeriveKeyErrorReturn),

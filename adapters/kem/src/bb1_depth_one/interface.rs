@@ -29,6 +29,7 @@ pub struct Bb1DepthOneKemConstructorParams<'a, P: IPairingArithmetic> {
     pub hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Bb1DepthOneKemTryNewErrorReturn {
     DomainTag(DomainTagTryNewErrorReturn),
 }
@@ -69,6 +70,7 @@ pub enum Bb1DepthOneCapsule<P: IPairingAdapter> {
     Asset { u: P::G2, v: P::G1 },
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Bb1DepthOneSetupErrorReturn {
     MasterScalarSampling(SampleUniformScalarErrorReturn),
     U0Sampling(SampleUniformScalarErrorReturn),
@@ -77,6 +79,7 @@ pub enum Bb1DepthOneSetupErrorReturn {
     TrivialIdentityElement,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Bb1DepthOneDeriveIdentityErrorReturn {
     WrongIdentityScope,
     HashToScalar(HashToScalarErrorReturn),
@@ -84,14 +87,17 @@ pub enum Bb1DepthOneDeriveIdentityErrorReturn {
     OutsideAssetScope,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Bb1DepthOneIssueErrorReturn {
     Sampling(SampleUniformScalarErrorReturn),
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Bb1DepthOneRerandomizeErrorReturn {
     Sampling(SampleUniformScalarErrorReturn),
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Bb1DepthOneEncapsulateErrorReturn {
     Sampling(SampleUniformScalarErrorReturn),
 }

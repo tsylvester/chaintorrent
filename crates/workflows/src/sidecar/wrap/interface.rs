@@ -9,6 +9,7 @@ pub struct PieceGroupKey {
     pub(super) key: Secret<[u8; PIECE_GROUP_KEY_LENGTH]>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum PieceGroupKeyErrorReturn {
     WrongLength { expected: usize, actual: usize },
 }
@@ -18,6 +19,7 @@ pub struct WrappedPieceGroupKey {
     pub(super) bytes: [u8; PIECE_GROUP_KEY_LENGTH],
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum WrappedPieceGroupKeyErrorReturn {
     WrongLength { expected: usize, actual: usize },
 }
@@ -39,6 +41,7 @@ pub struct WrapPieceGroupKeySuccessReturn {
     pub wrapped: WrappedPieceGroupKey,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum WrapPieceGroupKeyErrorReturn {
     Encoding(EncodeErrorReturn),
     KeyDerivation(DeriveKeyErrorReturn),

@@ -380,7 +380,7 @@ struct AssetScopeOutcome {
     encapsulated: Vec<u8>,
     decapsulated_by_issued: Vec<u8>,
     decapsulated_by_holder_authored: Vec<u8>,
-    other_identity_is_outside_the_scope: bool,
+    other_identity_refusal: Option<DeriveIdentityErrorReturn>,
     set_carries_the_derived_identity_element: bool,
 }
 
@@ -521,8 +521,8 @@ impl IPairingConsumer for AssetScopeProbe {
         let decapsulated_by_holder_authored =
             decapsulated.encapsulated.key_material().expose().clone();
 
-        let other_identity_is_outside_the_scope = matches!(
-            kem.derive_identity(
+        let other_identity_refusal = kem
+            .derive_identity(
                 DeriveIdentityParams,
                 DeriveIdentityPayload {
                     parameter_set: &parameter_set,
@@ -530,11 +530,8 @@ impl IPairingConsumer for AssetScopeProbe {
                         identity_hash: &self.other_identity_hash,
                     },
                 },
-            ),
-            Err(DeriveIdentityErrorReturn::Bb1DepthOne(
-                Bb1DepthOneDeriveIdentityErrorReturn::OutsideAssetScope
-            ))
-        );
+            )
+            .err();
 
         let Ok(set_components) = kem.parameter_set_components(
             ParameterSetComponentsParams,
@@ -575,7 +572,7 @@ impl IPairingConsumer for AssetScopeProbe {
             encapsulated: encapsulated_bytes,
             decapsulated_by_issued,
             decapsulated_by_holder_authored,
-            other_identity_is_outside_the_scope,
+            other_identity_refusal,
             set_carries_the_derived_identity_element,
         }
     }
@@ -986,7 +983,7 @@ struct TrivialIdentityProbe {
 }
 
 impl IPairingConsumer for TrivialIdentityProbe {
-    type Output = bool;
+    type Output = Option<DeriveIdentityErrorReturn>;
 
     fn consume_pairing<P: IPairingArithmetic>(
         &self,
@@ -1053,29 +1050,25 @@ impl IPairingConsumer for TrivialIdentityProbe {
         }) else {
             panic!("the declared tag is admitted");
         };
-        matches!(
-            kem.derive_identity(
-                DeriveIdentityParams,
-                DeriveIdentityPayload {
-                    parameter_set: &parameter_set,
-                    identity: KemIdentity::Entitlement {
-                        canonical: &self.identity,
-                    },
+        kem.derive_identity(
+            DeriveIdentityParams,
+            DeriveIdentityPayload {
+                parameter_set: &parameter_set,
+                identity: KemIdentity::Entitlement {
+                    canonical: &self.identity,
                 },
-            ),
-            Err(DeriveIdentityErrorReturn::Bb1DepthOne(
-                Bb1DepthOneDeriveIdentityErrorReturn::TrivialIdentityElement
-            ))
+            },
         )
+        .err()
     }
 }
 
 struct SamplingOutcome {
-    setup_master_refused: bool,
-    setup_base_refused: bool,
-    issue_refused: bool,
-    rerandomize_refused: bool,
-    encapsulate_refused: bool,
+    setup_master_refusal: Option<SetupErrorReturn>,
+    setup_base_refusal: Option<SetupErrorReturn>,
+    issue_refusal: Option<IssueErrorReturn>,
+    rerandomize_refusal: Option<RerandomizeErrorReturn>,
+    encapsulate_refusal: Option<EncapsulateErrorReturn>,
 }
 
 struct SamplingProbe;
@@ -1103,42 +1096,26 @@ impl IPairingConsumer for SamplingProbe {
             panic!("the declared tag is admitted");
         };
 
-        let setup_master_refused = matches!(
-            kem.setup(
+        let setup_master_refusal = kem
+            .setup(
                 build_setup_params(SetupParamsOverrides::default()),
                 SetupPayload {
                     master_uniform: short_draw(),
                     u0_uniform: uniform_draw::<P>(0x22),
                     u1_uniform: uniform_draw::<P>(0x33),
                 },
-            ),
-            Err(SetupErrorReturn::Bb1DepthOne(
-                Bb1DepthOneSetupErrorReturn::MasterScalarSampling(
-                    SampleUniformScalarErrorReturn::WrongLength {
-                        expected: 64,
-                        actual: 32,
-                    }
-                )
-            ))
-        );
-        let setup_base_refused = matches!(
-            kem.setup(
+            )
+            .err();
+        let setup_base_refusal = kem
+            .setup(
                 build_setup_params(SetupParamsOverrides::default()),
                 SetupPayload {
                     master_uniform: uniform_draw::<P>(0x11),
                     u0_uniform: short_draw(),
                     u1_uniform: uniform_draw::<P>(0x33),
                 },
-            ),
-            Err(SetupErrorReturn::Bb1DepthOne(
-                Bb1DepthOneSetupErrorReturn::U0Sampling(
-                    SampleUniformScalarErrorReturn::WrongLength {
-                        expected: 64,
-                        actual: 32,
-                    }
-                )
-            ))
-        );
+            )
+            .err();
 
         let Ok(setup) = kem.setup(
             build_setup_params(SetupParamsOverrides::default()),
@@ -1171,8 +1148,8 @@ impl IPairingConsumer for SamplingProbe {
             panic!("the issuance succeeds");
         };
 
-        let issue_refused = matches!(
-            kem.issue(
+        let issue_refusal = kem
+            .issue(
                 IssueParams,
                 IssuePayload {
                     parameter_set: &parameter_set,
@@ -1180,18 +1157,10 @@ impl IPairingConsumer for SamplingProbe {
                     identity_element: &identity_element.identity_element,
                     uniform: short_draw(),
                 },
-            ),
-            Err(IssueErrorReturn::Bb1DepthOne(
-                Bb1DepthOneIssueErrorReturn::Sampling(
-                    SampleUniformScalarErrorReturn::WrongLength {
-                        expected: 64,
-                        actual: 32,
-                    }
-                )
-            ))
-        );
-        let rerandomize_refused = matches!(
-            kem.rerandomize(
+            )
+            .err();
+        let rerandomize_refusal = kem
+            .rerandomize(
                 RerandomizeParams,
                 RerandomizePayload {
                     parameter_set: &parameter_set,
@@ -1199,40 +1168,24 @@ impl IPairingConsumer for SamplingProbe {
                     credential: &issued.credential,
                     uniform: short_draw(),
                 },
-            ),
-            Err(RerandomizeErrorReturn::Bb1DepthOne(
-                Bb1DepthOneRerandomizeErrorReturn::Sampling(
-                    SampleUniformScalarErrorReturn::WrongLength {
-                        expected: 64,
-                        actual: 32,
-                    }
-                )
-            ))
-        );
-        let encapsulate_refused = matches!(
-            kem.encapsulate(
+            )
+            .err();
+        let encapsulate_refusal = kem
+            .encapsulate(
                 EncapsulateParams,
                 EncapsulatePayload {
                     parameter_set: &parameter_set,
                     uniform: short_draw(),
                 },
-            ),
-            Err(EncapsulateErrorReturn::Bb1DepthOne(
-                Bb1DepthOneEncapsulateErrorReturn::Sampling(
-                    SampleUniformScalarErrorReturn::WrongLength {
-                        expected: 64,
-                        actual: 32,
-                    }
-                )
-            ))
-        );
+            )
+            .err();
 
         SamplingOutcome {
-            setup_master_refused,
-            setup_base_refused,
-            issue_refused,
-            rerandomize_refused,
-            encapsulate_refused,
+            setup_master_refusal,
+            setup_base_refusal,
+            issue_refusal,
+            rerandomize_refusal,
+            encapsulate_refusal,
         }
     }
 }
@@ -1258,8 +1211,8 @@ impl<S: ISampleUniformScalar + Clone> IHashToScalarAdapter<S> for SpyHashToScala
 }
 
 struct WrongRoleOutcome {
-    entitlement_set_refused: bool,
-    asset_set_refused: bool,
+    entitlement_set_refusal: Option<DeriveIdentityErrorReturn>,
+    asset_set_refusal: Option<DeriveIdentityErrorReturn>,
     hash_calls: usize,
 }
 
@@ -1300,8 +1253,8 @@ impl IPairingConsumer for WrongRoleProbe {
         ) else {
             panic!("the entitlement setup succeeds");
         };
-        let entitlement_set_refused = matches!(
-            kem.derive_identity(
+        let entitlement_set_refusal = kem
+            .derive_identity(
                 DeriveIdentityParams,
                 DeriveIdentityPayload {
                     parameter_set: &entitlement_setup.parameter_set,
@@ -1309,11 +1262,8 @@ impl IPairingConsumer for WrongRoleProbe {
                         identity_hash: &self.asset_identity_hash,
                     },
                 },
-            ),
-            Err(DeriveIdentityErrorReturn::Bb1DepthOne(
-                Bb1DepthOneDeriveIdentityErrorReturn::WrongIdentityScope
-            ))
-        );
+            )
+            .err();
         let calls_at_entitlement_refusal = spy.calls.get();
 
         let Ok(asset_setup) = kem.setup(
@@ -1327,8 +1277,8 @@ impl IPairingConsumer for WrongRoleProbe {
             panic!("the asset setup succeeds");
         };
         spy.calls.set(0);
-        let asset_set_refused = matches!(
-            kem.derive_identity(
+        let asset_set_refusal = kem
+            .derive_identity(
                 DeriveIdentityParams,
                 DeriveIdentityPayload {
                     parameter_set: &asset_setup.parameter_set,
@@ -1336,15 +1286,12 @@ impl IPairingConsumer for WrongRoleProbe {
                         canonical: b"entitlement-one",
                     },
                 },
-            ),
-            Err(DeriveIdentityErrorReturn::Bb1DepthOne(
-                Bb1DepthOneDeriveIdentityErrorReturn::WrongIdentityScope
-            ))
-        );
+            )
+            .err();
 
         WrongRoleOutcome {
-            entitlement_set_refused,
-            asset_set_refused,
+            entitlement_set_refusal,
+            asset_set_refusal,
             hash_calls: calls_at_entitlement_refusal + spy.calls.get(),
         }
     }
@@ -1853,7 +1800,8 @@ fn every_asset_scope_credential_decapsulates_the_encapsulated_value() {
 /// Contract: an identity other than the asset's is outside the scope.
 /// Arrange: `AssetScopeProbe` over assets one and two.
 /// Act:     `create_pairing` on `PairingConcrete::Bls12381Arkworks`.
-/// Assert:  `other_identity_is_outside_the_scope`.
+/// Assert:  `other_identity_refusal` equals
+///   `DeriveIdentityErrorReturn::Bb1DepthOne(…OutsideAssetScope)`.
 #[test]
 fn derive_identity_refuses_an_identity_outside_the_asset_scope() {
     // Arrange
@@ -1874,7 +1822,12 @@ fn derive_identity_refuses_an_identity_outside_the_asset_scope() {
     let outcome = run_probe(probe, PairingConcrete::Bls12381Arkworks);
 
     // Assert
-    assert!(outcome.other_identity_is_outside_the_scope);
+    assert_eq!(
+        outcome.other_identity_refusal,
+        Some(DeriveIdentityErrorReturn::Bb1DepthOne(
+            Bb1DepthOneDeriveIdentityErrorReturn::OutsideAssetScope
+        ))
+    );
 }
 
 /// Contract: an identity of the other role is refused before any hashing.
@@ -1900,8 +1853,18 @@ fn derive_identity_refuses_the_other_identity_role_before_hashing() {
     let outcome = run_probe(probe, PairingConcrete::Bls12381Arkworks);
 
     // Assert
-    assert!(outcome.entitlement_set_refused);
-    assert!(outcome.asset_set_refused);
+    assert_eq!(
+        outcome.entitlement_set_refusal,
+        Some(DeriveIdentityErrorReturn::Bb1DepthOne(
+            Bb1DepthOneDeriveIdentityErrorReturn::WrongIdentityScope
+        ))
+    );
+    assert_eq!(
+        outcome.asset_set_refusal,
+        Some(DeriveIdentityErrorReturn::Bb1DepthOne(
+            Bb1DepthOneDeriveIdentityErrorReturn::WrongIdentityScope
+        ))
+    );
     assert_eq!(outcome.hash_calls, 0);
 }
 
@@ -1964,7 +1927,8 @@ fn encapsulation_exposes_only_the_admitted_target_group_encoding() {
 ///   issuance (CR-08; LC-08).
 /// Arrange: `TrivialIdentityProbe` over entitlement one.
 /// Act:     `create_pairing` on `PairingConcrete::Bls12381Arkworks`.
-/// Assert:  the output is `true`.
+/// Assert:  the refusal equals
+///   `DeriveIdentityErrorReturn::Bb1DepthOne(…TrivialIdentityElement)`.
 #[test]
 fn derive_identity_refuses_a_trivial_identity_element() {
     // Arrange
@@ -1976,7 +1940,12 @@ fn derive_identity_refuses_a_trivial_identity_element() {
     let refused = run_probe(probe, PairingConcrete::Bls12381Arkworks);
 
     // Assert
-    assert!(refused);
+    assert_eq!(
+        refused,
+        Some(DeriveIdentityErrorReturn::Bb1DepthOne(
+            Bb1DepthOneDeriveIdentityErrorReturn::TrivialIdentityElement
+        ))
+    );
 }
 
 /// Contract: the components the delivery proof states hold `hpub = α·g2` for
@@ -2156,7 +2125,8 @@ fn a_master_scalar_restored_from_its_components_issues_valid_credentials() {
 /// Contract: a sampling refusal returns in the method's own variant unchanged.
 /// Arrange: `SamplingProbe`.
 /// Act:     `create_pairing` on `PairingConcrete::Bls12381Arkworks`.
-/// Assert:  `setup_master_refused`.
+/// Assert:  `setup_master_refusal` equals
+///   `SetupErrorReturn::Bb1DepthOne(…MasterScalarSampling(WrongLength { 64, 32 }))`.
 #[test]
 fn setup_refuses_a_master_draw_of_the_wrong_length() {
     // Arrange
@@ -2166,13 +2136,24 @@ fn setup_refuses_a_master_draw_of_the_wrong_length() {
     let outcome = run_probe(probe, PairingConcrete::Bls12381Arkworks);
 
     // Assert
-    assert!(outcome.setup_master_refused);
+    assert_eq!(
+        outcome.setup_master_refusal,
+        Some(SetupErrorReturn::Bb1DepthOne(
+            Bb1DepthOneSetupErrorReturn::MasterScalarSampling(
+                SampleUniformScalarErrorReturn::WrongLength {
+                    expected: 64,
+                    actual: 32,
+                }
+            )
+        ))
+    );
 }
 
 /// Contract: a sampling refusal returns in the method's own variant unchanged.
 /// Arrange: `SamplingProbe`.
 /// Act:     `create_pairing` on `PairingConcrete::Bls12381Arkworks`.
-/// Assert:  `setup_base_refused`.
+/// Assert:  `setup_base_refusal` equals
+///   `SetupErrorReturn::Bb1DepthOne(…U0Sampling(WrongLength { 64, 32 }))`.
 #[test]
 fn setup_refuses_an_identity_base_draw_of_the_wrong_length() {
     // Arrange
@@ -2182,13 +2163,22 @@ fn setup_refuses_an_identity_base_draw_of_the_wrong_length() {
     let outcome = run_probe(probe, PairingConcrete::Bls12381Arkworks);
 
     // Assert
-    assert!(outcome.setup_base_refused);
+    assert_eq!(
+        outcome.setup_base_refusal,
+        Some(SetupErrorReturn::Bb1DepthOne(
+            Bb1DepthOneSetupErrorReturn::U0Sampling(SampleUniformScalarErrorReturn::WrongLength {
+                expected: 64,
+                actual: 32,
+            })
+        ))
+    );
 }
 
 /// Contract: a sampling refusal returns in the method's own variant unchanged.
 /// Arrange: `SamplingProbe`.
 /// Act:     `create_pairing` on `PairingConcrete::Bls12381Arkworks`.
-/// Assert:  `issue_refused`.
+/// Assert:  `issue_refusal` equals
+///   `IssueErrorReturn::Bb1DepthOne(…Sampling(WrongLength { 64, 32 }))`.
 #[test]
 fn issue_refuses_a_draw_of_the_wrong_length() {
     // Arrange
@@ -2198,13 +2188,22 @@ fn issue_refuses_a_draw_of_the_wrong_length() {
     let outcome = run_probe(probe, PairingConcrete::Bls12381Arkworks);
 
     // Assert
-    assert!(outcome.issue_refused);
+    assert_eq!(
+        outcome.issue_refusal,
+        Some(IssueErrorReturn::Bb1DepthOne(
+            Bb1DepthOneIssueErrorReturn::Sampling(SampleUniformScalarErrorReturn::WrongLength {
+                expected: 64,
+                actual: 32,
+            })
+        ))
+    );
 }
 
 /// Contract: a sampling refusal returns in the method's own variant unchanged.
 /// Arrange: `SamplingProbe`.
 /// Act:     `create_pairing` on `PairingConcrete::Bls12381Arkworks`.
-/// Assert:  `rerandomize_refused`.
+/// Assert:  `rerandomize_refusal` equals
+///   `RerandomizeErrorReturn::Bb1DepthOne(…Sampling(WrongLength { 64, 32 }))`.
 #[test]
 fn rerandomize_refuses_a_draw_of_the_wrong_length() {
     // Arrange
@@ -2214,13 +2213,24 @@ fn rerandomize_refuses_a_draw_of_the_wrong_length() {
     let outcome = run_probe(probe, PairingConcrete::Bls12381Arkworks);
 
     // Assert
-    assert!(outcome.rerandomize_refused);
+    assert_eq!(
+        outcome.rerandomize_refusal,
+        Some(RerandomizeErrorReturn::Bb1DepthOne(
+            Bb1DepthOneRerandomizeErrorReturn::Sampling(
+                SampleUniformScalarErrorReturn::WrongLength {
+                    expected: 64,
+                    actual: 32,
+                }
+            )
+        ))
+    );
 }
 
 /// Contract: a sampling refusal returns in the method's own variant unchanged.
 /// Arrange: `SamplingProbe`.
 /// Act:     `create_pairing` on `PairingConcrete::Bls12381Arkworks`.
-/// Assert:  `encapsulate_refused`.
+/// Assert:  `encapsulate_refusal` equals
+///   `EncapsulateErrorReturn::Bb1DepthOne(…Sampling(WrongLength { 64, 32 }))`.
 #[test]
 fn encapsulate_refuses_a_draw_of_the_wrong_length() {
     // Arrange
@@ -2230,7 +2240,17 @@ fn encapsulate_refuses_a_draw_of_the_wrong_length() {
     let outcome = run_probe(probe, PairingConcrete::Bls12381Arkworks);
 
     // Assert
-    assert!(outcome.encapsulate_refused);
+    assert_eq!(
+        outcome.encapsulate_refusal,
+        Some(EncapsulateErrorReturn::Bb1DepthOne(
+            Bb1DepthOneEncapsulateErrorReturn::Sampling(
+                SampleUniformScalarErrorReturn::WrongLength {
+                    expected: 64,
+                    actual: 32,
+                }
+            )
+        ))
+    );
 }
 
 /// Contract: the concrete's declaration names the KEM identifier, both

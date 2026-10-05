@@ -268,7 +268,7 @@ fn unwrap_derives_from_the_encapsulated_value_and_the_encoded_context() {
 /// Arrange: `MockIKeyDerivationAdapter`, whose key is empty, and the
 ///   admitted wrapped key `vec![0x3c; 32]`.
 /// Act:     `unwrap_piece_group_key` over the payload.
-/// Assert:  `error` matches `UnwrapPieceGroupKeyErrorReturn::
+/// Assert:  `error` equals `UnwrapPieceGroupKeyErrorReturn::
 ///   WrappingKeyLength { expected: 32, actual: 0 }`.
 #[test]
 fn unwrap_refuses_a_wrapping_key_of_another_length() {
@@ -303,11 +303,13 @@ fn unwrap_refuses_a_wrapping_key_of_another_length() {
     };
 
     // Assert
-    let UnwrapPieceGroupKeyErrorReturn::WrappingKeyLength { expected, actual } = error else {
-        panic!("the refusal is the wrapping-key length")
-    };
-    assert_eq!(expected, PIECE_GROUP_KEY_LENGTH);
-    assert_eq!(actual, 0);
+    assert_eq!(
+        error,
+        UnwrapPieceGroupKeyErrorReturn::WrappingKeyLength {
+            expected: 32,
+            actual: 0
+        }
+    );
 }
 
 /// Contract: an encoding refusal returns the error unchanged before any
@@ -352,15 +354,12 @@ fn unwrap_returns_an_encoder_contract_refusal() {
     };
 
     // Assert
-    let UnwrapPieceGroupKeyErrorReturn::Encoding(inner) = error else {
-        panic!("the refusal is the encoding arm")
-    };
     assert_eq!(
-        inner,
-        EncodeErrorReturn::FieldCount {
+        error,
+        UnwrapPieceGroupKeyErrorReturn::Encoding(EncodeErrorReturn::FieldCount {
             expected: 10,
             actual: 9
-        }
+        })
     );
     assert!(kdf.calls.borrow().is_empty());
 }

@@ -57,6 +57,7 @@ pub struct SetupSuccessReturn<PS, M> {
     pub master_scalar: M,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum SetupErrorReturn {
     Bb1DepthOne(Bb1DepthOneSetupErrorReturn),
 }
@@ -83,6 +84,7 @@ pub struct DeriveIdentitySuccessReturn<IE> {
     pub identity_element: IE,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum DeriveIdentityErrorReturn {
     Bb1DepthOne(Bb1DepthOneDeriveIdentityErrorReturn),
 }
@@ -104,6 +106,7 @@ pub struct IssueSuccessReturn<C, S: Zeroize> {
     pub randomness: Secret<S>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum IssueErrorReturn {
     Bb1DepthOne(Bb1DepthOneIssueErrorReturn),
 }
@@ -124,6 +127,7 @@ pub struct RerandomizeSuccessReturn<C, S: Zeroize> {
     pub offset: Secret<S>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum RerandomizeErrorReturn {
     Bb1DepthOne(Bb1DepthOneRerandomizeErrorReturn),
 }
@@ -156,6 +160,7 @@ pub struct EncapsulateSuccessReturn<CA> {
     pub encapsulated: EncapsulatedValue,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum EncapsulateErrorReturn {
     Bb1DepthOne(Bb1DepthOneEncapsulateErrorReturn),
 }
@@ -524,6 +529,7 @@ pub struct CreateKemSuccessReturn<O> {
     pub output: O,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum CreateKemErrorReturn {
     UnsupportedKemIdentifier,
     UnsupportedIdentityScope,
