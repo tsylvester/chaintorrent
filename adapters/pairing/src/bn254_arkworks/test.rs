@@ -374,16 +374,18 @@ fn decode_g1_rejects_a_wrong_length() {
     let bytes = vec![0u8; 63];
 
     // Act
-    let result = pairing.decode_g1(DecodeG1Params, &bytes);
+    let Err(error) = pairing.decode_g1(DecodeG1Params, &bytes) else {
+        panic!("the input is refused")
+    };
 
     // Assert
-    assert!(matches!(
-        result,
-        Err(DecodeG1ErrorReturn::WrongLength {
+    assert_eq!(
+        error,
+        DecodeG1ErrorReturn::WrongLength {
             expected: 64,
             actual: 63
-        })
-    ));
+        }
+    );
 }
 
 /// Contract: the non-canonical-coordinate branch of `decode_g1` — a 32-byte
@@ -405,13 +407,12 @@ fn decode_g1_rejects_a_coordinate_equal_to_the_base_field_modulus() {
     bytes.extend_from_slice(&two);
 
     // Act
-    let result = pairing.decode_g1(DecodeG1Params, &bytes);
+    let Err(error) = pairing.decode_g1(DecodeG1Params, &bytes) else {
+        panic!("the input is refused")
+    };
 
     // Assert
-    assert!(matches!(
-        result,
-        Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)
-    ));
+    assert_eq!(error, DecodeG1ErrorReturn::NonCanonicalCoordinate);
 }
 
 /// Contract: the off-the-curve branch of `decode_g1` — a canonical pair not
@@ -433,10 +434,12 @@ fn decode_g1_rejects_a_point_off_the_curve() {
     bytes.extend_from_slice(&three);
 
     // Act
-    let result = pairing.decode_g1(DecodeG1Params, &bytes);
+    let Err(error) = pairing.decode_g1(DecodeG1Params, &bytes) else {
+        panic!("the input is refused")
+    };
 
     // Assert
-    assert!(matches!(result, Err(DecodeG1ErrorReturn::NotOnCurve)));
+    assert_eq!(error, DecodeG1ErrorReturn::NotOnCurve);
 }
 
 /// Contract: the wrong-length branch of `decode_g2` returns
@@ -452,16 +455,18 @@ fn decode_g2_rejects_a_wrong_length() {
     let bytes = vec![0u8; 127];
 
     // Act
-    let result = pairing.decode_g2(DecodeG2Params, &bytes);
+    let Err(error) = pairing.decode_g2(DecodeG2Params, &bytes) else {
+        panic!("the input is refused")
+    };
 
     // Assert
-    assert!(matches!(
-        result,
-        Err(DecodeG2ErrorReturn::WrongLength {
+    assert_eq!(
+        error,
+        DecodeG2ErrorReturn::WrongLength {
             expected: 128,
             actual: 127
-        })
-    ));
+        }
+    );
 }
 
 /// Contract: the off-the-curve branch of `decode_g2` returns `NotOnCurve`.
@@ -478,10 +483,12 @@ fn decode_g2_rejects_a_point_off_the_curve() {
     };
 
     // Act
-    let result = pairing.decode_g2(DecodeG2Params, &bytes);
+    let Err(error) = pairing.decode_g2(DecodeG2Params, &bytes) else {
+        panic!("the input is refused")
+    };
 
     // Assert
-    assert!(matches!(result, Err(DecodeG2ErrorReturn::NotOnCurve)));
+    assert_eq!(error, DecodeG2ErrorReturn::NotOnCurve);
 }
 
 /// Contract: the outside-the-subgroup branch of `decode_g2` — an on-curve
@@ -511,10 +518,12 @@ fn decode_g2_rejects_a_point_outside_the_subgroup() {
     bytes.extend_from_slice(&y.c0.into_bigint().to_bytes_be());
 
     // Act
-    let result = pairing.decode_g2(DecodeG2Params, &bytes);
+    let Err(error) = pairing.decode_g2(DecodeG2Params, &bytes) else {
+        panic!("the input is refused")
+    };
 
     // Assert
-    assert!(matches!(result, Err(DecodeG2ErrorReturn::NotInSubgroup)));
+    assert_eq!(error, DecodeG2ErrorReturn::NotInSubgroup);
 }
 
 /// Contract: the non-canonical branch of `decode_scalar` — bytes at least
@@ -531,10 +540,12 @@ fn decode_scalar_rejects_the_group_order() {
     };
 
     // Act
-    let result = pairing.decode_scalar(DecodeScalarParams, &bytes);
+    let Err(error) = pairing.decode_scalar(DecodeScalarParams, &bytes) else {
+        panic!("the input is refused")
+    };
 
     // Assert
-    assert!(matches!(result, Err(DecodeScalarErrorReturn::NonCanonical)));
+    assert_eq!(error, DecodeScalarErrorReturn::NonCanonical);
 }
 
 /// Contract: the valid branch of `decode_scalar` holds the scalar, which
@@ -580,16 +591,18 @@ fn decode_scalar_rejects_a_wrong_length() {
     let bytes = vec![0u8; 31];
 
     // Act
-    let result = pairing.decode_scalar(DecodeScalarParams, &bytes);
+    let Err(error) = pairing.decode_scalar(DecodeScalarParams, &bytes) else {
+        panic!("the input is refused")
+    };
 
     // Assert
-    assert!(matches!(
-        result,
-        Err(DecodeScalarErrorReturn::WrongLength {
+    assert_eq!(
+        error,
+        DecodeScalarErrorReturn::WrongLength {
             expected: 32,
             actual: 31
-        })
-    ));
+        }
+    );
 }
 
 /// Contract: the summed branch of `add_g1` returns the point's group sum —
@@ -1005,16 +1018,20 @@ fn sample_from_uniform_bytes_rejects_a_wrong_length() {
     });
 
     // Act
-    let result = Bn254ArkworksScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload);
+    let Err(error) =
+        Bn254ArkworksScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)
+    else {
+        panic!("the input is refused")
+    };
 
     // Assert
-    assert!(matches!(
-        result,
-        Err(SampleUniformScalarErrorReturn::WrongLength {
+    assert_eq!(
+        error,
+        SampleUniformScalarErrorReturn::WrongLength {
             expected: 64,
             actual: 63
-        })
-    ));
+        }
+    );
 }
 
 /// Contract: the sampled branch of `sample_from_uniform_bytes` reduces the
@@ -2057,10 +2074,12 @@ fn g2_outside_subgroup_encoding_is_refused_by_decode_g2_as_outside_the_subgroup(
     ) else {
         panic!("the reference is present")
     };
-    let result = pairing.decode_g2(DecodeG2Params, found.bytes.as_ref());
+    let Err(error) = pairing.decode_g2(DecodeG2Params, found.bytes.as_ref()) else {
+        panic!("the input is refused")
+    };
 
     // Assert
-    assert!(matches!(result, Err(DecodeG2ErrorReturn::NotInSubgroup)));
+    assert_eq!(error, DecodeG2ErrorReturn::NotInSubgroup);
 }
 
 /// Contract: the found branch's point has `x = (c0, 0)` and, of the two

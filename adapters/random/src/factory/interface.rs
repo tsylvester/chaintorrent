@@ -24,6 +24,7 @@ pub struct FillBytesSuccessReturn {
     pub bytes: Secret<Vec<u8>>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum FillBytesErrorReturn {
     OperatingSystem(OsRandomSourceFillBytesErrorReturn),
 }
@@ -47,6 +48,7 @@ pub struct CreateRandomSourceSuccessReturn {
     pub adapter: Box<dyn IRandomSourceAdapter>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum CreateRandomSourceErrorReturn {
     OperatingSystem(Infallible),
 }

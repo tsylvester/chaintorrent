@@ -380,8 +380,8 @@ struct ReferenceValuesResult {
     scalar_field_order: Vec<u8>,
     g1_outside_subgroup: Option<Vec<u8>>,
     g2_outside_subgroup: Vec<u8>,
-    g1_decoder_refuses_it: bool,
-    g2_decoder_refuses_it: bool,
+    g1_decoder_refusal: Option<DecodeG1ErrorReturn>,
+    g2_decoder_refusal: Option<DecodeG2ErrorReturn>,
 }
 
 struct ReferenceValues;
@@ -410,24 +410,20 @@ impl IPairingConsumer for ReferenceValues {
             panic!("the second group's outside-the-subgroup encoding is produced");
         };
 
-        let g1_decoder_refuses_it = match g1_encoding.bytes.as_ref() {
-            None => true,
-            Some(bytes) => matches!(
-                adapter.decode_g1(DecodeG1Params, bytes.as_ref()),
-                Err(DecodeG1ErrorReturn::NotInSubgroup)
-            ),
+        let g1_decoder_refusal = match g1_encoding.bytes.as_ref() {
+            None => None,
+            Some(bytes) => adapter.decode_g1(DecodeG1Params, bytes.as_ref()).err(),
         };
-        let g2_decoder_refuses_it = matches!(
-            adapter.decode_g2(DecodeG2Params, g2_encoding.bytes.as_ref()),
-            Err(DecodeG2ErrorReturn::NotInSubgroup)
-        );
+        let g2_decoder_refusal = adapter
+            .decode_g2(DecodeG2Params, g2_encoding.bytes.as_ref())
+            .err();
 
         ReferenceValuesResult {
             scalar_field_order: order.bytes,
             g1_outside_subgroup: g1_encoding.bytes.map(|bytes| bytes.as_ref().to_vec()),
             g2_outside_subgroup: g2_encoding.bytes.as_ref().to_vec(),
-            g1_decoder_refuses_it,
-            g2_decoder_refuses_it,
+            g1_decoder_refusal,
+            g2_decoder_refusal,
         }
     }
 }
@@ -443,7 +439,8 @@ impl IPairingConsumer for ReferenceValues {
 /// Assert:  the `scalar_field_order` values are equal and equal the published
 ///   BN254 group order, both `g1_outside_subgroup` values are `None`, the
 ///   `g2_outside_subgroup` values are equal and 128 bytes, and
-///   `g1_decoder_refuses_it` and `g2_decoder_refuses_it` are `true` for each.
+///   `g1_decoder_refusal` is `None` and `g2_decoder_refusal` is
+///   `Some(DecodeG2ErrorReturn::NotInSubgroup)` for each.
 /// Boundary: the crate's public surface — `create_pairing` constructs the real
 ///   arkworks and halo2curves BN254 concretes and the consumer exercises them
 ///   through `IPairingArithmetic`, `IPairingReference`, and their supertrait.
@@ -489,10 +486,16 @@ fn the_bn254_concretes_return_the_same_scalar_field_order_and_outside_subgroup_e
         halo2curves.output.g2_outside_subgroup
     );
     assert_eq!(arkworks.output.g2_outside_subgroup.len(), 128);
-    assert!(arkworks.output.g1_decoder_refuses_it);
-    assert!(halo2curves.output.g1_decoder_refuses_it);
-    assert!(arkworks.output.g2_decoder_refuses_it);
-    assert!(halo2curves.output.g2_decoder_refuses_it);
+    assert_eq!(arkworks.output.g1_decoder_refusal, None);
+    assert_eq!(halo2curves.output.g1_decoder_refusal, None);
+    assert_eq!(
+        arkworks.output.g2_decoder_refusal,
+        Some(DecodeG2ErrorReturn::NotInSubgroup)
+    );
+    assert_eq!(
+        halo2curves.output.g2_decoder_refusal,
+        Some(DecodeG2ErrorReturn::NotInSubgroup)
+    );
 }
 
 /// Contract: the arkworks and halo2curves BLS12-381 concretes, each constructed
@@ -506,8 +509,9 @@ fn the_bn254_concretes_return_the_same_scalar_field_order_and_outside_subgroup_e
 /// Assert:  the `scalar_field_order` values are equal and equal the published
 ///   BLS12-381 group order, the `g1_outside_subgroup` values are equal,
 ///   `Some`, and 128 bytes, the `g2_outside_subgroup` values are equal and 256
-///   bytes, and `g1_decoder_refuses_it` and `g2_decoder_refuses_it` are `true`
-///   for each.
+///   bytes, and `g1_decoder_refusal` is
+///   `Some(DecodeG1ErrorReturn::NotInSubgroup)` and `g2_decoder_refusal` is
+///   `Some(DecodeG2ErrorReturn::NotInSubgroup)` for each.
 /// Boundary: the crate's public surface — `create_pairing` constructs the real
 ///   arkworks and halo2curves BLS12-381 concretes and the consumer exercises
 ///   them through `IPairingArithmetic`, `IPairingReference`, and their
@@ -560,8 +564,20 @@ fn the_bls12_381_concretes_return_the_same_scalar_field_order_and_outside_subgro
         halo2curves.output.g2_outside_subgroup
     );
     assert_eq!(arkworks.output.g2_outside_subgroup.len(), 256);
-    assert!(arkworks.output.g1_decoder_refuses_it);
-    assert!(halo2curves.output.g1_decoder_refuses_it);
-    assert!(arkworks.output.g2_decoder_refuses_it);
-    assert!(halo2curves.output.g2_decoder_refuses_it);
+    assert_eq!(
+        arkworks.output.g1_decoder_refusal,
+        Some(DecodeG1ErrorReturn::NotInSubgroup)
+    );
+    assert_eq!(
+        halo2curves.output.g1_decoder_refusal,
+        Some(DecodeG1ErrorReturn::NotInSubgroup)
+    );
+    assert_eq!(
+        arkworks.output.g2_decoder_refusal,
+        Some(DecodeG2ErrorReturn::NotInSubgroup)
+    );
+    assert_eq!(
+        halo2curves.output.g2_decoder_refusal,
+        Some(DecodeG2ErrorReturn::NotInSubgroup)
+    );
 }

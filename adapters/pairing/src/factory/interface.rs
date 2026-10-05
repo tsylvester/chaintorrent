@@ -59,6 +59,7 @@ pub struct SampleUniformScalarSuccessReturn<S: Zeroize> {
     pub scalar: Secret<S>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum SampleUniformScalarErrorReturn {
     WrongLength { expected: usize, actual: usize },
 }
@@ -204,6 +205,7 @@ pub struct DecodeG1SuccessReturn<G> {
     pub point: G,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum DecodeG1ErrorReturn {
     WrongLength { expected: usize, actual: usize },
     NonCanonicalCoordinate,
@@ -219,6 +221,7 @@ pub struct DecodeG2SuccessReturn<G> {
     pub point: G,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum DecodeG2ErrorReturn {
     WrongLength { expected: usize, actual: usize },
     NonCanonicalCoordinate,
@@ -234,6 +237,7 @@ pub struct DecodeScalarSuccessReturn<S> {
     pub scalar: S,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum DecodeScalarErrorReturn {
     WrongLength { expected: usize, actual: usize },
     NonCanonical,
@@ -554,6 +558,7 @@ pub struct G1OutsideSubgroupEncodingSuccessReturn<E> {
     pub bytes: Option<E>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum G1OutsideSubgroupEncodingErrorReturn {
     SearchExhausted,
 }
@@ -569,6 +574,7 @@ pub struct G2OutsideSubgroupEncodingSuccessReturn<E> {
     pub bytes: E,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum G2OutsideSubgroupEncodingErrorReturn {
     SearchExhausted,
 }
@@ -636,6 +642,7 @@ pub struct CreatePairingSuccessReturn<O> {
     pub output: O,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum CreatePairingErrorReturn {
     UnsupportedPrecompileEncoding,
     UnsupportedTargetGroupEncoding,

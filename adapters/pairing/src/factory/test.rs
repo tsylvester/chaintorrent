@@ -245,13 +245,15 @@ fn create_pairing_refuses_a_concrete_whose_encoding_the_chain_does_not_deploy() 
     });
 
     // Act
-    let result = create_pairing(&deps, params, CreatePairingPayload);
+    let Err(error) = create_pairing(&deps, params, CreatePairingPayload) else {
+        panic!("the concrete is refused")
+    };
 
     // Assert
-    assert!(matches!(
-        result,
-        Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)
-    ));
+    assert_eq!(
+        error,
+        CreatePairingErrorReturn::UnsupportedPrecompileEncoding
+    );
     assert!(!deps.consumer.called.get());
 }
 
@@ -283,12 +285,14 @@ fn create_pairing_refuses_a_concrete_whose_target_group_encoding_the_suite_does_
     });
 
     // Act
-    let result = create_pairing(&deps, params, CreatePairingPayload);
+    let Err(error) = create_pairing(&deps, params, CreatePairingPayload) else {
+        panic!("the concrete is refused")
+    };
 
     // Assert
-    assert!(matches!(
-        result,
-        Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding)
-    ));
+    assert_eq!(
+        error,
+        CreatePairingErrorReturn::UnsupportedTargetGroupEncoding
+    );
     assert!(!deps.consumer.called.get());
 }

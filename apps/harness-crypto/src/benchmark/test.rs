@@ -286,15 +286,16 @@ fn consume_pairing_returns_the_sampling_error_for_a_draw_of_the_wrong_length() {
     ) else {
         panic!("the admitted concrete constructs")
     };
+    let Err(error) = success.output else {
+        panic!("the malformed draw is refused")
+    };
 
     // Assert
-    assert!(matches!(
-        success.output,
-        Err(PairingBenchmarkErrorReturn::SampleScalar(
-            SampleUniformScalarErrorReturn::WrongLength {
-                expected: 64,
-                actual: 0
-            }
-        ))
-    ));
+    assert_eq!(
+        error,
+        PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength {
+            expected: 64,
+            actual: 0
+        })
+    );
 }

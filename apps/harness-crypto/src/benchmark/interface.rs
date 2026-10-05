@@ -30,6 +30,7 @@ pub struct PairingBenchmarkSuccessReturn {
     pub timings: PairingOperationTimings,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum PairingBenchmarkErrorReturn {
     FillBytes(FillBytesErrorReturn),
     SampleScalar(SampleUniformScalarErrorReturn),
