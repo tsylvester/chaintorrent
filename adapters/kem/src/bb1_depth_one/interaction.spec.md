@@ -11,13 +11,13 @@ Branch contract for the `bb1_depth_one` module of the `kem` crate: the depth-one
 
 ## `Bb1DepthOneKem::<'_, P>::DECLARATION`
 
-The inherent constant `KemDeclaration { identifier: KemIdentifier::Bb1DepthOneV1, identity_scopes: &[IdentityScope::Entitlement, IdentityScope::Asset], identity_tag: BB1_DEPTH_ONE_IDENTITY_TAG, adapter_version: 1, interface_version: KEM_INTERFACE_VERSION }`, its tag the constant `try_new` constructs the adapter's `DomainTag` from; readable before any instance exists.
+The inherent constant `KemDeclaration = BB1_DEPTH_ONE_DECLARATION`, its tag the constant `try_new` constructs the adapter's `DomainTag` from; readable before any instance exists.
 
 ## Shared steps
 
 **Sampling** — every sampling branch below names this step: `P::Scalar::sample_from_uniform_bytes(SampleUniformScalarParams, SampleUniformScalarPayload { uniform })` with the payload's uniform bytes moved in, its `Err(error)` returned in the method's own variant and its `Ok` yielding a `Secret<P::Scalar>` whose exposed value is cloned into each pairing payload that needs it.
 
-**Identity mapping** — `setup` and `derive_identity` name this step: `self.hash_to_scalar.hash_to_scalar(HashToScalarParams { tag: &self.tag }, HashToScalarPayload { message: identity })` yielding `I`, its `Err(error)` returned in the method's `HashToScalar` variant; then `F = add_g1(u0, mul_g1(u1, I))`; then `is_identity_g1(F)`, `true` returned in the method's `TrivialIdentityElement` variant.
+**Identity mapping** — `setup` and `derive_identity` name this step: borrow `canonical` from `KemIdentity::Entitlement` or call `identity_hash.as_bytes()` on `KemIdentity::Asset` only when building `HashToScalarPayload`, the setup asset hash being the latter; `self.hash_to_scalar.hash_to_scalar(HashToScalarParams { tag: &self.tag }, HashToScalarPayload { message: bytes })` yields `I`, its `Err(error)` returned in the method's `HashToScalar` variant; then `F = add_g1(u0, mul_g1(u1, I))`; then `is_identity_g1(F)`, `true` returned in the method's `TrivialIdentityElement` variant.
 
 ## `setup(&self, params: SetupParams<'_>, payload: SetupPayload) -> SetupReturn<Self::ParameterSet, Self::MasterScalar>`
 
@@ -25,15 +25,16 @@ The inherent constant `KemDeclaration { identifier: KemIdentifier::Bb1DepthOneV1
 |---|---|---|---|---|
 | sampling refused | the master, `u0`, or `u1` uniform bytes are refused, sampled in that order | the sampler's result, for the first refused | `P::Scalar::sample_from_uniform_bytes` up to three times | `Err(SetupErrorReturn::Bb1DepthOne(…))` holding `MasterScalarSampling`, `U0Sampling`, or `U1Sampling` with the refusal unchanged |
 | entitlement scope | `params.scope` is `SetupScope::Entitlement` and all three samplings succeed | none | `g1_generator`, `g2_generator`, `mul_g1(g1, a)` for `u0`, `mul_g1(g1, b)` for `u1`, and `mul_g2(g2, α)` for `hpub`, each once | `Ok(SetupSuccessReturn { parameter_set, master_scalar })` with the scope `Bb1DepthOneParameterSetScope::Entitlement` and the master scalar the sampled `Secret` of `α` in `Bb1DepthOneMasterScalar`; the sampled `a` and `b` drop and zeroize |
-| asset scope refused | `params.scope` is `SetupScope::Asset { identity }` and the identity mapping over `identity` and the new `u0`, `u1` fails | the mapping's result | `g1_generator`, `g2_generator`, the two `mul_g1`, `mul_g2(g2, α)`, then the identity mapping | `Err(SetupErrorReturn::Bb1DepthOne(Bb1DepthOneSetupErrorReturn::HashToScalar(error)))` or `Err(SetupErrorReturn::Bb1DepthOne(Bb1DepthOneSetupErrorReturn::TrivialIdentityElement))`; `a` and `b` are uniform, so `F` is trivial with negligible probability and the hash refuses no tag this concrete holds, so neither branch has a unit test |
-| asset scope | `params.scope` is `SetupScope::Asset { identity }` and the identity mapping succeeds | none | as above | `Ok` as the entitlement scope with the scope `Bb1DepthOneParameterSetScope::Asset { identity_element: F }` |
+| asset scope refused | `params.scope` is `SetupScope::Asset { identity_hash }` and the identity mapping over `KemIdentity::Asset { identity_hash }` and the new `u0`, `u1` fails | the mapping's result | `g1_generator`, `g2_generator`, the two `mul_g1`, `mul_g2(g2, α)`, then the identity mapping | `Err(SetupErrorReturn::Bb1DepthOne(Bb1DepthOneSetupErrorReturn::HashToScalar(error)))` or `Err(SetupErrorReturn::Bb1DepthOne(Bb1DepthOneSetupErrorReturn::TrivialIdentityElement))`; `a` and `b` are uniform, so `F` is trivial with negligible probability and the hash refuses no tag this concrete holds, so neither branch has a unit test |
+| asset scope | `params.scope` is `SetupScope::Asset { identity_hash }` and the identity mapping succeeds | none | as above | `Ok` as the entitlement scope with the scope `Bb1DepthOneParameterSetScope::Asset { identity_element: F }` |
 
 ## `derive_identity(&self, params: DeriveIdentityParams, payload: DeriveIdentityPayload<'_, Self::ParameterSet>) -> DeriveIdentityReturn<Self::IdentityElement>`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| refused by the hash or trivial | the identity mapping over `payload.identity` and the parameter set's `u0`, `u1` fails | the mapping's result | the identity mapping | `Err(DeriveIdentityErrorReturn::Bb1DepthOne(…))` holding `HashToScalar(error)` unchanged or `TrivialIdentityElement` (LC-08) |
-| outside the asset scope | the parameter set's scope is `Asset { identity_element }` and `encode_g1(F)` differs from `encode_g1(identity_element)` | byte equality of the two public encodings | the identity mapping, then `encode_g1` twice | `Err(DeriveIdentityErrorReturn::Bb1DepthOne(Bb1DepthOneDeriveIdentityErrorReturn::OutsideAssetScope))` |
+| wrong role | the parameter set's scope is `Entitlement` and `payload.identity` is `KemIdentity::Asset`, or its scope is `Asset` and the identity is `KemIdentity::Entitlement` | the mismatch | none | `Err(DeriveIdentityErrorReturn::Bb1DepthOne(Bb1DepthOneDeriveIdentityErrorReturn::WrongIdentityScope))` before hashing |
+| refused by the hash or trivial | the roles match and the identity mapping over `payload.identity` and the parameter set's `u0`, `u1` fails | the mapping's result | the identity mapping | `Err(DeriveIdentityErrorReturn::Bb1DepthOne(…))` holding `HashToScalar(error)` unchanged or `TrivialIdentityElement` (LC-08) |
+| outside the asset scope | the parameter set's scope is `Asset { identity_element }` and `encode_g1(F)` differs from `encode_g1(identity_element)` | equality of the two `P::EncodedG1` values, without discarding their type into byte vectors | the identity mapping, then `encode_g1` twice | `Err(DeriveIdentityErrorReturn::Bb1DepthOne(Bb1DepthOneDeriveIdentityErrorReturn::OutsideAssetScope))` |
 | derived | the mapping succeeds and, under the asset scope, the encodings are equal | none | the identity mapping, then `encode_g1` twice under the asset scope | `Ok(DeriveIdentitySuccessReturn { identity_element: Bb1DepthOneIdentityElement { scalar: I, element: F } })` |
 
 ## `issue(&self, params: IssueParams, payload: IssuePayload<'_, Self::ParameterSet, Self::MasterScalar, Self::IdentityElement>) -> IssueReturn<Self::Credential, S>`
@@ -61,7 +62,7 @@ The inherent constant `KemDeclaration { identifier: KemIdentifier::Bb1DepthOneV1
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
 | sampling refused | `payload.uniform` is refused | the sampler's result | `P::Scalar::sample_from_uniform_bytes` once | `Err(EncapsulateErrorReturn::Bb1DepthOne(Bb1DepthOneEncapsulateErrorReturn::Sampling(error)))`, the refusal unchanged |
-| encapsulated | sampling succeeds | the parameter set's scope selects the capsule form | `mul_g2(g2, t)` for `U`; under the entitlement scope `mul_g1(u0, t)` for `V` and `mul_g1(u1, t)` for `W`; under the asset scope `mul_g1(F, t)` for `V`; then `mul_g1(g1, t)`, `pairing_product` over the one term `(t·g1, hpub)`, and `encode_gt` | `Ok(EncapsulateSuccessReturn { capsule, encapsulated: EncapsulatedValue { bytes } })`, the capsule `Bb1DepthOneCapsule::Entitlement { u, v, w }` or `Bb1DepthOneCapsule::Asset { u, v }` by scope; the sampled `t` and the target-group value drop and zeroize |
+| encapsulated | sampling succeeds | the parameter set's scope selects the capsule form | `mul_g2(g2, t)` for `U`; under the entitlement scope `mul_g1(u0, t)` for `V` and `mul_g1(u1, t)` for `W`; under the asset scope `mul_g1(F, t)` for `V`; then `mul_g1(g1, t)`, `pairing_product` over the one term `(t·g1, hpub)`, and `encode_gt`; copy `Secret<P::EncodedGt>::expose().as_ref()` once into the private `EncapsulatedValue` secret buffer | `Ok(EncapsulateSuccessReturn { capsule, encapsulated })`, the capsule `Bb1DepthOneCapsule::Entitlement { u, v, w }` or `Bb1DepthOneCapsule::Asset { u, v }` by scope; the sampled `t`, the encoded target-group value, and the target-group value drop and zeroize |
 
 ## `is_well_formed(&self, params: IsWellFormedParams, payload: IsWellFormedPayload<'_, Self::ParameterSet, Self::Capsule>) -> IsWellFormedReturn`
 
@@ -75,8 +76,8 @@ The inherent constant `KemDeclaration { identifier: KemIdentifier::Bb1DepthOneV1
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| entitlement | the capsule is `Entitlement { u, v, w }` | none | `mul_g1(w, I)`, `add_g1(v, I·w)`, `neg_g1` of that sum, `pairing_product` over `(A, u)` and `(-(v + I·w), B)`, and `encode_gt` | `Ok(DecapsulateSuccessReturn { encapsulated: EncapsulatedValue { bytes } })` |
-| asset | the capsule is `Asset { u, v }` | none | `neg_g1(v)`, `pairing_product` over `(A, u)` and `(-v, B)`, and `encode_gt` | `Ok(DecapsulateSuccessReturn { encapsulated: EncapsulatedValue { bytes } })`; the identity element is not read, since the asset's `F` is fixed in `v` |
+| entitlement | the capsule is `Entitlement { u, v, w }` | none | `mul_g1(w, I)`, `add_g1(v, I·w)`, `neg_g1` of that sum, `pairing_product` over `(A, u)` and `(-(v + I·w), B)`, and `encode_gt`; copy the typed encoded target-group bytes into the private `EncapsulatedValue` as in `encapsulate` | `Ok(DecapsulateSuccessReturn { encapsulated })` |
+| asset | the capsule is `Asset { u, v }` | none | `neg_g1(v)`, `pairing_product` over `(A, u)` and `(-v, B)`, and `encode_gt`; the copy as in `encapsulate` | `Ok(DecapsulateSuccessReturn { encapsulated })`; the identity element is not read, since the asset's `F` is fixed in `v` |
 
 ## Component access
 

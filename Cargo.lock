@@ -3091,6 +3091,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
+name = "workflows"
+version = "0.0.0"
+dependencies = [
+ "domain",
+ "encoding",
+ "hash-to-scalar",
+ "hex",
+ "kdf",
+ "kem",
+ "pairing 0.0.0",
+ "random",
+]
+
+[[package]]
 name = "wyz"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

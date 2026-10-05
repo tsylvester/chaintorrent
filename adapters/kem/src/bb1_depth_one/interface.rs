@@ -4,7 +4,19 @@ use hash_to_scalar::{
 };
 use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorReturn};
 
+use crate::factory::provides::{
+    IdentityScope, KEM_INTERFACE_VERSION, KemDeclaration, KemIdentifier,
+};
+
 pub const BB1_DEPTH_ONE_IDENTITY_TAG: &[u8] = b"ChainTorrent-v1-kem-identity";
+
+pub(crate) const BB1_DEPTH_ONE_DECLARATION: KemDeclaration = KemDeclaration {
+    identifier: KemIdentifier::Bb1DepthOneV1,
+    identity_scopes: &[IdentityScope::Entitlement, IdentityScope::Asset],
+    identity_tag: BB1_DEPTH_ONE_IDENTITY_TAG,
+    adapter_version: 1,
+    interface_version: KEM_INTERFACE_VERSION,
+};
 
 pub struct Bb1DepthOneKem<'a, P: IPairingArithmetic> {
     pub(super) pairing: &'a P,
@@ -66,6 +78,7 @@ pub enum Bb1DepthOneSetupErrorReturn {
 }
 
 pub enum Bb1DepthOneDeriveIdentityErrorReturn {
+    WrongIdentityScope,
     HashToScalar(HashToScalarErrorReturn),
     TrivialIdentityElement,
     OutsideAssetScope,

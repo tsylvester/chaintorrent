@@ -1,15 +1,18 @@
 use core::convert::Infallible;
-use domain::Secret;
-use pairing::IPairingAdapter;
+use domain::{AssetIdentityHash, Secret};
+use hash_to_scalar::IHashToScalarAdapter;
+use pairing::{IPairingAdapter, IPairingArithmetic};
 use zeroize::Zeroize;
 
 use crate::bb1_depth_one::provides::{
     Bb1DepthOneDeriveIdentityErrorReturn, Bb1DepthOneEncapsulateErrorReturn,
-    Bb1DepthOneIssueErrorReturn, Bb1DepthOneRerandomizeErrorReturn, Bb1DepthOneSetupErrorReturn,
+    Bb1DepthOneIssueErrorReturn, Bb1DepthOneKemTryNewErrorReturn,
+    Bb1DepthOneRerandomizeErrorReturn, Bb1DepthOneSetupErrorReturn,
 };
 
 pub const KEM_INTERFACE_VERSION: u32 = 1;
 
+#[derive(PartialEq, Eq)]
 pub enum KemIdentifier {
     Bb1DepthOneV1,
 }
@@ -29,12 +32,14 @@ pub struct KemDeclaration {
 }
 
 pub struct EncapsulatedValue {
-    pub bytes: Secret<Vec<u8>>,
+    pub(crate) bytes: Secret<Vec<u8>>,
 }
 
 pub enum SetupScope<'a> {
     Entitlement,
-    Asset { identity: &'a [u8] },
+    Asset {
+        identity_hash: &'a AssetIdentityHash,
+    },
 }
 
 pub struct SetupParams<'a> {
@@ -58,11 +63,20 @@ pub enum SetupErrorReturn {
 
 pub type SetupReturn<PS, M> = Result<SetupSuccessReturn<PS, M>, SetupErrorReturn>;
 
+pub enum KemIdentity<'a> {
+    Entitlement {
+        canonical: &'a [u8],
+    },
+    Asset {
+        identity_hash: &'a AssetIdentityHash,
+    },
+}
+
 pub struct DeriveIdentityParams;
 
 pub struct DeriveIdentityPayload<'a, PS> {
     pub parameter_set: &'a PS,
-    pub identity: &'a [u8],
+    pub identity: KemIdentity<'a>,
 }
 
 pub struct DeriveIdentitySuccessReturn<IE> {
@@ -326,6 +340,8 @@ pub type MasterScalarFromComponentsReturn<M> =
     Result<MasterScalarFromComponentsSuccessReturn<M>, Infallible>;
 
 pub trait ICredentialKemAdapter {
+    const DECLARATION: KemDeclaration;
+
     type Pairing: IPairingAdapter;
     type ParameterSet;
     type MasterScalar;
@@ -461,3 +477,63 @@ pub trait ICredentialKemAdapter {
         payload: MasterScalarFromComponentsPayload<<Self::Pairing as IPairingAdapter>::Scalar>,
     ) -> MasterScalarFromComponentsReturn<Self::MasterScalar>;
 }
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum KemConcrete {
+    Bb1DepthOne,
+}
+
+pub trait IKemConsumer<P: IPairingAdapter> {
+    type Output;
+
+    fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        &self,
+        params: ConsumeKemParams,
+        payload: ConsumeKemPayload<K>,
+    ) -> Self::Output;
+}
+
+pub struct ConsumeKemParams;
+
+pub struct ConsumeKemPayload<K: ICredentialKemAdapter> {
+    pub adapter: K,
+    pub(super) scope: IdentityScope,
+}
+
+impl<K: ICredentialKemAdapter> ConsumeKemPayload<K> {
+    pub fn scope(&self) -> IdentityScope {
+        self.scope
+    }
+}
+
+pub struct CreateKemDeps<'a, P: IPairingArithmetic, C> {
+    pub pairing: &'a P,
+    pub hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    pub consumer: C,
+}
+
+pub struct CreateKemParams {
+    pub concrete: KemConcrete,
+    pub identifier: KemIdentifier,
+    pub scope: IdentityScope,
+}
+
+pub struct CreateKemPayload;
+
+pub struct CreateKemSuccessReturn<O> {
+    pub output: O,
+}
+
+pub enum CreateKemErrorReturn {
+    UnsupportedKemIdentifier,
+    UnsupportedIdentityScope,
+    Bb1DepthOne(Bb1DepthOneKemTryNewErrorReturn),
+}
+
+pub type CreateKemReturn<O> = Result<CreateKemSuccessReturn<O>, CreateKemErrorReturn>;
+
+pub type CreateKemFn<'a, P, C> = fn(
+    &CreateKemDeps<'a, P, C>,
+    CreateKemParams,
+    CreateKemPayload,
+) -> CreateKemReturn<<C as IKemConsumer<P>>::Output>;

@@ -1,0 +1,27 @@
+[package]
+name = "workflows"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+domain = { path = "../domain" }
+encoding = { path = "../../adapters/encoding" }
+kdf = { path = "../../adapters/kdf" }
+kem = { path = "../../adapters/kem" }
+
+[dev-dependencies]
+domain = { path = "../domain", features = ["mocks"] }
+encoding = { path = "../../adapters/encoding", features = ["mocks"] }
+kdf = { path = "../../adapters/kdf", features = ["mocks"] }
+kem = { path = "../../adapters/kem", features = ["mocks"] }
+pairing = { path = "../../adapters/pairing", features = ["mocks"] }
+hash-to-scalar = { path = "../../adapters/hash-to-scalar", features = ["mocks"] }
+random = { path = "../../adapters/random", features = ["mocks"] }
+hex = "0.4.3"
+
+[features]
+mocks = ["domain/mocks"]
+
+[lints]
+workspace = true

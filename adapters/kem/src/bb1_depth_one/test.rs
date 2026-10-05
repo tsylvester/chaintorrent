@@ -19,7 +19,7 @@ use crate::factory::provides::{
     DeriveIdentityPayload, EncapsulateErrorReturn, EncapsulateParams, EncapsulatePayload,
     ICredentialKemAdapter, IdentityElementComponentsParams, IdentityElementComponentsPayload,
     IdentityScope, IsValidParams, IsValidPayload, IsWellFormedParams, IsWellFormedPayload,
-    IssueErrorReturn, IssueParams, IssuePayload, KEM_INTERFACE_VERSION, KemIdentifier,
+    IssueErrorReturn, IssueParams, IssuePayload, KEM_INTERFACE_VERSION, KemIdentifier, KemIdentity,
     MasterScalarComponentsParams, MasterScalarComponentsPayload, MasterScalarFromComponentsParams,
     MasterScalarFromComponentsPayload, ParameterSetComponentsParams, ParameterSetComponentsPayload,
     ParameterSetFromComponentsParams, ParameterSetFromComponentsPayload,
@@ -27,21 +27,28 @@ use crate::factory::provides::{
     SetupErrorReturn, SetupParamsOverrides, SetupPayload, SetupPayloadOverrides, SetupScope,
     build_setup_params, build_setup_payload,
 };
-use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
+use core::cell::Cell;
+use domain::{
+    AssetIdentityHash, AssetIdentityHashConstructorParamsOverrides, Secret,
+    SecretConstructorParamsOverrides, build_asset_identity_hash, build_secret,
+};
 use hash_to_scalar::{
     CreateHashToScalarDeps, CreateHashToScalarParamsOverrides, CreateHashToScalarPayload,
-    DomainTag, DomainTagConstructorParams, HashToScalarParams, HashToScalarPayload,
+    DomainTag, DomainTagConstructorParams, HashToScalarDeclaration, HashToScalarParams,
+    HashToScalarPayload, HashToScalarReturn, IHashToScalarAdapter,
     build_create_hash_to_scalar_params, create_hash_to_scalar,
 };
 use pairing::{
     AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, ConsumePairingParams,
     ConsumePairingPayload, CreatePairingDeps, CreatePairingParamsOverrides, CreatePairingPayload,
-    EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload, EncodeScalarParams,
-    EncodeScalarPayload, G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams,
-    G2GeneratorPayload, IPairingArithmetic, IPairingConsumer, ISampleUniformScalar, MsmG1Params,
-    MsmG1Payload, MsmG1Term, MulG1Params, MulG1Payload, MulG2Params, MulG2Payload, NegScalarParams,
-    NegScalarPayload, PairingConcrete, SampleUniformScalarErrorReturn, build_create_pairing_params,
-    create_pairing,
+    EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload, EncodeGtParams,
+    EncodeGtPayload, EncodeScalarParams, EncodeScalarPayload, G1GeneratorParams,
+    G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingArithmetic,
+    IPairingConsumer, ISampleUniformScalar, MsmG1Params, MsmG1Payload, MsmG1Term, MulG1Params,
+    MulG1Payload, MulG2Params, MulG2Payload, NegScalarParams, NegScalarPayload, PairingConcrete,
+    PairingProductParams, PairingProductPayload, PairingProductTerm,
+    SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
+    build_create_pairing_params, create_pairing,
 };
 
 fn uniform_draw<P: IPairingArithmetic>(byte: u8) -> Secret<Vec<u8>> {
@@ -137,7 +144,9 @@ impl IPairingConsumer for EntitlementScopeProbe {
             DeriveIdentityParams,
             DeriveIdentityPayload {
                 parameter_set: &parameter_set,
-                identity: &self.identity,
+                identity: KemIdentity::Entitlement {
+                    canonical: &self.identity,
+                },
             },
         ) else {
             panic!("the identity derives");
@@ -146,7 +155,9 @@ impl IPairingConsumer for EntitlementScopeProbe {
             DeriveIdentityParams,
             DeriveIdentityPayload {
                 parameter_set: &parameter_set,
-                identity: &self.other_identity,
+                identity: KemIdentity::Entitlement {
+                    canonical: &self.other_identity,
+                },
             },
         ) else {
             panic!("the other identity derives");
@@ -155,7 +166,9 @@ impl IPairingConsumer for EntitlementScopeProbe {
             DeriveIdentityParams,
             DeriveIdentityPayload {
                 parameter_set: &other_parameter_set,
-                identity: &self.identity,
+                identity: KemIdentity::Entitlement {
+                    canonical: &self.identity,
+                },
             },
         ) else {
             panic!("the identity derives under the other set");
@@ -261,7 +274,7 @@ impl IPairingConsumer for EntitlementScopeProbe {
         );
         let issued_is_valid_under_other_set = valid.is_valid;
 
-        let encapsulated_bytes = encapsulated.encapsulated.bytes.expose().clone();
+        let encapsulated_bytes = encapsulated.encapsulated.key_material().expose().clone();
         let Ok(decapsulated) = kem.decapsulate(
             DecapsulateParams,
             DecapsulatePayload {
@@ -270,7 +283,7 @@ impl IPairingConsumer for EntitlementScopeProbe {
                 capsule: &encapsulated.capsule,
             },
         );
-        let decapsulated_by_issued = decapsulated.encapsulated.bytes.expose().clone();
+        let decapsulated_by_issued = decapsulated.encapsulated.key_material().expose().clone();
         let Ok(decapsulated) = kem.decapsulate(
             DecapsulateParams,
             DecapsulatePayload {
@@ -279,7 +292,8 @@ impl IPairingConsumer for EntitlementScopeProbe {
                 capsule: &encapsulated.capsule,
             },
         );
-        let decapsulated_by_second_issued = decapsulated.encapsulated.bytes.expose().clone();
+        let decapsulated_by_second_issued =
+            decapsulated.encapsulated.key_material().expose().clone();
         let Ok(decapsulated) = kem.decapsulate(
             DecapsulateParams,
             DecapsulatePayload {
@@ -288,7 +302,8 @@ impl IPairingConsumer for EntitlementScopeProbe {
                 capsule: &encapsulated.capsule,
             },
         );
-        let decapsulated_by_rerandomized = decapsulated.encapsulated.bytes.expose().clone();
+        let decapsulated_by_rerandomized =
+            decapsulated.encapsulated.key_material().expose().clone();
         let Ok(decapsulated) = kem.decapsulate(
             DecapsulateParams,
             DecapsulatePayload {
@@ -297,7 +312,8 @@ impl IPairingConsumer for EntitlementScopeProbe {
                 capsule: &encapsulated.capsule,
             },
         );
-        let decapsulated_by_other_entitlement = decapsulated.encapsulated.bytes.expose().clone();
+        let decapsulated_by_other_entitlement =
+            decapsulated.encapsulated.key_material().expose().clone();
 
         let Ok(well_formed) = kem.is_well_formed(
             IsWellFormedParams,
@@ -369,8 +385,8 @@ struct AssetScopeOutcome {
 }
 
 struct AssetScopeProbe {
-    asset_identity: Vec<u8>,
-    other_identity: Vec<u8>,
+    asset_identity_hash: AssetIdentityHash,
+    other_identity_hash: AssetIdentityHash,
 }
 
 impl IPairingConsumer for AssetScopeProbe {
@@ -399,7 +415,7 @@ impl IPairingConsumer for AssetScopeProbe {
         let Ok(setup) = kem.setup(
             build_setup_params(SetupParamsOverrides {
                 scope: Some(SetupScope::Asset {
-                    identity: &self.asset_identity,
+                    identity_hash: &self.asset_identity_hash,
                 }),
             }),
             build_setup_payload(SetupPayloadOverrides::default()),
@@ -413,7 +429,9 @@ impl IPairingConsumer for AssetScopeProbe {
             DeriveIdentityParams,
             DeriveIdentityPayload {
                 parameter_set: &parameter_set,
-                identity: &self.asset_identity,
+                identity: KemIdentity::Asset {
+                    identity_hash: &self.asset_identity_hash,
+                },
             },
         ) else {
             panic!("the asset identity derives");
@@ -482,7 +500,7 @@ impl IPairingConsumer for AssetScopeProbe {
         );
         let capsule_is_well_formed = well_formed.is_well_formed;
 
-        let encapsulated_bytes = encapsulated.encapsulated.bytes.expose().clone();
+        let encapsulated_bytes = encapsulated.encapsulated.key_material().expose().clone();
         let Ok(decapsulated) = kem.decapsulate(
             DecapsulateParams,
             DecapsulatePayload {
@@ -491,7 +509,7 @@ impl IPairingConsumer for AssetScopeProbe {
                 capsule: &encapsulated.capsule,
             },
         );
-        let decapsulated_by_issued = decapsulated.encapsulated.bytes.expose().clone();
+        let decapsulated_by_issued = decapsulated.encapsulated.key_material().expose().clone();
         let Ok(decapsulated) = kem.decapsulate(
             DecapsulateParams,
             DecapsulatePayload {
@@ -500,14 +518,17 @@ impl IPairingConsumer for AssetScopeProbe {
                 capsule: &encapsulated.capsule,
             },
         );
-        let decapsulated_by_holder_authored = decapsulated.encapsulated.bytes.expose().clone();
+        let decapsulated_by_holder_authored =
+            decapsulated.encapsulated.key_material().expose().clone();
 
         let other_identity_is_outside_the_scope = matches!(
             kem.derive_identity(
                 DeriveIdentityParams,
                 DeriveIdentityPayload {
                     parameter_set: &parameter_set,
-                    identity: &self.other_identity,
+                    identity: KemIdentity::Asset {
+                        identity_hash: &self.other_identity_hash,
+                    },
                 },
             ),
             Err(DeriveIdentityErrorReturn::Bb1DepthOne(
@@ -614,7 +635,9 @@ impl IPairingConsumer for ComponentsProbe {
             DeriveIdentityParams,
             DeriveIdentityPayload {
                 parameter_set: &parameter_set,
-                identity: &self.identity,
+                identity: KemIdentity::Entitlement {
+                    canonical: &self.identity,
+                },
             },
         ) else {
             panic!("the identity derives");
@@ -759,7 +782,7 @@ impl IPairingConsumer for ComponentsProbe {
         let Ok(actual_i) =
             pairing.encode_scalar(EncodeScalarParams, EncodeScalarPayload { scalar: i_scalar });
         let identity_scalar_is_the_declared_tags_hash =
-            expected_i.bytes.expose() == actual_i.bytes.expose();
+            expected_i.bytes.expose().as_ref() == actual_i.bytes.expose().as_ref();
 
         let Ok(expected_a) = pairing.msm_g1(
             MsmG1Params,
@@ -906,7 +929,8 @@ impl IPairingConsumer for ComponentsProbe {
             },
         );
         let rebuilt_capsule_decapsulates_the_encapsulated_value =
-            decapsulated.encapsulated.bytes.expose() == encapsulated.encapsulated.bytes.expose();
+            decapsulated.encapsulated.key_material().expose()
+                == encapsulated.encapsulated.key_material().expose();
 
         let Ok(master_components_again) = kem.master_scalar_components(
             MasterScalarComponentsParams,
@@ -1034,7 +1058,9 @@ impl IPairingConsumer for TrivialIdentityProbe {
                 DeriveIdentityParams,
                 DeriveIdentityPayload {
                     parameter_set: &parameter_set,
-                    identity: &self.identity,
+                    identity: KemIdentity::Entitlement {
+                        canonical: &self.identity,
+                    },
                 },
             ),
             Err(DeriveIdentityErrorReturn::Bb1DepthOne(
@@ -1126,7 +1152,9 @@ impl IPairingConsumer for SamplingProbe {
             DeriveIdentityParams,
             DeriveIdentityPayload {
                 parameter_set: &parameter_set,
-                identity: b"entitlement-one",
+                identity: KemIdentity::Entitlement {
+                    canonical: b"entitlement-one",
+                },
             },
         ) else {
             panic!("the identity derives");
@@ -1205,6 +1233,204 @@ impl IPairingConsumer for SamplingProbe {
             issue_refused,
             rerandomize_refused,
             encapsulate_refused,
+        }
+    }
+}
+
+struct SpyHashToScalar<S: ISampleUniformScalar + Clone> {
+    inner: Box<dyn IHashToScalarAdapter<S>>,
+    calls: Cell<usize>,
+}
+
+impl<S: ISampleUniformScalar + Clone> IHashToScalarAdapter<S> for SpyHashToScalar<S> {
+    fn declaration(&self) -> HashToScalarDeclaration {
+        self.inner.declaration()
+    }
+
+    fn hash_to_scalar(
+        &self,
+        params: HashToScalarParams<'_>,
+        payload: HashToScalarPayload<'_>,
+    ) -> HashToScalarReturn<S> {
+        self.calls.set(self.calls.get() + 1);
+        self.inner.hash_to_scalar(params, payload)
+    }
+}
+
+struct WrongRoleOutcome {
+    entitlement_set_refused: bool,
+    asset_set_refused: bool,
+    hash_calls: usize,
+}
+
+struct WrongRoleProbe {
+    asset_identity_hash: AssetIdentityHash,
+}
+
+impl IPairingConsumer for WrongRoleProbe {
+    type Output = WrongRoleOutcome;
+
+    fn consume_pairing<P: IPairingArithmetic>(
+        &self,
+        _params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output {
+        let pairing = &payload.adapter;
+        let Ok(hash) = create_hash_to_scalar::<P::Scalar>(
+            &CreateHashToScalarDeps,
+            build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides::default()),
+            CreateHashToScalarPayload,
+        ) else {
+            panic!("the hash-to-scalar concrete is constructed");
+        };
+        let spy = SpyHashToScalar {
+            inner: hash.adapter,
+            calls: Cell::new(0),
+        };
+        let Ok(kem) = Bb1DepthOneKem::try_new(Bb1DepthOneKemConstructorParams {
+            pairing,
+            hash_to_scalar: &spy,
+        }) else {
+            panic!("the declared tag is admitted");
+        };
+
+        let Ok(entitlement_setup) = kem.setup(
+            build_setup_params(SetupParamsOverrides::default()),
+            build_setup_payload(SetupPayloadOverrides::default()),
+        ) else {
+            panic!("the entitlement setup succeeds");
+        };
+        let entitlement_set_refused = matches!(
+            kem.derive_identity(
+                DeriveIdentityParams,
+                DeriveIdentityPayload {
+                    parameter_set: &entitlement_setup.parameter_set,
+                    identity: KemIdentity::Asset {
+                        identity_hash: &self.asset_identity_hash,
+                    },
+                },
+            ),
+            Err(DeriveIdentityErrorReturn::Bb1DepthOne(
+                Bb1DepthOneDeriveIdentityErrorReturn::WrongIdentityScope
+            ))
+        );
+        let calls_at_entitlement_refusal = spy.calls.get();
+
+        let Ok(asset_setup) = kem.setup(
+            build_setup_params(SetupParamsOverrides {
+                scope: Some(SetupScope::Asset {
+                    identity_hash: &self.asset_identity_hash,
+                }),
+            }),
+            build_setup_payload(SetupPayloadOverrides::default()),
+        ) else {
+            panic!("the asset setup succeeds");
+        };
+        spy.calls.set(0);
+        let asset_set_refused = matches!(
+            kem.derive_identity(
+                DeriveIdentityParams,
+                DeriveIdentityPayload {
+                    parameter_set: &asset_setup.parameter_set,
+                    identity: KemIdentity::Entitlement {
+                        canonical: b"entitlement-one",
+                    },
+                },
+            ),
+            Err(DeriveIdentityErrorReturn::Bb1DepthOne(
+                Bb1DepthOneDeriveIdentityErrorReturn::WrongIdentityScope
+            ))
+        );
+
+        WrongRoleOutcome {
+            entitlement_set_refused,
+            asset_set_refused,
+            hash_calls: calls_at_entitlement_refusal + spy.calls.get(),
+        }
+    }
+}
+
+struct EncodingOutcome {
+    encapsulated_matches_encode_gt: bool,
+}
+
+#[derive(Clone, Copy)]
+struct EncodingProbe;
+
+impl IPairingConsumer for EncodingProbe {
+    type Output = EncodingOutcome;
+
+    fn consume_pairing<P: IPairingArithmetic>(
+        &self,
+        _params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output {
+        let pairing = &payload.adapter;
+        let Ok(hash) = create_hash_to_scalar::<P::Scalar>(
+            &CreateHashToScalarDeps,
+            build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides::default()),
+            CreateHashToScalarPayload,
+        ) else {
+            panic!("the hash-to-scalar concrete is constructed");
+        };
+        let Ok(kem) = Bb1DepthOneKem::try_new(Bb1DepthOneKemConstructorParams {
+            pairing,
+            hash_to_scalar: hash.adapter.as_ref(),
+        }) else {
+            panic!("the declared tag is admitted");
+        };
+
+        let Ok(setup) = kem.setup(
+            build_setup_params(SetupParamsOverrides::default()),
+            build_setup_payload(SetupPayloadOverrides::default()),
+        ) else {
+            panic!("the setup succeeds");
+        };
+        let parameter_set = setup.parameter_set;
+        let Ok(encapsulated) = kem.encapsulate(
+            EncapsulateParams,
+            EncapsulatePayload {
+                parameter_set: &parameter_set,
+                uniform: uniform_draw::<P>(0xbb),
+            },
+        ) else {
+            panic!("the encapsulation succeeds");
+        };
+
+        let Ok(sampled) = P::Scalar::sample_from_uniform_bytes(
+            SampleUniformScalarParams,
+            SampleUniformScalarPayload {
+                uniform: uniform_draw::<P>(0xbb),
+            },
+        ) else {
+            panic!("the same uniform bytes resample");
+        };
+        let Ok(t_times_g1) = pairing.mul_g1(
+            MulG1Params,
+            MulG1Payload {
+                point: parameter_set.g1.clone(),
+                scalar: sampled.scalar.expose().clone(),
+            },
+        );
+        let Ok(product) = pairing.pairing_product(
+            PairingProductParams,
+            PairingProductPayload {
+                terms: vec![PairingProductTerm {
+                    g1: t_times_g1.product,
+                    g2: parameter_set.hpub.clone(),
+                }],
+            },
+        );
+        let Ok(expected) = pairing.encode_gt(
+            EncodeGtParams,
+            EncodeGtPayload {
+                value: product.product,
+            },
+        );
+
+        EncodingOutcome {
+            encapsulated_matches_encode_gt: expected.bytes.expose().as_ref()
+                == encapsulated.encapsulated.key_material().expose().as_slice(),
         }
     }
 }
@@ -1516,8 +1742,16 @@ fn every_credential_decapsulates_the_encapsulated_value_on_bls12_381_halo2curves
 fn an_asset_scope_capsule_has_two_elements() {
     // Arrange
     let probe = AssetScopeProbe {
-        asset_identity: b"asset-one".to_vec(),
-        other_identity: b"asset-two".to_vec(),
+        asset_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            },
+        ),
+        other_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa2; 32]),
+            },
+        ),
     };
 
     // Act
@@ -1535,8 +1769,16 @@ fn an_asset_scope_capsule_has_two_elements() {
 fn an_asset_scope_capsule_is_well_formed_under_its_parameter_set() {
     // Arrange
     let probe = AssetScopeProbe {
-        asset_identity: b"asset-one".to_vec(),
-        other_identity: b"asset-two".to_vec(),
+        asset_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            },
+        ),
+        other_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa2; 32]),
+            },
+        ),
     };
 
     // Act
@@ -1555,8 +1797,16 @@ fn an_asset_scope_capsule_is_well_formed_under_its_parameter_set() {
 fn a_holder_authors_a_valid_asset_scope_credential_without_the_master_scalar() {
     // Arrange
     let probe = AssetScopeProbe {
-        asset_identity: b"asset-one".to_vec(),
-        other_identity: b"asset-two".to_vec(),
+        asset_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            },
+        ),
+        other_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa2; 32]),
+            },
+        ),
     };
 
     // Act
@@ -1577,8 +1827,16 @@ fn a_holder_authors_a_valid_asset_scope_credential_without_the_master_scalar() {
 fn every_asset_scope_credential_decapsulates_the_encapsulated_value() {
     // Arrange
     let probe = AssetScopeProbe {
-        asset_identity: b"asset-one".to_vec(),
-        other_identity: b"asset-two".to_vec(),
+        asset_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            },
+        ),
+        other_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa2; 32]),
+            },
+        ),
     };
 
     // Act
@@ -1600,8 +1858,16 @@ fn every_asset_scope_credential_decapsulates_the_encapsulated_value() {
 fn derive_identity_refuses_an_identity_outside_the_asset_scope() {
     // Arrange
     let probe = AssetScopeProbe {
-        asset_identity: b"asset-one".to_vec(),
-        other_identity: b"asset-two".to_vec(),
+        asset_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            },
+        ),
+        other_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa2; 32]),
+            },
+        ),
     };
 
     // Act
@@ -1609,6 +1875,34 @@ fn derive_identity_refuses_an_identity_outside_the_asset_scope() {
 
     // Assert
     assert!(outcome.other_identity_is_outside_the_scope);
+}
+
+/// Contract: an identity of the other role is refused before any hashing.
+/// Arrange: `WrongRoleProbe` over asset hash one; under an entitlement set the
+///   probe passes `KemIdentity::Asset { identity_hash: … }` and under an asset
+///   set it passes `KemIdentity::Entitlement { canonical: b"entitlement-one" }`.
+///   A 31-byte asset hash cannot be placed in either asset variant.
+/// Act:     `create_pairing` on `PairingConcrete::Bls12381Arkworks`.
+/// Assert:  both calls return `WrongIdentityScope` and the hash-to-scalar spy
+///   records no call.
+#[test]
+fn derive_identity_refuses_the_other_identity_role_before_hashing() {
+    // Arrange
+    let probe = WrongRoleProbe {
+        asset_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            },
+        ),
+    };
+
+    // Act
+    let outcome = run_probe(probe, PairingConcrete::Bls12381Arkworks);
+
+    // Assert
+    assert!(outcome.entitlement_set_refused);
+    assert!(outcome.asset_set_refused);
+    assert_eq!(outcome.hash_calls, 0);
 }
 
 /// Contract: the asset scope's fixed `F` is the element its asset identity
@@ -1620,8 +1914,16 @@ fn derive_identity_refuses_an_identity_outside_the_asset_scope() {
 fn an_asset_scope_parameter_set_carries_the_derived_identity_element() {
     // Arrange
     let probe = AssetScopeProbe {
-        asset_identity: b"asset-one".to_vec(),
-        other_identity: b"asset-two".to_vec(),
+        asset_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            },
+        ),
+        other_identity_hash: build_asset_identity_hash(
+            AssetIdentityHashConstructorParamsOverrides {
+                bytes: Some([0xa2; 32]),
+            },
+        ),
     };
 
     // Act
@@ -1629,6 +1931,33 @@ fn an_asset_scope_parameter_set_carries_the_derived_identity_element() {
 
     // Assert
     assert!(outcome.set_carries_the_derived_identity_element);
+}
+
+/// Contract: `encapsulate` stores exactly the concrete's `encode_gt` encoding
+///   of the pairing product as the `EncapsulatedValue`'s KDF material; external
+///   code can borrow `key_material()` but cannot initialize or mutate the
+///   field from `Secret<Vec<u8>>` (compile-time).
+/// Arrange: `EncodingProbe`.
+/// Act:     `create_pairing` on each of the four pairing concretes, comparing
+///   `encapsulated.key_material().expose()` with that concrete's `encode_gt`
+///   result for the same pairing product, using `as_ref()` only at the
+///   comparison.
+/// Assert:  `encapsulated_matches_encode_gt` under each concrete.
+#[test]
+fn encapsulation_exposes_only_the_admitted_target_group_encoding() {
+    // Arrange
+    let probe = EncodingProbe;
+
+    // Act and Assert
+    for concrete in [
+        PairingConcrete::Bn254Arkworks,
+        PairingConcrete::Bn254Halo2curves,
+        PairingConcrete::Bls12381Arkworks,
+        PairingConcrete::Bls12381Halo2curves,
+    ] {
+        let outcome = run_probe(probe, concrete);
+        assert!(outcome.encapsulated_matches_encode_gt);
+    }
 }
 
 /// Contract: an identity whose element is the identity is refused before any

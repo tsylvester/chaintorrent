@@ -16,12 +16,11 @@ use crate::factory::provides::{
     EncapsulateErrorReturn, EncapsulateParams, EncapsulatePayload, EncapsulateReturn,
     EncapsulateSuccessReturn, EncapsulatedValue, ICredentialKemAdapter, IdentityElementComponents,
     IdentityElementComponentsParams, IdentityElementComponentsPayload,
-    IdentityElementComponentsReturn, IdentityElementComponentsSuccessReturn, IdentityScope,
-    IsValidParams, IsValidPayload, IsValidReturn, IsValidSuccessReturn, IsWellFormedParams,
-    IsWellFormedPayload, IsWellFormedReturn, IsWellFormedSuccessReturn, IssueErrorReturn,
-    IssueParams, IssuePayload, IssueReturn, IssueSuccessReturn, KEM_INTERFACE_VERSION,
-    KemDeclaration, KemIdentifier, MasterScalarComponents, MasterScalarComponentsParams,
-    MasterScalarComponentsPayload, MasterScalarComponentsReturn,
+    IdentityElementComponentsReturn, IdentityElementComponentsSuccessReturn, IsValidParams,
+    IsValidPayload, IsValidReturn, IsValidSuccessReturn, IsWellFormedParams, IsWellFormedPayload,
+    IsWellFormedReturn, IsWellFormedSuccessReturn, IssueErrorReturn, IssueParams, IssuePayload,
+    IssueReturn, IssueSuccessReturn, KemDeclaration, KemIdentity, MasterScalarComponents,
+    MasterScalarComponentsParams, MasterScalarComponentsPayload, MasterScalarComponentsReturn,
     MasterScalarComponentsSuccessReturn, MasterScalarFromComponentsParams,
     MasterScalarFromComponentsPayload, MasterScalarFromComponentsReturn,
     MasterScalarFromComponentsSuccessReturn, ParameterSetComponents, ParameterSetComponentsParams,
@@ -37,8 +36,8 @@ use hash_to_scalar::{
     DomainTag, DomainTagConstructorParams, HashToScalarParams, HashToScalarPayload,
 };
 use interface::{
-    BB1_DEPTH_ONE_IDENTITY_TAG, Bb1DepthOneCapsule, Bb1DepthOneCredential,
-    Bb1DepthOneDeriveIdentityErrorReturn, Bb1DepthOneEncapsulateErrorReturn,
+    BB1_DEPTH_ONE_DECLARATION, BB1_DEPTH_ONE_IDENTITY_TAG, Bb1DepthOneCapsule,
+    Bb1DepthOneCredential, Bb1DepthOneDeriveIdentityErrorReturn, Bb1DepthOneEncapsulateErrorReturn,
     Bb1DepthOneIdentityElement, Bb1DepthOneIssueErrorReturn, Bb1DepthOneKem,
     Bb1DepthOneKemConstructorParams, Bb1DepthOneKemTryNewErrorReturn, Bb1DepthOneKemTryNewReturn,
     Bb1DepthOneMasterScalar, Bb1DepthOneParameterSet, Bb1DepthOneParameterSetScope,
@@ -55,13 +54,7 @@ use pairing::{
 };
 
 impl<'a, P: IPairingArithmetic> Bb1DepthOneKem<'a, P> {
-    pub const DECLARATION: KemDeclaration = KemDeclaration {
-        identifier: KemIdentifier::Bb1DepthOneV1,
-        identity_scopes: &[IdentityScope::Entitlement, IdentityScope::Asset],
-        identity_tag: BB1_DEPTH_ONE_IDENTITY_TAG,
-        adapter_version: 1,
-        interface_version: KEM_INTERFACE_VERSION,
-    };
+    pub const DECLARATION: KemDeclaration = BB1_DEPTH_ONE_DECLARATION;
 
     pub fn try_new(
         params: Bb1DepthOneKemConstructorParams<'a, P>,
@@ -83,6 +76,8 @@ impl<'a, P: IPairingArithmetic> Bb1DepthOneKem<'a, P> {
 }
 
 impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> {
+    const DECLARATION: KemDeclaration = BB1_DEPTH_ONE_DECLARATION;
+
     type Pairing = P;
     type ParameterSet = Bb1DepthOneParameterSet<P>;
     type MasterScalar = Bb1DepthOneMasterScalar<P>;
@@ -163,10 +158,12 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         );
         let scope = match params.scope {
             SetupScope::Entitlement => Bb1DepthOneParameterSetScope::Entitlement,
-            SetupScope::Asset { identity } => {
+            SetupScope::Asset { identity_hash } => {
                 let mapped = match self.hash_to_scalar.hash_to_scalar(
                     HashToScalarParams { tag: &self.tag },
-                    HashToScalarPayload { message: identity },
+                    HashToScalarPayload {
+                        message: identity_hash.as_bytes(),
+                    },
                 ) {
                     Ok(mapped) => mapped,
                     Err(error) => {
@@ -225,11 +222,27 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         _params: DeriveIdentityParams,
         payload: DeriveIdentityPayload<'_, Self::ParameterSet>,
     ) -> DeriveIdentityReturn<Self::IdentityElement> {
+        if matches!(
+            (&payload.parameter_set.scope, &payload.identity),
+            (
+                Bb1DepthOneParameterSetScope::Entitlement,
+                KemIdentity::Asset { .. }
+            ) | (
+                Bb1DepthOneParameterSetScope::Asset { .. },
+                KemIdentity::Entitlement { .. }
+            )
+        ) {
+            return Err(DeriveIdentityErrorReturn::Bb1DepthOne(
+                Bb1DepthOneDeriveIdentityErrorReturn::WrongIdentityScope,
+            ));
+        }
+        let bytes = match payload.identity {
+            KemIdentity::Entitlement { canonical } => canonical,
+            KemIdentity::Asset { identity_hash } => identity_hash.as_bytes(),
+        };
         let mapped = match self.hash_to_scalar.hash_to_scalar(
             HashToScalarParams { tag: &self.tag },
-            HashToScalarPayload {
-                message: payload.identity,
-            },
+            HashToScalarPayload { message: bytes },
         ) {
             Ok(mapped) => mapped,
             Err(error) => {
@@ -519,11 +532,12 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         let Ok(encoded) = self
             .pairing
             .encode_gt(EncodeGtParams, EncodeGtPayload { value: k.product });
+        let Ok(bytes) = Secret::try_new(SecretConstructorParams {
+            value: encoded.bytes.expose().as_ref().to_vec(),
+        });
         Ok(EncapsulateSuccessReturn {
             capsule,
-            encapsulated: EncapsulatedValue {
-                bytes: encoded.bytes,
-            },
+            encapsulated: EncapsulatedValue { bytes },
         })
     }
 
@@ -681,10 +695,11 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
                 value: value.product,
             },
         );
+        let Ok(bytes) = Secret::try_new(SecretConstructorParams {
+            value: encoded.bytes.expose().as_ref().to_vec(),
+        });
         Ok(DecapsulateSuccessReturn {
-            encapsulated: EncapsulatedValue {
-                bytes: encoded.bytes,
-            },
+            encapsulated: EncapsulatedValue { bytes },
         })
     }
 
@@ -835,5 +850,11 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
                 value: payload.components.value,
             },
         })
+    }
+}
+
+impl EncapsulatedValue {
+    pub fn key_material(&self) -> &Secret<Vec<u8>> {
+        &self.bytes
     }
 }

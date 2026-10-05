@@ -8,32 +8,33 @@
 use super::interface::{
     CapsuleComponents, CapsuleComponentsParams, CapsuleComponentsPayload,
     CapsuleComponentsSuccessReturn, CapsuleFromComponentsParams, CapsuleFromComponentsPayload,
-    CapsuleFromComponentsSuccessReturn, CredentialComponents, CredentialComponentsParams,
-    CredentialComponentsPayload, CredentialComponentsSuccessReturn, CredentialFromComponentsParams,
+    CapsuleFromComponentsSuccessReturn, ConsumeKemParams, ConsumeKemPayload, CreateKemDeps,
+    CreateKemParams, CreateKemPayload, CreateKemReturn, CreateKemSuccessReturn,
+    CredentialComponents, CredentialComponentsParams, CredentialComponentsPayload,
+    CredentialComponentsSuccessReturn, CredentialFromComponentsParams,
     CredentialFromComponentsPayload, CredentialFromComponentsSuccessReturn, DecapsulateParams,
     DecapsulatePayload, DecapsulateSuccessReturn, DeriveIdentityParams, DeriveIdentityPayload,
     DeriveIdentitySuccessReturn, EncapsulateParams, EncapsulatePayload, EncapsulateSuccessReturn,
-    EncapsulatedValue, ICredentialKemAdapter, IdentityElementComponents,
+    EncapsulatedValue, ICredentialKemAdapter, IKemConsumer, IdentityElementComponents,
     IdentityElementComponentsParams, IdentityElementComponentsPayload,
     IdentityElementComponentsSuccessReturn, IdentityScope, IsValidParams, IsValidPayload,
     IsValidSuccessReturn, IsWellFormedParams, IsWellFormedPayload, IsWellFormedSuccessReturn,
-    IssueParams, IssuePayload, IssueSuccessReturn, KEM_INTERFACE_VERSION, KemDeclaration,
-    KemIdentifier, MasterScalarComponents, MasterScalarComponentsParams,
-    MasterScalarComponentsPayload, MasterScalarComponentsSuccessReturn,
-    MasterScalarFromComponentsParams, MasterScalarFromComponentsPayload,
-    MasterScalarFromComponentsSuccessReturn, ParameterSetComponents, ParameterSetComponentsParams,
-    ParameterSetComponentsPayload, ParameterSetComponentsSuccessReturn,
-    ParameterSetFromComponentsParams, ParameterSetFromComponentsPayload,
-    ParameterSetFromComponentsSuccessReturn, ParameterSetScopeComponents, RerandomizeParams,
-    RerandomizePayload, RerandomizeSuccessReturn, SetupParams, SetupPayload, SetupScope,
-    SetupSuccessReturn,
+    IssueParams, IssuePayload, IssueSuccessReturn, KemConcrete, KemDeclaration, KemIdentifier,
+    MasterScalarComponents, MasterScalarComponentsParams, MasterScalarComponentsPayload,
+    MasterScalarComponentsSuccessReturn, MasterScalarFromComponentsParams,
+    MasterScalarFromComponentsPayload, MasterScalarFromComponentsSuccessReturn,
+    ParameterSetComponents, ParameterSetComponentsParams, ParameterSetComponentsPayload,
+    ParameterSetComponentsSuccessReturn, ParameterSetFromComponentsParams,
+    ParameterSetFromComponentsPayload, ParameterSetFromComponentsSuccessReturn,
+    ParameterSetScopeComponents, RerandomizeParams, RerandomizePayload, RerandomizeSuccessReturn,
+    SetupParams, SetupPayload, SetupScope, SetupSuccessReturn,
 };
 use core::marker::PhantomData;
 use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
-use pairing::IPairingAdapter;
+use pairing::{IPairingAdapter, IPairingArithmetic};
 use zeroize::Zeroize;
 
-use crate::bb1_depth_one::provides::BB1_DEPTH_ONE_IDENTITY_TAG;
+use crate::bb1_depth_one::provides::BB1_DEPTH_ONE_DECLARATION;
 
 #[derive(Default)]
 pub struct KemDeclarationOverrides {
@@ -46,13 +47,21 @@ pub struct KemDeclarationOverrides {
 
 pub fn build_kem_declaration(overrides: KemDeclarationOverrides) -> KemDeclaration {
     KemDeclaration {
-        identifier: overrides.identifier.unwrap_or(KemIdentifier::Bb1DepthOneV1),
+        identifier: overrides
+            .identifier
+            .unwrap_or(BB1_DEPTH_ONE_DECLARATION.identifier),
         identity_scopes: overrides
             .identity_scopes
-            .unwrap_or(&[IdentityScope::Entitlement, IdentityScope::Asset]),
-        identity_tag: overrides.identity_tag.unwrap_or(BB1_DEPTH_ONE_IDENTITY_TAG),
-        adapter_version: overrides.adapter_version.unwrap_or(1),
-        interface_version: overrides.interface_version.unwrap_or(KEM_INTERFACE_VERSION),
+            .unwrap_or(BB1_DEPTH_ONE_DECLARATION.identity_scopes),
+        identity_tag: overrides
+            .identity_tag
+            .unwrap_or(BB1_DEPTH_ONE_DECLARATION.identity_tag),
+        adapter_version: overrides
+            .adapter_version
+            .unwrap_or(BB1_DEPTH_ONE_DECLARATION.adapter_version),
+        interface_version: overrides
+            .interface_version
+            .unwrap_or(BB1_DEPTH_ONE_DECLARATION.interface_version),
     }
 }
 
@@ -63,9 +72,11 @@ pub struct EncapsulatedValueOverrides {
 
 pub fn build_encapsulated_value(overrides: EncapsulatedValueOverrides) -> EncapsulatedValue {
     EncapsulatedValue {
-        bytes: overrides
-            .bytes
-            .unwrap_or_else(|| build_secret(SecretConstructorParamsOverrides::default())),
+        bytes: overrides.bytes.unwrap_or_else(|| {
+            let mut bytes = vec![0u8; 384];
+            bytes[31] = 1;
+            build_secret(SecretConstructorParamsOverrides { value: Some(bytes) })
+        }),
     }
 }
 
@@ -449,6 +460,8 @@ where
     C: Default,
     CA: Default,
 {
+    const DECLARATION: KemDeclaration = BB1_DEPTH_ONE_DECLARATION;
+
     type Pairing = P;
     type ParameterSet = PS;
     type MasterScalar = M;
@@ -618,4 +631,73 @@ where
             Default::default(),
         ))
     }
+}
+
+#[derive(Default)]
+pub struct CreateKemParamsOverrides {
+    pub concrete: Option<KemConcrete>,
+    pub identifier: Option<KemIdentifier>,
+    pub scope: Option<IdentityScope>,
+}
+
+pub fn build_create_kem_params(overrides: CreateKemParamsOverrides) -> CreateKemParams {
+    CreateKemParams {
+        concrete: overrides.concrete.unwrap_or(KemConcrete::Bb1DepthOne),
+        identifier: overrides.identifier.unwrap_or(KemIdentifier::Bb1DepthOneV1),
+        scope: overrides.scope.unwrap_or(IdentityScope::Entitlement),
+    }
+}
+
+#[derive(Default)]
+pub struct CreateKemSuccessReturnOverrides<O> {
+    pub output: Option<O>,
+}
+
+pub fn build_create_kem_success_return<O: Default>(
+    overrides: CreateKemSuccessReturnOverrides<O>,
+) -> CreateKemSuccessReturn<O> {
+    CreateKemSuccessReturn {
+        output: overrides.output.unwrap_or_default(),
+    }
+}
+
+#[derive(Default)]
+pub struct ConsumeKemPayloadOverrides<K> {
+    pub adapter: Option<K>,
+    pub scope: Option<IdentityScope>,
+}
+
+pub fn build_consume_kem_payload<K: ICredentialKemAdapter + Default>(
+    overrides: ConsumeKemPayloadOverrides<K>,
+) -> ConsumeKemPayload<K> {
+    ConsumeKemPayload {
+        adapter: overrides.adapter.unwrap_or_default(),
+        scope: overrides.scope.unwrap_or(IdentityScope::Entitlement),
+    }
+}
+
+pub struct MockIKemConsumer;
+
+impl<P: IPairingAdapter> IKemConsumer<P> for MockIKemConsumer {
+    type Output = ();
+
+    fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        &self,
+        _params: ConsumeKemParams,
+        _payload: ConsumeKemPayload<K>,
+    ) -> Self::Output {
+    }
+}
+
+pub fn mock_create_kem<'a, P, C>(
+    _deps: &CreateKemDeps<'a, P, C>,
+    _params: CreateKemParams,
+    _payload: CreateKemPayload,
+) -> CreateKemReturn<C::Output>
+where
+    P: IPairingArithmetic,
+    C: IKemConsumer<P>,
+    C::Output: Default,
+{
+    Ok(build_create_kem_success_return(Default::default()))
 }
