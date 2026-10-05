@@ -10,6 +10,14 @@ Cited by: construction view (workplan node `interface` and `implementation` elem
 - Each error is a single, specific failure.
 - Each error explains exactly what went wrong and exactly where.
 
+## Errors are inspectable and comparable
+
+An error states exactly what went wrong, so it can be printed and it can be compared by value. Every type in an error arm — the `ErrorReturn`, every flavor, and every value a variant carries — is printable and comparable. In Rust each derives `Debug`, `PartialEq`, and `Eq`.
+
+- An error carries the facts that locate the failure — indexes, lengths, kinds, and a callee's error intact — and never a secret-typed value, so nothing in an error blocks printing it.
+- A callee's error carried intact brings its derives with it. A callee error that lacks one is a defect in the callee's interface: report it, propose the node that adds the derives in its owning interface, and halt (see [discovery-halt](discovery-halt.md)). The carrying error never drops a derive to accommodate it.
+- A vendor error that a concrete propagates unchanged is the one value the repo cannot derive on. The error type holding it omits only the trait the vendor type lacks, and that omission carries up through every error that holds it. No other omission exists.
+
 ## Errors are surfaced, never altered
 
 - Every error is surfaced, every single time.
@@ -76,5 +84,5 @@ Membership is transitive — `EnqueuedReturn` is assignable to `MyFunctionSucces
 
 ## Precedence
 
-This topic outranks the workplan. A node step that returns only the success type, hoists a success or error flavor into the top-level union (making it more than two arms), swallows or rewrites an error, converts an error to a different type, or leaves an error arm unhandled is defective — comply with this topic and report the discrepancy.
+This topic outranks the workplan. A node step that returns only the success type, hoists a success or error flavor into the top-level union (making it more than two arms), swallows or rewrites an error, converts an error to a different type, declares an error type that cannot be printed or compared by value, or leaves an error arm unhandled is defective — comply with this topic and report the discrepancy.
 

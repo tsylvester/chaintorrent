@@ -12,6 +12,7 @@ Written **before** the implementation (TDD). Validates behavior.
 - **When updating an existing suite for new requirements, update the existing tests in the same pass.** Do not leave stale tests for a second pass after the implementation changes — add the new tests and correct the existing ones together.
 - Focus on correct transformations and branching logic. Do **not** re-test type shape (interface test) or guard correctness (guard test).
 - One behavior per test.
+- An error outcome is asserted by equality with the whole expected error, every field and every carried callee error stated — `assert_eq!` in Rust. A pattern that elides fields with `..` asserts less than the branch returns.
 - Never run any terminal commands.
 
 ### The contract header here
