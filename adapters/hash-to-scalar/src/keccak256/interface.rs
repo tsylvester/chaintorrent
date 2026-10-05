@@ -9,6 +9,7 @@ pub struct Keccak256HashToScalarConstructorParams;
 
 pub type Keccak256HashToScalarTryNewReturn = Result<Keccak256HashToScalar, Infallible>;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Keccak256HashToScalarErrorReturn {
     TagLengthExceedsPrefix {
         length: usize,

@@ -28,6 +28,7 @@ pub struct HashToScalarSuccessReturn<S> {
     pub scalar: S,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum HashToScalarErrorReturn {
     Keccak256(Keccak256HashToScalarErrorReturn),
 }
@@ -61,6 +62,7 @@ pub struct CreateHashToScalarSuccessReturn<S> {
     pub adapter: Box<dyn IHashToScalarAdapter<S>>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum CreateHashToScalarErrorReturn {
     UnsupportedHashToScalarIdentifier,
     Keccak256(Infallible),

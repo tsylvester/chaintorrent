@@ -40,6 +40,7 @@ pub struct DeriveKeySuccessReturn {
     pub key: Secret<Vec<u8>>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum DeriveKeyErrorReturn {
     Blake3Keyed(Blake3KeyedKdfDeriveKeyErrorReturn),
 }
@@ -69,6 +70,7 @@ pub struct CreateKeyDerivationSuccessReturn {
     pub adapter: Box<dyn IKeyDerivationAdapter>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum CreateKeyDerivationErrorReturn {
     UnsupportedKdfIdentifier,
     Blake3Keyed(Infallible),

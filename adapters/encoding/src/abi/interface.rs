@@ -7,7 +7,7 @@ pub struct AbiEncodingConstructorParams;
 
 pub type AbiEncodingTryNewReturn = Result<AbiEncoding, Infallible>;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AbiDecoderErrorReturn {
     Malformed(alloy::dyn_abi::Error),
     DecodedShapeMismatch {

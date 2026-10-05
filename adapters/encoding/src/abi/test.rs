@@ -79,7 +79,7 @@ struct BytesProbe {
     word: [u8; 32],
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 enum BytesProbeFromFieldsErrorReturn {
     Shape,
 }
@@ -132,7 +132,7 @@ struct WidthsProbe {
     integer: [u8; 32],
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 enum WidthsProbeFromFieldsErrorReturn {
     Shape,
 }
@@ -311,8 +311,9 @@ fn decode_reads_the_reference_vector_as_the_reference_context() {
 /// Contract: input missing the dynamic tail is refused by the ABI decoder.
 /// Arrange: the reference vector's first 0x140 bytes.
 /// Act:     `encoding.decode(DecodeParams { description: &description }, &bytes)`.
-/// Assert:  `error` matches `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
-///   Malformed(_))`.
+/// Assert:  `error` equals `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
+///   Malformed(alloy::dyn_abi::Error::SolTypes(alloy::core::sol_types::
+///   Error::Overrun)))`.
 #[test]
 fn decode_rejects_input_truncated_to_the_head() {
     // Arrange
@@ -335,16 +336,18 @@ fn decode_rejects_input_truncated_to_the_head() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
-        DecodeErrorReturn::Abi(AbiDecoderErrorReturn::Malformed(_))
-    ));
+        DecodeErrorReturn::Abi(AbiDecoderErrorReturn::Malformed(
+            alloy::dyn_abi::Error::SolTypes(alloy::core::sol_types::Error::Overrun)
+        ))
+    );
 }
 
 /// Contract: bytes past the canonical end are refused.
 /// Arrange: the reference vector followed by 32 zero bytes.
 /// Act:     `encoding.decode(DecodeParams { description: &description }, &bytes)`.
-/// Assert:  `error` matches `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
+/// Assert:  `error` equals `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
 ///   NonCanonical)`.
 #[test]
 fn decode_rejects_trailing_bytes() {
@@ -368,17 +371,17 @@ fn decode_rejects_trailing_bytes() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
         DecodeErrorReturn::Abi(AbiDecoderErrorReturn::NonCanonical)
-    ));
+    );
 }
 
 /// Contract: a string's padding is zero in its one byte form.
 /// Arrange: the reference vector with byte 447, the asset version's last
 ///   padding byte, set to 0x01.
 /// Act:     `encoding.decode(DecodeParams { description: &description }, &bytes)`.
-/// Assert:  `error` matches `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
+/// Assert:  `error` equals `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
 ///   NonCanonical)`.
 #[test]
 fn decode_rejects_nonzero_string_padding() {
@@ -402,10 +405,10 @@ fn decode_rejects_nonzero_string_padding() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
         DecodeErrorReturn::Abi(AbiDecoderErrorReturn::NonCanonical)
-    ));
+    );
 }
 
 /// Contract: an integer word with bits above its field's width is refused,
@@ -413,7 +416,7 @@ fn decode_rejects_nonzero_string_padding() {
 /// Arrange: the reference vector with byte 157 set to 0x01, the suite
 ///   version's word reading 0x010003.
 /// Act:     `encoding.decode(DecodeParams { description: &description }, &bytes)`.
-/// Assert:  `error` matches `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
+/// Assert:  `error` equals `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
 ///   ValueOutOfRange { index: 4, kind: CanonicalFieldKind::Unsigned16 })`.
 #[test]
 fn decode_rejects_a_uint16_word_wider_than_sixteen_bits() {
@@ -437,13 +440,13 @@ fn decode_rejects_a_uint16_word_wider_than_sixteen_bits() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
         DecodeErrorReturn::Abi(AbiDecoderErrorReturn::ValueOutOfRange {
             index: 4,
             kind: CanonicalFieldKind::Unsigned16
         })
-    ));
+    );
 }
 
 /// Contract: an integer word with bits above its field's width is refused,
@@ -451,7 +454,7 @@ fn decode_rejects_a_uint16_word_wider_than_sixteen_bits() {
 /// Arrange: the reference vector with byte 288, the total extent's word's
 ///   high byte, set to 0x80.
 /// Act:     `encoding.decode(DecodeParams { description: &description }, &bytes)`.
-/// Assert:  `error` matches `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
+/// Assert:  `error` equals `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
 ///   ValueOutOfRange { index: 9, kind: CanonicalFieldKind::Unsigned64 })`.
 #[test]
 fn decode_rejects_a_uint64_word_wider_than_sixty_four_bits() {
@@ -475,13 +478,13 @@ fn decode_rejects_a_uint64_word_wider_than_sixty_four_bits() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
         DecodeErrorReturn::Abi(AbiDecoderErrorReturn::ValueOutOfRange {
             index: 9,
             kind: CanonicalFieldKind::Unsigned64
         })
-    ));
+    );
 }
 
 /// Contract: an encoding with a field beyond the description's sequence is
@@ -489,7 +492,7 @@ fn decode_rejects_a_uint64_word_wider_than_sixty_four_bits() {
 /// Arrange: the field-too-many vector — the reference fields' parameter
 ///   encoding followed by a uint64 of 1.
 /// Act:     `encoding.decode(DecodeParams { description: &description }, &bytes)`.
-/// Assert:  `error` matches `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
+/// Assert:  `error` equals `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
 ///   NonCanonical)`.
 #[test]
 fn decode_rejects_the_encoding_of_one_field_too_many() {
@@ -512,10 +515,10 @@ fn decode_rejects_the_encoding_of_one_field_too_many() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
         DecodeErrorReturn::Abi(AbiDecoderErrorReturn::NonCanonical)
-    ));
+    );
 }
 
 /// Contract: a canonically encoded value the description refuses returns
@@ -523,7 +526,7 @@ fn decode_rejects_the_encoding_of_one_field_too_many() {
 /// Arrange: the reference vector with bytes 64 through 95, the deployment
 ///   identity, set to zero.
 /// Act:     `encoding.decode(DecodeParams { description: &description }, &bytes)`.
-/// Assert:  `error` matches `DecodeErrorReturn::Description(
+/// Assert:  `error` equals `DecodeErrorReturn::Description(
 ///   DerivationContextFromFieldsErrorReturn::DeploymentIdentity(
 ///   DeploymentIdentityTryNewErrorReturn::AllZero))`.
 #[test]
@@ -548,12 +551,12 @@ fn decode_returns_the_description_refusal_unchanged() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
         DecodeErrorReturn::Description(DerivationContextFromFieldsErrorReturn::DeploymentIdentity(
             DeploymentIdentityTryNewErrorReturn::AllZero
         ))
-    ));
+    );
 }
 
 /// Contract: the concrete's declaration names the encoding identifier, its
@@ -645,7 +648,7 @@ fn decode_reads_the_byte_string_vector_as_its_value() {
 /// Arrange: the byte-string vector with byte 127, the byte string's last
 ///   padding byte, set to 0x01.
 /// Act:     `encoding.decode(DecodeParams { description: &BytesProbeDescription }, &bytes)`.
-/// Assert:  `error` matches `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
+/// Assert:  `error` equals `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
 ///   NonCanonical)`.
 #[test]
 fn decode_rejects_nonzero_byte_string_padding() {
@@ -667,10 +670,10 @@ fn decode_rejects_nonzero_byte_string_padding() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
         DecodeErrorReturn::Abi(AbiDecoderErrorReturn::NonCanonical)
-    ));
+    );
 }
 
 /// Contract: a twenty-byte fixed string encodes as `abi.encode` encodes
@@ -741,7 +744,7 @@ fn decode_reads_the_widths_vector_as_its_value() {
 /// Arrange: the widths vector with byte 20, the first padding byte after
 ///   the twenty, set to 0x01.
 /// Act:     `encoding.decode(DecodeParams { description: &WidthsProbeDescription }, &bytes)`.
-/// Assert:  `error` matches `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
+/// Assert:  `error` equals `DecodeErrorReturn::Abi(AbiDecoderErrorReturn::
 ///   NonCanonical)`.
 #[test]
 fn decode_rejects_nonzero_fixed_bytes20_padding() {
@@ -763,10 +766,10 @@ fn decode_rejects_nonzero_fixed_bytes20_padding() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
         DecodeErrorReturn::Abi(AbiDecoderErrorReturn::NonCanonical)
-    ));
+    );
 }
 
 struct CountMismatchDescription;
@@ -855,7 +858,7 @@ impl IEncodingContract for KindMismatchDescription {
 /// Arrange: `CountMismatchDescription`, declaring two kinds and emitting
 ///   one, and the byte-string value.
 /// Act:     `encoding.encode(EncodeParams { description: &CountMismatchDescription }, &value)`.
-/// Assert:  `error` matches `EncodeErrorReturn::FieldCount { expected: 2,
+/// Assert:  `error` equals `EncodeErrorReturn::FieldCount { expected: 2,
 ///   actual: 1 }`.
 #[test]
 fn encode_rejects_a_description_emitting_the_wrong_count() {
@@ -877,13 +880,13 @@ fn encode_rejects_a_description_emitting_the_wrong_count() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
         EncodeErrorReturn::FieldCount {
             expected: 2,
             actual: 1
         }
-    ));
+    );
 }
 
 /// Contract: a description emitting a field whose kind differs from its
@@ -892,7 +895,7 @@ fn encode_rejects_a_description_emitting_the_wrong_count() {
 /// Arrange: `KindMismatchDescription`, declaring Bytes then FixedBytes32
 ///   and emitting Bytes then Bytes, and the byte-string value.
 /// Act:     `encoding.encode(EncodeParams { description: &KindMismatchDescription }, &value)`.
-/// Assert:  `error` matches `EncodeErrorReturn::FieldKind { index: 1,
+/// Assert:  `error` equals `EncodeErrorReturn::FieldKind { index: 1,
 ///   expected: CanonicalFieldKind::FixedBytes32, actual:
 ///   CanonicalFieldKind::Bytes }`.
 #[test]
@@ -915,14 +918,14 @@ fn encode_rejects_a_description_emitting_the_wrong_kind() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
         EncodeErrorReturn::FieldKind {
             index: 1,
             expected: CanonicalFieldKind::FixedBytes32,
             actual: CanonicalFieldKind::Bytes
         }
-    ));
+    );
 }
 
 /// Contract: a description that admits a canonically decoded value but
@@ -932,8 +935,8 @@ fn encode_rejects_a_description_emitting_the_wrong_kind() {
 ///   emitting one field against two declared, and the byte-string vector,
 ///   canonical for the declared schema.
 /// Act:     `encoding.decode(DecodeParams { description: &CountMismatchDescription }, &bytes)`.
-/// Assert:  `error` matches `DecodeErrorReturn::EncoderContract(
-///   EncodeErrorReturn::FieldCount { .. })`.
+/// Assert:  `error` equals `DecodeErrorReturn::EncoderContract(
+///   EncodeErrorReturn::FieldCount { expected: 2, actual: 1 })`.
 #[test]
 fn decode_reports_a_description_whose_reencoding_disagrees_with_its_schema() {
     // Arrange
@@ -953,8 +956,11 @@ fn decode_reports_a_description_whose_reencoding_disagrees_with_its_schema() {
     };
 
     // Assert
-    assert!(matches!(
+    assert_eq!(
         error,
-        DecodeErrorReturn::EncoderContract(EncodeErrorReturn::FieldCount { .. })
-    ));
+        DecodeErrorReturn::EncoderContract(EncodeErrorReturn::FieldCount {
+            expected: 2,
+            actual: 1
+        })
+    );
 }

@@ -48,7 +48,7 @@ pub type FromFieldsReturn<T, E> = Result<FromFieldsSuccessReturn<T>, E>;
 
 pub trait IEncodingContract {
     type Described;
-    type FromFieldsErrorReturn;
+    type FromFieldsErrorReturn: core::fmt::Debug + PartialEq + Eq;
     const FIELDS: &'static [CanonicalFieldKind];
 
     fn to_fields(&self, params: ToFieldsParams, payload: &Self::Described) -> ToFieldsReturn;
@@ -115,7 +115,7 @@ pub struct DecodeSuccessReturn<T> {
     pub described: T,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum DecodeErrorReturn<E> {
     Abi(AbiDecoderErrorReturn),
     Description(E),
@@ -168,7 +168,7 @@ pub struct CreateEncodingSuccessReturn<O> {
     pub output: O,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum CreateEncodingErrorReturn {
     UnsupportedEncodingIdentifier,
     Abi(Infallible),

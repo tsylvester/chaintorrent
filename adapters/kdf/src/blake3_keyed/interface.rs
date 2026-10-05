@@ -15,6 +15,7 @@ pub const BLAKE3_KEYED_CAPSULE_RANDOMNESS_CONTEXT: &str = "ChainTorrent v1 capsu
 pub const BLAKE3_KEYED_PIECE_GROUP_KEY_CONTEXT: &str = "ChainTorrent v1 piece-group-key";
 pub const BLAKE3_KEYED_PLAINTEXT_ROOT_KEY_CONTEXT: &str = "ChainTorrent v1 plaintext-root";
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Blake3KeyedKdfDeriveKeyErrorReturn {
     KeyMaterialLengthExceedsPrefix { length: usize },
 }
