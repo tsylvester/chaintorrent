@@ -33,6 +33,10 @@ impl Blake3KeyedKdf {
 }
 
 impl IKeyDerivationAdapter for Blake3KeyedKdf {
+    fn declaration(&self) -> KdfDeclaration {
+        Self::DECLARATION
+    }
+
     fn derive_key(
         &self,
         params: DeriveKeyParams,

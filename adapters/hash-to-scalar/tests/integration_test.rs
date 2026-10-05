@@ -59,7 +59,9 @@ impl IEncodingConsumer for EncodeContext {
                 description: &description,
             },
             &self.context,
-        );
+        ) else {
+            panic!("the reference context encodes")
+        };
         success.bytes
     }
 }
@@ -101,7 +103,7 @@ impl IPairingConsumer for FactoryScalarProbe {
                 scalar: hashed.scalar,
             },
         );
-        encoded.bytes.expose().clone()
+        encoded.bytes.expose().as_ref().to_vec()
     }
 }
 

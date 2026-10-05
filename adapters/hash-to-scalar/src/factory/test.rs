@@ -37,7 +37,7 @@ impl IPairingConsumer for DeclarationProbe {
         ) else {
             panic!("the Keccak-256 concrete is admitted for its identifier");
         };
-        success.declaration
+        success.adapter.declaration()
     }
 }
 

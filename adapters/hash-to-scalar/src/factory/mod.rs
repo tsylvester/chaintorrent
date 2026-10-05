@@ -26,7 +26,6 @@ pub fn create_hash_to_scalar<S: ISampleUniformScalar + Clone>(
             let Ok(hasher) = Keccak256HashToScalar::try_new(Keccak256HashToScalarConstructorParams);
             Ok(CreateHashToScalarSuccessReturn {
                 adapter: Box::new(hasher),
-                declaration: Keccak256HashToScalar::DECLARATION,
             })
         }
     }

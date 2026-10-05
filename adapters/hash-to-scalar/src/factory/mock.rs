@@ -55,6 +55,10 @@ pub struct MockIHashToScalarAdapter<S> {
 impl<S: ISampleUniformScalar + Clone + Default> IHashToScalarAdapter<S>
     for MockIHashToScalarAdapter<S>
 {
+    fn declaration(&self) -> HashToScalarDeclaration {
+        build_hash_to_scalar_declaration(Default::default())
+    }
+
     fn hash_to_scalar(
         &self,
         _params: HashToScalarParams<'_>,
@@ -86,7 +90,6 @@ pub fn build_create_hash_to_scalar_params(
 #[derive(Default)]
 pub struct CreateHashToScalarSuccessReturnOverrides<S> {
     pub adapter: Option<Box<dyn IHashToScalarAdapter<S>>>,
-    pub declaration: Option<HashToScalarDeclaration>,
 }
 
 pub fn build_create_hash_to_scalar_success_return<
@@ -100,9 +103,6 @@ pub fn build_create_hash_to_scalar_success_return<
                 scalar: PhantomData,
             })
         }),
-        declaration: overrides
-            .declaration
-            .unwrap_or_else(|| build_hash_to_scalar_declaration(Default::default())),
     }
 }
 

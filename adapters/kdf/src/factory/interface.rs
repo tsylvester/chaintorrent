@@ -47,6 +47,7 @@ pub enum DeriveKeyErrorReturn {
 pub type DeriveKeyReturn = Result<DeriveKeySuccessReturn, DeriveKeyErrorReturn>;
 
 pub trait IKeyDerivationAdapter {
+    fn declaration(&self) -> KdfDeclaration;
     fn derive_key(&self, params: DeriveKeyParams, payload: DeriveKeyPayload<'_>)
     -> DeriveKeyReturn;
 }
@@ -66,7 +67,6 @@ pub struct CreateKeyDerivationPayload;
 
 pub struct CreateKeyDerivationSuccessReturn {
     pub adapter: Box<dyn IKeyDerivationAdapter>,
-    pub declaration: KdfDeclaration,
 }
 
 pub enum CreateKeyDerivationErrorReturn {

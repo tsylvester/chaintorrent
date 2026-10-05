@@ -23,10 +23,9 @@ pub fn create_encoding<C: IEncodingConsumer>(
                 return Err(CreateEncodingErrorReturn::UnsupportedEncodingIdentifier);
             }
             let Ok(adapter) = AbiEncoding::try_new(AbiEncodingConstructorParams);
-            let output = deps.consumer.consume_encoding(
-                ConsumeEncodingParams,
-                ConsumeEncodingPayload { adapter },
-            );
+            let output = deps
+                .consumer
+                .consume_encoding(ConsumeEncodingParams, ConsumeEncodingPayload { adapter });
             Ok(CreateEncodingSuccessReturn { output })
         }
     }

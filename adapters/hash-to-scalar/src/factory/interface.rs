@@ -35,6 +35,8 @@ pub enum HashToScalarErrorReturn {
 pub type HashToScalarReturn<S> = Result<HashToScalarSuccessReturn<S>, HashToScalarErrorReturn>;
 
 pub trait IHashToScalarAdapter<S: ISampleUniformScalar + Clone> {
+    fn declaration(&self) -> HashToScalarDeclaration;
+
     fn hash_to_scalar(
         &self,
         params: HashToScalarParams<'_>,
@@ -57,7 +59,6 @@ pub struct CreateHashToScalarPayload;
 
 pub struct CreateHashToScalarSuccessReturn<S> {
     pub adapter: Box<dyn IHashToScalarAdapter<S>>,
-    pub declaration: HashToScalarDeclaration,
 }
 
 pub enum CreateHashToScalarErrorReturn {

@@ -31,6 +31,10 @@ impl Keccak256HashToScalar {
 }
 
 impl<S: ISampleUniformScalar + Clone> IHashToScalarAdapter<S> for Keccak256HashToScalar {
+    fn declaration(&self) -> HashToScalarDeclaration {
+        Self::DECLARATION
+    }
+
     fn hash_to_scalar(
         &self,
         params: HashToScalarParams<'_>,

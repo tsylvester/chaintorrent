@@ -25,7 +25,6 @@ pub fn create_key_derivation(
             let Ok(kdf) = Blake3KeyedKdf::try_new(Blake3KeyedKdfConstructorParams);
             Ok(CreateKeyDerivationSuccessReturn {
                 adapter: Box::new(kdf),
-                declaration: Blake3KeyedKdf::DECLARATION,
             })
         }
     }

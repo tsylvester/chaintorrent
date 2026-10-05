@@ -17,7 +17,7 @@ variant, exhaustive so a variant with no arm fails to compile. Within each arm:
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
 | unsupported identifier | the named concrete's `DECLARATION.identifier` is not `params.identifier` | equality, read before any construction | none | `Err(CreateKeyDerivationErrorReturn::UnsupportedKdfIdentifier)`; nothing is constructed. `KdfIdentifier` has the one variant the BLAKE3 concrete declares, so no input takes this branch until a further identifier exists, and it has no unit test |
-| admitted | the named concrete's declared identifier is `params.identifier` | the equality above | the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited | `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(kdf), declaration })` with the concrete's `DECLARATION` |
+| admitted | the named concrete's declared identifier is `params.identifier` | the equality above | the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited | `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(kdf) })`, whose adapter reports the concrete's `DECLARATION` |
 
 `CreateKeyDerivationErrorReturn::Blake3Keyed` carries the BLAKE3 concrete's
 constructor error type `Infallible` in the return union; the error arm is

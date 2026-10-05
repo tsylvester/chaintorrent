@@ -59,6 +59,10 @@ pub fn build_derive_key_success_return(
 pub struct MockIKeyDerivationAdapter;
 
 impl IKeyDerivationAdapter for MockIKeyDerivationAdapter {
+    fn declaration(&self) -> KdfDeclaration {
+        build_kdf_declaration(Default::default())
+    }
+
     fn derive_key(
         &self,
         _params: DeriveKeyParams,
@@ -86,7 +90,6 @@ pub fn build_create_key_derivation_params(
 #[derive(Default)]
 pub struct CreateKeyDerivationSuccessReturnOverrides {
     pub adapter: Option<Box<dyn IKeyDerivationAdapter>>,
-    pub declaration: Option<KdfDeclaration>,
 }
 
 pub fn build_create_key_derivation_success_return(
@@ -96,9 +99,6 @@ pub fn build_create_key_derivation_success_return(
         adapter: overrides
             .adapter
             .unwrap_or_else(|| Box::new(MockIKeyDerivationAdapter)),
-        declaration: overrides
-            .declaration
-            .unwrap_or_else(|| build_kdf_declaration(Default::default())),
     }
 }
 

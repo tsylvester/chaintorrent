@@ -49,7 +49,9 @@ impl IEncodingConsumer for EncodeContext {
                 description: &description,
             },
             &self.context,
-        );
+        ) else {
+            panic!("the reference context encodes through the adapter")
+        };
         success.bytes
     }
 }

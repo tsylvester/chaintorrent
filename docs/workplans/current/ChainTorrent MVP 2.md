@@ -449,7 +449,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning in every target, the `abi` concrete's unused-item warnings having no remaining cause
     * `[✅]`   `alloy` is named nowhere outside `adapters/encoding/src/abi`, and no code outside `adapters/encoding` can name `AbiEncoding`
 
-* `[ ]`   `kdf/blake3_keyed` **BLAKE3 keyed-derivation concrete deriving a key of a requested length from secret key material under an encoded context and a fixed context string per purpose; creates the `adapters/kdf` crate and authors the key-derivation family's generic interface, the KDF identifier, the declaration, and the mock**
+* `[✅]`   `kdf/blake3_keyed` **BLAKE3 keyed-derivation concrete deriving a key of a requested length from secret key material under an encoded context and a fixed context string per purpose; creates the `adapters/kdf` crate and authors the key-derivation family's generic interface, the KDF identifier, the declaration, and the mock**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: every derivation a client performs off chain, the wrapping key, the publisher lineage's roots, master scalar, identity bases, capsule randomness, and piece-group keys, and the keyed plaintext-root key, is a domain-separated derivation of secret key material under a context, so the derivation passes through one repo-owned interface, its context strings, input serialization, and output lengths are frozen, and no module outside a concrete names the hash library (CR-05; CR-11; `docs/research/cryptography.md`'s Credential KEM statement, Publisher lineage, and Plaintext-root disclosure modes)
@@ -501,7 +501,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The crate barrel: `mod blake3_keyed;`, `mod factory;`, and `pub use factory::provides::*;`, nothing else
     * `[✅]`   Until `factory/mod.rs` and `blake3_keyed/mod.rs` exist, `cargo check` reports the unresolved modules, which is the RED state for every element below that precedes them
 
-  * `[ ]`   `adapters/kdf/src/factory/interface.rs`
+  * `[✅]`   `adapters/kdf/src/factory/interface.rs`
     * `[✅]`   `KDF_INTERFACE_VERSION`, a `pub const` of type `u32` with value `1`
     * `[✅]`   `KdfIdentifier`, an enum with the one variant `Blake3KeyedV1`, the identifier a deployment's hash-card names
     * `[✅]`   `KdfDeclaration`, a struct with `pub identifier: KdfIdentifier`, `pub adapter_version: u32`, and `pub interface_version: u32`
@@ -511,8 +511,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `DeriveKeySuccessReturn`, a struct with `pub key: Secret<Vec<u8>>`
     * `[✅]`   `DeriveKeyErrorReturn`, an enum with the one variant `Blake3Keyed(Blake3KeyedKdfDeriveKeyErrorReturn)`, the BLAKE3 concrete's error carried unchanged; each further concrete's error is its own variant
     * `[✅]`   `DeriveKeyReturn`, the alias `Result<DeriveKeySuccessReturn, DeriveKeyErrorReturn>`
-    * `[ ]`   `IKeyDerivationAdapter`, an object-safe trait with `fn declaration(&self) -> KdfDeclaration;` and `fn derive_key(&self, params: DeriveKeyParams, payload: DeriveKeyPayload<'_>) -> DeriveKeyReturn;`; metadata remains available through `Box<dyn IKeyDerivationAdapter>` and is supplied by that adapter
-    * `[ ]`   No derives on any type in this file; imports `domain::Secret` and `Blake3KeyedKdfDeriveKeyErrorReturn` from `crate::blake3_keyed::provides`; names no vendor
+    * `[✅]`   `IKeyDerivationAdapter`, an object-safe trait with `fn declaration(&self) -> KdfDeclaration;` and `fn derive_key(&self, params: DeriveKeyParams, payload: DeriveKeyPayload<'_>) -> DeriveKeyReturn;`; metadata remains available through `Box<dyn IKeyDerivationAdapter>` and is supplied by that adapter
+    * `[✅]`   No derives on any type in this file; imports `domain::Secret` and `Blake3KeyedKdfDeriveKeyErrorReturn` from `crate::blake3_keyed::provides`; names no vendor
 
   * `[✅]`   `adapters/kdf/src/blake3_keyed/interface.rs`
     * `[✅]`   `Blake3KeyedKdf`, the unit struct `pub struct Blake3KeyedKdf;`, the adapter over `blake3`'s derive-key mode
@@ -530,12 +530,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `derive_key`, derived: condition the length converts; decision none further; dependency calls `Hasher::new_derive_key` with the purpose's context string, then `update` with the length's 8 big-endian bytes, `update` with the exposed key material, and `update` with `payload.context`, in that order, each once; then `finalize_xof` once and `fill` once over a zero-initialized buffer of `params.length` bytes; then `zeroize` on the output reader and on the hasher; outcome `Ok(DeriveKeySuccessReturn { key })`, the filled buffer moved into a `Secret` without copy
     * `[✅]`   Ordering: the length conversion precedes the hasher; the prefix, the key material, and the context are absorbed in that order; the reader and the hasher are zeroized before the buffer is moved into the `Secret`; the same params and payload always yield the same key; a `params.length` of zero yields an empty key
 
-  * `[ ]`   `adapters/kdf/src/factory/mock.rs`
+  * `[✅]`   `adapters/kdf/src/factory/mock.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
     * `[✅]`   `KdfDeclarationOverrides`, `#[derive(Default)]`, one `Option` per field; `build_kdf_declaration(overrides: KdfDeclarationOverrides) -> KdfDeclaration`, defaulting to `KdfIdentifier::Blake3KeyedV1`, `1`, and `KDF_INTERFACE_VERSION`
     * `[✅]`   `DeriveKeyParamsOverrides`, `#[derive(Default)]`, fields `pub purpose: Option<DerivationPurpose>` and `pub length: Option<usize>`; `build_derive_key_params(overrides: DeriveKeyParamsOverrides) -> DeriveKeyParams`, defaulting to `DerivationPurpose::WrappingKey` and `32`
     * `[✅]`   `DeriveKeySuccessReturnOverrides`, `#[derive(Default)]`, one field `pub key: Option<Secret<Vec<u8>>>`; `build_derive_key_success_return(overrides: DeriveKeySuccessReturnOverrides) -> DeriveKeySuccessReturn`, the key defaulting to `build_secret::<Vec<u8>>(SecretConstructorParamsOverrides::default())`, an empty key
-    * `[ ]`   `MockIKeyDerivationAdapter`, the unit struct `pub struct MockIKeyDerivationAdapter;`, implementing `IKeyDerivationAdapter` with `declaration()` returning the default BLAKE3 keyed declaration and `derive_key` returning `Ok(build_derive_key_success_return(Default::default()))` for any params and payload; a test needing other behavior implements the trait on its own local struct
+    * `[✅]`   `MockIKeyDerivationAdapter`, the unit struct `pub struct MockIKeyDerivationAdapter;`, implementing `IKeyDerivationAdapter` with `declaration()` returning the default BLAKE3 keyed declaration and `derive_key` returning `Ok(build_derive_key_success_return(Default::default()))` for any params and payload; a test needing other behavior implements the trait on its own local struct
     * `[✅]`   No builder for `DeriveKeyPayload`, whose fields are borrowed with no default and are written at the call site as its production value, or for the enums `KdfIdentifier`, `DerivationPurpose`, and `DeriveKeyErrorReturn`; no corruptions type and no invalidator, since no value this interface owns arrives as untrusted data
     * `[✅]`   Imports `Secret`, `build_secret`, and `SecretConstructorParamsOverrides` from `domain`, and this module's types from `super::interface`
 
@@ -562,10 +562,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `Blake3KeyedKdf::try_new` is the concrete's only producer, and its only caller is the key-derivation factory, which reads `Blake3KeyedKdf::DECLARATION` before constructing
     * `[✅]`   The concrete owns no object type a consumer builds as a fixture: the adapter is a unit struct constructed by `try_new` over fieldless params, its context strings are constants, and its error is an enum, so it has no `mock.rs`
 
-  * `[ ]`   `adapters/kdf/src/blake3_keyed/mod.rs`
+  * `[✅]`   `adapters/kdf/src/blake3_keyed/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
     * `[✅]`   `impl Blake3KeyedKdf` with `pub const DECLARATION: KdfDeclaration` as the interaction spec states and `pub fn try_new(_params: Blake3KeyedKdfConstructorParams) -> Blake3KeyedKdfTryNewReturn` returning `Ok(Blake3KeyedKdf)`
-    * `[ ]`   `impl IKeyDerivationAdapter for Blake3KeyedKdf` with `declaration()` returning `Self::DECLARATION` and `derive_key` realizing the purpose mapping, branches, and ordering of the interaction spec; the buffer is `vec![0u8; params.length]`, and it is moved into the `Secret` by `let Ok(key) = Secret::try_new(SecretConstructorParams { value: buffer });`
+    * `[✅]`   `impl IKeyDerivationAdapter for Blake3KeyedKdf` with `declaration()` returning `Self::DECLARATION` and `derive_key` realizing the purpose mapping, branches, and ordering of the interaction spec; the buffer is `vec![0u8; params.length]`, and it is moved into the `Secret` by `let Ok(key) = Secret::try_new(SecretConstructorParams { value: buffer });`
     * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::Zeroize`, `blake3::Hasher`, and this module's names from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
@@ -575,7 +575,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `directionality`
     * `[✅]`   `blake3_keyed` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on `blake3`; the `factory` module depends on `domain` and on `blake3_keyed`'s error through `crate::blake3_keyed::provides`, the family form's recorded cycle, which `kdf/factory` completes by constructing the concrete; among repository crates the crate depends on `crates/domain` alone; nothing depends on the crate yet
 
-  * `[ ]`   `requirements`
+  * `[✅]`   `requirements`
     * `[✅]`   `adapters/kdf/Cargo.toml` carries exactly the tables and keys stated above, and `blake3` is named nowhere in the crate outside `adapters/kdf/src/blake3_keyed`
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `blake3_keyed` concrete, which `kdf/factory` resolves by constructing the concrete
     * `[✅]`   Every `derive_key_for_…_matches_the_independent_vector` test passes (CR-11, context strings, serialization, and output frozen against an independent implementation's vectors; CR-05 for the lineage purposes)
@@ -583,12 +583,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `blake3_keyed_kdf_declares_its_identifier_and_versions` passes
     * `[✅]`   Code outside `adapters/kdf` naming `Blake3KeyedKdf` or anything under `blake3_keyed` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* `[ ]`   `kdf/factory` **Key-derivation factory constructing the concrete the configuration names, admitted against the KDF identifier the hash-card requires, and returning it behind the family's trait, which reports its declaration; carries the family's integration test**
+* `[✅]`   `kdf/factory` **Key-derivation factory constructing the concrete the configuration names, admitted against the KDF identifier the hash-card requires, and returning it behind the family's trait, which reports its declaration; carries the family's integration test**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a consumer obtains a key-derivation adapter only through the family's generic surface, never by naming a concrete, and the derivation it uses is the one the deployment's hash-card names, so a concrete that does not declare the required KDF identifier is refused before anything is constructed (CR-11; Composition Boundary)
     * `[✅]`   Functional: given the concrete the configuration names and the KDF identifier required, the factory refuses a concrete whose declared identifier is not the required one, with no construction
-    * `[ ]`   Functional: an admitted concrete is constructed and returned as `Box<dyn IKeyDerivationAdapter>` that reports its declaration
+    * `[✅]`   Functional: an admitted concrete is constructed and returned as `Box<dyn IKeyDerivationAdapter>` that reports its declaration
     * `[✅]`   Functional: a concrete's constructor error is returned unchanged in the factory's error arm, one variant per concrete
     * `[✅]`   Functional: the concrete the factory returns derives the wrapping key over the reference context encoded through the encoding factory, matching the independent vector
     * `[✅]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, and its branch here; adding an identifier is its variant in `KdfIdentifier`; no consumer changes
@@ -620,43 +620,43 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `[dev-dependencies]` reads `domain = { path = "../../crates/domain", features = ["mocks"] }`, `encoding = { path = "../encoding", features = ["mocks"] }`, and `hex = "0.4.3"`
     * `[✅]`   `[package]`, `[dependencies]`, `[features]`, and `[lints]` are unchanged; no other table
 
-  * `[ ]`   `adapters/kdf/src/factory/interface.rs`
+  * `[✅]`   `adapters/kdf/src/factory/interface.rs`
     * `[✅]`   `KdfIdentifier` gains `#[derive(PartialEq, Eq)]`, so the admission compares a declared identifier with the required one
     * `[✅]`   `KdfConcrete`, an enum with the one variant `Blake3Keyed`, the selection of the concrete to construct
     * `[✅]`   `CreateKeyDerivationDeps`, the fieldless struct `pub struct CreateKeyDerivationDeps;`
     * `[✅]`   `CreateKeyDerivationParams`, a struct with `pub concrete: KdfConcrete` and `pub identifier: KdfIdentifier`, the selection and the identifier the concrete must declare
     * `[✅]`   `CreateKeyDerivationPayload`, the fieldless struct `pub struct CreateKeyDerivationPayload;`, since the factory operates on no data
-    * `[ ]`   `CreateKeyDerivationSuccessReturn`, a struct with only `pub adapter: Box<dyn IKeyDerivationAdapter>`; callers read the declaration through `adapter.declaration()`
+    * `[✅]`   `CreateKeyDerivationSuccessReturn`, a struct with only `pub adapter: Box<dyn IKeyDerivationAdapter>`; callers read the declaration through `adapter.declaration()`
     * `[✅]`   `CreateKeyDerivationErrorReturn`, an enum with the variants `UnsupportedKdfIdentifier`, the named concrete not declaring the required identifier, and `Blake3Keyed(Infallible)`, the BLAKE3 concrete's constructor error carried unchanged; each further concrete's constructor error is its own variant
     * `[✅]`   `CreateKeyDerivationReturn`, the alias `Result<CreateKeyDerivationSuccessReturn, CreateKeyDerivationErrorReturn>`
     * `[✅]`   `CreateKeyDerivationFn`, the alias `fn(&CreateKeyDerivationDeps, CreateKeyDerivationParams, CreateKeyDerivationPayload) -> CreateKeyDerivationReturn`
     * `[✅]`   Adds the import of `core::convert::Infallible`; every item `kdf/blake3_keyed` authored in this file is unchanged except the derive on `KdfIdentifier`
 
-  * `[ ]`   `adapters/kdf/src/factory/interaction.spec.md`
+  * `[✅]`   `adapters/kdf/src/factory/interaction.spec.md`
     * `[✅]`   `create_key_derivation(deps: &CreateKeyDerivationDeps, params: CreateKeyDerivationParams, payload: CreateKeyDerivationPayload) -> CreateKeyDerivationReturn`: decision a `match` on `params.concrete`, one arm per `KdfConcrete` variant, exhaustive so a variant with no arm fails to compile
     * `[✅]`   Unsupported identifier: condition the named concrete's `DECLARATION.identifier` is not `params.identifier`; decision equality, read before any construction; dependency call none; outcome `Err(CreateKeyDerivationErrorReturn::UnsupportedKdfIdentifier)`, with nothing constructed; `KdfIdentifier` has the one variant the BLAKE3 concrete declares, so no input takes this branch until a further identifier exists, and it has no unit test
-    * `[ ]`   Admitted: condition the named concrete's declared identifier is `params.identifier`; dependency call the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited; outcome `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(kdf) })`, whose adapter reports the concrete's `DECLARATION`
+    * `[✅]`   Admitted: condition the named concrete's declared identifier is `params.identifier`; dependency call the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited; outcome `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(kdf) })`, whose adapter reports the concrete's `DECLARATION`
     * `[✅]`   `CreateKeyDerivationErrorReturn::Blake3Keyed` carries the constructor's uninhabited error type in the return union, so no branch produces it
     * `[✅]`   `params.concrete` selects and `params.identifier` admits; `deps` and `payload` carry nothing and are not read
 
-  * `[ ]`   `adapters/kdf/src/factory/mock.rs`
+  * `[✅]`   `adapters/kdf/src/factory/mock.rs`
     * `[✅]`   `CreateKeyDerivationParamsOverrides`, `#[derive(Default)]`, fields `pub concrete: Option<KdfConcrete>` and `pub identifier: Option<KdfIdentifier>`; `build_create_key_derivation_params(overrides: CreateKeyDerivationParamsOverrides) -> CreateKeyDerivationParams`, defaulting to `KdfConcrete::Blake3Keyed` and `KdfIdentifier::Blake3KeyedV1`
-    * `[ ]`   `CreateKeyDerivationSuccessReturnOverrides`, `#[derive(Default)]`, with only `pub adapter: Option<Box<dyn IKeyDerivationAdapter>>`; `build_create_key_derivation_success_return(overrides: CreateKeyDerivationSuccessReturnOverrides) -> CreateKeyDerivationSuccessReturn`, the adapter defaulting to `Box::new(MockIKeyDerivationAdapter)`; a test needing different metadata supplies an adapter that reports it
+    * `[✅]`   `CreateKeyDerivationSuccessReturnOverrides`, `#[derive(Default)]`, with only `pub adapter: Option<Box<dyn IKeyDerivationAdapter>>`; `build_create_key_derivation_success_return(overrides: CreateKeyDerivationSuccessReturnOverrides) -> CreateKeyDerivationSuccessReturn`, the adapter defaulting to `Box::new(MockIKeyDerivationAdapter)`; a test needing different metadata supplies an adapter that reports it
     * `[✅]`   `mock_create_key_derivation(_deps: &CreateKeyDerivationDeps, _params: CreateKeyDerivationParams, _payload: CreateKeyDerivationPayload) -> CreateKeyDerivationReturn`, returning `Ok(build_create_key_derivation_success_return(Default::default()))`
     * `[✅]`   No builder for the fieldless `CreateKeyDerivationDeps` and `CreateKeyDerivationPayload`, used by their production values, or for the enums `KdfConcrete` and `CreateKeyDerivationErrorReturn`; every symbol `kdf/blake3_keyed` authored in this file is unchanged
 
-  * `[ ]`   `adapters/kdf/src/factory/test.rs`
+  * `[✅]`   `adapters/kdf/src/factory/test.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `create_key_derivation` from `super`, `CreateKeyDerivationDeps`, `CreateKeyDerivationPayload`, `KdfConcrete`, `KdfIdentifier`, and `KDF_INTERFACE_VERSION` from `super::interface`, and `build_create_key_derivation_params` and `CreateKeyDerivationParamsOverrides` from `super::mock`
-    * `[ ]`   `create_key_derivation_returns_the_blake3_keyed_concrete_and_its_declaration`: contract: the BLAKE3 concrete, admitted for its identifier, returns an adapter reporting its own declaration; arrange `build_create_key_derivation_params` with `concrete: Some(KdfConcrete::Blake3Keyed)` and `identifier: Some(KdfIdentifier::Blake3KeyedV1)`; act `create_key_derivation(&CreateKeyDerivationDeps, params, CreateKeyDerivationPayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.adapter.declaration().identifier` matches `KdfIdentifier::Blake3KeyedV1`, `adapter_version` equals `1`, and `interface_version` equals `KDF_INTERFACE_VERSION`
+    * `[✅]`   `create_key_derivation_returns_the_blake3_keyed_concrete_and_its_declaration`: contract: the BLAKE3 concrete, admitted for its identifier, returns an adapter reporting its own declaration; arrange `build_create_key_derivation_params` with `concrete: Some(KdfConcrete::Blake3Keyed)` and `identifier: Some(KdfIdentifier::Blake3KeyedV1)`; act `create_key_derivation(&CreateKeyDerivationDeps, params, CreateKeyDerivationPayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.adapter.declaration().identifier` matches `KdfIdentifier::Blake3KeyedV1`, `adapter_version` equals `1`, and `interface_version` equals `KDF_INTERFACE_VERSION`
     * `[✅]`   The unsupported-identifier branch has no unit test, as the interaction spec states
     * `[✅]`   The test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
 
   * `[✅]`   `construction`
     * `[✅]`   The composition root calls `create_key_derivation` with `&CreateKeyDerivationDeps`, `CreateKeyDerivationParams` holding the concrete the configuration names and the identifier the hash-card requires, and `CreateKeyDerivationPayload`, and places the returned `Box<dyn IKeyDerivationAdapter>` in each consumer's deps; no consumer constructs or names a concrete
 
-  * `[ ]`   `adapters/kdf/src/factory/mod.rs`
+  * `[✅]`   `adapters/kdf/src/factory/mod.rs`
     * `[✅]`   Adds `#[cfg(test)] mod test;` to the wiring `kdf/blake3_keyed` authored
-    * `[ ]`   `pub fn create_key_derivation(_deps: &CreateKeyDerivationDeps, params: CreateKeyDerivationParams, _payload: CreateKeyDerivationPayload) -> CreateKeyDerivationReturn`, a `match` on `params.concrete` whose `KdfConcrete::Blake3Keyed` arm returns the refusal when `Blake3KeyedKdf::DECLARATION.identifier` is not `params.identifier`, then binds the concrete by `let Ok(kdf) = Blake3KeyedKdf::try_new(Blake3KeyedKdfConstructorParams);` and returns `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(kdf) })`
+    * `[✅]`   `pub fn create_key_derivation(_deps: &CreateKeyDerivationDeps, params: CreateKeyDerivationParams, _payload: CreateKeyDerivationPayload) -> CreateKeyDerivationReturn`, a `match` on `params.concrete` whose `KdfConcrete::Blake3Keyed` arm returns the refusal when `Blake3KeyedKdf::DECLARATION.identifier` is not `params.identifier`, then binds the concrete by `let Ok(kdf) = Blake3KeyedKdf::try_new(Blake3KeyedKdfConstructorParams);` and returns `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(kdf) })`
     * `[✅]`   Imports `Blake3KeyedKdf` and `Blake3KeyedKdfConstructorParams` from `crate::blake3_keyed::provides`, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
@@ -670,14 +670,14 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `the_blake3_keyed_concrete_from_the_factory_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes`: contract: the reference context encoded through the encoding factory, and the wrapping key derived over it through the key-derivation factory's concrete, match the independent vector, with nothing mocked; arrange the context bytes from `create_encoding` with `build_create_encoding_params` overridden by `concrete: Some(EncodingConcrete::Abi)` and `identifier: Some(EncodingIdentifier::EthereumAbiV1)` and `CreateEncodingDeps { consumer: EncodeContext { context } }` holding the reference context, the adapter from `create_key_derivation` with `build_create_key_derivation_params` overridden by `concrete: Some(KdfConcrete::Blake3Keyed)` and `identifier: Some(KdfIdentifier::Blake3KeyedV1)`, and the reference secret, each factory call unpacked by `let Ok(success) = … else { panic!(…) };`; act `adapter.derive_key` with `build_derive_key_params` overridden by `purpose: Some(DerivationPurpose::WrappingKey)` and `length: Some(64)` and `DeriveKeyPayload { key_material: &secret, context: &context }`; assert the derived key's exposed bytes equal the wrapping-key vector
     * `[✅]`   The test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers; nothing is mocked, since `alloy` and `blake3` are the outer edges
 
-  * `[ ]`   `directionality`
+  * `[✅]`   `directionality`
     * `[✅]`   The `factory` module depends on the `blake3_keyed` concrete through `crate::blake3_keyed::provides` and on its own interface; `blake3_keyed` depends on the `factory` module's surface, the family form's recorded cycle; the crate's public surface is the `factory` module's `provides`
     * `[✅]`   Among repository crates the crate depends on `crates/domain` at runtime and on `adapters/encoding` for its integration test only; `adapters/encoding` names nothing in this crate; no cycle
     * `[✅]`   `workflows/sidecar/wrap` consumes the family through `create_key_derivation` and `IKeyDerivationAdapter`
 
-  * `[ ]`   `requirements`
+  * `[✅]`   `requirements`
     * `[✅]`   `adapters/kdf/Cargo.toml` carries exactly the dev-dependencies stated above, and every other table `kdf/blake3_keyed` stated is unchanged
-    * `[ ]`   `create_key_derivation_returns_the_blake3_keyed_concrete_and_its_declaration` passes; the unsupported-identifier refusal is fixed by the return union and the `match` and has no unit test until a further identifier exists
+    * `[✅]`   `create_key_derivation_returns_the_blake3_keyed_concrete_and_its_declaration` passes; the unsupported-identifier refusal is fixed by the return union and the `match` and has no unit test until a further identifier exists
     * `[✅]`   `the_blake3_keyed_concrete_from_the_factory_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes` passes (CR-11, the wrapping-key derivation over the encoded derivation context reached through both families' surfaces)
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning in every target, the `blake3_keyed` concrete's unused-item warnings having no remaining cause
     * `[✅]`   `blake3` is named nowhere outside `adapters/kdf/src/blake3_keyed`, and no code outside `adapters/kdf` can name `Blake3KeyedKdf`
@@ -786,7 +786,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `try_new_rejects_an_empty_tag`, `try_new_rejects_a_tag_one_byte_over_the_maximum`, `try_new_rejects_the_lowest_byte_outside_printable_ascii`, `try_new_rejects_a_non_ascii_byte`, `try_new_rejects_a_leading_space`, `try_new_rejects_a_trailing_space`, `try_new_reports_the_leading_edge_before_the_trailing_edge`, `try_new_reports_the_bytes_before_the_edges`, and `try_new_reports_the_length_before_the_bytes` pass (CR-11, a tag has one byte form, refused before any hash)
     * `[✅]`   Code outside `adapters/hash-to-scalar/src/domain_tag` reading the `bytes` field fails to compile
 
-* `[ ]`   `hash-to-scalar/keccak256` **Keccak-256 concrete hashing a length-prefixed domain tag and a message and reducing the digest modulo the group order of whichever pairing scalar it is asked for; authors the hash-to-scalar family's generic interface, identifier, declaration, and mock**
+* `[✅]`   `hash-to-scalar/keccak256` **Keccak-256 concrete hashing a length-prefixed domain tag and a message and reducing the digest modulo the group order of whichever pairing scalar it is asked for; authors the hash-to-scalar family's generic interface, identifier, declaration, and mock**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: the identity mapping and the delivery proof's challenge are scalars the contract recomputes, and the EVM has keccak256 and no BLAKE3, so both are keccak256 under a domain tag reduced modulo the group order, computed identically by the client and the contract, through one repo-owned interface, with no module outside a concrete naming the hash library (CR-08; CR-09; CR-11)
@@ -825,7 +825,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`, and `Secret::expose(&self) -> &T`
     * `[✅]`   From `pairing`: `ISampleUniformScalar::UNIFORM_BYTES_LENGTH`, `64` on every current concrete, and `sample_from_uniform_bytes(SampleUniformScalarParams, SampleUniformScalarPayload { uniform }) -> Result<SampleUniformScalarSuccessReturn<S>, SampleUniformScalarErrorReturn>`, which reads `uniform` as a big-endian integer and reduces it modulo the group order into `Secret<S>`; `S: Clone` through `IPairingAdapter::Scalar`'s bound
     * `[✅]`   From `sha3`: `Keccak256::new()`, `Digest::update(&mut self, data: impl AsRef<[u8]>)`, and `Digest::finalize(self)`, whose 32-byte output dereferences to a byte slice
-    * `[ ]`   From `pairing`, in the tests: `create_pairing<C: IPairingConsumer>(&CreatePairingDeps<C>, CreatePairingParams, CreatePairingPayload)`, `IPairingConsumer::consume_pairing<P: IPairingAdapter>`, and `IPairingAdapter::encode_scalar(&self, EncodeScalarParams, EncodeScalarPayload { scalar }) -> Result<EncodeScalarSuccessReturn<P::EncodedScalar>, Infallible>` with `bytes: Secret<P::EncodedScalar>`, whose `as_ref()` borrows 32 big-endian bytes for each test comparison
+    * `[✅]`   From `pairing`, in the tests: `create_pairing<C: IPairingConsumer>(&CreatePairingDeps<C>, CreatePairingParams, CreatePairingPayload)`, `IPairingConsumer::consume_pairing<P: IPairingAdapter>`, and `IPairingAdapter::encode_scalar(&self, EncodeScalarParams, EncodeScalarPayload { scalar }) -> Result<EncodeScalarSuccessReturn<P::EncodedScalar>, Infallible>` with `bytes: Secret<P::EncodedScalar>`, whose `as_ref()` borrows 32 big-endian bytes for each test comparison
 
   * `[✅]`   `adapters/hash-to-scalar/Cargo.toml`
     * `[✅]`   `[dependencies]` with `domain = { path = "../../crates/domain" }`, `pairing = { path = "../pairing" }`, and `sha3 = "0.12.0"`
@@ -836,7 +836,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The crate barrel reads `mod domain_tag;`, `mod factory;`, `mod keccak256;`, `pub use domain_tag::provides::*;`, and `pub use factory::provides::*;`, nothing else; the `keccak256` concrete's surface is not re-exported
     * `[✅]`   Until `factory/mod.rs` and `keccak256/mod.rs` exist, `cargo check` reports the unresolved modules, which is the RED state for every element below that precedes them
 
-  * `[ ]`   `adapters/hash-to-scalar/src/factory/interface.rs`
+  * `[✅]`   `adapters/hash-to-scalar/src/factory/interface.rs`
     * `[✅]`   `HASH_TO_SCALAR_INTERFACE_VERSION`, a `pub const` of type `u32` with value `1`
     * `[✅]`   `HashToScalarIdentifier`, an enum with the one variant `Keccak256V1`, the identifier a deployment's hash-card names
     * `[✅]`   `HashToScalarDeclaration`, a struct with `pub identifier: HashToScalarIdentifier`, `pub adapter_version: u32`, and `pub interface_version: u32`
@@ -845,8 +845,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `HashToScalarSuccessReturn<S>`, a struct with `pub scalar: S`; the scalar is public, since the identity mapping and the challenge are values the contract recomputes
     * `[✅]`   `HashToScalarErrorReturn`, an enum with the one variant `Keccak256(Keccak256HashToScalarErrorReturn)`, the Keccak-256 concrete's error carried unchanged; each further concrete's error is its own variant
     * `[✅]`   `HashToScalarReturn<S>`, the alias `Result<HashToScalarSuccessReturn<S>, HashToScalarErrorReturn>`
-    * `[ ]`   `IHashToScalarAdapter<S: ISampleUniformScalar + Clone>`, an object-safe trait with `fn declaration(&self) -> HashToScalarDeclaration;` and `fn hash_to_scalar(&self, params: HashToScalarParams<'_>, payload: HashToScalarPayload<'_>) -> HashToScalarReturn<S>;`, generic over the scalar type rather than its method, so a consumer holds `Box<dyn IHashToScalarAdapter<P::Scalar>>` and obtains metadata from that adapter
-    * `[ ]`   No derives on any type in this file; imports `DomainTag` from `crate::domain_tag::provides`, `ISampleUniformScalar` from `pairing`, and `Keccak256HashToScalarErrorReturn` from `crate::keccak256::provides`; names no vendor
+    * `[✅]`   `IHashToScalarAdapter<S: ISampleUniformScalar + Clone>`, an object-safe trait with `fn declaration(&self) -> HashToScalarDeclaration;` and `fn hash_to_scalar(&self, params: HashToScalarParams<'_>, payload: HashToScalarPayload<'_>) -> HashToScalarReturn<S>;`, generic over the scalar type rather than its method, so a consumer holds `Box<dyn IHashToScalarAdapter<P::Scalar>>` and obtains metadata from that adapter
+    * `[✅]`   No derives on any type in this file; imports `DomainTag` from `crate::domain_tag::provides`, `ISampleUniformScalar` from `pairing`, and `Keccak256HashToScalarErrorReturn` from `crate::keccak256::provides`; names no vendor
 
   * `[✅]`   `adapters/hash-to-scalar/src/keccak256/interface.rs`
     * `[✅]`   `KECCAK256_DIGEST_LENGTH`, a `pub const` of type `usize` with value `32`
@@ -865,11 +865,11 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `hash_to_scalar`, hashed: condition both checks pass; dependency calls `Keccak256::new()`, then `update` with the one prefix byte, `update` with `params.tag.as_bytes()`, and `update` with `payload.message`, in that order, each once, then `finalize` once; a buffer of `S::UNIFORM_BYTES_LENGTH` zero bytes receives the digest in its last `KECCAK256_DIGEST_LENGTH` bytes and is moved into a `Secret` by `let Ok(uniform) = Secret::try_new(SecretConstructorParams { value: buffer });`; then `S::sample_from_uniform_bytes(SampleUniformScalarParams, SampleUniformScalarPayload { uniform })` once; outcome `Ok(HashToScalarSuccessReturn { scalar })`, `scalar` a clone of the sampled `Secret`'s exposed value, the `Secret` then dropping and zeroizing its copy
     * `[✅]`   Ordering: the prefix conversion and the length subtraction precede the hasher; the prefix, the tag, and the message are absorbed in that order; the same tag and message always yield the same scalar for one scalar type
 
-  * `[ ]`   `adapters/hash-to-scalar/src/factory/mock.rs`
+  * `[✅]`   `adapters/hash-to-scalar/src/factory/mock.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
     * `[✅]`   `HashToScalarDeclarationOverrides`, `#[derive(Default)]`, one `Option` per field; `build_hash_to_scalar_declaration(overrides: HashToScalarDeclarationOverrides) -> HashToScalarDeclaration`, defaulting to `HashToScalarIdentifier::Keccak256V1`, `1`, and `HASH_TO_SCALAR_INTERFACE_VERSION`
     * `[✅]`   `HashToScalarSuccessReturnOverrides<S>`, `#[derive(Default)]`, one field `pub scalar: Option<S>`; `build_hash_to_scalar_success_return<S: Default>(overrides: HashToScalarSuccessReturnOverrides<S>) -> HashToScalarSuccessReturn<S>`, the scalar defaulting to `S::default()`
-    * `[ ]`   `MockIHashToScalarAdapter<S>`, a struct with the one field `pub scalar: PhantomData<S>`, implementing `IHashToScalarAdapter<S>` for `S: ISampleUniformScalar + Clone + Default` with `declaration()` returning the default Keccak-256 declaration and `hash_to_scalar` returning `Ok(build_hash_to_scalar_success_return(Default::default()))` for any params and payload; a test needing other behavior implements the trait on its own local struct
+    * `[✅]`   `MockIHashToScalarAdapter<S>`, a struct with the one field `pub scalar: PhantomData<S>`, implementing `IHashToScalarAdapter<S>` for `S: ISampleUniformScalar + Clone + Default` with `declaration()` returning the default Keccak-256 declaration and `hash_to_scalar` returning `Ok(build_hash_to_scalar_success_return(Default::default()))` for any params and payload; a test needing other behavior implements the trait on its own local struct
     * `[✅]`   No builder for `HashToScalarParams` and `HashToScalarPayload`, whose fields are borrowed with no default and are written at the call site as their production values, or for the enums `HashToScalarIdentifier` and `HashToScalarErrorReturn`; no corruptions type and no invalidator, since no value this interface owns arrives as untrusted data
     * `[✅]`   Imports `ISampleUniformScalar` from `pairing`, `core::marker::PhantomData`, and this module's types from `super::interface`
 
@@ -879,9 +879,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `adapters/hash-to-scalar/src/factory/provides.rs`
     * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
 
-  * `[ ]`   `adapters/hash-to-scalar/src/keccak256/test.rs`
+  * `[✅]`   `adapters/hash-to-scalar/src/keccak256/test.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `Keccak256HashToScalar` and `Keccak256HashToScalarConstructorParams` from `super::interface`; `IHashToScalarAdapter`, `HashToScalarParams`, `HashToScalarPayload`, `HashToScalarIdentifier`, and `HASH_TO_SCALAR_INTERFACE_VERSION` from `crate::factory::provides`; `DomainTag`, `build_domain_tag`, and `DomainTagConstructorParamsOverrides` from `crate::domain_tag::provides`; the `pairing` names the deps list for the tests; and `hex::decode`
-    * `[ ]`   A test-local `ScalarProbe`, a struct with `tag: DomainTag` and `message: Vec<u8>`, implementing `IPairingConsumer` with `type Output = Vec<u8>;` and a `consume_pairing<P: IPairingAdapter>` that constructs the subject by `let Ok(hasher) = Keccak256HashToScalar::try_new(Keccak256HashToScalarConstructorParams);`, calls `IHashToScalarAdapter::<P::Scalar>::hash_to_scalar(&hasher, HashToScalarParams { tag: &self.tag }, HashToScalarPayload { message: &self.message })`, encodes the returned scalar through `payload.adapter.encode_scalar(EncodeScalarParams, EncodeScalarPayload { scalar })`, each call unpacked by `let Ok(…) = … else { panic!(…) };`, and returns `encoded.bytes.expose().as_ref().to_vec()` only at the independent-vector test boundary
+    * `[✅]`   A test-local `ScalarProbe`, a struct with `tag: DomainTag` and `message: Vec<u8>`, implementing `IPairingConsumer` with `type Output = Vec<u8>;` and a `consume_pairing<P: IPairingAdapter>` that constructs the subject by `let Ok(hasher) = Keccak256HashToScalar::try_new(Keccak256HashToScalarConstructorParams);`, calls `IHashToScalarAdapter::<P::Scalar>::hash_to_scalar(&hasher, HashToScalarParams { tag: &self.tag }, HashToScalarPayload { message: &self.message })`, encodes the returned scalar through `payload.adapter.encode_scalar(EncodeScalarParams, EncodeScalarPayload { scalar })`, each call unpacked by `let Ok(…) = … else { panic!(…) };`, and returns `encoded.bytes.expose().as_ref().to_vec()` only at the independent-vector test boundary
     * `[✅]`   Each test builds its tag through `build_domain_tag` with `bytes` overridden, runs `ScalarProbe` through `create_pairing` with `build_create_pairing_params` overridden by `concrete` alone and `CreatePairingDeps { consumer }`, and unpacks the factory's return by `let Ok(success) = … else { panic!(…) };`
     * `[✅]`   The reference tag is `b"ChainTorrent hash-to-scalar test".to_vec()`, 32 bytes; the reference message is the 448-byte reference vector `encoding/abi` states, written as one hex string of its words in order
     * `[✅]`   The independent vectors, each a 32-byte big-endian scalar, computed with the Keccak team's pure-Python reference `CompactFIPS202.py` from the XKCP repository as `Keccak(1088, 512, input, 0x01, 32)`, which reproduces keccak256 of the empty string and of `abc`, over the input `0x20`, the reference tag, then the message, with the digest reduced modulo each group order: for the reference message, digest `4151bea01b9ddc7edbe167b8167245798f08813fcb739ae26c7a3637880f8de2`, at or above the BN254 group order and below the BLS12-381 group order, BN254 scalar `10ed702d3a6c3c552391220194f0ed1c66d498f751ba2a51289840a3980f8de1`, BLS12-381 scalar `4151bea01b9ddc7edbe167b8167245798f08813fcb739ae26c7a3637880f8de2`; for the empty message, digest `e563de6b3c6c28ad12ef953efbe86d3dd05f80bad4c7a2198246e9836046bb0b`, at or above both group orders, BN254 scalar `23d2a49fb7a5a80631ae7e64f5e30bc92f8fdf98ede1dfd472bf1333a046bb07`, BLS12-381 scalar `7176371812ceab64dfb5bd36f24695387ca1dcb7d4c9461a8246e9846046bb0a`
@@ -900,10 +900,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `Keccak256HashToScalar::try_new` is the concrete's only producer, and its only caller is the hash-to-scalar factory, which reads `Keccak256HashToScalar::DECLARATION` before constructing
     * `[✅]`   The concrete owns no object type a consumer builds as a fixture: the adapter is a unit struct constructed by `try_new` over fieldless params and its error is an enum, so it has no `mock.rs`
 
-  * `[ ]`   `adapters/hash-to-scalar/src/keccak256/mod.rs`
+  * `[✅]`   `adapters/hash-to-scalar/src/keccak256/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
     * `[✅]`   `impl Keccak256HashToScalar` with `pub const DECLARATION: HashToScalarDeclaration` as the interaction spec states and `pub fn try_new(_params: Keccak256HashToScalarConstructorParams) -> Keccak256HashToScalarTryNewReturn` returning `Ok(Keccak256HashToScalar)`
-    * `[ ]`   `impl<S: ISampleUniformScalar + Clone> IHashToScalarAdapter<S> for Keccak256HashToScalar` with `declaration()` returning `Self::DECLARATION` and `hash_to_scalar` realizing the branches and ordering of the interaction spec; the digest is copied into the buffer's tail by `copy_from_slice` over the range starting at the subtraction's result
+    * `[✅]`   `impl<S: ISampleUniformScalar + Clone> IHashToScalarAdapter<S> for Keccak256HashToScalar` with `declaration()` returning `Self::DECLARATION` and `hash_to_scalar` realizing the branches and ordering of the interaction spec; the digest is copied into the buffer's tail by `copy_from_slice` over the range starting at the subtraction's result
     * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `ISampleUniformScalar`, `SampleUniformScalarParams`, and `SampleUniformScalarPayload` from `pairing`, `sha3::{Digest, Keccak256}`, and this module's names from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
@@ -914,19 +914,19 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `keccak256` depends on the `factory` module's surface through `crate::factory::provides`, on `domain_tag`'s through `crate::domain_tag::provides`, on `domain`, on `pairing`, and on `sha3`; the `factory` module depends on `domain_tag`, on `pairing`, and on `keccak256`'s error through `crate::keccak256::provides`, the family form's recorded cycle, which `hash-to-scalar/factory` completes by constructing the concrete
     * `[✅]`   Among repository crates the crate depends on `crates/domain` and `adapters/pairing`, which names nothing in this crate; nothing depends on the crate yet; no other cycle
 
-  * `[ ]`   `requirements`
+  * `[✅]`   `requirements`
     * `[✅]`   `adapters/hash-to-scalar/Cargo.toml` carries exactly the tables and keys stated above, and `sha3` is named nowhere in the crate outside `adapters/hash-to-scalar/src/keccak256`
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `keccak256` concrete, which `hash-to-scalar/factory` resolves by constructing the concrete
     * `[✅]`   Every `hash_to_scalar_on_…_reduces_…` test passes (CR-11, the tag prefix, serialization, and reduction frozen against an independent implementation's vectors on both curves and all four pairing concretes; CR-08 and CR-09 for the identity mapping and the challenge that consume it)
     * `[✅]`   `hash_to_scalar_binds_the_tag_length`, `hash_to_scalar_separates_domains`, and `keccak256_hash_to_scalar_declares_its_identifier_and_versions` pass
     * `[✅]`   Code outside `adapters/hash-to-scalar` naming `Keccak256HashToScalar` or anything under `keccak256` fails to compile; the crate's public surface is the `domain_tag` and `factory` modules' `provides`
 
-* `[ ]`   `hash-to-scalar/factory` **Hash-to-scalar factory constructing the concrete the configuration names, admitted against the hash-to-scalar identifier the hash-card requires, and returning it behind the family's trait for the pairing scalar type asked for; carries the family's integration test and the milestone's commit**
+* `[✅]`   `hash-to-scalar/factory` **Hash-to-scalar factory constructing the concrete the configuration names, admitted against the hash-to-scalar identifier the hash-card requires, and returning it behind the family's trait for the pairing scalar type asked for; carries the family's integration test and the milestone's commit**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a consumer obtains a hash-to-scalar adapter only through the family's generic surface, never by naming a concrete, for the scalar type of the pairing it resolved, and the mapping it uses is the one the deployment's hash-card names, so a concrete that does not declare the required identifier is refused before anything is constructed (CR-08; CR-09; CR-11; Composition Boundary)
     * `[✅]`   Functional: given the concrete the configuration names and the identifier required, the factory refuses a concrete whose declared identifier is not the required one, with no construction
-    * `[ ]`   Functional: an admitted concrete is constructed and returned as `Box<dyn IHashToScalarAdapter<S>>` for the scalar type `S` the caller names; the adapter reports its declaration
+    * `[✅]`   Functional: an admitted concrete is constructed and returned as `Box<dyn IHashToScalarAdapter<S>>` for the scalar type `S` the caller names; the adapter reports its declaration
     * `[✅]`   Functional: a concrete's constructor error is returned unchanged in the factory's error arm, one variant per concrete
     * `[✅]`   Functional: the concrete the factory returns, handed the scalar type of the pairing the pairing factory resolves, maps the reference tag over the reference context encoded through the encoding factory to the independent scalar on each curve
     * `[✅]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, and its branch here; adding an identifier is its variant in `HashToScalarIdentifier`; no consumer changes
@@ -961,54 +961,54 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `[dev-dependencies]` reads `domain = { path = "../../crates/domain", features = ["mocks"] }`, `encoding = { path = "../encoding", features = ["mocks"] }`, `pairing = { path = "../pairing", features = ["mocks"] }`, and `hex = "0.4.3"`
     * `[✅]`   `[package]`, `[dependencies]`, `[features]`, and `[lints]` are unchanged; no other table
 
-  * `[ ]`   `adapters/hash-to-scalar/src/factory/interface.rs`
+  * `[✅]`   `adapters/hash-to-scalar/src/factory/interface.rs`
     * `[✅]`   `HashToScalarIdentifier` gains `#[derive(PartialEq, Eq)]`, so the admission compares a declared identifier with the required one
     * `[✅]`   `HashToScalarConcrete`, an enum with the one variant `Keccak256`, the selection of the concrete to construct
     * `[✅]`   `CreateHashToScalarDeps`, the fieldless struct `pub struct CreateHashToScalarDeps;`
     * `[✅]`   `CreateHashToScalarParams`, a struct with `pub concrete: HashToScalarConcrete` and `pub identifier: HashToScalarIdentifier`, the selection and the identifier the concrete must declare
     * `[✅]`   `CreateHashToScalarPayload`, the fieldless struct `pub struct CreateHashToScalarPayload;`, since the factory operates on no data
-    * `[ ]`   `CreateHashToScalarSuccessReturn<S>`, a struct with only `pub adapter: Box<dyn IHashToScalarAdapter<S>>`; callers read the declaration through `adapter.declaration()`
+    * `[✅]`   `CreateHashToScalarSuccessReturn<S>`, a struct with only `pub adapter: Box<dyn IHashToScalarAdapter<S>>`; callers read the declaration through `adapter.declaration()`
     * `[✅]`   `CreateHashToScalarErrorReturn`, an enum with the variants `UnsupportedHashToScalarIdentifier`, the named concrete not declaring the required identifier, and `Keccak256(Infallible)`, the Keccak-256 concrete's constructor error carried unchanged; each further concrete's constructor error is its own variant
     * `[✅]`   `CreateHashToScalarReturn<S>`, the alias `Result<CreateHashToScalarSuccessReturn<S>, CreateHashToScalarErrorReturn>`
     * `[✅]`   `CreateHashToScalarFn<S>`, the alias `fn(&CreateHashToScalarDeps, CreateHashToScalarParams, CreateHashToScalarPayload) -> CreateHashToScalarReturn<S>`
     * `[✅]`   Adds the import of `core::convert::Infallible`; every item `hash-to-scalar/keccak256` authored in this file is unchanged except the derive on `HashToScalarIdentifier`
 
-  * `[ ]`   `adapters/hash-to-scalar/src/factory/interaction.spec.md`
+  * `[✅]`   `adapters/hash-to-scalar/src/factory/interaction.spec.md`
     * `[✅]`   `create_hash_to_scalar<S: ISampleUniformScalar + Clone>(deps: &CreateHashToScalarDeps, params: CreateHashToScalarParams, payload: CreateHashToScalarPayload) -> CreateHashToScalarReturn<S>`: decision a `match` on `params.concrete`, one arm per `HashToScalarConcrete` variant, exhaustive so a variant with no arm fails to compile
     * `[✅]`   Unsupported identifier: condition the named concrete's `DECLARATION.identifier` is not `params.identifier`; decision equality, read before any construction; dependency call none; outcome `Err(CreateHashToScalarErrorReturn::UnsupportedHashToScalarIdentifier)`, with nothing constructed; `HashToScalarIdentifier` has the one variant the Keccak-256 concrete declares, so no input takes this branch until a further identifier exists, and it has no unit test
-    * `[ ]`   Admitted: condition the named concrete's declared identifier is `params.identifier`; dependency call the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited; outcome `Ok(CreateHashToScalarSuccessReturn { adapter: Box::new(hasher) })`, whose boxed adapter reports the concrete's `DECLARATION`
+    * `[✅]`   Admitted: condition the named concrete's declared identifier is `params.identifier`; dependency call the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited; outcome `Ok(CreateHashToScalarSuccessReturn { adapter: Box::new(hasher) })`, whose boxed adapter reports the concrete's `DECLARATION`
     * `[✅]`   `CreateHashToScalarErrorReturn::Keccak256` carries the constructor's uninhabited error type in the return union, so no branch produces it
     * `[✅]`   `params.concrete` selects and `params.identifier` admits; `S` fixes the scalar type the returned adapter produces; `deps` and `payload` carry nothing and are not read
 
-  * `[ ]`   `adapters/hash-to-scalar/src/factory/mock.rs`
+  * `[✅]`   `adapters/hash-to-scalar/src/factory/mock.rs`
     * `[✅]`   `CreateHashToScalarParamsOverrides`, `#[derive(Default)]`, fields `pub concrete: Option<HashToScalarConcrete>` and `pub identifier: Option<HashToScalarIdentifier>`; `build_create_hash_to_scalar_params(overrides: CreateHashToScalarParamsOverrides) -> CreateHashToScalarParams`, defaulting to `HashToScalarConcrete::Keccak256` and `HashToScalarIdentifier::Keccak256V1`
-    * `[ ]`   `CreateHashToScalarSuccessReturnOverrides<S>`, `#[derive(Default)]`, with only `pub adapter: Option<Box<dyn IHashToScalarAdapter<S>>>`; `build_create_hash_to_scalar_success_return<S: ISampleUniformScalar + Clone + Default>(overrides: CreateHashToScalarSuccessReturnOverrides<S>) -> CreateHashToScalarSuccessReturn<S>`, the adapter defaulting to `Box::new(MockIHashToScalarAdapter { scalar: PhantomData })`; a test needing different metadata supplies an adapter that reports it
+    * `[✅]`   `CreateHashToScalarSuccessReturnOverrides<S>`, `#[derive(Default)]`, with only `pub adapter: Option<Box<dyn IHashToScalarAdapter<S>>>`; `build_create_hash_to_scalar_success_return<S: ISampleUniformScalar + Clone + Default>(overrides: CreateHashToScalarSuccessReturnOverrides<S>) -> CreateHashToScalarSuccessReturn<S>`, the adapter defaulting to `Box::new(MockIHashToScalarAdapter { scalar: PhantomData })`; a test needing different metadata supplies an adapter that reports it
     * `[✅]`   `mock_create_hash_to_scalar<S: ISampleUniformScalar + Clone + Default>(_deps: &CreateHashToScalarDeps, _params: CreateHashToScalarParams, _payload: CreateHashToScalarPayload) -> CreateHashToScalarReturn<S>`, returning `Ok(build_create_hash_to_scalar_success_return(Default::default()))`
     * `[✅]`   No builder for the fieldless `CreateHashToScalarDeps` and `CreateHashToScalarPayload`, used by their production values, or for the enums `HashToScalarConcrete` and `CreateHashToScalarErrorReturn`; every symbol `hash-to-scalar/keccak256` authored in this file is unchanged
 
-  * `[ ]`   `adapters/hash-to-scalar/src/factory/test.rs`
+  * `[✅]`   `adapters/hash-to-scalar/src/factory/test.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `create_hash_to_scalar` from `super`, `CreateHashToScalarDeps`, `CreateHashToScalarPayload`, `HashToScalarConcrete`, `HashToScalarDeclaration`, `HashToScalarIdentifier`, and `HASH_TO_SCALAR_INTERFACE_VERSION` from `super::interface`, `build_create_hash_to_scalar_params` and `CreateHashToScalarParamsOverrides` from `super::mock`, and `create_pairing`, `CreatePairingDeps`, `CreatePairingPayload`, `build_create_pairing_params`, `CreatePairingParamsOverrides`, `PairingConcrete`, `IPairingConsumer`, `IPairingAdapter`, `ConsumePairingParams`, and `ConsumePairingPayload` from `pairing`
-    * `[ ]`   A test-local `DeclarationProbe`, the unit struct implementing `IPairingConsumer` with `type Output = HashToScalarDeclaration;` and a `consume_pairing<P: IPairingAdapter>` that calls `create_hash_to_scalar::<P::Scalar>(&CreateHashToScalarDeps, build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides { concrete: Some(HashToScalarConcrete::Keccak256), identifier: Some(HashToScalarIdentifier::Keccak256V1) }), CreateHashToScalarPayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`, and returns `success.adapter.declaration()`
-    * `[ ]`   `create_hash_to_scalar_returns_the_keccak256_concrete_and_its_declaration_for_a_pairing_scalar`: contract: the Keccak-256 concrete, admitted for its identifier, is returned with its declaration for the scalar type of a resolved pairing; arrange `build_create_pairing_params` with `concrete: Some(PairingConcrete::Bn254Arkworks)` and `CreatePairingDeps { consumer: DeclarationProbe }`; act `create_pairing(&deps, params, CreatePairingPayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.output.identifier` matches `HashToScalarIdentifier::Keccak256V1`, `success.output.adapter_version` equals `1`, and `success.output.interface_version` equals `HASH_TO_SCALAR_INTERFACE_VERSION`
+    * `[✅]`   A test-local `DeclarationProbe`, the unit struct implementing `IPairingConsumer` with `type Output = HashToScalarDeclaration;` and a `consume_pairing<P: IPairingAdapter>` that calls `create_hash_to_scalar::<P::Scalar>(&CreateHashToScalarDeps, build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides { concrete: Some(HashToScalarConcrete::Keccak256), identifier: Some(HashToScalarIdentifier::Keccak256V1) }), CreateHashToScalarPayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`, and returns `success.adapter.declaration()`
+    * `[✅]`   `create_hash_to_scalar_returns_the_keccak256_concrete_and_its_declaration_for_a_pairing_scalar`: contract: the Keccak-256 concrete, admitted for its identifier, is returned with its declaration for the scalar type of a resolved pairing; arrange `build_create_pairing_params` with `concrete: Some(PairingConcrete::Bn254Arkworks)` and `CreatePairingDeps { consumer: DeclarationProbe }`; act `create_pairing(&deps, params, CreatePairingPayload)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.output.identifier` matches `HashToScalarIdentifier::Keccak256V1`, `success.output.adapter_version` equals `1`, and `success.output.interface_version` equals `HASH_TO_SCALAR_INTERFACE_VERSION`
     * `[✅]`   The unsupported-identifier branch has no unit test, as the interaction spec states
     * `[✅]`   The test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
 
   * `[✅]`   `construction`
     * `[✅]`   A consumer working with a resolved pairing `P` calls `create_hash_to_scalar::<P::Scalar>` with `&CreateHashToScalarDeps`, `CreateHashToScalarParams` holding the concrete the configuration names and the identifier the hash-card requires, and `CreateHashToScalarPayload`, and holds the returned `Box<dyn IHashToScalarAdapter<P::Scalar>>` in its deps; no consumer constructs or names a concrete
 
-  * `[ ]`   `adapters/hash-to-scalar/src/factory/mod.rs`
+  * `[✅]`   `adapters/hash-to-scalar/src/factory/mod.rs`
     * `[✅]`   Adds `#[cfg(test)] mod test;` to the wiring `hash-to-scalar/keccak256` authored
-    * `[ ]`   `pub fn create_hash_to_scalar<S: ISampleUniformScalar + Clone>(_deps: &CreateHashToScalarDeps, params: CreateHashToScalarParams, _payload: CreateHashToScalarPayload) -> CreateHashToScalarReturn<S>`, a `match` on `params.concrete` whose `HashToScalarConcrete::Keccak256` arm returns the refusal when `Keccak256HashToScalar::DECLARATION.identifier` is not `params.identifier`, then binds the concrete by `let Ok(hasher) = Keccak256HashToScalar::try_new(Keccak256HashToScalarConstructorParams);` and returns `Ok(CreateHashToScalarSuccessReturn { adapter: Box::new(hasher) })`
+    * `[✅]`   `pub fn create_hash_to_scalar<S: ISampleUniformScalar + Clone>(_deps: &CreateHashToScalarDeps, params: CreateHashToScalarParams, _payload: CreateHashToScalarPayload) -> CreateHashToScalarReturn<S>`, a `match` on `params.concrete` whose `HashToScalarConcrete::Keccak256` arm returns the refusal when `Keccak256HashToScalar::DECLARATION.identifier` is not `params.identifier`, then binds the concrete by `let Ok(hasher) = Keccak256HashToScalar::try_new(Keccak256HashToScalarConstructorParams);` and returns `Ok(CreateHashToScalarSuccessReturn { adapter: Box::new(hasher) })`
     * `[✅]`   Imports `Keccak256HashToScalar` and `Keccak256HashToScalarConstructorParams` from `crate::keccak256::provides`, `ISampleUniformScalar` from `pairing`, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[✅]`   `adapters/hash-to-scalar/src/factory/provides.rs`
     * `[✅]`   Adds `pub use super::create_hash_to_scalar;` to the re-exports `hash-to-scalar/keccak256` authored
 
-  * `[ ]`   `adapters/hash-to-scalar/tests/integration_test.rs`
+  * `[✅]`   `adapters/hash-to-scalar/tests/integration_test.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `create_hash_to_scalar`, `CreateHashToScalarDeps`, `CreateHashToScalarPayload`, `build_create_hash_to_scalar_params`, `CreateHashToScalarParamsOverrides`, `HashToScalarConcrete`, `HashToScalarIdentifier`, `HashToScalarParams`, `HashToScalarPayload`, `DomainTag`, `build_domain_tag`, and `DomainTagConstructorParamsOverrides` from `hash_to_scalar`; the `pairing` names the context slice lists with `CreatePairingDeps`, `CreatePairingPayload`, `EncodeScalarParams`, and `EncodeScalarPayload`; the `encoding` names the context slice lists; `DerivationContext` and the domain builders and overrides that make the reference context from `domain`; and `hex::decode`; the builders are reached through each crate's `mocks` feature, which the workspace's test and check commands enable with `--all-features`
     * `[✅]`   A test-local `EncodeContext`, a struct with `context: DerivationContext`, implementing `IEncodingConsumer` with `type Output = Vec<u8>;` and a `consume_encoding<E: IEncoderAdapter + IDecoderAdapter>` that constructs `DerivationContextDescription` by `let Ok(description) = DerivationContextDescription::try_new(DerivationContextDescriptionConstructorParams);`, encodes `self.context` through `payload.adapter.encode(EncodeParams { description: &description }, &self.context)`, unpacked by `let Ok(success) = … else { panic!(…) };`, and returns `success.bytes`
-    * `[ ]`   A test-local `FactoryScalarProbe`, a struct with `tag: DomainTag` and `message: Vec<u8>`, implementing `IPairingConsumer` with `type Output = Vec<u8>;` and a `consume_pairing<P: IPairingAdapter>` that obtains the adapter from `create_hash_to_scalar::<P::Scalar>` with `build_create_hash_to_scalar_params` overridden by `concrete: Some(HashToScalarConcrete::Keccak256)` and `identifier: Some(HashToScalarIdentifier::Keccak256V1)`, calls `hash_to_scalar(HashToScalarParams { tag: &self.tag }, HashToScalarPayload { message: &self.message })` on it, encodes the scalar through `payload.adapter.encode_scalar(EncodeScalarParams, EncodeScalarPayload { scalar })`, each call unpacked by `let Ok(…) = … else { panic!(…) };`, and returns `encoded.bytes.expose().as_ref().to_vec()` only at the independent-vector test boundary
+    * `[✅]`   A test-local `FactoryScalarProbe`, a struct with `tag: DomainTag` and `message: Vec<u8>`, implementing `IPairingConsumer` with `type Output = Vec<u8>;` and a `consume_pairing<P: IPairingAdapter>` that obtains the adapter from `create_hash_to_scalar::<P::Scalar>` with `build_create_hash_to_scalar_params` overridden by `concrete: Some(HashToScalarConcrete::Keccak256)` and `identifier: Some(HashToScalarIdentifier::Keccak256V1)`, calls `hash_to_scalar(HashToScalarParams { tag: &self.tag }, HashToScalarPayload { message: &self.message })` on it, encodes the scalar through `payload.adapter.encode_scalar(EncodeScalarParams, EncodeScalarPayload { scalar })`, each call unpacked by `let Ok(…) = … else { panic!(…) };`, and returns `encoded.bytes.expose().as_ref().to_vec()` only at the independent-vector test boundary
     * `[✅]`   The reference context is the one `encoding/derivation_context`'s tests build; the reference tag is `build_domain_tag` with `bytes: Some(b"ChainTorrent hash-to-scalar test".to_vec())`; the reference message's BN254 and BLS12-381 scalars are the independent vectors `hash-to-scalar/keccak256`'s tests state
     * `[✅]`   `the_keccak256_concrete_from_the_factory_maps_the_encoded_reference_context_to_the_independent_bn254_scalar`: contract: the reference context encoded through the encoding factory, hashed under the reference tag through the hash-to-scalar factory's concrete, and reduced by the BN254 scalar the pairing factory resolves, matches the independent vector, with nothing mocked; arrange the message from `create_encoding` with `build_create_encoding_params` overridden by `concrete: Some(EncodingConcrete::Abi)` and `identifier: Some(EncodingIdentifier::EthereumAbiV1)` and `CreateEncodingDeps { consumer: EncodeContext { context } }` holding the reference context, unpacked by `let Ok(success) = … else { panic!(…) };`, and `CreatePairingDeps { consumer: FactoryScalarProbe { tag, message } }`; act `create_pairing` with `build_create_pairing_params` overridden by `concrete: Some(PairingConcrete::Bn254Arkworks)`, unpacked by `let Ok(success) = … else { panic!(…) };`; assert `success.output` equals the reference message's BN254 scalar
     * `[✅]`   `the_keccak256_concrete_from_the_factory_maps_the_encoded_reference_context_to_the_independent_bls12_381_scalar`: the same with `PairingConcrete::Bls12381Arkworks` against the reference message's BLS12-381 scalar
@@ -1019,9 +1019,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Among repository crates the crate depends on `crates/domain` and `adapters/pairing` at runtime and on `adapters/encoding` for its integration test only; none of them names this crate; no other cycle
     * `[✅]`   `kem/bb1_depth_one` consumes the family for the identity mapping and `proof/schnorr_fs/challenge` for the challenge, each through `create_hash_to_scalar` and `IHashToScalarAdapter`
 
-  * `[ ]`   `requirements`
+  * `[✅]`   `requirements`
     * `[✅]`   `adapters/hash-to-scalar/Cargo.toml` carries exactly the dev-dependencies stated above, and every other table `hash-to-scalar/keccak256` stated is unchanged
-    * `[ ]`   `create_hash_to_scalar_returns_the_keccak256_concrete_and_its_declaration_for_a_pairing_scalar` passes; the unsupported-identifier refusal is fixed by the return union and the `match` and has no unit test until a further identifier exists
+    * `[✅]`   `create_hash_to_scalar_returns_the_keccak256_concrete_and_its_declaration_for_a_pairing_scalar` passes; the unsupported-identifier refusal is fixed by the return union and the `match` and has no unit test until a further identifier exists
     * `[✅]`   `the_keccak256_concrete_from_the_factory_maps_the_encoded_reference_context_to_the_independent_bn254_scalar` and `the_keccak256_concrete_from_the_factory_maps_the_encoded_reference_context_to_the_independent_bls12_381_scalar` pass (CR-11, the hash-to-scalar mapping over an encoded domain value reached through the encoding, pairing, and hash-to-scalar families' surfaces on both curves)
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning in every target, the `keccak256` concrete's unused-item warnings having no remaining cause
     * `[✅]`   `sha3` is named nowhere outside `adapters/hash-to-scalar/src/keccak256`, and no code outside `adapters/hash-to-scalar` can name `Keccak256HashToScalar`
@@ -1036,79 +1036,79 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
 * `[ ]`   `domain/asset_identity_hash` **Asset identity hash, the 32 bytes of the Registry's `bytes32` asset key, `BLAKE3(packageName@version)`, admitting nonzero candidate keys without asserting Registry membership**
 
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: the Registry keys every asset record, and the per-name version index, by the identity hash `BLAKE3(packageName@version)`, the `bytes32` `identityHash`; every delivery transcript carries the asset identity hash as a field; and under the asset scope the credential KEM's identity mapping `I` is the hash-to-scalar mapping of the asset's identity hash; so one value names the asset across the record, the transcript, and the identity mapping, and the all-zero unassigned-slot value must be refused before binding (PR-02; CR-09's transcript; `docs/research/MVP Scope.md`'s Canonical Identity and As-Is Ingestion; `docs/research/cryptography.md`'s transcript per delivery-statement version and its `Bb1DepthOneKemAdapter` statement; the technical requirements' `Asset` and `VersionIndex` schemas; the dependency map's `domain/asset_identity_hash` row; the Delivery proof and Solidity verifier milestone)
-    * `[ ]`   Functional: one type holds the asset identity hash's 32 bytes, reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the constructor takes exactly 32 bytes, so the length is a fact of the params type and never a runtime check
-    * `[ ]`   Functional: the constructor refuses the all-zero value, the value read from an unassigned `bytes32` storage slot; admission of any other value does not establish Registry membership
-    * `[ ]`   Functional: every other 32-byte value is admitted and read back unchanged
-    * `[ ]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: the Registry keys every asset record, and the per-name version index, by the identity hash `BLAKE3(packageName@version)`, the `bytes32` `identityHash`; every delivery transcript carries the asset identity hash as a field; and under the asset scope the credential KEM's identity mapping `I` is the hash-to-scalar mapping of the asset's identity hash; so one value names the asset across the record, the transcript, and the identity mapping, and the all-zero unassigned-slot value must be refused before binding (PR-02; CR-09's transcript; `docs/research/MVP Scope.md`'s Canonical Identity and As-Is Ingestion; `docs/research/cryptography.md`'s transcript per delivery-statement version and its `Bb1DepthOneKemAdapter` statement; the technical requirements' `Asset` and `VersionIndex` schemas; the dependency map's `domain/asset_identity_hash` row; the Delivery proof and Solidity verifier milestone)
+    * `[✅]`   Functional: one type holds the asset identity hash's 32 bytes, reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[✅]`   Functional: the constructor takes exactly 32 bytes, so the length is a fact of the params type and never a runtime check
+    * `[✅]`   Functional: the constructor refuses the all-zero value, the value read from an unassigned `bytes32` storage slot; admission of any other value does not establish Registry membership
+    * `[✅]`   Functional: every other 32-byte value is admitted and read back unchanged
+    * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
 
-  * `[ ]`   `role`
-    * `[ ]`   Domain: an owned value type in the protocol and domain ring, the asset key every asset record, delivery transcript, and asset-scope identity mapping names
-    * `[ ]`   Does not compute the hash; the `domain` crate names no hash library, and `BLAKE3(name@version)` over `domain/asset_identity`'s join is computed through the hashing family, whose result a caller passes to this constructor
-    * `[ ]`   Does not map the hash to a scalar; the credential KEM's identity mapping takes its bytes through the hash-to-scalar family
-    * `[ ]`   Does not decode a hash from wire bytes of unknown length; the encoding family decodes a `bytes32` into the 32 bytes this constructor takes, and the proof family's transcript descriptions encode the held bytes as their fixed 32-byte field
-    * `[ ]`   Does not look up, register, or check the Registry record the hash keys
-    * `[ ]`   Does not create any other module of the `domain` crate
-    * `[ ]`   Does not carry a commit
+  * `[✅]`   `role`
+    * `[✅]`   Domain: an owned value type in the protocol and domain ring, the asset key every asset record, delivery transcript, and asset-scope identity mapping names
+    * `[✅]`   Does not compute the hash; the `domain` crate names no hash library, and `BLAKE3(name@version)` over `domain/asset_identity`'s join is computed through the hashing family, whose result a caller passes to this constructor
+    * `[✅]`   Does not map the hash to a scalar; the credential KEM's identity mapping takes its bytes through the hash-to-scalar family
+    * `[✅]`   Does not decode a hash from wire bytes of unknown length; the encoding family decodes a `bytes32` into the 32 bytes this constructor takes, and the proof family's transcript descriptions encode the held bytes as their fixed 32-byte field
+    * `[✅]`   Does not look up, register, or check the Registry record the hash keys
+    * `[✅]`   Does not create any other module of the `domain` crate
+    * `[✅]`   Does not carry a commit
 
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `asset_identity_hash` module of the `domain` crate, holding `AssetIdentityHash`, its length, its constructor params, and its constructor's error and return types
-    * `[ ]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's lines
-    * `[ ]`   Outside: the hash's computation, its mapping to a scalar, the Registry record and version index it keys, and the encoding of the hash on the wire
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `asset_identity_hash` module of the `domain` crate, holding `AssetIdentityHash`, its length, its constructor params, and its constructor's error and return types
+    * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's lines
+    * `[✅]`   Outside: the hash's computation, its mapping to a scalar, the Registry record and version index it keys, and the encoding of the hash on the wire
 
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, `deployment_identity`, `suite_identifier`, `parameter_set_identifier`, `group_index`, `piece_geometry`, or `derivation_context`
-    * `[ ]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
-    * `[ ]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   The credential KEM's asset-scope identity mapping is this module's first consumer; proof statements and the Registry follow
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, `deployment_identity`, `suite_identifier`, `parameter_set_identifier`, `group_index`, `piece_geometry`, or `derivation_context`
+    * `[✅]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
+    * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
+    * `[✅]`   The credential KEM's asset-scope identity mapping is this module's first consumer; proof statements and the Registry follow
 
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
+  * `[✅]`   `context_slice`
+    * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
 
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod asset_identity;`, `mod asset_identity_hash;`, `mod deployment_identity;`, `mod derivation_context;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use asset_identity_hash::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use derivation_context::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
-    * `[ ]`   Until `asset_identity_hash/mod.rs` exists, `cargo check` reports the unresolved `mod asset_identity_hash`, which is the RED state for every element below that precedes the implementation
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod asset_identity_hash;`, `mod deployment_identity;`, `mod derivation_context;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use asset_identity_hash::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use derivation_context::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+    * `[✅]`   Until `asset_identity_hash/mod.rs` exists, `cargo check` reports the unresolved `mod asset_identity_hash`, which is the RED state for every element below that precedes the implementation
 
-  * `[ ]`   `crates/domain/src/asset_identity_hash/interface.rs`
-    * `[ ]`   `ASSET_IDENTITY_HASH_LENGTH`, a `pub const` of type `usize` with value `32`, the width of the Registry's `bytes32` asset key and of a BLAKE3 digest
-    * `[ ]`   `AssetIdentityHash`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: [u8; ASSET_IDENTITY_HASH_LENGTH]`, so only the `asset_identity_hash` module and its children reach the field
-    * `[ ]`   `AssetIdentityHashConstructorParams`, a struct with the one field `pub bytes: [u8; ASSET_IDENTITY_HASH_LENGTH]`; no derives
-    * `[ ]`   `AssetIdentityHashTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`
-    * `[ ]`   `AssetIdentityHashTryNewReturn`, the type alias `Result<AssetIdentityHash, AssetIdentityHashTryNewErrorReturn>`
-    * `[ ]`   Imports nothing; declares nothing else
+  * `[✅]`   `crates/domain/src/asset_identity_hash/interface.rs`
+    * `[✅]`   `ASSET_IDENTITY_HASH_LENGTH`, a `pub const` of type `usize` with value `32`, the width of the Registry's `bytes32` asset key and of a BLAKE3 digest
+    * `[✅]`   `AssetIdentityHash`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: [u8; ASSET_IDENTITY_HASH_LENGTH]`, so only the `asset_identity_hash` module and its children reach the field
+    * `[✅]`   `AssetIdentityHashConstructorParams`, a struct with the one field `pub bytes: [u8; ASSET_IDENTITY_HASH_LENGTH]`; no derives
+    * `[✅]`   `AssetIdentityHashTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`
+    * `[✅]`   `AssetIdentityHashTryNewReturn`, the type alias `Result<AssetIdentityHash, AssetIdentityHashTryNewErrorReturn>`
+    * `[✅]`   Imports nothing; declares nothing else
 
-  * `[ ]`   `crates/domain/src/asset_identity_hash/interaction.spec.md`
-    * `[ ]`   `AssetIdentityHash::try_new(params: AssetIdentityHashConstructorParams) -> AssetIdentityHashTryNewReturn`, all zero: condition every byte of `params.bytes` is `0`; decision `params.bytes.iter().all(…)` over the byte equal to `0`; dependency call none; outcome `Err(AssetIdentityHashTryNewErrorReturn::AllZero)`
-    * `[ ]`   Admitted: condition some byte of `params.bytes` is nonzero; decision the same check; dependency call none; outcome `Ok(AssetIdentityHash { bytes })`, the array moved from the params
-    * `[ ]`   `AssetIdentityHash::as_bytes(&self) -> &[u8; ASSET_IDENTITY_HASH_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
-    * `[ ]`   Ordering: the single check fully decides the outcome; the same params always yield the same outcome
-    * `[ ]`   Invariants: every `AssetIdentityHash` holds exactly 32 bytes, not all zero; its only producer is `try_new`, and `Clone` copies only an already-admitted value
+  * `[✅]`   `crates/domain/src/asset_identity_hash/interaction.spec.md`
+    * `[✅]`   `AssetIdentityHash::try_new(params: AssetIdentityHashConstructorParams) -> AssetIdentityHashTryNewReturn`, all zero: condition every byte of `params.bytes` is `0`; decision `params.bytes.iter().all(…)` over the byte equal to `0`; dependency call none; outcome `Err(AssetIdentityHashTryNewErrorReturn::AllZero)`
+    * `[✅]`   Admitted: condition some byte of `params.bytes` is nonzero; decision the same check; dependency call none; outcome `Ok(AssetIdentityHash { bytes })`, the array moved from the params
+    * `[✅]`   `AssetIdentityHash::as_bytes(&self) -> &[u8; ASSET_IDENTITY_HASH_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
+    * `[✅]`   Ordering: the single check fully decides the outcome; the same params always yield the same outcome
+    * `[✅]`   Invariants: every `AssetIdentityHash` holds exactly 32 bytes, not all zero; its only producer is `try_new`, and `Clone` copies only an already-admitted value
 
-  * `[ ]`   `crates/domain/src/asset_identity_hash/mock.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
-    * `[ ]`   `AssetIdentityHashConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub bytes: Option<[u8; ASSET_IDENTITY_HASH_LENGTH]>`
-    * `[ ]`   `build_asset_identity_hash_constructor_params(overrides: AssetIdentityHashConstructorParamsOverrides) -> AssetIdentityHashConstructorParams`, the bytes defaulting to `[0x44; ASSET_IDENTITY_HASH_LENGTH]`, distinct from the deployment identity's, suite identifier's, and parameter-set identifier's defaults
-    * `[ ]`   `build_asset_identity_hash(overrides: AssetIdentityHashConstructorParamsOverrides) -> AssetIdentityHash`, returning the real instance from `AssetIdentityHash::try_new(build_asset_identity_hash_constructor_params(overrides))` through `.expect("built asset identity hash constructor params are admitted")`
-    * `[ ]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array, the one value the constructor refuses is an array the params builder's overrides carry, and the crate has no serialization dependency; no `AssetIdentityHash` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
-    * `[ ]`   Imports `AssetIdentityHash`, `AssetIdentityHashConstructorParams`, and `ASSET_IDENTITY_HASH_LENGTH` from `super::interface`
+  * `[✅]`   `crates/domain/src/asset_identity_hash/mock.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
+    * `[✅]`   `AssetIdentityHashConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub bytes: Option<[u8; ASSET_IDENTITY_HASH_LENGTH]>`
+    * `[✅]`   `build_asset_identity_hash_constructor_params(overrides: AssetIdentityHashConstructorParamsOverrides) -> AssetIdentityHashConstructorParams`, the bytes defaulting to `[0x44; ASSET_IDENTITY_HASH_LENGTH]`, distinct from the deployment identity's, suite identifier's, and parameter-set identifier's defaults
+    * `[✅]`   `build_asset_identity_hash(overrides: AssetIdentityHashConstructorParamsOverrides) -> AssetIdentityHash`, returning the real instance from `AssetIdentityHash::try_new(build_asset_identity_hash_constructor_params(overrides))` through `.expect("built asset identity hash constructor params are admitted")`
+    * `[✅]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array, the one value the constructor refuses is an array the params builder's overrides carry, and the crate has no serialization dependency; no `AssetIdentityHash` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
+    * `[✅]`   Imports `AssetIdentityHash`, `AssetIdentityHashConstructorParams`, and `ASSET_IDENTITY_HASH_LENGTH` from `super::interface`
 
-  * `[ ]`   `crates/domain/src/asset_identity_hash/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `AssetIdentityHash` and `AssetIdentityHashTryNewErrorReturn` from `super::interface`, and `build_asset_identity_hash_constructor_params` and `AssetIdentityHashConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_asset_identity_hash_constructor_params` with `bytes` overridden, acts `AssetIdentityHash::try_new(params)`, and unpacks the result by `let Ok(hash) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
-    * `[ ]`   `try_new_admits_a_hash_whose_only_nonzero_byte_is_the_last`: contract: any nonzero candidate key is admitted and read back unchanged, the last byte included; arrange `bytes: Some(…)` holding 31 zero bytes followed by `0x01`; act `try_new`; assert `hash.as_bytes()` equals an array of 31 zero bytes followed by `0x01`
-    * `[ ]`   `try_new_admits_a_hash_whose_only_nonzero_byte_is_the_first`: contract: the zero check reads every byte, the first included; arrange `bytes: Some(…)` holding `0x80` followed by 31 zero bytes; act `try_new`; assert `hash.as_bytes()` equals an array of `0x80` followed by 31 zero bytes
-    * `[ ]`   `try_new_rejects_the_all_zero_hash`: contract: the value an unassigned slot reads as names no asset; arrange `bytes: Some([0u8; 32])`; act `try_new`; assert `error` equals `AssetIdentityHashTryNewErrorReturn::AllZero`
-    * `[ ]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
+  * `[✅]`   `crates/domain/src/asset_identity_hash/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `AssetIdentityHash` and `AssetIdentityHashTryNewErrorReturn` from `super::interface`, and `build_asset_identity_hash_constructor_params` and `AssetIdentityHashConstructorParamsOverrides` from `super::mock`; each test builds its params through `build_asset_identity_hash_constructor_params` with `bytes` overridden, acts `AssetIdentityHash::try_new(params)`, and unpacks the result by `let Ok(hash) = … else { panic!(…) };` or `let Err(error) = … else { panic!(…) };`
+    * `[✅]`   `try_new_admits_a_hash_whose_only_nonzero_byte_is_the_last`: contract: any nonzero candidate key is admitted and read back unchanged, the last byte included; arrange `bytes: Some(…)` holding 31 zero bytes followed by `0x01`; act `try_new`; assert `hash.as_bytes()` equals an array of 31 zero bytes followed by `0x01`
+    * `[✅]`   `try_new_admits_a_hash_whose_only_nonzero_byte_is_the_first`: contract: the zero check reads every byte, the first included; arrange `bytes: Some(…)` holding `0x80` followed by 31 zero bytes; act `try_new`; assert `hash.as_bytes()` equals an array of `0x80` followed by 31 zero bytes
+    * `[✅]`   `try_new_rejects_the_all_zero_hash`: contract: the value an unassigned slot reads as names no asset; arrange `bytes: Some([0u8; 32])`; act `try_new`; assert `error` equals `AssetIdentityHashTryNewErrorReturn::AllZero`
+    * `[✅]`   Every test block carries the full `Contract`, `Arrange`, `Act`, `Assert` header and the inline markers
 
-  * `[ ]`   `construction`
-    * `[ ]`   `AssetIdentityHash::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a computed digest or a decoded `bytes32` passes it as `AssetIdentityHashConstructorParams` and handles the refusal arm
+  * `[✅]`   `construction`
+    * `[✅]`   `AssetIdentityHash::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a computed digest or a decoded `bytes32` passes it as `AssetIdentityHashConstructorParams` and handles the refusal arm
 
-  * `[ ]`   `crates/domain/src/asset_identity_hash/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl AssetIdentityHash` with `pub fn try_new(params: AssetIdentityHashConstructorParams) -> AssetIdentityHashTryNewReturn` realizing the branches of the interaction spec, and `pub fn as_bytes(&self) -> &[u8; ASSET_IDENTITY_HASH_LENGTH]` returning `&self.bytes`
-    * `[ ]`   Imports `AssetIdentityHash`, `AssetIdentityHashConstructorParams`, `AssetIdentityHashTryNewErrorReturn`, `AssetIdentityHashTryNewReturn`, and `ASSET_IDENTITY_HASH_LENGTH` from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+  * `[✅]`   `crates/domain/src/asset_identity_hash/mod.rs`
+    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[✅]`   `impl AssetIdentityHash` with `pub fn try_new(params: AssetIdentityHashConstructorParams) -> AssetIdentityHashTryNewReturn` realizing the branches of the interaction spec, and `pub fn as_bytes(&self) -> &[u8; ASSET_IDENTITY_HASH_LENGTH]` returning `&self.bytes`
+    * `[✅]`   Imports `AssetIdentityHash`, `AssetIdentityHashConstructorParams`, `AssetIdentityHashTryNewErrorReturn`, `AssetIdentityHashTryNewReturn`, and `ASSET_IDENTITY_HASH_LENGTH` from `interface`
+    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[ ]`   `crates/domain/src/asset_identity_hash/provides.rs`
     * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a consumer's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature

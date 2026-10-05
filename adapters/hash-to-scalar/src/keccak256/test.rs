@@ -77,7 +77,7 @@ impl IPairingConsumer for ScalarProbe {
                 scalar: success.scalar,
             },
         );
-        encoded.bytes.expose().clone()
+        encoded.bytes.expose().as_ref().to_vec()
     }
 }
 
