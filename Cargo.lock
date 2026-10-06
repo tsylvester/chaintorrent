@@ -1377,6 +1377,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "envelope"
+version = "0.0.0"
+dependencies = [
+ "domain",
+ "encoding",
+ "hash-to-scalar",
+ "kem",
+ "pairing 0.0.0",
+ "random",
+ "zeroize",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
