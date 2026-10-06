@@ -9,6 +9,7 @@ pub enum PairingCurve {
     Bls12381,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerifierGroupArithmetic {
     FirstGroupOnly,
     BothGroups,

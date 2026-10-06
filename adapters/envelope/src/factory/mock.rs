@@ -29,7 +29,11 @@ use core::marker::PhantomData;
 use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
 use encoding::IEncoderAdapter;
 use kem::build_credential_components;
-use pairing::{IPairingAdapter, IPairingArithmetic};
+use pairing::{
+    AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, G1GeneratorParams, G1GeneratorPayload,
+    G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingArithmetic,
+    ISampleUniformScalar, SampleUniformScalarParams, SampleUniformScalarPayload,
+};
 use zeroize::Zeroize;
 
 use crate::pairing_elgamal::provides::{
@@ -67,22 +71,90 @@ pub fn build_key_agreement_declaration(
     }
 }
 
-#[derive(Default)]
 pub struct EnvelopeCoinsOverrides<S: Zeroize> {
     pub rho: Option<Secret<S>>,
     pub sigma: Option<Secret<S>>,
 }
 
-pub fn build_envelope_coins<S: Zeroize + Default>(
-    overrides: EnvelopeCoinsOverrides<S>,
-) -> EnvelopeCoins<S> {
+impl<S: Zeroize> Default for EnvelopeCoinsOverrides<S> {
+    fn default() -> Self {
+        Self {
+            rho: None,
+            sigma: None,
+        }
+    }
+}
+
+fn sample_scalar_secret<P: IPairingAdapter>(fill: u8) -> Secret<P::Scalar> {
+    P::Scalar::sample_from_uniform_bytes(
+        SampleUniformScalarParams,
+        SampleUniformScalarPayload {
+            uniform: build_secret(SecretConstructorParamsOverrides {
+                value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
+            }),
+        },
+    )
+    .unwrap()
+    .scalar
+}
+
+fn sample_scalar<P: IPairingAdapter>(fill: u8) -> P::Scalar {
+    sample_scalar_secret::<P>(fill).expose().clone()
+}
+
+fn g1_element<P: IPairingAdapter>(pairing: &P, additions: usize) -> P::G1 {
+    let generator = pairing
+        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+        .unwrap()
+        .point;
+    let mut element = generator.clone();
+    for _ in 0..additions {
+        element = pairing
+            .add_g1(
+                AddG1Params,
+                AddG1Payload {
+                    left: element,
+                    right: generator.clone(),
+                },
+            )
+            .unwrap()
+            .sum;
+    }
+    element
+}
+
+fn g2_element<P: IPairingAdapter>(pairing: &P, additions: usize) -> P::G2 {
+    let generator = pairing
+        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+        .unwrap()
+        .point;
+    let mut element = generator.clone();
+    for _ in 0..additions {
+        element = pairing
+            .add_g2(
+                AddG2Params,
+                AddG2Payload {
+                    left: element,
+                    right: generator.clone(),
+                },
+            )
+            .unwrap()
+            .sum;
+    }
+    element
+}
+
+pub fn build_envelope_coins<P: IPairingAdapter>(
+    _pairing: &P,
+    overrides: EnvelopeCoinsOverrides<P::Scalar>,
+) -> EnvelopeCoins<P::Scalar> {
     EnvelopeCoins {
         rho: overrides
             .rho
-            .unwrap_or_else(|| build_secret(SecretConstructorParamsOverrides::default())),
+            .unwrap_or_else(|| sample_scalar_secret::<P>(0x51)),
         sigma: overrides
             .sigma
-            .unwrap_or_else(|| build_secret(SecretConstructorParamsOverrides::default())),
+            .unwrap_or_else(|| sample_scalar_secret::<P>(0x52)),
     }
 }
 
@@ -122,73 +194,102 @@ pub fn build_generate_keys_success_return<KP: Default, PO: Default>(
     }
 }
 
-#[derive(Default)]
 pub struct WrapToSuccessReturnOverrides<E, S: Zeroize> {
     pub envelope: Option<E>,
     pub coins: Option<EnvelopeCoins<S>>,
 }
 
-pub fn build_wrap_to_success_return<E: Default, S: Zeroize + Default>(
-    overrides: WrapToSuccessReturnOverrides<E, S>,
-) -> WrapToSuccessReturn<E, S> {
+impl<E, S: Zeroize> Default for WrapToSuccessReturnOverrides<E, S> {
+    fn default() -> Self {
+        Self {
+            envelope: None,
+            coins: None,
+        }
+    }
+}
+
+pub fn build_wrap_to_success_return<P: IPairingAdapter, E: Default>(
+    pairing: &P,
+    overrides: WrapToSuccessReturnOverrides<E, P::Scalar>,
+) -> WrapToSuccessReturn<E, P::Scalar> {
     WrapToSuccessReturn {
         envelope: overrides.envelope.unwrap_or_default(),
         coins: overrides
             .coins
-            .unwrap_or_else(|| build_envelope_coins(Default::default())),
+            .unwrap_or_else(|| build_envelope_coins(pairing, Default::default())),
     }
 }
 
-#[derive(Default)]
 pub struct UnwrapSuccessReturnOverrides<G1, G2> {
     pub credential: Option<kem::CredentialComponents<G1, G2>>,
 }
 
-pub fn build_unwrap_success_return<G1: Default, G2: Default>(
-    overrides: UnwrapSuccessReturnOverrides<G1, G2>,
-) -> UnwrapSuccessReturn<G1, G2> {
-    UnwrapSuccessReturn {
-        credential: overrides
-            .credential
-            .unwrap_or_else(|| build_credential_components(Default::default())),
+impl<G1, G2> Default for UnwrapSuccessReturnOverrides<G1, G2> {
+    fn default() -> Self {
+        Self { credential: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_unwrap_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: UnwrapSuccessReturnOverrides<P::G1, P::G2>,
+) -> UnwrapSuccessReturn<P::G1, P::G2> {
+    UnwrapSuccessReturn {
+        credential: overrides
+            .credential
+            .unwrap_or_else(|| build_credential_components(pairing, Default::default())),
+    }
+}
+
 pub struct KeyPairComponentsOverrides<S: Zeroize> {
     pub x: Option<Secret<S>>,
     pub y: Option<Secret<S>>,
 }
 
-pub fn build_key_pair_components<S: Zeroize + Default>(
-    overrides: KeyPairComponentsOverrides<S>,
-) -> KeyPairComponents<S> {
-    KeyPairComponents {
-        x: overrides
-            .x
-            .unwrap_or_else(|| build_secret(SecretConstructorParamsOverrides::default())),
-        y: overrides
-            .y
-            .unwrap_or_else(|| build_secret(SecretConstructorParamsOverrides::default())),
+impl<S: Zeroize> Default for KeyPairComponentsOverrides<S> {
+    fn default() -> Self {
+        Self { x: None, y: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_key_pair_components<P: IPairingAdapter>(
+    _pairing: &P,
+    overrides: KeyPairComponentsOverrides<P::Scalar>,
+) -> KeyPairComponents<P::Scalar> {
+    KeyPairComponents {
+        x: overrides
+            .x
+            .unwrap_or_else(|| sample_scalar_secret::<P>(0x53)),
+        y: overrides
+            .y
+            .unwrap_or_else(|| sample_scalar_secret::<P>(0x54)),
+    }
+}
+
 pub struct PublicKeysComponentsOverrides<G1, G2> {
     pub pk1: Option<G1>,
     pub pk2: Option<G2>,
 }
 
-pub fn build_public_keys_components<G1: Default, G2: Default>(
-    overrides: PublicKeysComponentsOverrides<G1, G2>,
-) -> PublicKeysComponents<G1, G2> {
-    PublicKeysComponents {
-        pk1: overrides.pk1.unwrap_or_default(),
-        pk2: overrides.pk2.unwrap_or_default(),
+impl<G1, G2> Default for PublicKeysComponentsOverrides<G1, G2> {
+    fn default() -> Self {
+        Self {
+            pk1: None,
+            pk2: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_public_keys_components<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: PublicKeysComponentsOverrides<P::G1, P::G2>,
+) -> PublicKeysComponents<P::G1, P::G2> {
+    PublicKeysComponents {
+        pk1: overrides.pk1.unwrap_or_else(|| g1_element(pairing, 0)),
+        pk2: overrides.pk2.unwrap_or_else(|| g2_element(pairing, 0)),
+    }
+}
+
 pub struct PossessionComponentsOverrides<S, G1, G2> {
     pub r1: Option<G1>,
     pub z1: Option<S>,
@@ -196,18 +297,29 @@ pub struct PossessionComponentsOverrides<S, G1, G2> {
     pub z2: Option<S>,
 }
 
-pub fn build_possession_components<S: Default, G1: Default, G2: Default>(
-    overrides: PossessionComponentsOverrides<S, G1, G2>,
-) -> PossessionComponents<S, G1, G2> {
-    PossessionComponents {
-        r1: overrides.r1.unwrap_or_default(),
-        z1: overrides.z1.unwrap_or_default(),
-        r2: overrides.r2.unwrap_or_default(),
-        z2: overrides.z2.unwrap_or_default(),
+impl<S, G1, G2> Default for PossessionComponentsOverrides<S, G1, G2> {
+    fn default() -> Self {
+        Self {
+            r1: None,
+            z1: None,
+            r2: None,
+            z2: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_possession_components<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: PossessionComponentsOverrides<P::Scalar, P::G1, P::G2>,
+) -> PossessionComponents<P::Scalar, P::G1, P::G2> {
+    PossessionComponents {
+        r1: overrides.r1.unwrap_or_else(|| g1_element(pairing, 0)),
+        z1: overrides.z1.unwrap_or_else(|| sample_scalar::<P>(0x55)),
+        r2: overrides.r2.unwrap_or_else(|| g2_element(pairing, 0)),
+        z2: overrides.z2.unwrap_or_else(|| sample_scalar::<P>(0x56)),
+    }
+}
+
 pub struct EnvelopeComponentsOverrides<G1, G2> {
     pub c1: Option<G1>,
     pub c2: Option<G1>,
@@ -215,89 +327,131 @@ pub struct EnvelopeComponentsOverrides<G1, G2> {
     pub d2: Option<G2>,
 }
 
-pub fn build_envelope_components<G1: Default, G2: Default>(
-    overrides: EnvelopeComponentsOverrides<G1, G2>,
-) -> EnvelopeComponents<G1, G2> {
-    EnvelopeComponents {
-        c1: overrides.c1.unwrap_or_default(),
-        c2: overrides.c2.unwrap_or_default(),
-        d1: overrides.d1.unwrap_or_default(),
-        d2: overrides.d2.unwrap_or_default(),
+impl<G1, G2> Default for EnvelopeComponentsOverrides<G1, G2> {
+    fn default() -> Self {
+        Self {
+            c1: None,
+            c2: None,
+            d1: None,
+            d2: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_envelope_components<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: EnvelopeComponentsOverrides<P::G1, P::G2>,
+) -> EnvelopeComponents<P::G1, P::G2> {
+    EnvelopeComponents {
+        c1: overrides.c1.unwrap_or_else(|| g1_element(pairing, 0)),
+        c2: overrides.c2.unwrap_or_else(|| g1_element(pairing, 1)),
+        d1: overrides.d1.unwrap_or_else(|| g2_element(pairing, 0)),
+        d2: overrides.d2.unwrap_or_else(|| g2_element(pairing, 1)),
+    }
+}
+
 pub struct KeyPairComponentsSuccessReturnOverrides<S: Zeroize> {
     pub components: Option<KeyPairComponents<S>>,
 }
 
-pub fn build_key_pair_components_success_return<S: Zeroize + Default>(
-    overrides: KeyPairComponentsSuccessReturnOverrides<S>,
-) -> KeyPairComponentsSuccessReturn<S> {
-    KeyPairComponentsSuccessReturn {
-        components: overrides
-            .components
-            .unwrap_or_else(|| build_key_pair_components(Default::default())),
+impl<S: Zeroize> Default for KeyPairComponentsSuccessReturnOverrides<S> {
+    fn default() -> Self {
+        Self { components: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_key_pair_components_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: KeyPairComponentsSuccessReturnOverrides<P::Scalar>,
+) -> KeyPairComponentsSuccessReturn<P::Scalar> {
+    KeyPairComponentsSuccessReturn {
+        components: overrides
+            .components
+            .unwrap_or_else(|| build_key_pair_components(pairing, Default::default())),
+    }
+}
+
 pub struct KeyPairPublicKeysSuccessReturnOverrides<G1, G2> {
     pub components: Option<PublicKeysComponents<G1, G2>>,
 }
 
-pub fn build_key_pair_public_keys_success_return<G1: Default, G2: Default>(
-    overrides: KeyPairPublicKeysSuccessReturnOverrides<G1, G2>,
-) -> KeyPairPublicKeysSuccessReturn<G1, G2> {
-    KeyPairPublicKeysSuccessReturn {
-        components: overrides
-            .components
-            .unwrap_or_else(|| build_public_keys_components(Default::default())),
+impl<G1, G2> Default for KeyPairPublicKeysSuccessReturnOverrides<G1, G2> {
+    fn default() -> Self {
+        Self { components: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_key_pair_public_keys_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: KeyPairPublicKeysSuccessReturnOverrides<P::G1, P::G2>,
+) -> KeyPairPublicKeysSuccessReturn<P::G1, P::G2> {
+    KeyPairPublicKeysSuccessReturn {
+        components: overrides
+            .components
+            .unwrap_or_else(|| build_public_keys_components(pairing, Default::default())),
+    }
+}
+
 pub struct PublicKeysComponentsSuccessReturnOverrides<G1, G2> {
     pub components: Option<PublicKeysComponents<G1, G2>>,
 }
 
-pub fn build_public_keys_components_success_return<G1: Default, G2: Default>(
-    overrides: PublicKeysComponentsSuccessReturnOverrides<G1, G2>,
-) -> PublicKeysComponentsSuccessReturn<G1, G2> {
-    PublicKeysComponentsSuccessReturn {
-        components: overrides
-            .components
-            .unwrap_or_else(|| build_public_keys_components(Default::default())),
+impl<G1, G2> Default for PublicKeysComponentsSuccessReturnOverrides<G1, G2> {
+    fn default() -> Self {
+        Self { components: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_public_keys_components_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: PublicKeysComponentsSuccessReturnOverrides<P::G1, P::G2>,
+) -> PublicKeysComponentsSuccessReturn<P::G1, P::G2> {
+    PublicKeysComponentsSuccessReturn {
+        components: overrides
+            .components
+            .unwrap_or_else(|| build_public_keys_components(pairing, Default::default())),
+    }
+}
+
 pub struct PossessionComponentsSuccessReturnOverrides<S, G1, G2> {
     pub components: Option<PossessionComponents<S, G1, G2>>,
 }
 
-pub fn build_possession_components_success_return<S: Default, G1: Default, G2: Default>(
-    overrides: PossessionComponentsSuccessReturnOverrides<S, G1, G2>,
-) -> PossessionComponentsSuccessReturn<S, G1, G2> {
-    PossessionComponentsSuccessReturn {
-        components: overrides
-            .components
-            .unwrap_or_else(|| build_possession_components(Default::default())),
+impl<S, G1, G2> Default for PossessionComponentsSuccessReturnOverrides<S, G1, G2> {
+    fn default() -> Self {
+        Self { components: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_possession_components_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: PossessionComponentsSuccessReturnOverrides<P::Scalar, P::G1, P::G2>,
+) -> PossessionComponentsSuccessReturn<P::Scalar, P::G1, P::G2> {
+    PossessionComponentsSuccessReturn {
+        components: overrides
+            .components
+            .unwrap_or_else(|| build_possession_components(pairing, Default::default())),
+    }
+}
+
 pub struct EnvelopeComponentsSuccessReturnOverrides<G1, G2> {
     pub components: Option<EnvelopeComponents<G1, G2>>,
 }
 
-pub fn build_envelope_components_success_return<G1: Default, G2: Default>(
-    overrides: EnvelopeComponentsSuccessReturnOverrides<G1, G2>,
-) -> EnvelopeComponentsSuccessReturn<G1, G2> {
+impl<G1, G2> Default for EnvelopeComponentsSuccessReturnOverrides<G1, G2> {
+    fn default() -> Self {
+        Self { components: None }
+    }
+}
+
+pub fn build_envelope_components_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: EnvelopeComponentsSuccessReturnOverrides<P::G1, P::G2>,
+) -> EnvelopeComponentsSuccessReturn<P::G1, P::G2> {
     EnvelopeComponentsSuccessReturn {
         components: overrides
             .components
-            .unwrap_or_else(|| build_envelope_components(Default::default())),
+            .unwrap_or_else(|| build_envelope_components(pairing, Default::default())),
     }
 }
 
@@ -353,20 +507,17 @@ pub fn build_envelope_from_components_success_return<E: Default>(
     }
 }
 
-pub struct MockIKeyAgreementAdapter<P, KP, PK, PO, E> {
-    pub pairing: PhantomData<P>,
+pub struct MockIKeyAgreementAdapter<'a, P, KP, PK, PO, E> {
+    pub pairing: &'a P,
     pub key_pair: PhantomData<KP>,
     pub public_keys: PhantomData<PK>,
     pub possession: PhantomData<PO>,
     pub envelope: PhantomData<E>,
 }
 
-impl<P, KP, PK, PO, E> IKeyAgreementAdapter for MockIKeyAgreementAdapter<P, KP, PK, PO, E>
+impl<'a, P, KP, PK, PO, E> IKeyAgreementAdapter for MockIKeyAgreementAdapter<'a, P, KP, PK, PO, E>
 where
     P: IPairingAdapter,
-    P::Scalar: Default,
-    P::G1: Default,
-    P::G2: Default,
     KP: Default,
     PK: Default,
     PO: Default,
@@ -400,7 +551,10 @@ where
         _params: WrapToParams,
         _payload: WrapToPayload<'_, Self::PublicKeys, P::G1, P::G2>,
     ) -> super::interface::WrapToReturn<Self::Envelope, P::Scalar> {
-        Ok(build_wrap_to_success_return(Default::default()))
+        Ok(build_wrap_to_success_return(
+            self.pairing,
+            Default::default(),
+        ))
     }
 
     fn unwrap(
@@ -408,7 +562,10 @@ where
         _params: UnwrapParams,
         _payload: UnwrapPayload<'_, Self::KeyPair, Self::Envelope>,
     ) -> super::interface::UnwrapReturn<P::G1, P::G2> {
-        Ok(build_unwrap_success_return(Default::default()))
+        Ok(build_unwrap_success_return(
+            self.pairing,
+            Default::default(),
+        ))
     }
 
     fn key_pair_components(
@@ -416,7 +573,10 @@ where
         _params: KeyPairComponentsParams,
         _payload: KeyPairComponentsPayload<'_, Self::KeyPair>,
     ) -> super::interface::KeyPairComponentsReturn<P::Scalar> {
-        Ok(build_key_pair_components_success_return(Default::default()))
+        Ok(build_key_pair_components_success_return(
+            self.pairing,
+            Default::default(),
+        ))
     }
 
     fn key_pair_public_keys(
@@ -424,7 +584,10 @@ where
         _params: KeyPairPublicKeysParams,
         _payload: KeyPairPublicKeysPayload<'_, Self::KeyPair>,
     ) -> super::interface::KeyPairPublicKeysReturn<P::G1, P::G2> {
-        Ok(build_key_pair_public_keys_success_return(Default::default()))
+        Ok(build_key_pair_public_keys_success_return(
+            self.pairing,
+            Default::default(),
+        ))
     }
 
     fn public_keys_components(
@@ -433,6 +596,7 @@ where
         _payload: PublicKeysComponentsPayload<'_, Self::PublicKeys>,
     ) -> super::interface::PublicKeysComponentsReturn<P::G1, P::G2> {
         Ok(build_public_keys_components_success_return(
+            self.pairing,
             Default::default(),
         ))
     }
@@ -443,6 +607,7 @@ where
         _payload: PossessionComponentsPayload<'_, Self::Possession>,
     ) -> super::interface::PossessionComponentsReturn<P::Scalar, P::G1, P::G2> {
         Ok(build_possession_components_success_return(
+            self.pairing,
             Default::default(),
         ))
     }
@@ -452,7 +617,10 @@ where
         _params: EnvelopeComponentsParams,
         _payload: EnvelopeComponentsPayload<'_, Self::Envelope>,
     ) -> super::interface::EnvelopeComponentsReturn<P::G1, P::G2> {
-        Ok(build_envelope_components_success_return(Default::default()))
+        Ok(build_envelope_components_success_return(
+            self.pairing,
+            Default::default(),
+        ))
     }
 
     fn key_pair_from_components(

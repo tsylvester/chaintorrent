@@ -1,0 +1,32 @@
+[package]
+name = "proof"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+encoding = { path = "../encoding" }
+chain = { path = "../chain" }
+domain = { path = "../../crates/domain" }
+hash-to-scalar = { path = "../hash-to-scalar" }
+pairing = { path = "../pairing" }
+envelope = { path = "../envelope" }
+kem = { path = "../kem" }
+random = { path = "../random" }
+zeroize = "1.9.0"
+
+[dev-dependencies]
+encoding = { path = "../encoding", features = ["mocks"] }
+domain = { path = "../../crates/domain", features = ["mocks"] }
+chain = { path = "../chain", features = ["mocks"] }
+hash-to-scalar = { path = "../hash-to-scalar", features = ["mocks"] }
+pairing = { path = "../pairing", features = ["mocks"] }
+envelope = { path = "../envelope", features = ["mocks"] }
+kem = { path = "../kem", features = ["mocks"] }
+random = { path = "../random", features = ["mocks"] }
+
+[features]
+mocks = ["domain/mocks", "pairing/mocks", "envelope/mocks"]
+
+[lints]
+workspace = true

@@ -11,8 +11,10 @@ use super::interface::{
     CreateEncodingReturn, CreateEncodingSuccessReturn, DecodeErrorReturn, DecodeParams,
     DecodeReturn, DecodeSuccessReturn, ENCODING_INTERFACE_VERSION, EncodeParams, EncodeReturn,
     EncodeSuccessReturn, EncodingConcrete, EncodingDeclaration, EncodingIdentifier,
-    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IDecoderAdapter, IEncoderAdapter,
-    IEncodingConsumer, IEncodingContract, ToFieldsParams, ToFieldsReturn, ToFieldsSuccessReturn,
+    FromFieldParams, FromFieldReturn, FromFieldSuccessReturn, FromFieldsParams, FromFieldsReturn,
+    FromFieldsSuccessReturn, ICanonicalField, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer,
+    IEncodingContract, ToFieldParams, ToFieldReturn, ToFieldSuccessReturn, ToFieldsParams,
+    ToFieldsReturn, ToFieldsSuccessReturn,
 };
 use core::convert::Infallible;
 use core::marker::PhantomData;
@@ -224,4 +226,51 @@ where
     C::Output: Default,
 {
     Ok(build_create_encoding_success_return(Default::default()))
+}
+
+#[derive(Default)]
+pub struct ToFieldSuccessReturnOverrides {
+    pub field: Option<CanonicalFieldValue>,
+}
+
+pub fn build_to_field_success_return(
+    overrides: ToFieldSuccessReturnOverrides,
+) -> ToFieldSuccessReturn {
+    ToFieldSuccessReturn {
+        field: overrides
+            .field
+            .unwrap_or(CanonicalFieldValue::Unsigned256([0; 32])),
+    }
+}
+
+#[derive(Default)]
+pub struct FromFieldSuccessReturnOverrides<T> {
+    pub value: Option<T>,
+}
+
+pub fn build_from_field_success_return<T: Default>(
+    overrides: FromFieldSuccessReturnOverrides<T>,
+) -> FromFieldSuccessReturn<T> {
+    FromFieldSuccessReturn {
+        value: overrides.value.unwrap_or_default(),
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MockICanonicalField;
+
+impl ICanonicalField for MockICanonicalField {
+    type FromFieldErrorReturn = Infallible;
+    const KIND: CanonicalFieldKind = CanonicalFieldKind::Unsigned256;
+
+    fn to_field(_params: ToFieldParams, _payload: &Self) -> ToFieldReturn {
+        Ok(build_to_field_success_return(Default::default()))
+    }
+
+    fn from_field(
+        _params: FromFieldParams,
+        _payload: CanonicalFieldValue,
+    ) -> FromFieldReturn<Self, Self::FromFieldErrorReturn> {
+        Ok(build_from_field_success_return(Default::default()))
+    }
 }

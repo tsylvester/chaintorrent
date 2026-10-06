@@ -60,6 +60,34 @@ pub trait IEncodingContract {
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn>;
 }
 
+pub struct ToFieldParams;
+
+pub struct ToFieldSuccessReturn {
+    pub field: CanonicalFieldValue,
+}
+
+pub type ToFieldReturn = Result<ToFieldSuccessReturn, Infallible>;
+
+pub struct FromFieldParams;
+
+pub struct FromFieldSuccessReturn<T> {
+    pub value: T,
+}
+
+pub type FromFieldReturn<T, E> = Result<FromFieldSuccessReturn<T>, E>;
+
+pub trait ICanonicalField: Sized {
+    type FromFieldErrorReturn: core::fmt::Debug + PartialEq + Eq;
+    const KIND: CanonicalFieldKind;
+
+    fn to_field(params: ToFieldParams, payload: &Self) -> ToFieldReturn;
+
+    fn from_field(
+        params: FromFieldParams,
+        payload: CanonicalFieldValue,
+    ) -> FromFieldReturn<Self, Self::FromFieldErrorReturn>;
+}
+
 pub const ENCODING_INTERFACE_VERSION: u32 = 1;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

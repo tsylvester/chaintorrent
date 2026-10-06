@@ -1,0 +1,17 @@
+[package]
+name = "chain"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+encoding = { path = "../encoding" }
+
+[dev-dependencies]
+encoding = { path = "../encoding", features = ["mocks"] }
+
+[features]
+mocks = ["encoding/mocks"]
+
+[lints]
+workspace = true
