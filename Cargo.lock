@@ -1607,7 +1607,13 @@ dependencies = [
 name = "harness-crypto"
 version = "0.0.0"
 dependencies = [
+ "chain",
+ "encoding",
+ "envelope",
+ "hex",
+ "kem",
  "pairing 0.0.0",
+ "proof",
  "random",
 ]
 

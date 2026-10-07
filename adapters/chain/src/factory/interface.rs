@@ -14,11 +14,11 @@ pub struct ChainFormsDeclaration {
     pub interface_version: u32,
 }
 
-pub trait IChainForms {
+pub trait IChainForms: core::fmt::Debug + PartialEq + Eq {
     const DECLARATION: ChainFormsDeclaration;
 
-    type Identity: ICanonicalField + Clone;
-    type Entitlement: ICanonicalField + Clone;
-    type Interval: ICanonicalField + Clone;
-    type ChainIdentifier: ICanonicalField + Clone;
+    type Identity: ICanonicalField + Clone + core::fmt::Debug + PartialEq + Eq;
+    type Entitlement: ICanonicalField + Clone + core::fmt::Debug + PartialEq + Eq;
+    type Interval: ICanonicalField + Clone + core::fmt::Debug + PartialEq + Eq;
+    type ChainIdentifier: ICanonicalField + Clone + core::fmt::Debug + PartialEq + Eq;
 }

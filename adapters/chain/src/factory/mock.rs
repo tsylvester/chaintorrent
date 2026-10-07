@@ -10,6 +10,25 @@ use super::interface::{
 };
 use encoding::MockICanonicalField;
 
+#[derive(Default)]
+pub struct ChainFormsDeclarationOverrides {
+    pub identifier: Option<ChainFormsIdentifier>,
+    pub adapter_version: Option<u32>,
+    pub interface_version: Option<u32>,
+}
+
+pub fn build_chain_forms_declaration(
+    overrides: ChainFormsDeclarationOverrides,
+) -> ChainFormsDeclaration {
+    ChainFormsDeclaration {
+        identifier: overrides.identifier.unwrap_or(ChainFormsIdentifier::EvmV1),
+        adapter_version: overrides.adapter_version.unwrap_or(1),
+        interface_version: overrides
+            .interface_version
+            .unwrap_or(CHAIN_FORMS_INTERFACE_VERSION),
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct MockIChainForms;
 

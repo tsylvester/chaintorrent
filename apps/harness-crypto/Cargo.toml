@@ -5,15 +5,25 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
+chain = { path = "../../adapters/chain" }
+encoding = { path = "../../adapters/encoding" }
+envelope = { path = "../../adapters/envelope" }
+kem = { path = "../../adapters/kem" }
 pairing = { path = "../../adapters/pairing" }
+proof = { path = "../../adapters/proof" }
 random = { path = "../../adapters/random" }
 
 [dev-dependencies]
+chain = { path = "../../adapters/chain", features = ["mocks"] }
+envelope = { path = "../../adapters/envelope", features = ["mocks"] }
+hex = "0.4.3"
+kem = { path = "../../adapters/kem", features = ["mocks"] }
 pairing = { path = "../../adapters/pairing", features = ["mocks"] }
+proof = { path = "../../adapters/proof", features = ["mocks"] }
 random = { path = "../../adapters/random", features = ["mocks"] }
 
 [features]
-mocks = ["pairing/mocks", "random/mocks"]
+mocks = ["chain/mocks", "envelope/mocks", "kem/mocks", "pairing/mocks", "proof/mocks", "random/mocks"]
 
 [lints]
 workspace = true
