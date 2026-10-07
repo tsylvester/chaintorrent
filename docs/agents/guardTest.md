@@ -65,3 +65,4 @@ Scope: test only guards for types this interface owns. A foreign guard is tested
 
 Forbidden: running any terminal commands, importing the implementation, creating/editing the guard file; defining a guard in the test; silencing the compiler; hand-rolled fixtures duplicating builders; testing a foreign guard; hand-building fixtures for imported types. If the mock file lacks a needed builder or invalidator, add it there in the four-symbol form (see [mocks](mocks.md)); if it belongs to an imported type, find it in its home or halt.
 
+

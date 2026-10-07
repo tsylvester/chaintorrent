@@ -715,5 +715,3 @@ Earlier conversation decisions are ordered below without invented timestamps. Th
 No implementation, benchmark run, or security proof was completed as part of creating this notebook.
 
 Maintained by GPT-6 (created 2026-09-15; reviewed and extended 2026-09-21) and Claude Fable 5.1 Max (2026-09-16, 2026-09-20 and 2026-09-21 increments).
-
-

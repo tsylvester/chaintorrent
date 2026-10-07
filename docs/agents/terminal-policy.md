@@ -56,3 +56,4 @@ Each environment folder documents its own allowlist mechanism and its limits.
 
 This policy outranks the workplan. An agent that runs a denied command, or routes around the guard, is defective — comply, and if a command is genuinely needed, stop and ask the user to run it.
 
+

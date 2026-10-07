@@ -1,9 +1,6 @@
 # parameter_set_identifier interactions
 
-`ParameterSetIdentifier` is an owned value type: a fallible constructor
-`try_new` is its only producer, and the read accessor `as_bytes` is its only
-view. There are no dependency calls; the only decision is a byte-level check
-on the identifier.
+`ParameterSetIdentifier` is an owned value type: a fallible constructor `try_new` is its only producer, and the read accessor `as_bytes` is its only view. There are no dependency calls; the only decision is a byte-level check on the identifier.
 
 ## `ParameterSetIdentifier::try_new`
 
@@ -14,8 +11,7 @@ on the identifier.
 | all zero | every byte of `params.bytes` is `0` | `params.bytes.iter().all(…)` over the byte equal to `0` | none | `Err(ParameterSetIdentifierTryNewErrorReturn::AllZero)` |
 | admitted | some byte of `params.bytes` is nonzero | the same check | none | `Ok(ParameterSetIdentifier { bytes })`, the array moved from the params |
 
-Ordering: the single check fully decides the outcome; the same params always
-yield the same outcome.
+Ordering: the single check fully decides the outcome; the same params always yield the same outcome.
 
 ## `ParameterSetIdentifier::as_bytes`
 
@@ -27,9 +23,6 @@ yield the same outcome.
 
 ## Invariants
 
-- Every `ParameterSetIdentifier` holds exactly 32 bytes, not all zero — the
-  length is a fact of the params type, never a runtime check, and the
-  all-zero value is what an unassigned `bytes32` storage slot reads as, so it
-  names no set the Registry holds.
-- `try_new` is the only producer; `Clone` copies only an already-admitted
-  value, so no admitted form exists outside the constructor's invariants.
+- Every `ParameterSetIdentifier` holds exactly 32 bytes, not all zero — the length is a fact of the params type, never a runtime check, and the all-zero value is what an unassigned `bytes32` storage slot reads as, so it names no set the Registry holds.
+- `try_new` is the only producer; `Clone` copies only an already-admitted value, so no admitted form exists outside the constructor's invariants.
+

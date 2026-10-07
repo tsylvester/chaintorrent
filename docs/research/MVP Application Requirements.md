@@ -365,4 +365,3 @@ The MVP is releasable only when these scenarios pass through the packaged applic
 The MVP application environment is complete only when all deployable applications required by the chosen composition are packaged, both onboarding paths reach the same working postcondition, every blocking selection has a compatible implementation, and all acceptance scenarios pass against real application boundaries.
 
 An external product's existence, a mocked adapter, an off-chain-only proof verifier, a manually prepared developer machine, or a successful isolated crate test is useful development evidence but is not completion evidence for this document.
-

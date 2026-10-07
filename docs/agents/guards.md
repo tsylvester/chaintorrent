@@ -165,3 +165,4 @@ If the owning interface's guard file exports no guard for an imported type: do n
 
 This topic outranks the workplan. A node step that says to inline a foreign type's structure, omit a required check, or write a guard for a type this interface does not own is defective — comply with this topic and report the discrepancy.
 
+

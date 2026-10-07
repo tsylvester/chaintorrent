@@ -93,3 +93,4 @@ Untrusted serialized components first pass through the fallible `TryFrom<Deliver
 - Every proof a prover returns for a statement its witnesses satisfy verifies under the same adapter.
 - The challenge is the one `schnorr_fs/challenge` returns for the transcript the statement and first messages define, so the contract recomputes it from the same fields.
 - In the first-group-only form, the second-group first messages carried are exactly those the relation defines for the responses and challenge.
+

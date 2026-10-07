@@ -1019,4 +1019,3 @@ If the owner wishes to price the asset >$0.00, they cannot retroactively charge 
 ### Authorization Height Agreement
 
 **Resolved by the attempt rule.** The problem this section recorded — several provisioning nodes having to agree on one settlement reference for a threshold response — no longer arises, because no party evaluates authorization on a holder's behalf. The conforming client reads its own state view at the deployment's declared tier or above, no older than its freshness bound `τ_soft` ([Per-Attempt Authorization](#phase-2-consumption-and-decryption)), and the reference of that view binds nothing but the client's own attempt. Delivery proofs bind a settlement's own reference by being verified inside it. What remains is the choice of `τ_soft` and `τ_wallet` per deployment, which is a parameter selection held in the To-Do list rather than an open design question.
-

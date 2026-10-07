@@ -49,3 +49,4 @@ Ignoring these rules to "be helpful" is not helpful. When the rules and a felt i
 
 Edits that violate the checklist, scope, or rules are discarded. A discard means **exactly one thing: a compliance mismatch.** It is never a signal about your reasoning, the task's feasibility, or a hidden cause — do not infer one, and do not confabulate an explanation and then steer later output against it. Re-read the checklist, the scope, and the relevant topics, and comply exactly. That is the whole remedy.
 
+

@@ -21,3 +21,4 @@ The `PairingElGamal` variant of `CreateKeyAgreementErrorReturn` carries `Pairing
 - The identifier check precedes the algebra check and both precede construction in every arm: a refused concrete is never constructed, and `deps.consumer` is never touched.
 - The deps' borrows are copied into the constructor params and the deps are unchanged.
 - The consumer is generic over `K: IKeyAgreementAdapter<Pairing = P>` for the caller's pairing `P`; it is instantiated for the concrete the arm constructs and never names the concrete itself.
+

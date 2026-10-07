@@ -219,3 +219,4 @@ The first group's cofactor exceeds one, so the search ends among the least value
 - Zeroization: `Bls12381ArkworksScalar`, `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt` each zeroize their `value` through their `Zeroize` implementation and on drop, so every clone a consumer places in a payload is zeroized when the payload drops.
 - Each outside-the-subgroup search is ascending from one and stops at the first on-curve point outside the subgroup; the choice between a point and its negation follows the search and precedes the encoding, and the same call always returns the same bytes.
 - `params` carries no control and is not read in any method, and no reference method reads its payload.
+

@@ -57,3 +57,4 @@ A map from the file you are building to the topic that governs it, the template 
 | provides | [boundaries](boundaries.md) | export-surface example ([boundaries](boundaries.md)) | a symbol a consumer needs is not available to export |
 | integration test | [tests](tests.md#integration) | boundary-mocking example ([tests#integration](tests.md#integration)) | a function in the integrated chain is not built yet |
 
+

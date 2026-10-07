@@ -20,3 +20,4 @@ Conforms to: `docs/agents/tests.md#interface`, `docs/agents/tests.md#applying-a-
 
 Do only the interface test. Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.
 
+

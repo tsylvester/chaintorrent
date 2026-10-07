@@ -19,3 +19,4 @@ This scope takes the **full four-field header and the inline markers** (see [tes
 
 Naming what is mocked is what lets an audit catch a test that proves a mock instead of the integrated chain — an asserted value that originated in a mock and was only relayed is a tautological pass (see [tests](tests.md#audit)).
 
+

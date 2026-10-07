@@ -162,3 +162,4 @@ Do not write a `declare const` binding for an interface test. If you begin writi
 
 Forbidden: running any terminal commands, importing an implementation, defining types locally ("temporary, I'll move it later"); silencing the compiler (`@ts-expect-error`, `as`, `satisfies`, `unknown`); importing mocks, builders, or guards; constructing a value of an imported type — a hand-rolled literal or its builder — instead of a type-only surface assertion; using `declare const` in an interface test; stubbing a function to inhabit its type (`const fn: MyFunction = …`); a broad primitive where a narrow type exists; redefining an imported type locally. A file that compiles cleanly at this stage is a failed task.
 
+

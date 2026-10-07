@@ -18,12 +18,7 @@
 
 # Work Breakdown Structure
 
-Write each element in the fixed dependency order below — do not reorder or merge them, and
-omit an element only when the work does not touch its concern. Before writing an element,
-obey the topics that govern it — its `Conforms to:` list in
-`docs/agents/workplan-structure.md` and the routing matrix in `docs/agents/index.md` — but
-do not print those citations into the plan; they are authoring guidance, not node content.
-Name groupings by their dependency role; never number them.
+Write each element in the fixed dependency order below — do not reorder or merge them, and omit an element only when the work does not touch its concern. Before writing an element, obey the topics that govern it — its `Conforms to:` list in `docs/agents/workplan-structure.md` and the routing matrix in `docs/agents/index.md` — but do not print those citations into the plan; they are authoring guidance, not node content. Name groupings by their dependency role; never number them.
 
 * **TITLE OF SPRINT** 
 

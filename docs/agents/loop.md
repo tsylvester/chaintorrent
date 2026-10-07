@@ -51,3 +51,4 @@ Do not assume paths or file names. Search with the information you have and narr
 
 Search on what a thing structurally **is**, never on what convention says it would be called or where it would live — the procedure and its outcomes are owned by [tdd-ordering](tdd-ordering.md#search-the-invariant-never-the-convention).
 
+

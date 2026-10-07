@@ -19,3 +19,4 @@ Each concrete's own variant of `CreatePairingErrorReturn` — `Bn254Arkworks(Inf
 - `params.concrete` selects the concrete; `params.supported_encodings` and `params.target_group_encoding` admit or refuse it. `payload` carries nothing and is not read.
 - The encoding admission precedes the target-group admission and both precede construction in every arm: a refused concrete is never constructed, and `deps.consumer` is never touched.
 - The consumer is generic over `P: IPairingArithmetic + IPairingReference`; it is instantiated inside the arm for the concrete the arm constructs and never names the concrete itself.
+

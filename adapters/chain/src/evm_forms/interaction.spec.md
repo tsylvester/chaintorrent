@@ -133,3 +133,4 @@ The error arm has no branch: `Infallible` is uninhabited.
 - Each `from_field` decides by the one match before any construction; the same payload always yields the same outcome; no call has a side effect.
 - Each form's `to_field` returns a value of its `KIND`; each form's `from_field` admits every value its `to_field` returns and returns a form equal to the one that yielded it.
 - A form's only constructor is its `try_new`, which its own `from_field` calls.
+

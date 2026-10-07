@@ -275,3 +275,4 @@ You must use the EXACT format of the node structure. Do not modify, adapt, or "i
 
 `[DB]` migration · `[RLS]` row-level security · `[BE]` backend logic · `[API]` API client library · `[STORE]` state management · `[UI]` frontend component · `[CLI]` · `[IDE]` · `[TEST-UNIT]` · `[TEST-INT]` · `[TEST-E2E]` · `[DOCS]` · `[REFACTOR]` · `[PROMPT]` · `[CONFIG]` · `[COMMIT]` · `[DEPLOY]`.
 
+

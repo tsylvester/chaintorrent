@@ -28,3 +28,4 @@ The error arm has no branch: moving a value into the wrapper has no failure, so 
 - `Secret<T>` cannot implement a serialization trait: the `domain` crate carries no serialization dependency.
 - `Secret::try_new` is the only producer of `Secret<T>`.
 - The held value is reachable only through `expose`; the `value` field is `pub(super)`, so no code outside the `secret` module can read it.
+

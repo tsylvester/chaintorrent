@@ -21,3 +21,4 @@ The decision is a `match` on `params.concrete`, one arm per `DeliveryProofConcre
 - `payload` carries nothing and is not read.
 - The deps' borrows are copied into the constructor params; the deps are unchanged, and the caller keeps each collaborator for the credential KEM and the key agreement.
 - The consumer is generic over `IDeliveryProofAdapter` whose `Pairing` is the caller's pairing type and whose `Forms` are the consumer's chain forms; it never names the concrete.
+

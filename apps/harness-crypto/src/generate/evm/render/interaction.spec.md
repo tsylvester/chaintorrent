@@ -1,12 +1,6 @@
 # render interactions
 
-`render` assembles the source text of one Solidity library from a license
-identifier, a compiler version, a library name, and either a list of named
-constant entries or a list of vector record declarations. It reads no
-dependency, draws no randomness, reads no clock, and touches no filesystem;
-every refusal is a constructor's. The validated name, literal, value, entry,
-member, and declaration types admit only text and lists the rendering can
-emit, so the function itself has no failure branch.
+`render` assembles the source text of one Solidity library from a license identifier, a compiler version, a library name, and either a list of named constant entries or a list of vector record declarations. It reads no dependency, draws no randomness, reads no clock, and touches no filesystem; every refusal is a constructor's. The validated name, literal, value, entry, member, and declaration types admit only text and lists the rendering can emit, so the function itself has no failure branch.
 
 ## `SolidityLibraryName::try_new`
 
@@ -25,18 +19,13 @@ Decision: over `params.text.as_bytes()`.
 
 `SolidityConstantName::try_new(params: SolidityConstantNameConstructorParams) -> SolidityConstantNameTryNewReturn`
 
-Decision: the same branches in the same order as `SolidityLibraryName::try_new`
-with `SolidityConstantNameTryNewErrorReturn`'s variants, the later-byte set
-being `b'A'..=b'Z'`, `b'0'..=b'9'`, and `b'_'`; admitted, outcome
-`Ok(SolidityConstantName { text })`.
+Decision: the same branches in the same order as `SolidityLibraryName::try_new` with `SolidityConstantNameTryNewErrorReturn`'s variants, the later-byte set being `b'A'..=b'Z'`, `b'0'..=b'9'`, and `b'_'`; admitted, outcome `Ok(SolidityConstantName { text })`.
 
 ## `SpdxLicenseIdentifier::try_new`
 
 `SpdxLicenseIdentifier::try_new(params: SpdxLicenseIdentifierConstructorParams) -> SpdxLicenseIdentifierTryNewReturn`
 
-Decision: the identifier part is the text without its last byte when that byte
-is `b'+'`, and the whole text otherwise; branches are decided over the
-identifier part, indexes into the whole text.
+Decision: the identifier part is the text without its last byte when that byte is `b'+'`, and the whole text otherwise; branches are decided over the identifier part, indexes into the whole text.
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
@@ -77,19 +66,13 @@ Decision: over `params.text.as_bytes()`.
 
 `SolidityTypeName::try_new(params: SolidityTypeNameConstructorParams) -> SolidityTypeNameTryNewReturn`
 
-Decision: the same branches in the same order as `SolidityLibraryName::try_new`
-with `SolidityTypeNameTryNewErrorReturn`'s variants, the leading set
-`b'A'..=b'Z'` and the later-byte set `b'A'..=b'Z'`, `b'a'..=b'z'`, and
-`b'0'..=b'9'`; admitted, outcome `Ok(SolidityTypeName { text })`.
+Decision: the same branches in the same order as `SolidityLibraryName::try_new` with `SolidityTypeNameTryNewErrorReturn`'s variants, the leading set `b'A'..=b'Z'` and the later-byte set `b'A'..=b'Z'`, `b'a'..=b'z'`, and `b'0'..=b'9'`; admitted, outcome `Ok(SolidityTypeName { text })`.
 
 ## `SolidityMemberName::try_new`
 
 `SolidityMemberName::try_new(params: SolidityMemberNameConstructorParams) -> SolidityMemberNameTryNewReturn`
 
-Decision: the same branches in the same order as `SolidityLibraryName::try_new`
-with `SolidityMemberNameTryNewErrorReturn`'s variants, the leading set
-`b'a'..=b'z'` and the later-byte set `b'A'..=b'Z'`, `b'a'..=b'z'`, and
-`b'0'..=b'9'`; admitted, outcome `Ok(SolidityMemberName { text })`.
+Decision: the same branches in the same order as `SolidityLibraryName::try_new` with `SolidityMemberNameTryNewErrorReturn`'s variants, the leading set `b'a'..=b'z'` and the later-byte set `b'A'..=b'Z'`, `b'a'..=b'z'`, and `b'0'..=b'9'`; admitted, outcome `Ok(SolidityMemberName { text })`.
 
 ## `SolidityAbiType::try_new`
 
@@ -103,18 +86,13 @@ with `SolidityMemberNameTryNewErrorReturn`'s variants, the leading set
 
 `SolidityAbiType::as_str(&self) -> &'static str`
 
-Decision: an exhaustive `match` on `self.kind`, one arm per
-`CanonicalFieldKind` variant, so a variant with no arm fails to compile:
-`FixedBytes32` to `bytes32`, `Unsigned16` to `uint16`, `Unsigned32` to
-`uint32`, `Unsigned64` to `uint64`, `Text` to `string`, `Bytes` to `bytes`,
-`FixedBytes20` to `bytes20`, and `Unsigned256` to `uint256`.
+Decision: an exhaustive `match` on `self.kind`, one arm per `CanonicalFieldKind` variant, so a variant with no arm fails to compile: `FixedBytes32` to `bytes32`, `Unsigned16` to `uint16`, `Unsigned32` to `uint32`, `Unsigned64` to `uint64`, `Text` to `string`, `Bytes` to `bytes`, `FixedBytes20` to `bytes20`, and `Unsigned256` to `uint256`.
 
 ## `SolidityAbiType::decodes_into_memory`
 
 `SolidityAbiType::decodes_into_memory(&self) -> bool`
 
-Decision: an exhaustive `match` on `self.kind`, `Text` and `Bytes` to `true`
-and every other kind to `false`.
+Decision: an exhaustive `match` on `self.kind`, `Text` and `Bytes` to `true` and every other kind to `false`.
 
 ## `SolidityRecordMembers::try_new`
 
@@ -139,8 +117,7 @@ and every other kind to `false`.
 | duplicate path constant name | the lowest index `j` whose `path_constant_name` equals the `path_constant_name` of a declaration at a lower index | `i` is the lowest such lower index | none | `Err(SolidityRecordDeclarationsTryNewErrorReturn::DuplicatePathConstantName { first_index: i, duplicate_index: j })` |
 | admitted | no branch above | each of the three names is unique within the list | none | `Ok(SolidityRecordDeclarations { declarations })`, the vector moved from the params in its order |
 
-The three duplicate branches run in the order `struct_name`,
-`decode_function_name`, `path_constant_name`.
+The three duplicate branches run in the order `struct_name`, `decode_function_name`, `path_constant_name`.
 
 ## `SoliditySourceText::as_str`
 
@@ -150,41 +127,16 @@ The three duplicate branches run in the order `struct_name`,
 
 `render(deps: &RenderDeps, params: RenderParams, payload: RenderPayload) -> RenderReturn`, the trusted form.
 
-Decision: an exhaustive `match` on `payload.body`, one arm per
-`SolidityLibraryBody` variant. The header in both arms is
-`// SPDX-License-Identifier: `, the license's text, and `\n`; `pragma solidity `,
-`major`, `.`, `minor`, `.`, and `patch` in decimal, `;`, and `\n`; `\n`; and
-`library `, the library name's text, and ` {\n`. The text closes with `}\n`.
+Decision: an exhaustive `match` on `payload.body`, one arm per `SolidityLibraryBody` variant. The header in both arms is `// SPDX-License-Identifier: `, the license's text, and `\n`; `pragma solidity `, `major`, `.`, `minor`, `.`, and `patch` in decimal, `;`, and `\n`; `\n`; and `library `, the library name's text, and ` {\n`. The text closes with `}\n`.
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
 | constants | `payload.body` is `SolidityLibraryBody::Constants(entries)` | the match arm | none | `Ok(RenderSuccessReturn { source: SoliditySourceText { text } })`, the body being one line per entry in payload order |
 | records | `payload.body` is `SolidityLibraryBody::Records(declarations)` | the match arm | none | `Ok(RenderSuccessReturn { source: SoliditySourceText { text } })`, the body being each declaration's block in payload order, every block after the first preceded by `\n` |
 
-An entry's line is four spaces, the Solidity type, ` internal constant `, the
-constant name's text, ` = `, the literal, `;`, and `\n`; by value:
-`Bytes(bytes)` renders type `bytes` and literal `hex"`, each byte as two
-lowercase hex digits, and `"` (`hex""` when empty); `Uint256(value)` renders
-type `uint256` and literal `0x` and each byte of `value.big_endian` as two
-lowercase hex digits in array order; `Uint64(value)` renders type `uint64`
-and literal the value in decimal; `Uint16(value)` renders type `uint16` and
-literal the value in decimal; `Bool(value)` renders type `bool` and literal
-`true` or `false`; `String(literal)` renders type `string` and literal `"`,
-the literal's text, and `"`.
+An entry's line is four spaces, the Solidity type, ` internal constant `, the constant name's text, ` = `, the literal, `;`, and `\n`; by value: `Bytes(bytes)` renders type `bytes` and literal `hex"`, each byte as two lowercase hex digits, and `"` (`hex""` when empty); `Uint256(value)` renders type `uint256` and literal `0x` and each byte of `value.big_endian` as two lowercase hex digits in array order; `Uint64(value)` renders type `uint64` and literal the value in decimal; `Uint16(value)` renders type `uint16` and literal the value in decimal; `Bool(value)` renders type `bool` and literal `true` or `false`; `String(literal)` renders type `string` and literal `"`, the literal's text, and `"`.
 
-A declaration's block, each member's ABI type being
-`SolidityAbiType::try_new(SolidityAbiTypeConstructorParams { kind })`'s
-`as_str()`, unpacked irrefutably: `    struct `, the struct name, and ` {\n`;
-per member in order, eight spaces, the ABI type, a space, the member name,
-and `;\n`; `    }\n`; `\n`; `    string internal constant `, the path
-constant name, ` = "`, the path's text, and `";\n`; `\n`; `    function `,
-the decode function name, `(bytes memory line) internal pure returns (`, the
-struct name, and ` memory) {\n`; eight spaces, `(`, the members' locals
-joined by `, `, each the ABI type, ` memory` where `decodes_into_memory()`,
-a space, and the member name, `) = abi.decode(line, (`, the members' ABI
-types joined by `, `, and `));\n`; eight spaces, `return `, the struct name,
-`({`, each member as its name, `: `, and its name, joined by `, `, and
-`});\n`; and `    }\n`.
+A declaration's block, each member's ABI type being `SolidityAbiType::try_new(SolidityAbiTypeConstructorParams { kind })`'s `as_str()`, unpacked irrefutably: `    struct `, the struct name, and ` {\n`; per member in order, eight spaces, the ABI type, a space, the member name, and `;\n`; `    }\n`; `\n`; `    string internal constant `, the path constant name, ` = "`, the path's text, and `";\n`; `\n`; `    function `, the decode function name, `(bytes memory line) internal pure returns (`, the struct name, and ` memory) {\n`; eight spaces, `(`, the members' locals joined by `, `, each the ABI type, ` memory` where `decodes_into_memory()`, a space, and the member name, `) = abi.decode(line, (`, the members' ABI types joined by `, `, and `));\n`; eight spaces, `return `, the struct name, `({`, each member as its name, `: `, and its name, joined by `, `, and `});\n`; and `    }\n`.
 
-Ordering: the header, the body, the closing brace. `deps` is not read; equal
-params and payload yield equal text; no side effect.
+Ordering: the header, the body, the closing brace. `deps` is not read; equal params and payload yield equal text; no side effect.
+

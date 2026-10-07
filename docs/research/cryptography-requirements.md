@@ -55,4 +55,3 @@ Numbering follows the ledger. Interpretations 1, 3 and 5 were settled at the res
 | No. | Interpretation | What is undecided | Owner |
 | --- | --- | --- | --- |
 | 4 | Helper budget | "Small fraction" is now settled by formula (Q05 section): three source-group elements per capsule, a constant per interval on chain, a constant per holder. What remains is byte measurement on the chosen curve, which no decision can replace. | Q08 remainder |
-

@@ -42,3 +42,4 @@ Fields `13`–`18` encode `buyer_keys.pk1` (G1), `buyer_keys.pk2` (G2), `envelop
 - The lowest failing index decides; the same payload always yields the same outcome.
 - `params` carries no control and is not read.
 - A reconstructed mint statement contains only group elements admitted by the selected pairing's decoders and a `MintPurpose`; a round trip preserves the exact canonical field order and values.
+

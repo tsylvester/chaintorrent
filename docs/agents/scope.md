@@ -85,3 +85,4 @@ This is the same rule as the one above, applied to a symbol surface rather than 
 
 This topic outranks the workplan. A node step that widens a scope beyond one unit of work, that treats its own bullets as the complete symbol list, or that asks the implementer to determine what is in scope, is defective — comply with this topic and report the discrepancy (see [precedence](precedence.md)).
 
+

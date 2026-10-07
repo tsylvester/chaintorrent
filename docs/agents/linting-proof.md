@@ -4,7 +4,7 @@ After every edit, the touched file is linted clean, and completion is proven —
 
 Applies whenever a file is edited. This is a Process topic — it governs all other work.
 
-Linting does not apply to documents, such as markdown or text. 
+Linting does not apply to documents, such as markdown or text.
 
 ## Lint every edit
 
@@ -26,4 +26,5 @@ The workspace lint table denies constructs in production code that test code leg
 ## Completion proof
 
 Completion requires a lint-clean file **plus** GREEN test evidence — or a documented exemption for pure docs, types, or interfaces. Record the evidence in your response (e.g. "Lint: clean via internal tool; Tests: not run per policy"). The agent does not run tests; test evidence comes from provided output (see [environment](environment.md)). Never assume success without proof.
+
 

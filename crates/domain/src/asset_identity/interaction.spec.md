@@ -1,10 +1,6 @@
 # asset_identity interactions
 
-`AssetIdentity` is an owned value type: a fallible constructor `try_new` is its
-only producer, the read accessors `name` and `version` are its only string
-views, and `coordinate` is the only producer of `AssetCoordinate`.
-There are no dependency calls; every decision is a byte-level check on the
-params.
+`AssetIdentity` is an owned value type: a fallible constructor `try_new` is its only producer, the read accessors `name` and `version` are its only string views, and `coordinate` is the only producer of `AssetCoordinate`. There are no dependency calls; every decision is a byte-level check on the params.
 
 ## `AssetIdentity::try_new`
 
@@ -44,19 +40,9 @@ params.
 
 ## Invariants and ordering
 
-- Ordering: the name's checks precede the version's; within each string the
-  lowest offending index decides; the same params always yield the same
-  outcome, so a refusal is deterministic across every process.
-- A version byte that is both non-graphic and the separator is impossible
-  (`b'@'` is graphic), so each offending index maps to exactly one error
-  variant.
-- Every `AssetIdentity` holds a non-empty name and a non-empty version of
-  visible ASCII (`0x21..=0x7E`), the version free of `@`; the join
-  `name@version` therefore splits at its last `@` into exactly one name and
-  one version.
-- `try_new` is the only producer; `Clone` copies only an already-admitted
-  value, so no admitted form exists outside the constructor's invariants.
-- Every `AssetCoordinate` comes from an admitted `AssetIdentity` through
-  `coordinate`, so it has exactly one `name@version` byte form — the canonical
-  Registry identity-hash preimage a consumer borrows through `AsRef<[u8]>`
-  and never re-joins.
+- Ordering: the name's checks precede the version's; within each string the lowest offending index decides; the same params always yield the same outcome, so a refusal is deterministic across every process.
+- A version byte that is both non-graphic and the separator is impossible (`b'@'` is graphic), so each offending index maps to exactly one error variant.
+- Every `AssetIdentity` holds a non-empty name and a non-empty version of visible ASCII (`0x21..=0x7E`), the version free of `@`; the join `name@version` therefore splits at its last `@` into exactly one name and one version.
+- `try_new` is the only producer; `Clone` copies only an already-admitted value, so no admitted form exists outside the constructor's invariants.
+- Every `AssetCoordinate` comes from an admitted `AssetIdentity` through `coordinate`, so it has exactly one `name@version` byte form — the canonical Registry identity-hash preimage a consumer borrows through `AsRef<[u8]>` and never re-joins.
+

@@ -26,3 +26,4 @@ The error arm is uninhabited (`Result<_, Infallible>`): `NonZeroU32` already exc
 - `payload.declaration` is not read; `_params` carries nothing and is not read.
 - The body names no curve library and no concrete: `P` is bound only by `IPairingAdapter`, and `P::Scalar` only by `ISampleUniformScalar`.
 - Decoding, encoding, and sampling itself are not timed.
+

@@ -24,3 +24,4 @@ This scope takes the **full four-field header and the inline markers** — the b
 - **Act** — the single call to the function under test.
 - **Assert** — each transformation or branch outcome checked, stated independently of the arrangement. An expected value read back out of the arrangement is a tautological test.
 
+

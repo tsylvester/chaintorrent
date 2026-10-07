@@ -32,12 +32,12 @@ component/
 - **No External Type Dependencies**: Components must never depend on external type packages or shared type files
 - **Interface-Defined Types**: All component types must be defined within the component's interface definition
 - **Complete Type Ecosystem**: Each component's interface must include:
-  - Primary business logic types
-  - Input/output contract types
-  - Event emission/subscription schemas
-  - Configuration and initialization types
-  - Testing utilities (mocks, partials, stubs)
-  - Dependency injection types for testing
+- Primary business logic types
+- Input/output contract types
+- Event emission/subscription schemas
+- Configuration and initialization types
+- Testing utilities (mocks, partials, stubs)
+- Dependency injection types for testing
 
 ### Mock and Test Double Standards
 - **Component-Owned Mocks**: Each component must provide its own official mocks/stubs/test doubles

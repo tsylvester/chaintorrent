@@ -39,3 +39,4 @@ Each makes the reader rebuild the scope from memory. Rebuilding it is the failur
 
 Do only the scope statement. Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.
 
+

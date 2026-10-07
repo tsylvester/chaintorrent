@@ -12,3 +12,4 @@ Conforms to: `docs/agents/composition.md`, `docs/agents/types.md`, `docs/agents/
 
 Do only the interface. Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.
 
+

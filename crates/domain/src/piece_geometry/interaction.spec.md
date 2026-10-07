@@ -1,10 +1,6 @@
 # piece_geometry interactions
 
-`PieceGeometry` is an owned value type: a fallible constructor `try_new` is
-its only producer, and the read accessors `piece_size`, `piece_group_size`,
-`total_extent`, `piece_count`, and `group_count` are its only views. There
-are no dependency calls; the only decisions are arithmetic checks on the
-declared sizes and extent.
+`PieceGeometry` is an owned value type: a fallible constructor `try_new` is its only producer, and the read accessors `piece_size`, `piece_group_size`, `total_extent`, `piece_count`, and `group_count` are its only views. There are no dependency calls; the only decisions are arithmetic checks on the declared sizes and extent.
 
 ## `PieceGeometry::try_new`
 
@@ -19,14 +15,11 @@ declared sizes and extent.
 | zero total extent | both sizes pass and `params.total_extent == 0` | the equality check | none | `Err(PieceGeometryTryNewErrorReturn::ZeroTotalExtent)` |
 | admitted | every check passes | none further | none | `Ok(PieceGeometry { piece_size, piece_group_size, total_extent })`, each moved from the params |
 
-Ordering: the piece size's checks precede the piece-group size's, which
-precede the total extent's; the same params always yield the same outcome.
+Ordering: the piece size's checks precede the piece-group size's, which precede the total extent's; the same params always yield the same outcome.
 
 ## `PieceGeometry::piece_size`, `piece_group_size`, `total_extent`
 
-`PieceGeometry::piece_size(&self) -> u32`
-`PieceGeometry::piece_group_size(&self) -> u32`
-`PieceGeometry::total_extent(&self) -> u64`
+`PieceGeometry::piece_size(&self) -> u32` `PieceGeometry::piece_group_size(&self) -> u32` `PieceGeometry::total_extent(&self) -> u64`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
@@ -50,8 +43,6 @@ precede the total extent's; the same params always yield the same outcome.
 
 ## Invariants
 
-- Every `PieceGeometry` holds a power-of-two piece size of at least 16 KiB,
-  a nonzero piece-group size that is a whole multiple of it, and a nonzero
-  total extent.
-- `try_new` is the only producer; `Clone` copies only an already-admitted
-  value, so no admitted form exists outside the constructor's invariants.
+- Every `PieceGeometry` holds a power-of-two piece size of at least 16 KiB, a nonzero piece-group size that is a whole multiple of it, and a nonzero total extent.
+- `try_new` is the only producer; `Clone` copies only an already-admitted value, so no admitted form exists outside the constructor's invariants.
+

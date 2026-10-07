@@ -216,3 +216,4 @@ The second group's cofactor exceeds the group order, so an on-curve point is out
 - Zeroization: `Bn254ArkworksScalar`, `Bn254ArkworksG1`, `Bn254ArkworksG2`, and `Bn254ArkworksGt` each zeroize their `value` through their `Zeroize` implementation and on drop, so every clone a consumer places in a payload is zeroized when the payload drops.
 - The outside-the-subgroup search is ascending from `c0 = 1` and stops at the first on-curve point outside the subgroup; the choice between a point and its negation follows the search and precedes the encoding, and the same call always returns the same bytes.
 - `params` carries no control and is not read in any method, and no reference method reads its payload.
+

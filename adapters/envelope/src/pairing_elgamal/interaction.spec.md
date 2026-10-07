@@ -85,3 +85,4 @@ Each one branch with no dependency call and each outcome `Ok`, unpacked irrefuta
 - Every point and scalar a pairing payload consumes is a clone of a held value, and the held values are unchanged. `params` carries no control and is not read in any method.
 - The same key pair, public keys, and envelope always open to the same components. Every key pair and proof `generate_keys` returns, read through `key_pair_public_keys` and `possession_components`, pass `public_keys_from_components`. Every envelope `wrap_to` returns for a key pair's public keys opens under that key pair to the credential components it wrapped.
 - `pk1 = x·g1` and `pk2 = y·g2`; `C1 = ρ·g1`, `C2 = A + ρ·pk1`, `D1 = σ·g2`, and `D2 = B + σ·pk2` for the returned coins. Every value rebuilt from its own components behaves as the value it was read from.
+

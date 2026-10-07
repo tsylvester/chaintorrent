@@ -55,3 +55,4 @@ Re-exporting is permitted **only** in barrel files — the ones named `index` or
 
 This topic outranks the workplan. A node step that imports from a module's internal file instead of its `provides`, re-exports outside a barrel, omits a symbol a consumer needs from `provides`, or introduces a reverse/lateral/cyclic dependency is defective — comply with this topic and report the discrepancy.
 
+

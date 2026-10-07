@@ -25,3 +25,4 @@ The inherent constant `HashToScalarDeclaration { identifier: HashToScalarIdentif
 
 - The prefix conversion and the length subtraction precede the hasher; the prefix, the tag, and the message are absorbed in that order. The same tag and message always yield the same scalar for one scalar type.
 - The digest is read as a big-endian integer, zero-extended at the front to `S::UNIFORM_BYTES_LENGTH`, and reduced modulo the group order by the scalar type's own sampler — no field arithmetic is duplicated here, and no pairing library or use's tag is named.
+

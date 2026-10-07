@@ -67,3 +67,4 @@ Even *thinking about* how to get around the one-file boundary is itself the disc
 
 If you are corrected or realize you deviated, stop, report it, and wait for direction. Do not self-remediate in a way that risks a further violation; repeated correction means halt immediately (see [precedence](precedence.md)).
 
+

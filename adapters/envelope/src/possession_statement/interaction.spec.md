@@ -39,3 +39,4 @@ The G2 member calls `decode_g2` throughout and wraps decoder refusals in `Invali
 - `fields_to_value` decides in the stated order: count, then kinds in index order, then group decoding in index order. No kind check is skipped by an earlier one passing; no decode runs before every kind check.
 - `params` carries no control and is not read in either method.
 - Only a pair of successfully decoded group elements of the selected pairing, in the same group the description describes, can enter a trusted `PossessionG1Statement<P>` or `PossessionG2Statement<P>`; no path admits raw bytes into a statement.
+

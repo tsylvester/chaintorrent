@@ -67,3 +67,4 @@ Types and interfaces are exempt from RED/GREEN unit testing — their contract i
 
 This topic outranks the workplan. A node step that edits executable code before its RED test, builds a consumer before its producer, advances past an unproven file, recreates a resource that already exists, or leaves the build broken between steps is defective — comply with this topic and report the discrepancy.
 
+

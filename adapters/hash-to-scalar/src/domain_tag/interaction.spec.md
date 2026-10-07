@@ -23,3 +23,4 @@ Branch contract for the `domain_tag` module of the `hash-to-scalar` crate: the f
 
 - The checks run in order: emptiness, then length, then the byte scan, then the leading edge, then the trailing edge. The same params always yield the same outcome.
 - Every `DomainTag` holds between 1 and 255 bytes, each printable ASCII, its first and last byte visible ASCII; its only producer is `try_new`.
+

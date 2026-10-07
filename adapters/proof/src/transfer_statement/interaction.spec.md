@@ -42,3 +42,4 @@ Fields `13`–`24` encode `seller_keys.pk1` (G1), `seller_keys.pk2` (G2), `buyer
 - The lowest failing index decides; the same payload always yields the same outcome.
 - `params` carries no control and is not read.
 - A reconstructed transfer statement contains only group elements admitted by the selected pairing's decoders and a `TransferPurpose`; a round trip preserves the exact canonical field order and values.
+

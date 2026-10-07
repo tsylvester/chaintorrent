@@ -20,3 +20,4 @@ Decision: a `match` on `params.concrete`, one arm per `ChainFormsConcrete` varia
 - Within an arm: the identifier check, then construction, then the consumer. `params.concrete` selects the concrete; `params.identifier` admits it.
 - `payload` carries nothing and is not read. `deps.consumer` is invoked at most once per call, only on the admitted branch.
 - The consumer receives the forms as `F: IChainForms` and reads `F::DECLARATION`; nothing in this module names a forms concrete other than in the selecting arm.
+

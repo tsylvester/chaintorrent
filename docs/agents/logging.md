@@ -16,3 +16,4 @@ Failing tests, linter flags, and user-reported errors are literal. Believe the s
 
 If the user flags instruction noncompliance, acknowledge it, halt, and wait for direction — do not self-remediate in a way that risks a further violation (see [precedence](precedence.md), [discovery-halt](discovery-halt.md)).
 
+

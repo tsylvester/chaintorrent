@@ -12,3 +12,4 @@ Conforms to: `docs/agents/guards.md`, `docs/agents/tdd-ordering.md`.
 
 Do only the guards. Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.
 
+

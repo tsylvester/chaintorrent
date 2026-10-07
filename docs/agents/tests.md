@@ -229,3 +229,4 @@ Neither producer edits. A remedy is applied in a later, separately instructed st
 
 This topic outranks the workplan. A node step that silences a RED compiler error, defines the thing under test inside its test, hand-rolls fixtures, specifies an arrangement that admits no counterfactual, derives a test's expectation from its own arrangement, re-tests shape or guard correctness in a unit test, mocks a function that is supposed to be integrated, or leaves existing tests stale during a requirements change is defective — comply with this topic and report the discrepancy.
 
+

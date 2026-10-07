@@ -46,3 +46,4 @@ One function per file is owned by [composition](composition.md).
 
 This topic outranks the workplan. A node step that skips an adapter for an external dependency, gives a context factory optional fields or hidden defaults, guards or `unknown`-types injected deps, or injects a type guard is defective — comply with this topic and report the discrepancy.
 
+

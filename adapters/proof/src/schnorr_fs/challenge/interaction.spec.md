@@ -20,3 +20,4 @@ The challenge tag is constructed once in `SchnorrFsDeliveryProof::try_new` from 
 - The already-admitted tag is borrowed, then the matching pairing-borrowing description is constructed, then encoding is attempted, then hashing; an encoding refusal prevents the hash call; the transcript is borrowed and unchanged.
 - `params` carries no control and is not read.
 - For a given encoder and hash-to-scalar adapter, the challenge is a function of the transcript alone: the mapping under `SCHNORR_FS_CHALLENGE_TAG` of the transcript's encoding through its own description, which the contract recomputes from the same fields.
+

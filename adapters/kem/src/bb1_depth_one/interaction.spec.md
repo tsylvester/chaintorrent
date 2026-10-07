@@ -99,3 +99,4 @@ Each method is one branch with no dependency call and each outcome `Ok`:
 
 - Every sampling precedes the arithmetic it feeds, and setup samples `α`, `a`, then `b`; the identity mapping hashes before it multiplies, and the trivial test precedes the asset-scope comparison; every point and scalar a pairing payload consumes is a clone of a held value, and the held values are unchanged; `params` carries no control and is not read in any method but `setup`.
 - The same inputs always yield the same outputs; every credential `issue` or `rerandomize` returns passes `is_valid` for its identity element under its parameter set; every capsule `encapsulate` returns passes `is_well_formed` under its parameter set, and every valid credential decapsulates it to `encapsulate`'s bytes; every value rebuilt from its own components behaves as the value it was read from; `B` is `randomness·g2` for an issued credential and grows by `offset·g2` under rerandomization.
+

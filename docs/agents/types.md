@@ -143,3 +143,4 @@ A ternary is not a type guard — a ternary supplies a default value. Default va
 
 This topic outranks the workplan. A node step that casts a repo-owned object, types a value `unknown` to skip finding its real type, redefines a type inline, or edits a type without authorization is defective — comply with this topic and report the discrepancy.
 
+

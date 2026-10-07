@@ -25,3 +25,4 @@ The Instructions topics and templates are seeded with **canaries** — small, ex
 
 This topic owns the mechanism. Specific canaries live with the topics they protect — for example, the node-template canaries in [workplan-structure](workplan-structure.md).
 
+

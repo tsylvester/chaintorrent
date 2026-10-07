@@ -1,9 +1,6 @@
 # asset_identity_hash interactions
 
-`AssetIdentityHash` is an owned value type: the fallible constructor `try_new`
-is its only producer, and the read accessor `as_bytes` is its only view.
-There are no dependency calls; the only decision is a byte-level check on the
-params.
+`AssetIdentityHash` is an owned value type: the fallible constructor `try_new` is its only producer, and the read accessor `as_bytes` is its only view. There are no dependency calls; the only decision is a byte-level check on the params.
 
 ## `AssetIdentityHash::try_new`
 
@@ -24,12 +21,8 @@ params.
 
 ## Invariants and ordering
 
-- Ordering: the single check fully decides the outcome; the same params
-  always yield the same outcome, so a refusal is deterministic across every
-  process.
-- Every `AssetIdentityHash` holds exactly `ASSET_IDENTITY_HASH_LENGTH` (32)
-  bytes, not all zero.
-- `try_new` is the only producer; `Clone` copies only an already-admitted
-  value, so no admitted form exists outside the constructor's invariants.
-- The params type carries exactly 32 bytes, so the length is a fact of the
-  type and never a runtime check.
+- Ordering: the single check fully decides the outcome; the same params always yield the same outcome, so a refusal is deterministic across every process.
+- Every `AssetIdentityHash` holds exactly `ASSET_IDENTITY_HASH_LENGTH` (32) bytes, not all zero.
+- `try_new` is the only producer; `Clone` copies only an already-admitted value, so no admitted form exists outside the constructor's invariants.
+- The params type carries exactly 32 bytes, so the length is a fact of the type and never a runtime check.
+

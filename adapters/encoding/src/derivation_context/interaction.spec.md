@@ -1,11 +1,6 @@
 # derivation_context interactions
 
-`DerivationContextDescription` is the encoding family's description of
-`DerivationContext`. Its fallible constructor `try_new` is its only producer,
-and its `IEncodingContract` implementation states the context's canonical field
-sequence once, format-free: `Described` is `DerivationContext`,
-`FromFieldsErrorReturn` is `DerivationContextFromFieldsErrorReturn`, and
-`FIELDS` is `&DERIVATION_CONTEXT_FIELD_KINDS`.
+`DerivationContextDescription` is the encoding family's description of `DerivationContext`. Its fallible constructor `try_new` is its only producer, and its `IEncodingContract` implementation states the context's canonical field sequence once, format-free: `Described` is `DerivationContext`, `FromFieldsErrorReturn` is `DerivationContextFromFieldsErrorReturn`, and `FIELDS` is `&DERIVATION_CONTEXT_FIELD_KINDS`.
 
 ## `DerivationContextDescription::try_new`
 
@@ -37,13 +32,9 @@ sequence once, format-free: `Described` is `DerivationContext`,
 | context refused | every component is admitted and `DerivationContext::try_new` refuses | the context constructor's result | `DerivationContext::try_new` once over the six components | `Err(DerivationContextFromFieldsErrorReturn::DerivationContext(error))`, the refusal unchanged |
 | admitted | every check and constructor passes | the same | the same constructors | `Ok(FromFieldsSuccessReturn { described })` holding the constructed context |
 
-Ordering: the count precedes every kind, every kind precedes every constructor,
-the constructors run in field order, and the context constructor runs last; the
-same payload always yields the same outcome. `params` carries no control and is
-not read.
+Ordering: the count precedes every kind, every kind precedes every constructor, the constructors run in field order, and the context constructor runs last; the same payload always yields the same outcome. `params` carries no control and is not read.
 
 ## Invariants
 
-- The kinds of the values `to_fields` returns are
-  `DERIVATION_CONTEXT_FIELD_KINDS` in order, and `fields_to_value` admits exactly
-  that sequence.
+- The kinds of the values `to_fields` returns are `DERIVATION_CONTEXT_FIELD_KINDS` in order, and `fields_to_value` admits exactly that sequence.
+

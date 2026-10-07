@@ -28,3 +28,4 @@ An inherent constant, readable from the type before any instance exists:
 - The buffer is moved into a `Secret` **after** `getrandom::fill` returns and **before** its result is inspected, so the buffer is zeroized on both branches.
 - A `payload.length` of zero takes the drawn branch with an empty buffer.
 - `params` carries no control and is not read.
+

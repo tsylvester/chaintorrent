@@ -1,11 +1,6 @@
 # abi interactions
 
-`AbiEncoding` is the encoding family's first concrete: the adapter over
-`alloy`'s dynamic ABI. Its fallible constructor `try_new` is its only
-producer; `AbiEncoding::DECLARATION` names the encoding identifier it sits
-under, its adapter version, and the interface version it implements, readable
-before any instance exists. It implements `IEncoderAdapter` and
-`IDecoderAdapter`.
+`AbiEncoding` is the encoding family's first concrete: the adapter over `alloy`'s dynamic ABI. Its fallible constructor `try_new` is its only producer; `AbiEncoding::DECLARATION` names the encoding identifier it sits under, its adapter version, and the interface version it implements, readable before any instance exists. It implements `IEncoderAdapter` and `IDecoderAdapter`.
 
 ## `AbiEncoding::try_new`
 
@@ -17,8 +12,7 @@ before any instance exists. It implements `IEncoderAdapter` and
 
 ## `AbiEncoding::DECLARATION`
 
-The inherent constant
-`EncodingDeclaration { identifier: EncodingIdentifier::EthereumAbiV1, adapter_version: 1, interface_version: ENCODING_INTERFACE_VERSION }`.
+The inherent constant `EncodingDeclaration { identifier: EncodingIdentifier::EthereumAbiV1, adapter_version: 1, interface_version: ENCODING_INTERFACE_VERSION }`.
 
 ## `IEncoderAdapter::encode`
 
@@ -46,11 +40,9 @@ The inherent constant
 | non-canonical | the description admits the value and the re-encoding succeeds with bytes other than the payload | byte equality | `encode` once, the same call | `Err(DecodeErrorReturn::Abi(AbiDecoderErrorReturn::NonCanonical))`; this refuses trailing bytes, nonzero padding, non-canonical offsets, and a head of the wrong length, which the dynamic decoder reads past |
 | admitted | the re-encoding equals the payload | the same | the same call | `Ok(DecodeSuccessReturn { described })` |
 
-Ordering: the ABI decode precedes the item pass, the item pass precedes the
-description, and the re-encoding comparison runs last; `params` supplies the
-description and nothing else is read from it.
+Ordering: the ABI decode precedes the item pass, the item pass precedes the description, and the re-encoding comparison runs last; `params` supplies the description and nothing else is read from it.
 
 ## Invariants
 
-- For any description and admitted value, `decode` over `encode`'s output
-  returns that value: exactly one byte form per value.
+- For any description and admitted value, `decode` over `encode`'s output returns that value: exactly one byte form per value.
+

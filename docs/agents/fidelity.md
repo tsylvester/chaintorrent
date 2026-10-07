@@ -20,3 +20,4 @@ Never rename a function, variable, type, or file without explicit instruction. I
 
 Implementing exactly the agreed solution, reporting deviations, and halting on repeated correction are owned by [precedence](precedence.md).
 
+

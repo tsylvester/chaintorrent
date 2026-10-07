@@ -153,3 +153,4 @@ Deps and params never take this form. A params field that originates outside the
 
 This topic outranks the workplan. A node step that puts deps inside params, blobs params and payload, returns only the success type, hosts two functions in one file, types an untrusted payload strong instead of `unknown` + guard, or throws on an invalid payload instead of returning the error arm is defective — comply with this topic and report the discrepancy.
 
+

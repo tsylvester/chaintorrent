@@ -21,3 +21,4 @@ The `Bb1DepthOne` variant of `CreateKemErrorReturn` carries `Bb1DepthOneKemTryNe
 - The identifier check precedes the scope check and both precede construction in every arm: a refused concrete is never constructed, and `deps.consumer` is never touched.
 - The deps' borrows are copied into the constructor params and the deps are unchanged.
 - The consumer is generic over `K: ICredentialKemAdapter<Pairing = P>` for the caller's pairing `P`; it is instantiated for the concrete the arm constructs and never names the concrete itself.
+

@@ -86,3 +86,4 @@ Membership is transitive — `EnqueuedReturn` is assignable to `MyFunctionSucces
 
 This topic outranks the workplan. A node step that returns only the success type, hoists a success or error flavor into the top-level union (making it more than two arms), swallows or rewrites an error, converts an error to a different type, declares an error type that cannot be printed or compared by value, or leaves an error arm unhandled is defective — comply with this topic and report the discrepancy.
 
+
