@@ -6,8 +6,10 @@ publish.workspace = true
 
 [dependencies]
 chain = { path = "../../adapters/chain" }
+domain = { path = "../../crates/domain" }
 encoding = { path = "../../adapters/encoding" }
 envelope = { path = "../../adapters/envelope" }
+hash-to-scalar = { path = "../../adapters/hash-to-scalar" }
 kem = { path = "../../adapters/kem" }
 pairing = { path = "../../adapters/pairing" }
 proof = { path = "../../adapters/proof" }
@@ -15,7 +17,9 @@ random = { path = "../../adapters/random" }
 
 [dev-dependencies]
 chain = { path = "../../adapters/chain", features = ["mocks"] }
+encoding = { path = "../../adapters/encoding", features = ["mocks"] }
 envelope = { path = "../../adapters/envelope", features = ["mocks"] }
+hash-to-scalar = { path = "../../adapters/hash-to-scalar", features = ["mocks"] }
 hex = "0.4.3"
 kem = { path = "../../adapters/kem", features = ["mocks"] }
 pairing = { path = "../../adapters/pairing", features = ["mocks"] }
@@ -23,7 +27,7 @@ proof = { path = "../../adapters/proof", features = ["mocks"] }
 random = { path = "../../adapters/random", features = ["mocks"] }
 
 [features]
-mocks = ["chain/mocks", "envelope/mocks", "kem/mocks", "pairing/mocks", "proof/mocks", "random/mocks"]
+mocks = ["chain/mocks", "encoding/mocks", "envelope/mocks", "hash-to-scalar/mocks", "kem/mocks", "pairing/mocks", "proof/mocks", "random/mocks"]
 
 [lints]
 workspace = true

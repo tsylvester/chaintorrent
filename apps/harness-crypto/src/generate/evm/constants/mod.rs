@@ -59,31 +59,32 @@ pub fn constants<'a, P: IPairingReference, F: IChainForms>(
             .map_err(ConstantsErrorReturn::StringLiteral)
     };
 
-    let mut entries: Vec<SolidityLibraryEntry> = Vec::new();
-    entries.push(SolidityLibraryEntry {
-        name: constant_name("IDENTITY_TAG")?,
-        value: SolidityConstantValue::Bytes(payload.kem.identity_tag.to_vec()),
-    });
-    entries.push(SolidityLibraryEntry {
-        name: constant_name("POSSESSION_G1_TAG")?,
-        value: SolidityConstantValue::Bytes(payload.key_agreement.possession_g1_tag.to_vec()),
-    });
-    entries.push(SolidityLibraryEntry {
-        name: constant_name("POSSESSION_G2_TAG")?,
-        value: SolidityConstantValue::Bytes(payload.key_agreement.possession_g2_tag.to_vec()),
-    });
-    entries.push(SolidityLibraryEntry {
-        name: constant_name("CHALLENGE_TAG")?,
-        value: SolidityConstantValue::Bytes(payload.delivery_proof.challenge_tag.to_vec()),
-    });
-    entries.push(SolidityLibraryEntry {
-        name: constant_name("WEIGHT_TAG")?,
-        value: SolidityConstantValue::Bytes(payload.delivery_proof.weight_tag.to_vec()),
-    });
-    entries.push(SolidityLibraryEntry {
-        name: constant_name("DELIVERY_STATEMENT_VERSION")?,
-        value: SolidityConstantValue::Uint16(params.statement_version),
-    });
+    let mut entries: Vec<SolidityLibraryEntry> = vec![
+        SolidityLibraryEntry {
+            name: constant_name("IDENTITY_TAG")?,
+            value: SolidityConstantValue::Bytes(payload.kem.identity_tag.to_vec()),
+        },
+        SolidityLibraryEntry {
+            name: constant_name("POSSESSION_G1_TAG")?,
+            value: SolidityConstantValue::Bytes(payload.key_agreement.possession_g1_tag.to_vec()),
+        },
+        SolidityLibraryEntry {
+            name: constant_name("POSSESSION_G2_TAG")?,
+            value: SolidityConstantValue::Bytes(payload.key_agreement.possession_g2_tag.to_vec()),
+        },
+        SolidityLibraryEntry {
+            name: constant_name("CHALLENGE_TAG")?,
+            value: SolidityConstantValue::Bytes(payload.delivery_proof.challenge_tag.to_vec()),
+        },
+        SolidityLibraryEntry {
+            name: constant_name("WEIGHT_TAG")?,
+            value: SolidityConstantValue::Bytes(payload.delivery_proof.weight_tag.to_vec()),
+        },
+        SolidityLibraryEntry {
+            name: constant_name("DELIVERY_STATEMENT_VERSION")?,
+            value: SolidityConstantValue::Uint16(params.statement_version),
+        },
+    ];
     for purpose in DELIVERY_PURPOSES {
         let text = match purpose {
             DeliveryPurpose::Mint => "PURPOSE_MINT",

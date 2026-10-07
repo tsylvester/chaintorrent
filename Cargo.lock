@@ -1608,8 +1608,10 @@ name = "harness-crypto"
 version = "0.0.0"
 dependencies = [
  "chain",
+ "domain",
  "encoding",
  "envelope",
+ "hash-to-scalar",
  "hex",
  "kem",
  "pairing 0.0.0",
