@@ -213,7 +213,49 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `build_secret<T: Zeroize + Default>(overrides: SecretConstructorParamsOverrides<T>) -> Secret<T>`, returning the real instance from `Secret::try_new(build_secret_constructor_params(overrides))` through the irrefutable pattern `let Ok(secret) = …;`
     * `[✅]`   No corruptions type and no invalidator: the params never arrive as untrusted data, and the crate carries no serialization dependency to express corruption; no `Secret` overrides, invalidator, or mock function, since the class is built as a real instance and owns no free function
 
-  * `[ ]`   `crates/domain/src/secret/test.rs`
+  * `[✅]`   `crates/domain/src/secret/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::panic)]`; imports `Secret`, `SecretConstructorParamsOverrides`, `build_secret`, and `build_secret_constructor_params` from `super::provides`, `Zeroize` from `zeroize`, and `assert_not_impl_any` from `static_assertions`; every test holds `Vec<u8>` except where it holds the block-local recorder named in that test
+    * `[✅]`   Compile-time assertion over `Secret<Vec<u8>>`
+      * `[✅]`   Contract: `Secret<T>` implements none of `core::fmt::Debug`, `core::fmt::Display`, `Clone`, or `Copy`
+      * `[✅]`   Arrange: the type `Secret<Vec<u8>>`
+      * `[✅]`   Act: `assert_not_impl_any!` over that type naming `core::fmt::Debug`, `core::fmt::Display`, `Clone`, and `Copy`
+      * `[✅]`   Assert: the module compiles only if none of the four traits is implemented
+    * `[✅]`   `try_new_holds_the_value_in_params`
+      * `[✅]`   Contract: any params → `Ok(Secret)` holding `params.value`
+      * `[✅]`   Collaborators: none; the fixture is `build_secret_constructor_params::<Vec<u8>>`
+      * `[✅]`   Arrange: `build_secret_constructor_params` with the value override set to a nonempty byte sequence, so the default empty vector and the given value differ
+      * `[✅]`   Act: `Secret::try_new` on the built params
+      * `[✅]`   Assert: the result binds through the irrefutable `let Ok(secret) = …;`; the held `value`, read through the field the child test module reaches, equals the same byte sequence written as a literal in the assertion
+    * `[✅]`   `expose_returns_a_reference_to_the_held_value`
+      * `[✅]`   Contract: a living secret → a shared reference to the held value, no copy
+      * `[✅]`   Collaborators: none; the fixture is `build_secret::<Vec<u8>>`
+      * `[✅]`   Arrange: `build_secret` with the value override set to a nonempty byte sequence, so the default empty vector and the held value differ
+      * `[✅]`   Act: `secret.expose()`
+      * `[✅]`   Assert: the returned reference equals the same byte sequence written as a literal in the assertion; the returned reference is address-identical to the secret's held `value` field under `core::ptr::eq`
+    * `[✅]`   `dropping_a_secret_zeroizes_its_value`
+      * `[✅]`   Contract: the secret's lifetime ends by move into a consumer that drops it → `Zeroize::zeroize` is called on the held value exactly once
+      * `[✅]`   Collaborators: `Zeroize::zeroize` on the held value, replaced by a block-local struct implementing `Zeroize` whose `zeroize` increments an `Arc<AtomicUsize>` counter shared with the test; the struct implements `Default` to meet the builder's bound
+      * `[✅]`   Arrange: the shared counter at its initial value; the recorder holding a handle to it; `build_secret` with the value override set to the recorder
+      * `[✅]`   Act: `drop(secret)`
+      * `[✅]`   Assert: the shared counter equals the literal one
+    * `[✅]`   `exposing_a_secret_does_not_zeroize_it`
+      * `[✅]`   Contract: a living secret → `expose` returns a shared reference with no side effect on the held value
+      * `[✅]`   Collaborators: `Zeroize::zeroize` on the held value, replaced by a block-local struct implementing `Zeroize` whose `zeroize` increments an `Arc<AtomicUsize>` counter shared with the test; the struct implements `Default` to meet the builder's bound
+      * `[✅]`   Arrange: the shared counter at its initial value; the recorder holding a handle to it; `build_secret` with the value override set to the recorder
+      * `[✅]`   Act: `secret.expose()`
+      * `[✅]`   Assert: the shared counter equals the literal zero while the secret is alive
+    * `[✅]`   `try_new_moves_the_value_without_copying_it`
+      * `[✅]`   Contract: any params → `Ok(Secret)` holding `params.value`, moved without copy
+      * `[✅]`   Collaborators: none; the fixture is `build_secret_constructor_params::<Vec<u8>>`
+      * `[✅]`   Arrange: a nonempty byte vector bound to a local whose heap address is read before the call; `build_secret_constructor_params` with the value override set to that vector
+      * `[✅]`   Act: `Secret::try_new` on the built params
+      * `[✅]`   Assert: the result binds through the irrefutable `let Ok(secret) = …;`; the heap address of the held `value` equals the address read before the call
+    * `[✅]`   `dropping_a_secret_during_unwinding_zeroizes_its_value`
+      * `[✅]`   Contract: the secret's lifetime ends by unwinding → `Zeroize::zeroize` is called on the held value exactly once
+      * `[✅]`   Collaborators: `Zeroize::zeroize` on the held value, replaced by a block-local struct implementing `Zeroize` whose `zeroize` increments an `Arc<AtomicUsize>` counter shared with the test; the struct implements `Default` to meet the builder's bound
+      * `[✅]`   Arrange: the shared counter at its initial value; the recorder holding a handle to it; `build_secret` with the value override set to the recorder; a closure that takes the secret by move and panics
+      * `[✅]`   Act: `std::panic::catch_unwind` on the closure
+      * `[✅]`   Assert: the outcome is `Err`; the shared counter equals the literal one
 
   * `[✅]`   `construction`
     * `[✅]`   `Secret::try_new` is the only producer; no `Default`, `From`, or other constructor exists; each later producer of secret material constructs the secret where the material is produced and passes it by move
@@ -330,20 +372,68 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `adapters/random/src/factory/provides.rs`
     * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
 
+  * `[ ]`   `adapters/random/src/os/mock.rs`
+    * `[ ]`   `build_os_random_source() -> OsRandomSource`, returning the real instance from `OsRandomSource::try_new(OsRandomSourceConstructorParams)` through the irrefutable pattern `let Ok(source) = …;`
+    * `[ ]`   No overrides type, corruptions type, or invalidator for `OsRandomSourceConstructorParams`, which is fieldless, used by its production value, and never arrives as untrusted data; no `OsRandomSource` overrides, invalidator, or mock function, since the concrete is built as a real instance and owns no free function
+    * `[ ]`   Imports this module's types from `super::interface`
+
   * `[ ]`   `adapters/random/src/os/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `OsRandomSource` and `build_os_random_source` from `super::provides`, `FillBytesParams`, `FillBytesPayloadOverrides`, `IRandomSourceAdapter`, `RandomSourceKind`, `RANDOM_SOURCE_INTERFACE_VERSION`, and `build_fill_bytes_payload` from `crate::factory::provides`, and `HashSet` from `std::collections`
+    * `[ ]`   `fill_bytes_returns_the_number_of_bytes_requested`
+      * `[ ]`   Contract: `getrandom::fill` returns `Ok(())` over a buffer of `payload.length` bytes → `Ok(FillBytesSuccessReturn)` whose `Secret` holds exactly `payload.length` bytes
+      * `[ ]`   Collaborators: `getrandom::fill`, the operating system's generator, called for real as the outer edge; fixtures `build_os_random_source` and `build_fill_bytes_payload`; `FillBytesParams` by its production value
+      * `[ ]`   Arrange: `build_fill_bytes_payload` with the length override set to 48, a nonzero length that differs from the builder's default of 32, so a source returning the default width fails
+      * `[ ]`   Act: `fill_bytes(FillBytesParams, payload)` on the built source
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the length of `bytes.expose()` equals the literal 48 written in the assertion
+    * `[ ]`   `fill_bytes_returns_an_empty_draw_for_a_zero_length`
+      * `[ ]`   Contract: `payload.length` of zero takes the drawn branch with an empty buffer → `Ok(FillBytesSuccessReturn)` whose `Secret` holds no bytes
+      * `[ ]`   Collaborators: `getrandom::fill`, the operating system's generator, called for real as the outer edge; fixtures `build_os_random_source` and `build_fill_bytes_payload`; `FillBytesParams` by its production value
+      * `[ ]`   Arrange: `build_fill_bytes_payload` with the length override set to 0, so a source that ignores the length and returns the builder's default width fails
+      * `[ ]`   Act: `fill_bytes(FillBytesParams, payload)` on the built source
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `bytes.expose()` is empty
+    * `[ ]`   `fill_bytes_draws_pairwise_distinct_segments_within_a_draw`
+      * `[ ]`   Contract: a drawn buffer is filled by the generator → segments of a fixed width within one draw are pairwise distinct
+      * `[ ]`   Collaborators: `getrandom::fill`, the operating system's generator, called for real as the outer edge; fixtures `build_os_random_source` and `build_fill_bytes_payload`; `FillBytesParams` by its production value
+      * `[ ]`   Arrange: `build_fill_bytes_payload` with the length override set to 1024, which splits into segments of 32 bytes, so a zero-filled or repeating buffer yields fewer distinct segments than segments
+      * `[ ]`   Act: `fill_bytes(FillBytesParams, payload)` on the built source
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the 32-byte segments of `bytes.expose()` collected into a `HashSet` number the literal 32 written in the assertion
+    * `[ ]`   `fill_bytes_fills_a_draw_with_more_than_one_distinct_byte_value`
+      * `[ ]`   Contract: a drawn buffer is filled by the generator → a draw of a fixed length holds more than one distinct byte value
+      * `[ ]`   Collaborators: `getrandom::fill`, the operating system's generator, called for real as the outer edge; fixtures `build_os_random_source` and `build_fill_bytes_payload`; `FillBytesParams` by its production value
+      * `[ ]`   Arrange: `build_fill_bytes_payload` with the length override set to 256, so a zero-filled buffer holds one distinct byte value
+      * `[ ]`   Act: `fill_bytes(FillBytesParams, payload)` on the built source
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the bytes of `bytes.expose()` collected into a `HashSet` number more than the literal 1 written in the assertion
+    * `[ ]`   `os_random_source_declares_its_adapter_and_interface_versions`
+      * `[ ]`   Contract: `OsRandomSource::DECLARATION` is `RandomSourceDeclaration { source: RandomSourceKind::OperatingSystem, adapter_version: 1, interface_version: RANDOM_SOURCE_INTERFACE_VERSION }`, readable from the type before any instance exists
+      * `[ ]`   Collaborators: none; no instance is built
+      * `[ ]`   Arrange: none; the type alone
+      * `[ ]`   Act: reading `OsRandomSource::DECLARATION`
+      * `[ ]`   Assert: `source` matches `RandomSourceKind::OperatingSystem` under `matches!`; `adapter_version` equals the literal 1 written in the assertion; `interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
+    * `[ ]`   `declaration_returns_the_associated_declaration`
+      * `[ ]`   Contract: `declaration()` on a living source → `Self::DECLARATION`
+      * `[ ]`   Collaborators: none; the fixture is `build_os_random_source`
+      * `[ ]`   Arrange: `build_os_random_source()`
+      * `[ ]`   Act: `declaration()` on the built source through `IRandomSourceAdapter`
+      * `[ ]`   Assert: `source` matches `RandomSourceKind::OperatingSystem` under `matches!`; `adapter_version` equals the literal 1 written in the assertion; `interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
+    * `[ ]`   `try_new_returns_the_operating_system_source`
+      * `[ ]`   Contract: any params → `Ok(OsRandomSource)`
+      * `[ ]`   Collaborators: none; `OsRandomSourceConstructorParams` by its production value
+      * `[ ]`   Arrange: `OsRandomSourceConstructorParams` by its production value
+      * `[ ]`   Act: `OsRandomSource::try_new(OsRandomSourceConstructorParams)`
+      * `[ ]`   Assert: `result.is_ok()` is true
 
   * `[✅]`   `construction`
     * `[✅]`   `OsRandomSource::try_new` is the concrete's only producer, and its only caller is the randomness factory, which returns it as `Box<dyn IRandomSourceAdapter>`; the boxed adapter reports its declaration through `IRandomSourceAdapter::declaration`
 
   * `[✅]`   `adapters/random/src/os/mod.rs`
-    * `[✅]`   Module declarations: `mod interface;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
+    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(test)] mod mock;`, `pub(crate) mod provides;`, and `#[cfg(test)] mod test;`
     * `[✅]`   `impl OsRandomSource` with `pub const DECLARATION: RandomSourceDeclaration` as the interaction spec states, and `pub fn try_new(_params: OsRandomSourceConstructorParams) -> OsRandomSourceTryNewReturn` returning `Ok(OsRandomSource)`
     * `[✅]`   `impl IRandomSourceAdapter for OsRandomSource` with `declaration()` returning `Self::DECLARATION` and `fn fill_bytes(&self, _params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn`, which allocates `vec![0u8; payload.length]`, calls `getrandom::fill` on it, moves the buffer into a `Secret` by `let Ok(bytes) = Secret::try_new(SecretConstructorParams { value: buffer });`, and then matches the fill result into the two branches of the interaction spec
     * `[✅]`   Imports the factory's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[✅]`   `adapters/random/src/os/provides.rs`
-    * `[✅]`   `pub(crate) use super::interface::*;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate
+    * `[✅]`   `pub(crate) use super::interface::*;` and `#[cfg(test)] pub(crate) use super::mock::*;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate
 
   * `[✅]`   `directionality`
     * `[✅]`   `os` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, and on `getrandom`; the `factory` module depends on `domain` and on `os`'s error type through `crate::os::provides`; among repository crates the crate depends on `crates/domain` alone, inward; nothing depends on the crate yet
@@ -413,6 +503,13 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No builder for the fieldless `CreateRandomSourceDeps` and `CreateRandomSourcePayload`, used by their production values, or for the enum `CreateRandomSourceErrorReturn`; every symbol `random/os` authored in this file is unchanged
 
   * `[ ]`   `adapters/random/src/factory/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, `CreateRandomSourceParamsOverrides`, `build_create_random_source_params`, `RandomSourceKind`, and `RANDOM_SOURCE_INTERFACE_VERSION` from `super::provides`
+    * `[ ]`   `create_random_source_returns_the_operating_system_source_for_its_kind`
+      * `[ ]`   Contract: `params.kind` is `RandomSourceKind::OperatingSystem` → `Ok(CreateRandomSourceSuccessReturn { adapter })` holding the operating-system concrete, which reports `OsRandomSource::DECLARATION` through `declaration()`
+      * `[ ]`   Collaborators: `OsRandomSource::try_new`, the concrete the factory constructs, runs for real; fixture `build_create_random_source_params`; `CreateRandomSourceDeps` and `CreateRandomSourcePayload` by their production values
+      * `[ ]`   Arrange: `build_create_random_source_params` with the kind override set to `RandomSourceKind::OperatingSystem`
+      * `[ ]`   Act: `create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `adapter.declaration()` has `source` matching `RandomSourceKind::OperatingSystem` under `matches!`, `adapter_version` equal to the literal 1 written in the assertion, and `interface_version` equal to `RANDOM_SOURCE_INTERFACE_VERSION`
 
   * `[✅]`   `construction`
     * `[✅]`   The composition root calls `create_random_source` with `&CreateRandomSourceDeps`, `CreateRandomSourceParams` holding the configured `RandomSourceKind`, and `CreateRandomSourcePayload`, and places the returned `Box<dyn IRandomSourceAdapter>` in each consumer's deps; no consumer constructs a concrete
@@ -427,6 +524,28 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds `pub use super::create_random_source;` to the re-exports `random/os` authored
 
   * `[ ]`   `adapters/random/tests/integration_test.rs`
+    * `[ ]`   Outside the crate, so it reaches only the crate's public surface: module-level `#![allow(clippy::expect_used)]`; imports from the `random` crate `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, `CreateRandomSourceParamsOverrides`, `build_create_random_source_params`, `FillBytesParams`, `FillBytesPayloadOverrides`, `build_fill_bytes_payload`, `RandomSourceKind`, and `RANDOM_SOURCE_INTERFACE_VERSION`, and `HashSet` from `std::collections`
+    * `[ ]`   `a_source_from_the_factory_draws_random_bytes_through_the_family_trait`
+      * `[ ]`   Contract: a source obtained from `create_random_source` for `RandomSourceKind::OperatingSystem` draws the requested number of bytes through `fill_bytes`, and the draw is filled by the operating system's generator
+      * `[ ]`   Boundary: the crate's public surface; the real chain `create_random_source` → `OsRandomSource::try_new` → `OsRandomSource::fill_bytes` → `getrandom::fill`
+      * `[ ]`   Mocked: nothing; the operating system's generator is the outer edge and runs real, so this test proves the generator's output reaches the caller and does not prove the generator's quality
+      * `[ ]`   Arrange: the adapter returned by `create_random_source` with `build_create_random_source_params` carrying the kind override `RandomSourceKind::OperatingSystem`, `CreateRandomSourceDeps` and `CreateRandomSourcePayload` by their production values; `build_fill_bytes_payload` with the length override set to 1024, which splits into segments of 32 bytes and differs from the builder's default of 32
+      * `[ ]`   Act: `fill_bytes(FillBytesParams, payload)` on the returned adapter
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the length of `bytes.expose()` equals the literal 1024 written in the assertion; the 32-byte segments of `bytes.expose()` collected into a `HashSet` number the literal 32 written in the assertion
+    * `[ ]`   `a_source_from_the_factory_draws_an_empty_buffer_for_a_zero_length`
+      * `[ ]`   Contract: a source obtained from `create_random_source` for `RandomSourceKind::OperatingSystem` draws zero bytes for a `payload.length` of zero through `fill_bytes`
+      * `[ ]`   Boundary: the crate's public surface; the real chain `create_random_source` → `OsRandomSource::try_new` → `OsRandomSource::fill_bytes` → `getrandom::fill`
+      * `[ ]`   Mocked: nothing; the operating system's generator is the outer edge and runs real
+      * `[ ]`   Arrange: the adapter returned by `create_random_source` with `build_create_random_source_params` carrying the kind override `RandomSourceKind::OperatingSystem`, `CreateRandomSourceDeps` and `CreateRandomSourcePayload` by their production values; `build_fill_bytes_payload` with the length override set to 0, which differs from the builder's default of 32
+      * `[ ]`   Act: `fill_bytes(FillBytesParams, payload)` on the returned adapter
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `bytes.expose()` is empty
+    * `[ ]`   `a_source_from_the_factory_reports_the_operating_system_declaration`
+      * `[ ]`   Contract: a source obtained from `create_random_source` for `RandomSourceKind::OperatingSystem` reports `OsRandomSource::DECLARATION` through `declaration()`
+      * `[ ]`   Boundary: the crate's public surface; the real chain `create_random_source` → `OsRandomSource::try_new` → `OsRandomSource::declaration`
+      * `[ ]`   Mocked: nothing; the chain has no outer edge beyond the standard library
+      * `[ ]`   Arrange: the adapter returned by `create_random_source` with `build_create_random_source_params` carrying the kind override `RandomSourceKind::OperatingSystem`, `CreateRandomSourceDeps` and `CreateRandomSourcePayload` by their production values
+      * `[ ]`   Act: `declaration()` on the returned adapter
+      * `[ ]`   Assert: `source` matches `RandomSourceKind::OperatingSystem` under `matches!`; `adapter_version` equals the literal 1 written in the assertion; `interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
 
   * `[✅]`   `directionality`
     * `[✅]`   The `factory` module depends on `os` through `crate::os::provides` and on its own interface; `os` depends on the `factory` module's surface, the family form's recorded cycle; the crate's public surface is the `factory` module's `provides`; nothing depends on the crate yet
@@ -506,9 +625,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`, and `Secret::expose(&self) -> &T`
     * `[✅]`   From `domain`'s mocks: `build_secret(SecretConstructorParamsOverrides<T>) -> Secret<T>` for `T: Zeroize + Default`
     * `[✅]`   From `zeroize`: the `Zeroize` trait's `zeroize(&mut self)`, the `ZeroizeOnDrop` marker trait, and their implementations for `Vec<Z: Zeroize>`, `Affine`, and `PairingOutput`
-    * `[✅]`   From `ark-bn254`: `Bn254`, `Fq`, `Fq2` with its public fields `c0` and `c1` and `Fq2::new(c0, c1)`, `Fq12`, `Fr`, `G1Affine`, `G1Projective`, `G2Affine`, and `G2Projective`
-    * `[✅]`   From `ark-ec`: `AffineRepr` for `generator()`, `xy()`, and `is_zero()`, true exactly for the identity; the short-Weierstrass affine `identity()`, `new_unchecked(x, y)`, `is_on_curve()`, `is_in_correct_subgroup_assuming_on_curve()`, and `get_point_from_x_unchecked(x, greatest)`, an `Option` of an on-curve point with that `x`, unchecked for the subgroup; the affine `+` and `* Fr` producing projective points; unary `-` on the affine point, returning `(x, -y)` and the identity for the identity; `CurveGroup::into_affine`; `VariableBaseMSM::msm_unchecked(bases, scalars)`; `pairing::Pairing::multi_pairing(a, b)` over iterators of borrowed affine points, returning `PairingOutput<Bn254>`, whose public field `0` is the `Fq12` value and whose identity is `Fq12::one()`; `Pairing::multi_miller_loop(a, b)` over the same iterators, returning `MillerLoopOutput<Bn254>` whose public field `0` is the unreduced `Fq12`; `Mul<Fr> for PairingOutput<Bn254>`, the exponentiation of a target-group value by a scalar; `Pairing::pairing(p, q)`
-    * `[✅]`   From `ark-ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `Fr::from(u64)` and `Fq::from(u64)`; `Field::ONE`; `Field::pow(&self, exp: impl AsRef<[u64]>)`, infallible exponentiation by little-endian limbs, on `Fr` and on `Fq12`; `PrimeField::MODULUS`, the `BigInt<4>` of `Fr` and of `Fq`; `BigInteger::sub_with_borrow(&mut self, other: &Self) -> bool` and `BigInt::<4>::from(u64)`; `From<BigInt<4>> for num_bigint::BigUint`; the public fields `c0` and `c1` of the degree-two and degree-twelve extensions and `c0`, `c1`, and `c2` of the degree-six extension; `PrimeField::from_be_bytes_mod_order(&[u8])` and `into_bigint()` on `Fq` and on `Fr`, the `BigInt<4>` of `Fq` ordering as the integer; `BigInteger::to_bytes_be()`, 32 bytes for a `BigInt<4>`; `Zero::is_zero()` on `Fq` and on `PairingOutput`; unary `-` on `Fq2`
+    * `[✅]`   From `ark-bn254`: `Bn254`, `Fq`, `Fq2` with its public fields `c0` and `c1` and `Fq2::new(c0, c1)`, `Fq6` with `Fq6::new(c0, c1, c2)`, `Fq12` with `Fq12::new(c0, c1)`, `Fr`, `G1Affine`, `G1Projective`, `G2Affine`, and `G2Projective`
+    * `[✅]`   From `ark-ec`: `AffineRepr` for `generator()`, `xy()`, and `is_zero()`, true exactly for the identity; the short-Weierstrass affine `identity()`, `new_unchecked(x, y)`, `is_on_curve()`, `is_in_correct_subgroup_assuming_on_curve()`, and `get_point_from_x_unchecked(x, greatest)`, an `Option` of an on-curve point with that `x`, unchecked for the subgroup; the affine `+` and `* Fr` producing projective points; unary `-` on the affine point, returning `(x, -y)` and the identity for the identity; `CurveGroup::into_affine`; `VariableBaseMSM::msm_unchecked(bases, scalars)`; `pairing::Pairing::multi_pairing(a, b)` over iterators of borrowed affine points, returning `PairingOutput<Bn254>`, whose public field `0` is the `Fq12` value and whose identity is `Fq12::one()`; `Pairing::multi_miller_loop(a, b)` over the same iterators, returning `MillerLoopOutput<Bn254>` whose public field `0` is the unreduced `Fq12`; `Mul<Fr> for PairingOutput<Bn254>`, the exponentiation of a target-group value by a scalar; `Pairing::pairing(p, q)`; `Zeroize` for the affine point, which zeroizes `x`, `y`, and `infinity`, so a zeroized point is `new_unchecked(0, 0)`, and for `PairingOutput`, which zeroizes its `Fq12`
+    * `[✅]`   From `ark-ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `Fr::from(u64)` and `Fq::from(u64)`; `Field::ONE`; `Field::pow(&self, exp: impl AsRef<[u64]>)`, infallible exponentiation by little-endian limbs, on `Fr` and on `Fq12`; `PrimeField::MODULUS`, the `BigInt<4>` of `Fr` and of `Fq`; `BigInteger::sub_with_borrow(&mut self, other: &Self) -> bool` and `BigInt::<4>::from(u64)`; `From<BigInt<4>> for num_bigint::BigUint`; the public fields `c0` and `c1` of the degree-two and degree-twelve extensions and `c0`, `c1`, and `c2` of the degree-six extension; `PrimeField::from_be_bytes_mod_order(&[u8])` and `into_bigint()` on `Fq` and on `Fr`, the `BigInt<4>` of `Fq` ordering as the integer; `BigInteger::to_bytes_be()`, 32 bytes for a `BigInt<4>`; `Zero::is_zero()` on `Fq`, on `Fq12`, and on `PairingOutput`; unary `-` on `Fq2`
     * `[ ]`   From `num-bigint`, in `mock.rs`'s test-only fixtures and in `test.rs`: `BigUint::from(u32)`, `BigUint::from_bytes_be(&[u8])`, `BigUint::pow(&self, u32)`, `Sub`, `Div`, and `Rem` between `BigUint`s, and `BigUint::to_u64_digits(&self) -> Vec<u64>`, little-endian limbs
 
   * `[ ]`   `adapters/pairing/Cargo.toml`
@@ -606,12 +725,13 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No builder for the fieldless params and payloads, for the error enums, or for the declaration's enums, each used by its production value; no corruptions type and no invalidator, since no struct this interface owns arrives as untrusted data and the decoders take the untrusted bytes directly
 
   * `[ ]`   `adapters/pairing/src/bn254_arkworks/mock.rs`
-    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `super::interface::{Bn254ArkworksG1, Bn254ArkworksG2, Bn254ArkworksGt, Bn254ArkworksPairing, Bn254ArkworksPairingConstructorParams, Bn254ArkworksScalar}`, `super::BN254_SEED`, `ark_bn254::{Bn254, Fq, Fq2, Fq12, Fr, G1Affine, G2Affine}`, `ark_ec::{AffineRepr, pairing::{Pairing, PairingOutput}}`, and `ark_ff::{BigInteger, Field, PrimeField}`; and, `#[cfg(test)]`, `hex::decode`, `num_bigint::BigUint`, and `zeroize::ZeroizeOnDrop`
+    * `[ ]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `super::interface::{Bn254ArkworksEncodedGt, Bn254ArkworksEncodedScalar, Bn254ArkworksG1, Bn254ArkworksG2, Bn254ArkworksGt, Bn254ArkworksPairing, Bn254ArkworksPairingConstructorParams, Bn254ArkworksScalar}`, `super::BN254_SEED`, `ark_bn254::{Bn254, Fq, Fq2, Fq12, Fr, G1Affine, G2Affine}`, `ark_ec::{AffineRepr, pairing::{Pairing, PairingOutput}}`, and `ark_ff::{BigInteger, Field, PrimeField}`; and, `#[cfg(test)]`, `ark_bn254::Fq6`, `ark_ec::CurveGroup`, `hex::decode`, `num_bigint::BigUint`, and `zeroize::ZeroizeOnDrop`
     * `[✅]`   The builder defaults for the concrete's owned types, which the family's generic builders and `MockIPairingAdapter` read through `Default`: `impl Default for Bn254ArkworksScalar` returning `value: Fr::from(1u64)`; `impl Default for Bn254ArkworksG1` returning `value: G1Affine::generator()`; `impl Default for Bn254ArkworksG2` returning `value: G2Affine::generator()`; `impl Default for Bn254ArkworksGt` returning `value: Bn254::pairing(G1Affine::generator(), G2Affine::generator())`, a non-identity target-group value
     * `[ ]`   The builders for the concrete's owned types, each overrides struct `#[derive(Default)]` with one `Option` field and each omitted value taking the type's `Default` above: `Bn254ArkworksScalarOverrides` with `pub value: Option<Fr>` and `build_bn254_arkworks_scalar(overrides: Bn254ArkworksScalarOverrides) -> Bn254ArkworksScalar`; `Bn254ArkworksG1Overrides` with `pub value: Option<G1Affine>` and `build_bn254_arkworks_g1`; `Bn254ArkworksG2Overrides` with `pub value: Option<G2Affine>` and `build_bn254_arkworks_g2`; `Bn254ArkworksGtOverrides` with `pub value: Option<PairingOutput<Bn254>>` and `build_bn254_arkworks_gt`; no corruptions type and no invalidator, since none of these arrives as untrusted data
     * `[ ]`   `build_bn254_arkworks_pairing() -> Bn254ArkworksPairing`, the real instance from `Bn254ArkworksPairing::try_new(Bn254ArkworksPairingConstructorParams)` through `let Ok(pairing) = …;`; the constructor params are fieldless, so the builder takes no overrides
-    * `[ ]`   The test fixtures, each `#[cfg(test)]`, since they use the crate's dev-dependencies; constants, each a `const … : &str` of hex: `BASE_FIELD_MODULUS_HEX` `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47`; `GROUP_ORDER_HEX` `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001`; `GROUP_ORDER_MINUS_ONE_HEX` `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000`; `GROUP_ORDER_MINUS_TWO_HEX` `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff`; `G1_GENERATOR_HEX`, 31 zero bytes and `01` then 31 zero bytes and `02`; `G2_GENERATOR_HEX`, `198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2` `1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed` `090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b` `12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa`; `G2_GENERATOR_OFF_CURVE_HEX`, the same with the last byte `aa` replaced by `ab`; `NEG_G1_GENERATOR_HEX`, 31 zero bytes and `01` then `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45`; `G1_X_AT_MODULUS_HEX`, the 32 bytes of `BASE_FIELD_MODULUS_HEX` then 31 zero bytes and `02`; `G1_OFF_CURVE_HEX`, 31 zero bytes and `01` then 31 zero bytes and `03`, the point `(1, 3)`, which satisfies `y^2 = x^3 + 3` on neither side, 9 against 4; `UNIFORM_GROUP_ORDER_HEX`, 32 zero bytes then the 32 bytes of `GROUP_ORDER_HEX`, the group order as a 64-byte big-endian integer
-    * `[ ]`   The test-fixture helpers, each `#[cfg(test)]`: `vector_bytes(hex: &str) -> Vec<u8>`, `decode(hex)` unpacked by `let Ok(bytes) = … else { panic!("the vector decodes") };`; `zero_bytes(length: usize) -> Vec<u8>`, `vec![0u8; length]`; `gt_identity_encoding() -> Vec<u8>`, `vec![0u8; 384]` with index `31` set to `1`; `base_field_modulus() -> BigUint`, `BigUint::from_bytes_be(&vector_bytes(BASE_FIELD_MODULUS_HEX))`; `scalar_value(hex: &str) -> Fr`, `Fr::from_be_bytes_mod_order(&vector_bytes(hex))`; `eip_196_generator() -> G1Affine`, `G1Affine::new_unchecked(Fq::from(1u64), Fq::from(2u64))`, the generator EIP-196 publishes; `eip_196_negated_generator() -> G1Affine`, `G1Affine::new_unchecked` over the two 32-byte halves of `vector_bytes(NEG_G1_GENERATOR_HEX)`, each read by `Fq::from_be_bytes_mod_order`; `eip_197_generator() -> G2Affine`, `G2Affine::new_unchecked(Fq2::new(x_c0, x_c1), Fq2::new(y_c0, y_c1))` over the four 32-byte quarters of `vector_bytes(G2_GENERATOR_HEX)`, read in order as `x_c1`, `x_c0`, `y_c1`, `y_c0` by `Fq::from_be_bytes_mod_order`; `g2_point_from_encoding(bytes: &[u8]) -> G2Affine`, the same reading over any 128 bytes; `g2_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `(1u64..).find_map(|c0| G2Affine::get_point_from_x_unchecked(Fq2::new(Fq::from(c0), Fq::from(0u64)), false).filter(|point| !point.is_in_correct_subgroup_assuming_on_curve()))` unpacked by `let Some(point) = … else { panic!("an on-curve point outside the subgroup exists") };`, its `xy()` unpacked by `let Some((x, y)) = … else { panic!("the point has coordinates") };`, encoded by appending `into_bigint().to_bytes_be()` of `x.c1`, `x.c0`, `y.c1`, `y.c0`; `definition_exponent() -> Vec<u64>`, `let p = BigUint::from(Fq::MODULUS); let r = BigUint::from(Fr::MODULUS); ((p.pow(12) - BigUint::from(1u32)) / r).to_u64_digits()`; `definition_value(g1: G1Affine, g2: G2Affine) -> Fq12`, `Bn254::multi_miller_loop([g1], [g2]).0.pow(definition_exponent())`, the identifier's definition of the pairing value; `library_multiple() -> Fr`, `let seed = Fr::from(BN254_SEED); (seed * seed * Fr::from(6u64) + seed * Fr::from(3u64) + Fr::ONE) * seed * Fr::from(2u64)`; `requires_zeroize_on_drop<T: ZeroizeOnDrop>() {}`
+    * `[ ]`   The builders for the concrete's encoded scalar and encoded target-group types, each overrides struct `#[derive(Default)]` with one `Option` field: `Bn254ArkworksEncodedScalarOverrides` with `pub bytes: Option<[u8; 32]>` and `build_bn254_arkworks_encoded_scalar(overrides: Bn254ArkworksEncodedScalarOverrides) -> Bn254ArkworksEncodedScalar`, the bytes defaulting to `[1u8; 32]`; `Bn254ArkworksEncodedGtOverrides` with `pub bytes: Option<[u8; 384]>` and `build_bn254_arkworks_encoded_gt`, the bytes defaulting to `[1u8; 384]`; the defaults are nonzero so a zeroized value differs from a built one; no corruptions type and no invalidator, since neither arrives as untrusted data
+    * `[ ]`   The test fixtures, each `#[cfg(test)]`, since they use the crate's dev-dependencies; constants, each a `const … : &str` of hex: `BASE_FIELD_MODULUS_HEX` `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47`; `GROUP_ORDER_HEX` `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001`; `GROUP_ORDER_MINUS_ONE_HEX` `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000`; `GROUP_ORDER_MINUS_TWO_HEX` `30644e72e131a029b85045b68181585d2833e84879b9709143e1f593efffffff`; `G1_GENERATOR_HEX`, 31 zero bytes and `01` then 31 zero bytes and `02`; `G2_GENERATOR_HEX`, `198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2` `1800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed` `090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b` `12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa`; `G2_GENERATOR_OFF_CURVE_HEX`, the same with the last byte `aa` replaced by `ab`; `G2_X_C1_AT_MODULUS_HEX`, the 32 bytes of `BASE_FIELD_MODULUS_HEX` followed by the last three 32-byte quarters of `G2_GENERATOR_HEX`; `NEG_G1_GENERATOR_HEX`, 31 zero bytes and `01` then `30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45`; `G1_X_AT_MODULUS_HEX`, the 32 bytes of `BASE_FIELD_MODULUS_HEX` then 31 zero bytes and `02`; `G1_OFF_CURVE_HEX`, 31 zero bytes and `01` then 31 zero bytes and `03`, the point `(1, 3)`, which satisfies `y^2 = x^3 + 3` on neither side, 9 against 4; `UNIFORM_GROUP_ORDER_HEX`, 32 zero bytes then the 32 bytes of `GROUP_ORDER_HEX`, the group order as a 64-byte big-endian integer
+    * `[ ]`   The test-fixture helpers, each `#[cfg(test)]`: `vector_bytes(hex: &str) -> Vec<u8>`, `decode(hex)` unpacked by `let Ok(bytes) = … else { panic!("the vector decodes") };`; `zero_bytes(length: usize) -> Vec<u8>`, `vec![0u8; length]`; `gt_identity_encoding() -> Vec<u8>`, `vec![0u8; 384]` with index `31` set to `1`; `gt_with_sequential_coefficients() -> PairingOutput<Bn254>`, `PairingOutput(Fq12::new(Fq6::new(Fq2::new(Fq::from(1u64), Fq::from(2u64)), Fq2::new(Fq::from(3u64), Fq::from(4u64)), Fq2::new(Fq::from(5u64), Fq::from(6u64))), Fq6::new(Fq2::new(Fq::from(7u64), Fq::from(8u64)), Fq2::new(Fq::from(9u64), Fq::from(10u64)), Fq2::new(Fq::from(11u64), Fq::from(12u64)))))`, whose twelve coefficients in tower order are the integers one through twelve; `sequential_gt_encoding() -> Vec<u8>`, `vec![0u8; 384]` with, for each coefficient position `i` from zero through eleven in tower order, byte `32 * i + 31` set to `i + 1`; `base_field_modulus() -> BigUint`, `BigUint::from_bytes_be(&vector_bytes(BASE_FIELD_MODULUS_HEX))`; `scalar_value(hex: &str) -> Fr`, `Fr::from_be_bytes_mod_order(&vector_bytes(hex))`; `eip_196_generator() -> G1Affine`, `G1Affine::new_unchecked(Fq::from(1u64), Fq::from(2u64))`, the generator EIP-196 publishes; `eip_196_negated_generator() -> G1Affine`, `G1Affine::new_unchecked` over the two 32-byte halves of `vector_bytes(NEG_G1_GENERATOR_HEX)`, each read by `Fq::from_be_bytes_mod_order`; `eip_197_generator() -> G2Affine`, `G2Affine::new_unchecked(Fq2::new(x_c0, x_c1), Fq2::new(y_c0, y_c1))` over the four 32-byte quarters of `vector_bytes(G2_GENERATOR_HEX)`, read in order as `x_c1`, `x_c0`, `y_c1`, `y_c0` by `Fq::from_be_bytes_mod_order`; `g2_point_from_encoding(bytes: &[u8]) -> G2Affine`, the same reading over any 128 bytes; `g2_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `(1u64..).find_map(|c0| G2Affine::get_point_from_x_unchecked(Fq2::new(Fq::from(c0), Fq::from(0u64)), false).filter(|point| !point.is_in_correct_subgroup_assuming_on_curve()))` unpacked by `let Some(point) = … else { panic!("an on-curve point outside the subgroup exists") };`, its `xy()` unpacked by `let Some((x, y)) = … else { panic!("the point has coordinates") };`, encoded by appending `into_bigint().to_bytes_be()` of `x.c1`, `x.c0`, `y.c1`, `y.c0`; `definition_exponent() -> Vec<u64>`, `let p = BigUint::from(Fq::MODULUS); let r = BigUint::from(Fr::MODULUS); ((p.pow(12) - BigUint::from(1u32)) / r).to_u64_digits()`; `definition_value(g1: G1Affine, g2: G2Affine) -> Fq12`, `Bn254::multi_miller_loop([g1], [g2]).0.pow(definition_exponent())`, the identifier's definition of the pairing value; `eip_196_doubled_generator() -> G1Affine`, `(eip_196_generator() + eip_196_generator()).into_affine()`; `definition_value_power(g1: G1Affine, g2: G2Affine, exponent: u64) -> Fq12`, `definition_value(g1, g2).pow([exponent])`; `library_multiple() -> Fr`, `let seed = Fr::from(BN254_SEED); (seed * seed * Fr::from(6u64) + seed * Fr::from(3u64) + Fr::ONE) * seed * Fr::from(2u64)`; `requires_zeroize_on_drop<T: ZeroizeOnDrop>() {}`
     * `[ ]`   No mock function: the concrete is built as a real instance and owns no free function
 
   * `[✅]`   `adapters/pairing/src/factory/mod.rs`
@@ -621,6 +741,484 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`; the factory function's re-export is `pairing/factory`'s
 
   * `[ ]`   `adapters/pairing/src/bn254_arkworks/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports from `super::provides` the concrete, its owned types, and the mock's builders, constants, and helpers each block uses; from `crate::factory::provides` the params, payloads, errors, trait names, and builders each block uses; and the `ark_bn254`, `ark_ec`, `ark_ff`, `num_bigint::BigUint`, and `zeroize::Zeroize` names each block uses
+    * `[ ]`   Compile-time assertion over `Bn254ArkworksPairing::DECLARATION`
+      * `[ ]`   Contract: the inherent constant is `PairingDeclaration { curve: PairingCurve::Bn254, verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly, precompile_encoding: PrecompileEncoding::Eip196Eip197, target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`, readable before any instance exists
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading `Bn254ArkworksPairing::DECLARATION`, each enum field tested with `matches!` and each version with `==`
+      * `[ ]`   Assert: the module compiles only if every field holds
+    * `[ ]`   Compile-time assertion over `<Bn254ArkworksPairing as IPairingAdapter>::DECLARATION`
+      * `[ ]`   Contract: the trait constant carries the same fields as the inherent constant
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading the trait constant, each enum field tested with `matches!` and each version with `==`
+      * `[ ]`   Assert: the module compiles only if every field holds
+    * `[ ]`   Compile-time assertion over `<Bn254ArkworksPairing as IPairingAdapter>::CONCRETE`
+      * `[ ]`   Contract: the trait constant is `PairingConcrete::Bn254Arkworks`
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading the trait constant under `matches!`
+      * `[ ]`   Assert: the module compiles only if the constant is `PairingConcrete::Bn254Arkworks`
+    * `[ ]`   `bn254_arkworks_scalar_is_zeroize_on_drop`
+      * `[ ]`   Contract: `Bn254ArkworksScalar` implements `ZeroizeOnDrop`, the marker the sampling bound requires
+      * `[ ]`   Collaborators: none
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: `requires_zeroize_on_drop::<Bn254ArkworksScalar>()`
+      * `[ ]`   Assert: the block compiles only if the type implements `ZeroizeOnDrop`
+    * `[ ]`   `bn254_arkworks_scalar_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living scalar → its `value` is zero
+      * `[ ]`   Collaborators: arkworks' `Fr` zeroization, run for real as the vendor; fixture `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_bn254_arkworks_scalar` with the value override `Fr::from(5u64)`, so a scalar left unchanged differs from the expected zero
+      * `[ ]`   Act: `scalar.zeroize()`
+      * `[ ]`   Assert: `scalar.value` equals `Fr::from(0u64)`
+    * `[ ]`   `reduced_pairing_correction_inverts_the_library_multiple`
+      * `[ ]`   Contract: any params → `Ok(Bn254ArkworksPairing)` whose `reduced_pairing_correction` is the inverse in the scalar field of `2x(6x^2 + 3x + 1)` for the curve seed `x`
+      * `[ ]`   Collaborators: arkworks' `Fr` arithmetic, run for real as the vendor; the expectation is `library_multiple()`, computed in the fixtures from the seed by field multiplication and independent of the Fermat inversion `try_new` performs
+      * `[ ]`   Arrange: `Bn254ArkworksPairingConstructorParams` by its production value
+      * `[ ]`   Act: `Bn254ArkworksPairing::try_new(Bn254ArkworksPairingConstructorParams)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(pairing) = …;`; `pairing.reduced_pairing_correction * library_multiple()` equals `Fr::from(1u64)`
+    * `[ ]`   `uniform_bytes_length_is_twice_the_group_order_width`
+      * `[ ]`   Contract: `UNIFORM_BYTES_LENGTH` is twice the byte width of the group order
+      * `[ ]`   Collaborators: none
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: reading `<Bn254ArkworksScalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH`
+      * `[ ]`   Assert: the constant equals the literal 64 written in the assertion
+    * `[ ]`   `g1_generator_returns_the_eip_196_generator`
+      * `[ ]`   Contract: any call → `Ok(G1GeneratorSuccessReturn { point })` holding the first group's generator
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; `G1GeneratorParams` and `G1GeneratorPayload` by their production values
+      * `[ ]`   Arrange: `build_bn254_arkworks_pairing()`
+      * `[ ]`   Act: `g1_generator(G1GeneratorParams, G1GeneratorPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.point.value` equals `eip_196_generator()`
+    * `[ ]`   `g2_generator_returns_the_eip_197_generator`
+      * `[ ]`   Contract: any call → `Ok(G2GeneratorSuccessReturn { point })` holding the second group's generator
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; `G2GeneratorParams` and `G2GeneratorPayload` by their production values
+      * `[ ]`   Arrange: `build_bn254_arkworks_pairing()`
+      * `[ ]`   Act: `g2_generator(G2GeneratorParams, G2GeneratorPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.point.value` equals `eip_197_generator()`
+    * `[ ]`   `add_g1_of_a_point_and_its_negation_is_the_identity`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG1SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: arkworks' affine addition, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_add_g1_payload`, and `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_add_g1_payload` with the left override `build_bn254_arkworks_g1` at its default generator and the right override `build_bn254_arkworks_g1` with the value `eip_196_negated_generator()`, so a sum that returns either input differs from the identity
+      * `[ ]`   Act: `add_g1(AddG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `add_g1_of_the_identity_and_a_point_is_the_point`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG1SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: arkworks' affine addition, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_add_g1_payload`, and `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_add_g1_payload` with the left override `build_bn254_arkworks_g1` with the value `G1Affine::identity()` and the right override `build_bn254_arkworks_g1` at its default generator, so a sum that returns the left input differs from the generator
+      * `[ ]`   Act: `add_g1(AddG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_196_generator()`
+    * `[ ]`   `add_g2_of_a_point_and_its_negation_is_the_identity`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG2SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: arkworks' affine addition, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_add_g2_payload`, and `build_bn254_arkworks_g2`
+      * `[ ]`   Arrange: `build_add_g2_payload` with the left override `build_bn254_arkworks_g2` at its default generator and the right override `build_bn254_arkworks_g2` with the value `-eip_197_generator()`, so a sum that returns either input differs from the identity
+      * `[ ]`   Act: `add_g2(AddG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `add_g2_of_the_identity_and_a_point_is_the_point`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG2SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: arkworks' affine addition, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_add_g2_payload`, and `build_bn254_arkworks_g2`
+      * `[ ]`   Arrange: `build_add_g2_payload` with the left override `build_bn254_arkworks_g2` with the value `G2Affine::identity()` and the right override `build_bn254_arkworks_g2` at its default generator, so a sum that returns the left input differs from the generator
+      * `[ ]`   Act: `add_g2(AddG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_197_generator()`
+    * `[ ]`   `mul_g1_by_one_is_the_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_mul_g1_payload`, `build_bn254_arkworks_g1`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bn254_arkworks_g1` at its default generator and the scalar override `build_bn254_arkworks_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_196_generator()`
+    * `[ ]`   `mul_g1_by_zero_is_the_identity`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_mul_g1_payload`, `build_bn254_arkworks_g1`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bn254_arkworks_g1` at its default generator and the scalar override `build_bn254_arkworks_scalar` with the value `Fr::from(0u64)`, so a product that returns the point differs from the identity
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `G1Affine::identity()`
+    * `[ ]`   `mul_g1_by_the_group_order_minus_one_is_the_negated_generator`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_mul_g1_payload`, `build_bn254_arkworks_g1`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bn254_arkworks_g1` at its default generator and the scalar override `build_bn254_arkworks_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`, so a product that ignores the scalar differs from the negated generator
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_196_negated_generator()`
+    * `[ ]`   `mul_g2_by_one_is_the_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_mul_g2_payload`, `build_bn254_arkworks_g2`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bn254_arkworks_g2` at its default generator and the scalar override `build_bn254_arkworks_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_197_generator()`
+    * `[ ]`   `mul_g2_by_zero_is_the_identity`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_mul_g2_payload`, `build_bn254_arkworks_g2`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bn254_arkworks_g2` at its default generator and the scalar override `build_bn254_arkworks_scalar` with the value `Fr::from(0u64)`, so a product that returns the point differs from the identity
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `G2Affine::identity()`
+    * `[ ]`   `mul_g2_by_the_group_order_minus_one_is_the_negated_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_mul_g2_payload`, `build_bn254_arkworks_g2`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bn254_arkworks_g2` at its default generator and the scalar override `build_bn254_arkworks_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`, so a product that ignores the scalar differs from the negated generator
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `-eip_197_generator()`
+    * `[ ]`   `msm_g1_of_no_terms_is_the_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the identity
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing` and `build_msm_g1_payload`
+      * `[ ]`   Arrange: `build_msm_g1_payload` at its default of no terms
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `msm_g1_pairs_each_base_with_its_own_scalar`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_msm_g1_payload`, `build_msm_g1_term`, `build_bn254_arkworks_g1`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_msm_g1_payload` with the terms override holding two `build_msm_g1_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `eip_196_negated_generator()` with the scalar `Fr::from(0u64)`, so bases and scalars exchanged between terms yield the negated generator
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_196_generator()`
+    * `[ ]`   `msm_g1_sums_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_msm_g1_payload`, `build_msm_g1_term`, `build_bn254_arkworks_g1`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_msm_g1_payload` with the terms override holding two `build_msm_g1_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `eip_196_negated_generator()` with the scalar `Fr::from(1u64)`, so a sum over the first term alone differs from the identity
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `msm_g2_of_no_terms_is_the_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the identity
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing` and `build_msm_g2_payload`
+      * `[ ]`   Arrange: `build_msm_g2_payload` at its default of no terms
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `msm_g2_pairs_each_base_with_its_own_scalar`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_msm_g2_payload`, `build_msm_g2_term`, `build_bn254_arkworks_g2`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_msm_g2_payload` with the terms override holding two `build_msm_g2_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `-eip_197_generator()` with the scalar `Fr::from(0u64)`, so bases and scalars exchanged between terms yield the negated generator
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_197_generator()`
+    * `[ ]`   `msm_g2_sums_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_msm_g2_payload`, `build_msm_g2_term`, `build_bn254_arkworks_g2`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_msm_g2_payload` with the terms override holding two `build_msm_g2_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `-eip_197_generator()` with the scalar `Fr::from(1u64)`, so a sum over the first term alone differs from the identity
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `pairing_product_is_one_of_no_terms_is_true`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` true
+      * `[ ]`   Collaborators: arkworks' multi-pairing, run for real as the vendor; fixtures `build_bn254_arkworks_pairing` and `build_pairing_product_is_one_payload`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` at its default of no terms
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is true
+    * `[ ]`   `pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to the target group's identity → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` true
+      * `[ ]`   Collaborators: arkworks' multi-pairing, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_pairing_product_is_one_payload`, `build_pairing_product_term`, and `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` with the terms override holding two `build_pairing_product_term` values: the generators, and the first-group override `build_bn254_arkworks_g1` with the value `eip_196_negated_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is true
+    * `[ ]`   `pairing_product_is_one_of_the_generators_is_false`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to a value other than the target group's identity → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` false
+      * `[ ]`   Collaborators: arkworks' multi-pairing, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_pairing_product_is_one_payload`, and `build_pairing_product_term`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is false
+    * `[ ]`   `decode_g1_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 64` → `Err(DecodeG1ErrorReturn::WrongLength { expected: 64, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(63)`, which differs from the required length
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::WrongLength { expected: 64, actual: 63 })`, the whole expected error
+    * `[ ]`   `decode_g1_rejects_a_non_canonical_coordinate`
+      * `[ ]`   Contract: a 64-byte payload whose first half is at least the base field modulus → `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: arkworks' field reduction, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `vector_bytes(G1_X_AT_MODULUS_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_X_AT_MODULUS_HEX)`, whose reduced coordinates would otherwise fail the curve check, so a decoder that checks the curve first returns a different error
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_decodes_the_identity_from_zero_bytes`
+      * `[ ]`   Contract: a 64-byte payload with both coordinates zero → `Ok(DecodeG1SuccessReturn { point })` holding the first group's identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(64)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `G1Affine::identity()`
+    * `[ ]`   `decode_g1_rejects_a_point_off_the_curve`
+      * `[ ]`   Contract: a canonical 64-byte payload that satisfies no curve equation → `Err(DecodeG1ErrorReturn::NotOnCurve)`
+      * `[ ]`   Collaborators: arkworks' curve check, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `vector_bytes(G1_OFF_CURVE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_OFF_CURVE_HEX)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g1_decodes_the_eip_196_generator`
+      * `[ ]`   Contract: a canonical 64-byte payload on the curve → `Ok(DecodeG1SuccessReturn { point })` holding that point
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `vector_bytes(G1_GENERATOR_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_GENERATOR_HEX)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `eip_196_generator()`
+    * `[ ]`   `decode_g2_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 128` → `Err(DecodeG2ErrorReturn::WrongLength { expected: 128, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(127)`, which differs from the required length
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::WrongLength { expected: 128, actual: 127 })`, the whole expected error
+    * `[ ]`   `decode_g2_rejects_a_non_canonical_coordinate`
+      * `[ ]`   Contract: a 128-byte payload whose first coordinate is at least the base field modulus → `Err(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: arkworks' field reduction, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `vector_bytes(G2_X_C1_AT_MODULUS_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_X_C1_AT_MODULUS_HEX)`, whose reduced coordinates would otherwise fail the curve check, so a decoder that checks the curve first returns a different error
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g2_decodes_the_identity_from_zero_bytes`
+      * `[ ]`   Contract: a 128-byte payload with every coordinate zero → `Ok(DecodeG2SuccessReturn { point })` holding the second group's identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(128)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `G2Affine::identity()`
+    * `[ ]`   `decode_g2_rejects_a_point_off_the_curve`
+      * `[ ]`   Contract: a canonical 128-byte payload that satisfies no curve equation → `Err(DecodeG2ErrorReturn::NotOnCurve)`
+      * `[ ]`   Collaborators: arkworks' curve check, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `vector_bytes(G2_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g2_rejects_a_point_outside_the_subgroup`
+      * `[ ]`   Contract: a canonical 128-byte payload on the curve and outside the prime-order subgroup → `Err(DecodeG2ErrorReturn::NotInSubgroup)`
+      * `[ ]`   Collaborators: arkworks' subgroup check, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `g2_outside_subgroup_bytes()`
+      * `[ ]`   Arrange: the payload `g2_outside_subgroup_bytes()`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_g2_decodes_the_eip_197_generator`
+      * `[ ]`   Contract: a canonical 128-byte payload on the curve and in the subgroup → `Ok(DecodeG2SuccessReturn { point })` holding that point
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `vector_bytes(G2_GENERATOR_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_GENERATOR_HEX)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `eip_197_generator()`
+    * `[ ]`   `decode_scalar_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 32` → `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(31)`, which differs from the required length
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: 31 })`, the whole expected error
+    * `[ ]`   `decode_scalar_rejects_the_group_order`
+      * `[ ]`   Contract: a 32-byte payload at least the group order → `Err(DecodeScalarErrorReturn::NonCanonical)`
+      * `[ ]`   Collaborators: arkworks' field reduction, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `vector_bytes(GROUP_ORDER_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(GROUP_ORDER_HEX)`, whose reduction is zero and so differs from the bytes
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeScalarErrorReturn::NonCanonical)`
+    * `[ ]`   `decode_scalar_decodes_the_largest_canonical_scalar`
+      * `[ ]`   Contract: a canonical 32-byte payload → `Ok(DecodeScalarSuccessReturn { scalar })` holding that scalar
+      * `[ ]`   Collaborators: arkworks' field reduction, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; the untrusted bytes from `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)`
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.value` equals `-Fr::from(1u64)`
+    * `[ ]`   `encode_g1_writes_the_eip_196_generator`
+      * `[ ]`   Contract: a first-group point → `Ok(EncodeG1SuccessReturn { bytes })` holding `x` then `y`, each 32 bytes big-endian, in this concrete's `Bn254ArkworksEncodedG1`
+      * `[ ]`   Collaborators: arkworks' coordinate encoding, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_encode_g1_payload`, and `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_encode_g1_payload` with the point override `build_bn254_arkworks_g1` at its default generator
+      * `[ ]`   Act: `encode_g1(EncodeG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` binds to a `Bn254ArkworksEncodedG1` typed binding; its bytes equal `vector_bytes(G1_GENERATOR_HEX)` as a byte slice
+    * `[ ]`   `encode_g1_writes_the_identity_as_zero_bytes`
+      * `[ ]`   Contract: the first group's identity → `Ok(EncodeG1SuccessReturn { bytes })` holding 64 zero bytes
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_encode_g1_payload`, and `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_encode_g1_payload` with the point override `build_bn254_arkworks_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `encode_g1(EncodeG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes` equal `zero_bytes(64)` as a byte slice
+    * `[ ]`   `encode_g2_writes_the_eip_197_generator`
+      * `[ ]`   Contract: a second-group point → `Ok(EncodeG2SuccessReturn { bytes })` holding `x.c1`, `x.c0`, `y.c1`, `y.c0`, each 32 bytes big-endian, in this concrete's `Bn254ArkworksEncodedG2`
+      * `[ ]`   Collaborators: arkworks' coordinate encoding, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_encode_g2_payload`, and `build_bn254_arkworks_g2`
+      * `[ ]`   Arrange: `build_encode_g2_payload` with the point override `build_bn254_arkworks_g2` at its default generator
+      * `[ ]`   Act: `encode_g2(EncodeG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` binds to a `Bn254ArkworksEncodedG2` typed binding; its bytes equal `vector_bytes(G2_GENERATOR_HEX)` as a byte slice
+    * `[ ]`   `encode_g2_writes_the_identity_as_zero_bytes`
+      * `[ ]`   Contract: the second group's identity → `Ok(EncodeG2SuccessReturn { bytes })` holding 128 zero bytes
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_encode_g2_payload`, and `build_bn254_arkworks_g2`
+      * `[ ]`   Arrange: `build_encode_g2_payload` with the point override `build_bn254_arkworks_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `encode_g2(EncodeG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes` equal `zero_bytes(128)` as a byte slice
+    * `[ ]`   `encode_scalar_writes_the_largest_canonical_scalar`
+      * `[ ]`   Contract: a scalar → `Ok(EncodeScalarSuccessReturn { bytes })` holding its 32 big-endian bytes in this concrete's `Bn254ArkworksEncodedScalar`, inside a `Secret`
+      * `[ ]`   Collaborators: arkworks' integer encoding, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_encode_scalar_payload`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_encode_scalar_payload` with the scalar override `build_bn254_arkworks_scalar` with the value `-Fr::from(1u64)`
+      * `[ ]`   Act: `encode_scalar(EncodeScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes.expose()` binds to a `Bn254ArkworksEncodedScalar` typed binding; its bytes equal `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)` as a byte slice
+    * `[ ]`   `sample_from_uniform_bytes_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.uniform.expose().len() != 64` → `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
+      * `[ ]`   Collaborators: `Secret::expose`, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `zero_bytes(63)`
+      * `[ ]`   Act: `Bn254ArkworksScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 63 })`, the whole expected error
+    * `[ ]`   `sample_from_uniform_bytes_reduces_the_group_order_to_zero`
+      * `[ ]`   Contract: a 64-byte uniform input → `Ok(SampleUniformScalarSuccessReturn { scalar })` holding the input reduced modulo the group order, inside a `Secret`
+      * `[ ]`   Collaborators: `Secret::expose` and arkworks' modular reduction, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `vector_bytes(UNIFORM_GROUP_ORDER_HEX)`, whose reduction is zero and so differs from the input
+      * `[ ]`   Act: `Bn254ArkworksScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.expose().value` equals `Fr::from(0u64)`
+    * `[ ]`   `add_scalar_of_two_and_three_is_five`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddScalarSuccessReturn { sum })` holding their sum modulo the group order
+      * `[ ]`   Collaborators: arkworks' `Fr` addition, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_add_scalar_payload`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_add_scalar_payload` with the left override `build_bn254_arkworks_scalar` with the value `Fr::from(2u64)` and the right override with the value `Fr::from(3u64)`
+      * `[ ]`   Act: `add_scalar(AddScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `Fr::from(5u64)`
+    * `[ ]`   `add_scalar_reduces_modulo_the_group_order`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddScalarSuccessReturn { sum })` holding their sum modulo the group order
+      * `[ ]`   Collaborators: arkworks' `Fr` addition, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_add_scalar_payload`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_add_scalar_payload` with the left override `build_bn254_arkworks_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)` and the right override with the value `Fr::from(2u64)`, whose integer sum exceeds the group order
+      * `[ ]`   Act: `add_scalar(AddScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `Fr::from(1u64)`
+    * `[ ]`   `mul_scalar_of_two_and_three_is_six`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(MulScalarSuccessReturn { product })` holding their product modulo the group order
+      * `[ ]`   Collaborators: arkworks' `Fr` multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_mul_scalar_payload`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_scalar_payload` with the left override `build_bn254_arkworks_scalar` with the value `Fr::from(2u64)` and the right override with the value `Fr::from(3u64)`
+      * `[ ]`   Act: `mul_scalar(MulScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `Fr::from(6u64)`
+    * `[ ]`   `mul_scalar_reduces_modulo_the_group_order`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(MulScalarSuccessReturn { product })` holding their product modulo the group order
+      * `[ ]`   Collaborators: arkworks' `Fr` multiplication, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_mul_scalar_payload`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_scalar_payload` with the left override `build_bn254_arkworks_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)` and the right override with the value `Fr::from(2u64)`, whose integer product exceeds the group order
+      * `[ ]`   Act: `mul_scalar(MulScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `scalar_value(GROUP_ORDER_MINUS_TWO_HEX)`
+    * `[ ]`   `neg_scalar_of_one_is_the_group_order_minus_one`
+      * `[ ]`   Contract: `payload.scalar` → `Ok(NegScalarSuccessReturn { negation })` holding the group order minus the scalar
+      * `[ ]`   Collaborators: arkworks' `Fr` negation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_neg_scalar_payload`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_neg_scalar_payload` with the scalar override `build_bn254_arkworks_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `neg_scalar(NegScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`
+    * `[ ]`   `neg_scalar_of_zero_is_zero`
+      * `[ ]`   Contract: `payload.scalar` of zero → `Ok(NegScalarSuccessReturn { negation })` holding zero
+      * `[ ]`   Collaborators: arkworks' `Fr` negation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_neg_scalar_payload`, and `build_bn254_arkworks_scalar`
+      * `[ ]`   Arrange: `build_neg_scalar_payload` with the scalar override `build_bn254_arkworks_scalar` with the value `Fr::from(0u64)`
+      * `[ ]`   Act: `neg_scalar(NegScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `Fr::from(0u64)`
+    * `[ ]`   `neg_g1_of_the_generator_is_the_negated_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(NegG1SuccessReturn { negation })` holding `(x, p - y)` for a point `(x, y)`
+      * `[ ]`   Collaborators: arkworks' affine negation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_neg_g1_payload`, and `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_neg_g1_payload` with the point override `build_bn254_arkworks_g1` at its default generator
+      * `[ ]`   Act: `neg_g1(NegG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `eip_196_negated_generator()`
+    * `[ ]`   `neg_g1_of_the_identity_is_the_identity`
+      * `[ ]`   Contract: `payload.point` of the identity → `Ok(NegG1SuccessReturn { negation })` holding the identity
+      * `[ ]`   Collaborators: arkworks' affine negation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_neg_g1_payload`, and `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_neg_g1_payload` with the point override `build_bn254_arkworks_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `neg_g1(NegG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `G1Affine::identity()`
+    * `[ ]`   `neg_g2_negates_each_y_coefficient_modulo_the_base_field`
+      * `[ ]`   Contract: `payload.point` → `Ok(NegG2SuccessReturn { negation })` holding `(x, p - y)` for a point `(x, y)`, each `y` coefficient negated
+      * `[ ]`   Collaborators: arkworks' affine negation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_neg_g2_payload`, and `build_bn254_arkworks_g2`
+      * `[ ]`   Arrange: `build_neg_g2_payload` with the point override `build_bn254_arkworks_g2` at its default generator
+      * `[ ]`   Act: `neg_g2(NegG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the negation's `xy()` has an `x` equal to the generator's `x` from `eip_197_generator().xy()`; its `y.c0` and `y.c1`, each as a `BigUint`, equal `base_field_modulus()` minus the generator's corresponding coefficient as a `BigUint`
+    * `[ ]`   `neg_g2_of_the_identity_is_the_identity`
+      * `[ ]`   Contract: `payload.point` of the identity → `Ok(NegG2SuccessReturn { negation })` holding the identity
+      * `[ ]`   Collaborators: arkworks' affine negation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_neg_g2_payload`, and `build_bn254_arkworks_g2`
+      * `[ ]`   Arrange: `build_neg_g2_payload` with the point override `build_bn254_arkworks_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `neg_g2(NegG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `G2Affine::identity()`
+    * `[ ]`   `is_identity_g1_is_true_for_the_identity`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG1SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_is_identity_g1_payload`, and `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_is_identity_g1_payload` with the point override `build_bn254_arkworks_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `is_identity_g1(IsIdentityG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is true
+    * `[ ]`   `is_identity_g1_is_false_for_the_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG1SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_is_identity_g1_payload`, and `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_is_identity_g1_payload` with the point override `build_bn254_arkworks_g1` at its default generator
+      * `[ ]`   Act: `is_identity_g1(IsIdentityG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is false
+    * `[ ]`   `is_identity_g2_is_true_for_the_identity`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG2SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_is_identity_g2_payload`, and `build_bn254_arkworks_g2`
+      * `[ ]`   Arrange: `build_is_identity_g2_payload` with the point override `build_bn254_arkworks_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `is_identity_g2(IsIdentityG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is true
+    * `[ ]`   `is_identity_g2_is_false_for_the_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG2SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_is_identity_g2_payload`, and `build_bn254_arkworks_g2`
+      * `[ ]`   Arrange: `build_is_identity_g2_payload` with the point override `build_bn254_arkworks_g2` at its default generator
+      * `[ ]`   Act: `is_identity_g2(IsIdentityG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is false
+    * `[ ]`   `pairing_product_of_no_terms_is_the_target_group_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(PairingProductSuccessReturn { product })` holding the target group's identity
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing` and `build_pairing_product_payload`
+      * `[ ]`   Arrange: `build_pairing_product_payload` at its default of no terms
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` is the identity under `is_zero()`
+    * `[ ]`   `pairing_product_of_the_generators_is_not_the_target_group_identity`
+      * `[ ]`   Contract: a pairing of the generators → `Ok(PairingProductSuccessReturn { product })` holding a value other than the target group's identity
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` is not the identity under `is_zero()`
+    * `[ ]`   `pairing_product_is_bilinear`
+      * `[ ]`   Contract: a term whose first-group element is twice the generator → `Ok(PairingProductSuccessReturn { product })` holding the generators' pairing raised to the power two
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_pairing_product_payload`, `build_pairing_product_term`, and `build_bn254_arkworks_g1`; the expectation is `definition_value_power`, the identifier's definition raised to a power in the fixtures, independent of the correction `pairing_product` applies
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` with the first-group override `build_bn254_arkworks_g1` with the value `eip_196_doubled_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.0` equals `definition_value_power(eip_196_generator(), eip_197_generator(), 2)`
+    * `[ ]`   `pairing_product_multiplies_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(PairingProductSuccessReturn { product })` holding the product of each term's pairing
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`; the expectation is `definition_value_power`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding two `build_pairing_product_term` values at their default generators, so a product over one term differs from the expected square
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.0` equals `definition_value_power(eip_196_generator(), eip_197_generator(), 2)`
+    * `[ ]`   `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to the target group's identity → `Ok(PairingProductSuccessReturn { product })` holding the identity
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_pairing_product_payload`, `build_pairing_product_term`, and `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding two `build_pairing_product_term` values: the generators, and the first-group override `build_bn254_arkworks_g1` with the value `eip_196_negated_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` is the identity under `is_zero()`
+    * `[ ]`   `pairing_product_of_the_generators_equals_the_definition`
+      * `[ ]`   Contract: a pairing of the generators → `Ok(PairingProductSuccessReturn { product })` holding the Miller loop's value raised to the exact exponent `(p^12 - 1) / r`, the value `TargetGroupEncodingIdentifier::Bn254V1` defines
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`; the expectation is `definition_value`, the Miller loop over the generators raised to `definition_exponent()` built by `num-bigint`, independent of the correction `pairing_product` applies
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.0` equals `definition_value(eip_196_generator(), eip_197_generator())`
+    * `[ ]`   `encode_gt_writes_the_target_group_identity_with_c0_c0_c0_first`
+      * `[ ]`   Contract: a target-group value → `Ok(EncodeGtSuccessReturn { bytes })` holding its twelve coefficients in tower order, `c0.c0.c0` first, each 32 bytes big-endian, inside a `Secret`
+      * `[ ]`   Collaborators: arkworks' integer encoding, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_encode_gt_payload`, and `build_bn254_arkworks_gt`; the expectation is `gt_identity_encoding()`
+      * `[ ]`   Arrange: `build_encode_gt_payload` with the value override `build_bn254_arkworks_gt` with the value `PairingOutput(Fq12::ONE)`, the target group's identity
+      * `[ ]`   Act: `encode_gt(EncodeGtParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes.expose()` binds to a `Bn254ArkworksEncodedGt` typed binding; its bytes equal `gt_identity_encoding()` as a byte slice
+    * `[ ]`   `scalar_field_order_is_the_group_order`
+      * `[ ]`   Contract: any call → `Ok(ScalarFieldOrderSuccessReturn { bytes })` holding the group order's 32 big-endian bytes
+      * `[ ]`   Collaborators: arkworks' scalar field modulus, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; `ScalarFieldOrderParams` and `ScalarFieldOrderPayload` by their production values
+      * `[ ]`   Arrange: `build_bn254_arkworks_pairing()`
+      * `[ ]`   Act: `scalar_field_order(ScalarFieldOrderParams, ScalarFieldOrderPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` equals `vector_bytes(GROUP_ORDER_HEX)`
+    * `[ ]`   `g1_outside_subgroup_encoding_is_absent_where_the_cofactor_is_one`
+      * `[ ]`   Contract: any call → `Ok(G1OutsideSubgroupEncodingSuccessReturn { bytes: None })`
+      * `[ ]`   Collaborators: none called; fixture `build_bn254_arkworks_pairing`; `G1OutsideSubgroupEncodingParams` and `G1OutsideSubgroupEncodingPayload` by their production values
+      * `[ ]`   Arrange: `build_bn254_arkworks_pairing()`
+      * `[ ]`   Act: `g1_outside_subgroup_encoding(G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.bytes.is_none()` is true
+    * `[ ]`   `g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup`
+      * `[ ]`   Contract: any call → `Ok(G2OutsideSubgroupEncodingSuccessReturn { bytes })` holding the precompile encoding of an on-curve point outside the prime-order subgroup, in this concrete's `Bn254ArkworksEncodedG2`
+      * `[ ]`   Collaborators: arkworks' curve and subgroup checks, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; `G2OutsideSubgroupEncodingParams` and `G2OutsideSubgroupEncodingPayload` by their production values; the point read back by `g2_point_from_encoding`
+      * `[ ]`   Arrange: `build_bn254_arkworks_pairing()`
+      * `[ ]`   Act: `g2_outside_subgroup_encoding(G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.bytes` binds to a `Bn254ArkworksEncodedG2` typed binding; the point `g2_point_from_encoding` reads from its bytes satisfies `is_on_curve()` and does not satisfy `is_in_correct_subgroup_assuming_on_curve()`
+    * `[ ]`   `g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root`
+      * `[ ]`   Contract: any call → the encoded point's first coordinate is `(c0, 0)` with the least `c0` of an on-curve point outside the subgroup, and its `y` is the lesser of the two roots, compared by `y.c1` and then `y.c0`
+      * `[ ]`   Collaborators: arkworks' curve and subgroup checks, run for real as the vendor; fixture `build_bn254_arkworks_pairing`; `G2OutsideSubgroupEncodingParams` and `G2OutsideSubgroupEncodingPayload` by their production values; the expectations are `g2_outside_subgroup_bytes()`, the ascending search in the fixtures, and `base_field_modulus()`
+      * `[ ]`   Arrange: `build_bn254_arkworks_pairing()`
+      * `[ ]`   Act: `g2_outside_subgroup_encoding(G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the encoding's `x.c1` quarter, its first 32 bytes, is all zero; its `x.c0` quarter, its second 32 bytes, equals the `x.c0` quarter of `g2_outside_subgroup_bytes()`; the pair `y.c1`, `y.c0` read from its last 64 bytes as `BigUint` values is not greater than the pair of their negations, each `base_field_modulus()` minus the coefficient, reduced to zero where the coefficient is zero
+    * `[ ]`   `encode_gt_writes_the_twelve_coefficients_in_tower_order`
+      * `[ ]`   Contract: a target-group value → `Ok(EncodeGtSuccessReturn { bytes })` holding its twelve coefficients in tower order, `c0.c0.c0` through `c1.c2.c1`, each 32 bytes big-endian, inside a `Secret`
+      * `[ ]`   Collaborators: arkworks' integer encoding, run for real as the vendor; fixtures `build_bn254_arkworks_pairing`, `build_encode_gt_payload`, and `build_bn254_arkworks_gt`; the expectation is `sequential_gt_encoding()`
+      * `[ ]`   Arrange: `build_encode_gt_payload` with the value override `build_bn254_arkworks_gt` with the value `gt_with_sequential_coefficients()`, whose twelve coefficients are distinct, so any exchange of two positions changes the bytes
+      * `[ ]`   Act: `encode_gt(EncodeGtParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes.expose()` equal `sequential_gt_encoding()` as a byte slice
+    * `[ ]`   `bn254_arkworks_g1_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living first-group element → its `value` is the point `new_unchecked(0, 0)`
+      * `[ ]`   Collaborators: arkworks' affine zeroization, run for real as the vendor; fixture `build_bn254_arkworks_g1`
+      * `[ ]`   Arrange: `build_bn254_arkworks_g1` at its default generator, which differs from the expected point
+      * `[ ]`   Act: `g1.zeroize()`
+      * `[ ]`   Assert: `g1.value` equals `G1Affine::new_unchecked(Fq::from(0u64), Fq::from(0u64))`
+    * `[ ]`   `bn254_arkworks_g2_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living second-group element → its `value` is the point `new_unchecked(0, 0)`
+      * `[ ]`   Collaborators: arkworks' affine zeroization, run for real as the vendor; fixture `build_bn254_arkworks_g2`
+      * `[ ]`   Arrange: `build_bn254_arkworks_g2` at its default generator, which differs from the expected point
+      * `[ ]`   Act: `g2.zeroize()`
+      * `[ ]`   Assert: `g2.value` equals `G2Affine::new_unchecked(Fq2::new(Fq::from(0u64), Fq::from(0u64)), Fq2::new(Fq::from(0u64), Fq::from(0u64)))`
+    * `[ ]`   `bn254_arkworks_gt_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living target-group value → every coefficient of its `Fq12` is zero
+      * `[ ]`   Collaborators: arkworks' `PairingOutput` zeroization, run for real as the vendor; fixture `build_bn254_arkworks_gt`
+      * `[ ]`   Arrange: `build_bn254_arkworks_gt` at its default pairing of the generators, whose `Fq12` is nonzero
+      * `[ ]`   Act: `gt.zeroize()`
+      * `[ ]`   Assert: `gt.value.0.is_zero()` is true
+    * `[ ]`   `bn254_arkworks_encoded_scalar_zeroize_clears_its_bytes`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living encoded scalar → every byte is zero
+      * `[ ]`   Collaborators: none; fixture `build_bn254_arkworks_encoded_scalar`
+      * `[ ]`   Arrange: `build_bn254_arkworks_encoded_scalar` at its nonzero default
+      * `[ ]`   Act: `encoded.zeroize()`
+      * `[ ]`   Assert: the bytes of `encoded` equal `zero_bytes(32)` as a byte slice
+    * `[ ]`   `bn254_arkworks_encoded_gt_zeroize_clears_its_bytes`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living encoded target-group value → every byte is zero
+      * `[ ]`   Collaborators: none; fixture `build_bn254_arkworks_encoded_gt`
+      * `[ ]`   Arrange: `build_bn254_arkworks_encoded_gt` at its nonzero default
+      * `[ ]`   Act: `encoded.zeroize()`
+      * `[ ]`   Assert: the bytes of `encoded` equal `zero_bytes(384)` as a byte slice
 
   * `[✅]`   `construction`
     * `[✅]`   `Bn254ArkworksPairing::try_new` is the concrete's only producer, computing its one field, and its only caller is the pairing factory, which reads `Bn254ArkworksPairing::DECLARATION` before constructing
@@ -640,7 +1238,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`; the correction is computed in `try_new` and read from no configuration; neither the order nor a point is written as a literal
 
   * `[✅]`   `adapters/pairing/src/bn254_arkworks/provides.rs`
-    * `[✅]`   The one line `pub(crate) use super::interface::*;`, exposing every item of the concrete's interface to the crate and nothing beyond it
+    * `[✅]`   `pub(crate) use super::interface::*;` and `#[cfg(test)] pub(crate) use super::mock::*;`, exposing every item of the concrete's interface to the crate and, in the crate's own test build, the concrete's builders, fixtures, and helpers, and nothing beyond them
 
   * `[✅]`   `directionality`
     * `[✅]`   `bn254_arkworks` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on the arkworks crates; the `factory` module depends on `domain` and `zeroize` and on no concrete; `IPairingArithmetic` and `IPairingReference` each depend on `IPairingAdapter` within the `factory` module; among repository crates the crate depends on `crates/domain` alone at runtime and on `adapters/random` for tests only, the dependency map's edge
@@ -700,9 +1298,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Reverse dependency: `pairing/factory`
 
   * `[ ]`   `context_slice`
-    * `[✅]`   From `halo2curves::bn256`: `Bn256`, `Fq`, `Fq2` with `Fq2::new(c0, c1)` and the accessors `c0()` and `c1()`, `Fq12` with `c0()` and `c1()` and the degree-six accessors `c0()`, `c1()`, and `c2()`, `Fr`, `G1`, `G1Affine`, `G2`, `G2Affine`, and `Gt` with `Gt::identity()` and `Gt::inner()`
+    * `[✅]`   From `halo2curves::bn256`: `Bn256`, `Fq`, `Fq2` with `Fq2::new(c0, c1)` and the accessors `c0()` and `c1()`, `Fq12` with `c0()` and `c1()` and the degree-six accessors `c0()`, `c1()`, and `c2()`, `Fr`, `G1`, `G1Affine`, `G2`, `G2Affine`, and `Gt` with `Gt::identity()`, `Gt::inner()`, and `PartialEq`
     * `[ ]`   `Fr::from(u64)` and `Fq::from(u64)`, the scalars and coordinates the test fixtures and expectations name
-    * `[✅]`   From `halo2curves::ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `Field` for `ZERO`, `ONE`, `is_zero()`, `square()`, `sqrt()` returning a `CtOption`, and `pow_vartime(&self, exp: impl AsRef<[u64]>)`, exponentiation by little-endian limbs; unary `-` on `Fq` and `Fq2`; `PrimeField` for `from_repr(repr) -> CtOption<Self>`, which reads 32 little-endian bytes and is none at or above the modulus, `to_repr()`, 32 little-endian bytes read by `as_ref()`, and `MODULUS`, the `&'static str` hex modulus with the `0x` prefix, on `Fq` and on `Fr`; `FromUniformBytes::<64>::from_uniform_bytes(&[u8; 64])`, a little-endian wide reduction
+    * `[✅]`   From `halo2curves::ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `Field` for `ZERO`, `ONE`, `is_zero()`, `square()`, `sqrt()` returning a `CtOption`, and `pow_vartime(&self, exp: impl AsRef<[u64]>)`, exponentiation by little-endian limbs; unary `-` on `Fq` and `Fq2` and binary `+` on `Fq2`; `PrimeField` for `from_repr(repr) -> CtOption<Self>`, which reads 32 little-endian bytes and is none at or above the modulus, `to_repr()`, 32 little-endian bytes read by `as_ref()`, and `MODULUS`, the `&'static str` hex modulus with the `0x` prefix, on `Fq` and on `Fr`; `FromUniformBytes::<64>::from_uniform_bytes(&[u8; 64])`, a little-endian wide reduction
     * `[✅]`   From `halo2curves::group`: `Curve::to_affine`, `Group::is_identity`, `prime::PrimeCurveAffine` for `generator()`, `identity()`, `is_identity()` returning a `Choice`, and `to_curve()`, `cofactor::CofactorGroup::is_torsion_free`, and the projective `+` and `* Fr`; unary `-` on `G1Affine` and `G2Affine`
     * `[✅]`   From `halo2curves`: `CurveAffine` for `from_xy(x, y) -> CtOption<Self>`, which is none off the curve, `coordinates() -> CtOption<Coordinates<Self>>`, and `b()`; `Coordinates` for `x()` and `y()`; `msm::msm_best(coeffs: &[C::Scalar], bases: &[C]) -> C::Curve`
     * `[✅]`   From `halo2curves::pairing`: `MultiMillerLoop::multi_miller_loop(&[(&G1Affine, &G2Affine)])` on `Bn256`, returning the unreduced `Fq12`, `MillerLoopResult::final_exponentiation` returning `Gt`, whose `is_identity()` is the check, and `Engine::pairing(&G1Affine, &G2Affine)` for the builder default
@@ -753,14 +1351,499 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `Ordering and edges`, a bulleted section: every decoder checks in the stated order, length, then canonicality, then identity, then curve, then subgroup, and copies each 32-byte coordinate out of the fixed-size array before reversing it to little-endian; an empty `msm` term list yields the identity, and an empty `pairing_product_is_one` term list yields `is_one: true`; halo2curves' `Fr` implements no `Zeroize`, so `Bn254Halo2curvesScalar`'s `Zeroize` implementation and its `Drop` set `value` to `Fr::ZERO` and pass `&self.value` to `black_box`, which keeps the clearing from being removed as a dead store, every clone a consumer places in a payload being cleared when the payload drops, and the same zero-then-`black_box` treatment clears the `Vec<Fr>` an `msm` builds; halo2curves' affine points and `Gt` implement no `Zeroize`, so `Bn254Halo2curvesG1`, `Bn254Halo2curvesG2`, and `Bn254Halo2curvesGt` clear by setting `value` to `G1Affine::identity()`, `G2Affine::identity()`, or `Gt::identity()` and passing `&self.value` to `black_box`, in their `Zeroize` implementations and their `Drop`; the outside-the-subgroup search is ascending from `c0 = 1` and stops at the first on-curve point outside the subgroup, the choice between a point and its negation follows the search and precedes the encoding, and the same call always returns the same bytes; `params` carries no control and is not read in any method, and no reference method reads its payload
 
   * `[ ]`   `adapters/pairing/src/bn254_halo2curves/mock.rs`
-    * `[ ]`   The module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `super::interface::{Bn254Halo2curvesG1, Bn254Halo2curvesG2, Bn254Halo2curvesGt, Bn254Halo2curvesPairing, Bn254Halo2curvesPairingConstructorParams, Bn254Halo2curvesScalar}`, `core::iter::successors`, `halo2curves::CurveAffine`, `halo2curves::bn256::{Bn256, Fq, Fq2, Fq12, Fr, G1Affine, G2Affine, Gt}`, `halo2curves::ff::{Field, PrimeField}`, `halo2curves::group::{cofactor::CofactorGroup, prime::PrimeCurveAffine}`, and `halo2curves::pairing::{Engine, MultiMillerLoop}`; and, `#[cfg(test)]`, `hex::decode`, `num_bigint::BigUint`, and `zeroize::ZeroizeOnDrop`
+    * `[ ]`   The module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `super::interface::{Bn254Halo2curvesEncodedGt, Bn254Halo2curvesEncodedScalar, Bn254Halo2curvesG1, Bn254Halo2curvesG2, Bn254Halo2curvesGt, Bn254Halo2curvesPairing, Bn254Halo2curvesPairingConstructorParams, Bn254Halo2curvesScalar}`, `core::iter::successors`, `halo2curves::CurveAffine`, `halo2curves::bn256::{Bn256, Fq, Fq2, Fq12, Fr, G1Affine, G2Affine, Gt}`, `halo2curves::ff::{Field, PrimeField}`, `halo2curves::group::{cofactor::CofactorGroup, prime::PrimeCurveAffine}`, and `halo2curves::pairing::{Engine, MultiMillerLoop}`; and, `#[cfg(test)]`, `halo2curves::group::Curve`, `hex::decode`, `num_bigint::BigUint`, and `zeroize::ZeroizeOnDrop`
     * `[✅]`   `impl Default for Bn254Halo2curvesScalar` returning `value: Fr::ONE`; `impl Default for Bn254Halo2curvesG1` returning `value: G1Affine::generator()`; `impl Default for Bn254Halo2curvesG2` returning `value: G2Affine::generator()`; `impl Default for Bn254Halo2curvesGt` returning `value: Bn256::pairing(&G1Affine::generator(), &G2Affine::generator())`, a non-identity target-group value; the family's generic builders and `MockIPairingAdapter` read these through `Default`
     * `[ ]`   The builders for the concrete's owned types, each overrides struct `#[derive(Default)]` with one `Option` field and each omitted value taking the type's `Default` above: `Bn254Halo2curvesScalarOverrides` with `pub value: Option<Fr>` and `build_bn254_halo2curves_scalar`; `Bn254Halo2curvesG1Overrides` with `pub value: Option<G1Affine>` and `build_bn254_halo2curves_g1`; `Bn254Halo2curvesG2Overrides` with `pub value: Option<G2Affine>` and `build_bn254_halo2curves_g2`; `Bn254Halo2curvesGtOverrides` with `pub value: Option<Gt>` and `build_bn254_halo2curves_gt`; no corruptions type and no invalidator, since none of these arrives as untrusted data
     * `[ ]`   `build_bn254_halo2curves_pairing() -> Bn254Halo2curvesPairing`, the real instance from `Bn254Halo2curvesPairing::try_new(Bn254Halo2curvesPairingConstructorParams)` through `let Ok(pairing) = …;`; the constructor params are fieldless, so the builder takes no overrides
-    * `[ ]`   The test fixtures, each `#[cfg(test)]`, since they use the crate's dev-dependencies: the constants `pairing/bn254_arkworks` states in its `mock.rs`, by the same names and values, and `UNIFORM_FIVE_HEX`, 63 zero bytes and `05`; the helpers `vector_bytes`, `zero_bytes`, `gt_identity_encoding`, `base_field_modulus`, and `requires_zeroize_on_drop` as `pairing/bn254_arkworks` states them; `scalar_value(hex: &str) -> Fr`, the 32 bytes of `vector_bytes(hex)` reversed to little-endian and read by `Fr::from_repr`, unpacked by `let Some(scalar) = Option::from(…) else { panic!("the scalar is canonical") };`; `eip_196_generator() -> G1Affine`, `G1Affine::from_xy(Fq::from(1u64), Fq::from(2u64))` unpacked the same way; `eip_196_negated_generator() -> G1Affine`, `G1Affine::from_xy` over the two 32-byte halves of `vector_bytes(NEG_G1_GENERATOR_HEX)`, each reversed to little-endian and read by `Fq::from_repr`; `eip_197_generator() -> G2Affine`, `G2Affine::from_xy(Fq2::new(x_c0, x_c1), Fq2::new(y_c0, y_c1))` over the four 32-byte quarters of `vector_bytes(G2_GENERATOR_HEX)`, read in order as `x_c1`, `x_c0`, `y_c1`, `y_c0`, each reversed to little-endian and read by `Fq::from_repr`; `g2_point_from_encoding(bytes: &[u8]) -> Option<G2Affine>`, the same reading over any 128 bytes, `None` off the curve; `g2_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `successors(Some(Fq::ONE), |c0| Some(*c0 + Fq::ONE)).find_map(|c0| { let x = Fq2::new(c0, Fq::ZERO); Option::<Fq2>::from((x.square() * x + G2Affine::b()).sqrt()).and_then(|y| Option::<G2Affine>::from(G2Affine::from_xy(x, y)).filter(|point| !bool::from(point.to_curve().is_torsion_free())).map(|_| (x, y))) })` unpacked by `let Some((x, y)) = … else { panic!("an on-curve point outside the subgroup exists") };`, encoded by extending with `to_repr().as_ref().iter().rev()` of `x.c1()`, `x.c0()`, `y.c1()`, `y.c0()`; `definition_exponent() -> Vec<u64>`, `let Some(p) = BigUint::parse_bytes(Fq::MODULUS.trim_start_matches("0x").as_bytes(), 16) else { panic!("the base field modulus parses") }; let Some(r) = BigUint::parse_bytes(Fr::MODULUS.trim_start_matches("0x").as_bytes(), 16) else { panic!("the group order parses") }; ((p.pow(12) - BigUint::from(1u32)) / r).to_u64_digits()`; `definition_value(g1: G1Affine, g2: G2Affine) -> Fq12`, `Bn256::multi_miller_loop(&[(&g1, &g2)]).pow_vartime(definition_exponent())`, the identifier's definition of the pairing value
+    * `[ ]`   The builders for the concrete's encoded scalar and encoded target-group types, each overrides struct `#[derive(Default)]` with one `Option` field: `Bn254Halo2curvesEncodedScalarOverrides` with `pub bytes: Option<[u8; 32]>` and `build_bn254_halo2curves_encoded_scalar(overrides: Bn254Halo2curvesEncodedScalarOverrides) -> Bn254Halo2curvesEncodedScalar`, the bytes defaulting to `[1u8; 32]`; `Bn254Halo2curvesEncodedGtOverrides` with `pub bytes: Option<[u8; 384]>` and `build_bn254_halo2curves_encoded_gt`, the bytes defaulting to `[1u8; 384]`; the defaults are nonzero so a zeroized value differs from a built one; no corruptions type and no invalidator, since neither arrives as untrusted data
+    * `[ ]`   The test fixtures, each `#[cfg(test)]`, since they use the crate's dev-dependencies: the constants `pairing/bn254_arkworks` states in its `mock.rs`, by the same names and values, and `UNIFORM_FIVE_HEX`, 63 zero bytes and `05`; the helpers `vector_bytes`, `zero_bytes`, `gt_identity_encoding`, `base_field_modulus`, and `requires_zeroize_on_drop` as `pairing/bn254_arkworks` states them; `scalar_value(hex: &str) -> Fr`, the 32 bytes of `vector_bytes(hex)` reversed to little-endian and read by `Fr::from_repr`, unpacked by `let Some(scalar) = Option::from(…) else { panic!("the scalar is canonical") };`; `eip_196_generator() -> G1Affine`, `G1Affine::from_xy(Fq::from(1u64), Fq::from(2u64))` unpacked the same way; `eip_196_negated_generator() -> G1Affine`, `G1Affine::from_xy` over the two 32-byte halves of `vector_bytes(NEG_G1_GENERATOR_HEX)`, each reversed to little-endian and read by `Fq::from_repr`; `eip_197_generator() -> G2Affine`, `G2Affine::from_xy(Fq2::new(x_c0, x_c1), Fq2::new(y_c0, y_c1))` over the four 32-byte quarters of `vector_bytes(G2_GENERATOR_HEX)`, read in order as `x_c1`, `x_c0`, `y_c1`, `y_c0`, each reversed to little-endian and read by `Fq::from_repr`; `g2_point_from_encoding(bytes: &[u8]) -> Option<G2Affine>`, the same reading over any 128 bytes, `None` off the curve; `g2_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `successors(Some(Fq::ONE), |c0| Some(*c0 + Fq::ONE)).find_map(|c0| { let x = Fq2::new(c0, Fq::ZERO); Option::<Fq2>::from((x.square() * x + G2Affine::b()).sqrt()).and_then(|y| Option::<G2Affine>::from(G2Affine::from_xy(x, y)).filter(|point| !bool::from(point.to_curve().is_torsion_free())).map(|_| (x, y))) })` unpacked by `let Some((x, y)) = … else { panic!("an on-curve point outside the subgroup exists") };`, encoded by extending with `to_repr().as_ref().iter().rev()` of `x.c1()`, `x.c0()`, `y.c1()`, `y.c0()`; `definition_exponent() -> Vec<u64>`, `let Some(p) = BigUint::parse_bytes(Fq::MODULUS.trim_start_matches("0x").as_bytes(), 16) else { panic!("the base field modulus parses") }; let Some(r) = BigUint::parse_bytes(Fr::MODULUS.trim_start_matches("0x").as_bytes(), 16) else { panic!("the group order parses") }; ((p.pow(12) - BigUint::from(1u32)) / r).to_u64_digits()`; `definition_value(g1: G1Affine, g2: G2Affine) -> Fq12`, `Bn256::multi_miller_loop(&[(&g1, &g2)]).pow_vartime(definition_exponent())`, the identifier's definition of the pairing value; `definition_value_power(g1: G1Affine, g2: G2Affine, exponent: u64) -> Fq12`, `definition_value(g1, g2).pow_vartime([exponent])`; `definition_encoding() -> Vec<u8>`, the twelve coefficients of `definition_value(eip_196_generator(), eip_197_generator())` read through the `c0()`, `c1()`, and `c2()` accessors in the tower order `c0.c0.c0`, `c0.c0.c1`, `c0.c1.c0`, `c0.c1.c1`, `c0.c2.c0`, `c0.c2.c1`, `c1.c0.c0`, `c1.c0.c1`, `c1.c1.c0`, `c1.c1.c1`, `c1.c2.c0`, `c1.c2.c1`, each `to_repr()` reversed to 32 big-endian bytes and appended; `eip_196_doubled_generator() -> G1Affine`, `(eip_196_generator().to_curve() + eip_196_generator().to_curve()).to_affine()`
     * `[ ]`   No mock function: the concrete is built as a real instance and owns no free function
 
   * `[ ]`   `adapters/pairing/src/bn254_halo2curves/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports from `super::provides` the concrete, its owned types, and the mock's builders, constants, and helpers each block uses; from `crate::factory::provides` the params, payloads, errors, trait names, and builders each block uses; and the `halo2curves`, `num_bigint::BigUint`, and `zeroize::Zeroize` names each block uses
+    * `[ ]`   Compile-time assertion over `Bn254Halo2curvesPairing::DECLARATION`
+      * `[ ]`   Contract: the inherent constant is `PairingDeclaration { curve: PairingCurve::Bn254, verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly, precompile_encoding: PrecompileEncoding::Eip196Eip197, target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`, readable before any instance exists
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading `Bn254Halo2curvesPairing::DECLARATION`, each enum field tested with `matches!` and each version with `==`
+      * `[ ]`   Assert: the module compiles only if every field holds
+    * `[ ]`   Compile-time assertion over `<Bn254Halo2curvesPairing as IPairingAdapter>::DECLARATION`
+      * `[ ]`   Contract: the trait constant carries the same fields as the inherent constant
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading the trait constant, each enum field tested with `matches!` and each version with `==`
+      * `[ ]`   Assert: the module compiles only if every field holds
+    * `[ ]`   Compile-time assertion over `<Bn254Halo2curvesPairing as IPairingAdapter>::CONCRETE`
+      * `[ ]`   Contract: the trait constant is `PairingConcrete::Bn254Halo2curves`
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading the trait constant under `matches!`
+      * `[ ]`   Assert: the module compiles only if the constant is `PairingConcrete::Bn254Halo2curves`
+    * `[ ]`   `bn254_halo2curves_scalar_is_zeroize_on_drop`
+      * `[ ]`   Contract: `Bn254Halo2curvesScalar` implements `ZeroizeOnDrop`, the marker the sampling bound requires
+      * `[ ]`   Collaborators: none
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: `requires_zeroize_on_drop::<Bn254Halo2curvesScalar>()`
+      * `[ ]`   Assert: the block compiles only if the type implements `ZeroizeOnDrop`
+    * `[ ]`   `bn254_halo2curves_scalar_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living scalar → its `value` is zero
+      * `[ ]`   Collaborators: none; fixture `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_bn254_halo2curves_scalar` with the value override `Fr::from(5u64)`, so a scalar left unchanged differs from the expected zero
+      * `[ ]`   Act: `scalar.zeroize()`
+      * `[ ]`   Assert: `scalar.value` equals `Fr::ZERO`
+    * `[ ]`   `bn254_halo2curves_g1_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living first-group element → its `value` is the identity
+      * `[ ]`   Collaborators: none; fixture `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_bn254_halo2curves_g1` at its default generator, which differs from the identity
+      * `[ ]`   Act: `g1.zeroize()`
+      * `[ ]`   Assert: `g1.value` equals `G1Affine::identity()`
+    * `[ ]`   `bn254_halo2curves_g2_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living second-group element → its `value` is the identity
+      * `[ ]`   Collaborators: none; fixture `build_bn254_halo2curves_g2`
+      * `[ ]`   Arrange: `build_bn254_halo2curves_g2` at its default generator, which differs from the identity
+      * `[ ]`   Act: `g2.zeroize()`
+      * `[ ]`   Assert: `g2.value` equals `G2Affine::identity()`
+    * `[ ]`   `bn254_halo2curves_gt_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living target-group value → its `value` is the target group's identity
+      * `[ ]`   Collaborators: none; fixture `build_bn254_halo2curves_gt`
+      * `[ ]`   Arrange: `build_bn254_halo2curves_gt` at its default pairing of the generators, which differs from the identity
+      * `[ ]`   Act: `gt.zeroize()`
+      * `[ ]`   Assert: `gt.value` equals `Gt::identity()`
+    * `[ ]`   `bn254_halo2curves_encoded_scalar_zeroize_clears_its_bytes`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living encoded scalar → every byte is zero
+      * `[ ]`   Collaborators: none; fixture `build_bn254_halo2curves_encoded_scalar`
+      * `[ ]`   Arrange: `build_bn254_halo2curves_encoded_scalar` at its nonzero default
+      * `[ ]`   Act: `encoded.zeroize()`
+      * `[ ]`   Assert: the bytes of `encoded` equal `zero_bytes(32)` as a byte slice
+    * `[ ]`   `bn254_halo2curves_encoded_gt_zeroize_clears_its_bytes`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living encoded target-group value → every byte is zero
+      * `[ ]`   Collaborators: none; fixture `build_bn254_halo2curves_encoded_gt`
+      * `[ ]`   Arrange: `build_bn254_halo2curves_encoded_gt` at its nonzero default
+      * `[ ]`   Act: `encoded.zeroize()`
+      * `[ ]`   Assert: the bytes of `encoded` equal `zero_bytes(384)` as a byte slice
+    * `[ ]`   `try_new_returns_the_halo2curves_pairing`
+      * `[ ]`   Contract: any params → `Ok(Bn254Halo2curvesPairing)`
+      * `[ ]`   Collaborators: none; `Bn254Halo2curvesPairingConstructorParams` by its production value
+      * `[ ]`   Arrange: `Bn254Halo2curvesPairingConstructorParams` by its production value
+      * `[ ]`   Act: `Bn254Halo2curvesPairing::try_new(Bn254Halo2curvesPairingConstructorParams)`
+      * `[ ]`   Assert: `result.is_ok()` is true
+    * `[ ]`   `uniform_bytes_length_is_twice_the_group_order_width`
+      * `[ ]`   Contract: `UNIFORM_BYTES_LENGTH` is twice the byte width of the group order
+      * `[ ]`   Collaborators: none
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: reading `<Bn254Halo2curvesScalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH`
+      * `[ ]`   Assert: the constant equals the literal 64 written in the assertion
+    * `[ ]`   `g1_generator_returns_the_eip_196_generator`
+      * `[ ]`   Contract: any call → `Ok(G1GeneratorSuccessReturn { point })` holding the first group's generator
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; `G1GeneratorParams` and `G1GeneratorPayload` by their production values
+      * `[ ]`   Arrange: `build_bn254_halo2curves_pairing()`
+      * `[ ]`   Act: `g1_generator(G1GeneratorParams, G1GeneratorPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.point.value` equals `eip_196_generator()`
+    * `[ ]`   `g2_generator_returns_the_eip_197_generator`
+      * `[ ]`   Contract: any call → `Ok(G2GeneratorSuccessReturn { point })` holding the second group's generator
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; `G2GeneratorParams` and `G2GeneratorPayload` by their production values
+      * `[ ]`   Arrange: `build_bn254_halo2curves_pairing()`
+      * `[ ]`   Act: `g2_generator(G2GeneratorParams, G2GeneratorPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.point.value` equals `eip_197_generator()`
+    * `[ ]`   `add_g1_of_a_point_and_its_negation_is_the_identity`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG1SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: halo2curves' projective addition, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_add_g1_payload`, and `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_add_g1_payload` with the left override `build_bn254_halo2curves_g1` at its default generator and the right override `build_bn254_halo2curves_g1` with the value `eip_196_negated_generator()`, so a sum that returns either input differs from the identity
+      * `[ ]`   Act: `add_g1(AddG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `add_g1_of_the_identity_and_a_point_is_the_point`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG1SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: halo2curves' projective addition, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_add_g1_payload`, and `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_add_g1_payload` with the left override `build_bn254_halo2curves_g1` with the value `G1Affine::identity()` and the right override `build_bn254_halo2curves_g1` at its default generator, so a sum that returns the left input differs from the generator
+      * `[ ]`   Act: `add_g1(AddG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_196_generator()`
+    * `[ ]`   `add_g2_of_a_point_and_its_negation_is_the_identity`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG2SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: halo2curves' projective addition, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_add_g2_payload`, and `build_bn254_halo2curves_g2`
+      * `[ ]`   Arrange: `build_add_g2_payload` with the left override `build_bn254_halo2curves_g2` at its default generator and the right override `build_bn254_halo2curves_g2` with the value `-eip_197_generator()`, so a sum that returns either input differs from the identity
+      * `[ ]`   Act: `add_g2(AddG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `add_g2_of_the_identity_and_a_point_is_the_point`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG2SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: halo2curves' projective addition, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_add_g2_payload`, and `build_bn254_halo2curves_g2`
+      * `[ ]`   Arrange: `build_add_g2_payload` with the left override `build_bn254_halo2curves_g2` with the value `G2Affine::identity()` and the right override `build_bn254_halo2curves_g2` at its default generator, so a sum that returns the left input differs from the generator
+      * `[ ]`   Act: `add_g2(AddG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_197_generator()`
+    * `[ ]`   `mul_g1_by_one_is_the_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_mul_g1_payload`, `build_bn254_halo2curves_g1`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bn254_halo2curves_g1` at its default generator and the scalar override `build_bn254_halo2curves_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_196_generator()`
+    * `[ ]`   `mul_g1_by_zero_is_the_identity`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_mul_g1_payload`, `build_bn254_halo2curves_g1`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bn254_halo2curves_g1` at its default generator and the scalar override `build_bn254_halo2curves_scalar` with the value `Fr::ZERO`, so a product that returns the point differs from the identity
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `G1Affine::identity()`
+    * `[ ]`   `mul_g1_by_the_group_order_minus_one_is_the_negated_generator`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_mul_g1_payload`, `build_bn254_halo2curves_g1`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bn254_halo2curves_g1` at its default generator and the scalar override `build_bn254_halo2curves_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`, so a product that ignores the scalar differs from the negated generator
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_196_negated_generator()`
+    * `[ ]`   `mul_g2_by_one_is_the_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_mul_g2_payload`, `build_bn254_halo2curves_g2`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bn254_halo2curves_g2` at its default generator and the scalar override `build_bn254_halo2curves_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_197_generator()`
+    * `[ ]`   `mul_g2_by_zero_is_the_identity`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_mul_g2_payload`, `build_bn254_halo2curves_g2`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bn254_halo2curves_g2` at its default generator and the scalar override `build_bn254_halo2curves_scalar` with the value `Fr::ZERO`, so a product that returns the point differs from the identity
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `G2Affine::identity()`
+    * `[ ]`   `mul_g2_by_the_group_order_minus_one_is_the_negated_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_mul_g2_payload`, `build_bn254_halo2curves_g2`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bn254_halo2curves_g2` at its default generator and the scalar override `build_bn254_halo2curves_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`, so a product that ignores the scalar differs from the negated generator
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `-eip_197_generator()`
+    * `[ ]`   `msm_g1_of_no_terms_is_the_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the identity
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing` and `build_msm_g1_payload`
+      * `[ ]`   Arrange: `build_msm_g1_payload` at its default of no terms
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `msm_g1_pairs_each_base_with_its_own_scalar`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_msm_g1_payload`, `build_msm_g1_term`, `build_bn254_halo2curves_g1`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_msm_g1_payload` with the terms override holding two `build_msm_g1_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `eip_196_negated_generator()` with the scalar `Fr::ZERO`, so bases and scalars exchanged between terms yield the negated generator
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_196_generator()`
+    * `[ ]`   `msm_g1_sums_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_msm_g1_payload`, `build_msm_g1_term`, `build_bn254_halo2curves_g1`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_msm_g1_payload` with the terms override holding two `build_msm_g1_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `eip_196_negated_generator()` with the scalar `Fr::from(1u64)`, so a sum over the first term alone differs from the identity
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `msm_g2_of_no_terms_is_the_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the identity
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing` and `build_msm_g2_payload`
+      * `[ ]`   Arrange: `build_msm_g2_payload` at its default of no terms
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `msm_g2_pairs_each_base_with_its_own_scalar`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_msm_g2_payload`, `build_msm_g2_term`, `build_bn254_halo2curves_g2`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_msm_g2_payload` with the terms override holding two `build_msm_g2_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `-eip_197_generator()` with the scalar `Fr::ZERO`, so bases and scalars exchanged between terms yield the negated generator
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_197_generator()`
+    * `[ ]`   `msm_g2_sums_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_msm_g2_payload`, `build_msm_g2_term`, `build_bn254_halo2curves_g2`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_msm_g2_payload` with the terms override holding two `build_msm_g2_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `-eip_197_generator()` with the scalar `Fr::from(1u64)`, so a sum over the first term alone differs from the identity
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `pairing_product_is_one_of_no_terms_is_true`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` true
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing` and `build_pairing_product_is_one_payload`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` at its default of no terms
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is true
+    * `[ ]`   `pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to the target group's identity → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` true
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_pairing_product_is_one_payload`, `build_pairing_product_term`, and `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` with the terms override holding two `build_pairing_product_term` values: the generators, and the first-group override `build_bn254_halo2curves_g1` with the value `eip_196_negated_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is true
+    * `[ ]`   `pairing_product_is_one_of_the_generators_is_false`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to a value other than the target group's identity → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` false
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_pairing_product_is_one_payload`, and `build_pairing_product_term`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is false
+    * `[ ]`   `decode_g1_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 64` → `Err(DecodeG1ErrorReturn::WrongLength { expected: 64, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(63)`, which differs from the required length
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::WrongLength { expected: 64, actual: 63 })`, the whole expected error
+    * `[ ]`   `decode_g1_rejects_a_non_canonical_coordinate`
+      * `[ ]`   Contract: a 64-byte payload whose first half is at least the base field modulus → `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: halo2curves' `Fq::from_repr`, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G1_X_AT_MODULUS_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_X_AT_MODULUS_HEX)`, whose coordinates would otherwise fail the curve check, so a decoder that checks the curve first returns a different error
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_decodes_the_identity_from_zero_bytes`
+      * `[ ]`   Contract: a 64-byte payload with both coordinates zero → `Ok(DecodeG1SuccessReturn { point })` holding the first group's identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(64)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `G1Affine::identity()`
+    * `[ ]`   `decode_g1_rejects_a_point_off_the_curve`
+      * `[ ]`   Contract: a canonical 64-byte payload that satisfies no curve equation → `Err(DecodeG1ErrorReturn::NotOnCurve)`
+      * `[ ]`   Collaborators: halo2curves' `from_xy`, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G1_OFF_CURVE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_OFF_CURVE_HEX)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g1_decodes_the_eip_196_generator`
+      * `[ ]`   Contract: a canonical 64-byte payload on the curve → `Ok(DecodeG1SuccessReturn { point })` holding that point
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G1_GENERATOR_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_GENERATOR_HEX)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `eip_196_generator()`
+    * `[ ]`   `decode_g2_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 128` → `Err(DecodeG2ErrorReturn::WrongLength { expected: 128, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(127)`, which differs from the required length
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::WrongLength { expected: 128, actual: 127 })`, the whole expected error
+    * `[ ]`   `decode_g2_rejects_a_non_canonical_coordinate`
+      * `[ ]`   Contract: a 128-byte payload whose first coordinate is at least the base field modulus → `Err(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: halo2curves' `Fq::from_repr`, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G2_X_C1_AT_MODULUS_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_X_C1_AT_MODULUS_HEX)`, whose coordinates would otherwise fail the curve check, so a decoder that checks the curve first returns a different error
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g2_decodes_the_identity_from_zero_bytes`
+      * `[ ]`   Contract: a 128-byte payload with every coordinate zero → `Ok(DecodeG2SuccessReturn { point })` holding the second group's identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(128)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `G2Affine::identity()`
+    * `[ ]`   `decode_g2_rejects_a_point_off_the_curve`
+      * `[ ]`   Contract: a canonical 128-byte payload that satisfies no curve equation → `Err(DecodeG2ErrorReturn::NotOnCurve)`
+      * `[ ]`   Collaborators: halo2curves' `from_xy`, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G2_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g2_rejects_a_point_outside_the_subgroup`
+      * `[ ]`   Contract: a canonical 128-byte payload on the curve and outside the prime-order subgroup → `Err(DecodeG2ErrorReturn::NotInSubgroup)`
+      * `[ ]`   Collaborators: halo2curves' torsion check, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `g2_outside_subgroup_bytes()`
+      * `[ ]`   Arrange: the payload `g2_outside_subgroup_bytes()`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_g2_decodes_the_eip_197_generator`
+      * `[ ]`   Contract: a canonical 128-byte payload on the curve and in the subgroup → `Ok(DecodeG2SuccessReturn { point })` holding that point
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G2_GENERATOR_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_GENERATOR_HEX)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `eip_197_generator()`
+    * `[ ]`   `decode_scalar_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 32` → `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(31)`, which differs from the required length
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: 31 })`, the whole expected error
+    * `[ ]`   `decode_scalar_rejects_the_group_order`
+      * `[ ]`   Contract: a 32-byte payload at least the group order → `Err(DecodeScalarErrorReturn::NonCanonical)`
+      * `[ ]`   Collaborators: halo2curves' `Fr::from_repr`, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `vector_bytes(GROUP_ORDER_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(GROUP_ORDER_HEX)`
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeScalarErrorReturn::NonCanonical)`
+    * `[ ]`   `decode_scalar_decodes_the_largest_canonical_scalar`
+      * `[ ]`   Contract: a canonical 32-byte payload → `Ok(DecodeScalarSuccessReturn { scalar })` holding that scalar
+      * `[ ]`   Collaborators: halo2curves' `Fr::from_repr`, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; the untrusted bytes from `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)`
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.value` equals `-Fr::from(1u64)`
+    * `[ ]`   `encode_g1_writes_the_eip_196_generator`
+      * `[ ]`   Contract: a first-group point → `Ok(EncodeG1SuccessReturn { bytes })` holding `x` then `y`, each 32 bytes big-endian, in this concrete's `Bn254Halo2curvesEncodedG1`
+      * `[ ]`   Collaborators: halo2curves' coordinate encoding, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_encode_g1_payload`, and `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_encode_g1_payload` with the point override `build_bn254_halo2curves_g1` at its default generator
+      * `[ ]`   Act: `encode_g1(EncodeG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` binds to a `Bn254Halo2curvesEncodedG1` typed binding; its bytes equal `vector_bytes(G1_GENERATOR_HEX)` as a byte slice
+    * `[ ]`   `encode_g1_writes_the_identity_as_zero_bytes`
+      * `[ ]`   Contract: the first group's identity → `Ok(EncodeG1SuccessReturn { bytes })` holding 64 zero bytes
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_encode_g1_payload`, and `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_encode_g1_payload` with the point override `build_bn254_halo2curves_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `encode_g1(EncodeG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes` equal `zero_bytes(64)` as a byte slice
+    * `[ ]`   `encode_g2_writes_the_eip_197_generator`
+      * `[ ]`   Contract: a second-group point → `Ok(EncodeG2SuccessReturn { bytes })` holding `x.c1`, `x.c0`, `y.c1`, `y.c0`, each 32 bytes big-endian, in this concrete's `Bn254Halo2curvesEncodedG2`
+      * `[ ]`   Collaborators: halo2curves' coordinate encoding, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_encode_g2_payload`, and `build_bn254_halo2curves_g2`
+      * `[ ]`   Arrange: `build_encode_g2_payload` with the point override `build_bn254_halo2curves_g2` at its default generator
+      * `[ ]`   Act: `encode_g2(EncodeG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` binds to a `Bn254Halo2curvesEncodedG2` typed binding; its bytes equal `vector_bytes(G2_GENERATOR_HEX)` as a byte slice
+    * `[ ]`   `encode_g2_writes_the_identity_as_zero_bytes`
+      * `[ ]`   Contract: the second group's identity → `Ok(EncodeG2SuccessReturn { bytes })` holding 128 zero bytes
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_encode_g2_payload`, and `build_bn254_halo2curves_g2`
+      * `[ ]`   Arrange: `build_encode_g2_payload` with the point override `build_bn254_halo2curves_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `encode_g2(EncodeG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes` equal `zero_bytes(128)` as a byte slice
+    * `[ ]`   `encode_scalar_writes_the_largest_canonical_scalar`
+      * `[ ]`   Contract: a scalar → `Ok(EncodeScalarSuccessReturn { bytes })` holding its 32 big-endian bytes in this concrete's `Bn254Halo2curvesEncodedScalar`, inside a `Secret`
+      * `[ ]`   Collaborators: halo2curves' `to_repr`, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_encode_scalar_payload`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_encode_scalar_payload` with the scalar override `build_bn254_halo2curves_scalar` with the value `-Fr::from(1u64)`
+      * `[ ]`   Act: `encode_scalar(EncodeScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes.expose()` binds to a `Bn254Halo2curvesEncodedScalar` typed binding; its bytes equal `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)` as a byte slice
+    * `[ ]`   `sample_from_uniform_bytes_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.uniform.expose().len() != 64` → `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
+      * `[ ]`   Collaborators: `Secret::expose`, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `zero_bytes(63)`
+      * `[ ]`   Act: `Bn254Halo2curvesScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 63 })`, the whole expected error
+    * `[ ]`   `sample_from_uniform_bytes_reads_the_input_as_a_big_endian_integer`
+      * `[ ]`   Contract: a 64-byte uniform input → `Ok(SampleUniformScalarSuccessReturn { scalar })` holding the input read as one big-endian integer reduced modulo the group order, inside a `Secret`
+      * `[ ]`   Collaborators: `Secret::expose` and halo2curves' wide reduction, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `vector_bytes(UNIFORM_FIVE_HEX)`, whose last byte is five, so an input read as little-endian yields a different scalar
+      * `[ ]`   Act: `Bn254Halo2curvesScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.expose().value` equals `Fr::from(5u64)`
+    * `[ ]`   `sample_from_uniform_bytes_reduces_the_group_order_to_zero`
+      * `[ ]`   Contract: a 64-byte uniform input → `Ok(SampleUniformScalarSuccessReturn { scalar })` holding the input reduced modulo the group order, inside a `Secret`
+      * `[ ]`   Collaborators: `Secret::expose` and halo2curves' wide reduction, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `vector_bytes(UNIFORM_GROUP_ORDER_HEX)`, whose reduction is zero and so differs from the input
+      * `[ ]`   Act: `Bn254Halo2curvesScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.expose().value` equals `Fr::ZERO`
+    * `[ ]`   `add_scalar_of_two_and_three_is_five`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddScalarSuccessReturn { sum })` holding their sum modulo the group order
+      * `[ ]`   Collaborators: halo2curves' `Fr` addition, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_add_scalar_payload`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_add_scalar_payload` with the left override `build_bn254_halo2curves_scalar` with the value `Fr::from(2u64)` and the right override with the value `Fr::from(3u64)`
+      * `[ ]`   Act: `add_scalar(AddScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `Fr::from(5u64)`
+    * `[ ]`   `add_scalar_reduces_modulo_the_group_order`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddScalarSuccessReturn { sum })` holding their sum modulo the group order
+      * `[ ]`   Collaborators: halo2curves' `Fr` addition, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_add_scalar_payload`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_add_scalar_payload` with the left override `build_bn254_halo2curves_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)` and the right override with the value `Fr::from(2u64)`, whose integer sum exceeds the group order
+      * `[ ]`   Act: `add_scalar(AddScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `Fr::from(1u64)`
+    * `[ ]`   `mul_scalar_of_two_and_three_is_six`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(MulScalarSuccessReturn { product })` holding their product modulo the group order
+      * `[ ]`   Collaborators: halo2curves' `Fr` multiplication, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_mul_scalar_payload`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_scalar_payload` with the left override `build_bn254_halo2curves_scalar` with the value `Fr::from(2u64)` and the right override with the value `Fr::from(3u64)`
+      * `[ ]`   Act: `mul_scalar(MulScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `Fr::from(6u64)`
+    * `[ ]`   `mul_scalar_reduces_modulo_the_group_order`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(MulScalarSuccessReturn { product })` holding their product modulo the group order
+      * `[ ]`   Collaborators: halo2curves' `Fr` multiplication, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_mul_scalar_payload`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_scalar_payload` with the left override `build_bn254_halo2curves_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)` and the right override with the value `Fr::from(2u64)`, whose integer product exceeds the group order
+      * `[ ]`   Act: `mul_scalar(MulScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `scalar_value(GROUP_ORDER_MINUS_TWO_HEX)`
+    * `[ ]`   `neg_scalar_of_one_is_the_group_order_minus_one`
+      * `[ ]`   Contract: `payload.scalar` → `Ok(NegScalarSuccessReturn { negation })` holding the group order minus the scalar
+      * `[ ]`   Collaborators: halo2curves' `Fr` negation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_neg_scalar_payload`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_neg_scalar_payload` with the scalar override `build_bn254_halo2curves_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `neg_scalar(NegScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`
+    * `[ ]`   `neg_scalar_of_zero_is_zero`
+      * `[ ]`   Contract: `payload.scalar` of zero → `Ok(NegScalarSuccessReturn { negation })` holding zero
+      * `[ ]`   Collaborators: halo2curves' `Fr` negation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_neg_scalar_payload`, and `build_bn254_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_neg_scalar_payload` with the scalar override `build_bn254_halo2curves_scalar` with the value `Fr::ZERO`
+      * `[ ]`   Act: `neg_scalar(NegScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `Fr::ZERO`
+    * `[ ]`   `neg_g1_of_the_generator_is_the_negated_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(NegG1SuccessReturn { negation })` holding `(x, p - y)` for a point `(x, y)`
+      * `[ ]`   Collaborators: halo2curves' affine negation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_neg_g1_payload`, and `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_neg_g1_payload` with the point override `build_bn254_halo2curves_g1` at its default generator
+      * `[ ]`   Act: `neg_g1(NegG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `eip_196_negated_generator()`
+    * `[ ]`   `neg_g1_of_the_identity_is_the_identity`
+      * `[ ]`   Contract: `payload.point` of the identity → `Ok(NegG1SuccessReturn { negation })` holding the identity
+      * `[ ]`   Collaborators: halo2curves' affine negation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_neg_g1_payload`, and `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_neg_g1_payload` with the point override `build_bn254_halo2curves_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `neg_g1(NegG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `G1Affine::identity()`
+    * `[ ]`   `neg_g2_negates_the_y_coordinate_and_keeps_x`
+      * `[ ]`   Contract: `payload.point` → `Ok(NegG2SuccessReturn { negation })` holding `(x, -y)` for a point `(x, y)`
+      * `[ ]`   Collaborators: halo2curves' affine negation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_neg_g2_payload`, and `build_bn254_halo2curves_g2`
+      * `[ ]`   Arrange: `build_neg_g2_payload` with the point override `build_bn254_halo2curves_g2` at its default generator
+      * `[ ]`   Act: `neg_g2(NegG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the negation's `coordinates()` yields an `x` equal to the `x` of `eip_197_generator().coordinates()` and a `y` whose sum with the generator's `y` is zero under `is_zero()`
+    * `[ ]`   `neg_g2_of_the_identity_is_the_identity`
+      * `[ ]`   Contract: `payload.point` of the identity → `Ok(NegG2SuccessReturn { negation })` holding the identity
+      * `[ ]`   Collaborators: halo2curves' affine negation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_neg_g2_payload`, and `build_bn254_halo2curves_g2`
+      * `[ ]`   Arrange: `build_neg_g2_payload` with the point override `build_bn254_halo2curves_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `neg_g2(NegG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `G2Affine::identity()`
+    * `[ ]`   `is_identity_g1_is_true_for_the_identity`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG1SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_is_identity_g1_payload`, and `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_is_identity_g1_payload` with the point override `build_bn254_halo2curves_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `is_identity_g1(IsIdentityG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is true
+    * `[ ]`   `is_identity_g1_is_false_for_the_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG1SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_is_identity_g1_payload`, and `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_is_identity_g1_payload` with the point override `build_bn254_halo2curves_g1` at its default generator
+      * `[ ]`   Act: `is_identity_g1(IsIdentityG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is false
+    * `[ ]`   `is_identity_g2_is_true_for_the_identity`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG2SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_is_identity_g2_payload`, and `build_bn254_halo2curves_g2`
+      * `[ ]`   Arrange: `build_is_identity_g2_payload` with the point override `build_bn254_halo2curves_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `is_identity_g2(IsIdentityG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is true
+    * `[ ]`   `is_identity_g2_is_false_for_the_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG2SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_is_identity_g2_payload`, and `build_bn254_halo2curves_g2`
+      * `[ ]`   Arrange: `build_is_identity_g2_payload` with the point override `build_bn254_halo2curves_g2` at its default generator
+      * `[ ]`   Act: `is_identity_g2(IsIdentityG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is false
+    * `[ ]`   `pairing_product_of_no_terms_is_the_target_group_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(PairingProductSuccessReturn { product })` holding the target group's identity
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing` and `build_pairing_product_payload`
+      * `[ ]`   Arrange: `build_pairing_product_payload` at its default of no terms
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `Gt::identity()`
+    * `[ ]`   `pairing_product_of_the_generators_is_not_the_target_group_identity`
+      * `[ ]`   Contract: a pairing of the generators → `Ok(PairingProductSuccessReturn { product })` holding a value other than the target group's identity
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` is not equal to `Gt::identity()`
+    * `[ ]`   `pairing_product_is_bilinear`
+      * `[ ]`   Contract: a term whose first-group element is twice the generator → `Ok(PairingProductSuccessReturn { product })` holding the generators' pairing raised to the power two
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_pairing_product_payload`, `build_pairing_product_term`, and `build_bn254_halo2curves_g1`; the expectation is `definition_value_power`, the identifier's definition raised to a power in the fixtures
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` with the first-group override `build_bn254_halo2curves_g1` with the value `eip_196_doubled_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.inner()` equals `&definition_value_power(eip_196_generator(), eip_197_generator(), 2)`
+    * `[ ]`   `pairing_product_multiplies_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(PairingProductSuccessReturn { product })` holding the product of each term's pairing
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`; the expectation is `definition_value_power`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding two `build_pairing_product_term` values at their default generators, so a product over one term differs from the expected square
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.inner()` equals `&definition_value_power(eip_196_generator(), eip_197_generator(), 2)`
+    * `[ ]`   `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to the target group's identity → `Ok(PairingProductSuccessReturn { product })` holding the identity
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_pairing_product_payload`, `build_pairing_product_term`, and `build_bn254_halo2curves_g1`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding two `build_pairing_product_term` values: the generators, and the first-group override `build_bn254_halo2curves_g1` with the value `eip_196_negated_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `Gt::identity()`
+    * `[ ]`   `pairing_product_of_the_generators_equals_the_definition`
+      * `[ ]`   Contract: a pairing of the generators → `Ok(PairingProductSuccessReturn { product })` holding the Miller loop's value raised to the exact exponent `(p^12 - 1) / r`, the value `TargetGroupEncodingIdentifier::Bn254V1` defines, with no correction applied
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`; the expectation is `definition_value`, the Miller loop over the generators raised to `definition_exponent()` built by `num-bigint`, independent of the library's final exponentiation
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.inner()` equals `&definition_value(eip_196_generator(), eip_197_generator())`
+    * `[ ]`   `encode_gt_writes_the_target_group_identity_with_c0_c0_c0_first`
+      * `[ ]`   Contract: a target-group value → `Ok(EncodeGtSuccessReturn { bytes })` holding its twelve coefficients in tower order, `c0.c0.c0` first, each 32 bytes big-endian, inside a `Secret`
+      * `[ ]`   Collaborators: halo2curves' `to_repr`, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_encode_gt_payload`, and `build_bn254_halo2curves_gt`; the expectation is `gt_identity_encoding()`
+      * `[ ]`   Arrange: `build_encode_gt_payload` with the value override `build_bn254_halo2curves_gt` with the value `Gt::identity()`
+      * `[ ]`   Act: `encode_gt(EncodeGtParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes.expose()` binds to a `Bn254Halo2curvesEncodedGt` typed binding; its bytes equal `gt_identity_encoding()` as a byte slice
+    * `[ ]`   `encode_gt_writes_the_definition_value_in_tower_order`
+      * `[ ]`   Contract: a target-group value → `Ok(EncodeGtSuccessReturn { bytes })` holding its twelve coefficients in tower order, `c0.c0.c0` through `c1.c2.c1`, each 32 bytes big-endian, inside a `Secret`
+      * `[ ]`   Collaborators: halo2curves' `to_repr`, run for real as the vendor; fixtures `build_bn254_halo2curves_pairing`, `build_encode_gt_payload`, and `build_bn254_halo2curves_gt`; the expectation is `definition_encoding()`, the serialization in the fixtures of the Miller loop over the generators raised to the exact exponent
+      * `[ ]`   Arrange: `build_encode_gt_payload` at its default value, the pairing of the generators, whose twelve coefficients are distinct, so any exchange of two positions changes the bytes
+      * `[ ]`   Act: `encode_gt(EncodeGtParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes.expose()` equal `definition_encoding()` as a byte slice
+    * `[ ]`   `scalar_field_order_is_the_group_order`
+      * `[ ]`   Contract: any call → `Ok(ScalarFieldOrderSuccessReturn { bytes })` holding the group order's 32 big-endian bytes
+      * `[ ]`   Collaborators: halo2curves' `Fr` negation and `to_repr`, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; `ScalarFieldOrderParams` and `ScalarFieldOrderPayload` by their production values
+      * `[ ]`   Arrange: `build_bn254_halo2curves_pairing()`
+      * `[ ]`   Act: `scalar_field_order(ScalarFieldOrderParams, ScalarFieldOrderPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` equals `vector_bytes(GROUP_ORDER_HEX)`
+    * `[ ]`   `g1_outside_subgroup_encoding_is_absent_where_the_cofactor_is_one`
+      * `[ ]`   Contract: any call → `Ok(G1OutsideSubgroupEncodingSuccessReturn { bytes: None })`
+      * `[ ]`   Collaborators: none called; fixture `build_bn254_halo2curves_pairing`; `G1OutsideSubgroupEncodingParams` and `G1OutsideSubgroupEncodingPayload` by their production values
+      * `[ ]`   Arrange: `build_bn254_halo2curves_pairing()`
+      * `[ ]`   Act: `g1_outside_subgroup_encoding(G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.bytes.is_none()` is true
+    * `[ ]`   `g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup`
+      * `[ ]`   Contract: any call → `Ok(G2OutsideSubgroupEncodingSuccessReturn { bytes })` holding the precompile encoding of an on-curve point outside the prime-order subgroup, in this concrete's `Bn254Halo2curvesEncodedG2`
+      * `[ ]`   Collaborators: halo2curves' curve and torsion checks, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; `G2OutsideSubgroupEncodingParams` and `G2OutsideSubgroupEncodingPayload` by their production values; the point read back by `g2_point_from_encoding`
+      * `[ ]`   Arrange: `build_bn254_halo2curves_pairing()`
+      * `[ ]`   Act: `g2_outside_subgroup_encoding(G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.bytes` binds to a `Bn254Halo2curvesEncodedG2` typed binding; `g2_point_from_encoding` reads a point from its bytes, which is `Some` because the point is on the curve, and that point's `to_curve().is_torsion_free()` is false
+    * `[ ]`   `g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root`
+      * `[ ]`   Contract: any call → the encoded point's first coordinate is `(c0, 0)` with the least `c0` of an on-curve point outside the subgroup, and its `y` is the lesser of the two roots, compared by `y.c1` and then `y.c0`
+      * `[ ]`   Collaborators: halo2curves' curve and torsion checks, run for real as the vendor; fixture `build_bn254_halo2curves_pairing`; `G2OutsideSubgroupEncodingParams` and `G2OutsideSubgroupEncodingPayload` by their production values; the expectations are `g2_outside_subgroup_bytes()`, the ascending search in the fixtures, and `base_field_modulus()`
+      * `[ ]`   Arrange: `build_bn254_halo2curves_pairing()`
+      * `[ ]`   Act: `g2_outside_subgroup_encoding(G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the encoding's `x.c1` quarter, its first 32 bytes, is all zero; its `x.c0` quarter, its second 32 bytes, equals the `x.c0` quarter of `g2_outside_subgroup_bytes()`; the pair `y.c1`, `y.c0` read from its last 64 bytes as `BigUint` values is not greater than the pair of their negations, each `base_field_modulus()` minus the coefficient, reduced to zero where the coefficient is zero
 
   * `[✅]`   `construction`
     * `[✅]`   `Bn254Halo2curvesPairing::try_new` is the concrete's only producer, and its only caller is the pairing factory, which reads `Bn254Halo2curvesPairing::DECLARATION` before constructing
@@ -779,7 +1862,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`; neither the order nor a point is written as a literal
 
   * `[✅]`   `adapters/pairing/src/bn254_halo2curves/provides.rs`
-    * `[✅]`   The one line `pub(crate) use super::interface::*;`, exposing every item of the concrete's interface to the crate and nothing beyond it
+    * `[✅]`   `pub(crate) use super::interface::*;` and `#[cfg(test)] pub(crate) use super::mock::*;`, exposing every item of the concrete's interface to the crate and, in the crate's own test build, the concrete's builders, fixtures, and helpers, and nothing beyond them
 
   * `[✅]`   `directionality`
     * `[✅]`   `bn254_halo2curves` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on `halo2curves`; it depends on no other concrete and no concrete depends on it; among repository crates the crate depends on `crates/domain` alone at runtime
@@ -839,8 +1922,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
   * `[ ]`   `context_slice`
     * `[✅]`   From `ark-bls12-381`: `Bls12_381`, `Fq`, `Fq2` with its public fields `c0` and `c1` and `Fq2::new(c0, c1)`, `Fq12`, `Fr`, `G1Affine`, `G1Projective`, `G2Affine`, and `G2Projective`
-    * `[✅]`   From `ark-ec`: `AffineRepr` for `generator()`, `xy()`, and `is_zero()`; the short-Weierstrass affine `identity()`, `new_unchecked(x, y)`, `is_on_curve()`, `is_in_correct_subgroup_assuming_on_curve()`, and `get_point_from_x_unchecked(x, greatest)`; the affine `+` and `* Fr` producing projective points; unary `-` on the affine point; `CurveGroup::into_affine`; `VariableBaseMSM::msm_unchecked(bases, scalars)`; `pairing::Pairing::multi_pairing` over iterators of borrowed affine points, returning `PairingOutput<Bls12_381>` with public field `0`; `Pairing::multi_miller_loop` over the same iterators, returning `MillerLoopOutput<Bls12_381>` with public field `0`, the unreduced `Fq12`; `Mul<Fr> for PairingOutput<Bls12_381>`; `Pairing::pairing(p, q)`
-    * `[✅]`   From `ark-ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `Fr::from(u64)` and `Fq::from(u64)`; `Field::ONE`; `Field::pow(&self, exp: impl AsRef<[u64]>)` on `Fr` and on `Fq12`; `PrimeField::MODULUS`, the `BigInt<4>` of `Fr` and the `BigInt<6>` of `Fq`; `BigInteger::sub_with_borrow(&mut self, other: &Self) -> bool` and `BigInt::<4>::from(u64)`; `From<BigInt<N>> for num_bigint::BigUint`; the public fields `c0` and `c1` of the degree-two and degree-twelve extensions and `c0`, `c1`, and `c2` of the degree-six extension; `PrimeField::from_be_bytes_mod_order(&[u8])` and `into_bigint()` on `Fq` and on `Fr`, the `BigInt<6>` of `Fq` ordering as the integer; `BigInteger::to_bytes_be()`, 48 bytes for `Fq` and 32 for `Fr`; `Zero::is_zero()` on `Fq` and on `PairingOutput`; unary `-` on `Fq` and on `Fq2`
+    * `[✅]`   From `ark-ec`: `AffineRepr` for `generator()`, `xy()`, and `is_zero()`; the short-Weierstrass affine `identity()`, `new_unchecked(x, y)`, `is_on_curve()`, `is_in_correct_subgroup_assuming_on_curve()`, and `get_point_from_x_unchecked(x, greatest)`; the affine `+` and `* Fr` producing projective points; unary `-` on the affine point; `CurveGroup::into_affine`; `VariableBaseMSM::msm_unchecked(bases, scalars)`; `pairing::Pairing::multi_pairing` over iterators of borrowed affine points, returning `PairingOutput<Bls12_381>` with public field `0`; `Pairing::multi_miller_loop` over the same iterators, returning `MillerLoopOutput<Bls12_381>` with public field `0`, the unreduced `Fq12`; `Mul<Fr> for PairingOutput<Bls12_381>`; `Pairing::pairing(p, q)`; `Zeroize` for the affine point, which zeroizes `x`, `y`, and `infinity`, so a zeroized point is `new_unchecked(0, 0)`, and for `PairingOutput`, which zeroizes its `Fq12`
+    * `[✅]`   From `ark-ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `Fr::from(u64)` and `Fq::from(u64)`; `Field::ONE`; `Field::pow(&self, exp: impl AsRef<[u64]>)` on `Fr` and on `Fq12`; `PrimeField::MODULUS`, the `BigInt<4>` of `Fr` and the `BigInt<6>` of `Fq`; `BigInteger::sub_with_borrow(&mut self, other: &Self) -> bool` and `BigInt::<4>::from(u64)`; `From<BigInt<N>> for num_bigint::BigUint`; the public fields `c0` and `c1` of the degree-two and degree-twelve extensions and `c0`, `c1`, and `c2` of the degree-six extension; `PrimeField::from_be_bytes_mod_order(&[u8])` and `into_bigint()` on `Fq` and on `Fr`, the `BigInt<6>` of `Fq` ordering as the integer; `BigInteger::to_bytes_be()`, 48 bytes for `Fq` and 32 for `Fr`; `Zero::is_zero()` on `Fq`, on `Fq12`, and on `PairingOutput`; unary `-` on `Fq` and on `Fq2`
     * `[ ]`   From `num-bigint`, in `mock.rs`'s test-only fixtures and in `test.rs`: `BigUint::from(u32)`, `BigUint::from_bytes_be(&[u8])`, `BigUint::pow(&self, u32)`, `Sub`, `Div`, and `Rem` between `BigUint`s, and `to_u64_digits()`
     * `[✅]`   From `domain`: `Secret::try_new(SecretConstructorParams { value })` returning `Result<Secret<T>, Infallible>`, and `Secret::expose(&self) -> &T`
 
@@ -892,16 +1975,531 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `Ordering and edges`, a bulleted section: every decoder checks in the stated order, length, then canonicality, then identity, then curve, then subgroup, and slices the payload only after the length check; an empty `msm` term list yields the identity, and an empty `pairing_product_is_one` term list yields `is_one: true`, as EIP-2537 does for empty input; `Bls12381ArkworksScalar`, `Bls12381ArkworksG1`, `Bls12381ArkworksG2`, and `Bls12381ArkworksGt` each zeroize their `value` through their `Zeroize` implementation and on drop, so every clone a consumer places in a payload is zeroized when the payload drops; each outside-the-subgroup search is ascending from one and stops at the first on-curve point outside the subgroup, the choice between a point and its negation follows the search and precedes the encoding, and the same call always returns the same bytes; `params` carries no control and is not read in any method, and no reference method reads its payload
 
   * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/mock.rs`
-    * `[ ]`   The module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `super::interface::{Bls12381ArkworksG1, Bls12381ArkworksG2, Bls12381ArkworksGt, Bls12381ArkworksPairing, Bls12381ArkworksPairingConstructorParams, Bls12381ArkworksScalar}`, `ark_bls12_381::{Bls12_381, Fq, Fq2, Fq12, Fr, G1Affine, G2Affine}`, `ark_ec::{AffineRepr, pairing::{Pairing, PairingOutput}}`, and `ark_ff::{BigInteger, Field, PrimeField}`; and, `#[cfg(test)]`, `hex::decode`, `num_bigint::BigUint`, and `zeroize::ZeroizeOnDrop`
+    * `[ ]`   The module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `super::interface::{Bls12381ArkworksEncodedGt, Bls12381ArkworksEncodedScalar, Bls12381ArkworksG1, Bls12381ArkworksG2, Bls12381ArkworksGt, Bls12381ArkworksPairing, Bls12381ArkworksPairingConstructorParams, Bls12381ArkworksScalar}`, `ark_bls12_381::{Bls12_381, Fq, Fq2, Fq12, Fr, G1Affine, G2Affine}`, `ark_ec::{AffineRepr, pairing::{Pairing, PairingOutput}}`, and `ark_ff::{BigInteger, Field, PrimeField}`; and, `#[cfg(test)]`, `ark_ec::CurveGroup`, `hex::decode`, `num_bigint::BigUint`, and `zeroize::ZeroizeOnDrop`
     * `[✅]`   `impl Default for Bls12381ArkworksScalar` returning `value: Fr::from(1u64)`; `impl Default for Bls12381ArkworksG1` returning `value: G1Affine::generator()`; `impl Default for Bls12381ArkworksG2` returning `value: G2Affine::generator()`; `impl Default for Bls12381ArkworksGt` returning `value: Bls12_381::pairing(G1Affine::generator(), G2Affine::generator())`, a non-identity target-group value; the family's generic builders and `MockIPairingAdapter` read these through `Default`
     * `[ ]`   The builders for the concrete's owned types, each overrides struct `#[derive(Default)]` with one `Option` field and each omitted value taking the type's `Default` above: `Bls12381ArkworksScalarOverrides` with `pub value: Option<Fr>` and `build_bls12_381_arkworks_scalar`; `Bls12381ArkworksG1Overrides` with `pub value: Option<G1Affine>` and `build_bls12_381_arkworks_g1`; `Bls12381ArkworksG2Overrides` with `pub value: Option<G2Affine>` and `build_bls12_381_arkworks_g2`; `Bls12381ArkworksGtOverrides` with `pub value: Option<PairingOutput<Bls12_381>>` and `build_bls12_381_arkworks_gt`; no corruptions type and no invalidator, since none of these arrives as untrusted data
     * `[ ]`   `build_bls12_381_arkworks_pairing() -> Bls12381ArkworksPairing`, the real instance from `Bls12381ArkworksPairing::try_new(Bls12381ArkworksPairingConstructorParams)` through `let Ok(pairing) = …;`; the constructor params are fieldless, so the builder takes no overrides
-    * `[ ]`   The test fixtures, each `#[cfg(test)]`, since they use the crate's dev-dependencies; constants, each a `const … : &str` of hex: `BASE_FIELD_MODULUS_PADDED_HEX`, 16 zero bytes then `1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab`; `GROUP_ORDER_HEX` `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001`; `GROUP_ORDER_MINUS_ONE_HEX` `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000000`; `GROUP_ORDER_MINUS_TWO_HEX` `73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffeffffffff`; `G1_GENERATOR_HEX`, 16 zero bytes, `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`, 16 zero bytes, `08b3f481e3aaa0f1a09e30ed741d8ae4fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1`; `G1_GENERATOR_OFF_CURVE_HEX`, the same with the last byte `e1` replaced by `e2`; `G2_GENERATOR_HEX`, 16 zero bytes and `024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8`, 16 zero bytes and `13e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e`, 16 zero bytes and `0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801`, 16 zero bytes and `0606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab3f370d275cec1da1aaa9075ff05f79be`; `G2_GENERATOR_OFF_CURVE_HEX`, the same with the last byte `be` replaced by `bf`; `NEG_G1_GENERATOR_HEX`, 16 zero bytes and `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`, then 16 zero bytes and `114d1d6855d545a8aa7d76c8cf2e21f267816aef1db507c96655b9d5caac42364e6f38ba0ecb751bad54dcd6b939c2ca`; `G1_NONZERO_PADDING_HEX`, `G1_GENERATOR_HEX` with its first byte `00` replaced by `01`; `G1_X_AT_MODULUS_HEX`, the 64 bytes of `BASE_FIELD_MODULUS_PADDED_HEX` then the last 64 bytes of `G1_GENERATOR_HEX`; `UNIFORM_GROUP_ORDER_HEX`, 32 zero bytes then the 32 bytes of `GROUP_ORDER_HEX`, the group order as a 64-byte big-endian integer; `UNIFORM_FIVE_HEX`, 63 zero bytes and `05`
+    * `[ ]`   The builders for the concrete's encoded scalar and encoded target-group types, each overrides struct `#[derive(Default)]` with one `Option` field: `Bls12381ArkworksEncodedScalarOverrides` with `pub bytes: Option<[u8; 32]>` and `build_bls12_381_arkworks_encoded_scalar(overrides: Bls12381ArkworksEncodedScalarOverrides) -> Bls12381ArkworksEncodedScalar`, the bytes defaulting to `[1u8; 32]`; `Bls12381ArkworksEncodedGtOverrides` with `pub bytes: Option<[u8; 576]>` and `build_bls12_381_arkworks_encoded_gt`, the bytes defaulting to `[1u8; 576]`; the defaults are nonzero so a zeroized value differs from a built one; no corruptions type and no invalidator, since neither arrives as untrusted data
+    * `[ ]`   The test fixtures, each `#[cfg(test)]`, since they use the crate's dev-dependencies; constants, each a `const … : &str` of hex: `BASE_FIELD_MODULUS_PADDED_HEX`, 16 zero bytes then `1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab`; `GROUP_ORDER_HEX` `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001`; `GROUP_ORDER_MINUS_ONE_HEX` `73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000000`; `GROUP_ORDER_MINUS_TWO_HEX` `73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffeffffffff`; `G1_GENERATOR_HEX`, 16 zero bytes, `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`, 16 zero bytes, `08b3f481e3aaa0f1a09e30ed741d8ae4fcf5e095d5d00af600db18cb2c04b3edd03cc744a2888ae40caa232946c5e7e1`; `G1_GENERATOR_OFF_CURVE_HEX`, the same with the last byte `e1` replaced by `e2`; `G2_GENERATOR_HEX`, 16 zero bytes and `024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8`, 16 zero bytes and `13e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e`, 16 zero bytes and `0ce5d527727d6e118cc9cdc6da2e351aadfd9baa8cbdd3a76d429a695160d12c923ac9cc3baca289e193548608b82801`, 16 zero bytes and `0606c4a02ea734cc32acd2b02bc28b99cb3e287e85a763af267492ab572e99ab3f370d275cec1da1aaa9075ff05f79be`; `G2_GENERATOR_OFF_CURVE_HEX`, the same with the last byte `be` replaced by `bf`; `NEG_G1_GENERATOR_HEX`, 16 zero bytes and `17f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb`, then 16 zero bytes and `114d1d6855d545a8aa7d76c8cf2e21f267816aef1db507c96655b9d5caac42364e6f38ba0ecb751bad54dcd6b939c2ca`; `G1_NONZERO_PADDING_HEX`, `G1_GENERATOR_HEX` with its first byte `00` replaced by `01`; `G1_X_AT_MODULUS_HEX`, the 64 bytes of `BASE_FIELD_MODULUS_PADDED_HEX` then the last 64 bytes of `G1_GENERATOR_HEX`; `G2_NONZERO_PADDING_HEX`, `G2_GENERATOR_HEX` with its first byte `00` replaced by `01`; `G2_X_C0_AT_MODULUS_HEX`, the 64 bytes of `BASE_FIELD_MODULUS_PADDED_HEX` then the last 192 bytes of `G2_GENERATOR_HEX`; `UNIFORM_GROUP_ORDER_HEX`, 32 zero bytes then the 32 bytes of `GROUP_ORDER_HEX`, the group order as a 64-byte big-endian integer; `UNIFORM_FIVE_HEX`, 63 zero bytes and `05`
     * `[ ]`   The test-fixture constant `CFRG_GENERATOR_PAIRING_HEX`, `#[cfg(test)]`, the 576-byte encoding of the pairing of the base points `BP` and `BP'`, which are the EIP-2537 generators, as Appendix B of `draft-irtf-cfrg-pairing-friendly-curves-11` publishes it, its twelve coefficients `e_0` through `e_11` concatenated in order, the draft's inductive octet rule being the tower order the objective states; the coefficients, each 96 hex characters: `11619b45f61edfe3b47a15fac19442526ff489dcda25e59121d9931438907dfd448299a87dde3a649bdba96e84d54558`, `153ce14a76a53e205ba8f275ef1137c56a566f638b52d34ba3bf3bf22f277d70f76316218c0dfd583a394b8448d2be7f`, `095668fb4a02fe930ed44767834c915b283b1c6ca98c047bd4c272e9ac3f3ba6ff0b05a93e59c71fba77bce995f04692`, `16deedaa683124fe7260085184d88f7d036b86f53bb5b7f1fc5e248814782065413e7d958d17960109ea006b2afdeb5f`, `09c92cf02f3cd3d2f9d34bc44eee0dd50314ed44ca5d30ce6a9ec0539be7a86b121edc61839ccc908c4bdde256cd6048`, `111061f398efc2a97ff825b04d21089e24fd8b93a47e41e60eae7e9b2a38d54fa4dedced0811c34ce528781ab9e929c7`, `01ecfcf31c86257ab00b4709c33f1c9c4e007659dd5ffc4a735192167ce197058cfb4c94225e7f1b6c26ad9ba68f63bc`, `08890726743a1f94a8193a166800b7787744a8ad8e2f9365db76863e894b7a11d83f90d873567e9d645ccf725b32d26f`, `0e61c752414ca5dfd258e9606bac08daec29b3e2c57062669556954fb227d3f1260eedf25446a086b0844bcd43646c10`, `0fe63f185f56dd29150fc498bbeea78969e7e783043620db33f75a05a0a2ce5c442beaff9da195ff15164c00ab66bdde`, `10900338a92ed0b47af211636f7cfdec717b7ee43900eee9b5fc24f0000c5874d4801372db478987691c566a8c474978`, `1454814f3085f0e6602247671bc408bbce2007201536818c901dbd4d2095dd86c1ec8b888e59611f60a301af7776be3d`
-    * `[ ]`   The test-fixture helpers, each `#[cfg(test)]`: `vector_bytes`, `zero_bytes`, `scalar_value`, and `requires_zeroize_on_drop` as `pairing/bn254_arkworks` states them; `base_field_modulus() -> BigUint`, `BigUint::from_bytes_be(&vector_bytes(BASE_FIELD_MODULUS_PADDED_HEX))`; `gt_identity_encoding() -> Vec<u8>`, `vec![0u8; 576]` with index `47` set to `1`; `g1_point_from_encoding(bytes: &[u8]) -> G1Affine`, `G1Affine::new_unchecked` over the two 64-byte coordinates of `bytes`, each its last 48 bytes read by `Fq::from_be_bytes_mod_order`; `g2_point_from_encoding(bytes: &[u8]) -> G2Affine`, `G2Affine::new_unchecked(Fq2::new(x_c0, x_c1), Fq2::new(y_c0, y_c1))` over the four 64-byte coordinates of `bytes`, read in order as `x_c0`, `x_c1`, `y_c0`, `y_c1`, each its last 48 bytes read by `Fq::from_be_bytes_mod_order`; `eip_2537_g1_generator() -> G1Affine`, `g1_point_from_encoding(&vector_bytes(G1_GENERATOR_HEX))`, the generator EIP-2537 publishes; `eip_2537_negated_g1_generator() -> G1Affine`, `g1_point_from_encoding(&vector_bytes(NEG_G1_GENERATOR_HEX))`; `eip_2537_g2_generator() -> G2Affine`, `g2_point_from_encoding(&vector_bytes(G2_GENERATOR_HEX))`; `g1_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `(1u64..).find_map(|c| G1Affine::get_point_from_x_unchecked(Fq::from(c), false).filter(|point| !point.is_in_correct_subgroup_assuming_on_curve()))` unpacked with "an on-curve point outside the subgroup exists", its `xy()` unpacked with "the point has coordinates", encoded as 16 zero bytes, `x.into_bigint().to_bytes_be()`, 16 zero bytes, and `y.into_bigint().to_bytes_be()`; `g2_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `(1u64..).find_map(|c0| G2Affine::get_point_from_x_unchecked(Fq2::new(Fq::from(c0), Fq::from(0u64)), false).filter(|point| !point.is_in_correct_subgroup_assuming_on_curve()))` unpacked with "an on-curve point outside the subgroup exists", its `xy()` unpacked with "the point has coordinates", encoded as `x.c0`, `x.c1`, `y.c0`, `y.c1`, each 16 zero bytes followed by `into_bigint().to_bytes_be()`; `definition_exponent() -> Vec<u64>`, `let p = BigUint::from(Fq::MODULUS); let r = BigUint::from(Fr::MODULUS); ((p.pow(12) - BigUint::from(1u32)) / r).to_u64_digits()`; `definition_value(g1: G1Affine, g2: G2Affine) -> Fq12`, `Bls12_381::multi_miller_loop([g1], [g2]).0.pow(definition_exponent())`, the identifier's definition of the pairing value
+    * `[ ]`   The test-fixture helpers, each `#[cfg(test)]`: `vector_bytes`, `zero_bytes`, `scalar_value`, and `requires_zeroize_on_drop` as `pairing/bn254_arkworks` states them; `base_field_modulus() -> BigUint`, `BigUint::from_bytes_be(&vector_bytes(BASE_FIELD_MODULUS_PADDED_HEX))`; `gt_identity_encoding() -> Vec<u8>`, `vec![0u8; 576]` with index `47` set to `1`; `g1_point_from_encoding(bytes: &[u8]) -> G1Affine`, `G1Affine::new_unchecked` over the two 64-byte coordinates of `bytes`, each its last 48 bytes read by `Fq::from_be_bytes_mod_order`; `g2_point_from_encoding(bytes: &[u8]) -> G2Affine`, `G2Affine::new_unchecked(Fq2::new(x_c0, x_c1), Fq2::new(y_c0, y_c1))` over the four 64-byte coordinates of `bytes`, read in order as `x_c0`, `x_c1`, `y_c0`, `y_c1`, each its last 48 bytes read by `Fq::from_be_bytes_mod_order`; `eip_2537_g1_generator() -> G1Affine`, `g1_point_from_encoding(&vector_bytes(G1_GENERATOR_HEX))`, the generator EIP-2537 publishes; `eip_2537_negated_g1_generator() -> G1Affine`, `g1_point_from_encoding(&vector_bytes(NEG_G1_GENERATOR_HEX))`; `eip_2537_g2_generator() -> G2Affine`, `g2_point_from_encoding(&vector_bytes(G2_GENERATOR_HEX))`; `g1_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `(1u64..).find_map(|c| G1Affine::get_point_from_x_unchecked(Fq::from(c), false).filter(|point| !point.is_in_correct_subgroup_assuming_on_curve()))` unpacked with "an on-curve point outside the subgroup exists", its `xy()` unpacked with "the point has coordinates", encoded as 16 zero bytes, `x.into_bigint().to_bytes_be()`, 16 zero bytes, and `y.into_bigint().to_bytes_be()`; `g2_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `(1u64..).find_map(|c0| G2Affine::get_point_from_x_unchecked(Fq2::new(Fq::from(c0), Fq::from(0u64)), false).filter(|point| !point.is_in_correct_subgroup_assuming_on_curve()))` unpacked with "an on-curve point outside the subgroup exists", its `xy()` unpacked with "the point has coordinates", encoded as `x.c0`, `x.c1`, `y.c0`, `y.c1`, each 16 zero bytes followed by `into_bigint().to_bytes_be()`; `definition_exponent() -> Vec<u64>`, `let p = BigUint::from(Fq::MODULUS); let r = BigUint::from(Fr::MODULUS); ((p.pow(12) - BigUint::from(1u32)) / r).to_u64_digits()`; `definition_value(g1: G1Affine, g2: G2Affine) -> Fq12`, `Bls12_381::multi_miller_loop([g1], [g2]).0.pow(definition_exponent())`, the identifier's definition of the pairing value; `definition_value_power(g1: G1Affine, g2: G2Affine, exponent: u64) -> Fq12`, `definition_value(g1, g2).pow([exponent])`; `eip_2537_doubled_g1_generator() -> G1Affine`, `(eip_2537_g1_generator() + eip_2537_g1_generator()).into_affine()`
     * `[ ]`   No mock function: the concrete is built as a real instance and owns no free function
 
   * `[ ]`   `adapters/pairing/src/bls12_381_arkworks/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports from `super::provides` the concrete, its owned types, and the mock's builders, constants, and helpers each block uses; from `crate::factory::provides` the params, payloads, errors, trait names, and builders each block uses; and the `ark_bls12_381`, `ark_ec`, `ark_ff`, `num_bigint::BigUint`, and `zeroize::Zeroize` names each block uses
+    * `[ ]`   Compile-time assertion over `Bls12381ArkworksPairing::DECLARATION`
+      * `[ ]`   Contract: the inherent constant is `PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`, readable before any instance exists
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading `Bls12381ArkworksPairing::DECLARATION`, each enum field tested with `matches!` and each version with `==`
+      * `[ ]`   Assert: the module compiles only if every field holds
+    * `[ ]`   Compile-time assertion over `<Bls12381ArkworksPairing as IPairingAdapter>::DECLARATION`
+      * `[ ]`   Contract: the trait constant carries the same fields as the inherent constant
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading the trait constant, each enum field tested with `matches!` and each version with `==`
+      * `[ ]`   Assert: the module compiles only if every field holds
+    * `[ ]`   Compile-time assertion over `<Bls12381ArkworksPairing as IPairingAdapter>::CONCRETE`
+      * `[ ]`   Contract: the trait constant is `PairingConcrete::Bls12381Arkworks`
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading the trait constant under `matches!`
+      * `[ ]`   Assert: the module compiles only if the constant is `PairingConcrete::Bls12381Arkworks`
+    * `[ ]`   `bls12_381_arkworks_scalar_is_zeroize_on_drop`
+      * `[ ]`   Contract: `Bls12381ArkworksScalar` implements `ZeroizeOnDrop`, the marker the sampling bound requires
+      * `[ ]`   Collaborators: none
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: `requires_zeroize_on_drop::<Bls12381ArkworksScalar>()`
+      * `[ ]`   Assert: the block compiles only if the type implements `ZeroizeOnDrop`
+    * `[ ]`   `bls12_381_arkworks_scalar_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living scalar → its `value` is zero
+      * `[ ]`   Collaborators: arkworks' `Fr` zeroization, run for real as the vendor; fixture `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_scalar` with the value override `Fr::from(5u64)`, so a scalar left unchanged differs from the expected zero
+      * `[ ]`   Act: `scalar.zeroize()`
+      * `[ ]`   Assert: `scalar.value` equals `Fr::from(0u64)`
+    * `[ ]`   `bls12_381_arkworks_g1_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living first-group element → its `value` is the point `new_unchecked(0, 0)`
+      * `[ ]`   Collaborators: arkworks' affine zeroization, run for real as the vendor; fixture `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_g1` at its default generator, which differs from the expected point
+      * `[ ]`   Act: `g1.zeroize()`
+      * `[ ]`   Assert: `g1.value` equals `G1Affine::new_unchecked(Fq::from(0u64), Fq::from(0u64))`
+    * `[ ]`   `bls12_381_arkworks_g2_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living second-group element → its `value` is the point `new_unchecked(0, 0)`
+      * `[ ]`   Collaborators: arkworks' affine zeroization, run for real as the vendor; fixture `build_bls12_381_arkworks_g2`
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_g2` at its default generator, which differs from the expected point
+      * `[ ]`   Act: `g2.zeroize()`
+      * `[ ]`   Assert: `g2.value` equals `G2Affine::new_unchecked(Fq2::new(Fq::from(0u64), Fq::from(0u64)), Fq2::new(Fq::from(0u64), Fq::from(0u64)))`
+    * `[ ]`   `bls12_381_arkworks_gt_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living target-group value → every coefficient of its `Fq12` is zero
+      * `[ ]`   Collaborators: arkworks' `PairingOutput` zeroization, run for real as the vendor; fixture `build_bls12_381_arkworks_gt`
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_gt` at its default pairing of the generators, whose `Fq12` is nonzero
+      * `[ ]`   Act: `gt.zeroize()`
+      * `[ ]`   Assert: `gt.value.0.is_zero()` is true
+    * `[ ]`   `bls12_381_arkworks_encoded_scalar_zeroize_clears_its_bytes`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living encoded scalar → every byte is zero
+      * `[ ]`   Collaborators: none; fixture `build_bls12_381_arkworks_encoded_scalar`
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_encoded_scalar` at its nonzero default
+      * `[ ]`   Act: `encoded.zeroize()`
+      * `[ ]`   Assert: the bytes of `encoded` equal `zero_bytes(32)` as a byte slice
+    * `[ ]`   `bls12_381_arkworks_encoded_gt_zeroize_clears_its_bytes`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living encoded target-group value → every byte is zero
+      * `[ ]`   Collaborators: none; fixture `build_bls12_381_arkworks_encoded_gt`
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_encoded_gt` at its nonzero default
+      * `[ ]`   Act: `encoded.zeroize()`
+      * `[ ]`   Assert: the bytes of `encoded` equal `zero_bytes(576)` as a byte slice
+    * `[ ]`   `reduced_pairing_correction_inverts_three`
+      * `[ ]`   Contract: any params → `Ok(Bls12381ArkworksPairing)` whose `reduced_pairing_correction` is the inverse of three in the scalar field
+      * `[ ]`   Collaborators: arkworks' `Fr` arithmetic, run for real as the vendor; `Bls12381ArkworksPairingConstructorParams` by its production value
+      * `[ ]`   Arrange: `Bls12381ArkworksPairingConstructorParams` by its production value
+      * `[ ]`   Act: `Bls12381ArkworksPairing::try_new(Bls12381ArkworksPairingConstructorParams)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(pairing) = …;`; `pairing.reduced_pairing_correction * Fr::from(3u64)` equals `Fr::from(1u64)`
+    * `[ ]`   `uniform_bytes_length_is_twice_the_group_order_width`
+      * `[ ]`   Contract: `UNIFORM_BYTES_LENGTH` is twice the byte width of the group order
+      * `[ ]`   Collaborators: none
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: reading `<Bls12381ArkworksScalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH`
+      * `[ ]`   Assert: the constant equals the literal 64 written in the assertion
+    * `[ ]`   `g1_generator_returns_the_eip_2537_generator`
+      * `[ ]`   Contract: any call → `Ok(G1GeneratorSuccessReturn { point })` holding the first group's generator
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; `G1GeneratorParams` and `G1GeneratorPayload` by their production values
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_pairing()`
+      * `[ ]`   Act: `g1_generator(G1GeneratorParams, G1GeneratorPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.point.value` equals `eip_2537_g1_generator()`
+    * `[ ]`   `g2_generator_returns_the_eip_2537_generator`
+      * `[ ]`   Contract: any call → `Ok(G2GeneratorSuccessReturn { point })` holding the second group's generator
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; `G2GeneratorParams` and `G2GeneratorPayload` by their production values
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_pairing()`
+      * `[ ]`   Act: `g2_generator(G2GeneratorParams, G2GeneratorPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.point.value` equals `eip_2537_g2_generator()`
+    * `[ ]`   `add_g1_of_a_point_and_its_negation_is_the_identity`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG1SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: arkworks' affine addition, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_add_g1_payload`, and `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_add_g1_payload` with the left override `build_bls12_381_arkworks_g1` at its default generator and the right override `build_bls12_381_arkworks_g1` with the value `eip_2537_negated_g1_generator()`, so a sum that returns either input differs from the identity
+      * `[ ]`   Act: `add_g1(AddG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `add_g1_of_the_identity_and_a_point_is_the_point`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG1SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: arkworks' affine addition, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_add_g1_payload`, and `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_add_g1_payload` with the left override `build_bls12_381_arkworks_g1` with the value `G1Affine::identity()` and the right override `build_bls12_381_arkworks_g1` at its default generator, so a sum that returns the left input differs from the generator
+      * `[ ]`   Act: `add_g1(AddG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_2537_g1_generator()`
+    * `[ ]`   `add_g2_of_a_point_and_its_negation_is_the_identity`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG2SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: arkworks' affine addition, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_add_g2_payload`, and `build_bls12_381_arkworks_g2`
+      * `[ ]`   Arrange: `build_add_g2_payload` with the left override `build_bls12_381_arkworks_g2` at its default generator and the right override `build_bls12_381_arkworks_g2` with the value `-eip_2537_g2_generator()`, so a sum that returns either input differs from the identity
+      * `[ ]`   Act: `add_g2(AddG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `add_g2_of_the_identity_and_a_point_is_the_point`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG2SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: arkworks' affine addition, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_add_g2_payload`, and `build_bls12_381_arkworks_g2`
+      * `[ ]`   Arrange: `build_add_g2_payload` with the left override `build_bls12_381_arkworks_g2` with the value `G2Affine::identity()` and the right override `build_bls12_381_arkworks_g2` at its default generator, so a sum that returns the left input differs from the generator
+      * `[ ]`   Act: `add_g2(AddG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_2537_g2_generator()`
+    * `[ ]`   `mul_g1_by_one_is_the_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_mul_g1_payload`, `build_bls12_381_arkworks_g1`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bls12_381_arkworks_g1` at its default generator and the scalar override `build_bls12_381_arkworks_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_2537_g1_generator()`
+    * `[ ]`   `mul_g1_by_zero_is_the_identity`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_mul_g1_payload`, `build_bls12_381_arkworks_g1`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bls12_381_arkworks_g1` at its default generator and the scalar override `build_bls12_381_arkworks_scalar` with the value `Fr::from(0u64)`, so a product that returns the point differs from the identity
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `G1Affine::identity()`
+    * `[ ]`   `mul_g1_by_the_group_order_minus_one_is_the_negated_generator`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_mul_g1_payload`, `build_bls12_381_arkworks_g1`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bls12_381_arkworks_g1` at its default generator and the scalar override `build_bls12_381_arkworks_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`, so a product that ignores the scalar differs from the negated generator
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_2537_negated_g1_generator()`
+    * `[ ]`   `mul_g2_by_one_is_the_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_mul_g2_payload`, `build_bls12_381_arkworks_g2`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bls12_381_arkworks_g2` at its default generator and the scalar override `build_bls12_381_arkworks_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_2537_g2_generator()`
+    * `[ ]`   `mul_g2_by_zero_is_the_identity`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_mul_g2_payload`, `build_bls12_381_arkworks_g2`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bls12_381_arkworks_g2` at its default generator and the scalar override `build_bls12_381_arkworks_scalar` with the value `Fr::from(0u64)`, so a product that returns the point differs from the identity
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `G2Affine::identity()`
+    * `[ ]`   `mul_g2_by_the_group_order_minus_one_is_the_negated_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: arkworks' affine scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_mul_g2_payload`, `build_bls12_381_arkworks_g2`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bls12_381_arkworks_g2` at its default generator and the scalar override `build_bls12_381_arkworks_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`, so a product that ignores the scalar differs from the negated generator
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `-eip_2537_g2_generator()`
+    * `[ ]`   `msm_g1_of_no_terms_is_the_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the identity
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing` and `build_msm_g1_payload`
+      * `[ ]`   Arrange: `build_msm_g1_payload` at its default of no terms
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `msm_g1_pairs_each_base_with_its_own_scalar`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_msm_g1_payload`, `build_msm_g1_term`, `build_bls12_381_arkworks_g1`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_msm_g1_payload` with the terms override holding two `build_msm_g1_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `eip_2537_negated_g1_generator()` with the scalar `Fr::from(0u64)`, so bases and scalars exchanged between terms yield the negated generator
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_2537_g1_generator()`
+    * `[ ]`   `msm_g1_sums_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_msm_g1_payload`, `build_msm_g1_term`, `build_bls12_381_arkworks_g1`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_msm_g1_payload` with the terms override holding two `build_msm_g1_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `eip_2537_negated_g1_generator()` with the scalar `Fr::from(1u64)`, so a sum over the first term alone differs from the identity
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `msm_g2_of_no_terms_is_the_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the identity
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing` and `build_msm_g2_payload`
+      * `[ ]`   Arrange: `build_msm_g2_payload` at its default of no terms
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `msm_g2_pairs_each_base_with_its_own_scalar`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_msm_g2_payload`, `build_msm_g2_term`, `build_bls12_381_arkworks_g2`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_msm_g2_payload` with the terms override holding two `build_msm_g2_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `-eip_2537_g2_generator()` with the scalar `Fr::from(0u64)`, so bases and scalars exchanged between terms yield the negated generator
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_2537_g2_generator()`
+    * `[ ]`   `msm_g2_sums_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: arkworks' multi-scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_msm_g2_payload`, `build_msm_g2_term`, `build_bls12_381_arkworks_g2`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_msm_g2_payload` with the terms override holding two `build_msm_g2_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `-eip_2537_g2_generator()` with the scalar `Fr::from(1u64)`, so a sum over the first term alone differs from the identity
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `pairing_product_is_one_of_no_terms_is_true`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` true
+      * `[ ]`   Collaborators: arkworks' multi-pairing, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing` and `build_pairing_product_is_one_payload`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` at its default of no terms
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is true
+    * `[ ]`   `pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to the target group's identity → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` true
+      * `[ ]`   Collaborators: arkworks' multi-pairing, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_pairing_product_is_one_payload`, `build_pairing_product_term`, and `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` with the terms override holding two `build_pairing_product_term` values: the generators, and the first-group override `build_bls12_381_arkworks_g1` with the value `eip_2537_negated_g1_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is true
+    * `[ ]`   `pairing_product_is_one_of_the_generators_is_false`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to a value other than the target group's identity → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` false
+      * `[ ]`   Collaborators: arkworks' multi-pairing, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_pairing_product_is_one_payload`, and `build_pairing_product_term`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is false
+    * `[ ]`   `decode_g1_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 128` → `Err(DecodeG1ErrorReturn::WrongLength { expected: 128, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(127)`, which differs from the required length
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::WrongLength { expected: 128, actual: 127 })`, the whole expected error
+    * `[ ]`   `decode_g1_rejects_a_nonzero_padding_byte`
+      * `[ ]`   Contract: a 128-byte payload with a nonzero byte among a coordinate's first 16 → `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: none called; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `vector_bytes(G1_NONZERO_PADDING_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_NONZERO_PADDING_HEX)`, the generator with one padding byte changed, so a decoder that ignores the padding returns the generator
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_rejects_a_non_canonical_coordinate`
+      * `[ ]`   Contract: a 128-byte payload whose first coordinate is at least the base field modulus → `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: arkworks' field reduction, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `vector_bytes(G1_X_AT_MODULUS_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_X_AT_MODULUS_HEX)`, whose reduced coordinate would otherwise fail the curve check, so a decoder that checks the curve first returns a different error
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_decodes_the_identity_from_zero_bytes`
+      * `[ ]`   Contract: a 128-byte payload with both coordinates zero → `Ok(DecodeG1SuccessReturn { point })` holding the first group's identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(128)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `G1Affine::identity()`
+    * `[ ]`   `decode_g1_rejects_a_point_off_the_curve`
+      * `[ ]`   Contract: a canonical 128-byte payload that satisfies no curve equation → `Err(DecodeG1ErrorReturn::NotOnCurve)`
+      * `[ ]`   Collaborators: arkworks' curve check, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `vector_bytes(G1_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g1_rejects_a_point_outside_the_subgroup`
+      * `[ ]`   Contract: a canonical 128-byte payload on the curve and outside the prime-order subgroup → `Err(DecodeG1ErrorReturn::NotInSubgroup)`
+      * `[ ]`   Collaborators: arkworks' subgroup check, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `g1_outside_subgroup_bytes()`
+      * `[ ]`   Arrange: the payload `g1_outside_subgroup_bytes()`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_g1_decodes_the_eip_2537_generator`
+      * `[ ]`   Contract: a canonical 128-byte payload on the curve and in the subgroup → `Ok(DecodeG1SuccessReturn { point })` holding that point
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `vector_bytes(G1_GENERATOR_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_GENERATOR_HEX)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `eip_2537_g1_generator()`
+    * `[ ]`   `decode_g2_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 256` → `Err(DecodeG2ErrorReturn::WrongLength { expected: 256, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(255)`, which differs from the required length
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::WrongLength { expected: 256, actual: 255 })`, the whole expected error
+    * `[ ]`   `decode_g2_rejects_a_nonzero_padding_byte`
+      * `[ ]`   Contract: a 256-byte payload with a nonzero byte among a coordinate's first 16 → `Err(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: none called; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `vector_bytes(G2_NONZERO_PADDING_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_NONZERO_PADDING_HEX)`, the generator with one padding byte changed, so a decoder that ignores the padding returns the generator
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g2_rejects_a_non_canonical_coordinate`
+      * `[ ]`   Contract: a 256-byte payload whose first coordinate is at least the base field modulus → `Err(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: arkworks' field reduction, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `vector_bytes(G2_X_C0_AT_MODULUS_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_X_C0_AT_MODULUS_HEX)`, whose reduced coordinate would otherwise fail the curve check, so a decoder that checks the curve first returns a different error
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g2_decodes_the_identity_from_zero_bytes`
+      * `[ ]`   Contract: a 256-byte payload with every coordinate zero → `Ok(DecodeG2SuccessReturn { point })` holding the second group's identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(256)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `G2Affine::identity()`
+    * `[ ]`   `decode_g2_rejects_a_point_off_the_curve`
+      * `[ ]`   Contract: a canonical 256-byte payload that satisfies no curve equation → `Err(DecodeG2ErrorReturn::NotOnCurve)`
+      * `[ ]`   Collaborators: arkworks' curve check, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `vector_bytes(G2_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g2_rejects_a_point_outside_the_subgroup`
+      * `[ ]`   Contract: a canonical 256-byte payload on the curve and outside the prime-order subgroup → `Err(DecodeG2ErrorReturn::NotInSubgroup)`
+      * `[ ]`   Collaborators: arkworks' subgroup check, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `g2_outside_subgroup_bytes()`
+      * `[ ]`   Arrange: the payload `g2_outside_subgroup_bytes()`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_g2_decodes_the_eip_2537_generator`
+      * `[ ]`   Contract: a canonical 256-byte payload on the curve and in the subgroup → `Ok(DecodeG2SuccessReturn { point })` holding that point
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `vector_bytes(G2_GENERATOR_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_GENERATOR_HEX)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `eip_2537_g2_generator()`
+    * `[ ]`   `decode_scalar_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 32` → `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(31)`, which differs from the required length
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: 31 })`, the whole expected error
+    * `[ ]`   `decode_scalar_rejects_the_group_order`
+      * `[ ]`   Contract: a 32-byte payload at least the group order → `Err(DecodeScalarErrorReturn::NonCanonical)`
+      * `[ ]`   Collaborators: arkworks' field reduction, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `vector_bytes(GROUP_ORDER_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(GROUP_ORDER_HEX)`, whose reduction is zero and so differs from the bytes
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeScalarErrorReturn::NonCanonical)`
+    * `[ ]`   `decode_scalar_decodes_the_largest_canonical_scalar`
+      * `[ ]`   Contract: a canonical 32-byte payload → `Ok(DecodeScalarSuccessReturn { scalar })` holding that scalar
+      * `[ ]`   Collaborators: arkworks' field reduction, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; the untrusted bytes from `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)`
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.value` equals `-Fr::from(1u64)`
+    * `[ ]`   `encode_g1_writes_the_eip_2537_generator`
+      * `[ ]`   Contract: a first-group point → `Ok(EncodeG1SuccessReturn { bytes })` holding `x` then `y`, each 16 zero bytes followed by 48 bytes big-endian, in this concrete's `Bls12381ArkworksEncodedG1`
+      * `[ ]`   Collaborators: arkworks' coordinate encoding, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_encode_g1_payload`, and `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_encode_g1_payload` with the point override `build_bls12_381_arkworks_g1` at its default generator
+      * `[ ]`   Act: `encode_g1(EncodeG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` binds to a `Bls12381ArkworksEncodedG1` typed binding; its bytes equal `vector_bytes(G1_GENERATOR_HEX)` as a byte slice
+    * `[ ]`   `encode_g1_writes_the_identity_as_zero_bytes`
+      * `[ ]`   Contract: the first group's identity → `Ok(EncodeG1SuccessReturn { bytes })` holding 128 zero bytes
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_encode_g1_payload`, and `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_encode_g1_payload` with the point override `build_bls12_381_arkworks_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `encode_g1(EncodeG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes` equal `zero_bytes(128)` as a byte slice
+    * `[ ]`   `encode_g2_writes_the_eip_2537_generator`
+      * `[ ]`   Contract: a second-group point → `Ok(EncodeG2SuccessReturn { bytes })` holding `x.c0`, `x.c1`, `y.c0`, `y.c1`, each 16 zero bytes followed by 48 bytes big-endian, in this concrete's `Bls12381ArkworksEncodedG2`
+      * `[ ]`   Collaborators: arkworks' coordinate encoding, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_encode_g2_payload`, and `build_bls12_381_arkworks_g2`
+      * `[ ]`   Arrange: `build_encode_g2_payload` with the point override `build_bls12_381_arkworks_g2` at its default generator
+      * `[ ]`   Act: `encode_g2(EncodeG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` binds to a `Bls12381ArkworksEncodedG2` typed binding; its bytes equal `vector_bytes(G2_GENERATOR_HEX)` as a byte slice
+    * `[ ]`   `encode_g2_writes_the_identity_as_zero_bytes`
+      * `[ ]`   Contract: the second group's identity → `Ok(EncodeG2SuccessReturn { bytes })` holding 256 zero bytes
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_encode_g2_payload`, and `build_bls12_381_arkworks_g2`
+      * `[ ]`   Arrange: `build_encode_g2_payload` with the point override `build_bls12_381_arkworks_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `encode_g2(EncodeG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes` equal `zero_bytes(256)` as a byte slice
+    * `[ ]`   `encode_scalar_writes_the_largest_canonical_scalar`
+      * `[ ]`   Contract: a scalar → `Ok(EncodeScalarSuccessReturn { bytes })` holding its 32 big-endian bytes in this concrete's `Bls12381ArkworksEncodedScalar`, inside a `Secret`
+      * `[ ]`   Collaborators: arkworks' integer encoding, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_encode_scalar_payload`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_encode_scalar_payload` with the scalar override `build_bls12_381_arkworks_scalar` with the value `-Fr::from(1u64)`
+      * `[ ]`   Act: `encode_scalar(EncodeScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes.expose()` binds to a `Bls12381ArkworksEncodedScalar` typed binding; its bytes equal `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)` as a byte slice
+    * `[ ]`   `sample_from_uniform_bytes_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.uniform.expose().len() != 64` → `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
+      * `[ ]`   Collaborators: `Secret::expose`, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `zero_bytes(63)`
+      * `[ ]`   Act: `Bls12381ArkworksScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 63 })`, the whole expected error
+    * `[ ]`   `sample_from_uniform_bytes_reads_the_input_as_a_big_endian_integer`
+      * `[ ]`   Contract: a 64-byte uniform input → `Ok(SampleUniformScalarSuccessReturn { scalar })` holding the input read as one big-endian integer reduced modulo the group order, inside a `Secret`
+      * `[ ]`   Collaborators: `Secret::expose` and arkworks' modular reduction, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `vector_bytes(UNIFORM_FIVE_HEX)`, whose last byte is five, so an input read as little-endian yields a different scalar
+      * `[ ]`   Act: `Bls12381ArkworksScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.expose().value` equals `Fr::from(5u64)`
+    * `[ ]`   `sample_from_uniform_bytes_reduces_the_group_order_to_zero`
+      * `[ ]`   Contract: a 64-byte uniform input → `Ok(SampleUniformScalarSuccessReturn { scalar })` holding the input reduced modulo the group order, inside a `Secret`
+      * `[ ]`   Collaborators: `Secret::expose` and arkworks' modular reduction, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `vector_bytes(UNIFORM_GROUP_ORDER_HEX)`, whose reduction is zero and so differs from the input
+      * `[ ]`   Act: `Bls12381ArkworksScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.expose().value` equals `Fr::from(0u64)`
+    * `[ ]`   `add_scalar_of_two_and_three_is_five`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddScalarSuccessReturn { sum })` holding their sum modulo the group order
+      * `[ ]`   Collaborators: arkworks' `Fr` addition, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_add_scalar_payload`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_add_scalar_payload` with the left override `build_bls12_381_arkworks_scalar` with the value `Fr::from(2u64)` and the right override with the value `Fr::from(3u64)`
+      * `[ ]`   Act: `add_scalar(AddScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `Fr::from(5u64)`
+    * `[ ]`   `add_scalar_reduces_modulo_the_group_order`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddScalarSuccessReturn { sum })` holding their sum modulo the group order
+      * `[ ]`   Collaborators: arkworks' `Fr` addition, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_add_scalar_payload`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_add_scalar_payload` with the left override `build_bls12_381_arkworks_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)` and the right override with the value `Fr::from(2u64)`, whose integer sum exceeds the group order
+      * `[ ]`   Act: `add_scalar(AddScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `Fr::from(1u64)`
+    * `[ ]`   `mul_scalar_of_two_and_three_is_six`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(MulScalarSuccessReturn { product })` holding their product modulo the group order
+      * `[ ]`   Collaborators: arkworks' `Fr` multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_mul_scalar_payload`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_scalar_payload` with the left override `build_bls12_381_arkworks_scalar` with the value `Fr::from(2u64)` and the right override with the value `Fr::from(3u64)`
+      * `[ ]`   Act: `mul_scalar(MulScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `Fr::from(6u64)`
+    * `[ ]`   `mul_scalar_reduces_modulo_the_group_order`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(MulScalarSuccessReturn { product })` holding their product modulo the group order
+      * `[ ]`   Collaborators: arkworks' `Fr` multiplication, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_mul_scalar_payload`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_mul_scalar_payload` with the left override `build_bls12_381_arkworks_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)` and the right override with the value `Fr::from(2u64)`, whose integer product exceeds the group order
+      * `[ ]`   Act: `mul_scalar(MulScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `scalar_value(GROUP_ORDER_MINUS_TWO_HEX)`
+    * `[ ]`   `neg_scalar_of_one_is_the_group_order_minus_one`
+      * `[ ]`   Contract: `payload.scalar` → `Ok(NegScalarSuccessReturn { negation })` holding the group order minus the scalar
+      * `[ ]`   Collaborators: arkworks' `Fr` negation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_neg_scalar_payload`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_neg_scalar_payload` with the scalar override `build_bls12_381_arkworks_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `neg_scalar(NegScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`
+    * `[ ]`   `neg_scalar_of_zero_is_zero`
+      * `[ ]`   Contract: `payload.scalar` of zero → `Ok(NegScalarSuccessReturn { negation })` holding zero
+      * `[ ]`   Collaborators: arkworks' `Fr` negation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_neg_scalar_payload`, and `build_bls12_381_arkworks_scalar`
+      * `[ ]`   Arrange: `build_neg_scalar_payload` with the scalar override `build_bls12_381_arkworks_scalar` with the value `Fr::from(0u64)`
+      * `[ ]`   Act: `neg_scalar(NegScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `Fr::from(0u64)`
+    * `[ ]`   `neg_g1_of_the_generator_is_the_negated_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(NegG1SuccessReturn { negation })` holding `(x, p - y)` for a point `(x, y)`
+      * `[ ]`   Collaborators: arkworks' affine negation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_neg_g1_payload`, and `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_neg_g1_payload` with the point override `build_bls12_381_arkworks_g1` at its default generator
+      * `[ ]`   Act: `neg_g1(NegG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `eip_2537_negated_g1_generator()`
+    * `[ ]`   `neg_g1_of_the_identity_is_the_identity`
+      * `[ ]`   Contract: `payload.point` of the identity → `Ok(NegG1SuccessReturn { negation })` holding the identity
+      * `[ ]`   Collaborators: arkworks' affine negation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_neg_g1_payload`, and `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_neg_g1_payload` with the point override `build_bls12_381_arkworks_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `neg_g1(NegG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `G1Affine::identity()`
+    * `[ ]`   `neg_g2_negates_each_y_coefficient_modulo_the_base_field`
+      * `[ ]`   Contract: `payload.point` → `Ok(NegG2SuccessReturn { negation })` holding `(x, p - y)` for a point `(x, y)`, each `y` coefficient negated
+      * `[ ]`   Collaborators: arkworks' affine negation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_neg_g2_payload`, and `build_bls12_381_arkworks_g2`
+      * `[ ]`   Arrange: `build_neg_g2_payload` with the point override `build_bls12_381_arkworks_g2` at its default generator
+      * `[ ]`   Act: `neg_g2(NegG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the negation's `xy()` has an `x` equal to the generator's `x` from `eip_2537_g2_generator().xy()`; its `y.c0` and `y.c1`, each as a `BigUint`, equal `base_field_modulus()` minus the generator's corresponding coefficient as a `BigUint`
+    * `[ ]`   `neg_g2_of_the_identity_is_the_identity`
+      * `[ ]`   Contract: `payload.point` of the identity → `Ok(NegG2SuccessReturn { negation })` holding the identity
+      * `[ ]`   Collaborators: arkworks' affine negation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_neg_g2_payload`, and `build_bls12_381_arkworks_g2`
+      * `[ ]`   Arrange: `build_neg_g2_payload` with the point override `build_bls12_381_arkworks_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `neg_g2(NegG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `G2Affine::identity()`
+    * `[ ]`   `is_identity_g1_is_true_for_the_identity`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG1SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_is_identity_g1_payload`, and `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_is_identity_g1_payload` with the point override `build_bls12_381_arkworks_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `is_identity_g1(IsIdentityG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is true
+    * `[ ]`   `is_identity_g1_is_false_for_the_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG1SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_is_identity_g1_payload`, and `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_is_identity_g1_payload` with the point override `build_bls12_381_arkworks_g1` at its default generator
+      * `[ ]`   Act: `is_identity_g1(IsIdentityG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is false
+    * `[ ]`   `is_identity_g2_is_true_for_the_identity`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG2SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_is_identity_g2_payload`, and `build_bls12_381_arkworks_g2`
+      * `[ ]`   Arrange: `build_is_identity_g2_payload` with the point override `build_bls12_381_arkworks_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `is_identity_g2(IsIdentityG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is true
+    * `[ ]`   `is_identity_g2_is_false_for_the_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG2SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: arkworks, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_is_identity_g2_payload`, and `build_bls12_381_arkworks_g2`
+      * `[ ]`   Arrange: `build_is_identity_g2_payload` with the point override `build_bls12_381_arkworks_g2` at its default generator
+      * `[ ]`   Act: `is_identity_g2(IsIdentityG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is false
+    * `[ ]`   `pairing_product_of_no_terms_is_the_target_group_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(PairingProductSuccessReturn { product })` holding the target group's identity
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing` and `build_pairing_product_payload`
+      * `[ ]`   Arrange: `build_pairing_product_payload` at its default of no terms
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` is the identity under `is_zero()`
+    * `[ ]`   `pairing_product_of_the_generators_is_not_the_target_group_identity`
+      * `[ ]`   Contract: a pairing of the generators → `Ok(PairingProductSuccessReturn { product })` holding a value other than the target group's identity
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` is not the identity under `is_zero()`
+    * `[ ]`   `pairing_product_is_bilinear`
+      * `[ ]`   Contract: a term whose first-group element is twice the generator → `Ok(PairingProductSuccessReturn { product })` holding the generators' pairing raised to the power two
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_pairing_product_payload`, `build_pairing_product_term`, and `build_bls12_381_arkworks_g1`; the expectation is `definition_value_power`, the identifier's definition raised to a power in the fixtures, independent of the correction `pairing_product` applies
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` with the first-group override `build_bls12_381_arkworks_g1` with the value `eip_2537_doubled_g1_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.0` equals `definition_value_power(eip_2537_g1_generator(), eip_2537_g2_generator(), 2)`
+    * `[ ]`   `pairing_product_multiplies_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(PairingProductSuccessReturn { product })` holding the product of each term's pairing
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`; the expectation is `definition_value_power`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding two `build_pairing_product_term` values at their default generators, so a product over one term differs from the expected square
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.0` equals `definition_value_power(eip_2537_g1_generator(), eip_2537_g2_generator(), 2)`
+    * `[ ]`   `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to the target group's identity → `Ok(PairingProductSuccessReturn { product })` holding the identity
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_pairing_product_payload`, `build_pairing_product_term`, and `build_bls12_381_arkworks_g1`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding two `build_pairing_product_term` values: the generators, and the first-group override `build_bls12_381_arkworks_g1` with the value `eip_2537_negated_g1_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` is the identity under `is_zero()`
+    * `[ ]`   `pairing_product_of_the_generators_equals_the_definition`
+      * `[ ]`   Contract: a pairing of the generators → `Ok(PairingProductSuccessReturn { product })` holding the Miller loop's value raised to the exact exponent `(p^12 - 1) / r`, the value `TargetGroupEncodingIdentifier::Bls12381V1` defines, which is the library's reduced pairing with the cube removed
+      * `[ ]`   Collaborators: arkworks' multi-pairing and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`; the expectation is `definition_value`, the Miller loop over the generators raised to `definition_exponent()` built by `num-bigint`, independent of the correction `pairing_product` applies
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.0` equals `definition_value(eip_2537_g1_generator(), eip_2537_g2_generator())`
+    * `[ ]`   `encode_gt_writes_the_target_group_identity_with_c0_c0_c0_first`
+      * `[ ]`   Contract: a target-group value → `Ok(EncodeGtSuccessReturn { bytes })` holding its twelve coefficients in tower order, `c0.c0.c0` first, each 48 bytes big-endian, inside a `Secret`
+      * `[ ]`   Collaborators: arkworks' integer encoding, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_encode_gt_payload`, and `build_bls12_381_arkworks_gt`; the expectation is `gt_identity_encoding()`
+      * `[ ]`   Arrange: `build_encode_gt_payload` with the value override `build_bls12_381_arkworks_gt` with the value `PairingOutput(Fq12::ONE)`, the target group's identity
+      * `[ ]`   Act: `encode_gt(EncodeGtParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes.expose()` binds to a `Bls12381ArkworksEncodedGt` typed binding; its bytes equal `gt_identity_encoding()` as a byte slice
+    * `[ ]`   `encode_gt_writes_the_published_pairing_of_the_generators`
+      * `[ ]`   Contract: a target-group value → `Ok(EncodeGtSuccessReturn { bytes })` holding its twelve coefficients in tower order, `c0.c0.c0` through `c1.c2.c1`, each 48 bytes big-endian, inside a `Secret`
+      * `[ ]`   Collaborators: arkworks' integer encoding, run for real as the vendor; fixtures `build_bls12_381_arkworks_pairing`, `build_encode_gt_payload`, and `build_bls12_381_arkworks_gt`; the expectation is `CFRG_GENERATOR_PAIRING_HEX`, the pairing of the base points published in the CFRG draft's test-vector appendix
+      * `[ ]`   Arrange: `build_encode_gt_payload` with the value override `build_bls12_381_arkworks_gt` with the value `PairingOutput(definition_value(eip_2537_g1_generator(), eip_2537_g2_generator()))`, the identifier's value for the generators, whose twelve coefficients are distinct, so any exchange of two positions changes the bytes
+      * `[ ]`   Act: `encode_gt(EncodeGtParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes.expose()` equal `vector_bytes(CFRG_GENERATOR_PAIRING_HEX)` as a byte slice
+    * `[ ]`   `scalar_field_order_is_the_group_order`
+      * `[ ]`   Contract: any call → `Ok(ScalarFieldOrderSuccessReturn { bytes })` holding the group order's 32 big-endian bytes
+      * `[ ]`   Collaborators: arkworks' scalar field modulus, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; `ScalarFieldOrderParams` and `ScalarFieldOrderPayload` by their production values
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_pairing()`
+      * `[ ]`   Act: `scalar_field_order(ScalarFieldOrderParams, ScalarFieldOrderPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` equals `vector_bytes(GROUP_ORDER_HEX)`
+    * `[ ]`   `g1_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup`
+      * `[ ]`   Contract: any call → `Ok(G1OutsideSubgroupEncodingSuccessReturn { bytes: Some(bytes) })` holding the precompile encoding of an on-curve point outside the prime-order subgroup, in this concrete's `Bls12381ArkworksEncodedG1`
+      * `[ ]`   Collaborators: arkworks' curve and subgroup checks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; `G1OutsideSubgroupEncodingParams` and `G1OutsideSubgroupEncodingPayload` by their production values; the point read back by `g1_point_from_encoding`
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_pairing()`
+      * `[ ]`   Act: `g1_outside_subgroup_encoding(G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.bytes` is `Some` and its content binds to a `Bls12381ArkworksEncodedG1` typed binding; the point `g1_point_from_encoding` reads from its bytes satisfies `is_on_curve()` and does not satisfy `is_in_correct_subgroup_assuming_on_curve()`
+    * `[ ]`   `g1_outside_subgroup_encoding_uses_the_least_first_coordinate`
+      * `[ ]`   Contract: any call → the encoded point's `x` is the least `x` of an on-curve point outside the subgroup in an ascending search
+      * `[ ]`   Collaborators: arkworks' curve and subgroup checks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; `G1OutsideSubgroupEncodingParams` and `G1OutsideSubgroupEncodingPayload` by their production values; the expectation is `g1_outside_subgroup_bytes()`, the ascending search in the fixtures
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_pairing()`
+      * `[ ]`   Act: `g1_outside_subgroup_encoding(G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the first 64 bytes of the encoding, the `x` coordinate, equal the first 64 bytes of `g1_outside_subgroup_bytes()`
+    * `[ ]`   `g1_outside_subgroup_encoding_takes_the_lesser_root`
+      * `[ ]`   Contract: any call → the encoded point's `y` is the lesser of the two roots sharing its `x`
+      * `[ ]`   Collaborators: arkworks' curve and subgroup checks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; `G1OutsideSubgroupEncodingParams` and `G1OutsideSubgroupEncodingPayload` by their production values; the expectation is `base_field_modulus()`
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_pairing()`
+      * `[ ]`   Act: `g1_outside_subgroup_encoding(G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the last 48 bytes of the encoding's `y` coordinate, bytes 80 through 127, read as a `BigUint`, are not greater than `base_field_modulus()` minus that value
+    * `[ ]`   `g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup`
+      * `[ ]`   Contract: any call → `Ok(G2OutsideSubgroupEncodingSuccessReturn { bytes })` holding the precompile encoding of an on-curve point outside the prime-order subgroup, in this concrete's `Bls12381ArkworksEncodedG2`
+      * `[ ]`   Collaborators: arkworks' curve and subgroup checks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; `G2OutsideSubgroupEncodingParams` and `G2OutsideSubgroupEncodingPayload` by their production values; the point read back by `g2_point_from_encoding`
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_pairing()`
+      * `[ ]`   Act: `g2_outside_subgroup_encoding(G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.bytes` binds to a `Bls12381ArkworksEncodedG2` typed binding; the point `g2_point_from_encoding` reads from its bytes satisfies `is_on_curve()` and does not satisfy `is_in_correct_subgroup_assuming_on_curve()`
+    * `[ ]`   `g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root`
+      * `[ ]`   Contract: any call → the encoded point's first coordinate is `(c0, 0)` with the least `c0` of an on-curve point outside the subgroup, and its `y` is the lesser of the two roots, compared by `y.c1` and then `y.c0`
+      * `[ ]`   Collaborators: arkworks' curve and subgroup checks, run for real as the vendor; fixture `build_bls12_381_arkworks_pairing`; `G2OutsideSubgroupEncodingParams` and `G2OutsideSubgroupEncodingPayload` by their production values; the expectations are `g2_outside_subgroup_bytes()`, the ascending search in the fixtures, and `base_field_modulus()`
+      * `[ ]`   Arrange: `build_bls12_381_arkworks_pairing()`
+      * `[ ]`   Act: `g2_outside_subgroup_encoding(G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the encoding's `x.c1` coordinate, bytes 64 through 127, is all zero; its `x.c0` coordinate, bytes 0 through 63, equals the first 64 bytes of `g2_outside_subgroup_bytes()`; the pair `y.c1`, `y.c0`, each the last 48 bytes of its 64-byte coordinate read as a `BigUint`, is not greater than the pair of their negations, each `base_field_modulus()` minus the coefficient, reduced to zero where the coefficient is zero
 
   * `[✅]`   `construction`
     * `[✅]`   `Bls12381ArkworksPairing::try_new` is the concrete's only producer, computing its one field, and its only caller is the pairing factory, which reads `Bls12381ArkworksPairing::DECLARATION` before constructing
@@ -921,7 +2519,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`; the correction is computed in `try_new` and read from no configuration; neither the order nor a point is written as a literal
 
   * `[✅]`   `adapters/pairing/src/bls12_381_arkworks/provides.rs`
-    * `[✅]`   The one line `pub(crate) use super::interface::*;`, exposing every item of the concrete's interface to the crate and nothing beyond it
+    * `[✅]`   `pub(crate) use super::interface::*;` and `#[cfg(test)] pub(crate) use super::mock::*;`, exposing every item of the concrete's interface to the crate and, in the crate's own test build, the concrete's builders, fixtures, and helpers, and nothing beyond them
 
   * `[✅]`   `directionality`
     * `[✅]`   `bls12_381_arkworks` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on the arkworks crates; it depends on no other concrete and no concrete depends on it; the `factory` module depends on no concrete; among repository crates the crate depends on `crates/domain` alone at runtime
@@ -977,8 +2575,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Reverse dependency: `pairing/factory`
 
   * `[ ]`   `context_slice`
-    * `[✅]`   From `halo2curves::bls12381`: `Bls12381`, the engine; `Fq`, whose representation is 48 bytes; `Fq2` with `Fq2::new(c0, c1)` and the accessors `c0()` and `c1()`; `Fq12` with `c0()` and `c1()` and the degree-six accessors `c0()`, `c1()`, and `c2()`; `Fr`, whose representation is 32 bytes; `G1`, `G1Affine`, `G2`, `G2Affine`; and `Gt` with `Gt::identity()`, `Gt::inner()`, and `Mul<&Fr> for &Gt`, the exponentiation of a target-group value by a scalar
-    * `[✅]`   From `halo2curves::ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `Fr::from(u64)`; `Field` for `ZERO`, `ONE`, `is_zero()`, `square()`, `sqrt()` returning a `CtOption`, and `pow_vartime(&self, exp: impl AsRef<[u64]>)`, exponentiation by little-endian limbs, on `Fr` and on `Fq12`; unary `-` on `Fq` and `Fq2`; `PrimeField` for `from_repr(repr) -> CtOption<Self>`, which reads little-endian bytes and is none at or above the modulus, `to_repr()`, which writes little-endian bytes read by `as_ref()`, 48 for `Fq` and 32 for `Fr`, and `MODULUS`, the `&'static str` hex modulus with the `0x` prefix, on `Fq` and on `Fr`; `FromUniformBytes::<64>::from_uniform_bytes(&[u8; 64])` on `Fr`, a little-endian wide reduction
+    * `[✅]`   From `halo2curves::bls12381`: `Bls12381`, the engine; `Fq`, whose representation is 48 bytes; `Fq2` with `Fq2::new(c0, c1)` and the accessors `c0()` and `c1()`; `Fq12` with `c0()` and `c1()` and the degree-six accessors `c0()`, `c1()`, and `c2()`; `Fr`, whose representation is 32 bytes; `G1`, `G1Affine`, `G2`, `G2Affine`; and `Gt` with `Gt::identity()`, `Gt::inner()`, `PartialEq`, and `Mul<&Fr> for &Gt`, the exponentiation of a target-group value by a scalar
+    * `[✅]`   From `halo2curves::ff`: `Fr`'s `+`, `*`, and unary `-` modulo the group order; `Fr::from(u64)`; `Field` for `ZERO`, `ONE`, `is_zero()`, `square()`, `sqrt()` returning a `CtOption`, `invert()` returning a `CtOption`, and `pow_vartime(&self, exp: impl AsRef<[u64]>)`, exponentiation by little-endian limbs, on `Fr` and on `Fq12`; unary `-` on `Fq` and `Fq2` and binary `+` on `Fq2`; `PrimeField` for `from_repr(repr) -> CtOption<Self>`, which reads little-endian bytes and is none at or above the modulus, `to_repr()`, which writes little-endian bytes read by `as_ref()`, 48 for `Fq` and 32 for `Fr`, and `MODULUS`, the `&'static str` hex modulus with the `0x` prefix, on `Fq` and on `Fr`; `FromUniformBytes::<64>::from_uniform_bytes(&[u8; 64])` on `Fr`, a little-endian wide reduction
     * `[✅]`   From `halo2curves::group`: `Curve::to_affine`, `Group::is_identity`, `prime::PrimeCurveAffine` for `generator()`, `identity()`, `is_identity()` returning a `Choice`, and `to_curve()`, `cofactor::CofactorGroup::is_torsion_free` on `G1` and on `G2`, and the projective `+` and `* Fr`; unary `-` on `G1Affine` and `G2Affine`
     * `[✅]`   From `halo2curves`: `CurveAffine` for `from_xy(x, y) -> CtOption<Self>`, which is none off the curve, `coordinates() -> CtOption<Coordinates<Self>>`, and `b()`; `Coordinates` for `x()` and `y()`; `msm::msm_best(coeffs: &[C::Scalar], bases: &[C]) -> C::Curve`
     * `[✅]`   From `halo2curves::pairing`: `MultiMillerLoop::multi_miller_loop(&[(&G1Affine, &G2Affine)])` on `Bls12381`, returning the unreduced `Fq12`, `MillerLoopResult::final_exponentiation` returning `Gt`, whose `is_identity()` is the check, and `Engine::pairing(&G1Affine, &G2Affine)` for the builder default
@@ -1028,14 +2626,529 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `Ordering and edges`, a bulleted section: every decoder checks in the stated order, length, then canonicality, then identity, then curve, then subgroup, and copies each 48-byte coordinate out of the fixed-size array before reversing it to little-endian; an empty `msm` term list yields the identity, and an empty `pairing_product_is_one` term list yields `is_one: true`, as EIP-2537 does for empty input; halo2curves' `Fr` implements no `Zeroize`, so `Bls12381Halo2curvesScalar`'s `Zeroize` implementation and its `Drop` set `value` to `Fr::ZERO` and pass `&self.value` to `black_box`, which keeps the clearing from being removed as a dead store, every clone a consumer places in a payload being cleared when the payload drops, and the same zero-then-`black_box` treatment clears the `Vec<Fr>` an `msm` builds; halo2curves' affine points and `Gt` implement no `Zeroize`, so `Bls12381Halo2curvesG1`, `Bls12381Halo2curvesG2`, and `Bls12381Halo2curvesGt` clear by setting `value` to `G1Affine::identity()`, `G2Affine::identity()`, or `Gt::identity()` and passing `&self.value` to `black_box`, in their `Zeroize` implementations and their `Drop`; each outside-the-subgroup search is ascending from one and stops at the first on-curve point outside the subgroup, the choice between a point and its negation follows the search and precedes the encoding, and the same call always returns the same bytes; `params` carries no control and is not read in any method, and no reference method reads its payload
 
   * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/mock.rs`
-    * `[ ]`   The module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `super::interface::{Bls12381Halo2curvesG1, Bls12381Halo2curvesG2, Bls12381Halo2curvesGt, Bls12381Halo2curvesPairing, Bls12381Halo2curvesPairingConstructorParams, Bls12381Halo2curvesScalar}`, `core::iter::successors`, `halo2curves::CurveAffine`, `halo2curves::bls12381::{Bls12381, Fq, Fq2, Fq12, Fr, G1Affine, G2Affine, Gt}`, `halo2curves::ff::{Field, PrimeField}`, `halo2curves::group::{cofactor::CofactorGroup, prime::PrimeCurveAffine}`, and `halo2curves::pairing::{Engine, MultiMillerLoop}`; and, `#[cfg(test)]`, `hex::decode`, `num_bigint::BigUint`, and `zeroize::ZeroizeOnDrop`
+    * `[ ]`   The module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`; imports `super::interface::{Bls12381Halo2curvesEncodedGt, Bls12381Halo2curvesEncodedScalar, Bls12381Halo2curvesG1, Bls12381Halo2curvesG2, Bls12381Halo2curvesGt, Bls12381Halo2curvesPairing, Bls12381Halo2curvesPairingConstructorParams, Bls12381Halo2curvesScalar}`, `core::iter::successors`, `halo2curves::CurveAffine`, `halo2curves::bls12381::{Bls12381, Fq, Fq2, Fq12, Fr, G1Affine, G2Affine, Gt}`, `halo2curves::ff::{Field, PrimeField}`, `halo2curves::group::{cofactor::CofactorGroup, prime::PrimeCurveAffine}`, and `halo2curves::pairing::{Engine, MultiMillerLoop}`; and, `#[cfg(test)]`, `halo2curves::group::Curve`, `hex::decode`, `num_bigint::BigUint`, and `zeroize::ZeroizeOnDrop`
     * `[✅]`   `impl Default for Bls12381Halo2curvesScalar` returning `value: Fr::ONE`; `impl Default for Bls12381Halo2curvesG1` returning `value: G1Affine::generator()`; `impl Default for Bls12381Halo2curvesG2` returning `value: G2Affine::generator()`; `impl Default for Bls12381Halo2curvesGt` returning `value: Bls12381::pairing(&G1Affine::generator(), &G2Affine::generator())`, a non-identity target-group value; the family's generic builders and `MockIPairingAdapter` read these through `Default`
     * `[ ]`   The builders for the concrete's owned types, each overrides struct `#[derive(Default)]` with one `Option` field and each omitted value taking the type's `Default` above: `Bls12381Halo2curvesScalarOverrides` with `pub value: Option<Fr>` and `build_bls12_381_halo2curves_scalar`; `Bls12381Halo2curvesG1Overrides` with `pub value: Option<G1Affine>` and `build_bls12_381_halo2curves_g1`; `Bls12381Halo2curvesG2Overrides` with `pub value: Option<G2Affine>` and `build_bls12_381_halo2curves_g2`; `Bls12381Halo2curvesGtOverrides` with `pub value: Option<Gt>` and `build_bls12_381_halo2curves_gt`; no corruptions type and no invalidator, since none of these arrives as untrusted data
     * `[ ]`   `build_bls12_381_halo2curves_pairing() -> Bls12381Halo2curvesPairing`, the real instance from `Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams)` through `let Ok(pairing) = …;`; the constructor params are fieldless, so the builder takes no overrides
-    * `[ ]`   The test fixtures, each `#[cfg(test)]`, since they use the crate's dev-dependencies: the constants `pairing/bls12_381_arkworks` states in its `mock.rs`, by the same names and values; the helpers `vector_bytes`, `zero_bytes`, `base_field_modulus`, `gt_identity_encoding`, and `requires_zeroize_on_drop` as `pairing/bls12_381_arkworks` states them; `scalar_value(hex: &str) -> Fr` as `pairing/bn254_halo2curves` states it; `g1_point_from_encoding(bytes: &[u8]) -> Option<G1Affine>`, `G1Affine::from_xy` over the two 64-byte coordinates of `bytes`, each its last 48 bytes copied into a `[u8; 48]`, reversed to little-endian, and read by `Fq::from_repr`, `None` off the curve; `g2_point_from_encoding(bytes: &[u8]) -> Option<G2Affine>`, `G2Affine::from_xy(Fq2::new(x_c0, x_c1), Fq2::new(y_c0, y_c1))` over the four 64-byte coordinates of `bytes`, read in order as `x_c0`, `x_c1`, `y_c0`, `y_c1` the same way; `eip_2537_g1_generator() -> G1Affine`, `eip_2537_negated_g1_generator() -> G1Affine`, and `eip_2537_g2_generator() -> G2Affine`, the point `g1_point_from_encoding` or `g2_point_from_encoding` returns over `vector_bytes(G1_GENERATOR_HEX)`, `vector_bytes(NEG_G1_GENERATOR_HEX)`, or `vector_bytes(G2_GENERATOR_HEX)`, unpacked by `let Some(point) = … else { panic!("the published point is on the curve") };`; `g1_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `successors(Some(Fq::ONE), |x| Some(*x + Fq::ONE)).find_map(|x| Option::<Fq>::from((x.square() * x + G1Affine::b()).sqrt()).and_then(|y| Option::<G1Affine>::from(G1Affine::from_xy(x, y)).filter(|point| !bool::from(point.to_curve().is_torsion_free())).map(|_| (x, y))))` unpacked by `let Some((x, y)) = … else { panic!("an on-curve point outside the subgroup exists") };`, encoded as 16 zero bytes, `x.to_repr().as_ref().iter().rev()`, 16 zero bytes, and `y.to_repr().as_ref().iter().rev()`; `g2_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `successors(Some(Fq::ONE), |c0| Some(*c0 + Fq::ONE)).find_map(|c0| { let x = Fq2::new(c0, Fq::ZERO); Option::<Fq2>::from((x.square() * x + G2Affine::b()).sqrt()).and_then(|y| Option::<G2Affine>::from(G2Affine::from_xy(x, y)).filter(|point| !bool::from(point.to_curve().is_torsion_free())).map(|_| (x, y))) })` unpacked the same way, encoded as `x.c0()`, `x.c1()`, `y.c0()`, `y.c1()`, each 16 zero bytes followed by `to_repr().as_ref().iter().rev()`; `definition_exponent() -> Vec<u64>`, `let Some(p) = BigUint::parse_bytes(Fq::MODULUS.trim_start_matches("0x").as_bytes(), 16) else { panic!("the base field modulus parses") }; let Some(r) = BigUint::parse_bytes(Fr::MODULUS.trim_start_matches("0x").as_bytes(), 16) else { panic!("the group order parses") }; ((p.pow(12) - BigUint::from(1u32)) / r).to_u64_digits()`; `definition_value(g1: G1Affine, g2: G2Affine) -> Fq12`, `Bls12381::multi_miller_loop(&[(&g1, &g2)]).pow_vartime(definition_exponent())`, the identifier's definition of the pairing value
+    * `[ ]`   The builders for the concrete's encoded scalar and encoded target-group types, each overrides struct `#[derive(Default)]` with one `Option` field: `Bls12381Halo2curvesEncodedScalarOverrides` with `pub bytes: Option<[u8; 32]>` and `build_bls12_381_halo2curves_encoded_scalar(overrides: Bls12381Halo2curvesEncodedScalarOverrides) -> Bls12381Halo2curvesEncodedScalar`, the bytes defaulting to `[1u8; 32]`; `Bls12381Halo2curvesEncodedGtOverrides` with `pub bytes: Option<[u8; 576]>` and `build_bls12_381_halo2curves_encoded_gt`, the bytes defaulting to `[1u8; 576]`; the defaults are nonzero so a zeroized value differs from a built one; no corruptions type and no invalidator, since neither arrives as untrusted data
+    * `[ ]`   The test fixtures, each `#[cfg(test)]`, since they use the crate's dev-dependencies: the constants `pairing/bls12_381_arkworks` states in its `mock.rs`, by the same names and values; the helpers `vector_bytes`, `zero_bytes`, `base_field_modulus`, `gt_identity_encoding`, and `requires_zeroize_on_drop` as `pairing/bls12_381_arkworks` states them; `scalar_value(hex: &str) -> Fr` as `pairing/bn254_halo2curves` states it; `g1_point_from_encoding(bytes: &[u8]) -> Option<G1Affine>`, `G1Affine::from_xy` over the two 64-byte coordinates of `bytes`, each its last 48 bytes copied into a `[u8; 48]`, reversed to little-endian, and read by `Fq::from_repr`, `None` off the curve; `g2_point_from_encoding(bytes: &[u8]) -> Option<G2Affine>`, `G2Affine::from_xy(Fq2::new(x_c0, x_c1), Fq2::new(y_c0, y_c1))` over the four 64-byte coordinates of `bytes`, read in order as `x_c0`, `x_c1`, `y_c0`, `y_c1` the same way; `eip_2537_g1_generator() -> G1Affine`, `eip_2537_negated_g1_generator() -> G1Affine`, and `eip_2537_g2_generator() -> G2Affine`, the point `g1_point_from_encoding` or `g2_point_from_encoding` returns over `vector_bytes(G1_GENERATOR_HEX)`, `vector_bytes(NEG_G1_GENERATOR_HEX)`, or `vector_bytes(G2_GENERATOR_HEX)`, unpacked by `let Some(point) = … else { panic!("the published point is on the curve") };`; `g1_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `successors(Some(Fq::ONE), |x| Some(*x + Fq::ONE)).find_map(|x| Option::<Fq>::from((x.square() * x + G1Affine::b()).sqrt()).and_then(|y| Option::<G1Affine>::from(G1Affine::from_xy(x, y)).filter(|point| !bool::from(point.to_curve().is_torsion_free())).map(|_| (x, y))))` unpacked by `let Some((x, y)) = … else { panic!("an on-curve point outside the subgroup exists") };`, encoded as 16 zero bytes, `x.to_repr().as_ref().iter().rev()`, 16 zero bytes, and `y.to_repr().as_ref().iter().rev()`; `g2_outside_subgroup_bytes() -> Vec<u8>`, the least on-curve point outside the subgroup, `successors(Some(Fq::ONE), |c0| Some(*c0 + Fq::ONE)).find_map(|c0| { let x = Fq2::new(c0, Fq::ZERO); Option::<Fq2>::from((x.square() * x + G2Affine::b()).sqrt()).and_then(|y| Option::<G2Affine>::from(G2Affine::from_xy(x, y)).filter(|point| !bool::from(point.to_curve().is_torsion_free())).map(|_| (x, y))) })` unpacked the same way, encoded as `x.c0()`, `x.c1()`, `y.c0()`, `y.c1()`, each 16 zero bytes followed by `to_repr().as_ref().iter().rev()`; `definition_exponent() -> Vec<u64>`, `let Some(p) = BigUint::parse_bytes(Fq::MODULUS.trim_start_matches("0x").as_bytes(), 16) else { panic!("the base field modulus parses") }; let Some(r) = BigUint::parse_bytes(Fr::MODULUS.trim_start_matches("0x").as_bytes(), 16) else { panic!("the group order parses") }; ((p.pow(12) - BigUint::from(1u32)) / r).to_u64_digits()`; `definition_value(g1: G1Affine, g2: G2Affine) -> Fq12`, `Bls12381::multi_miller_loop(&[(&g1, &g2)]).pow_vartime(definition_exponent())`, the identifier's definition of the pairing value; `definition_value_power(g1: G1Affine, g2: G2Affine, exponent: u64) -> Fq12`, `definition_value(g1, g2).pow_vartime([exponent])`; `eip_2537_doubled_g1_generator() -> G1Affine`, `(eip_2537_g1_generator().to_curve() + eip_2537_g1_generator().to_curve()).to_affine()`; `corrected_generator_pairing() -> Gt`, the library's reduced pairing of the generators, `Bls12381::pairing(&G1Affine::generator(), &G2Affine::generator())`, exponentiated by the inverse of three, `&pairing * &inverse` with `inverse` the `Option::from` of `Fr::from(3u64).invert()` unpacked by `let Some(inverse) = … else { panic!("three is invertible") };`, the identifier's exact value as a `Gt`
     * `[ ]`   No mock function: the concrete is built as a real instance and owns no free function
 
   * `[ ]`   `adapters/pairing/src/bls12_381_halo2curves/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports from `super::provides` the concrete, its owned types, and the mock's builders, constants, and helpers each block uses; from `crate::factory::provides` the params, payloads, errors, trait names, and builders each block uses; and the `halo2curves`, `num_bigint::BigUint`, and `zeroize::Zeroize` names each block uses
+    * `[ ]`   Compile-time assertion over `Bls12381Halo2curvesPairing::DECLARATION`
+      * `[ ]`   Contract: the inherent constant is `PairingDeclaration { curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`, readable before any instance exists
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading `Bls12381Halo2curvesPairing::DECLARATION`, each enum field tested with `matches!` and each version with `==`
+      * `[ ]`   Assert: the module compiles only if every field holds
+    * `[ ]`   Compile-time assertion over `<Bls12381Halo2curvesPairing as IPairingAdapter>::DECLARATION`
+      * `[ ]`   Contract: the trait constant carries the same fields as the inherent constant
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading the trait constant, each enum field tested with `matches!` and each version with `==`
+      * `[ ]`   Assert: the module compiles only if every field holds
+    * `[ ]`   Compile-time assertion over `<Bls12381Halo2curvesPairing as IPairingAdapter>::CONCRETE`
+      * `[ ]`   Contract: the trait constant is `PairingConcrete::Bls12381Halo2curves`
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: a module-level `const _: () = assert!(…);` reading the trait constant under `matches!`
+      * `[ ]`   Assert: the module compiles only if the constant is `PairingConcrete::Bls12381Halo2curves`
+    * `[ ]`   `bls12_381_halo2curves_scalar_is_zeroize_on_drop`
+      * `[ ]`   Contract: `Bls12381Halo2curvesScalar` implements `ZeroizeOnDrop`, the marker the sampling bound requires
+      * `[ ]`   Collaborators: none
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: `requires_zeroize_on_drop::<Bls12381Halo2curvesScalar>()`
+      * `[ ]`   Assert: the block compiles only if the type implements `ZeroizeOnDrop`
+    * `[ ]`   `bls12_381_halo2curves_scalar_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living scalar → its `value` is zero
+      * `[ ]`   Collaborators: none; fixture `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_scalar` with the value override `Fr::from(5u64)`, so a scalar left unchanged differs from the expected zero
+      * `[ ]`   Act: `scalar.zeroize()`
+      * `[ ]`   Assert: `scalar.value` equals `Fr::ZERO`
+    * `[ ]`   `bls12_381_halo2curves_g1_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living first-group element → its `value` is the identity
+      * `[ ]`   Collaborators: none; fixture `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_g1` at its default generator, which differs from the identity
+      * `[ ]`   Act: `g1.zeroize()`
+      * `[ ]`   Assert: `g1.value` equals `G1Affine::identity()`
+    * `[ ]`   `bls12_381_halo2curves_g2_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living second-group element → its `value` is the identity
+      * `[ ]`   Collaborators: none; fixture `build_bls12_381_halo2curves_g2`
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_g2` at its default generator, which differs from the identity
+      * `[ ]`   Act: `g2.zeroize()`
+      * `[ ]`   Assert: `g2.value` equals `G2Affine::identity()`
+    * `[ ]`   `bls12_381_halo2curves_gt_zeroize_clears_its_value`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living target-group value → its `value` is the target group's identity
+      * `[ ]`   Collaborators: none; fixture `build_bls12_381_halo2curves_gt`
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_gt` at its default pairing of the generators, which differs from the identity
+      * `[ ]`   Act: `gt.zeroize()`
+      * `[ ]`   Assert: `gt.value` equals `Gt::identity()`
+    * `[ ]`   `bls12_381_halo2curves_encoded_scalar_zeroize_clears_its_bytes`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living encoded scalar → every byte is zero
+      * `[ ]`   Collaborators: none; fixture `build_bls12_381_halo2curves_encoded_scalar`
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_encoded_scalar` at its nonzero default
+      * `[ ]`   Act: `encoded.zeroize()`
+      * `[ ]`   Assert: the bytes of `encoded` equal `zero_bytes(32)` as a byte slice
+    * `[ ]`   `bls12_381_halo2curves_encoded_gt_zeroize_clears_its_bytes`
+      * `[ ]`   Contract: `Zeroize::zeroize` on a living encoded target-group value → every byte is zero
+      * `[ ]`   Collaborators: none; fixture `build_bls12_381_halo2curves_encoded_gt`
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_encoded_gt` at its nonzero default
+      * `[ ]`   Act: `encoded.zeroize()`
+      * `[ ]`   Assert: the bytes of `encoded` equal `zero_bytes(576)` as a byte slice
+    * `[ ]`   `reduced_pairing_correction_inverts_three`
+      * `[ ]`   Contract: any params → `Ok(Bls12381Halo2curvesPairing)` whose `reduced_pairing_correction` is the inverse of three in the scalar field
+      * `[ ]`   Collaborators: halo2curves' `Fr` arithmetic, run for real as the vendor; `Bls12381Halo2curvesPairingConstructorParams` by its production value
+      * `[ ]`   Arrange: `Bls12381Halo2curvesPairingConstructorParams` by its production value
+      * `[ ]`   Act: `Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(pairing) = …;`; `pairing.reduced_pairing_correction * Fr::from(3u64)` equals `Fr::ONE`
+    * `[ ]`   `uniform_bytes_length_is_twice_the_group_order_width`
+      * `[ ]`   Contract: `UNIFORM_BYTES_LENGTH` is twice the byte width of the group order
+      * `[ ]`   Collaborators: none
+      * `[ ]`   Arrange: the type alone
+      * `[ ]`   Act: reading `<Bls12381Halo2curvesScalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH`
+      * `[ ]`   Assert: the constant equals the literal 64 written in the assertion
+    * `[ ]`   `g1_generator_returns_the_eip_2537_generator`
+      * `[ ]`   Contract: any call → `Ok(G1GeneratorSuccessReturn { point })` holding the first group's generator
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; `G1GeneratorParams` and `G1GeneratorPayload` by their production values
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_pairing()`
+      * `[ ]`   Act: `g1_generator(G1GeneratorParams, G1GeneratorPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.point.value` equals `eip_2537_g1_generator()`
+    * `[ ]`   `g2_generator_returns_the_eip_2537_generator`
+      * `[ ]`   Contract: any call → `Ok(G2GeneratorSuccessReturn { point })` holding the second group's generator
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; `G2GeneratorParams` and `G2GeneratorPayload` by their production values
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_pairing()`
+      * `[ ]`   Act: `g2_generator(G2GeneratorParams, G2GeneratorPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.point.value` equals `eip_2537_g2_generator()`
+    * `[ ]`   `add_g1_of_a_point_and_its_negation_is_the_identity`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG1SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: halo2curves' projective addition, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_add_g1_payload`, and `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_add_g1_payload` with the left override `build_bls12_381_halo2curves_g1` at its default generator and the right override `build_bls12_381_halo2curves_g1` with the value `eip_2537_negated_g1_generator()`, so a sum that returns either input differs from the identity
+      * `[ ]`   Act: `add_g1(AddG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `add_g1_of_the_identity_and_a_point_is_the_point`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG1SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: halo2curves' projective addition, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_add_g1_payload`, and `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_add_g1_payload` with the left override `build_bls12_381_halo2curves_g1` with the value `G1Affine::identity()` and the right override `build_bls12_381_halo2curves_g1` at its default generator, so a sum that returns the left input differs from the generator
+      * `[ ]`   Act: `add_g1(AddG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_2537_g1_generator()`
+    * `[ ]`   `add_g2_of_a_point_and_its_negation_is_the_identity`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG2SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: halo2curves' projective addition, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_add_g2_payload`, and `build_bls12_381_halo2curves_g2`
+      * `[ ]`   Arrange: `build_add_g2_payload` with the left override `build_bls12_381_halo2curves_g2` at its default generator and the right override `build_bls12_381_halo2curves_g2` with the value `-eip_2537_g2_generator()`, so a sum that returns either input differs from the identity
+      * `[ ]`   Act: `add_g2(AddG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `add_g2_of_the_identity_and_a_point_is_the_point`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddG2SuccessReturn { sum })` holding their sum
+      * `[ ]`   Collaborators: halo2curves' projective addition, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_add_g2_payload`, and `build_bls12_381_halo2curves_g2`
+      * `[ ]`   Arrange: `build_add_g2_payload` with the left override `build_bls12_381_halo2curves_g2` with the value `G2Affine::identity()` and the right override `build_bls12_381_halo2curves_g2` at its default generator, so a sum that returns the left input differs from the generator
+      * `[ ]`   Act: `add_g2(AddG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_2537_g2_generator()`
+    * `[ ]`   `mul_g1_by_one_is_the_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_mul_g1_payload`, `build_bls12_381_halo2curves_g1`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bls12_381_halo2curves_g1` at its default generator and the scalar override `build_bls12_381_halo2curves_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_2537_g1_generator()`
+    * `[ ]`   `mul_g1_by_zero_is_the_identity`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_mul_g1_payload`, `build_bls12_381_halo2curves_g1`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bls12_381_halo2curves_g1` at its default generator and the scalar override `build_bls12_381_halo2curves_scalar` with the value `Fr::ZERO`, so a product that returns the point differs from the identity
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `G1Affine::identity()`
+    * `[ ]`   `mul_g1_by_the_group_order_minus_one_is_the_negated_generator`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG1SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_mul_g1_payload`, `build_bls12_381_halo2curves_g1`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g1_payload` with the point override `build_bls12_381_halo2curves_g1` at its default generator and the scalar override `build_bls12_381_halo2curves_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`, so a product that ignores the scalar differs from the negated generator
+      * `[ ]`   Act: `mul_g1(MulG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_2537_negated_g1_generator()`
+    * `[ ]`   `mul_g2_by_one_is_the_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_mul_g2_payload`, `build_bls12_381_halo2curves_g2`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bls12_381_halo2curves_g2` at its default generator and the scalar override `build_bls12_381_halo2curves_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `eip_2537_g2_generator()`
+    * `[ ]`   `mul_g2_by_zero_is_the_identity`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_mul_g2_payload`, `build_bls12_381_halo2curves_g2`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bls12_381_halo2curves_g2` at its default generator and the scalar override `build_bls12_381_halo2curves_scalar` with the value `Fr::ZERO`, so a product that returns the point differs from the identity
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `G2Affine::identity()`
+    * `[ ]`   `mul_g2_by_the_group_order_minus_one_is_the_negated_point`
+      * `[ ]`   Contract: `payload.point` and `payload.scalar` → `Ok(MulG2SuccessReturn { product })` holding the point multiplied by the scalar
+      * `[ ]`   Collaborators: halo2curves' projective scalar multiplication, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_mul_g2_payload`, `build_bls12_381_halo2curves_g2`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_g2_payload` with the point override `build_bls12_381_halo2curves_g2` at its default generator and the scalar override `build_bls12_381_halo2curves_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`, so a product that ignores the scalar differs from the negated generator
+      * `[ ]`   Act: `mul_g2(MulG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `-eip_2537_g2_generator()`
+    * `[ ]`   `msm_g1_of_no_terms_is_the_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the identity
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing` and `build_msm_g1_payload`
+      * `[ ]`   Arrange: `build_msm_g1_payload` at its default of no terms
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `msm_g1_pairs_each_base_with_its_own_scalar`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_msm_g1_payload`, `build_msm_g1_term`, `build_bls12_381_halo2curves_g1`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_msm_g1_payload` with the terms override holding two `build_msm_g1_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `eip_2537_negated_g1_generator()` with the scalar `Fr::ZERO`, so bases and scalars exchanged between terms yield the negated generator
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_2537_g1_generator()`
+    * `[ ]`   `msm_g1_sums_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG1SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_msm_g1_payload`, `build_msm_g1_term`, `build_bls12_381_halo2curves_g1`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_msm_g1_payload` with the terms override holding two `build_msm_g1_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `eip_2537_negated_g1_generator()` with the scalar `Fr::from(1u64)`, so a sum over the first term alone differs from the identity
+      * `[ ]`   Act: `msm_g1(MsmG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G1Affine::identity()`
+    * `[ ]`   `msm_g2_of_no_terms_is_the_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the identity
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing` and `build_msm_g2_payload`
+      * `[ ]`   Arrange: `build_msm_g2_payload` at its default of no terms
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `msm_g2_pairs_each_base_with_its_own_scalar`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_msm_g2_payload`, `build_msm_g2_term`, `build_bls12_381_halo2curves_g2`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_msm_g2_payload` with the terms override holding two `build_msm_g2_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `-eip_2537_g2_generator()` with the scalar `Fr::ZERO`, so bases and scalars exchanged between terms yield the negated generator
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `eip_2537_g2_generator()`
+    * `[ ]`   `msm_g2_sums_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(MsmG2SuccessReturn { sum })` holding the sum of each base multiplied by its own scalar
+      * `[ ]`   Collaborators: halo2curves' `msm_best`, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_msm_g2_payload`, `build_msm_g2_term`, `build_bls12_381_halo2curves_g2`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_msm_g2_payload` with the terms override holding two `build_msm_g2_term` values: the generator with the scalar `Fr::from(1u64)`, and the base `-eip_2537_g2_generator()` with the scalar `Fr::from(1u64)`, so a sum over the first term alone differs from the identity
+      * `[ ]`   Act: `msm_g2(MsmG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `G2Affine::identity()`
+    * `[ ]`   `pairing_product_is_one_of_no_terms_is_true`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` true
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing` and `build_pairing_product_is_one_payload`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` at its default of no terms
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is true
+    * `[ ]`   `pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to the target group's identity → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` true
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_pairing_product_is_one_payload`, `build_pairing_product_term`, and `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` with the terms override holding two `build_pairing_product_term` values: the generators, and the first-group override `build_bls12_381_halo2curves_g1` with the value `eip_2537_negated_g1_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is true
+    * `[ ]`   `pairing_product_is_one_of_the_generators_is_false`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to a value other than the target group's identity → `Ok(PairingProductIsOneSuccessReturn { is_one })` with `is_one` false
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop and final exponentiation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_pairing_product_is_one_payload`, and `build_pairing_product_term`
+      * `[ ]`   Arrange: `build_pairing_product_is_one_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product_is_one(PairingProductIsOneParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_one` is false
+    * `[ ]`   `decode_g1_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 128` → `Err(DecodeG1ErrorReturn::WrongLength { expected: 128, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(127)`, which differs from the required length
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::WrongLength { expected: 128, actual: 127 })`, the whole expected error
+    * `[ ]`   `decode_g1_rejects_a_nonzero_padding_byte`
+      * `[ ]`   Contract: a 128-byte payload with a nonzero byte among a coordinate's first 16 → `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: none called; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G1_NONZERO_PADDING_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_NONZERO_PADDING_HEX)`, the generator with one padding byte changed, so a decoder that ignores the padding returns the generator
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_rejects_a_non_canonical_coordinate`
+      * `[ ]`   Contract: a 128-byte payload whose first coordinate is at least the base field modulus → `Err(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: halo2curves' `Fq::from_repr`, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G1_X_AT_MODULUS_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_X_AT_MODULUS_HEX)`, whose coordinates would otherwise fail the curve check, so a decoder that checks the curve first returns a different error
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g1_decodes_the_identity_from_zero_bytes`
+      * `[ ]`   Contract: a 128-byte payload with both coordinates zero → `Ok(DecodeG1SuccessReturn { point })` holding the first group's identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(128)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `G1Affine::identity()`
+    * `[ ]`   `decode_g1_rejects_a_point_off_the_curve`
+      * `[ ]`   Contract: a canonical 128-byte payload that satisfies no curve equation → `Err(DecodeG1ErrorReturn::NotOnCurve)`
+      * `[ ]`   Collaborators: halo2curves' `from_xy`, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G1_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g1_rejects_a_point_outside_the_subgroup`
+      * `[ ]`   Contract: a canonical 128-byte payload on the curve and outside the prime-order subgroup → `Err(DecodeG1ErrorReturn::NotInSubgroup)`
+      * `[ ]`   Collaborators: halo2curves' torsion check, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `g1_outside_subgroup_bytes()`
+      * `[ ]`   Arrange: the payload `g1_outside_subgroup_bytes()`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG1ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_g1_decodes_the_eip_2537_generator`
+      * `[ ]`   Contract: a canonical 128-byte payload on the curve and in the subgroup → `Ok(DecodeG1SuccessReturn { point })` holding that point
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G1_GENERATOR_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G1_GENERATOR_HEX)`
+      * `[ ]`   Act: `decode_g1(DecodeG1Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `eip_2537_g1_generator()`
+    * `[ ]`   `decode_g2_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 256` → `Err(DecodeG2ErrorReturn::WrongLength { expected: 256, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(255)`, which differs from the required length
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::WrongLength { expected: 256, actual: 255 })`, the whole expected error
+    * `[ ]`   `decode_g2_rejects_a_nonzero_padding_byte`
+      * `[ ]`   Contract: a 256-byte payload with a nonzero byte among a coordinate's first 16 → `Err(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: none called; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G2_NONZERO_PADDING_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_NONZERO_PADDING_HEX)`, the generator with one padding byte changed, so a decoder that ignores the padding returns the generator
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g2_rejects_a_non_canonical_coordinate`
+      * `[ ]`   Contract: a 256-byte payload whose first coordinate is at least the base field modulus → `Err(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+      * `[ ]`   Collaborators: halo2curves' `Fq::from_repr`, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G2_X_C0_AT_MODULUS_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_X_C0_AT_MODULUS_HEX)`, whose coordinates would otherwise fail the curve check, so a decoder that checks the curve first returns a different error
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NonCanonicalCoordinate)`
+    * `[ ]`   `decode_g2_decodes_the_identity_from_zero_bytes`
+      * `[ ]`   Contract: a 256-byte payload with every coordinate zero → `Ok(DecodeG2SuccessReturn { point })` holding the second group's identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(256)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `G2Affine::identity()`
+    * `[ ]`   `decode_g2_rejects_a_point_off_the_curve`
+      * `[ ]`   Contract: a canonical 256-byte payload that satisfies no curve equation → `Err(DecodeG2ErrorReturn::NotOnCurve)`
+      * `[ ]`   Collaborators: halo2curves' `from_xy`, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G2_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_GENERATOR_OFF_CURVE_HEX)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NotOnCurve)`
+    * `[ ]`   `decode_g2_rejects_a_point_outside_the_subgroup`
+      * `[ ]`   Contract: a canonical 256-byte payload on the curve and outside the prime-order subgroup → `Err(DecodeG2ErrorReturn::NotInSubgroup)`
+      * `[ ]`   Collaborators: halo2curves' torsion check, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `g2_outside_subgroup_bytes()`
+      * `[ ]`   Arrange: the payload `g2_outside_subgroup_bytes()`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeG2ErrorReturn::NotInSubgroup)`
+    * `[ ]`   `decode_g2_decodes_the_eip_2537_generator`
+      * `[ ]`   Contract: a canonical 256-byte payload on the curve and in the subgroup → `Ok(DecodeG2SuccessReturn { point })` holding that point
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `vector_bytes(G2_GENERATOR_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(G2_GENERATOR_HEX)`
+      * `[ ]`   Act: `decode_g2(DecodeG2Params, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.point.value` equals `eip_2537_g2_generator()`
+    * `[ ]`   `decode_scalar_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.len() != 32` → `Err(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: payload.len() })`
+      * `[ ]`   Collaborators: none called; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `zero_bytes`
+      * `[ ]`   Arrange: the payload `zero_bytes(31)`, which differs from the required length
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeScalarErrorReturn::WrongLength { expected: 32, actual: 31 })`, the whole expected error
+    * `[ ]`   `decode_scalar_rejects_the_group_order`
+      * `[ ]`   Contract: a 32-byte payload at least the group order → `Err(DecodeScalarErrorReturn::NonCanonical)`
+      * `[ ]`   Collaborators: halo2curves' `Fr::from_repr`, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `vector_bytes(GROUP_ORDER_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(GROUP_ORDER_HEX)`
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(DecodeScalarErrorReturn::NonCanonical)`
+    * `[ ]`   `decode_scalar_decodes_the_largest_canonical_scalar`
+      * `[ ]`   Contract: a canonical 32-byte payload → `Ok(DecodeScalarSuccessReturn { scalar })` holding that scalar
+      * `[ ]`   Collaborators: halo2curves' `Fr::from_repr`, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; the untrusted bytes from `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)`
+      * `[ ]`   Arrange: the payload `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)`
+      * `[ ]`   Act: `decode_scalar(DecodeScalarParams, &payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.value` equals `-Fr::from(1u64)`
+    * `[ ]`   `encode_g1_writes_the_eip_2537_generator`
+      * `[ ]`   Contract: a first-group point → `Ok(EncodeG1SuccessReturn { bytes })` holding `x` then `y`, each 16 zero bytes followed by 48 bytes big-endian, in this concrete's `Bls12381Halo2curvesEncodedG1`
+      * `[ ]`   Collaborators: halo2curves' coordinate encoding, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_encode_g1_payload`, and `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_encode_g1_payload` with the point override `build_bls12_381_halo2curves_g1` at its default generator
+      * `[ ]`   Act: `encode_g1(EncodeG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` binds to a `Bls12381Halo2curvesEncodedG1` typed binding; its bytes equal `vector_bytes(G1_GENERATOR_HEX)` as a byte slice
+    * `[ ]`   `encode_g1_writes_the_identity_as_zero_bytes`
+      * `[ ]`   Contract: the first group's identity → `Ok(EncodeG1SuccessReturn { bytes })` holding 128 zero bytes
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_encode_g1_payload`, and `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_encode_g1_payload` with the point override `build_bls12_381_halo2curves_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `encode_g1(EncodeG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes` equal `zero_bytes(128)` as a byte slice
+    * `[ ]`   `encode_g2_writes_the_eip_2537_generator`
+      * `[ ]`   Contract: a second-group point → `Ok(EncodeG2SuccessReturn { bytes })` holding `x.c0`, `x.c1`, `y.c0`, `y.c1`, each 16 zero bytes followed by 48 bytes big-endian, in this concrete's `Bls12381Halo2curvesEncodedG2`
+      * `[ ]`   Collaborators: halo2curves' coordinate encoding, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_encode_g2_payload`, and `build_bls12_381_halo2curves_g2`
+      * `[ ]`   Arrange: `build_encode_g2_payload` with the point override `build_bls12_381_halo2curves_g2` at its default generator
+      * `[ ]`   Act: `encode_g2(EncodeG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` binds to a `Bls12381Halo2curvesEncodedG2` typed binding; its bytes equal `vector_bytes(G2_GENERATOR_HEX)` as a byte slice
+    * `[ ]`   `encode_g2_writes_the_identity_as_zero_bytes`
+      * `[ ]`   Contract: the second group's identity → `Ok(EncodeG2SuccessReturn { bytes })` holding 256 zero bytes
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_encode_g2_payload`, and `build_bls12_381_halo2curves_g2`
+      * `[ ]`   Arrange: `build_encode_g2_payload` with the point override `build_bls12_381_halo2curves_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `encode_g2(EncodeG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes` equal `zero_bytes(256)` as a byte slice
+    * `[ ]`   `encode_scalar_writes_the_largest_canonical_scalar`
+      * `[ ]`   Contract: a scalar → `Ok(EncodeScalarSuccessReturn { bytes })` holding its 32 big-endian bytes in this concrete's `Bls12381Halo2curvesEncodedScalar`, inside a `Secret`
+      * `[ ]`   Collaborators: halo2curves' `to_repr`, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_encode_scalar_payload`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_encode_scalar_payload` with the scalar override `build_bls12_381_halo2curves_scalar` with the value `-Fr::from(1u64)`
+      * `[ ]`   Act: `encode_scalar(EncodeScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes.expose()` binds to a `Bls12381Halo2curvesEncodedScalar` typed binding; its bytes equal `vector_bytes(GROUP_ORDER_MINUS_ONE_HEX)` as a byte slice
+    * `[ ]`   `sample_from_uniform_bytes_rejects_a_wrong_length`
+      * `[ ]`   Contract: `payload.uniform.expose().len() != 64` → `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual })`
+      * `[ ]`   Collaborators: `Secret::expose`, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `zero_bytes(63)`
+      * `[ ]`   Act: `Bls12381Halo2curvesScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the result's `.err()` equals `Some(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 63 })`, the whole expected error
+    * `[ ]`   `sample_from_uniform_bytes_reads_the_input_as_a_big_endian_integer`
+      * `[ ]`   Contract: a 64-byte uniform input → `Ok(SampleUniformScalarSuccessReturn { scalar })` holding the input read as one big-endian integer reduced modulo the group order, inside a `Secret`
+      * `[ ]`   Collaborators: `Secret::expose` and halo2curves' wide reduction, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `vector_bytes(UNIFORM_FIVE_HEX)`, whose last byte is five, so an input read as little-endian yields a different scalar
+      * `[ ]`   Act: `Bls12381Halo2curvesScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.expose().value` equals `Fr::from(5u64)`
+    * `[ ]`   `sample_from_uniform_bytes_reduces_the_group_order_to_zero`
+      * `[ ]`   Contract: a 64-byte uniform input → `Ok(SampleUniformScalarSuccessReturn { scalar })` holding the input reduced modulo the group order, inside a `Secret`
+      * `[ ]`   Collaborators: `Secret::expose` and halo2curves' wide reduction, real; fixtures `build_sample_uniform_scalar_payload` and `build_secret`
+      * `[ ]`   Arrange: `build_sample_uniform_scalar_payload` with the uniform override `build_secret` holding `vector_bytes(UNIFORM_GROUP_ORDER_HEX)`, whose reduction is zero and so differs from the input
+      * `[ ]`   Act: `Bls12381Halo2curvesScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.scalar.expose().value` equals `Fr::ZERO`
+    * `[ ]`   `add_scalar_of_two_and_three_is_five`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddScalarSuccessReturn { sum })` holding their sum modulo the group order
+      * `[ ]`   Collaborators: halo2curves' `Fr` addition, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_add_scalar_payload`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_add_scalar_payload` with the left override `build_bls12_381_halo2curves_scalar` with the value `Fr::from(2u64)` and the right override with the value `Fr::from(3u64)`
+      * `[ ]`   Act: `add_scalar(AddScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `Fr::from(5u64)`
+    * `[ ]`   `add_scalar_reduces_modulo_the_group_order`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(AddScalarSuccessReturn { sum })` holding their sum modulo the group order
+      * `[ ]`   Collaborators: halo2curves' `Fr` addition, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_add_scalar_payload`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_add_scalar_payload` with the left override `build_bls12_381_halo2curves_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)` and the right override with the value `Fr::from(2u64)`, whose integer sum exceeds the group order
+      * `[ ]`   Act: `add_scalar(AddScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.sum.value` equals `Fr::from(1u64)`
+    * `[ ]`   `mul_scalar_of_two_and_three_is_six`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(MulScalarSuccessReturn { product })` holding their product modulo the group order
+      * `[ ]`   Collaborators: halo2curves' `Fr` multiplication, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_mul_scalar_payload`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_scalar_payload` with the left override `build_bls12_381_halo2curves_scalar` with the value `Fr::from(2u64)` and the right override with the value `Fr::from(3u64)`
+      * `[ ]`   Act: `mul_scalar(MulScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `Fr::from(6u64)`
+    * `[ ]`   `mul_scalar_reduces_modulo_the_group_order`
+      * `[ ]`   Contract: `payload.left` and `payload.right` → `Ok(MulScalarSuccessReturn { product })` holding their product modulo the group order
+      * `[ ]`   Collaborators: halo2curves' `Fr` multiplication, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_mul_scalar_payload`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_mul_scalar_payload` with the left override `build_bls12_381_halo2curves_scalar` with the value `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)` and the right override with the value `Fr::from(2u64)`, whose integer product exceeds the group order
+      * `[ ]`   Act: `mul_scalar(MulScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `scalar_value(GROUP_ORDER_MINUS_TWO_HEX)`
+    * `[ ]`   `neg_scalar_of_one_is_the_group_order_minus_one`
+      * `[ ]`   Contract: `payload.scalar` → `Ok(NegScalarSuccessReturn { negation })` holding the group order minus the scalar
+      * `[ ]`   Collaborators: halo2curves' `Fr` negation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_neg_scalar_payload`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_neg_scalar_payload` with the scalar override `build_bls12_381_halo2curves_scalar` with the value `Fr::from(1u64)`
+      * `[ ]`   Act: `neg_scalar(NegScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `scalar_value(GROUP_ORDER_MINUS_ONE_HEX)`
+    * `[ ]`   `neg_scalar_of_zero_is_zero`
+      * `[ ]`   Contract: `payload.scalar` of zero → `Ok(NegScalarSuccessReturn { negation })` holding zero
+      * `[ ]`   Collaborators: halo2curves' `Fr` negation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_neg_scalar_payload`, and `build_bls12_381_halo2curves_scalar`
+      * `[ ]`   Arrange: `build_neg_scalar_payload` with the scalar override `build_bls12_381_halo2curves_scalar` with the value `Fr::ZERO`
+      * `[ ]`   Act: `neg_scalar(NegScalarParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `Fr::ZERO`
+    * `[ ]`   `neg_g1_of_the_generator_is_the_negated_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(NegG1SuccessReturn { negation })` holding `(x, p - y)` for a point `(x, y)`
+      * `[ ]`   Collaborators: halo2curves' affine negation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_neg_g1_payload`, and `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_neg_g1_payload` with the point override `build_bls12_381_halo2curves_g1` at its default generator
+      * `[ ]`   Act: `neg_g1(NegG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `eip_2537_negated_g1_generator()`
+    * `[ ]`   `neg_g1_of_the_identity_is_the_identity`
+      * `[ ]`   Contract: `payload.point` of the identity → `Ok(NegG1SuccessReturn { negation })` holding the identity
+      * `[ ]`   Collaborators: halo2curves' affine negation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_neg_g1_payload`, and `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_neg_g1_payload` with the point override `build_bls12_381_halo2curves_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `neg_g1(NegG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `G1Affine::identity()`
+    * `[ ]`   `neg_g2_negates_the_y_coordinate_and_keeps_x`
+      * `[ ]`   Contract: `payload.point` → `Ok(NegG2SuccessReturn { negation })` holding `(x, -y)` for a point `(x, y)`
+      * `[ ]`   Collaborators: halo2curves' affine negation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_neg_g2_payload`, and `build_bls12_381_halo2curves_g2`
+      * `[ ]`   Arrange: `build_neg_g2_payload` with the point override `build_bls12_381_halo2curves_g2` at its default generator
+      * `[ ]`   Act: `neg_g2(NegG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the negation's `coordinates()` yields an `x` equal to the `x` of `eip_2537_g2_generator().coordinates()` and a `y` whose sum with the generator's `y` is zero under `is_zero()`
+    * `[ ]`   `neg_g2_of_the_identity_is_the_identity`
+      * `[ ]`   Contract: `payload.point` of the identity → `Ok(NegG2SuccessReturn { negation })` holding the identity
+      * `[ ]`   Collaborators: halo2curves' affine negation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_neg_g2_payload`, and `build_bls12_381_halo2curves_g2`
+      * `[ ]`   Arrange: `build_neg_g2_payload` with the point override `build_bls12_381_halo2curves_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `neg_g2(NegG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.negation.value` equals `G2Affine::identity()`
+    * `[ ]`   `is_identity_g1_is_true_for_the_identity`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG1SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_is_identity_g1_payload`, and `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_is_identity_g1_payload` with the point override `build_bls12_381_halo2curves_g1` with the value `G1Affine::identity()`
+      * `[ ]`   Act: `is_identity_g1(IsIdentityG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is true
+    * `[ ]`   `is_identity_g1_is_false_for_the_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG1SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_is_identity_g1_payload`, and `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_is_identity_g1_payload` with the point override `build_bls12_381_halo2curves_g1` at its default generator
+      * `[ ]`   Act: `is_identity_g1(IsIdentityG1Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is false
+    * `[ ]`   `is_identity_g2_is_true_for_the_identity`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG2SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_is_identity_g2_payload`, and `build_bls12_381_halo2curves_g2`
+      * `[ ]`   Arrange: `build_is_identity_g2_payload` with the point override `build_bls12_381_halo2curves_g2` with the value `G2Affine::identity()`
+      * `[ ]`   Act: `is_identity_g2(IsIdentityG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is true
+    * `[ ]`   `is_identity_g2_is_false_for_the_generator`
+      * `[ ]`   Contract: `payload.point` → `Ok(IsIdentityG2SuccessReturn { is_identity })`, true exactly for the identity
+      * `[ ]`   Collaborators: halo2curves, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_is_identity_g2_payload`, and `build_bls12_381_halo2curves_g2`
+      * `[ ]`   Arrange: `build_is_identity_g2_payload` with the point override `build_bls12_381_halo2curves_g2` at its default generator
+      * `[ ]`   Act: `is_identity_g2(IsIdentityG2Params, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.is_identity` is false
+    * `[ ]`   `pairing_product_of_no_terms_is_the_target_group_identity`
+      * `[ ]`   Contract: an empty `payload.terms` → `Ok(PairingProductSuccessReturn { product })` holding the target group's identity
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop, final exponentiation, and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing` and `build_pairing_product_payload`
+      * `[ ]`   Arrange: `build_pairing_product_payload` at its default of no terms
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `Gt::identity()`
+    * `[ ]`   `pairing_product_of_the_generators_is_not_the_target_group_identity`
+      * `[ ]`   Contract: a pairing of the generators → `Ok(PairingProductSuccessReturn { product })` holding a value other than the target group's identity
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop, final exponentiation, and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` is not equal to `Gt::identity()`
+    * `[ ]`   `pairing_product_is_bilinear`
+      * `[ ]`   Contract: a term whose first-group element is twice the generator → `Ok(PairingProductSuccessReturn { product })` holding the generators' pairing raised to the power two
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop, final exponentiation, and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_pairing_product_payload`, `build_pairing_product_term`, and `build_bls12_381_halo2curves_g1`; the expectation is `definition_value_power`, the identifier's definition raised to a power in the fixtures, independent of the correction `pairing_product` applies
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` with the first-group override `build_bls12_381_halo2curves_g1` with the value `eip_2537_doubled_g1_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.inner()` equals `&definition_value_power(eip_2537_g1_generator(), eip_2537_g2_generator(), 2)`
+    * `[ ]`   `pairing_product_multiplies_its_terms`
+      * `[ ]`   Contract: `payload.terms` → `Ok(PairingProductSuccessReturn { product })` holding the product of each term's pairing
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop, final exponentiation, and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`; the expectation is `definition_value_power`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding two `build_pairing_product_term` values at their default generators, so a product over one term differs from the expected square
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.inner()` equals `&definition_value_power(eip_2537_g1_generator(), eip_2537_g2_generator(), 2)`
+    * `[ ]`   `pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity`
+      * `[ ]`   Contract: `payload.terms` whose pairings multiply to the target group's identity → `Ok(PairingProductSuccessReturn { product })` holding the identity
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop, final exponentiation, and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_pairing_product_payload`, `build_pairing_product_term`, and `build_bls12_381_halo2curves_g1`
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding two `build_pairing_product_term` values: the generators, and the first-group override `build_bls12_381_halo2curves_g1` with the value `eip_2537_negated_g1_generator()` over the second-group generator
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value` equals `Gt::identity()`
+    * `[ ]`   `pairing_product_of_the_generators_equals_the_definition`
+      * `[ ]`   Contract: a pairing of the generators → `Ok(PairingProductSuccessReturn { product })` holding the Miller loop's value raised to the exact exponent `(p^12 - 1) / r`, the value `TargetGroupEncodingIdentifier::Bls12381V1` defines, which is the library's reduced pairing with the cube removed
+      * `[ ]`   Collaborators: halo2curves' multi-Miller loop, final exponentiation, and target-group exponentiation, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_pairing_product_payload`, and `build_pairing_product_term`; the expectation is `definition_value`, the Miller loop over the generators raised to `definition_exponent()` built by `num-bigint`, independent of the correction `pairing_product` applies
+      * `[ ]`   Arrange: `build_pairing_product_payload` with the terms override holding one `build_pairing_product_term` at its default generators
+      * `[ ]`   Act: `pairing_product(PairingProductParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.product.value.inner()` equals `&definition_value(eip_2537_g1_generator(), eip_2537_g2_generator())`
+    * `[ ]`   `encode_gt_writes_the_target_group_identity_with_c0_c0_c0_first`
+      * `[ ]`   Contract: a target-group value → `Ok(EncodeGtSuccessReturn { bytes })` holding its twelve coefficients in tower order, `c0.c0.c0` first, each 48 bytes big-endian, inside a `Secret`
+      * `[ ]`   Collaborators: halo2curves' `to_repr`, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_encode_gt_payload`, and `build_bls12_381_halo2curves_gt`; the expectation is `gt_identity_encoding()`
+      * `[ ]`   Arrange: `build_encode_gt_payload` with the value override `build_bls12_381_halo2curves_gt` with the value `Gt::identity()`
+      * `[ ]`   Act: `encode_gt(EncodeGtParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes.expose()` binds to a `Bls12381Halo2curvesEncodedGt` typed binding; its bytes equal `gt_identity_encoding()` as a byte slice
+    * `[ ]`   `encode_gt_writes_the_published_pairing_of_the_generators`
+      * `[ ]`   Contract: a target-group value → `Ok(EncodeGtSuccessReturn { bytes })` holding its twelve coefficients in tower order, `c0.c0.c0` through `c1.c2.c1`, each 48 bytes big-endian, inside a `Secret`
+      * `[ ]`   Collaborators: halo2curves' `to_repr`, run for real as the vendor; fixtures `build_bls12_381_halo2curves_pairing`, `build_encode_gt_payload`, and `build_bls12_381_halo2curves_gt`; the expectation is `CFRG_GENERATOR_PAIRING_HEX`, the pairing of the base points published in the CFRG draft's test-vector appendix
+      * `[ ]`   Arrange: `build_encode_gt_payload` with the value override `build_bls12_381_halo2curves_gt` with the value `corrected_generator_pairing()`, the identifier's value for the generators, whose twelve coefficients are distinct, so any exchange of two positions changes the bytes
+      * `[ ]`   Act: `encode_gt(EncodeGtParams, payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; the bytes of `success.bytes.expose()` equal `vector_bytes(CFRG_GENERATOR_PAIRING_HEX)` as a byte slice
+    * `[ ]`   `scalar_field_order_is_the_group_order`
+      * `[ ]`   Contract: any call → `Ok(ScalarFieldOrderSuccessReturn { bytes })` holding the group order's 32 big-endian bytes
+      * `[ ]`   Collaborators: halo2curves' `Fr` negation and `to_repr`, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; `ScalarFieldOrderParams` and `ScalarFieldOrderPayload` by their production values
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_pairing()`
+      * `[ ]`   Act: `scalar_field_order(ScalarFieldOrderParams, ScalarFieldOrderPayload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `success.bytes` equals `vector_bytes(GROUP_ORDER_HEX)`
+    * `[ ]`   `g1_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup`
+      * `[ ]`   Contract: any call → `Ok(G1OutsideSubgroupEncodingSuccessReturn { bytes: Some(bytes) })` holding the precompile encoding of an on-curve point outside the prime-order subgroup, in this concrete's `Bls12381Halo2curvesEncodedG1`
+      * `[ ]`   Collaborators: halo2curves' curve and torsion checks, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; `G1OutsideSubgroupEncodingParams` and `G1OutsideSubgroupEncodingPayload` by their production values; the point read back by `g1_point_from_encoding`
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_pairing()`
+      * `[ ]`   Act: `g1_outside_subgroup_encoding(G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.bytes` is `Some` and its content binds to a `Bls12381Halo2curvesEncodedG1` typed binding; `g1_point_from_encoding` reads a point from its bytes, which is `Some` because the point is on the curve, and that point's `to_curve().is_torsion_free()` is false
+    * `[ ]`   `g1_outside_subgroup_encoding_uses_the_least_first_coordinate`
+      * `[ ]`   Contract: any call → the encoded point's `x` is the least `x` of an on-curve point outside the subgroup in an ascending search
+      * `[ ]`   Collaborators: halo2curves' curve and torsion checks, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; `G1OutsideSubgroupEncodingParams` and `G1OutsideSubgroupEncodingPayload` by their production values; the expectation is `g1_outside_subgroup_bytes()`, the ascending search in the fixtures
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_pairing()`
+      * `[ ]`   Act: `g1_outside_subgroup_encoding(G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the first 64 bytes of the encoding, the `x` coordinate, equal the first 64 bytes of `g1_outside_subgroup_bytes()`
+    * `[ ]`   `g1_outside_subgroup_encoding_takes_the_lesser_root`
+      * `[ ]`   Contract: any call → the encoded point's `y` is the lesser of the two roots sharing its `x`
+      * `[ ]`   Collaborators: halo2curves' curve and torsion checks, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; `G1OutsideSubgroupEncodingParams` and `G1OutsideSubgroupEncodingPayload` by their production values; the expectation is `base_field_modulus()`
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_pairing()`
+      * `[ ]`   Act: `g1_outside_subgroup_encoding(G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the last 48 bytes of the encoding's `y` coordinate, bytes 80 through 127, read as a `BigUint`, are not greater than `base_field_modulus()` minus that value
+    * `[ ]`   `g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup`
+      * `[ ]`   Contract: any call → `Ok(G2OutsideSubgroupEncodingSuccessReturn { bytes })` holding the precompile encoding of an on-curve point outside the prime-order subgroup, in this concrete's `Bls12381Halo2curvesEncodedG2`
+      * `[ ]`   Collaborators: halo2curves' curve and torsion checks, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; `G2OutsideSubgroupEncodingParams` and `G2OutsideSubgroupEncodingPayload` by their production values; the point read back by `g2_point_from_encoding`
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_pairing()`
+      * `[ ]`   Act: `g2_outside_subgroup_encoding(G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `success.bytes` binds to a `Bls12381Halo2curvesEncodedG2` typed binding; `g2_point_from_encoding` reads a point from its bytes, which is `Some` because the point is on the curve, and that point's `to_curve().is_torsion_free()` is false
+    * `[ ]`   `g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root`
+      * `[ ]`   Contract: any call → the encoded point's first coordinate is `(c0, 0)` with the least `c0` of an on-curve point outside the subgroup, and its `y` is the lesser of the two roots, compared by `y.c1` and then `y.c0`
+      * `[ ]`   Collaborators: halo2curves' curve and torsion checks, run for real as the vendor; fixture `build_bls12_381_halo2curves_pairing`; `G2OutsideSubgroupEncodingParams` and `G2OutsideSubgroupEncodingPayload` by their production values; the expectations are `g2_outside_subgroup_bytes()`, the ascending search in the fixtures, and `base_field_modulus()`
+      * `[ ]`   Arrange: `build_bls12_381_halo2curves_pairing()`
+      * `[ ]`   Act: `g2_outside_subgroup_encoding(G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload)`
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the encoding's `x.c1` coordinate, bytes 64 through 127, is all zero; its `x.c0` coordinate, bytes 0 through 63, equals the first 64 bytes of `g2_outside_subgroup_bytes()`; the pair `y.c1`, `y.c0`, each the last 48 bytes of its 64-byte coordinate read as a `BigUint`, is not greater than the pair of their negations, each `base_field_modulus()` minus the coefficient, reduced to zero where the coefficient is zero
 
   * `[✅]`   `construction`
     * `[✅]`   `Bls12381Halo2curvesPairing::try_new` is the concrete's only producer, computing its one field, and its only caller is the pairing factory, which reads `Bls12381Halo2curvesPairing::DECLARATION` before constructing
@@ -1055,7 +3168,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`; the correction is computed in `try_new` and read from no configuration; neither the order, the order minus two, nor a point is written as a literal
 
   * `[✅]`   `adapters/pairing/src/bls12_381_halo2curves/provides.rs`
-    * `[✅]`   The one line `pub(crate) use super::interface::*;`, exposing every item of the concrete's interface to the crate and nothing beyond it
+    * `[✅]`   `pub(crate) use super::interface::*;` and `#[cfg(test)] pub(crate) use super::mock::*;`, exposing every item of the concrete's interface to the crate and, in the crate's own test build, the concrete's builders, fixtures, and helpers, and nothing beyond them
 
   * `[✅]`   `directionality`
     * `[✅]`   `bls12_381_halo2curves` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on `halo2curves`; it depends on no other concrete and no concrete depends on it; among repository crates the crate depends on `crates/domain` alone at runtime
@@ -1080,7 +3193,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Functional: a concrete's constructor error is returned unchanged in the factory's error arm, one variant per concrete
     * `[✅]`   Functional: every concrete obtained from the factory computes through the family's traits; the arkworks and halo2curves concretes on BN254 encode the pairing of the same inputs to the same bytes, and likewise on BLS12-381, each concrete's definition test in its own node passing
     * `[✅]`   Functional: through the family's surface alone, both concretes of BN254 return the same scalar field order, no first-group encoding, and the same second-group encoding, which `decode_g2` refuses as outside the subgroup; both concretes of BLS12-381 return the same scalar field order and the same encoding in each group, each of which its group's decoder refuses as outside the subgroup
-    * `[✅]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, and its arm here; no consumer changes
+    * `[✅]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, its entry in `PAIRING_CONCRETES`, and its arm here; no consumer changes
 
   * `[✅]`   `role`
     * `[✅]`   Adapter family factory: the implementation of the `factory` module, which is the pairing family's construction point and the crate's public surface; binds the arithmetic and reference traits into the consumer surface
@@ -1094,7 +3207,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
   * `[✅]`   `module`
     * `[✅]`   Bounded context: the `factory` module of `adapters/pairing`, holding the factory function, its deps, params, payload, and return types, its signature type, the consumer trait with its params and payload types, the derive on `PrecompileEncoding` the admission compares by, the function mock and builders, the unit test, and the crate's integration test under `adapters/pairing/tests`
-    * `[✅]`   The node's files: `adapters/pairing/src/factory/interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, `mod.rs`, and `provides.rs`, and `adapters/pairing/tests/integration_test.rs`
+    * `[✅]`   The node's files: `adapters/pairing/src/factory/interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, `mod.rs`, and `provides.rs`, and `adapters/pairing/tests/factory_integration_test.rs`
     * `[✅]`   Outside: every concrete's behavior, the family's traits and declaration, the chain family's declarations, the configuration catalogue, and every consumer of the family
 
   * `[ ]`   `deps`
@@ -1122,6 +3235,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `CreatePairingErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]`, which `Infallible` satisfies, and the variants `UnsupportedPrecompileEncoding`, `UnsupportedTargetGroupEncoding`, `Bn254Arkworks(Infallible)`, `Bn254Halo2curves(Infallible)`, `Bls12381Arkworks(Infallible)`, and `Bls12381Halo2curves(Infallible)`, each concrete's constructor error carried unchanged in its own variant
     * `[✅]`   `CreatePairingReturn<O>`, the alias `Result<CreatePairingSuccessReturn<O>, CreatePairingErrorReturn>`
     * `[✅]`   `CreatePairingFn<C>`, the alias `fn(&CreatePairingDeps<C>, CreatePairingParams, CreatePairingPayload) -> CreatePairingReturn<<C as IPairingConsumer>::Output>`
+    * `[ ]`   `PAIRING_CONCRETES`, a `pub const` slice of `PairingConcrete` holding each variant of the selection enum, the family's declared set of selectable concretes
     * `[✅]`   No derives on any type this node declares beyond those stated; the file names no vendor and no concrete
 
   * `[✅]`   `adapters/pairing/src/factory/interaction.spec.md`
@@ -1129,15 +3243,38 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The section opens by stating that the decision is a `match` on `params.concrete`, one arm per `PairingConcrete` variant, `Bn254Arkworks`, `Bn254Halo2curves`, `Bls12381Arkworks`, and `Bls12381Halo2curves`, exhaustive, so a variant with no arm fails to compile, each arm constructing the concrete whose `CONCRETE` is the arm's variant and running the same contract against it; then a table with the columns `Branch`, `Condition`, `Decision`, `Dependency call`, and `Outcome` holding, in order: unsupported encoding, condition the arm's concrete's `DECLARATION.precompile_encoding` is not in `params.supported_encodings`, decision `contains`, read before any construction, dependency call none, outcome `Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)` with nothing constructed and the consumer not called; unsupported target-group encoding, condition the arm's concrete's `DECLARATION.target_group_encoding` is not equal to `params.target_group_encoding`, decision equality, read after the encoding admission and before any construction, dependency call none, outcome `Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding)` with nothing constructed and the consumer not called; admitted, condition both admissions pass, decision both checks, dependency call the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited, then `deps.consumer.consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter })`, exactly once, the consumer reading `P::DECLARATION` and `P::CONCRETE`, outcome `Ok(CreatePairingSuccessReturn { output })` holding the consumer's output; the section closes by stating that each concrete's own variant of `CreatePairingErrorReturn` carries that concrete's constructor error in the return union unchanged and, every constructor error being `Infallible`, no branch produces one
     * `[✅]`   `Ordering and edges`, a bulleted section: `params.concrete` selects the concrete, `params.supported_encodings` and `params.target_group_encoding` admit or refuse it, and `payload` carries nothing and is not read; the encoding admission precedes the target-group admission and both precede construction in every arm, so a refused concrete is never constructed and `deps.consumer` is never touched; the consumer is generic over `P: IPairingArithmetic + IPairingReference`, instantiated inside the arm for the concrete the arm constructs, and never names the concrete itself
 
-  * `[✅]`   `adapters/pairing/src/factory/mock.rs`
+  * `[ ]`   `adapters/pairing/src/factory/mock.rs`
     * `[✅]`   `CreatePairingParamsOverrides`, `#[derive(Default)]`, with `pub concrete: Option<PairingConcrete>`, `pub supported_encodings: Option<Vec<PrecompileEncoding>>`, and `pub target_group_encoding: Option<TargetGroupEncodingIdentifier>`; `build_create_pairing_params(overrides: CreatePairingParamsOverrides) -> CreatePairingParams` binding `let concrete = overrides.concrete.unwrap_or(PairingConcrete::Bn254Arkworks);`, defaulting `supported_encodings` to `vec![PrecompileEncoding::Eip196Eip197, PrecompileEncoding::Eip2537]`, and defaulting `target_group_encoding` to `match concrete { PairingConcrete::Bn254Arkworks | PairingConcrete::Bn254Halo2curves => TargetGroupEncodingIdentifier::Bn254V1, PairingConcrete::Bls12381Arkworks | PairingConcrete::Bls12381Halo2curves => TargetGroupEncodingIdentifier::Bls12381V1 }`, so an arrangement naming a concrete alone admits and only an arrangement proving refusal overrides the identifier
     * `[✅]`   `CreatePairingSuccessReturnOverrides<O>`, `#[derive(Default)]`, one field `pub output: Option<O>`; `build_create_pairing_success_return<O: Default>(overrides: CreatePairingSuccessReturnOverrides<O>) -> CreatePairingSuccessReturn<O>`
     * `[✅]`   `ConsumePairingPayloadOverrides<P>`, with `impl<P: IPairingAdapter> Default` initializing its only field to `None`, and only `pub adapter: Option<MockIPairingAdapter<P>>`; `build_consume_pairing_payload<P: IPairingAdapter>(overrides: ConsumePairingPayloadOverrides<P>) -> ConsumePairingPayload<MockIPairingAdapter<P>>` under the mock adapter's `Default` bounds, the adapter defaulting to `MockIPairingAdapter { adapter: PhantomData }`; its declaration, concrete identity, scalar, and group types come from the one adapter type `P`, with no independent metadata or value-type overrides
-    * `[✅]`   `MockIPairingConsumer`, the unit struct `pub struct MockIPairingConsumer;`, implementing `IPairingConsumer` with `type Output = ();` and `consume_pairing<P: IPairingAdapter>` returning `()`; a test needing other behavior implements the trait on its own local struct
+    * `[ ]`   `MockIPairingConsumer`, the unit struct with `#[derive(Default)]`, `pub struct MockIPairingConsumer;`, implementing `IPairingConsumer` with `type Output = ();` and `consume_pairing<P: IPairingAdapter>` returning `()`; a test needing other behavior implements the trait on its own local struct
+    * `[ ]`   `CreatePairingDepsOverrides<C: IPairingConsumer>`, with `impl<C: IPairingConsumer> Default` initializing its only field to `None`, and only `pub consumer: Option<C>`; `build_create_pairing_deps<C: IPairingConsumer + Default>(overrides: CreatePairingDepsOverrides<C>) -> CreatePairingDeps<C>`, the consumer defaulting to `C::default()`, so a unit test places `MockIPairingConsumer` in the deps by naming it as the type parameter
     * `[✅]`   `mock_create_pairing<C: IPairingConsumer>(_deps: &CreatePairingDeps<C>, _params: CreatePairingParams, _payload: CreatePairingPayload) -> CreatePairingReturn<C::Output>` for `C::Output: Default`, returning `Ok(build_create_pairing_success_return(Default::default()))`
-    * `[✅]`   No builder for the fieldless `ConsumePairingParams` and `CreatePairingPayload`, used by their production values, for `CreatePairingDeps`, whose one field is the consumer the test supplies, or for the enums; the module imports from `super::interface` the names these items add
+    * `[ ]`   No builder for the fieldless `ConsumePairingParams` and `CreatePairingPayload`, used by their production values, or for the enums; the module imports from `super::interface` the names these items add
 
   * `[ ]`   `adapters/pairing/src/factory/test.rs`
+    * `[ ]`   Imports `create_pairing` from `super`, and `CreatePairingDepsOverrides`, `CreatePairingErrorReturn`, `CreatePairingParamsOverrides`, `CreatePairingPayload`, `MockIPairingConsumer`, `PairingConcrete`, `PrecompileEncoding`, `TargetGroupEncodingIdentifier`, `build_create_pairing_deps`, and `build_create_pairing_params` from `super::provides`
+    * `[ ]`   Every block: the function under test is `create_pairing`; the consumer is `MockIPairingConsumer`, the family's official consumer mock, placed in the deps by `build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default())`; the arm's concrete `DECLARATION` and `try_new` run for real, since the factory reads and constructs them itself; the payload is the production value `CreatePairingPayload`; params come from `build_create_pairing_params` with only the fields the block varies overridden
+    * `[ ]`   `create_pairing_admits_the_<concrete>_concrete`, one block per `PairingConcrete` variant, `<concrete>` the variant in snake case: `bn254_arkworks` for `Bn254Arkworks`, `bn254_halo2curves` for `Bn254Halo2curves`, `bls12_381_arkworks` for `Bls12381Arkworks`, and `bls12_381_halo2curves` for `Bls12381Halo2curves`
+      * `[ ]`   Contract: given `params.concrete` is the variant, its declared precompile encoding is among `params.supported_encodings`, and its declared target-group encoding equals `params.target_group_encoding`, the factory returns the success arm
+      * `[ ]`   Arrange: `build_create_pairing_params` with only `concrete` overridden to the variant, so `supported_encodings` holds the encoding of each curve and `target_group_encoding` is the identifier of the variant's curve; deps with no override
+      * `[ ]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
+      * `[ ]`   Assert: `result.is_ok()`
+    * `[ ]`   `create_pairing_refuses_the_<concrete>_concrete_whose_encoding_the_chain_does_not_deploy`, one block per variant, `<concrete>` as above
+      * `[ ]`   Contract: given the variant's declared precompile encoding is not in `params.supported_encodings`, the factory returns `Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)`
+      * `[ ]`   Arrange: `build_create_pairing_params` with `concrete` overridden to the variant and `supported_encodings` overridden to a set holding only the encoding of the other curve, `PrecompileEncoding::Eip2537` for the BN254 variants and `PrecompileEncoding::Eip196Eip197` for the BLS12-381 variants, each variant's own encoding being the one its `DECLARATION` states; `target_group_encoding` left at the builder's default for the variant's curve, so only the encoding admission fails; deps with no override
+      * `[ ]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
+      * `[ ]`   Assert: `assert_eq!(result.err(), Some(CreatePairingErrorReturn::UnsupportedPrecompileEncoding))`, the interaction spec's outcome as a literal
+    * `[ ]`   `create_pairing_refuses_the_<concrete>_concrete_whose_target_group_encoding_the_suite_does_not_require`, one block per variant, `<concrete>` as above
+      * `[ ]`   Contract: given the variant's declared precompile encoding is in `params.supported_encodings` and its declared target-group encoding differs from `params.target_group_encoding`, the factory returns `Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding)`
+      * `[ ]`   Arrange: `build_create_pairing_params` with `concrete` overridden to the variant and `target_group_encoding` overridden to the identifier of the other curve, `TargetGroupEncodingIdentifier::Bls12381V1` for the BN254 variants and `TargetGroupEncodingIdentifier::Bn254V1` for the BLS12-381 variants, each variant's own identifier being the one its `DECLARATION` states; `supported_encodings` left at the builder's default, so only the target-group admission fails; deps with no override
+      * `[ ]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
+      * `[ ]`   Assert: `assert_eq!(result.err(), Some(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding))`, the interaction spec's outcome as a literal
+    * `[ ]`   `create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_<concrete>_concrete`, one block per variant, `<concrete>` as above
+      * `[ ]`   Contract: given both the variant's declared precompile encoding is not in `params.supported_encodings` and its declared target-group encoding differs from `params.target_group_encoding`, the factory returns `Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)`, the encoding admission preceding the target-group admission
+      * `[ ]`   Arrange: `build_create_pairing_params` with `concrete` overridden to the variant, `supported_encodings` overridden as in the encoding refusal block, and `target_group_encoding` overridden as in the target-group refusal block, so both admissions fail; deps with no override
+      * `[ ]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
+      * `[ ]`   Assert: `assert_eq!(result.err(), Some(CreatePairingErrorReturn::UnsupportedPrecompileEncoding))`, the interaction spec's outcome as a literal
 
   * `[✅]`   `construction`
     * `[✅]`   The composition root writes its pairing-dependent work once as an `IPairingConsumer`, generic over `P: IPairingArithmetic + IPairingReference`, and calls `create_pairing` with `CreatePairingDeps { consumer }`, `CreatePairingParams` holding the configured `PairingConcrete`, the chain's declared encodings, and the suite's identifier, and `CreatePairingPayload`; no consumer constructs or names a concrete
@@ -1160,9 +3297,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning in every target, the pairing concretes' unused-item warnings having no cause once the factory constructs them
     * `[ ]`   `CreatePairingErrorReturn` derives `Debug`, `PartialEq`, and `Eq`; the refusal blocks assert the whole error by `assert_eq!`
     * `[✅]`   Every test in `adapters/pairing` passes
-    * `[ ]`   The `create_pairing_admits_and_constructs_the_…_concrete` blocks pass, each proving its arm admits and constructs its concrete against the official consumer mock (CR-10, every concrete constructed through the family's surface)
-    * `[ ]`   `create_pairing_refuses_a_concrete_whose_encoding_the_chain_does_not_deploy` passes (CR-10, admission by the chain's precompile encodings)
-    * `[ ]`   `create_pairing_refuses_a_concrete_whose_target_group_encoding_the_suite_does_not_require` passes (CR-10, admission by the suite's identifier)
+    * `[ ]`   The `create_pairing_admits_the_…_concrete` blocks pass, each proving its arm admits its concrete against the official consumer mock (CR-10, every concrete constructed through the family's surface)
+    * `[ ]`   The `create_pairing_refuses_the_…_concrete_whose_encoding_the_chain_does_not_deploy` blocks pass (CR-10, admission by the chain's precompile encodings)
+    * `[ ]`   The `create_pairing_refuses_the_…_concrete_whose_target_group_encoding_the_suite_does_not_require` blocks pass (CR-10, admission by the suite's identifier)
+    * `[ ]`   The `create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_…_concrete` blocks pass (CR-10, admission by the chain's precompile encodings precedes admission by the suite's identifier)
     * `[ ]`   Each `the_…_concrete_from_the_factory_samples_and_encodes_through_secret` integration test passes, each proving its `Secret → <Concrete> → create_pairing` chain with every link real (CR-07, secret material crosses the family inside `Secret`; CR-10, every concrete reached through the factory)
     * `[✅]`   No `ark-` crate or `halo2curves` is named outside its concretes, and no code outside `adapters/pairing` can name a concrete
 

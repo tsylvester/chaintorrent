@@ -1,4 +1,4 @@
-Rust checks started: 2026-10-07 16:51:37 -05:00
+Rust checks started: 2026-10-08 13:53:40 -05:00
 
 > cargo check --workspace --all-targets --all-features
 
@@ -7,6 +7,18 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
+    Checking domain v0.0.0 (C:\Users\Tim\ChainTorrent\crates\domain)
+    Checking random v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\random)
+    Checking encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
+    Checking pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
+    Checking hash-to-scalar v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar)
+    Checking chain v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\chain)
+    Checking kdf v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kdf)
+    Checking kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
+    Checking envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
+    Checking workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
+    Checking proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
+    Checking harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
 warning: unused import: `super::constants`
  --> apps\harness-crypto\src\generate\evm\constants\provides.rs:1:9
   |
@@ -87,6 +99,12 @@ warning: unused import: `super::rejection_vectors`
 4 | pub use super::rejection_vectors;
   |         ^^^^^^^^^^^^^^^^^^^^^^^^
 
+warning: unused import: `super::mock::*`
+ --> apps\harness-crypto\src\generate\evm\render\provides.rs:3:9
+  |
+3 | pub use super::mock::*;
+  |         ^^^^^^^^^^^^^^
+
 warning: unused import: `super::render`
  --> apps\harness-crypto\src\generate\evm\render\provides.rs:4:9
   |
@@ -98,50 +116,6 @@ warning: unused import: `IPairingAdapter`
    |
 12 |     G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingReference,
    |                                                                ^^^^^^^^^^^^^^^
-
-warning: type alias `ConstantsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:41:10
-   |
-41 | pub type ConstantsFn<'a, P> =
-   |          ^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: type alias `GroupVectorsFn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:184:10
-    |
-184 | pub type GroupVectorsFn<'a, P> =
-    |          ^^^^^^^^^^^^^^
-
-warning: type alias `MappingVectorsFn` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:138:10
-    |
-138 | pub type MappingVectorsFn<'a, P, K> = fn(
-    |          ^^^^^^^^^^^^^^^^
-
-warning: type alias `PossessionVectorsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:96:10
-   |
-96 | pub type PossessionVectorsFn<'a, P, K> = fn(
-   |          ^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RejectionVectorsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:93:10
-   |
-93 | pub type RejectionVectorsFn<'a, P> = fn(
-   |          ^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RenderFn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:282:10
-    |
-282 | pub type RenderFn = fn(&RenderDeps, RenderParams, RenderPayload) -> RenderReturn;
-    |          ^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\evm\render\provides.rs:3:9
-  |
-3 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
 
 warning: function `constants` is never used
   --> apps\harness-crypto\src\generate\evm\constants\mod.rs:31:8
@@ -465,6 +439,12 @@ warning: type alias `GroupVectorsReturn` is never used
 182 | pub type GroupVectorsReturn = Result<GroupVectorsSuccessReturn, GroupVectorsErrorReturn>;
     |          ^^^^^^^^^^^^^^^^^^
 
+warning: type alias `GroupVectorsFn` is never used
+   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:184:10
+    |
+184 | pub type GroupVectorsFn<'a, P> =
+    |          ^^^^^^^^^^^^^^
+
 warning: struct `VectorCountConstructorParamsOverrides` is never constructed
   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:17:12
    |
@@ -757,6 +737,12 @@ warning: type alias `MappingVectorsReturn` is never used
 136 | pub type MappingVectorsReturn = Result<MappingVectorsSuccessReturn, MappingVectorsErrorReturn>;
     |          ^^^^^^^^^^^^^^^^^^^^
 
+warning: type alias `MappingVectorsFn` is never used
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:138:10
+    |
+138 | pub type MappingVectorsFn<'a, P, K> = fn(
+    |          ^^^^^^^^^^^^^^^^
+
 warning: struct `HashToScalarVectorOverrides` is never constructed
   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:19:12
    |
@@ -917,6 +903,12 @@ warning: type alias `PossessionVectorsReturn` is never used
    |
 93 | pub type PossessionVectorsReturn =
    |          ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: type alias `PossessionVectorsFn` is never used
+  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:96:10
+   |
+96 | pub type PossessionVectorsFn<'a, P, K> = fn(
+   |          ^^^^^^^^^^^^^^^^^^^
 
 warning: struct `PossessionVectorOverrides` is never constructed
   --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:15:12
@@ -1095,6 +1087,12 @@ warning: type alias `RejectionVectorsReturn` is never used
    |
 90 | pub type RejectionVectorsReturn =
    |          ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: type alias `RejectionVectorsFn` is never used
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:93:10
+   |
+93 | pub type RejectionVectorsFn<'a, P> = fn(
+   |          ^^^^^^^^^^^^^^^^^^
 
 warning: struct `RejectionVectorOverrides` is never constructed
   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:14:12
@@ -1546,6 +1544,12 @@ warning: type alias `RenderReturn` is never used
 280 | pub type RenderReturn = Result<RenderSuccessReturn, Infallible>;
     |          ^^^^^^^^^^^^
 
+warning: type alias `RenderFn` is never used
+   --> apps\harness-crypto\src\generate\evm\render\interface.rs:282:10
+    |
+282 | pub type RenderFn = fn(&RenderDeps, RenderParams, RenderPayload) -> RenderReturn;
+    |          ^^^^^^^^
+
 warning: struct `SolidityLibraryNameConstructorParamsOverrides` is never constructed
   --> apps\harness-crypto\src\generate\evm\render\mock.rs:24:12
    |
@@ -1816,11 +1820,347 @@ warning: function `build_render_payload` is never used
 379 | pub fn build_render_payload(overrides: RenderPayloadOverrides) -> RenderPayload {
     |        ^^^^^^^^^^^^^^^^^^^^
 
-warning: `harness-crypto` (lib test) generated 21 warnings (run `cargo fix --lib -p harness-crypto --tests` to apply 14 suggestions)
-warning: `harness-crypto` (lib) generated 287 warnings (20 duplicates) (run `cargo fix --lib -p harness-crypto` to apply 1 suggestion)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.34s
+warning: `harness-crypto` (lib) generated 287 warnings (run `cargo fix --lib -p harness-crypto` to apply 15 suggestions)
+error[E0583]: file not found for module `test`
+ --> adapters\random\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\random\src\factory\test.rs" or "adapters\random\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
 
-[exit code: 0]
+error[E0583]: file not found for module `test`
+ --> adapters\random\src\os\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\random\src\os\test.rs" or "adapters\random\src\os\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\encoding\src\abi\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\encoding\src\abi\test.rs" or "adapters\encoding\src\abi\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\encoding\src\derivation_context\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\encoding\src\derivation_context\test.rs" or "adapters\encoding\src\derivation_context\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\encoding\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\encoding\src\factory\test.rs" or "adapters\encoding\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\hash-to-scalar\src\domain_tag\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\hash-to-scalar\src\domain_tag\test.rs" or "adapters\hash-to-scalar\src\domain_tag\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\hash-to-scalar\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\hash-to-scalar\src\factory\test.rs" or "adapters\hash-to-scalar\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\hash-to-scalar\src\keccak256\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\hash-to-scalar\src\keccak256\test.rs" or "adapters\hash-to-scalar\src\keccak256\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\chain\src\create_chain_forms\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\chain\src\create_chain_forms\test.rs" or "adapters\chain\src\create_chain_forms\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\pairing\src\bls12_381_arkworks\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\pairing\src\bls12_381_arkworks\test.rs" or "adapters\pairing\src\bls12_381_arkworks\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\chain\src\evm_forms\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\chain\src\evm_forms\test.rs" or "adapters\chain\src\evm_forms\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\kdf\src\blake3_keyed\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\kdf\src\blake3_keyed\test.rs" or "adapters\kdf\src\blake3_keyed\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\pairing\src\bls12_381_halo2curves\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\pairing\src\bls12_381_halo2curves\test.rs" or "adapters\pairing\src\bls12_381_halo2curves\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\kdf\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\kdf\src\factory\test.rs" or "adapters\kdf\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\pairing\src\bn254_arkworks\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\pairing\src\bn254_arkworks\test.rs" or "adapters\pairing\src\bn254_arkworks\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+For more information about this error, try `rustc --explain E0583`.
+error[E0583]: file not found for module `test`
+ --> adapters\pairing\src\bn254_halo2curves\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\pairing\src\bn254_halo2curves\test.rs" or "adapters\pairing\src\bn254_halo2curves\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\kem\src\bb1_depth_one\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\kem\src\bb1_depth_one\test.rs" or "adapters\kem\src\bb1_depth_one\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\pairing\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\pairing\src\factory\test.rs" or "adapters\pairing\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> crates\workflows\src\sidecar\unwrap\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "crates\workflows\src\sidecar\unwrap\test.rs" or "crates\workflows\src\sidecar\unwrap\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error: could not compile `random` (lib test) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error[E0583]: file not found for module `test`
+ --> adapters\kem\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\kem\src\factory\test.rs" or "adapters\kem\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> crates\workflows\src\sidecar\wrap\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "crates\workflows\src\sidecar\wrap\test.rs" or "crates\workflows\src\sidecar\wrap\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\envelope\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\envelope\src\factory\test.rs" or "adapters\envelope\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\envelope\src\pairing_elgamal\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\envelope\src\pairing_elgamal\test.rs" or "adapters\envelope\src\pairing_elgamal\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\envelope\src\possession_statement\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\envelope\src\possession_statement\test.rs" or "adapters\envelope\src\possession_statement\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\proof\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\proof\src\factory\test.rs" or "adapters\proof\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\benchmark\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\benchmark\test.rs" or "apps\harness-crypto\src\benchmark\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\proof\src\mint_statement\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\proof\src\mint_statement\test.rs" or "adapters\proof\src\mint_statement\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\constants\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\constants\test.rs" or "apps\harness-crypto\src\generate\evm\constants\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\proof\src\schnorr_fs\challenge\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\proof\src\schnorr_fs\challenge\test.rs" or "adapters\proof\src\schnorr_fs\challenge\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\group_vectors\test.rs" or "apps\harness-crypto\src\generate\evm\group_vectors\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\proof\src\schnorr_fs\mod.rs:5:1
+  |
+5 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\proof\src\schnorr_fs\test.rs" or "adapters\proof\src\schnorr_fs\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\mapping_vectors\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\mapping_vectors\test.rs" or "apps\harness-crypto\src\generate\evm\mapping_vectors\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\proof\src\transfer_statement\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\proof\src\transfer_statement\test.rs" or "adapters\proof\src\transfer_statement\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\possession_vectors\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\possession_vectors\test.rs" or "apps\harness-crypto\src\generate\evm\possession_vectors\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\rejection_vectors\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\rejection_vectors\test.rs" or "apps\harness-crypto\src\generate\evm\rejection_vectors\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\render\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\render\test.rs" or "apps\harness-crypto\src\generate\evm\render\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error: could not compile `chain` (lib test) due to 2 previous errors
+error: could not compile `kdf` (lib test) due to 2 previous errors
+error: could not compile `workflows` (lib test) due to 2 previous errors
+error: could not compile `hash-to-scalar` (lib test) due to 3 previous errors
+error: could not compile `encoding` (lib test) due to 3 previous errors
+error: could not compile `envelope` (lib test) due to 3 previous errors
+error: could not compile `kem` (lib test) due to 2 previous errors
+error: could not compile `proof` (lib test) due to 5 previous errors
+error: could not compile `pairing` (lib test) due to 5 previous errors
+warning: `harness-crypto` (lib test) generated 16 warnings (16 duplicates)
+error: could not compile `harness-crypto` (lib test) due to 7 previous errors; 16 warnings emitted
+
+[exit code: 101]
 
 
 > cargo clippy --workspace --all-targets --all-features
@@ -1830,1826 +2170,121 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-warning: unused import: `super::constants`
- --> apps\harness-crypto\src\generate\evm\constants\provides.rs:1:9
+    Checking domain v0.0.0 (C:\Users\Tim\ChainTorrent\crates\domain)
+    Checking encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
+    Checking pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
+    Checking random v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\random)
+    Checking kdf v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kdf)
+error[E0583]: file not found for module `test`
+ --> adapters\random\src\factory\mod.rs:6:1
   |
-1 | pub use super::constants;
-  |         ^^^^^^^^^^^^^^^^
+6 | mod test;
+  | ^^^^^^^^^
   |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+  = help: to create the module `test`, create file "adapters\random\src\factory\test.rs" or "adapters\random\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
 
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\evm\constants\provides.rs:2:9
+error[E0583]: file not found for module `test`
+ --> adapters\random\src\os\mod.rs:4:1
   |
-2 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\evm\constants\provides.rs:4:9
+4 | mod test;
+  | ^^^^^^^^^
   |
-4 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
+  = help: to create the module `test`, create file "adapters\random\src\os\test.rs" or "adapters\random\src\os\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
 
-warning: unused import: `super::group_vectors`
- --> apps\harness-crypto\src\generate\evm\group_vectors\provides.rs:1:9
+warning: file is loaded as a module multiple times: `adapters\random\src\lib.rs`
+ --> adapters\random\src\factory\mod.rs:5:1
   |
-1 | pub use super::group_vectors;
-  |         ^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\evm\mapping_vectors\provides.rs:1:9
+5 | / #[cfg(test)]
+6 | | mod test;
+  | |_________^ first loaded here
   |
-1 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mapping_vectors`
- --> apps\harness-crypto\src\generate\evm\mapping_vectors\provides.rs:2:9
+ ::: adapters\random\src\os\mod.rs:3:1
   |
-2 | pub use super::mapping_vectors;
-  |         ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\evm\mapping_vectors\provides.rs:4:9
+3 | / #[cfg(test)]
+4 | | mod test;
+  | |_________^ loaded again here
   |
-4 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
+  = help: replace all but one `mod` item with `use` items
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#duplicate_mod
+  = note: `#[warn(clippy::duplicate_mod)]` on by default
 
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\evm\possession_vectors\provides.rs:1:9
+error[E0583]: file not found for module `test`
+ --> adapters\encoding\src\abi\mod.rs:4:1
   |
-1 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\evm\possession_vectors\provides.rs:3:9
+4 | mod test;
+  | ^^^^^^^^^
   |
-3 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
+  = help: to create the module `test`, create file "adapters\encoding\src\abi\test.rs" or "adapters\encoding\src\abi\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
 
-warning: unused import: `super::possession_vectors`
- --> apps\harness-crypto\src\generate\evm\possession_vectors\provides.rs:4:9
+error[E0583]: file not found for module `test`
+ --> adapters\encoding\src\derivation_context\mod.rs:4:1
   |
-4 | pub use super::possession_vectors;
-  |         ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\evm\rejection_vectors\provides.rs:1:9
+4 | mod test;
+  | ^^^^^^^^^
   |
-1 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
+  = help: to create the module `test`, create file "adapters\encoding\src\derivation_context\test.rs" or "adapters\encoding\src\derivation_context\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
 
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\evm\rejection_vectors\provides.rs:3:9
+For more information about this error, try `rustc --explain E0583`.
+error[E0583]: file not found for module `test`
+ --> adapters\encoding\src\factory\mod.rs:6:1
   |
-3 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
-
-warning: unused import: `super::rejection_vectors`
- --> apps\harness-crypto\src\generate\evm\rejection_vectors\provides.rs:4:9
+6 | mod test;
+  | ^^^^^^^^^
   |
-4 | pub use super::rejection_vectors;
-  |         ^^^^^^^^^^^^^^^^^^^^^^^^
+  = help: to create the module `test`, create file "adapters\encoding\src\factory\test.rs" or "adapters\encoding\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
 
-warning: unused import: `super::render`
- --> apps\harness-crypto\src\generate\evm\render\provides.rs:4:9
+warning: `random` (lib test) generated 1 warning
+error: could not compile `random` (lib test) due to 2 previous errors; 1 warning emitted
+warning: build failed, waiting for other jobs to finish...
+warning: file is loaded as a module multiple times: `adapters\encoding\src\lib.rs`
+ --> adapters\encoding\src\abi\mod.rs:3:1
   |
-4 | pub use super::render;
-  |         ^^^^^^^^^^^^^
-
-warning: unused import: `IPairingAdapter`
-  --> apps\harness-crypto\src\generate\evm\constants\mod.rs:12:64
-   |
-12 |     G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingReference,
-   |                                                                ^^^^^^^^^^^^^^^
-
-warning: type alias `ConstantsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:41:10
-   |
-41 | pub type ConstantsFn<'a, P> =
-   |          ^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: type alias `GroupVectorsFn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:184:10
-    |
-184 | pub type GroupVectorsFn<'a, P> =
-    |          ^^^^^^^^^^^^^^
-
-warning: type alias `MappingVectorsFn` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:138:10
-    |
-138 | pub type MappingVectorsFn<'a, P, K> = fn(
-    |          ^^^^^^^^^^^^^^^^
-
-warning: type alias `PossessionVectorsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:96:10
-   |
-96 | pub type PossessionVectorsFn<'a, P, K> = fn(
-   |          ^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RejectionVectorsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:93:10
-   |
-93 | pub type RejectionVectorsFn<'a, P> = fn(
-   |          ^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RenderFn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:282:10
-    |
-282 | pub type RenderFn = fn(&RenderDeps, RenderParams, RenderPayload) -> RenderReturn;
-    |          ^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\evm\render\provides.rs:3:9
+3 | / #[cfg(test)]
+4 | | mod test;
+  | |_________^ first loaded here
   |
-3 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
-
-warning: function `constants` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\mod.rs:31:8
-   |
-31 | pub fn constants<'a, P: IPairingReference, F: IChainForms>(
-   |        ^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: struct `ConstantsDeps` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:11:12
-   |
-11 | pub struct ConstantsDeps<'a, P: IPairingReference> {
-   |            ^^^^^^^^^^^^^
-
-warning: struct `ConstantsParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:16:12
-   |
-16 | pub struct ConstantsParams {
-   |            ^^^^^^^^^^^^^^^
-
-warning: struct `ConstantsPayload` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:20:12
-   |
-20 | pub struct ConstantsPayload<'a> {
-   |            ^^^^^^^^^^^^^^^^
-
-warning: struct `ConstantsSuccessReturn` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:27:12
-   |
-27 | pub struct ConstantsSuccessReturn {
-   |            ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `ConstantsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:32:10
-   |
-32 | pub enum ConstantsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `ConstantsReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:39:10
-   |
-39 | pub type ConstantsReturn = Result<ConstantsSuccessReturn, ConstantsErrorReturn>;
-   |          ^^^^^^^^^^^^^^^
-
-warning: type alias `ConstantsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:41:10
-   |
-41 | pub type ConstantsFn<'a, P> =
-   |          ^^^^^^^^^^^
-
-warning: struct `ConstantsParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:12:12
-   |
-12 | pub struct ConstantsParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_constants_params` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:16:8
-   |
-16 | pub fn build_constants_params(overrides: ConstantsParamsOverrides) -> ConstantsParams {
-   |        ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: associated items `try_new` and `get` are never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:46:12
-   |
-45 | impl VectorCount {
-   | ---------------- associated items in this implementation
-46 |     pub fn try_new(params: VectorCountConstructorParams) -> VectorCountTryNewReturn {
-   |            ^^^^^^^
-...
-53 |     pub fn get(&self) -> u32 {
-   |            ^^^
-
-warning: associated items `try_new` and `get` are never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:59:12
-   |
-58 | impl MsmTermCount {
-   | ----------------- associated items in this implementation
-59 |     pub fn try_new(params: MsmTermCountConstructorParams) -> MsmTermCountTryNewReturn {
-   |            ^^^^^^^
-...
-66 |     pub fn get(&self) -> u32 {
-   |            ^^^
-
-warning: associated items `try_new` and `members` are never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:72:12
-   |
-71 | impl GroupOperationVectorDescription {
-   | ------------------------------------ associated items in this implementation
-72 |     pub fn try_new(
-   |            ^^^^^^^
-...
-78 |     pub fn members(&self) -> VectorRecordMembersReturn {
-   |            ^^^^^^^
-
-warning: associated items `try_new` and `members` are never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:156:12
-    |
-155 | impl PairingCheckVectorDescription {
-    | ---------------------------------- associated items in this implementation
-156 |     pub fn try_new(
-    |            ^^^^^^^
-...
-162 |     pub fn members(&self) -> VectorRecordMembersReturn {
-    |            ^^^^^^^
-
-warning: function `group_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:239:8
-    |
-239 | pub fn group_vectors<'a, P: IPairingArithmetic>(
-    |        ^^^^^^^^^^^^^
-
-warning: struct `VectorCount` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:13:12
-   |
-13 | pub struct VectorCount {
-   |            ^^^^^^^^^^^
-
-warning: struct `VectorCountConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:17:12
-   |
-17 | pub struct VectorCountConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `VectorCountTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:22:10
-   |
-22 | pub enum VectorCountTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `VectorCountTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:26:10
-   |
-26 | pub type VectorCountTryNewReturn = Result<VectorCount, VectorCountTryNewErrorReturn>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MsmTermCount` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:29:12
-   |
-29 | pub struct MsmTermCount {
-   |            ^^^^^^^^^^^^
-
-warning: struct `MsmTermCountConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:33:12
-   |
-33 | pub struct MsmTermCountConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `MsmTermCountTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:38:10
-   |
-38 | pub enum MsmTermCountTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `MsmTermCountTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:42:10
-   |
-42 | pub type MsmTermCountTryNewReturn = Result<MsmTermCount, MsmTermCountTryNewErrorReturn>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `FirstGroupVectorCounts` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:45:12
-   |
-45 | pub struct FirstGroupVectorCounts {
-   |            ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MsmVectorSettings` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:52:12
-   |
-52 | pub struct MsmVectorSettings {
-   |            ^^^^^^^^^^^^^^^^^
-
-warning: struct `SecondGroupVectorCounts` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:58:12
-   |
-58 | pub struct SecondGroupVectorCounts {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupOperationVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:65:12
-   |
-65 | pub struct GroupOperationVector {
-   |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PairingCheckVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:72:12
-   |
-72 | pub struct PairingCheckVector {
-   |            ^^^^^^^^^^^^^^^^^^
-
-warning: constant `VECTOR_RECORD_FIELD_COUNT` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:78:11
-   |
-78 | pub const VECTOR_RECORD_FIELD_COUNT: usize = 3;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `VECTOR_RECORD_MEMBER_NAMES` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:80:11
-   |
-80 | pub const VECTOR_RECORD_MEMBER_NAMES: [&str; VECTOR_RECORD_FIELD_COUNT] =
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `GROUP_OPERATION_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:83:11
-   |
-83 | pub const GROUP_OPERATION_VECTOR_FIELD_KINDS: [CanonicalFieldKind; VECTOR_RECORD_FIELD_COUNT] = [
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `PAIRING_CHECK_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:89:11
-   |
-89 | pub const PAIRING_CHECK_VECTOR_FIELD_KINDS: [CanonicalFieldKind; VECTOR_RECORD_FIELD_COUNT] = [
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupOperationVectorDescription` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:95:12
-   |
-95 | pub struct GroupOperationVectorDescription;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupOperationVectorDescriptionConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:97:12
-   |
-97 | pub struct GroupOperationVectorDescriptionConstructorParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `GroupOperationVectorDescriptionTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:99:10
-   |
-99 | pub type GroupOperationVectorDescriptionTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `GroupOperationVectorFromFieldsErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:103:10
-    |
-103 | pub enum GroupOperationVectorFromFieldsErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PairingCheckVectorDescription` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:114:12
-    |
-114 | pub struct PairingCheckVectorDescription;
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PairingCheckVectorDescriptionConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:116:12
-    |
-116 | pub struct PairingCheckVectorDescriptionConstructorParams;
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `PairingCheckVectorDescriptionTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:118:10
-    |
-118 | pub type PairingCheckVectorDescriptionTryNewReturn =
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `PairingCheckVectorFromFieldsErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:122:10
-    |
-122 | pub enum PairingCheckVectorFromFieldsErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `VectorRecordMembersErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:134:10
-    |
-134 | pub enum VectorRecordMembersErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `VectorRecordMembersReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:139:10
-    |
-139 | pub type VectorRecordMembersReturn = Result<SolidityRecordMembers, VectorRecordMembersErrorReturn>;
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupVectorsDeps` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:141:12
-    |
-141 | pub struct GroupVectorsDeps<'a, P: IPairingArithmetic> {
-    |            ^^^^^^^^^^^^^^^^
-
-warning: struct `GroupVectorsParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:147:12
-    |
-147 | pub struct GroupVectorsParams {
-    |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupVectorsPayload` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:152:12
-    |
-152 | pub struct GroupVectorsPayload;
-    |            ^^^^^^^^^^^^^^^^^^^
-
-warning: struct `FirstGroupVectors` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:155:12
-    |
-155 | pub struct FirstGroupVectors {
-    |            ^^^^^^^^^^^^^^^^^
-
-warning: struct `SecondGroupVectors` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:162:12
-    |
-162 | pub struct SecondGroupVectors {
-    |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupVectorsSuccessReturn` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:169:12
-    |
-169 | pub struct GroupVectorsSuccessReturn {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `GroupVectorsErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:175:10
-    |
-175 | pub enum GroupVectorsErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `GroupVectorsReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:182:10
-    |
-182 | pub type GroupVectorsReturn = Result<GroupVectorsSuccessReturn, GroupVectorsErrorReturn>;
-    |          ^^^^^^^^^^^^^^^^^^
-
-warning: struct `VectorCountConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:17:12
-   |
-17 | pub struct VectorCountConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_vector_count_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:21:8
-   |
-21 | pub fn build_vector_count_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_vector_count` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:29:8
-   |
-29 | pub fn build_vector_count(overrides: VectorCountConstructorParamsOverrides) -> VectorCount {
-   |        ^^^^^^^^^^^^^^^^^^
-
-warning: struct `MsmTermCountConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:35:12
-   |
-35 | pub struct MsmTermCountConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_msm_term_count_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:39:8
-   |
-39 | pub fn build_msm_term_count_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_msm_term_count` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:47:8
-   |
-47 | pub fn build_msm_term_count(overrides: MsmTermCountConstructorParamsOverrides) -> MsmTermCount {
-   |        ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `FirstGroupVectorCountsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:53:12
-   |
-53 | pub struct FirstGroupVectorCountsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_first_group_vector_counts` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:59:8
-   |
-59 | pub fn build_first_group_vector_counts(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MsmVectorSettingsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:76:12
-   |
-76 | pub struct MsmVectorSettingsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_msm_vector_settings` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:81:8
-   |
-81 | pub fn build_msm_vector_settings(overrides: MsmVectorSettingsOverrides) -> MsmVectorSettings {
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SecondGroupVectorCountsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:93:12
-   |
-93 | pub struct SecondGroupVectorCountsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_second_group_vector_counts` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:99:8
-   |
-99 | pub fn build_second_group_vector_counts(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupVectorsParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:116:12
-    |
-116 | pub struct GroupVectorsParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_group_vectors_params` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:121:8
-    |
-121 | pub fn build_group_vectors_params(overrides: GroupVectorsParamsOverrides) -> GroupVectorsParams {
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupOperationVectorOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:131:12
-    |
-131 | pub struct GroupOperationVectorOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_group_operation_vector` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:137:8
-    |
-137 | pub fn build_group_operation_vector(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PairingCheckVectorOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:148:12
-    |
-148 | pub struct PairingCheckVectorOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_pairing_check_vector` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:154:8
-    |
-154 | pub fn build_pairing_check_vector(overrides: PairingCheckVectorOverrides) -> PairingCheckVector {
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_group_operation_vector_description` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:166:8
-    |
-166 | pub fn build_group_operation_vector_description() -> GroupOperationVectorDescription {
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_pairing_check_vector_description` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:172:8
-    |
-172 | pub fn build_pairing_check_vector_description() -> PairingCheckVectorDescription {
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: associated items `try_new` and `members` are never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mod.rs:44:12
-   |
-43 | impl HashToScalarVectorDescription {
-   | ---------------------------------- associated items in this implementation
-44 |     pub fn try_new(
-   |            ^^^^^^^
-...
-50 |     pub fn members(&self) -> MappingVectorMembersReturn {
-   |            ^^^^^^^
-
-warning: associated items `try_new` and `members` are never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mod.rs:128:12
-    |
-127 | impl IdentityMappingVectorDescription {
-    | ------------------------------------- associated items in this implementation
-128 |     pub fn try_new(
-    |            ^^^^^^^
-...
-134 |     pub fn members(&self) -> MappingVectorMembersReturn {
-    |            ^^^^^^^
-
-warning: function `mapping_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mod.rs:200:8
-    |
-200 | pub fn mapping_vectors<'a, P: IPairingArithmetic, K: ICredentialKemAdapter<Pairing = P>>(
-    |        ^^^^^^^^^^^^^^^
-
-warning: struct `HashToScalarVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:18:12
-   |
-18 | pub struct HashToScalarVector {
-   |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `IdentityMappingVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:25:12
-   |
-25 | pub struct IdentityMappingVector {
-   |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `HASH_TO_SCALAR_VECTOR_FIELD_COUNT` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:30:11
-   |
-30 | pub const HASH_TO_SCALAR_VECTOR_FIELD_COUNT: usize = 3;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `HASH_TO_SCALAR_VECTOR_MEMBER_NAMES` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:32:11
-   |
-32 | pub const HASH_TO_SCALAR_VECTOR_MEMBER_NAMES: [&str; HASH_TO_SCALAR_VECTOR_FIELD_COUNT] =
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `HASH_TO_SCALAR_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:35:11
-   |
-35 | pub const HASH_TO_SCALAR_VECTOR_FIELD_KINDS: [CanonicalFieldKind;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `IDENTITY_MAPPING_VECTOR_FIELD_COUNT` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:42:11
-   |
-42 | pub const IDENTITY_MAPPING_VECTOR_FIELD_COUNT: usize = 2;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `IDENTITY_MAPPING_VECTOR_MEMBER_NAMES` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:44:11
-   |
-44 | pub const IDENTITY_MAPPING_VECTOR_MEMBER_NAMES: [&str; IDENTITY_MAPPING_VECTOR_FIELD_COUNT] =
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `IDENTITY_MAPPING_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:47:11
-   |
-47 | pub const IDENTITY_MAPPING_VECTOR_FIELD_KINDS: [CanonicalFieldKind;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `HashToScalarVectorDescription` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:51:12
-   |
-51 | pub struct HashToScalarVectorDescription;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `HashToScalarVectorDescriptionConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:53:12
-   |
-53 | pub struct HashToScalarVectorDescriptionConstructorParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `HashToScalarVectorDescriptionTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:55:10
-   |
-55 | pub type HashToScalarVectorDescriptionTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `HashToScalarVectorFromFieldsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:59:10
-   |
-59 | pub enum HashToScalarVectorFromFieldsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `IdentityMappingVectorDescription` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:70:12
-   |
-70 | pub struct IdentityMappingVectorDescription;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `IdentityMappingVectorDescriptionConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:72:12
-   |
-72 | pub struct IdentityMappingVectorDescriptionConstructorParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `IdentityMappingVectorDescriptionTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:74:10
-   |
-74 | pub type IdentityMappingVectorDescriptionTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `IdentityMappingVectorFromFieldsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:78:10
-   |
-78 | pub enum IdentityMappingVectorFromFieldsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `MappingVectorMembersErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:90:10
-   |
-90 | pub enum MappingVectorMembersErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `MappingVectorMembersReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:95:10
-   |
-95 | pub type MappingVectorMembersReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MappingVectorsDeps` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:98:12
-   |
-98 | pub struct MappingVectorsDeps<'a, P: IPairingArithmetic, K: ICredentialKemAdapter<Pairing = P>> {
-   |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `MappingVectorsParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:106:12
-    |
-106 | pub struct MappingVectorsParams {
-    |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MappingVectorsPayload` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:112:12
-    |
-112 | pub struct MappingVectorsPayload<'a> {
-    |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MappingVectorsSuccessReturn` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:119:12
-    |
-119 | pub struct MappingVectorsSuccessReturn {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `MappingVectorsErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:125:10
-    |
-125 | pub enum MappingVectorsErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `MappingVectorsReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:136:10
-    |
-136 | pub type MappingVectorsReturn = Result<MappingVectorsSuccessReturn, MappingVectorsErrorReturn>;
-    |          ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `HashToScalarVectorOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:19:12
-   |
-19 | pub struct HashToScalarVectorOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_hash_to_scalar_vector` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:25:8
-   |
-25 | pub fn build_hash_to_scalar_vector(overrides: HashToScalarVectorOverrides) -> HashToScalarVector {
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `IdentityMappingVectorOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:34:12
-   |
-34 | pub struct IdentityMappingVectorOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_identity_mapping_vector` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:39:8
-   |
-39 | pub fn build_identity_mapping_vector(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MappingVectorsParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:49:12
-   |
-49 | pub struct MappingVectorsParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_mapping_vectors_params` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:55:8
-   |
-55 | pub fn build_mapping_vectors_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_hash_to_scalar_vector_description` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:67:8
-   |
-67 | pub fn build_hash_to_scalar_vector_description() -> HashToScalarVectorDescription {
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_identity_mapping_vector_description` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:73:8
-   |
-73 | pub fn build_identity_mapping_vector_description() -> IdentityMappingVectorDescription {
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: associated items `try_new` and `members` are never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\mod.rs:38:12
-   |
-37 | impl PossessionVectorDescription {
-   | -------------------------------- associated items in this implementation
-38 |     pub fn try_new(
-   |            ^^^^^^^
-...
-44 |     pub fn members(&self) -> PossessionVectorMembersReturn {
-   |            ^^^^^^^
-
-warning: function `possession_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\possession_vectors\mod.rs:161:8
-    |
-161 | pub fn possession_vectors<'a, P: IPairingArithmetic, K: IKeyAgreementAdapter<Pairing = P>>(
-    |        ^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:14:12
-   |
-14 | pub struct PossessionVector {
-   |            ^^^^^^^^^^^^^^^^
-
-warning: constant `POSSESSION_VECTOR_FIELD_COUNT` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:25:11
-   |
-25 | pub const POSSESSION_VECTOR_FIELD_COUNT: usize = 8;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `POSSESSION_VECTOR_MEMBER_NAMES` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:27:11
-   |
-27 | pub const POSSESSION_VECTOR_MEMBER_NAMES: [&str; POSSESSION_VECTOR_FIELD_COUNT] =
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `POSSESSION_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:30:11
-   |
-30 | pub const POSSESSION_VECTOR_FIELD_KINDS: [CanonicalFieldKind; POSSESSION_VECTOR_FIELD_COUNT] = [
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorDescription` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:41:12
-   |
-41 | pub struct PossessionVectorDescription;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorDescriptionConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:43:12
-   |
-43 | pub struct PossessionVectorDescriptionConstructorParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `PossessionVectorDescriptionTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:45:10
-   |
-45 | pub type PossessionVectorDescriptionTryNewReturn = Result<PossessionVectorDescription, Infallible>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `PossessionVectorFromFieldsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:48:10
-   |
-48 | pub enum PossessionVectorFromFieldsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `PossessionVectorMembersErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:60:10
-   |
-60 | pub enum PossessionVectorMembersErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `PossessionVectorMembersReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:65:10
-   |
-65 | pub type PossessionVectorMembersReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorsDeps` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:68:12
-   |
-68 | pub struct PossessionVectorsDeps<'a, P: IPairingArithmetic, K: IKeyAgreementAdapter<Pairing = P>> {
-   |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorsParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:75:12
-   |
-75 | pub struct PossessionVectorsParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorsPayload` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:79:12
-   |
-79 | pub struct PossessionVectorsPayload;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorsSuccessReturn` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:82:12
-   |
-82 | pub struct PossessionVectorsSuccessReturn {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `PossessionVectorsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:87:10
-   |
-87 | pub enum PossessionVectorsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `PossessionVectorsReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:93:10
-   |
-93 | pub type PossessionVectorsReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:15:12
-   |
-15 | pub struct PossessionVectorOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_possession_vector` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:26:8
-   |
-26 | pub fn build_possession_vector(overrides: PossessionVectorOverrides) -> PossessionVector {
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorsParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:40:12
-   |
-40 | pub struct PossessionVectorsParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_possession_vectors_params` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:44:8
-   |
-44 | pub fn build_possession_vectors_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_possession_vector_description` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:54:8
-   |
-54 | pub fn build_possession_vector_description() -> PossessionVectorDescription {
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: associated items `try_new` and `as_str` are never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mod.rs:35:12
-   |
-34 | impl DecodeTarget {
-   | ----------------- associated items in this implementation
-35 |     pub fn try_new(params: DecodeTargetConstructorParams) -> DecodeTargetTryNewReturn {
-   |            ^^^^^^^
-...
-44 |     pub fn as_str(&self) -> &'static str {
-   |            ^^^^^^
-
-warning: associated items `try_new` and `members` are never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mod.rs:54:12
-   |
-53 | impl RejectionVectorDescription {
-   | ------------------------------- associated items in this implementation
-54 |     pub fn try_new(
-   |            ^^^^^^^
-...
-60 |     pub fn members(&self) -> RejectionVectorMembersReturn {
-   |            ^^^^^^^
-
-warning: function `rejection_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mod.rs:128:8
-    |
-128 | pub fn rejection_vectors<'a, P: IPairingReference>(
-    |        ^^^^^^^^^^^^^^^^^
-
-warning: enum `DecodeTarget` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:13:10
-   |
-13 | pub enum DecodeTarget {
-   |          ^^^^^^^^^^^^
-
-warning: struct `DecodeTargetConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:19:12
-   |
-19 | pub struct DecodeTargetConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `DecodeTargetTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:24:10
-   |
-24 | pub enum DecodeTargetTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `DecodeTargetTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:28:10
-   |
-28 | pub type DecodeTargetTryNewReturn = Result<DecodeTarget, DecodeTargetTryNewErrorReturn>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `RejectionVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:31:12
-   |
-31 | pub struct RejectionVector {
-   |            ^^^^^^^^^^^^^^^
-
-warning: constant `REJECTION_VECTOR_FIELD_COUNT` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:36:11
-   |
-36 | pub const REJECTION_VECTOR_FIELD_COUNT: usize = 2;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `REJECTION_VECTOR_MEMBER_NAMES` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:38:11
-   |
-38 | pub const REJECTION_VECTOR_MEMBER_NAMES: [&str; REJECTION_VECTOR_FIELD_COUNT] = ["target", "input"];
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `REJECTION_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:40:11
-   |
-40 | pub const REJECTION_VECTOR_FIELD_KINDS: [CanonicalFieldKind; REJECTION_VECTOR_FIELD_COUNT] =
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `RejectionVectorDescription` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:43:12
-   |
-43 | pub struct RejectionVectorDescription;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `RejectionVectorDescriptionConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:45:12
-   |
-45 | pub struct RejectionVectorDescriptionConstructorParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RejectionVectorDescriptionTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:47:10
-   |
-47 | pub type RejectionVectorDescriptionTryNewReturn = Result<RejectionVectorDescription, Infallible>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `RejectionVectorFromFieldsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:50:10
-   |
-50 | pub enum RejectionVectorFromFieldsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `RejectionVectorMembersErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:63:10
-   |
-63 | pub enum RejectionVectorMembersErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RejectionVectorMembersReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:68:10
-   |
-68 | pub type RejectionVectorMembersReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `RejectionVectorsDeps` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:71:12
-   |
-71 | pub struct RejectionVectorsDeps<'a, P: IPairingReference> {
-   |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `RejectionVectorsParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:75:12
-   |
-75 | pub struct RejectionVectorsParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `RejectionVectorsPayload` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:77:12
-   |
-77 | pub struct RejectionVectorsPayload;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `RejectionVectorsSuccessReturn` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:80:12
-   |
-80 | pub struct RejectionVectorsSuccessReturn {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `RejectionVectorsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:85:10
-   |
-85 | pub enum RejectionVectorsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RejectionVectorsReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:90:10
-   |
-90 | pub type RejectionVectorsReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `RejectionVectorOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:14:12
-   |
-14 | pub struct RejectionVectorOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_rejection_vector` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:19:8
-   |
-19 | pub fn build_rejection_vector(overrides: RejectionVectorOverrides) -> RejectionVector {
-   |        ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_rejection_vector_description` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:26:8
-   |
-26 | pub fn build_rejection_vector_description() -> RejectionVectorDescription {
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: associated function `try_new` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mod.rs:34:12
-   |
-33 | impl SolidityLibraryName {
-   | ------------------------ associated function in this implementation
-34 |     pub fn try_new(
-   |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mod.rs:60:12
-   |
-59 | impl SolidityConstantName {
-   | ------------------------- associated function in this implementation
-60 |     pub fn try_new(
-   |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mod.rs:84:12
-   |
-83 | impl SolidityTypeName {
-   | --------------------- associated function in this implementation
-84 |     pub fn try_new(params: SolidityTypeNameConstructorParams) -> SolidityTypeNameTryNewReturn {
-   |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:108:12
-    |
-107 | impl SolidityMemberName {
-    | ----------------------- associated function in this implementation
-108 |     pub fn try_new(params: SolidityMemberNameConstructorParams) -> SolidityMemberNameTryNewReturn {
-    |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:132:12
-    |
-131 | impl SpdxLicenseIdentifier {
-    | -------------------------- associated function in this implementation
-132 |     pub fn try_new(
-    |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:156:12
-    |
-155 | impl SolidityStringLiteral {
-    | -------------------------- associated function in this implementation
-156 |     pub fn try_new(
-    |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:173:12
-    |
-172 | impl SolidityUint256 {
-    | -------------------- associated function in this implementation
-173 |     pub fn try_new(params: SolidityUint256ConstructorParams) -> SolidityUint256TryNewReturn {
-    |            ^^^^^^^
-
-warning: associated items `try_new`, `as_str`, and `decodes_into_memory` are never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:181:12
-    |
-180 | impl SolidityAbiType {
-    | -------------------- associated items in this implementation
-181 |     pub fn try_new(params: SolidityAbiTypeConstructorParams) -> SolidityAbiTypeTryNewReturn {
-    |            ^^^^^^^
-...
-185 |     pub fn as_str(&self) -> &'static str {
-    |            ^^^^^^
-...
-198 |     pub fn decodes_into_memory(&self) -> bool {
-    |            ^^^^^^^^^^^^^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:212:12
-    |
-211 | impl SolidityLibraryEntries {
-    | --------------------------- associated function in this implementation
-212 |     pub fn try_new(
-    |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:236:12
-    |
-235 | impl SolidityRecordMembers {
-    | -------------------------- associated function in this implementation
-236 |     pub fn try_new(
-    |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:269:12
-    |
-268 | impl SolidityRecordDeclarations {
-    | ------------------------------- associated function in this implementation
-269 |     pub fn try_new(
-    |            ^^^^^^^
-
-warning: method `as_str` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:324:12
-    |
-323 | impl SoliditySourceText {
-    | ----------------------- method in this implementation
-324 |     pub fn as_str(&self) -> &str {
-    |            ^^^^^^
-
-warning: function `render` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:329:8
-    |
-329 | pub fn render(_deps: &RenderDeps, params: RenderParams, payload: RenderPayload) -> RenderReturn {
-    |        ^^^^^^
-
-warning: struct `SolidityLibraryName` is never constructed
- --> apps\harness-crypto\src\generate\evm\render\interface.rs:5:12
+ ::: adapters\encoding\src\derivation_context\mod.rs:3:1
   |
-5 | pub struct SolidityLibraryName {
-  |            ^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryNameConstructorParams` is never constructed
- --> apps\harness-crypto\src\generate\evm\render\interface.rs:9:12
+3 | / #[cfg(test)]
+4 | | mod test;
+  | |_________^ loaded again here
   |
-9 | pub struct SolidityLibraryNameConstructorParams {
-  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityLibraryNameTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:14:10
-   |
-14 | pub enum SolidityLibraryNameTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityLibraryNameTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:20:10
-   |
-20 | pub type SolidityLibraryNameTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityConstantName` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:24:12
-   |
-24 | pub struct SolidityConstantName {
-   |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityConstantNameConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:28:12
-   |
-28 | pub struct SolidityConstantNameConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityConstantNameTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:33:10
-   |
-33 | pub enum SolidityConstantNameTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityConstantNameTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:39:10
-   |
-39 | pub type SolidityConstantNameTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SpdxLicenseIdentifier` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:43:12
-   |
-43 | pub struct SpdxLicenseIdentifier {
-   |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SpdxLicenseIdentifierConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:47:12
-   |
-47 | pub struct SpdxLicenseIdentifierConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SpdxLicenseIdentifierTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:52:10
-   |
-52 | pub enum SpdxLicenseIdentifierTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SpdxLicenseIdentifierTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:57:10
-   |
-57 | pub type SpdxLicenseIdentifierTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityCompilerVersion` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:61:12
-   |
-61 | pub struct SolidityCompilerVersion {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityStringLiteral` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:68:12
-   |
-68 | pub struct SolidityStringLiteral {
-   |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityStringLiteralConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:72:12
-   |
-72 | pub struct SolidityStringLiteralConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityStringLiteralTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:77:10
-   |
-77 | pub enum SolidityStringLiteralTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityStringLiteralTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:81:10
-   |
-81 | pub type SolidityStringLiteralTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityUint256` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:85:12
-   |
-85 | pub struct SolidityUint256 {
-   |            ^^^^^^^^^^^^^^^
-
-warning: struct `SolidityUint256ConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:89:12
-   |
-89 | pub struct SolidityUint256ConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityUint256TryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:93:10
-   |
-93 | pub type SolidityUint256TryNewReturn = Result<SolidityUint256, Infallible>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityConstantValue` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:96:10
-   |
-96 | pub enum SolidityConstantValue {
-   |          ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryEntry` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:106:12
-    |
-106 | pub struct SolidityLibraryEntry {
-    |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryEntries` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:112:12
-    |
-112 | pub struct SolidityLibraryEntries {
-    |            ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryEntriesConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:116:12
-    |
-116 | pub struct SolidityLibraryEntriesConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityLibraryEntriesTryNewErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:121:10
-    |
-121 | pub enum SolidityLibraryEntriesTryNewErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityLibraryEntriesTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:129:10
-    |
-129 | pub type SolidityLibraryEntriesTryNewReturn =
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityTypeName` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:133:12
-    |
-133 | pub struct SolidityTypeName {
-    |            ^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityTypeNameConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:137:12
-    |
-137 | pub struct SolidityTypeNameConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityTypeNameTryNewErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:142:10
-    |
-142 | pub enum SolidityTypeNameTryNewErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityTypeNameTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:148:10
-    |
-148 | pub type SolidityTypeNameTryNewReturn = Result<SolidityTypeName, SolidityTypeNameTryNewErrorReturn>;
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityMemberName` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:151:12
-    |
-151 | pub struct SolidityMemberName {
-    |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityMemberNameConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:155:12
-    |
-155 | pub struct SolidityMemberNameConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityMemberNameTryNewErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:160:10
-    |
-160 | pub enum SolidityMemberNameTryNewErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityMemberNameTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:166:10
-    |
-166 | pub type SolidityMemberNameTryNewReturn =
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityAbiType` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:170:12
-    |
-170 | pub struct SolidityAbiType {
-    |            ^^^^^^^^^^^^^^^
-
-warning: struct `SolidityAbiTypeConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:174:12
-    |
-174 | pub struct SolidityAbiTypeConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityAbiTypeTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:178:10
-    |
-178 | pub type SolidityAbiTypeTryNewReturn = Result<SolidityAbiType, Infallible>;
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordMember` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:181:12
-    |
-181 | pub struct SolidityRecordMember {
-    |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordMembers` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:187:12
-    |
-187 | pub struct SolidityRecordMembers {
-    |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordMembersConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:191:12
-    |
-191 | pub struct SolidityRecordMembersConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityRecordMembersTryNewErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:196:10
-    |
-196 | pub enum SolidityRecordMembersTryNewErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityRecordMembersTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:209:10
-    |
-209 | pub type SolidityRecordMembersTryNewReturn =
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordDeclaration` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:213:12
-    |
-213 | pub struct SolidityRecordDeclaration {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordDeclarations` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:222:12
-    |
-222 | pub struct SolidityRecordDeclarations {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordDeclarationsConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:226:12
-    |
-226 | pub struct SolidityRecordDeclarationsConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityRecordDeclarationsTryNewErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:231:10
-    |
-231 | pub enum SolidityRecordDeclarationsTryNewErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityRecordDeclarationsTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:247:10
-    |
-247 | pub type SolidityRecordDeclarationsTryNewReturn =
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityLibraryBody` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:251:10
-    |
-251 | pub enum SolidityLibraryBody {
-    |          ^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SoliditySourceText` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:257:12
-    |
-257 | pub struct SoliditySourceText {
-    |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `RenderDeps` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:261:12
-    |
-261 | pub struct RenderDeps;
-    |            ^^^^^^^^^^
-
-warning: struct `RenderParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:264:12
-    |
-264 | pub struct RenderParams {
-    |            ^^^^^^^^^^^^
-
-warning: struct `RenderPayload` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:270:12
-    |
-270 | pub struct RenderPayload {
-    |            ^^^^^^^^^^^^^
-
-warning: struct `RenderSuccessReturn` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:276:12
-    |
-276 | pub struct RenderSuccessReturn {
-    |            ^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RenderReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:280:10
-    |
-280 | pub type RenderReturn = Result<RenderSuccessReturn, Infallible>;
-    |          ^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryNameConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:24:12
-   |
-24 | pub struct SolidityLibraryNameConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_library_name_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:28:8
-   |
-28 | pub fn build_solidity_library_name_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_library_name` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:36:8
-   |
-36 | pub fn build_solidity_library_name(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityConstantNameConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:44:12
-   |
-44 | pub struct SolidityConstantNameConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_constant_name_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:48:8
-   |
-48 | pub fn build_solidity_constant_name_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_constant_name` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:56:8
-   |
-56 | pub fn build_solidity_constant_name(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SpdxLicenseIdentifierConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:64:12
-   |
-64 | pub struct SpdxLicenseIdentifierConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_spdx_license_identifier_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:68:8
-   |
-68 | pub fn build_spdx_license_identifier_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_spdx_license_identifier` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:76:8
-   |
-76 | pub fn build_spdx_license_identifier(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityStringLiteralConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:84:12
-   |
-84 | pub struct SolidityStringLiteralConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_string_literal_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:88:8
-   |
-88 | pub fn build_solidity_string_literal_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_string_literal` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:96:8
-   |
-96 | pub fn build_solidity_string_literal(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityUint256ConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:104:12
-    |
-104 | pub struct SolidityUint256ConstructorParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_uint256_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:108:8
-    |
-108 | pub fn build_solidity_uint256_constructor_params(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_uint256` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:116:8
-    |
-116 | pub fn build_solidity_uint256(
-    |        ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityCompilerVersionOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:124:12
-    |
-124 | pub struct SolidityCompilerVersionOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_compiler_version` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:130:8
-    |
-130 | pub fn build_solidity_compiler_version(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryEntryOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:141:12
-    |
-141 | pub struct SolidityLibraryEntryOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_library_entry` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:146:8
-    |
-146 | pub fn build_solidity_library_entry(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryEntriesConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:158:12
-    |
-158 | pub struct SolidityLibraryEntriesConstructorParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_library_entries_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:162:8
-    |
-162 | pub fn build_solidity_library_entries_constructor_params(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_library_entries` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:172:8
-    |
-172 | pub fn build_solidity_library_entries(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityTypeNameConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:180:12
-    |
-180 | pub struct SolidityTypeNameConstructorParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_type_name_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:184:8
-    |
-184 | pub fn build_solidity_type_name_constructor_params(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_type_name` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:192:8
-    |
-192 | pub fn build_solidity_type_name(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityMemberNameConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:200:12
-    |
-200 | pub struct SolidityMemberNameConstructorParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_member_name_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:204:8
-    |
-204 | pub fn build_solidity_member_name_constructor_params(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_member_name` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:212:8
-    |
-212 | pub fn build_solidity_member_name(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityAbiTypeConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:220:12
-    |
-220 | pub struct SolidityAbiTypeConstructorParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_abi_type_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:224:8
-    |
-224 | pub fn build_solidity_abi_type_constructor_params(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_abi_type` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:232:8
-    |
-232 | pub fn build_solidity_abi_type(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordMemberOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:240:12
-    |
-240 | pub struct SolidityRecordMemberOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_record_member` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:245:8
-    |
-245 | pub fn build_solidity_record_member(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordMembersConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:257:12
-    |
-257 | pub struct SolidityRecordMembersConstructorParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_record_members_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:261:8
-    |
-261 | pub fn build_solidity_record_members_constructor_params(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_record_members` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:288:8
-    |
-288 | pub fn build_solidity_record_members(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordDeclarationOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:296:12
-    |
-296 | pub struct SolidityRecordDeclarationOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_record_declaration` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:304:8
-    |
-304 | pub fn build_solidity_record_declaration(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordDeclarationsConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:333:12
-    |
-333 | pub struct SolidityRecordDeclarationsConstructorParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_record_declarations_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:337:8
-    |
-337 | pub fn build_solidity_record_declarations_constructor_params(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_record_declarations` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:347:8
-    |
-347 | pub fn build_solidity_record_declarations(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `RenderParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:357:12
-    |
-357 | pub struct RenderParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_render_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:362:8
-    |
-362 | pub fn build_render_params(overrides: RenderParamsOverrides) -> RenderParams {
-    |        ^^^^^^^^^^^^^^^^^^^
-
-warning: struct `RenderPayloadOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:374:12
-    |
-374 | pub struct RenderPayloadOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_render_payload` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:379:8
-    |
-379 | pub fn build_render_payload(overrides: RenderPayloadOverrides) -> RenderPayload {
-    |        ^^^^^^^^^^^^^^^^^^^^
-
-warning: `harness-crypto` (lib test) generated 21 warnings (run `cargo clippy --fix --lib -p harness-crypto --tests -- ` to apply 14 suggestions)
-warning: `harness-crypto` (lib) generated 287 warnings (20 duplicates) (run `cargo clippy --fix --lib -p harness-crypto -- ` to apply 1 suggestion)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.35s
-
-[exit code: 0]
+ ::: adapters\encoding\src\factory\mod.rs:5:1
+  |
+5 | / #[cfg(test)]
+6 | | mod test;
+  | |_________^ loaded again here
+  |
+  = help: replace all but one `mod` item with `use` items
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#duplicate_mod
+  = note: `#[warn(clippy::duplicate_mod)]` on by default
+
+warning: `encoding` (lib test) generated 1 warning
+error: could not compile `encoding` (lib test) due to 3 previous errors; 1 warning emitted
+
+[exit code: 101]
 
 
 > cargo fmt --all --check
 
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\adapters\chain\src\create_chain_forms\test.rs does not exist
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\adapters\encoding\src\abi\test.rs does not exist
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\adapters\envelope\src\factory\test.rs does not exist
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar\src\domain_tag\test.rs does not exist
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\adapters\kdf\src\blake3_keyed\test.rs does not exist
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\adapters\kem\src\bb1_depth_one\test.rs does not exist
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\adapters\pairing\src\bls12_381_arkworks\test.rs does not exist
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\adapters\proof\src\factory\test.rs does not exist
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\adapters\random\src\factory\test.rs does not exist
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\apps\harness-crypto\src\benchmark\test.rs does not exist
+Error writing files: failed to resolve mod `test`: \\?\C:\Users\Tim\ChainTorrent\crates\workflows\src\sidecar\unwrap\test.rs does not exist
 
-[exit code: 0]
+[exit code: 1]
 
 
 > cargo deny check
@@ -3749,6 +2384,24 @@ warning[duplicate]: found 2 duplicate entries for crate 'block-buffer'
          Γöé           ΓööΓöÇΓöÇ alloy-sol-types v1.7.3 (*)
          ΓööΓöÇΓöÇ sha3 v0.12.0
              ΓööΓöÇΓöÇ hash-to-scalar v0.0.0 (*)
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:20:6
+   Γöé
+20 Γöé     "BSL-1.0",
+   Γöé      ΓöüΓöüΓöüΓöüΓöüΓöüΓöü unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:17:6
+   Γöé
+17 Γöé     "ISC",
+   Γöé      ΓöüΓöüΓöü unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:18:6
+   Γöé
+18 Γöé     "Zlib",
+   Γöé      ΓöüΓöüΓöüΓöü unmatched license allowance
 
 warning[duplicate]: found 2 duplicate entries for crate 'cpufeatures'
    ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:37:1
@@ -4028,24 +2681,6 @@ warning[duplicate]: found 2 duplicate entries for crate 'digest'
      Γöé           ΓööΓöÇΓöÇ alloy-sol-types v1.7.3 (*)
      ΓööΓöÇΓöÇ sha3 v0.12.0
          ΓööΓöÇΓöÇ hash-to-scalar v0.0.0 (*)
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:20:6
-   Γöé
-20 Γöé     "BSL-1.0",
-   Γöé      ΓöüΓöüΓöüΓöüΓöüΓöüΓöü unmatched license allowance
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:17:6
-   Γöé
-17 Γöé     "ISC",
-   Γöé      ΓöüΓöüΓöü unmatched license allowance
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:18:6
-   Γöé
-18 Γöé     "Zlib",
-   Γöé      ΓöüΓöüΓöüΓöü unmatched license allowance
 
 warning[duplicate]: found 2 duplicate entries for crate 'pairing'
    ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:83:1
@@ -4344,6 +2979,352 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
+   Compiling domain v0.0.0 (C:\Users\Tim\ChainTorrent\crates\domain)
+   Compiling random v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\random)
+   Compiling pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
+   Compiling encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
+   Compiling chain v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\chain)
+   Compiling kdf v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kdf)
+   Compiling hash-to-scalar v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar)
+   Compiling kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
+   Compiling workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
+   Compiling envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
+   Compiling proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
+   Compiling harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
+error[E0583]: file not found for module `test`
+ --> adapters\chain\src\create_chain_forms\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\chain\src\create_chain_forms\test.rs" or "adapters\chain\src\create_chain_forms\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\chain\src\evm_forms\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\chain\src\evm_forms\test.rs" or "adapters\chain\src\evm_forms\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\kdf\src\blake3_keyed\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\kdf\src\blake3_keyed\test.rs" or "adapters\kdf\src\blake3_keyed\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\kdf\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\kdf\src\factory\test.rs" or "adapters\kdf\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\random\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\random\src\factory\test.rs" or "adapters\random\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\random\src\os\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\random\src\os\test.rs" or "adapters\random\src\os\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> crates\workflows\src\sidecar\unwrap\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "crates\workflows\src\sidecar\unwrap\test.rs" or "crates\workflows\src\sidecar\unwrap\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> crates\workflows\src\sidecar\wrap\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "crates\workflows\src\sidecar\wrap\test.rs" or "crates\workflows\src\sidecar\wrap\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\hash-to-scalar\src\domain_tag\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\hash-to-scalar\src\domain_tag\test.rs" or "adapters\hash-to-scalar\src\domain_tag\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\hash-to-scalar\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\hash-to-scalar\src\factory\test.rs" or "adapters\hash-to-scalar\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\hash-to-scalar\src\keccak256\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\hash-to-scalar\src\keccak256\test.rs" or "adapters\hash-to-scalar\src\keccak256\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+For more information about this error, try `rustc --explain E0583`.
+error[E0583]: file not found for module `test`
+ --> adapters\encoding\src\abi\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\encoding\src\abi\test.rs" or "adapters\encoding\src\abi\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\encoding\src\derivation_context\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\encoding\src\derivation_context\test.rs" or "adapters\encoding\src\derivation_context\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\encoding\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\encoding\src\factory\test.rs" or "adapters\encoding\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error: could not compile `random` (lib test) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error[E0583]: file not found for module `test`
+ --> adapters\kem\src\bb1_depth_one\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\kem\src\bb1_depth_one\test.rs" or "adapters\kem\src\bb1_depth_one\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\kem\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\kem\src\factory\test.rs" or "adapters\kem\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error: could not compile `chain` (lib test) due to 2 previous errors
+error[E0583]: file not found for module `test`
+ --> adapters\envelope\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\envelope\src\factory\test.rs" or "adapters\envelope\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error: could not compile `kdf` (lib test) due to 2 previous errors
+error[E0583]: file not found for module `test`
+ --> adapters\envelope\src\pairing_elgamal\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\envelope\src\pairing_elgamal\test.rs" or "adapters\envelope\src\pairing_elgamal\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\envelope\src\possession_statement\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\envelope\src\possession_statement\test.rs" or "adapters\envelope\src\possession_statement\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\proof\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\proof\src\factory\test.rs" or "adapters\proof\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\proof\src\mint_statement\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\proof\src\mint_statement\test.rs" or "adapters\proof\src\mint_statement\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\proof\src\schnorr_fs\challenge\mod.rs:4:1
+  |
+4 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\proof\src\schnorr_fs\challenge\test.rs" or "adapters\proof\src\schnorr_fs\challenge\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\proof\src\schnorr_fs\mod.rs:5:1
+  |
+5 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\proof\src\schnorr_fs\test.rs" or "adapters\proof\src\schnorr_fs\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\proof\src\transfer_statement\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\proof\src\transfer_statement\test.rs" or "adapters\proof\src\transfer_statement\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error: could not compile `workflows` (lib test) due to 2 previous errors
+error[E0583]: file not found for module `test`
+ --> adapters\pairing\src\bls12_381_arkworks\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\pairing\src\bls12_381_arkworks\test.rs" or "adapters\pairing\src\bls12_381_arkworks\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\pairing\src\bls12_381_halo2curves\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\pairing\src\bls12_381_halo2curves\test.rs" or "adapters\pairing\src\bls12_381_halo2curves\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\pairing\src\bn254_arkworks\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\pairing\src\bn254_arkworks\test.rs" or "adapters\pairing\src\bn254_arkworks\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\pairing\src\bn254_halo2curves\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\pairing\src\bn254_halo2curves\test.rs" or "adapters\pairing\src\bn254_halo2curves\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\benchmark\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\benchmark\test.rs" or "apps\harness-crypto\src\benchmark\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> adapters\pairing\src\factory\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "adapters\pairing\src\factory\test.rs" or "adapters\pairing\src\factory\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\constants\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\constants\test.rs" or "apps\harness-crypto\src\generate\evm\constants\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\group_vectors\test.rs" or "apps\harness-crypto\src\generate\evm\group_vectors\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\mapping_vectors\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\mapping_vectors\test.rs" or "apps\harness-crypto\src\generate\evm\mapping_vectors\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\possession_vectors\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\possession_vectors\test.rs" or "apps\harness-crypto\src\generate\evm\possession_vectors\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\rejection_vectors\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\rejection_vectors\test.rs" or "apps\harness-crypto\src\generate\evm\rejection_vectors\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `test`
+ --> apps\harness-crypto\src\generate\evm\render\mod.rs:6:1
+  |
+6 | mod test;
+  | ^^^^^^^^^
+  |
+  = help: to create the module `test`, create file "apps\harness-crypto\src\generate\evm\render\test.rs" or "apps\harness-crypto\src\generate\evm\render\test\mod.rs"
+  = note: if there is a `mod test` elsewhere in the crate already, import it with `use crate::...` instead
+
+error: could not compile `hash-to-scalar` (lib test) due to 3 previous errors
+error: could not compile `encoding` (lib test) due to 3 previous errors
+error: could not compile `envelope` (lib test) due to 3 previous errors
+error: could not compile `kem` (lib test) due to 2 previous errors
 warning: unused import: `super::constants`
  --> apps\harness-crypto\src\generate\evm\constants\provides.rs:1:9
   |
@@ -4424,6 +3405,12 @@ warning: unused import: `super::rejection_vectors`
 4 | pub use super::rejection_vectors;
   |         ^^^^^^^^^^^^^^^^^^^^^^^^
 
+warning: unused import: `super::mock::*`
+ --> apps\harness-crypto\src\generate\evm\render\provides.rs:3:9
+  |
+3 | pub use super::mock::*;
+  |         ^^^^^^^^^^^^^^
+
 warning: unused import: `super::render`
  --> apps\harness-crypto\src\generate\evm\render\provides.rs:4:9
   |
@@ -4436,827 +3423,10 @@ warning: unused import: `IPairingAdapter`
 12 |     G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingReference,
    |                                                                ^^^^^^^^^^^^^^^
 
-warning: type alias `ConstantsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:41:10
-   |
-41 | pub type ConstantsFn<'a, P> =
-   |          ^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: type alias `GroupVectorsFn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:184:10
-    |
-184 | pub type GroupVectorsFn<'a, P> =
-    |          ^^^^^^^^^^^^^^
-
-warning: type alias `MappingVectorsFn` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:138:10
-    |
-138 | pub type MappingVectorsFn<'a, P, K> = fn(
-    |          ^^^^^^^^^^^^^^^^
-
-warning: type alias `PossessionVectorsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:96:10
-   |
-96 | pub type PossessionVectorsFn<'a, P, K> = fn(
-   |          ^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RejectionVectorsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:93:10
-   |
-93 | pub type RejectionVectorsFn<'a, P> = fn(
-   |          ^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RenderFn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:282:10
-    |
-282 | pub type RenderFn = fn(&RenderDeps, RenderParams, RenderPayload) -> RenderReturn;
-    |          ^^^^^^^^
-
-warning: `harness-crypto` (lib test) generated 21 warnings (run `cargo fix --lib -p harness-crypto --tests` to apply 14 suggestions)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
-     Running unittests src\lib.rs (target\debug\deps\chain-ff7643f463e984f5.exe)
-
-running 15 tests
-test create_chain_forms::test::create_chain_forms_hands_the_consumer_the_evm_forms_and_their_declaration ... ok
-test evm_forms::test::evm_chain_identifier_form_is_rebuilt_from_a_256_bit_unsigned_field ... ok
-test evm_forms::test::evm_chain_identifier_form_refuses_a_field_of_another_kind ... ok
-test evm_forms::test::evm_chain_identifier_form_yields_its_bytes_as_a_256_bit_unsigned_field ... ok
-test evm_forms::test::evm_entitlement_form_is_rebuilt_from_a_256_bit_unsigned_field ... ok
-test evm_forms::test::evm_identity_form_yields_its_bytes_as_a_fixed_twenty_byte_field ... ok
-test evm_forms::test::evm_interval_form_yields_its_value_as_a_64_bit_unsigned_field ... ok
-test evm_forms::test::evm_entitlement_form_yields_its_bytes_as_a_256_bit_unsigned_field ... ok
-test evm_forms::test::evm_forms_bind_the_kinds_the_suite_schemas_fix ... ok
-test evm_forms::test::evm_identity_form_is_rebuilt_from_a_fixed_twenty_byte_field ... ok
-test evm_forms::test::evm_entitlement_form_refuses_a_field_of_another_kind ... ok
-test evm_forms::test::evm_interval_form_is_rebuilt_from_a_64_bit_unsigned_field ... ok
-test evm_forms::test::evm_forms_declares_its_identifier_and_versions ... ok
-test evm_forms::test::evm_identity_form_refuses_a_field_of_another_kind ... ok
-test evm_forms::test::evm_interval_form_refuses_a_field_of_another_kind ... ok
-
-test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running tests\integration_test.rs (target\debug\deps\integration_test-f09fb03613bb260e.exe)
-
-running 1 test
-test the_evm_forms_from_the_factory_rebuild_and_yield_each_transcript_field_through_the_form_interface ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running unittests src\lib.rs (target\debug\deps\domain-8bf3307dd67c6836.exe)
-
-running 44 tests
-test asset_identity::test::coordinate_writes_the_only_registry_hash_preimage ... ok
-test asset_identity::test::try_new_admits_a_scoped_name_and_a_prerelease_version ... ok
-test asset_identity::test::try_new_rejects_a_non_ascii_name ... ok
-test asset_identity::test::try_new_rejects_a_version_byte_outside_visible_ascii ... ok
-test asset_identity::test::try_new_rejects_a_version_containing_the_separator ... ok
-test asset_identity_hash::test::try_new_rejects_the_all_zero_hash ... ok
-test asset_identity::test::try_new_rejects_an_empty_version ... ok
-test asset_identity::test::try_new_rejects_the_lowest_name_byte_outside_visible_ascii ... ok
-test asset_identity_hash::test::try_new_admits_a_hash_whose_only_nonzero_byte_is_the_last ... ok
-test asset_identity_hash::test::try_new_admits_a_hash_whose_only_nonzero_byte_is_the_first ... ok
-test derivation_context::test::try_new_admits_index_zero_of_a_one_group_geometry ... ok
-test asset_identity::test::try_new_rejects_an_empty_name ... ok
-test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last ... ok
-test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first ... ok
-test deployment_identity::test::try_new_rejects_the_all_zero_identity ... ok
-test asset_identity::test::try_new_reports_the_lowest_offending_version_byte_whatever_its_kind ... ok
-test derivation_context::test::try_new_admits_the_last_group_of_the_geometry ... ok
-test derivation_context::test::try_new_rejects_a_group_index_equal_to_the_group_count ... ok
-test derivation_context::test::try_new_rejects_the_largest_group_index ... ok
-test parameter_set_identifier::test::try_new_rejects_the_all_zero_identifier ... ok
-test group_index::test::try_new_admits_the_largest_index ... ok
-test piece_geometry::test::piece_count_and_group_count_round_up_a_partial_piece_and_group ... ok
-test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last ... ok
-test group_index::test::try_new_admits_index_zero ... ok
-test piece_geometry::test::piece_count_and_group_count_do_not_round_up_an_exact_extent ... ok
-test piece_geometry::test::try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size ... ok
-test piece_geometry::test::piece_count_and_group_count_hold_at_the_largest_extent ... ok
-test piece_geometry::test::try_new_admits_the_smallest_geometry ... ok
-test asset_identity::test::try_new_reports_the_name_before_the_version ... ok
-test piece_geometry::test::try_new_rejects_a_piece_group_smaller_than_a_piece ... ok
-test piece_geometry::test::try_new_rejects_a_piece_size_that_is_not_a_power_of_two ... ok
-test piece_geometry::test::try_new_rejects_a_piece_size_below_the_minimum ... ok
-test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first ... ok
-test piece_geometry::test::try_new_rejects_a_zero_piece_group_size ... ok
-test piece_geometry::test::try_new_rejects_a_zero_piece_size ... ok
-test piece_geometry::test::try_new_rejects_a_zero_total_extent ... ok
-test piece_geometry::test::try_new_reports_the_piece_size_before_the_total_extent ... ok
-test secret::test::dropping_a_secret_zeroizes_its_value ... ok
-test secret::test::expose_returns_the_value_the_secret_was_constructed_with ... ok
-test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version ... ok
-test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one ... ok
-test suite_identifier::test::try_new_rejects_a_zero_version ... ok
-test suite_identifier::test::try_new_rejects_an_all_zero_identifier ... ok
-test suite_identifier::test::try_new_reports_the_identifier_before_the_version ... ok
-
-test result: ok. 44 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running unittests src\lib.rs (target\debug\deps\encoding-f95004d0a7191223.exe)
-
-running 35 tests
-test abi::test::abi_encoding_declares_its_identifier_and_versions ... ok
-test abi::test::decode_reads_the_byte_string_vector_as_its_value ... ok
-test abi::test::decode_rejects_nonzero_fixed_bytes20_padding ... ok
-test abi::test::decode_rejects_input_truncated_to_the_head ... ok
-test abi::test::decode_rejects_a_uint64_word_wider_than_sixty_four_bits ... ok
-test abi::test::decode_rejects_a_uint16_word_wider_than_sixteen_bits ... ok
-test abi::test::decode_reads_the_widths_vector_as_its_value ... ok
-test abi::test::encode_writes_the_width_kinds_as_bytes20_and_uint256 ... ok
-test derivation_context::test::derivation_context_description_declares_its_field_kinds_in_canonical_order ... ok
-test abi::test::decode_rejects_nonzero_string_padding ... ok
-test abi::test::decode_reads_the_reference_vector_as_the_reference_context ... ok
-test derivation_context::test::from_fields_constructs_the_components_in_field_order ... ok
-test abi::test::decode_rejects_the_encoding_of_one_field_too_many ... ok
-test derivation_context::test::from_fields_rejects_a_field_list_one_short ... ok
-test derivation_context::test::from_fields_returns_the_asset_identity_refusal_unchanged ... ok
-test abi::test::decode_rejects_nonzero_byte_string_padding ... ok
-test derivation_context::test::from_fields_returns_the_deployment_identity_refusal_unchanged ... ok
-test abi::test::decode_rejects_trailing_bytes ... ok
-test derivation_context::test::from_fields_checks_every_kind_before_constructing_any_component ... ok
-test abi::test::decode_reports_a_description_whose_reencoding_disagrees_with_its_schema ... ok
-test abi::test::encode_rejects_a_description_emitting_the_wrong_count ... ok
-test derivation_context::test::from_fields_rejects_a_field_list_one_long ... ok
-test abi::test::decode_returns_the_description_refusal_unchanged ... ok
-test abi::test::encode_rejects_a_description_emitting_the_wrong_kind ... ok
-test derivation_context::test::from_fields_rejects_a_field_of_the_wrong_kind ... ok
-test abi::test::encode_writes_a_byte_string_in_the_dynamic_tail ... ok
-test derivation_context::test::from_fields_returns_the_context_the_reference_fields_describe ... ok
-test derivation_context::test::from_fields_returns_the_derivation_context_refusal_unchanged ... ok
-test abi::test::encode_writes_the_reference_context_as_its_abi_parameter_encoding ... ok
-test derivation_context::test::from_fields_returns_the_parameter_set_identifier_refusal_unchanged ... ok
-test derivation_context::test::from_fields_returns_the_piece_geometry_refusal_unchanged ... ok
-test derivation_context::test::from_fields_returns_the_suite_identifier_refusal_unchanged ... ok
-test derivation_context::test::from_fields_reports_the_lowest_field_of_the_wrong_kind ... ok
-test derivation_context::test::to_fields_lists_the_reference_context_fields_in_canonical_order ... ok
-test factory::test::create_encoding_hands_the_consumer_the_abi_concrete_and_its_declaration ... ok
-
-test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running tests\integration_test.rs (target\debug\deps\integration_test-63bce113e9d14b31.exe)
-
-running 1 test
-test the_ethereum_abi_concrete_from_the_factory_round_trips_the_reference_context_through_the_family_traits ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running unittests src\lib.rs (target\debug\deps\envelope-e0c9c0da673f06d7.exe)
-
-running 36 tests
-test factory::test::create_key_agreement_hands_the_consumer_the_pairing_elgamal_concrete_and_its_declaration ... ok
-test pairing_elgamal::test::pairing_elgamal_key_agreement_declares_its_identifier_algebra_and_versions ... ok
-test possession_statement::test::fields_to_value_rejects_a_field_list_one_long ... ok
-test possession_statement::test::fields_to_value_rejects_a_field_list_one_short ... ok
-test possession_statement::test::fields_to_value_rejects_a_field_of_the_wrong_kind ... ok
-test possession_statement::test::fields_to_value_reports_the_lowest_field_of_the_wrong_kind ... ok
-test possession_statement::test::fields_to_value_rejects_invalid_group_encodings ... ok
-test possession_statement::test::possession_statement_description_declares_its_field_kinds_in_canonical_order ... ok
-test possession_statement::test::to_fields_lists_the_key_then_the_commitment ... ok
-test possession_statement::test::fields_to_value_returns_the_statement_the_reference_fields_describe ... ok
-test pairing_elgamal::test::key_pair_from_components_refuses_a_zero_secret_in_either_group ... ok
-test pairing_elgamal::test::key_pair_from_components_refuses_a_secret_shared_across_the_groups ... ok
-test pairing_elgamal::test::generate_keys_refuses_equal_secret_draws ... ok
-test pairing_elgamal::test::generate_keys_refuses_a_secret_draw_of_the_wrong_length ... ok
-test pairing_elgamal::test::generate_keys_refuses_a_zero_secret_in_either_group ... ok
-test pairing_elgamal::test::every_envelope_opens_under_its_key_pair_on_bn254_halo2curves ... ok
-test pairing_elgamal::test::every_envelope_opens_under_its_key_pair_on_bn254_arkworks ... ok
-test pairing_elgamal::test::encoding_refusal_propagates_from_key_generation_and_public_key_admission ... ok
-test pairing_elgamal::test::independent_coins_change_every_envelope_element_and_still_open ... ok
-test pairing_elgamal::test::every_envelope_opens_under_its_key_pair_to_the_credential_it_wrapped ... ok
-test pairing_elgamal::test::every_envelope_opens_under_its_key_pair_on_bls12_381_halo2curves ... ok
-test pairing_elgamal::test::an_envelope_rebuilt_from_its_components_opens ... ok
-test pairing_elgamal::test::the_wrap_returns_the_coins_its_envelope_was_formed_with ... ok
-test pairing_elgamal::test::a_key_pair_restored_from_its_components_opens_the_envelope ... ok
-test pairing_elgamal::test::each_proof_of_possession_hashes_its_challenge_under_the_declared_tag ... ok
-test pairing_elgamal::test::the_public_keys_are_the_key_pairs_secrets_times_the_generators ... ok
-test pairing_elgamal::test::a_second_group_coin_element_from_another_envelope_changes_only_the_second ... ok
-test pairing_elgamal::test::exchanged_secrets_open_an_envelope_to_a_different_pair ... ok
-test pairing_elgamal::test::another_key_pair_opens_an_envelope_to_a_different_pair ... ok
-test pairing_elgamal::test::a_first_group_coin_element_from_another_envelope_changes_only_the_first ... ok
-test pairing_elgamal::test::public_keys_are_refused_with_a_second_group_proof_from_another_key_pair ... ok
-test pairing_elgamal::test::public_keys_are_admitted_with_a_proof_rebuilt_from_its_components ... ok
-test pairing_elgamal::test::public_keys_are_refused_with_an_identity_key_in_either_group ... ok
-test pairing_elgamal::test::public_keys_are_admitted_with_their_own_proof_of_possession ... ok
-test pairing_elgamal::test::public_keys_are_refused_with_a_secret_shared_across_the_groups ... ok
-test pairing_elgamal::test::public_keys_are_refused_with_another_key_pairs_proof_of_possession ... ok
-
-test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.63s
-
-     Running tests\integration_test.rs (target\debug\deps\integration_test-3fdf5d138f1a8cb3.exe)
-
-running 2 tests
-test a_delivered_credential_opens_valid_for_its_recipient_and_invalid_for_another_key_pair_on_bn254_halo2curves ... ok
-test a_delivered_credential_opens_valid_for_its_recipient_and_invalid_for_another_key_pair_on_bls12_381_arkworks ... ok
-
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
-
-     Running unittests src\lib.rs (target\debug\deps\harness_crypto-4503ab01463fb4cc.exe)
-
-running 112 tests
-test benchmark::test::consume_pairing_returns_the_sampling_error_for_a_draw_of_the_wrong_length ... ok
-test generate::evm::group_vectors::test::group_operation_vector_description_rebuilds_the_record_from_its_fields ... ok
-test generate::evm::group_vectors::test::group_operation_vector_description_refuses_a_wrong_field_count ... ok
-test generate::evm::group_vectors::test::group_operation_vector_description_maps_draws_input_and_output_to_byte_strings_in_order ... ok
-test generate::evm::group_vectors::test::group_vectors_return_the_sampling_error_for_a_draw_of_the_wrong_length ... ok
-test generate::evm::constants::test::constants_refuse_a_statement_version_no_description_serves ... ok
-test generate::evm::group_vectors::test::group_operation_vector_description_refuses_a_field_of_the_wrong_kind ... ok
-test generate::evm::group_vectors::test::msm_term_count_admits_a_positive_count ... ok
-test generate::evm::group_vectors::test::msm_term_count_refuses_zero ... ok
-test generate::evm::group_vectors::test::pairing_check_vector_description_maps_its_output_to_a_fixed_32_byte_field ... ok
-test generate::evm::group_vectors::test::pairing_check_vector_description_rebuilds_the_record_and_refuses_a_byte_string_output ... ok
-test generate::evm::group_vectors::test::group_vectors_refuse_second_group_settings_on_a_first_group_only_pairing ... ok
-test generate::evm::constants::test::constants_carry_the_bn254_scalar_field_order_big_endian ... ok
-test generate::evm::constants::test::constants_carry_each_family_declarations_domain_tags ... ok
-test generate::evm::group_vectors::test::group_vectors_require_second_group_settings_on_bls12_381 ... ok
-test generate::evm::constants::test::constants_declare_first_group_only_arithmetic_on_bn254_and_both_groups_on_bls12_381 ... ok
-test generate::evm::constants::test::constants_render_the_mint_and_transfer_field_sequences_over_the_evm_forms ... ok
-test generate::evm::group_vectors::test::vector_count_admits_a_positive_count ... ok
-test generate::evm::group_vectors::test::vector_count_refuses_zero ... ok
-test generate::evm::constants::test::constants_carry_the_bls12_381_scalar_field_order_big_endian ... ok
-test generate::evm::constants::test::constants_carry_the_statement_version_and_each_purpose_code ... ok
-test generate::evm::constants::test::constants_list_their_entries_in_declared_order ... ok
-test generate::evm::constants::test::constants_carry_the_bn254_generators_precompile_encodings ... ok
-test generate::evm::group_vectors::test::vector_record_descriptions_declare_draws_input_and_output_members ... ok
-test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_maps_tag_message_and_scalar_in_order ... ok
-test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_rebuilds_the_record_and_refuses_a_wrong_count_and_kind ... ok
-test generate::evm::mapping_vectors::test::identity_mapping_vector_description_maps_identity_and_scalar_in_order ... ok
-test generate::evm::mapping_vectors::test::identity_mapping_vector_description_rebuilds_the_record_and_refuses_a_wrong_count_and_kind ... ok
-test generate::evm::mapping_vectors::test::mapping_vector_descriptions_declare_their_members ... ok
-test generate::evm::possession_vectors::test::possession_vector_description_declares_its_members ... ok
-test generate::evm::possession_vectors::test::possession_vector_description_maps_secrets_keys_and_proof_components_in_member_order ... ok
-test generate::evm::possession_vectors::test::possession_vector_description_rebuilds_the_record_from_its_fields ... ok
-test generate::evm::possession_vectors::test::possession_vector_description_refuses_a_wrong_field_count_and_a_field_of_the_wrong_kind ... ok
-test generate::evm::rejection_vectors::test::decode_target_admits_each_name_and_names_each_target ... ok
-test generate::evm::rejection_vectors::test::decode_target_refuses_an_unknown_name ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_declares_target_and_input_members ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_maps_target_and_input_in_order ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_rebuilds_the_record_from_its_fields ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_a_field_of_the_wrong_kind ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_a_wrong_field_count ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_return_the_refusal_of_an_all_zero_asset_identity ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_an_unknown_target ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_map_each_drawn_message_under_every_declared_tag_in_order ... ok
-test generate::evm::render::test::render_declares_the_library_by_name_and_closes_it_with_one_final_newline ... ok
-test generate::evm::render::test::render_opens_with_the_license_line_the_exact_pragma_and_an_empty_line ... ok
-test generate::evm::render::test::render_marks_only_bytes_and_string_locals_as_memory ... ok
-test generate::evm::render::test::render_produces_the_exact_source_of_a_reference_library ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_record_the_scalar_each_tag_maps_its_message_to ... ok
-test generate::evm::render::test::render_produces_the_exact_source_of_a_reference_record_library ... ok
-test generate::evm::render::test::render_separates_record_declarations_by_one_empty_line ... ok
-test generate::evm::render::test::render_writes_a_string_between_double_quotes ... ok
-test generate::evm::render::test::render_writes_64_bit_and_16_bit_values_in_decimal ... ok
-test generate::evm::render::test::render_writes_a_byte_string_as_a_lowercase_hex_literal ... ok
-test generate::evm::render::test::render_writes_a_256_bit_value_as_big_endian_hex_digits ... ok
-test generate::evm::render::test::render_writes_an_empty_byte_string_as_an_empty_hex_literal ... ok
-test generate::evm::render::test::render_writes_entries_in_payload_order ... ok
-test generate::evm::render::test::render_writes_booleans_as_true_and_false ... ok
-test generate::evm::render::test::solidity_abi_type_decodes_only_text_and_bytes_into_memory ... ok
-test generate::evm::render::test::solidity_constant_name_admits_an_upper_snake_identifier ... ok
-test generate::evm::render::test::solidity_abi_type_names_each_canonical_kind ... ok
-test generate::evm::render::test::solidity_constant_name_refuses_a_leading_digit ... ok
-test generate::evm::render::test::solidity_constant_name_refuses_empty_text ... ok
-test generate::evm::render::test::solidity_constant_name_refuses_the_lowest_later_byte_outside_its_set ... ok
-test generate::evm::render::test::solidity_library_entries_keeps_its_entries_in_order ... ok
-test generate::evm::render::test::solidity_library_entries_refuses_a_repeated_constant_name ... ok
-test generate::evm::render::test::solidity_library_entries_refuses_an_empty_list ... ok
-test generate::evm::render::test::solidity_library_name_refuses_a_leading_byte_that_is_not_an_uppercase_letter ... ok
-test generate::evm::render::test::solidity_library_name_admits_an_upper_camel_identifier ... ok
-test generate::evm::render::test::solidity_library_name_refuses_empty_text ... ok
-test generate::evm::render::test::solidity_library_name_refuses_the_lowest_later_byte_outside_its_set ... ok
-test generate::evm::render::test::solidity_member_name_admits_a_lower_camel_identifier ... ok
-test generate::evm::render::test::solidity_member_name_refuses_empty_text_an_uppercase_leading_byte_and_an_underscore ... ok
-test generate::evm::render::test::solidity_record_declarations_refuses_a_repeated_decode_function_name ... ok
-test generate::evm::render::test::solidity_record_declarations_refuses_a_repeated_path_constant_name ... ok
-test generate::evm::render::test::solidity_record_declarations_refuses_a_repeated_struct_name ... ok
-test generate::evm::render::test::solidity_record_declarations_refuses_an_empty_list ... ok
-test generate::evm::render::test::solidity_record_members_refuses_a_member_named_line ... ok
-test generate::evm::render::test::solidity_record_members_refuses_a_repeated_member_name ... ok
-test generate::evm::render::test::solidity_record_members_refuses_fewer_than_two_members ... ok
-test generate::evm::render::test::solidity_string_literal_admits_printable_text_and_the_empty_string ... ok
-test generate::evm::render::test::solidity_string_literal_refuses_a_control_byte_and_a_non_ascii_byte ... ok
-test generate::evm::render::test::solidity_string_literal_refuses_a_double_quote_and_a_backslash ... ok
-test generate::evm::render::test::solidity_type_name_admits_an_upper_camel_identifier ... ok
-test generate::evm::render::test::solidity_type_name_refuses_empty_text_a_lowercase_leading_byte_and_an_underscore ... ok
-test generate::evm::render::test::spdx_license_identifier_admits_a_short_identifier_and_one_with_a_final_plus ... ok
-test generate::evm::render::test::spdx_license_identifier_refuses_a_compound_expression ... ok
-test generate::evm::render::test::spdx_license_identifier_refuses_a_plus_that_is_not_final ... ok
-test generate::evm::render::test::spdx_license_identifier_refuses_empty_text_and_a_lone_plus ... ok
-test generate::evm::rejection_vectors::test::rejection_vectors_on_bn254_carry_each_candidate_in_its_precompile_encoding ... ok
-test generate::evm::rejection_vectors::test::rejection_vectors_on_bn254_enumerate_the_second_group_and_the_scalar_only ... ok
-test generate::evm::rejection_vectors::test::rejection_vectors_on_bls12_381_carry_each_candidate_in_its_precompile_encoding ... ok
-test generate::evm::rejection_vectors::test::rejection_vectors_on_bls12_381_enumerate_both_groups_and_the_scalar ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_refuse_an_asset_identity_that_is_not_32_bytes ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_map_each_identity_through_the_kem_under_the_entitlement_scope ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_map_each_identity_through_the_kem_under_the_asset_scope_on_bls12_381 ... ok
-test generate::evm::group_vectors::test::group_vectors_passing_pairing_check_cancels_its_first_pair ... ok
-test generate::evm::group_vectors::test::group_vectors_g1_addition_outputs_the_generator_times_the_sum_of_its_draws ... ok
-test generate::evm::group_vectors::test::group_vectors_g1_multiplication_ends_its_input_with_its_multiplier_and_outputs_the_product ... ok
-test generate::evm::group_vectors::test::group_vectors_size_bn254_records_in_the_eip_196_and_eip_197_encodings ... ok
-test benchmark::test::consume_pairing_times_every_operation_on_the_bn254_halo2curves_concrete ... ok
-test generate::evm::group_vectors::test::group_vectors_emit_each_first_group_kind_at_its_configured_count ... ok
-test generate::evm::group_vectors::test::group_vectors_pairing_checks_alternate_passing_and_failing_verdicts ... ok
-test generate::evm::possession_vectors::test::possession_vectors_carry_public_keys_that_are_the_generators_times_their_secrets ... ok
-test generate::evm::possession_vectors::test::possession_vectors_carry_proofs_the_key_agreement_admits ... ok
-test benchmark::test::consume_pairing_times_every_operation_on_the_bn254_arkworks_concrete ... ok
-test generate::evm::possession_vectors::test::possession_vectors_size_bn254_records_in_the_eip_196_and_eip_197_encodings ... ok
-test generate::evm::group_vectors::test::group_vectors_emit_second_group_kinds_on_bls12_381 ... ok
-test generate::evm::possession_vectors::test::possession_vectors_emit_the_configured_count_with_distinct_secrets ... ok
-test benchmark::test::consume_pairing_times_every_operation_on_the_bls12_381_halo2curves_concrete ... ok
-test generate::evm::possession_vectors::test::possession_vectors_size_bls12_381_records_in_the_eip_2537_encodings ... ok
-test generate::evm::group_vectors::test::group_vectors_g1_msm_on_bls12_381_outputs_the_generator_times_the_sum_of_draw_products_and_carries_each_multiplier ... ok
-test benchmark::test::consume_pairing_times_every_operation_on_the_bls12_381_arkworks_concrete ... ok
-
-test result: ok. 112 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
-
-     Running unittests src\lib.rs (target\debug\deps\hash_to_scalar-2e9b9ad305d85c7b.exe)
-
-running 21 tests
-test domain_tag::test::try_new_admits_a_tag_of_the_maximum_length ... ok
-test domain_tag::test::try_new_admits_a_tag_with_interior_spaces ... ok
-test domain_tag::test::try_new_rejects_a_leading_space ... ok
-test domain_tag::test::try_new_rejects_a_tag_one_byte_over_the_maximum ... ok
-test domain_tag::test::try_new_rejects_a_trailing_space ... ok
-test domain_tag::test::try_new_rejects_an_empty_tag ... ok
-test domain_tag::test::try_new_rejects_a_non_ascii_byte ... ok
-test domain_tag::test::try_new_reports_the_bytes_before_the_edges ... ok
-test domain_tag::test::try_new_reports_the_leading_edge_before_the_trailing_edge ... ok
-test factory::test::create_hash_to_scalar_returns_the_keccak256_concrete_and_its_declaration_for_a_pairing_scalar ... ok
-test domain_tag::test::try_new_rejects_the_lowest_byte_outside_printable_ascii ... ok
-test domain_tag::test::try_new_reports_the_length_before_the_bytes ... ok
-test keccak256::test::hash_to_scalar_on_bn254_arkworks_reduces_a_digest_above_the_group_order ... ok
-test keccak256::test::keccak256_hash_to_scalar_declares_its_identifier_and_versions ... ok
-test keccak256::test::hash_to_scalar_on_bls12_381_arkworks_reduces_a_digest_above_the_group_order ... ok
-test keccak256::test::hash_to_scalar_on_bn254_arkworks_reduces_the_reference_digest_to_the_independent_scalar ... ok
-test keccak256::test::hash_to_scalar_on_bls12_381_halo2curves_reduces_the_reference_digest_to_the_independent_scalar ... ok
-test keccak256::test::hash_to_scalar_on_bn254_halo2curves_reduces_the_reference_digest_to_the_independent_scalar ... ok
-test keccak256::test::hash_to_scalar_on_bls12_381_arkworks_reduces_the_reference_digest_to_the_independent_scalar ... ok
-test keccak256::test::hash_to_scalar_binds_the_tag_length ... ok
-test keccak256::test::hash_to_scalar_separates_domains ... ok
-
-test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running tests\integration_test.rs (target\debug\deps\integration_test-07280fae6e2dd508.exe)
-
-running 2 tests
-test the_keccak256_concrete_from_the_factory_maps_the_encoded_reference_context_to_the_independent_bn254_scalar ... ok
-test the_keccak256_concrete_from_the_factory_maps_the_encoded_reference_context_to_the_independent_bls12_381_scalar ... ok
-
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running unittests src\lib.rs (target\debug\deps\kdf-bb4d907274e6a41b.exe)
-
-running 13 tests
-test blake3_keyed::test::blake3_keyed_kdf_declares_its_identifier_and_versions ... ok
-test blake3_keyed::test::derive_key_binds_the_key_material_length ... ok
-test blake3_keyed::test::derive_key_for_the_publisher_root_matches_the_independent_vector ... ok
-test blake3_keyed::test::derive_key_for_the_capsule_randomness_matches_the_independent_vector ... ok
-test blake3_keyed::test::derive_key_for_the_identity_bases_matches_the_independent_vector ... ok
-test blake3_keyed::test::derive_key_for_the_master_scalar_matches_the_independent_vector ... ok
-test blake3_keyed::test::derive_key_for_the_plaintext_root_key_matches_the_independent_vector ... ok
-test blake3_keyed::test::derive_key_for_the_piece_group_key_matches_the_independent_vector ... ok
-test blake3_keyed::test::derive_key_for_the_asset_root_matches_the_independent_vector ... ok
-test factory::test::create_key_derivation_returns_the_blake3_keyed_concrete_and_its_declaration ... ok
-test blake3_keyed::test::derive_key_for_the_wrapping_key_matches_the_independent_vector ... ok
-test blake3_keyed::test::derive_key_of_thirty_two_bytes_is_the_prefix_of_the_sixty_four_byte_vector ... ok
-test blake3_keyed::test::derive_key_of_zero_bytes_returns_an_empty_key ... ok
-
-test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running tests\integration_test.rs (target\debug\deps\integration_test-792f5df0d68db4ae.exe)
-
-running 1 test
-test the_blake3_keyed_concrete_from_the_factory_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running unittests src\lib.rs (target\debug\deps\kem-5ce5707f1cff0b9a.exe)
-
-running 38 tests
-test bb1_depth_one::test::bb1_depth_one_kem_declares_its_identifier_scopes_and_versions ... ok
-test bb1_depth_one::test::derive_identity_refuses_a_trivial_identity_element ... ok
-test bb1_depth_one::test::encapsulate_refuses_a_draw_of_the_wrong_length ... ok
-test bb1_depth_one::test::setup_refuses_an_identity_base_draw_of_the_wrong_length ... ok
-test bb1_depth_one::test::derive_identity_refuses_the_other_identity_role_before_hashing ... ok
-test bb1_depth_one::test::rerandomize_refuses_a_draw_of_the_wrong_length ... ok
-test bb1_depth_one::test::setup_refuses_a_master_draw_of_the_wrong_length ... ok
-test factory::test::create_kem_hands_the_consumer_the_bb1_depth_one_concrete_under_the_asset_scope ... ok
-test factory::test::create_kem_hands_the_consumer_the_bb1_depth_one_concrete_under_the_entitlement_scope ... ok
-test bb1_depth_one::test::issue_refuses_a_draw_of_the_wrong_length ... ok
-test bb1_depth_one::test::every_credential_decapsulates_the_encapsulated_value_on_bn254_halo2curves ... ok
-test bb1_depth_one::test::a_holder_authors_a_valid_asset_scope_credential_without_the_master_scalar ... ok
-test bb1_depth_one::test::every_asset_scope_credential_decapsulates_the_encapsulated_value ... ok
-test bb1_depth_one::test::an_asset_scope_capsule_has_two_elements ... ok
-test bb1_depth_one::test::an_asset_scope_capsule_is_well_formed_under_its_parameter_set ... ok
-test bb1_depth_one::test::an_asset_scope_parameter_set_carries_the_derived_identity_element ... ok
-test bb1_depth_one::test::derive_identity_refuses_an_identity_outside_the_asset_scope ... ok
-test bb1_depth_one::test::encapsulation_exposes_only_the_admitted_target_group_encoding ... ok
-test bb1_depth_one::test::issuance_returns_the_randomness_its_credential_was_formed_with ... ok
-test bb1_depth_one::test::rerandomization_returns_the_offset_it_applied ... ok
-test bb1_depth_one::test::a_master_scalar_restored_from_its_components_issues_valid_credentials ... ok
-test bb1_depth_one::test::a_parameter_set_rebuilt_from_its_components_validates_its_credentials ... ok
-test bb1_depth_one::test::a_capsule_rebuilt_from_its_components_is_well_formed_and_decapsulates ... ok
-test bb1_depth_one::test::a_credential_rebuilt_from_its_components_is_valid ... ok
-test bb1_depth_one::test::the_identity_element_components_are_the_mapped_scalar_and_its_element ... ok
-test bb1_depth_one::test::the_identity_mapping_hashes_under_the_declared_tag ... ok
-test bb1_depth_one::test::the_parameter_set_components_bind_hpub_to_the_master_scalar ... ok
-test bb1_depth_one::test::every_credential_decapsulates_the_encapsulated_value_on_bn254_arkworks ... ok
-test bb1_depth_one::test::every_credential_decapsulates_the_encapsulated_value_on_bls12_381_halo2curves ... ok
-test bb1_depth_one::test::a_capsule_is_not_well_formed_under_another_parameter_set ... ok
-test bb1_depth_one::test::another_entitlements_credential_decapsulates_the_same_capsule_to_the_same_value ... ok
-test bb1_depth_one::test::every_credential_for_an_identity_decapsulates_the_encapsulated_value ... ok
-test bb1_depth_one::test::an_issued_credential_is_valid_for_its_identity ... ok
-test bb1_depth_one::test::a_capsule_is_well_formed_under_its_parameter_set ... ok
-test bb1_depth_one::test::a_rerandomized_credential_is_valid_without_the_master_scalar ... ok
-test bb1_depth_one::test::a_credential_is_invalid_under_another_parameter_set ... ok
-test bb1_depth_one::test::a_capsule_with_its_identity_bases_exchanged_is_not_well_formed ... ok
-test bb1_depth_one::test::a_credential_is_invalid_for_another_entitlement ... ok
-
-test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.26s
-
-     Running tests\integration_test.rs (target\debug\deps\integration_test-3829c4e65d688aca.exe)
-
-running 2 tests
-test a_kem_from_the_factory_round_trips_an_asset_scope_grant_from_operating_system_draws_on_bn254_halo2curves ... ok
-test a_kem_from_the_factory_round_trips_an_entitlement_scope_sale_from_operating_system_draws_on_bls12_381_arkworks ... ok
-
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
-
-     Running unittests src\lib.rs (target\debug\deps\pairing-524d17892812df53.exe)
-
-running 226 tests
-test bls12_381_arkworks::test::bls12_381_arkworks_scalar_zeroizes_on_drop ... ok
-test bls12_381_arkworks::test::bls12_381_arkworks_pairing_declares_its_curve_arithmetic_encodings_versions_and_concrete ... ok
-test bls12_381_arkworks::test::decode_scalar_rejects_a_wrong_length ... ok
-test bls12_381_arkworks::test::add_scalar_of_two_and_three_is_five ... ok
-test bls12_381_arkworks::test::add_scalar_reduces_modulo_the_group_order ... ok
-test bls12_381_arkworks::test::decode_g2_rejects_a_wrong_length ... ok
-test bls12_381_arkworks::test::decode_g1_rejects_a_wrong_length ... ok
-test bls12_381_arkworks::test::decode_g1_rejects_a_nonzero_padding_byte ... ok
-test bls12_381_arkworks::test::add_g1_of_the_generator_to_itself_equals_its_multiple_by_two ... ok
-test bls12_381_arkworks::test::decode_g1_reads_the_all_zero_encoding_as_the_identity ... ok
-test bls12_381_arkworks::test::decode_g1_rejects_a_coordinate_equal_to_the_base_field_modulus ... ok
-test bls12_381_arkworks::test::add_g2_of_the_generator_to_itself_equals_its_multiple_by_two ... ok
-test bls12_381_arkworks::test::is_identity_g1_is_false_for_the_generator ... ok
-test bls12_381_arkworks::test::decode_g1_rejects_a_point_off_the_curve ... ok
-test bls12_381_arkworks::test::decode_scalar_rejects_the_group_order ... ok
-test bls12_381_arkworks::test::decode_g2_reads_the_all_zero_encoding_as_the_identity ... ok
-test bls12_381_arkworks::test::g1_generator_encodes_to_the_eip_2537_generator ... ok
-test bls12_381_arkworks::test::decode_g2_rejects_a_point_off_the_curve ... ok
-test bls12_381_arkworks::test::is_identity_g2_is_false_for_the_generator ... ok
-test bls12_381_arkworks::test::g2_generator_encodes_to_the_eip_2537_generator ... ok
-test bls12_381_arkworks::test::decode_scalar_round_trips_the_largest_canonical_scalar ... ok
-test bls12_381_arkworks::test::encoders_return_the_concrete_encoded_types ... ok
-test bls12_381_arkworks::test::decode_g1_round_trips_the_eip_2537_generator ... ok
-test bls12_381_arkworks::test::is_identity_g1_is_true_for_the_identity ... ok
-test bls12_381_arkworks::test::neg_g2_of_the_generator_sums_with_the_generator_to_the_identity ... ok
-test bls12_381_arkworks::test::is_identity_g2_is_true_for_the_identity ... ok
-test bls12_381_arkworks::test::mul_scalar_of_two_and_three_is_six ... ok
-test bls12_381_arkworks::test::mul_scalar_reduces_modulo_the_group_order ... ok
-test bls12_381_arkworks::test::msm_g1_equals_the_multiple_by_the_sum_of_its_scalars ... ok
-test bls12_381_arkworks::test::neg_g1_of_the_generator_negates_its_y_coordinate ... ok
-test bls12_381_arkworks::test::decode_g2_round_trips_the_eip_2537_generator ... ok
-test bls12_381_arkworks::test::decode_g1_rejects_a_point_outside_the_subgroup ... ok
-test bls12_381_arkworks::test::neg_scalar_of_one_is_the_group_order_minus_one ... ok
-test bls12_381_arkworks::test::msm_g2_equals_the_multiple_by_the_sum_of_its_scalars ... ok
-test bls12_381_arkworks::test::g1_outside_subgroup_encoding_takes_the_lesser_root ... ok
-test bls12_381_arkworks::test::g1_outside_subgroup_encoding_is_refused_by_decode_g1_as_outside_the_subgroup ... ok
-test bls12_381_arkworks::test::neg_g1_of_the_identity_is_the_identity ... ok
-test bls12_381_arkworks::test::neg_scalar_of_zero_is_zero ... ok
-test bls12_381_arkworks::test::reduced_pairing_correction_inverts_three ... ok
-test bls12_381_arkworks::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
-test bls12_381_arkworks::test::sample_from_uniform_bytes_rejects_a_wrong_length ... ok
-test bls12_381_arkworks::test::sample_from_uniform_bytes_draws_an_in_range_scalar_from_the_operating_system_source ... ok
-test bls12_381_arkworks::test::sample_from_uniform_bytes_reads_its_input_as_a_big_endian_integer ... ok
-test bls12_381_arkworks::test::sample_from_uniform_bytes_reduces_the_largest_input_into_the_scalar_field ... ok
-test bls12_381_arkworks::test::scalar_field_order_is_the_group_order ... ok
-test bls12_381_halo2curves::test::add_scalar_of_two_and_three_is_five ... ok
-test bls12_381_halo2curves::test::add_scalar_reduces_modulo_the_group_order ... ok
-test bls12_381_halo2curves::test::bls12_381_halo2curves_pairing_declares_its_curve_arithmetic_encodings_versions_and_concrete ... ok
-test bls12_381_halo2curves::test::bls12_381_halo2curves_scalar_zeroizes_on_drop ... ok
-test bls12_381_arkworks::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
-test bls12_381_halo2curves::test::decode_g1_rejects_a_coordinate_equal_to_the_base_field_modulus ... ok
-test bls12_381_halo2curves::test::decode_g1_rejects_a_nonzero_padding_byte ... ok
-test bls12_381_halo2curves::test::decode_g1_reads_the_all_zero_encoding_as_the_identity ... ok
-test bls12_381_halo2curves::test::decode_g1_rejects_a_wrong_length ... ok
-test bls12_381_halo2curves::test::decode_g1_rejects_a_point_off_the_curve ... ok
-test bls12_381_arkworks::test::g2_outside_subgroup_encoding_is_refused_by_decode_g2_as_outside_the_subgroup ... ok
-test bls12_381_halo2curves::test::decode_g2_reads_the_all_zero_encoding_as_the_identity ... ok
-test bls12_381_halo2curves::test::decode_g2_rejects_a_wrong_length ... ok
-test bls12_381_halo2curves::test::decode_g2_rejects_a_point_off_the_curve ... ok
-test bls12_381_halo2curves::test::decode_scalar_rejects_a_wrong_length ... ok
-test bls12_381_halo2curves::test::decode_scalar_rejects_the_group_order ... ok
-test bls12_381_halo2curves::test::decode_scalar_round_trips_the_largest_canonical_scalar ... ok
-test bls12_381_halo2curves::test::encode_g1_writes_the_identity_as_all_zero_bytes ... ok
-test bls12_381_halo2curves::test::encoders_return_the_concrete_encoded_types ... ok
-test bls12_381_halo2curves::test::g1_generator_encodes_to_the_eip_2537_generator ... ok
-test bls12_381_halo2curves::test::g2_generator_encodes_to_the_eip_2537_generator ... ok
-test bls12_381_halo2curves::test::is_identity_g1_is_false_for_the_generator ... ok
-test bls12_381_halo2curves::test::decode_g1_round_trips_the_eip_2537_generator ... ok
-test bls12_381_halo2curves::test::is_identity_g2_is_false_for_the_generator ... ok
-test bls12_381_halo2curves::test::is_identity_g1_is_true_for_the_identity ... ok
-test bls12_381_halo2curves::test::is_identity_g2_is_true_for_the_identity ... ok
-test bls12_381_halo2curves::test::mul_scalar_of_two_and_three_is_six ... ok
-test bls12_381_halo2curves::test::mul_scalar_reduces_modulo_the_group_order ... ok
-test bls12_381_halo2curves::test::neg_g1_of_the_generator_negates_its_y_coordinate ... ok
-test bls12_381_halo2curves::test::neg_scalar_of_one_is_the_group_order_minus_one ... ok
-test bls12_381_halo2curves::test::neg_g2_of_the_generator_sums_with_the_generator_to_the_identity ... ok
-test bls12_381_halo2curves::test::neg_g1_of_the_identity_is_the_identity ... ok
-test bls12_381_halo2curves::test::neg_scalar_of_zero_is_zero ... ok
-test bls12_381_halo2curves::test::decode_g2_round_trips_the_eip_2537_generator ... ok
-test bls12_381_halo2curves::test::reduced_pairing_correction_inverts_three ... ok
-test bls12_381_halo2curves::test::sample_from_uniform_bytes_draws_an_in_range_scalar_from_the_operating_system_source ... ok
-test bls12_381_halo2curves::test::sample_from_uniform_bytes_reads_its_input_as_a_big_endian_integer ... ok
-test bls12_381_halo2curves::test::sample_from_uniform_bytes_reduces_the_largest_input_into_the_scalar_field ... ok
-test bls12_381_halo2curves::test::add_g1_of_the_generator_to_itself_equals_its_multiple_by_two ... ok
-test bls12_381_halo2curves::test::sample_from_uniform_bytes_rejects_a_wrong_length ... ok
-test bls12_381_halo2curves::test::scalar_field_order_is_the_group_order ... ok
-test bls12_381_halo2curves::test::g1_outside_subgroup_encoding_takes_the_lesser_root ... ok
-test bls12_381_halo2curves::test::decode_g1_rejects_a_point_outside_the_subgroup ... ok
-test bn254_arkworks::test::add_g1_of_the_generator_to_itself_equals_its_multiple_by_two ... ok
-test bls12_381_halo2curves::test::g1_outside_subgroup_encoding_is_refused_by_decode_g1_as_outside_the_subgroup ... ok
-test bn254_arkworks::test::add_scalar_of_two_and_three_is_five ... ok
-test bn254_arkworks::test::add_g2_of_the_generator_to_itself_equals_its_multiple_by_two ... ok
-test bn254_arkworks::test::bn254_arkworks_scalar_zeroizes_on_drop ... ok
-test bn254_arkworks::test::bn254_arkworks_pairing_declares_its_curve_arithmetic_encodings_versions_and_concrete ... ok
-test bn254_arkworks::test::add_scalar_reduces_modulo_the_group_order ... ok
-test bn254_arkworks::test::decode_g1_reads_the_all_zero_encoding_as_the_identity ... ok
-test bn254_arkworks::test::decode_g1_rejects_a_coordinate_equal_to_the_base_field_modulus ... ok
-test bn254_arkworks::test::decode_g1_rejects_a_point_off_the_curve ... ok
-test bn254_arkworks::test::decode_g1_rejects_a_wrong_length ... ok
-test bn254_arkworks::test::decode_g1_round_trips_the_eip_196_generator ... ok
-test bls12_381_halo2curves::test::msm_g1_equals_the_multiple_by_the_sum_of_its_scalars ... ok
-test bn254_arkworks::test::decode_g2_reads_the_all_zero_encoding_as_the_identity ... ok
-test bn254_arkworks::test::decode_g2_rejects_a_wrong_length ... ok
-test bn254_arkworks::test::decode_scalar_rejects_a_wrong_length ... ok
-test bn254_arkworks::test::decode_g2_rejects_a_point_off_the_curve ... ok
-test bn254_arkworks::test::decode_scalar_rejects_the_group_order ... ok
-test bn254_arkworks::test::encoders_return_the_concrete_encoded_types ... ok
-test bls12_381_halo2curves::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
-test bn254_arkworks::test::decode_scalar_round_trips_the_largest_canonical_scalar ... ok
-test bls12_381_halo2curves::test::g2_outside_subgroup_encoding_is_refused_by_decode_g2_as_outside_the_subgroup ... ok
-test bn254_arkworks::test::g1_outside_subgroup_encoding_is_absent_where_the_cofactor_is_one ... ok
-test bn254_arkworks::test::g1_generator_encodes_to_the_eip_196_generator ... ok
-test bn254_arkworks::test::g2_generator_encodes_to_the_eip_197_generator ... ok
-test bn254_arkworks::test::is_identity_g1_is_true_for_the_identity ... ok
-test bls12_381_halo2curves::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
-test bn254_arkworks::test::is_identity_g1_is_false_for_the_generator ... ok
-test bn254_arkworks::test::is_identity_g2_is_false_for_the_generator ... ok
-test bn254_arkworks::test::decode_g2_round_trips_the_eip_197_generator ... ok
-test bn254_arkworks::test::mul_scalar_of_two_and_three_is_six ... ok
-test bn254_arkworks::test::msm_g1_equals_the_multiple_by_the_sum_of_its_scalars ... ok
-test bn254_arkworks::test::is_identity_g2_is_true_for_the_identity ... ok
-test bn254_arkworks::test::neg_g1_of_the_generator_negates_its_y_coordinate ... ok
-test bn254_arkworks::test::mul_scalar_reduces_modulo_the_group_order ... ok
-test bn254_arkworks::test::neg_g1_of_the_identity_is_the_identity ... ok
-test bn254_arkworks::test::msm_g2_equals_the_multiple_by_the_sum_of_its_scalars ... ok
-test bn254_arkworks::test::neg_g2_of_the_generator_sums_with_the_generator_to_the_identity ... ok
-test bn254_arkworks::test::neg_scalar_of_one_is_the_group_order_minus_one ... ok
-test bn254_arkworks::test::neg_scalar_of_zero_is_zero ... ok
-test bn254_arkworks::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
-test bn254_arkworks::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
-test bls12_381_halo2curves::test::add_g2_of_the_generator_to_itself_equals_its_multiple_by_two ... ok
-test bn254_arkworks::test::reduced_pairing_correction_inverts_the_library_multiple ... ok
-test bn254_arkworks::test::g2_outside_subgroup_encoding_is_refused_by_decode_g2_as_outside_the_subgroup ... ok
-test bls12_381_halo2curves::test::msm_g2_equals_the_multiple_by_the_sum_of_its_scalars ... ok
-test bn254_arkworks::test::sample_from_uniform_bytes_draws_an_in_range_scalar_from_the_operating_system_source ... ok
-test bls12_381_halo2curves::test::pairing_product_is_not_one_for_a_single_generator_pairing ... ok
-test bn254_arkworks::test::sample_from_uniform_bytes_reduces_the_largest_input_into_the_scalar_field ... ok
-test bn254_arkworks::test::sample_from_uniform_bytes_rejects_a_wrong_length ... ok
-test bn254_arkworks::test::scalar_field_order_is_the_group_order ... ok
-test bn254_halo2curves::test::add_g1_of_the_generator_to_itself_equals_its_multiple_by_two ... ok
-test bn254_halo2curves::test::add_scalar_of_two_and_three_is_five ... ok
-test bn254_halo2curves::test::add_scalar_reduces_modulo_the_group_order ... ok
-test bn254_halo2curves::test::bn254_halo2curves_pairing_declares_its_curve_arithmetic_encodings_versions_and_concrete ... ok
-test bn254_halo2curves::test::bn254_halo2curves_scalar_zeroizes_on_drop ... ok
-test bn254_halo2curves::test::decode_g1_reads_the_all_zero_encoding_as_the_identity ... ok
-test bn254_halo2curves::test::decode_g1_rejects_a_coordinate_equal_to_the_base_field_modulus ... ok
-test bn254_halo2curves::test::decode_g1_rejects_a_wrong_length ... ok
-test bn254_halo2curves::test::decode_g1_rejects_a_point_off_the_curve ... ok
-test bn254_halo2curves::test::decode_g1_round_trips_the_eip_196_generator ... ok
-test bn254_halo2curves::test::decode_g2_rejects_a_point_off_the_curve ... ok
-test bn254_halo2curves::test::decode_g2_reads_the_all_zero_encoding_as_the_identity ... ok
-test bn254_halo2curves::test::decode_g2_rejects_a_wrong_length ... ok
-test bn254_halo2curves::test::decode_g2_round_trips_the_eip_197_generator ... ok
-test bn254_halo2curves::test::decode_scalar_rejects_a_wrong_length ... ok
-test bn254_halo2curves::test::decode_scalar_rejects_the_group_order ... ok
-test bn254_halo2curves::test::decode_scalar_round_trips_the_largest_canonical_scalar ... ok
-test bn254_halo2curves::test::encode_g1_writes_the_identity_as_all_zero_bytes ... ok
-test bn254_halo2curves::test::encoders_return_the_concrete_encoded_types ... ok
-test bn254_halo2curves::test::g1_generator_encodes_to_the_eip_196_generator ... ok
-test bls12_381_arkworks::test::pairing_product_is_not_one_for_a_single_generator_pairing ... ok
-test bls12_381_halo2curves::test::pairing_product_is_one_for_a_pairing_and_its_inverse ... ok
-test bn254_halo2curves::test::g1_outside_subgroup_encoding_is_absent_where_the_cofactor_is_one ... ok
-test bn254_halo2curves::test::g2_generator_encodes_to_the_eip_197_generator ... ok
-test bn254_halo2curves::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
-test bn254_halo2curves::test::add_g2_of_the_generator_to_itself_equals_its_multiple_by_two ... ok
-test bn254_halo2curves::test::is_identity_g1_is_false_for_the_generator ... ok
-test bn254_halo2curves::test::is_identity_g1_is_true_for_the_identity ... ok
-test bn254_halo2curves::test::is_identity_g2_is_false_for_the_generator ... ok
-test bn254_halo2curves::test::is_identity_g2_is_true_for_the_identity ... ok
-test bn254_halo2curves::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
-test bn254_halo2curves::test::mul_scalar_of_two_and_three_is_six ... ok
-test bn254_arkworks::test::pairing_product_is_not_one_for_a_single_generator_pairing ... ok
-test bn254_halo2curves::test::mul_scalar_reduces_modulo_the_group_order ... ok
-test bn254_halo2curves::test::neg_g2_of_the_generator_sums_with_the_generator_to_the_identity ... ok
-test bn254_halo2curves::test::neg_scalar_of_one_is_the_group_order_minus_one ... ok
-test bn254_halo2curves::test::neg_g1_of_the_generator_negates_its_y_coordinate ... ok
-test bn254_halo2curves::test::neg_g1_of_the_identity_is_the_identity ... ok
-test bn254_halo2curves::test::neg_scalar_of_zero_is_zero ... ok
-test bn254_halo2curves::test::g2_outside_subgroup_encoding_is_refused_by_decode_g2_as_outside_the_subgroup ... ok
-test bn254_halo2curves::test::msm_g1_equals_the_multiple_by_the_sum_of_its_scalars ... ok
-test bls12_381_arkworks::test::pairing_product_of_no_terms_encodes_as_the_target_group_identity ... ok
-test bn254_arkworks::test::pairing_product_is_one_for_a_pairing_and_its_inverse ... ok
-test bn254_halo2curves::test::msm_g2_equals_the_multiple_by_the_sum_of_its_scalars ... ok
-test bls12_381_arkworks::test::pairing_product_is_one_for_a_pairing_and_its_inverse ... ok
-test bls12_381_halo2curves::test::pairing_product_of_no_terms_encodes_as_the_target_group_identity ... ok
-test bn254_arkworks::test::pairing_product_of_no_terms_encodes_as_the_target_group_identity ... ok
-test bn254_halo2curves::test::sample_from_uniform_bytes_draws_an_in_range_scalar_from_the_operating_system_source ... ok
-test bn254_halo2curves::test::sample_from_uniform_bytes_reads_its_input_as_a_big_endian_integer ... ok
-test bn254_halo2curves::test::sample_from_uniform_bytes_reduces_the_largest_input_into_the_scalar_field ... ok
-test bn254_halo2curves::test::sample_from_uniform_bytes_rejects_a_wrong_length ... ok
-test bn254_halo2curves::test::scalar_field_order_is_the_group_order ... ok
-test bn254_halo2curves::test::pairing_product_is_not_one_for_a_single_generator_pairing ... ok
-test factory::test::create_pairing_hands_the_consumer_the_bls12_381_arkworks_concrete_and_its_declaration ... ok
-test factory::test::create_pairing_hands_the_consumer_the_bls12_381_halo2curves_concrete_and_its_declaration ... ok
-test factory::test::create_pairing_hands_the_consumer_the_bn254_halo2curves_concrete_and_its_declaration ... ok
-test factory::test::create_pairing_hands_the_consumer_the_bn254_arkworks_concrete_and_its_declaration ... ok
-test factory::test::create_pairing_refuses_a_concrete_whose_encoding_the_chain_does_not_deploy ... ok
-test factory::test::create_pairing_refuses_a_concrete_whose_target_group_encoding_the_suite_does_not_require ... ok
-test bn254_halo2curves::test::pairing_product_of_no_terms_encodes_as_the_target_group_identity ... ok
-test bn254_halo2curves::test::pairing_product_is_one_for_a_pairing_and_its_inverse ... ok
-test bn254_arkworks::test::pairing_product_of_the_generators_is_not_the_target_group_identity ... ok
-test bn254_halo2curves::test::pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity ... ok
-test bn254_arkworks::test::pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity ... ok
-test bn254_arkworks::test::pairing_product_is_one_across_the_bilinear_exchange ... ok
-test bls12_381_halo2curves::test::pairing_product_is_one_across_the_bilinear_exchange ... ok
-test bls12_381_halo2curves::test::pairing_product_of_the_generators_is_not_the_target_group_identity ... ok
-test bls12_381_halo2curves::test::pairing_product_of_the_generators_encodes_to_the_published_vector ... ok
-test bls12_381_arkworks::test::pairing_product_of_the_generators_is_not_the_target_group_identity ... ok
-test bn254_halo2curves::test::pairing_product_of_the_generators_is_not_the_target_group_identity ... ok
-test bls12_381_arkworks::test::pairing_product_is_one_across_the_bilinear_exchange ... ok
-test bls12_381_halo2curves::test::pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity ... ok
-test bls12_381_arkworks::test::pairing_product_of_the_generators_encodes_to_the_published_vector ... ok
-test bn254_halo2curves::test::pairing_product_is_one_across_the_bilinear_exchange ... ok
-test bls12_381_arkworks::test::pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity ... ok
-test bn254_halo2curves::test::pairing_product_multiplies_its_terms ... ok
-test bn254_halo2curves::test::pairing_product_is_bilinear ... ok
-test bn254_arkworks::test::pairing_product_is_bilinear ... ok
-test bn254_arkworks::test::pairing_product_multiplies_its_terms ... ok
-test bn254_halo2curves::test::pairing_product_of_the_generators_equals_the_definition ... ok
-test bls12_381_arkworks::test::pairing_product_is_bilinear ... ok
-test bls12_381_halo2curves::test::pairing_product_multiplies_its_terms ... ok
-test bls12_381_halo2curves::test::pairing_product_is_bilinear ... ok
-test bls12_381_arkworks::test::pairing_product_multiplies_its_terms ... ok
-test bn254_arkworks::test::pairing_product_of_the_generators_equals_the_definition ... ok
-test bls12_381_halo2curves::test::pairing_product_of_the_generators_equals_the_definition ... ok
-test bls12_381_arkworks::test::pairing_product_of_the_generators_equals_the_definition ... ok
-
-test result: ok. 226 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.56s
-
-     Running tests\integration_test.rs (target\debug\deps\integration_test-15143f6ff274d61b.exe)
-
-running 8 tests
-test the_bn254_concretes_return_the_same_scalar_field_order_and_outside_subgroup_encodings ... ok
-test the_bn254_halo2curves_concrete_from_the_factory_computes_through_the_family_trait ... ok
-test the_bls12_381_concretes_return_the_same_scalar_field_order_and_outside_subgroup_encodings ... ok
-test the_bn254_arkworks_concrete_from_the_factory_computes_through_the_family_trait ... ok
-test the_bls12_381_halo2curves_concrete_from_the_factory_computes_through_the_family_trait ... ok
-test the_bls12_381_arkworks_concrete_from_the_factory_computes_through_the_family_trait ... ok
-test the_bn254_concretes_encode_the_same_pairing_to_the_same_bytes ... ok
-test the_bls12_381_concretes_encode_the_same_pairing_to_the_same_bytes ... ok
-
-test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
-
-     Running unittests src\lib.rs (target\debug\deps\proof-c24a936fe119acc8.exe)
-
-running 65 tests
-test factory::test::create_delivery_proof_refuses_a_statement_version_the_concrete_does_not_declare ... ok
-test factory::test::create_delivery_proof_hands_the_consumer_the_schnorr_fs_concrete_and_its_declaration ... ok
-test mint_statement::test::mint_statement_description_declares_its_field_kinds_in_transcript_order ... ok
-test factory::test::create_delivery_proof_constructs_the_concrete_in_the_required_verifier_form ... ok
-test schnorr_fs::challenge::test::the_challenge_tag_is_admitted_as_a_domain_tag ... ok
-test mint_statement::test::the_declared_purposes_carry_their_codes_and_relations ... ok
-test mint_statement::test::fields_to_value_carries_an_identitys_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_an_entitlements_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_the_asset_identity_hashs_refusal ... ok
-test mint_statement::test::fields_to_value_carries_an_intervals_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_the_chain_identifiers_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_rejects_a_field_list_one_short ... ok
-test mint_statement::test::fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries ... ok
-test mint_statement::test::fields_to_value_carries_the_parameter_set_digests_refusal ... ok
-test mint_statement::test::fields_to_value_rejects_a_field_list_one_long ... ok
-test mint_statement::test::to_fields_lists_the_mint_transcript_in_transcript_order ... ok
-test schnorr_fs::test::schnorr_fs_delivery_proof_declares_its_algebras_forms_and_statement_versions ... ok
-test mint_statement::test::fields_to_value_reports_the_lowest_failing_field ... ok
-test schnorr_fs::test::the_mint_and_transfer_types_exclude_the_other_relations_purpose ... ok
-test schnorr_fs::challenge::test::encoding_refusal_prevents_hashing ... ok
-test mint_statement::test::fields_to_value_rejects_invalid_mint_group_encodings ... ok
-test mint_statement::test::fields_to_value_carries_the_suite_identifiers_refusal ... ok
-test schnorr_fs::test::the_weight_tag_is_admitted_as_a_domain_tag ... ok
-test transfer_statement::test::fields_to_value_carries_the_parameter_set_digests_refusal ... ok
-test transfer_statement::test::fields_to_value_carries_the_asset_identity_hashs_refusal ... ok
-test transfer_statement::test::fields_to_value_carries_an_intervals_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_chain_identifiers_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_an_entitlements_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_an_identitys_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_rejects_a_field_list_one_short ... ok
-test transfer_statement::test::fields_to_value_rejects_a_field_list_one_long ... ok
-test transfer_statement::test::fields_to_value_carries_the_suite_identifiers_refusal ... ok
-test transfer_statement::test::fields_to_value_reports_the_lowest_failing_field ... ok
-test transfer_statement::test::fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries ... ok
-test transfer_statement::test::transfer_statement_description_declares_its_field_kinds_in_transcript_order ... ok
-test transfer_statement::test::fields_to_value_rejects_invalid_transfer_group_encodings ... ok
-test transfer_statement::test::to_fields_lists_the_transfer_transcript_in_transcript_order ... ok
-test mint_statement::test::fields_to_value_rejects_a_directly_mapped_field_of_the_wrong_kind ... ok
-test schnorr_fs::challenge::test::the_challenge_is_the_tagged_hash_on_bn254_arkworks ... ok
-test schnorr_fs::challenge::test::the_transfer_challenge_is_the_tagged_hash_of_the_transfer_transcripts_encoding ... ok
-test schnorr_fs::challenge::test::a_transcript_differing_in_one_field_yields_another_challenge ... ok
-test schnorr_fs::challenge::test::the_same_transcript_always_yields_the_same_challenge ... ok
-test schnorr_fs::challenge::test::the_mint_challenge_is_the_tagged_hash_of_the_mint_transcripts_encoding ... ok
-test mint_statement::test::fields_to_value_returns_the_transcript_the_reference_fields_describe ... ok
-test transfer_statement::test::fields_to_value_rejects_a_directly_mapped_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_returns_the_transcript_the_reference_fields_describe ... ok
-test mint_statement::test::fields_to_value_admits_each_mint_purpose ... ok
-test transfer_statement::test::fields_to_value_admits_each_transfer_purpose ... ok
-test schnorr_fs::test::the_verifier_rejects_a_proof_of_the_other_relation ... ok
-test schnorr_fs::test::wire_reconstruction_refuses_the_other_relations_purpose_codes ... ok
-test schnorr_fs::test::wire_components_refuse_wrong_response_and_first_message_counts ... ok
-test schnorr_fs::test::the_proof_components_carry_the_challenge_the_responses_and_the_forms_first_messages ... ok
-test schnorr_fs::test::mint_and_transfer_proofs_verify_on_bn254_halo2curves ... ok
-test schnorr_fs::test::mint_and_transfer_proofs_verify_on_bn254_arkworks ... ok
-test schnorr_fs::test::a_transfer_proof_from_the_sellers_fresh_decryption_verifies_in_both_forms ... ok
-test schnorr_fs::test::a_grant_and_a_replacement_proof_verify_in_both_forms ... ok
-test schnorr_fs::test::a_proof_rebuilt_from_its_components_verifies ... ok
-test schnorr_fs::test::a_mint_proof_verifies_in_both_forms ... ok
-test schnorr_fs::test::mint_and_transfer_proofs_verify_on_bls12_381_halo2curves ... ok
-test schnorr_fs::test::a_proof_fails_under_the_other_verifier_form_or_with_the_wrong_response_count ... ok
-test schnorr_fs::test::a_proof_from_a_witness_the_statement_does_not_hold_fails ... ok
-test schnorr_fs::test::a_proof_with_a_changed_response_or_challenge_fails ... ok
-test schnorr_fs::test::a_first_group_only_proof_with_a_changed_second_group_first_message_fails ... ok
-test schnorr_fs::test::a_proof_fails_against_a_statement_differing_in_one_field ... ok
-test schnorr_fs::test::a_proof_whose_second_group_errors_cancel_unweighted_fails_the_weighted_product ... ok
-
-test result: ok. 65 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.21s
-
-     Running tests\integration_test.rs (target\debug\deps\integration_test-eda06bea745e1c2f.exe)
-
-running 2 tests
-test a_minted_and_transferred_credential_is_proved_and_verified_through_the_families_on_bn254_halo2curves ... ok
-test a_minted_and_transferred_credential_is_proved_and_verified_through_the_families_on_bls12_381_arkworks ... ok
-
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.75s
-
-     Running unittests src\lib.rs (target\debug\deps\random-b08e3ad539c51e9b.exe)
-
-running 7 tests
-test factory::test::create_random_source_returns_the_operating_system_source_for_its_kind ... ok
-test os::test::fill_bytes_returns_an_empty_draw_for_a_zero_length ... ok
-test os::test::fill_bytes_returns_the_number_of_bytes_requested ... ok
-test os::test::mock_fill_bytes_honors_the_requested_length ... ok
-test os::test::fill_bytes_draws_pairwise_distinct_values_across_repeated_draws ... ok
-test os::test::os_random_source_declares_its_adapter_and_interface_versions ... ok
-test os::test::fill_bytes_fills_a_draw_with_more_than_one_distinct_byte_value ... ok
-
-test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running tests\integration_test.rs (target\debug\deps\integration_test-dca925110f346381.exe)
-
-running 1 test
-test a_source_from_the_factory_draws_random_bytes_through_the_family_trait ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running unittests src\lib.rs (target\debug\deps\workflows-3f832ffa030d73cc.exe)
-
-running 13 tests
-test sidecar::unwrap::test::unwrap_derives_from_the_encapsulated_value_and_the_encoded_context ... ok
-test sidecar::unwrap::test::unwrap_refuses_a_wrapping_key_of_another_length ... ok
-test sidecar::unwrap::test::unwrap_derives_the_wrapping_key_under_its_purpose_at_the_wrapped_keys_length ... ok
-test sidecar::wrap::test::wrap_refuses_a_wrapping_key_of_another_length ... ok
-test sidecar::wrap::test::wrapped_piece_group_key_rejects_a_short_sidecar_value ... ok
-test sidecar::wrap::test::piece_group_key_rejects_a_short_secret ... ok
-test sidecar::wrap::test::wrap_derives_from_the_encapsulated_value_and_the_encoded_context ... ok
-test sidecar::wrap::test::wrap_derives_the_wrapping_key_under_its_purpose_at_the_piece_group_keys_length ... ok
-test sidecar::unwrap::test::unwrap_returns_an_encoder_contract_refusal ... ok
-test sidecar::wrap::test::wrap_returns_an_encoder_contract_refusal ... ok
-test sidecar::wrap::test::wrap_xors_the_piece_group_key_with_the_derived_wrapping_key ... ok
-test sidecar::unwrap::test::unwrap_returns_the_key_the_wrap_wrapped ... ok
-test sidecar::unwrap::test::unwrap_xors_the_wrapped_key_with_the_derived_wrapping_key ... ok
-
-test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running tests\integration_test.rs (target\debug\deps\integration_test-bb6d2144e71108f6.exe)
-
-running 4 tests
-test wrapping_a_zero_key_yields_the_independent_wrapping_key_vector ... ok
-test wrapping_an_all_ones_key_yields_the_complement_of_the_wrapping_key_vector ... ok
-test an_escrow_set_and_a_claimants_set_unwrap_one_piece_group_key_on_bn254_arkworks ... ok
-test two_independently_generated_entitlement_scope_sets_unwrap_one_piece_group_key_on_bls12_381_arkworks ... ok
-
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
-
-
-[exit code: 0]
+error: could not compile `proof` (lib test) due to 5 previous errors
+error: could not compile `pairing` (lib test) due to 5 previous errors
+warning: `harness-crypto` (lib test) generated 16 warnings
+error: could not compile `harness-crypto` (lib test) due to 7 previous errors; 16 warnings emitted
+
+[exit code: 101]
 
