@@ -53,6 +53,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
   * `[ ]`   `[function].interaction.spec`
     * `[ ]`   Declare the branch contract — per branch: condition, decision, dependency call, and the exact return-union outcome; plus side effects and ordering. Declarative, no code
+    * `[ ]`   In Rust, declare the integration elements — own entries, callee dispositions with routes, private surface, and public surface where the boundary is a public entry
 
   * `[ ]`   `[function].mock.ts`
     * `[ ]`   Provide the builders, invalidators, and function mocks this interface owns (before the guard test consumes them)
@@ -82,6 +83,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
   * `[ ]`   `[function].integration.test.ts`
     * `[ ]`   Only when an integration boundary is reached. Validate provider → function → consumer; use the real functions in the chain and mock only at the outer boundary
+    * `[ ]`   In Rust: the private integration test `integration_test.rs` in the module directory when the node completes an in-crate chain, and the public integration test under the crate's `tests/` when the node's boundary is a public entry
 
   * `[ ]`   `directionality`
     * `[ ]`   Confirm deps inward, provides outward, no unjustified cycles

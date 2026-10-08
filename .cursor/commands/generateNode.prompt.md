@@ -1,6 +1,6 @@
 Generate one complete node and insert it at the designated location. If the user has not indicated a location, insert it at the end of the existing nodes.
 
-Detail, in the exact template order, every non-file and file element. Perform the conformance check from conforms-to citations (`docs/agents/workplan-structure.md`) but do not include them. Ground every transform in the actual file — no "check if" or "validate that," no hand-waving. The node must be complete enough that the implementer can act from the node and the file it references alone, with no further research.
+Detail, in the exact template order, every non-file and file element. Perform the conformance check from conforms-to citations (`docs/agents/workplan-structure.md`) but do not include them. Ground every transform in the actual file — no "check if" or "validate that," no hand-waving. In Rust, ground the interaction spec's integration elements in the integration entries of the direct dependencies' nodes: disposition every entry, record the node's own, and describe the private and public integration test elements the node's role requires (`docs/agents/workplan-structure.md`). The node must be complete enough that the implementer can act from the node and the file it references alone, with no further research.
 
 Follow `docs/agents/workplan-structure.md` for node anatomy, the template, and new-vs-existing completeness, and `docs/agents/tdd-ordering.md` for element order. Do not emit the node in chat unless told to (`docs/agents/output.md`).
 

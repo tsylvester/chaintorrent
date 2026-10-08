@@ -8,7 +8,7 @@ Cited by: construction view (the workplan author builds nodes) and, for handling
 
 ## Node anatomy
 
-- A top-level node addresses exactly **one source file** and its entire support system — its interface, interface test, mock, guard test, guard, tests, provides, and integration test, to the extent the work requires them. This is inviolate.
+- A top-level node addresses exactly **one source file** and its entire support system — its interface, interface test, mock, guard test, guard, tests, provides, and integration tests, to the extent the work requires them. This is inviolate.
 - One source file per node. You cannot add a second source file "for one small edit." `function1.ts` and `function2.ts` are different nodes.
 - All changes to a source file and its support live in **that file's one node**. Do not split a single source file across multiple nodes, and do not create multiple sequential nodes that edit the same set of files.
 - Files that have no types and no tests (e.g. a database migration) are the only ones exempt from the full support-file structure.
@@ -38,6 +38,31 @@ For each branch the function takes, the spec states:
 - **Outcome** — the exact success flavor returned, or the error propagated or raised (see [errors-and-returns](errors-and-returns.md)).
 
 Every branch ends in a member of the return union; none falls through untyped. With the branch contract complete, the implementation is assembly — guard the payload on entry, then realize each branch exactly as specified. A branch contract stops at the contract; it is not pseudocode for the whole function body.
+
+## The interaction spec carries the integration elements
+
+In Rust, the `interaction.spec.md` also declares the node's integration elements. This is how an integration obligation travels from a producer to its consumers while every node stays stateless: each element is written from this node and the nodes beneath it, never about a consumer, and the consumer that comes after reads it and answers it.
+
+- **Own entries** — cross-module properties no unit test of this node can prove. An entry states, in this node's own terms, the condition and outcome, the input variation that separates a pass from a fail, and the failure or edge that must survive composition.
+- **Callee dispositions** — every entry of every direct dependency is dispositioned. *Absorbed*: this node's private integration test proves it, and the disposition cites that test element. *Carried*: the property survives this node's boundary; the disposition cites the callee entry by name and restates it only where this node transforms it, in this node's terms.
+- **Route** — a carried entry states the chain of real functions it passes through, by name, ending at this node, and the outer-edge collaborators that chain reaches. The author reads the callee's route and extends it with this node, so the node that hosts a public test is self-contained.
+- **Private surface** — the entries proven inside the crate: the chain of real functions, the outer-edge collaborators that are mocked, and the observable result.
+- **Public surface** — present only when the node's boundary is a public entry (see [boundaries](boundaries.md#public-entries)): what an outside caller invokes, what it observes, and the entries, own and carried, that the public integration test proves.
+
+Entries are addressed by name and cited, never numbered and never copied. An entry references only its own node and the node's dependencies; it never refers to a consumer, a later node, or what a consumer will do. The nodes of the direct dependencies are the only other nodes an author reads for this, and an entry is dispositioned in the consuming node, never deferred to the node that hosts the public test.
+
+### What the integration flow edits in a node
+
+Authoring the integration elements of a node touches exactly these parts of that node, and every one is written in the node that owns it, so the carry-forward needs no other edit:
+
+- the spec's own entries, callee dispositions, routes, and private surface;
+- the spec's public surface, when the node's boundary is a public entry;
+- the private integration test element, when the node completes an in-crate chain;
+- the public integration test element, when the node's boundary is a public entry.
+
+The private integration test element is `integration_test.rs`, never a unit test file; the unit test element holds no integration block (see [integrationTest](integrationTest.md#integration-private)).
+
+**Disposition canary.** A node whose spec leaves a direct dependency's entry undispositioned, cites an entry that does not exist, marks an entry absorbed without citing the private integration test element that proves it, or states a carried entry without its route is malformed and discarded (see [traceability](traceability.md)).
 
 ## What is never its own node
 
@@ -72,7 +97,7 @@ When a requirement changes, revise the node **in place** so it reads as the sing
 - Do not emit full workplan nodes in chat unless explicitly told to for that turn. The Read → Analyze → Explain → Propose cycle and EO&D reporting do **not** by themselves authorize emitting node content (see [output](output.md), [loop](loop.md)).
 - Document every edit within the workplan. If required edits are missing from the plan, explain the discovery, propose the new node, and halt — do not improvise (see [discovery-halt](discovery-halt.md)).
 - Obey the user first, then the Instructions topics, then the workplan. Never hide behind the workplan to ignore a direct user correction (see [precedence](precedence.md)). If the user tells you to work without updating the workplan, obey without complaint.
-- **Commits:** a commit step belongs in the last node of a completed set of work — generally once a producer → implementation → consumer chain can be integration-tested. The integration test is an obligate inclusion in the last node of that chain; never strand integration tests or commits in a node of their own. The agent never runs the commit itself (see [environment](environment.md)).
+- **Commits:** a commit step belongs in the last node of a completed set of work — generally once a producer → implementation → consumer chain can be integration-tested. The integration test is an obligate inclusion in the last node of that chain; never strand integration tests or commits in a node of their own. In Rust the private integration test is hosted by the node that completes the in-crate chain, and the public integration test by each node whose boundary is a public entry. The agent never runs the commit itself (see [environment](environment.md)).
 
 ## The To-Do list — debt the workplan has not scheduled
 
@@ -133,6 +158,7 @@ The author does the thinking so the implementer does not. Every node must be gro
 | Cramming several implementation files into one node | One node hosts a single implementation file (but may edit several interfaces/guards for it) |
 | A commit step at the end of every node | A commit step only where a defined set of work completes and the whole call stack is updated |
 | A separate node for integration tests or commits | The integration test and commit are steps in the **last node** of the chain they prove |
+| A callee's integration entry restated in the consumer, left undispositioned, or deferred to the node that hosts the public test | Every direct dependency entry is dispositioned in the consuming node — absorbed with its test cited, or carried with its route |
 | A node step that says "grep for", "check if", "validate that", "determine whether" | The author greps, checks, validates, and determines **now**, before writing the node. The implementer implements; it does not verify the work is complete |
 | A node step that says "no change required" | Omit it. No-op inclusions are noise |
 | A node carrying `AMENDED:` / `REVISED:` / "was X, now Y" history | State the current instruction as fact; delete superseded wording rather than annotate it |
@@ -178,9 +204,10 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
     * `[ ]`   Declare this function's signature: deps, params, payload, and the Success | Error return union
 
   ## 5. Interaction Semantics (Behavioral Structure)
-  * Conforms to: composition, errors-and-returns, guards
+  * Conforms to: composition, errors-and-returns, guards, tests#integration
   * `[ ]`   `[function].interaction.spec`
     * `[ ]`   Declare the branch contract — per branch: condition, decision, dependency call, and the exact return-union outcome; plus side effects and ordering. Declarative, no code
+    * `[ ]`   In Rust, declare the integration elements — own entries, callee dispositions with routes, private surface, and public surface where the boundary is a public entry
 
   ## 6. Simulation
   * Conforms to: mocks
@@ -253,12 +280,15 @@ The template names elements with TypeScript suffixes. Each language realizes the
 | guard | `[function].guard.ts` | — | the contract's `require` and custom-error revert paths |
 | unit test | `[function].test.ts` | `test.rs`, a `#[cfg(test)]` module, split by behavior as `test_*.rs` | `[Contract].t.sol` |
 | implementation | `[function].ts` | `mod.rs` | `[Contract].sol` |
+| private integration test | — | `integration_test.rs`, a `#[cfg(test)]` module of its own in the function's module directory | — |
 | provides | `[function].provides.ts` | `provides.rs`, the module's only `pub mod` | the contract's public ABI |
-| integration test | `[function].integration.test.ts` | `integration_test.rs` under the crate's `tests/` | `[Contract].integration.t.sol` against a deployed suite |
+| integration test | `[function].integration.test.ts` | `[module]_integration_test.rs` under the crate's `tests/`, the public integration test | `[Contract].integration.t.sol` against a deployed suite |
 
 In Rust a function is a module directory holding these files; crate directories are hyphenated and module directories underscored, and a node is addressed as `crate/module`. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it. In Solidity a suite is a directory under `contracts/` holding its own `src/`, `test/`, and Foundry configuration, the EVM suite at `contracts/evm`; a contract is one node addressed as `contracts/<suite>/Contract`, its Foundry test contracts are its test elements, and its constants and vectors are generated from the Rust reference rather than authored.
 
-Element → topic citations, clickable: `module` → [boundaries](boundaries.md); `deps` → [dependency-injection](dependency-injection.md); `interface.test` → [tests](tests.md#interface); `interface` → [composition](composition.md) + [types](types.md) + [errors-and-returns](errors-and-returns.md); `mock` → [mocks](mocks.md); `guard.test` / `guard` → [tests](tests.md#guard) + [guards](guards.md); `test` → [tests](tests.md#unit); `implementation` → [composition](composition.md) + [dependency-injection](dependency-injection.md) + [types](types.md) + [errors-and-returns](errors-and-returns.md) + [guards](guards.md) + [logging](logging.md); `provides` → [boundaries](boundaries.md); `integration.test` → [tests](tests.md#integration).
+In Rust the unit test is `test.rs`, split by behavior as `test_*.rs`, and the private integration test is `integration_test.rs`, a separate file, so integration blocks are never mixed into a unit test file. The public integration test file carries its module's name because every public entry in a crate hosts its own file under `tests/`. TypeScript and Solidity have a single integration test; the private and public tiers and the integration elements of the interaction spec are Rust forms.
+
+Element → topic citations, clickable: `module` → [boundaries](boundaries.md); `deps` → [dependency-injection](dependency-injection.md); `interface.test` → [tests](tests.md#interface); `interface` → [composition](composition.md) + [types](types.md) + [errors-and-returns](errors-and-returns.md); `mock` → [mocks](mocks.md); `guard.test` / `guard` → [tests](tests.md#guard) + [guards](guards.md); `test` → [tests](tests.md#unit); `implementation` → [composition](composition.md) + [dependency-injection](dependency-injection.md) + [types](types.md) + [errors-and-returns](errors-and-returns.md) + [guards](guards.md) + [logging](logging.md); `provides` → [boundaries](boundaries.md); `integration.test` → [tests](tests.md#integration), and in Rust the private and public tiers → [tests](tests.md#integration-private) and [tests](tests.md#integration-public); the `interaction.spec` integration elements → [integrationTest](integrationTest.md).
 
 ## Legend
 

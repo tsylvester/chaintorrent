@@ -44,6 +44,12 @@ The mock is part of the public surface on purpose: a consumer's tests import the
 
 Re-exporting is permitted **only** in barrel files — the ones named `index` or `provides`, and in Rust `provides.rs` and the crate's `lib.rs`. No other file re-exports. This is the home of the barrel rule that [types](types.md) points to.
 
+## Public entries
+
+A module is a **public entry** when the crate's `lib.rs` re-exports its `provides`. The public entries are the crate's public surface, and the public surface is everything a consumer outside the crate can call. A module that is not re-exported is internal: nothing outside the crate reaches it, and its behavior is observable from outside only through the public entries that carry it.
+
+Tests outside the crate consume the public surface and the official mocks under the `mocks` feature, and nothing else (see [integrationTest](integrationTest.md#integration-public)).
+
 ## Directionality
 
 - **Deps face inward, provides face outward.** A module depends on the modules beneath it and is depended on by the modules above it.

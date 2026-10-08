@@ -13,6 +13,7 @@ Every trigger below is the same event: the work has reached the edge of its scop
 - A function must be refactored to proceed — it is too long, too complex, deeply nested, or does not use DI (see [dependency-injection](dependency-injection.md)).
 - The contract is underspecified, or a requirement is misstated by the workplan.
 - Completing the task appears to require touching a file you were not told to touch.
+- A carried integration entry cannot be observed through the public API, or an entry a disposition cites does not exist (see [integrationTest](integrationTest.md#integration-public)).
 
 ### What is not a halt trigger
 

@@ -15,7 +15,7 @@ Cited by: construction view (workplan node `interface.test`, `guard.test`, `unit
 - Never change an assertion to match broken code — fix the code.
 - Fixtures come from the mock file's builders and invalidators (see [mocks](mocks.md)), never hand-rolled.
 - Test files mirror the source tree and may split by behavior (`bar.basic.test.ts`, `bar.error.test.ts`, `bar.edge.test.ts`); group related tests in nested `Deno.test` / `t.step` blocks.
-- In Rust each test element is a `#[cfg(test)]` module file in the function's module directory, `test.rs`, splitting by behavior as `test_basic.rs`, `test_error.rs`; the runner is `cargo test` with `assert!` and `assert_eq!`, and the agent still never runs it.
+- In Rust each test element is a `#[cfg(test)]` module file in the function's module directory, `test.rs`, splitting by behavior as `test_basic.rs`, `test_error.rs`; the runner is `cargo test` with `assert!` and `assert_eq!`, and the agent still never runs it. A private integration test is `integration_test.rs`, a `#[cfg(test)]` module of its own beside `test.rs`, and a public integration test is a file under the crate's `tests/`; neither is ever a `test_*.rs` split of the unit test.
 - The agent never runs tests (see [environment](environment.md)). A test's RED or GREEN state is proven by compiler/linter output, not by execution.
 - Examples in this topic use `test(...)` for a test block and `assert(...)` for a truthy assertion as neutral placeholders. Substitute your project's own runner and assertion library — `Deno.test` + `@std/assert`, `test` / `it` + `expect`, and so on — and its module-resolution convention for import paths.
 
@@ -145,7 +145,9 @@ Each scope is its own topic file. Load only the one you are working; the shared 
 <a id="unit"></a>
 - **[Unit test](unitTest.md)** — validates behavior, before the implementation exists (TDD RED).
 <a id="integration"></a>
-- **[Integration test](integrationTest.md)** — exercises real code across an approved boundary, mocking only at that boundary.
+<a id="integration-private"></a>
+<a id="integration-public"></a>
+- **[Integration test](integrationTest.md)** — exercises real code across an approved boundary, mocking only at that boundary. In Rust it has a private tier inside the crate and a public tier outside it, each with its own section.
 <a id="e2e"></a>
 - **[End-to-end test](e2eTest.md)** — reserved; full-stack against real infrastructure, in an isolated pipeline, outside the ordinary node cycle.
 
@@ -188,9 +190,9 @@ The header claims a property the body does not check, or the body checks a prope
 
 ### Layer misplacement — the property belongs to another scope
 
-Each scope owns a kind of property: shape and membership to the interface test, validity to the guard test, behavior and branching to the unit test, boundary crossing to the integration test.
+Each scope owns a kind of property: shape and membership to the interface test, validity to the guard test, behavior and branching to the unit test, boundary crossing to the integration test. In Rust the private integration test owns the cross-module properties provable inside the crate, and the public integration test owns the properties an outside caller can observe.
 
-**Probe.** Name the property the test asserts, then name the scope that owns it. If that is not this file's scope, the test is misplaced.
+**Probe.** Name the property the test asserts, then name the scope that owns it. If that is not this file's scope, the test is misplaced. A block that runs more than its subject inside a unit test file is an integration block and is misplaced there.
 
 **Remedy.** Report the owning scope and where the property is already covered. Deleting a misplaced test that duplicates real coverage is correct; deleting one whose property is covered nowhere is a coverage loss — propose the move, not the deletion.
 

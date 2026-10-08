@@ -21,6 +21,7 @@ Work on the provided workplan only. You will read the first indicated node, read
 - It never drives outside functions through test-local probe consumers or stubs.
 - Act is the single call to the function under test, and no other function of the module runs in the block.
 - One behavior per test.
+- It never proves an integration entry of the spec. A block that runs more than the subject is not a unit test; integration entries belong to the integration test elements (`docs/agents/integrationTest.md`).
 - Fixtures come only from builders and invalidators.
 - The test file holds only imports, contract headers, test blocks, and assertions. Constants, fixtures, and helpers belong in the mock file.
 - An error is asserted whole.
@@ -28,12 +29,13 @@ Work on the provided workplan only. You will read the first indicated node, read
 
 ## The method, per node, in order
 
-1. **Read the node.** Read its `deps`, `context_slice`, `interaction.spec`, everything *before* the unit test portion.
-2. **Read the mock, test, and unit test rules.**
-3. **Describe a test for every branch and provable behavior:**
+- **Read the node.** Read its `deps`, `context_slice`, `interaction.spec`, everything *before* the unit test portion.
+- **Read the mock, test, and unit test rules.**
+- **Describe a test for every branch and provable behavior:**
    - For every unit-test block: the one function under test, the single act, each collaborator and the official mock that replaces it, and where the expectation comes from. 
-5. **Write the unit test description to match the function description and requirements from the rules.**
-6. **Move to the next node.**
+- **Update the mock section if required:** Unit tests rely on mocks. If a mock is missing, update the mock section to describe it. 
+- **Write the unit test description to match the function description and requirements from the rules.**
+- **Move to the next node.**
 
 ## Do not
 
@@ -47,5 +49,7 @@ Work on the provided workplan only. You will read the first indicated node, read
 - A producer written in deps order is unused until its consumer node follows, so unused-item warnings against work that isn't performed yet is not a conflict.
 - Treat a question or comment from the user as an instruction to edit. Answer it and halt.
 - Number anything, add history, or narrate changes. The workplan states what is.
-
+- Read other tests or workplans for "examples". 
+- Pretend that you're unable to follow the rules for reasons you make up to justify not following the rules. 
+- Trust anything the node says about unit tests, anywhere. The rules tell you over and over, prior reasoning is never trusted, and the rules supercede the workplan. Do not defer to the workplan. Follow the rules exactly as written. Do not use "but the workplan says" as an excuse not to do what the rules require you to do. 
 Do not do anything other than this work, exactly as described.

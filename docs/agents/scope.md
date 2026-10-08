@@ -81,6 +81,8 @@ An element that owns symbols reports its enumeration: the symbols the interface 
 
 This is the same rule as the one above, applied to a symbol surface rather than a work scope. "No mock required" and "deliberately not exported" are dispositions; they are stated, not omitted.
 
+An integration element enumerates the same way, over the entries the node's `interaction.spec` declares: every entry, with the block that proves it. A response naming fewer entries than the spec declares is discarded (see [traceability](traceability.md)).
+
 ## Precedence
 
 This topic outranks the workplan. A node step that widens a scope beyond one unit of work, that treats its own bullets as the complete symbol list, or that asks the implementer to determine what is in scope, is defective — comply with this topic and report the discrepancy (see [precedence](precedence.md)).

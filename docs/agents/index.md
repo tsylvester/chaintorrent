@@ -32,7 +32,7 @@ Single source of truth for how agents work in this repo. Every rule lives in exa
 - [dependency-injection](dependency-injection.md) — DI at the boundary, context factory
 - [mocks](mocks.md) — builders, invalidators, function mocks
 - [guards](guards.md) — guard everything, authorship, boundary litmus
-- [tests](tests.md) — test authoring, contract headers, derangement audit; anchors `#interface` `#guard` `#unit` `#integration` `#e2e` `#audit`
+- [tests](tests.md) — test authoring, contract headers, derangement audit; anchors `#interface` `#guard` `#unit` `#integration` `#integration-private` `#integration-public` `#e2e` `#audit`
 - [errors-and-returns](errors-and-returns.md) — `Success | Error` handling
 - [boundaries](boundaries.md) — provides / barrels, directionality
 
@@ -55,6 +55,8 @@ A map from the file you are building to the topic that governs it, the template 
 | unit test | [tests](tests.md#unit), [errors-and-returns](errors-and-returns.md), [composition](composition.md) | no positive template — the branch contract (§5) and the forbidden catalog | the implementation's producer does not exist yet |
 | implementation | [composition](composition.md), [dependency-injection](dependency-injection.md), [types](types.md), [errors-and-returns](errors-and-returns.md), [guards](guards.md), [logging](logging.md) | guard-on-entry skeleton ([guards](guards.md)); body from the branch contract | an undeclared dependency or a missing guard is required |
 | provides | [boundaries](boundaries.md) | export-surface example ([boundaries](boundaries.md)) | a symbol a consumer needs is not available to export |
-| integration test | [tests](tests.md#integration) | boundary-mocking example ([tests#integration](tests.md#integration)) | a function in the integrated chain is not built yet |
+| integration test (TypeScript, Solidity) | [tests](tests.md#integration) | boundary-mocking example ([tests#integration](tests.md#integration)) | a function in the integrated chain is not built yet |
+| private integration test (Rust) | [tests](tests.md#integration-private), [workplan-structure](workplan-structure.md#the-interaction-spec-carries-the-integration-elements) | the spec's private surface and the entries it lists | a function in the integrated chain is not built yet |
+| public integration test (Rust) | [tests](tests.md#integration-public), [boundaries](boundaries.md#public-entries), [workplan-structure](workplan-structure.md#the-interaction-spec-carries-the-integration-elements) | the spec's public surface and the entries it lists | a carried entry cannot be observed through the public API, or a function in its route is not built yet |
 
 

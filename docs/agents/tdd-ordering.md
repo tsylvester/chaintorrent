@@ -18,10 +18,10 @@ RED test (asserting the desired green behavior) → implementation → GREEN →
 Within a node, elements are built producers-first so every dependency exists when its consumer is written:
 
 ```
-interface test → interface → mock → guard test → guard → unit test → implementation → provides → integration test
+interface test → interface → mock → guard test → guard → unit test → implementation → private integration test → provides → public integration test
 ```
 
-This order is not stylistic — it is the dependency graph. The mock precedes the guard test so the guard test can use its builders; the guard precedes the unit test so the implementation can rely on it; provides precedes the integration test so the consumer can import the finished surface.
+This order is not stylistic — it is the dependency graph. The mock precedes the guard test so the guard test can use its builders; the guard precedes the unit test so the implementation can rely on it; the private integration test follows the implementations it runs; provides precedes the public integration test so the consumer can import the finished surface. The private and public integration tests are Rust forms; TypeScript and Solidity omit the private test and keep a single integration test last.
 
 ### The order is immutable
 
