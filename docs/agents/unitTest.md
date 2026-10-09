@@ -9,6 +9,7 @@ Written **before** the implementation (TDD). Validates behavior.
 - Only imports, contract headers, test blocks, and assertions. Import the function from its implementation file.
 - **RED is the implementation not yet existing.** Import from its path; the compiler error is the deliverable; never create or edit the implementation file. Missing producer owned by another interface → halt (same rule as the interface test).
 - Factories and helpers go in the **mock file**, never in the test (see [mocks](mocks.md)). Do not build mocks for imported functions — use theirs.
+- A family collaborator is the family's mock concrete, reached through the family's factory by configuration (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)). The test names no concrete.
 - **When updating an existing suite for new requirements, update the existing tests in the same pass.** Do not leave stale tests for a second pass after the implementation changes — add the new tests and correct the existing ones together.
 - Focus on correct transformations and branching logic. Do **not** re-test type shape (interface test) or guard correctness (guard test).
 - One behavior per test.
@@ -21,7 +22,7 @@ This scope takes the **full four-field header and the inline markers** — the b
 
 - **Contract** — the one branch from the node's `interaction.spec`, condition → outcome.
 - **Arrange** — the fixture and the variation the branch discriminates over. A fixture containing nothing the branch would treat differently is an incidental test (see [tests](tests.md#audit)).
-- **Act** — the single call to the function under test.
+- **Act** — the single call to the function under test. Where the family's factory hands the subject its concrete, the single call is the factory call whose configuration selects the mock concrete, and the subject is the only function of its module that runs.
 - **Assert** — each transformation or branch outcome checked, stated independently of the arrangement. An expected value read back out of the arrangement is a tautological test.
 
 

@@ -30,6 +30,7 @@ The private integration test lives in the function's module directory as `integr
 
 - It proves every own entry and every absorbed callee entry the spec places on its private surface, one block per entry.
 - It runs the real chain through crate-internal paths and mocks only the outer-edge collaborators the private surface names. Fixtures come from the mock file's builders.
+- In a family's factory module it proves every contract entry of the family's trait, each block's body written once and run over the declared set and the mock concrete (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)), so a further concrete answers every entry without an edit to the test.
 - A function in the chain that is not built yet is a halt (see [discovery-halt](discovery-halt.md)).
 - It reports its enumeration: every entry the private surface lists and the block that proves it. A file proving fewer entries than the spec lists is incomplete (see [scope](scope.md#coverage-canary)).
 

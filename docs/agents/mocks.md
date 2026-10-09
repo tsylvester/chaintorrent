@@ -36,6 +36,7 @@ The general rule and its three outcomes are owned by [tdd-ordering](tdd-ordering
 
 - **Builder** — it returns the production type. `SomeType` in the return position is the invariant, whatever the function is called and wherever it lives.
 - **Function mock** — it *is* the production function type, so its type annotation is the invariant: a value declared `: SomeFn`.
+- **Family mock concrete** — it is the member the family's selection carries under the `mocks` feature (see [Families](#families--the-mock-is-a-concrete-of-the-family-rust)). Read the selection, never a name.
 - **Invalidator** — it returns `unknown` by mandate, so **its signature ties it to nothing**. There is no invariant to search on. Find the builder first, then read the file the builder turned out to live in — and do not assume that file is beside the interface, or that it holds an invalidator at all.
 
 An invalidator that does not exist is the second outcome in [tdd-ordering](tdd-ordering.md#three-outcomes-and-only-one-of-them-is-create-it), not the third: the mock file exists and is missing a symbol, which is another file's edit and so a discovery. Do not write the invalidator into a foreign mock file, and do not substitute a cast or a hand-rolled malformed object for the one that is missing.
@@ -51,7 +52,7 @@ For each symbol the interface owns, ask what it is:
 3. A **union type** → nothing for the union itself; each object-type member gets its own builder (step 1).
 4. An **enum, primitive/string-literal alias, or constant** → nothing. It is used directly by its production value or type.
 5. A **guard** → nothing here; guards are their own element (see [guards](guards.md)).
-6. A **class** → never mocked as a class. It decomposes by who constructs it: injected → mock the interface it implements (step 1); constructed by the code itself → a builder returning a real instance, plus the four symbols on its constructor-params object type (see [Classes](#classes--decompose-never-mock-the-class)).
+6. A **class** → never mocked as a class. It decomposes by who constructs it: injected → mock the interface it implements (step 1); constructed by the code itself → a builder returning a real instance, plus the four symbols on its constructor-params object type (see [Classes](#classes--decompose-never-mock-the-class)). In Rust a trait a factory selects concretes for takes the [family form](#families--the-mock-is-a-concrete-of-the-family-rust).
 
 If a symbol is none of these, it does not belong to this interface — do not mock it.
 
@@ -276,7 +277,7 @@ export function buildLoggerAdapter(overrides?: LoggerAdapterOverrides): LoggerAd
 
 An external class reaches this rule already resolved: DI mandates a repo-owned adapter interface for every external dependency, and external services are never mocked (see *Ownership* above). You mock the adapter interface, never the vendor's class.
 
-The Rust form: the mock file provides a struct implementing the trait, `MockLoggerAdapter` for `LoggerAdapter`, whose every method returns built defaults; that struct is the builder whose method properties default to the function mocks. A test needing different behavior implements the trait on its own local struct.
+The Rust form: a trait a factory selects concretes for takes the [family form](#families--the-mock-is-a-concrete-of-the-family-rust). Any other injected trait takes a struct implementing it, `MockLoggerAdapter` for `LoggerAdapter`, whose every method returns built defaults. No test implements a production trait on a struct of its own.
 
 ### Constructed by the code itself → build a real instance
 
@@ -338,6 +339,18 @@ The Rust form: `build_compression_key(overrides)` returns `CompressionKey::try_n
 
 spreading a class instance in a builder or invalidator (`{ ...instance, ...overrides }` returns a prototype-less object, not the type it claims) · casting an object literal to a class type to satisfy `private` members · typing a dep by the class instead of the interface it implements · a constructor taking positional arguments instead of one typed params object · a builder that returns a hand-rolled object in place of a real instance.
 
+## Families — the mock is a concrete of the family (Rust)
+
+A family is a factory module that owns a trait and selects its concrete from configuration. Its mock is a concrete of that family, and a test reaches it the way every caller reaches every concrete: through the factory, selected by configuration, admitted by its declaration, received as the family's trait. A test names neither the mock concrete nor any other concrete.
+
+The mock concrete, `MockI<Trait>` after the trait it implements, lives in the factory module's mock file. Under the `mocks` feature the family's selection, each error union of the family's trait, and the factory's selection branch carry it beside the real concretes. The declared set holds the real concretes alone, so a consumer or an integration test that runs over the declared set never reaches it. Its type is crate-visible; the public surface carries the configuration that selects it.
+
+It is self-contained. Its declaration, associated types, and error variant are its own; it never takes a concrete as a type parameter, wraps or delegates to a concrete, or borrows a concrete's declaration, associated types, or errors.
+
+It answers the family's contract. The factory module's private integration test runs every contract entry of the family's trait over the declared set and the mock concrete (see [integrationTest](integrationTest.md#integration-private)), so its methods compute from their inputs the outcomes the entries state: a working simplified implementation, never a constant an entry would reject. A consumer test that passes against the mock concrete holds for every concrete in the declared set.
+
+A test reaches each outcome the way a caller reaches it from a real concrete. The mock concrete computes every arm the contract states from its inputs, as the real concretes do, so a test reaches an arm by passing the input that produces it. An arm no input reaches, an outer-edge failure such as the operating system refusing a draw, is a failure mode: `MockI<Trait>FailureMode`, an enum the factory module's interface declares under the `mocks` feature and the selection's mock member carries. The selecting configuration names the failure mode, and the mock concrete returns its own error variant from the method that mode fails. Each failure mode stands for an error arm that a contract entry states a concrete returns. A failure mode is a selecting param; configuration never carries a function, an outcome, or an override for the mock concrete, and no test implements a family's trait on a struct of its own.
+
 ## Litmus
 
 Every export in the mock file is typed by a name from the interface file — builders return production object types, invalidators return `unknown`, function mocks are production function types. Any export whose type had to be invented is not a mock of this interface; it is new machinery, and new machinery is forbidden.
@@ -352,7 +365,7 @@ This topic outranks the workplan. If a node step instructs a null/undefined-acce
 
 ## Forbidden (summary)
 
-modify or widen production types · invent shapes or type names · `as` · `satisfies` · overloads · type aliases that weaken checking · generic merge helpers · specialized mock variants instead of overrides · wrap one mock with another · duplicate builders · mock imported symbols / databases / repositories / external services · generic or shared invalidators · spread a class instance · cast an object literal to a class type · type a dep by a class instead of the interface it implements · a positional-argument constructor · a class instance invalidator or a constructor mock.
+modify or widen production types · invent shapes or type names · `as` · `satisfies` · overloads · type aliases that weaken checking · generic merge helpers · specialized mock variants instead of overrides · wrap one mock with another · duplicate builders · mock imported symbols / databases / repositories / external services · generic or shared invalidators · spread a class instance · cast an object literal to a class type · type a dep by a class instead of the interface it implements · a positional-argument constructor · a class instance invalidator or a constructor mock · a mock parameterized by, wrapping, or borrowing from a concrete · a test naming a concrete or a family's mock concrete · a test-local implementation of a production trait · a function, outcome, or override carried in configuration for a mock concrete.
 
 ## Architecture
 

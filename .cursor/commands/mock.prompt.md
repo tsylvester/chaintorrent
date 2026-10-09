@@ -8,6 +8,8 @@ For each owned object type: the overrides type, builder, corruptions type, and i
 
 **An imported type is not yours to mock.** Locate the existing mock and use it. Never search for the name you expect it to have — the type declaration is what locates a mock, and the procedure and its three outcomes are owned by `docs/agents/mocks.md` and `docs/agents/tdd-ordering.md`. Follow them there; do not improvise a search here. Whatever the outcome, do not mock the type in this file, do not wrap another interface's mock, and do not hand-roll a stand-in.
 
+**A family's trait takes the family form.** Where the interface's trait is one its factory selects concretes for, write the mock concrete `docs/agents/mocks.md` describes, computing every arm the family's contract states from its inputs and failing by the failure mode its selection names. A selection that does not carry it is a discovery (`docs/agents/discovery-halt.md`); never parameterize the mock by a concrete to reach one.
+
 Close with the enumeration: every symbol the interface exports, and each one's disposition — the symbols you wrote, and the ones the procedure resolved to nothing. A mock file covering fewer owned symbols than the interface exports is incomplete (`docs/agents/scope.md`, the coverage canary).
 
 Conforms to: `docs/agents/mocks.md`, `docs/agents/tdd-ordering.md`.

@@ -6,7 +6,7 @@ Write a unit test to standard. This command takes one of two inputs — identify
 
 Given neither — no node, no remedy — halt and say so (`docs/agents/discovery-halt.md`). Do not infer the assignment from whatever file happens to be open (`docs/agents/precedence.md`).
 
-Both paths: validate transformations and branching, not type shape or guard correctness. When updating an existing suite for new requirements, update the existing tests in the same pass. Factories and helpers go in the mock file. Every block carries the full four-field contract header and the inline `// Arrange` / `// Act` / `// Assert` markers, its `Arrange` naming the variation the branch discriminates over.
+Both paths: validate transformations and branching, not type shape or guard correctness. When updating an existing suite for new requirements, update the existing tests in the same pass. Factories and helpers go in the mock file. Every block carries the full four-field contract header and the inline `// Arrange` / `// Act` / `// Assert` markers, its `Arrange` naming the variation the branch discriminates over. A family collaborator is its mock concrete, reached through its factory by configuration, and where the factory hands the subject its concrete, the Act is that factory call (`docs/agents/unitTest.md`, `docs/agents/mocks.md`).
 
 **The `interaction.spec`'s branches are the checklist, not the node's test bullets.** On the node path, enumerate every branch the spec declares before writing — each is a condition, a decision, a dependency call, and an outcome (`docs/agents/workplan-structure.md`) — and every branch gets a block. The spec is the contract; the bullets under the test element are an author's summary of it, and where they name fewer branches, they have not excluded the rest (`docs/agents/scope.md`). The spec's integration elements are not branches: integration entries are proven by the integration test elements, and no unit test file holds an integration block (`docs/agents/integrationTest.md`).
 
@@ -14,7 +14,7 @@ Both paths: validate transformations and branching, not type shape or guard corr
 
 Close with the enumeration: every branch in the spec, and the block proving it. A suite covering fewer branches than the spec declares is incomplete (`docs/agents/scope.md`, the coverage canary). A branch that cannot be tested as specified — an outcome the spec names that the interface's return union has no arm for — is a contract discrepancy: report and halt, do not drop the branch or invent an arm (`docs/agents/discovery-halt.md`).
 
-Conforms to: `docs/agents/tests.md#unit`, `docs/agents/tests.md#applying-a-remedy`, `docs/agents/errors-and-returns.md`, `docs/agents/composition.md`, `docs/agents/workplan-structure.md`.
+Conforms to: `docs/agents/tests.md#unit`, `docs/agents/tests.md#applying-a-remedy`, `docs/agents/errors-and-returns.md`, `docs/agents/composition.md`, `docs/agents/workplan-structure.md`, `docs/agents/mocks.md`.
 
 Do only the unit test. Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.
 

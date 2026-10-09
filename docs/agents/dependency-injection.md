@@ -32,6 +32,8 @@ Leaf functions accept either only the context object or explicit deps derived fr
 
 The Rust form: `deps` is a struct of handles typed by repo-owned traits, `Box<dyn Trait>` or a generic bound, never by an implementing type, built once at the composition root; the context object is an immutable struct with no `Option` field, built by a typed factory that sets every field.
 
+A factory's selection, the error unions of its family's trait, and its selection branch carry the family's mock concrete under the `mocks` feature, and its declared set holds the real concretes alone (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
+
 ## Refactor triggers → halt
 
 Stop, report the discovery, propose the node, and halt (see [discovery-halt](discovery-halt.md)) when:

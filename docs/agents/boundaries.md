@@ -38,7 +38,7 @@ pub use super::interface::*;
 pub use super::mock::*;
 ```
 
-The mock is part of the public surface on purpose: a consumer's tests import the module's official mock rather than hand-rolling a test double (see [mocks](mocks.md)).
+The mock is part of the public surface on purpose: a consumer's tests import the module's official mock rather than hand-rolling a test double (see [mocks](mocks.md)); a family's mock concrete is reached through the family's factory (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
 
 ## Barrels are the only place to re-export
 

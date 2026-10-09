@@ -6,6 +6,8 @@ It declares the signature — deps, params, payload, and the `Success | Error` r
 
 **This element sets the checklist every later element is measured against.** The interface's export surface is the enumeration the mock, guard, guard test, interface test, and provides all work from. So close with that surface reported: every symbol this interface exports, and its kind — object type, function type, union, enum or literal alias, or class. Downstream elements check their coverage against this list, and they cannot do it if it was never stated (`docs/agents/scope.md`, the coverage canary).
 
+A factory's interface carries its family's mock concrete under the `mocks` feature: the selection's mock member with its failure mode, and the mock concrete's variant in each error union of the family's trait (`docs/agents/dependency-injection.md`, `docs/agents/mocks.md`).
+
 A type this interface should own but cannot declare from the node and the files alone is a discovery, not a guess: report it and halt (`docs/agents/discovery-halt.md`). Do not type it inline, do not widen it to `unknown`, and do not mint a union at a use site (`docs/agents/types.md`).
 
 Conforms to: `docs/agents/composition.md`, `docs/agents/types.md`, `docs/agents/errors-and-returns.md`, `docs/agents/dependency-injection.md`.

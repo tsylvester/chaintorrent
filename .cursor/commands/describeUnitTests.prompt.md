@@ -17,9 +17,9 @@ Work on the provided workplan only. You will read the first indicated node, read
 ## The procedure
 
 **Unit test.** It proves only the function its node writes:
-- Every collaborator is replaced by that family's official mock. A test needing other behavior uses its own production-typed function, or for a trait its own local struct, as `mocks.md` states.
+- Every collaborator is replaced by that family's official mock: the family's mock concrete, reached through its factory by configuration and never named. A test needing another outcome reaches it by input, or by a failure mode the selecting configuration names, as `mocks.md` states.
 - It never drives outside functions through test-local probe consumers or stubs.
-- Act is the single call to the function under test, and no other function of the module runs in the block.
+- Act is the single call to the function under test, and no other function of the module runs in the block. Where the family's factory hands the subject its concrete, the single call is that factory call (`unitTest.md`).
 - One behavior per test.
 - It never proves an integration entry of the spec. A block that runs more than the subject is not a unit test; integration entries belong to the integration test elements (`docs/agents/integrationTest.md`).
 - Fixtures come only from builders and invalidators.

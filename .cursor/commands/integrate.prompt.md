@@ -10,7 +10,7 @@ A failure diagnosis reaching this scope needs its root cause confirmed before yo
 
 Given neither — no node, no remedy — halt and say so (`docs/agents/discovery-halt.md`). Do not infer the assignment from whatever file happens to be open (`docs/agents/precedence.md`).
 
-Both paths: exercise the real implementations of the functions being integrated; mock only at the outer boundary of the integrated scope, never the functions under integration. Fixtures come from the mock file's builders. Every block carries the full four-field contract header and the inline markers, plus this scope's `Boundary` and `Mocked` fields — `Mocked` naming what this test therefore does not prove. In Rust, close with the enumeration: every entry the element lists and the block that proves it (`docs/agents/scope.md`, the coverage canary).
+Both paths: exercise the real implementations of the functions being integrated; mock only at the outer boundary of the integrated scope, never the functions under integration. Fixtures come from the mock file's builders. Every block carries the full four-field contract header and the inline markers, plus this scope's `Boundary` and `Mocked` fields — `Mocked` naming what this test therefore does not prove. In a family's factory module, every contract entry of the family's trait runs over the declared set and the mock concrete (`docs/agents/integrationTest.md`). In Rust, close with the enumeration: every entry the element lists and the block that proves it (`docs/agents/scope.md`, the coverage canary).
 
 Conforms to: `docs/agents/tests.md#integration`, `docs/agents/tests.md#integration-private`, `docs/agents/tests.md#integration-public`, `docs/agents/tests.md#applying-a-remedy`.
 
