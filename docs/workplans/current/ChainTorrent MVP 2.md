@@ -980,18 +980,18 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Module wiring only: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, and `pub mod provides;`, nothing else
 
   * `[✅]`   `adapters/kdf/src/factory/provides.rs`
-    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
+    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and `#[cfg(any(test, feature = "mocks"))] pub use crate::blake3_keyed::provides::expected_derived_key;`, the oracle the `blake3_keyed` concrete authors, so the crate's public mock surface carries the oracle and no other item of the concrete, nothing else
 
   * `[ ]`   `adapters/kdf/src/blake3_keyed/mock.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `Blake3KeyedKdf` and `Blake3KeyedKdfConstructorParams` from `super::interface`, `DerivationPurpose`, `reference_key_material`, and `reference_context` from `crate::factory::provides`, `blake3::Hasher`, and `serde_json::Value` and `serde_json::Map`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `Blake3KeyedKdf` and `Blake3KeyedKdfConstructorParams` from `super::interface`, `DerivationPurpose` and `reference_key_material` from `crate::factory::provides`, `blake3::Hasher`, and `serde_json::Value` and `serde_json::Map`; `expected_derived_key` and the imports only it uses, `DerivationPurpose`, `reference_key_material`, and `blake3::Hasher`, are available under `#[cfg(any(test, feature = "mocks"))]`, and every other item and import in this file is under `#[cfg(test)]`
     * `[ ]`   `Blake3KeyedKdfConstructorParamsOverrides`, `#[derive(Default)]`, fieldless, since the params declare no field; `build_blake3_keyed_kdf_constructor_params(overrides: Blake3KeyedKdfConstructorParamsOverrides) -> Blake3KeyedKdfConstructorParams`
     * `[ ]`   `Blake3KeyedKdfConstructorParamsCorruptions`, `#[derive(Default)]`, fieldless; `invalidate_blake3_keyed_kdf_constructor_params(corruptions: Blake3KeyedKdfConstructorParamsCorruptions) -> serde_json::Value`, returning the empty JSON object, the representation of an object type that declares no field
     * `[ ]`   `build_blake3_keyed_kdf(overrides: Blake3KeyedKdfConstructorParamsOverrides) -> Blake3KeyedKdf`, returning the real instance from `Blake3KeyedKdf::try_new(build_blake3_keyed_kdf_constructor_params(overrides))` through the irrefutable pattern `let Ok(adapter) = …;`
-    * `[ ]`   `expected_derived_key(purpose: DerivationPurpose, length: usize) -> Vec<u8>`, the oracle the unit tests assert against, computed independently of `derive_key`: the context string comes from an exhaustive `match` on the purpose over text literals written in this file, never the production constants, `WrappingKey` to `"ChainTorrent v1 wrapping-key"`, `PublisherRoot` to `"ChainTorrent v1 publisher-root"`, `AssetRoot` to `"ChainTorrent v1 asset-root"`, `MasterScalar` to `"ChainTorrent v1 master-scalar"`, `IdentityBases` to `"ChainTorrent v1 identity-bases"`, `CapsuleRandomness` to `"ChainTorrent v1 capsule-randomness"`, `PieceGroupKey` to `"ChainTorrent v1 piece-group-key"`, and `PlaintextRootKey` to `"ChainTorrent v1 plaintext-root"`; the input is one buffer concatenating the length of `reference_key_material().expose()` as 8 big-endian bytes through `u64::try_from` and `u64::to_be_bytes`, then those key material bytes, then `reference_context()`; the output is `Hasher::new_derive_key` over the context string, one `update` over the whole buffer, `finalize_xof`, and `fill` over a zero-initialized buffer of `length` bytes
+    * `[ ]`   `expected_derived_key(purpose: DerivationPurpose, context: &[u8], length: usize) -> Vec<u8>`, a `pub` function available under `#[cfg(any(test, feature = "mocks"))]`, the oracle the unit tests of this concrete and the tests of the factory assert against, computed independently of `derive_key`: the context string comes from an exhaustive `match` on the purpose over text literals written in this file, never the production constants, `WrappingKey` to `"ChainTorrent v1 wrapping-key"`, `PublisherRoot` to `"ChainTorrent v1 publisher-root"`, `AssetRoot` to `"ChainTorrent v1 asset-root"`, `MasterScalar` to `"ChainTorrent v1 master-scalar"`, `IdentityBases` to `"ChainTorrent v1 identity-bases"`, `CapsuleRandomness` to `"ChainTorrent v1 capsule-randomness"`, `PieceGroupKey` to `"ChainTorrent v1 piece-group-key"`, and `PlaintextRootKey` to `"ChainTorrent v1 plaintext-root"`; the input is one buffer concatenating the length of `reference_key_material().expose()` as 8 big-endian bytes through `u64::try_from` and `u64::to_be_bytes`, then those key material bytes, then `context`; the output is `Hasher::new_derive_key` over the context string, one `update` over the whole buffer, `finalize_xof`, and `fill` over a zero-initialized buffer of `length` bytes
     * `[ ]`   The context string constants, `Blake3KeyedKdfTryNewReturn`, and `Blake3KeyedKdfDeriveKeyErrorReturn` are used by their production value or type with no mock; `Blake3KeyedKdf` takes no overrides, invalidator, or mock function, and the trait it implements is answered by the family's mock concrete
 
   * `[ ]`   `adapters/kdf/src/blake3_keyed/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `Blake3KeyedKdf`, `build_blake3_keyed_kdf`, `build_blake3_keyed_kdf_constructor_params`, and `expected_derived_key` from `super::provides`, and `IKeyDerivationAdapter`, `DerivationPurpose`, `KdfIdentifier`, `KDF_INTERFACE_VERSION`, `REFERENCE_LENGTH`, `REFERENCE_PREFIX_LENGTH`, `DeriveKeyParamsOverrides`, `build_derive_key_params`, and `build_derive_key_payload` from `crate::factory::provides`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `Blake3KeyedKdf`, `build_blake3_keyed_kdf`, `build_blake3_keyed_kdf_constructor_params`, and `expected_derived_key` from `super::provides`, and `IKeyDerivationAdapter`, `DerivationPurpose`, `KdfIdentifier`, `KDF_INTERFACE_VERSION`, `REFERENCE_LENGTH`, `REFERENCE_PREFIX_LENGTH`, `reference_context`, `DeriveKeyParamsOverrides`, `build_derive_key_params`, and `build_derive_key_payload` from `crate::factory::provides`
     * `[ ]`   `try_new_returns_the_adapter`
       * `[ ]`   Contract: any params → `Ok(Blake3KeyedKdf)`
       * `[ ]`   Collaborators: none; the fixture is `build_blake3_keyed_kdf_constructor_params`
@@ -1009,13 +1009,13 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[ ]`   Collaborators: `blake3::Hasher` and `blake3::OutputReader`, imported vendor types with no mock, run for real; `expected_derived_key` is the independent oracle the expectation comes from; the reference key material and context come from `build_derive_key_payload`
       * `[ ]`   Arrange: `build_blake3_keyed_kdf` with no override; `build_derive_key_params` with the purpose override set to the variant under test, so the expected key differs per block; `build_derive_key_payload` with no override
       * `[ ]`   Act: `adapter.derive_key(params, payload)`
-      * `[ ]`   Assert: the success arm is bound through `expect`; the key's `expose()` equals `expected_derived_key(variant under test, REFERENCE_LENGTH)`
+      * `[ ]`   Assert: the success arm is bound through `expect`; the key's `expose()` equals `expected_derived_key(variant under test, reference_context(), REFERENCE_LENGTH)`
     * `[ ]`   `derive_key_of_the_prefix_length_is_the_prefix_of_the_reference_length_output`
       * `[ ]`   Contract: the length converts, a requested length shorter than the reference length → `Ok` with a key that is the leading bytes of the longer output
       * `[ ]`   Collaborators: `blake3::Hasher` and `blake3::OutputReader`, run for real; `expected_derived_key` is the independent oracle
       * `[ ]`   Arrange: `build_blake3_keyed_kdf` with no override; `build_derive_key_params` with the purpose override `DerivationPurpose::WrappingKey` and the length override `REFERENCE_PREFIX_LENGTH`, so the requested length differs from the reference length; `build_derive_key_payload` with no override
       * `[ ]`   Act: `adapter.derive_key(params, payload)`
-      * `[ ]`   Assert: the success arm is bound through `expect`; the key's `expose()` equals the first `REFERENCE_PREFIX_LENGTH` bytes of `expected_derived_key(DerivationPurpose::WrappingKey, REFERENCE_LENGTH)`
+      * `[ ]`   Assert: the success arm is bound through `expect`; the key's `expose()` equals the first `REFERENCE_PREFIX_LENGTH` bytes of `expected_derived_key(DerivationPurpose::WrappingKey, reference_context(), REFERENCE_LENGTH)`
     * `[ ]`   `derive_key_of_zero_bytes_returns_an_empty_key`
       * `[ ]`   Contract: the length converts, `params.length` of zero → `Ok` with an empty key
       * `[ ]`   Collaborators: `blake3::Hasher` and `blake3::OutputReader`, run for real; the expectation is the empty byte sequence, stated in the assertion
@@ -1028,14 +1028,14 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[ ]`   The adapter is a unit struct constructed by `try_new` over fieldless params; `build_blake3_keyed_kdf` in `blake3_keyed/mock.rs` builds it as a real instance for the concrete's own unit tests, and no consumer names the concrete
 
   * `[ ]`   `adapters/kdf/src/blake3_keyed/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(test)] mod mock;`, `pub(crate) mod provides;`, `#[cfg(test)] mod test;`, and `#[cfg(test)] mod integration_test;`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, `#[cfg(test)] mod test;`, and `#[cfg(test)] mod integration_test;`
     * `[✅]`   `impl Blake3KeyedKdf` with `pub const DECLARATION: KdfDeclaration` as the interaction spec states and `pub fn try_new(_params: Blake3KeyedKdfConstructorParams) -> Blake3KeyedKdfTryNewReturn` returning `Ok(Blake3KeyedKdf)`
     * `[✅]`   `impl IKeyDerivationAdapter for Blake3KeyedKdf` with `declaration()` returning `Self::DECLARATION` and `derive_key` realizing the purpose mapping, branches, and ordering of the interaction spec; the buffer is `vec![0u8; params.length]`, and it is moved into the `Secret` by `let Ok(key) = Secret::try_new(SecretConstructorParams { value: buffer });`
     * `[✅]`   Imports the family's names from `crate::factory::provides`, `Secret` and `SecretConstructorParams` from `domain`, `zeroize::Zeroize`, `blake3::Hasher`, and this module's names from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[ ]`   `adapters/kdf/src/blake3_keyed/integration_test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_keyed_kdf` and `expected_derived_key` from `super::provides`, `IKeyDerivationAdapter`, `DerivationPurpose`, `REFERENCE_LENGTH`, `reference_key_material_bytes`, `DeriveKeyParamsOverrides`, `DeriveKeyPayloadOverrides`, `build_derive_key_params`, and `build_derive_key_payload` from `crate::factory::provides`, and `build_secret` and `SecretConstructorParamsOverrides` from `domain`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_keyed_kdf` and `expected_derived_key` from `super::provides`, `IKeyDerivationAdapter`, `DerivationPurpose`, `REFERENCE_LENGTH`, `reference_context`, `reference_key_material_bytes`, `DeriveKeyParamsOverrides`, `DeriveKeyPayloadOverrides`, `build_derive_key_params`, and `build_derive_key_payload` from `crate::factory::provides`, and `build_secret` and `SecretConstructorParamsOverrides` from `domain`
     * `[ ]`   `derive_key_leaves_the_borrowed_key_material_intact`
       * `[ ]`   Contract: `derive_key` is called with a living `Secret<Vec<u8>>` borrowed in the payload → after the call the secret's `expose()` equals the bytes it held before the call
       * `[ ]`   Arrange: `build_secret` with the value override `reference_key_material_bytes()`, whose bytes are not all zero, so a zeroized secret differs from an intact one; `build_blake3_keyed_kdf` with no override; `build_derive_key_params` with the purpose override `DerivationPurpose::WrappingKey`; `build_derive_key_payload` with the key material override set to a borrow of that secret
@@ -1047,12 +1047,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[ ]`   Contract: `derive_key` returns `Ok` and the key material's secret is then dropped, its drop zeroizing its value → the returned key's `expose()` still equals the derived bytes
       * `[ ]`   Arrange: `build_secret` with the value override `reference_key_material_bytes()`, so the dropped secret holds non-zero bytes that its drop overwrites; `build_blake3_keyed_kdf` with no override; `build_derive_key_params` with the purpose override `DerivationPurpose::WrappingKey`; `build_derive_key_payload` with the key material override set to a borrow of that secret
       * `[ ]`   Act: `adapter.derive_key(params, payload)`
-      * `[ ]`   Assert: the success arm is bound through `expect`; after `drop` of the key material's secret, the returned key's `expose()` equals `expected_derived_key(DerivationPurpose::WrappingKey, REFERENCE_LENGTH)`
+      * `[ ]`   Assert: the success arm is bound through `expect`; after `drop` of the key material's secret, the returned key's `expose()` equals `expected_derived_key(DerivationPurpose::WrappingKey, reference_context(), REFERENCE_LENGTH)`
       * `[ ]`   Boundary: the crate-internal path `Blake3KeyedKdf::derive_key` through `build_blake3_keyed_kdf` and `Blake3KeyedKdf::try_new`, running `blake3::Hasher`, `blake3::OutputReader`, `Zeroize::zeroize`, and `Secret::try_new`, with the key material's `Secret` drop running for real
       * `[ ]`   Mocked: nothing; `blake3`, `zeroize`, and `domain` run for real
 
   * `[ ]`   `adapters/kdf/src/blake3_keyed/provides.rs`
-    * `[ ]`   `pub(crate) use super::interface::*;` and `#[cfg(test)] pub(crate) use super::mock::*;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate, and its unit test reaches its mock through this file
+    * `[ ]`   `pub(crate) use super::interface::*;`, `#[cfg(test)] pub(crate) use super::mock::*;`, and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::expected_derived_key;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate, its unit test reaches its mock through this file, and the oracle is the one item the factory's `provides` can re-export
 
   * `[✅]`   `directionality`
     * `[✅]`   `blake3_keyed` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `zeroize`, and on `blake3`; the `factory` module depends on `domain` and on `blake3_keyed`'s error through `crate::blake3_keyed::provides`, the family form's recorded cycle, which `kdf/factory` completes by constructing the concrete; among repository crates the crate depends on `crates/domain` alone; nothing depends on the crate yet
@@ -1073,8 +1073,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Functional: given the concrete the configuration names and the KDF identifier required, the factory refuses a concrete whose declared identifier is not the required one, with no construction
     * `[✅]`   Functional: an admitted concrete is constructed and returned as `Box<dyn IKeyDerivationAdapter>` that reports its declaration
     * `[✅]`   Functional: a concrete's constructor error is returned unchanged in the factory's error arm, one variant per concrete
-    * `[✅]`   Functional: the concrete the factory returns derives the wrapping key over the reference context encoded through the encoding factory, matching the independent vector
-    * `[✅]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, and its branch here; adding an identifier is its variant in `KdfIdentifier`; no consumer changes
+    * `[✅]`   Functional: the concrete the factory returns derives the wrapping key over the reference context encoded through the encoding factory, matching the independent oracle `expected_derived_key`
+    * `[✅]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, its branch here, and its entry in the declared set; adding an identifier is its variant in `KdfIdentifier`; no consumer changes
 
   * `[✅]`   `role`
     * `[✅]`   Adapter family factory: the implementation of the `factory` module, the key-derivation family's construction point, and the crate's public surface
@@ -1085,60 +1085,155 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Carries the family's integration test across factory, concrete, and the encoding family that produces the context; does not carry a commit
 
   * `[✅]`   `module`
-    * `[✅]`   Bounded context: the `factory` module of `adapters/kdf`, holding the factory function, its deps, params, payload, and return types, its signature type, the selection enum, the function mock and builders, and the crate's integration test under `adapters/kdf/tests`
+    * `[✅]`   Bounded context: the `factory` module of `adapters/kdf`, holding the factory function, its deps, params, payload, and return types, its signature type, the selection enum and the declared set, the function mock and builders, the module's private integration test, and the crate's public integration test under `adapters/kdf/tests`
     * `[✅]`   Outside: the concrete's behavior, the encoding of any context, the hash-card, the configuration catalogue, and every consumer of the family
 
   * `[✅]`   `deps`
     * `[✅]`   The `blake3_keyed` concrete, through `crate::blake3_keyed::provides`: `Blake3KeyedKdf`, `Blake3KeyedKdfConstructorParams`, `Blake3KeyedKdf::try_new`, and `Blake3KeyedKdf::DECLARATION`; the factory constructs its concrete, completing the family form's recorded cycle that `kdf/blake3_keyed` opened
     * `[✅]`   The `factory` module's own interface: `IKeyDerivationAdapter`, `KdfIdentifier`, `KdfDeclaration`, and `KDF_INTERFACE_VERSION`
-    * `[✅]`   `encoding`, `adapters/encoding`, adapter ring, dev-dependency with its `mocks` feature, in the integration test only; supplies `create_encoding` and the names that encode the reference derivation context through the encoding family, the edge the dependency map draws from `encoding/factory` to this family; nothing at runtime, and the encoding crate names nothing in this crate
-    * `[✅]`   `domain` with its `mocks` feature and `hex`, the existing dev-dependencies, in the integration test only: the builders that make the reference context and the reference secret, and `hex::decode` for the vector
+    * `[✅]`   The `factory` module's own mock through `provides` under the `mocks` feature, in `factory/test.rs`, `factory/integration_test.rs`, and `tests/factory_integration_test.rs` only: the builders and overrides of this module, the builders of the family's interface, `reference_key_material_bytes`, `REFERENCE_LENGTH`, `REFERENCE_PREFIX_LENGTH`, `MockIKeyDerivationAdapterDeriveKeyErrorReturn`, the declared set `DECLARED_KDF_SELECTIONS`, and the oracle `expected_derived_key` that `kdf/blake3_keyed` authors and the factory's mock surface re-exports, taking the purpose, the context bytes, and the length over the reference key material; the tests reach the family only through `create_key_derivation` and name no concrete
+    * `[✅]`   `domain` with its `mocks` feature, the existing dev-dependency, in `factory/integration_test.rs` and `tests/factory_integration_test.rs` only: `build_secret` with `SecretConstructorParamsOverrides`, and in the public integration test the builders that make the reference derivation context
     * `[✅]`   `core::convert::Infallible`, standard library, the concrete's constructor error carried in the factory's error arm
 
   * `[ ]`   `context_slice`
     * `[✅]`   From the concrete: `Blake3KeyedKdf::try_new(Blake3KeyedKdfConstructorParams) -> Result<Blake3KeyedKdf, Infallible>`, the inherent constant `Blake3KeyedKdf::DECLARATION: KdfDeclaration`, and `Blake3KeyedKdf`'s implementation of `IKeyDerivationAdapter`
-    * `[ ]`   From `encoding`, in the integration test: `create_encoding<C: IEncodingConsumer>(&CreateEncodingDeps<C>, CreateEncodingParams, CreateEncodingPayload)`, `build_create_encoding_params` with `CreateEncodingParamsOverrides`, `EncodingConcrete::Abi`, `EncodingIdentifier::EthereumAbiV1`, `IEncodingConsumer`, `IEncoderAdapter::encode<D: IEncodingContract>(&self, EncodeParams { description }, &D::Described) -> EncodeReturn`, `ConsumeEncodingParams`, `ConsumeEncodingPayload`, and the unit value `DerivationContextDescription`
+    * `[ ]`   From the family's interface and this module's mock, in the tests: `IKeyDerivationAdapter::declaration(&self) -> KdfDeclaration` and `IKeyDerivationAdapter::derive_key(&self, DeriveKeyParams, DeriveKeyPayload<'_>) -> DeriveKeyReturn`, `build_derive_key_params` with `DeriveKeyParamsOverrides`, `build_derive_key_payload` with `DeriveKeyPayloadOverrides`, and `expected_derived_key`
 
   * `[✅]`   `adapters/kdf/Cargo.toml`
-    * `[✅]`   `[dev-dependencies]` reads `domain = { path = "../../crates/domain", features = ["mocks"] }`, `encoding = { path = "../encoding", features = ["mocks"] }`, and `hex = "0.4.3"`
+    * `[✅]`   `[dev-dependencies]` reads `domain = { path = "../../crates/domain", features = ["mocks"] }`, `serde_json = "1.0.151"`, and `encoding = { path = "../encoding", features = ["mocks"] }`
     * `[✅]`   `[package]`, `[dependencies]`, `[features]`, and `[lints]` are unchanged; no other table
 
   * `[✅]`   `adapters/kdf/src/factory/interface.rs`
-    * `[✅]`   `KdfIdentifier` gains `#[derive(PartialEq, Eq)]`, so the admission compares a declared identifier with the required one
-    * `[✅]`   `KdfConcrete`, an enum with the one variant `Blake3Keyed`, the selection of the concrete to construct
+    * `[✅]`   `KdfIdentifier` gains `#[derive(Clone, Copy, PartialEq, Eq)]`, so the admission compares a declared identifier with the required one and a declared selection is read by value
+    * `[✅]`   `MockIKeyDerivationAdapterFailureMode` gains `#[derive(Clone, Copy)]`, so the selection that carries it is read by value
+    * `[✅]`   `KdfConcrete`, an enum with `#[derive(Clone, Copy)]`, the variant `Blake3Keyed`, and, behind `#[cfg(any(test, feature = "mocks"))]`, the variant `Mock(MockIKeyDerivationAdapterFailureMode)`, the selection of the family's mock concrete carrying the failure mode the configuration names
     * `[✅]`   `CreateKeyDerivationDeps`, the fieldless struct `pub struct CreateKeyDerivationDeps;`
-    * `[✅]`   `CreateKeyDerivationParams`, a struct with `pub concrete: KdfConcrete` and `pub identifier: KdfIdentifier`, the selection and the identifier the concrete must declare
+    * `[✅]`   `CreateKeyDerivationParams`, a struct with `#[derive(Clone, Copy)]`, `pub concrete: KdfConcrete` and `pub identifier: KdfIdentifier`, the selection and the identifier the concrete must declare
     * `[✅]`   `CreateKeyDerivationPayload`, the fieldless struct `pub struct CreateKeyDerivationPayload;`, since the factory operates on no data
     * `[✅]`   `CreateKeyDerivationSuccessReturn`, a struct with only `pub adapter: Box<dyn IKeyDerivationAdapter>`; callers read the declaration through `adapter.declaration()`
-    * `[✅]`   `CreateKeyDerivationErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]`, which `Infallible` satisfies, and the variants `UnsupportedKdfIdentifier`, the named concrete not declaring the required identifier, and `Blake3Keyed(Infallible)`, the BLAKE3 concrete's constructor error carried unchanged; each further concrete's constructor error is its own variant
+    * `[✅]`   `CreateKeyDerivationErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]`, which `Infallible` satisfies, and the variants `UnsupportedKdfIdentifier`, the named concrete not declaring the required identifier, and `Blake3Keyed(Infallible)`, the BLAKE3 concrete's constructor error carried unchanged, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(Infallible)`, the mock concrete's constructor error carried unchanged; each further concrete's constructor error is its own variant
     * `[✅]`   `CreateKeyDerivationReturn`, the alias `Result<CreateKeyDerivationSuccessReturn, CreateKeyDerivationErrorReturn>`
     * `[✅]`   `CreateKeyDerivationFn`, the alias `fn(&CreateKeyDerivationDeps, CreateKeyDerivationParams, CreateKeyDerivationPayload) -> CreateKeyDerivationReturn`
-    * `[✅]`   Adds the import of `core::convert::Infallible`; every item `kdf/blake3_keyed` authored in this file is unchanged except the derive on `KdfIdentifier`
+    * `[✅]`   `DECLARED_KDF_SELECTIONS`, a `pub const` slice of `CreateKeyDerivationParams` holding, for each real concrete, its selection and the identifier it declares, here `CreateKeyDerivationParams { concrete: KdfConcrete::Blake3Keyed, identifier: KdfIdentifier::Blake3KeyedV1 }`, the declared set, which never holds the mock selection
+    * `[✅]`   Adds the import of `core::convert::Infallible`; every item `kdf/blake3_keyed` authored in this file is unchanged except the derives on `KdfIdentifier` and `MockIKeyDerivationAdapterFailureMode`
 
   * `[✅]`   `adapters/kdf/src/factory/interaction.spec.md`
     * `[✅]`   `create_key_derivation(deps: &CreateKeyDerivationDeps, params: CreateKeyDerivationParams, payload: CreateKeyDerivationPayload) -> CreateKeyDerivationReturn`: decision a `match` on `params.concrete`, one arm per `KdfConcrete` variant, exhaustive so a variant with no arm fails to compile
-    * `[✅]`   Unsupported identifier: condition the named concrete's `DECLARATION.identifier` is not `params.identifier`; decision equality, read before any construction; dependency call none; outcome `Err(CreateKeyDerivationErrorReturn::UnsupportedKdfIdentifier)`, with nothing constructed; `KdfIdentifier` has the one variant the BLAKE3 concrete declares, so no input takes this branch until a further identifier exists, and it has no unit test
+    * `[✅]`   Unsupported identifier: condition the named concrete's `DECLARATION.identifier` is not `params.identifier`; decision equality, read before any construction; dependency call none; outcome `Err(CreateKeyDerivationErrorReturn::UnsupportedKdfIdentifier)`, with nothing constructed; under the `mocks` feature the mock concrete declares `KdfIdentifier::MockV1`, so a `Mock` selection paired with another concrete's identifier takes this branch
     * `[✅]`   Admitted: condition the named concrete's declared identifier is `params.identifier`; dependency call the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited; outcome `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(kdf) })`, whose adapter reports the concrete's `DECLARATION`
-    * `[✅]`   `CreateKeyDerivationErrorReturn::Blake3Keyed` carries the constructor's uninhabited error type in the return union, so no branch produces it
+    * `[ ]`   `Mock` arm, under `#[cfg(any(test, feature = "mocks"))]`: the same admission over `MockIKeyDerivationAdapter::DECLARATION.identifier`; dependency call the mock concrete's `try_new` with `MockIKeyDerivationAdapterConstructorParams { failure_mode }`, the failure mode the selection carries, exactly once, its success destructured irrefutably because its error arm is uninhabited; outcome `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(mock) })`, whose adapter reports `KdfIdentifier::MockV1` and derives under the failure mode
+    * `[✅]`   `CreateKeyDerivationErrorReturn::Blake3Keyed` and `CreateKeyDerivationErrorReturn::Mock` carry the constructors' uninhabited error type in the return union, so no branch produces them
     * `[✅]`   `params.concrete` selects and `params.identifier` admits; `deps` and `payload` carry nothing and are not read
+    * `[ ]`   Callee disposition, `kdf/blake3_keyed` entry `derive_key_leaves_the_borrowed_key_material_intact`: absorbed, proven by `every_concrete_leaves_the_borrowed_key_material_intact` in the private integration test element `factory/integration_test.rs`, which runs the entry through `create_key_derivation` over the declared set and the mock selection
+    * `[ ]`   Callee disposition, `kdf/blake3_keyed` entry `derive_key_returns_a_key_that_outlives_the_key_material`: absorbed, proven by `every_concrete_returns_a_key_that_outlives_the_key_material` in the private integration test element `factory/integration_test.rs`, which runs the entry through `create_key_derivation` over the declared set and the mock selection
+    * `[ ]`   Own entry `every_concrete_is_constructed_under_the_identifier_it_declares`: condition `create_key_derivation` is called with the selection of a concrete and the identifier that concrete declares; outcome `Ok(CreateKeyDerivationSuccessReturn { adapter })` with `adapter.declaration()` reporting the identifier required and the interface version `KDF_INTERFACE_VERSION`; variation each case of the declared set and the mock selection, whose declared identifiers differ, so a factory that constructs a concrete other than the selected one reports another identifier; edge that must survive the composition: every concrete the factory admits declares the interface version the family's consumers are written against
+    * `[ ]`   Own entry `every_concrete_is_refused_under_an_identifier_it_does_not_declare`: condition `create_key_derivation` is called with the selection of a concrete and an identifier that concrete does not declare; outcome `Err(CreateKeyDerivationErrorReturn::UnsupportedKdfIdentifier)`; variation each case paired with the declared identifier of every other case whose declared identifier differs from its own, so an admission that compares against a constant or ignores the selection admits a pairing it must refuse; edge that must survive the composition: the refusal is decided by the selected concrete's own declaration
+    * `[ ]`   Own entry `every_concrete_derives_a_key_of_the_requested_length`: condition the adapter `create_key_derivation` returns derives with a `params.length`; outcome `Ok(DeriveKeySuccessReturn { key })` with the key's byte length equal to `params.length`; variation each case of the declared set and the mock selection over `REFERENCE_LENGTH`, `REFERENCE_PREFIX_LENGTH`, and zero, so a concrete that returns the reference length whatever is requested, or a non-empty key for zero, fails; edge that must survive the composition: a `params.length` of zero returns an empty key and no refusal
+    * `[ ]`   Own entry `every_concrete_returns_its_own_error_when_the_key_material_length_cannot_be_framed`: condition the adapter `create_key_derivation` returns for the mock selection under the failure mode `KeyMaterialLengthUnrepresentable` derives; outcome `Err(DeriveKeyErrorReturn::Mock(MockIKeyDerivationAdapterDeriveKeyErrorReturn::KeyMaterialLengthUnrepresentable { length }))` with `length` the key material's length; variation the mock selection under that failure mode, the case that reaches this arm, since a `usize` fits the 8-byte prefix on every supported target and no input takes it for a real concrete; edge that must survive the composition: the failure mode the configuration names is the failure mode of the concrete the factory constructs, and the concrete's own error variant arrives whole in the family's error union
+    * `[ ]`   Own entry `every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_reference_inputs`: condition `create_key_derivation` is called with the selection of a concrete that declares `KdfIdentifier::Blake3KeyedV1` and that identifier, and the adapter derives with `DerivationPurpose::WrappingKey` and `REFERENCE_LENGTH` over the reference key material and the reference context; outcome the key equals `expected_derived_key` over the wrapping-key purpose, the reference context, and `REFERENCE_LENGTH`; variation each case of the declared set that declares the identifier; edge that must survive the composition: the concrete the factory constructs derives, through the family's trait object, the key the independent oracle states
+    * `[ ]`   Own entry `every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes`: condition `create_key_derivation` is called with the selection of a concrete that declares `KdfIdentifier::Blake3KeyedV1` and that identifier, and the adapter derives with `DerivationPurpose::WrappingKey` and `REFERENCE_LENGTH` over the reference key material and the bytes `create_encoding` returns for a derivation context; outcome the key equals `expected_derived_key` over the wrapping-key purpose, those bytes, and `REFERENCE_LENGTH`; variation each case of the declared set that declares the identifier over each case of `DECLARED_ENCODING_SELECTIONS`, whose encoded bytes differ in length and content from the reference context, so a derivation that frames the context by the reference context's shape fails; edge that must survive the composition: the bytes the encoding family produces are consumed by the derivation as returned
+    * `[ ]`   Private surface: the chain of real functions `create_key_derivation`, the selected concrete's `try_new`, and `declaration` and `derive_key` as called on the returned adapter, with `Secret::expose` and the `Secret` drop of `domain` running for real; the cases are the declared set and the mock selection; no outer-edge collaborator is mocked, `blake3`, `zeroize`, and `domain` running as themselves; the observable result is the `Result` `create_key_derivation` returns, the declaration, the key's bytes, and the key material's bytes before and after the call; the entries proven are `every_concrete_is_constructed_under_the_identifier_it_declares`, `every_concrete_is_refused_under_an_identifier_it_does_not_declare`, `every_concrete_derives_a_key_of_the_requested_length`, `every_concrete_returns_its_own_error_when_the_key_material_length_cannot_be_framed`, and the absorbed entries
+    * `[ ]`   Public surface: an outside caller invokes `create_key_derivation` with `CreateKeyDerivationDeps`, a `CreateKeyDerivationParams` taken from `DECLARED_KDF_SELECTIONS`, and a `CreateKeyDerivationPayload`, calls `derive_key` on the returned adapter with `DeriveKeyParams` and `DeriveKeyPayload`, and obtains the context bytes from `create_encoding` over the official consumer mock, and observes the key's bytes; the entries proven are `every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_reference_inputs` and `every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes`
 
   * `[✅]`   `adapters/kdf/src/factory/mock.rs`
+    * `[ ]`   Imports the added names from `super::interface`
+    * `[ ]`   `CreateKeyDerivationDepsOverrides`, `#[derive(Default)]`, fieldless, since the deps declare no field; `build_create_key_derivation_deps(overrides: CreateKeyDerivationDepsOverrides) -> CreateKeyDerivationDeps`; `CreateKeyDerivationDepsCorruptions`, `#[derive(Default)]`, fieldless; `invalidate_create_key_derivation_deps(corruptions: CreateKeyDerivationDepsCorruptions) -> serde_json::Value`, returning the empty JSON object, the representation of an object type that declares no field
+    * `[ ]`   `CreateKeyDerivationPayloadOverrides`, `#[derive(Default)]`, fieldless; `build_create_key_derivation_payload(overrides: CreateKeyDerivationPayloadOverrides) -> CreateKeyDerivationPayload`; `CreateKeyDerivationPayloadCorruptions`, `#[derive(Default)]`, fieldless; `invalidate_create_key_derivation_payload(corruptions: CreateKeyDerivationPayloadCorruptions) -> serde_json::Value`, returning the empty JSON object
+    * `[ ]`   `CreateKeyDerivationParamsOverrides`, `#[derive(Default)]`, one `Option` per field of `CreateKeyDerivationParams`; `build_create_key_derivation_params(overrides: CreateKeyDerivationParamsOverrides) -> CreateKeyDerivationParams`, the omitted fields defaulting to `KdfConcrete::Mock(MockIKeyDerivationAdapterFailureMode::NoFailure)` and `KdfIdentifier::MockV1`, so the defaults select the mock concrete under the identifier it declares; `CreateKeyDerivationParamsCorruptions`, `#[derive(Default)]`, one `Option<serde_json::Value>` per field; `invalidate_create_key_derivation_params(corruptions: CreateKeyDerivationParamsCorruptions) -> serde_json::Value` over `build_create_key_derivation_params` with no override, an enum represented as its variant name text by an exhaustive `match` and the `Mock` variant of `KdfConcrete` as a JSON object keyed `Mock` holding the failure mode's variant name text
+    * `[ ]`   `CreateKeyDerivationSuccessReturnOverrides`, `#[derive(Default)]`, one `Option` per field of `CreateKeyDerivationSuccessReturn`; `build_create_key_derivation_success_return(overrides: CreateKeyDerivationSuccessReturnOverrides) -> CreateKeyDerivationSuccessReturn`, the default `adapter` the family's mock concrete, boxed, from its `try_new` under `MockIKeyDerivationAdapterFailureMode::NoFailure` through the irrefutable pattern `let Ok(adapter) = …;`; `CreateKeyDerivationSuccessReturnCorruptions`, `#[derive(Default)]`, one `Option<serde_json::Value>` per field; `invalidate_create_key_derivation_success_return(corruptions: CreateKeyDerivationSuccessReturnCorruptions) -> serde_json::Value` over `build_create_key_derivation_success_return` with no override, the `adapter` represented by `invalidate_kdf_declaration` over no corruption, since a trait object has no field representation
+    * `[ ]`   `mock_create_key_derivation`, a function of the production type `CreateKeyDerivationFn`, returning `Ok(build_create_key_derivation_success_return(Default::default()))`
+    * `[ ]`   `KdfConcrete` and `CreateKeyDerivationErrorReturn` are used by their production variants with no mock; `DECLARED_KDF_SELECTIONS` is used by its production value; `CreateKeyDerivationReturn` is an alias of `Result` and `CreateKeyDerivationFn` is a function type whose mock is `mock_create_key_derivation`; no failure mode is added, since `MockIKeyDerivationAdapterFailureMode` carries the arm no input reaches
 
   * `[ ]`   `adapters/kdf/src/factory/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `create_key_derivation`, `CreateKeyDerivationErrorReturn`, `CreateKeyDerivationParamsOverrides`, `IKeyDerivationAdapter`, `KdfIdentifier`, `build_create_key_derivation_deps`, `build_create_key_derivation_params`, and `build_create_key_derivation_payload` from `super::provides`
+    * `[ ]`   `create_key_derivation_returns_the_adapter_of_the_selected_concrete`
+      * `[ ]`   Contract: `create_key_derivation`, admitted: the named concrete's declared identifier is `params.identifier` → `Ok(CreateKeyDerivationSuccessReturn { adapter })` whose adapter reports the declaration of the concrete the selection names
+      * `[ ]`   Collaborators: the family's mock concrete, reached through `create_key_derivation` by `build_create_key_derivation_params` at its defaults, which select it under the identifier it declares; `build_create_key_derivation_deps` and `build_create_key_derivation_payload` at their defaults; no test names a concrete
+      * `[ ]`   Arrange: `build_create_key_derivation_deps`, `build_create_key_derivation_params`, and `build_create_key_derivation_payload`, each with no override; the selected concrete declares an identifier no other concrete declares, so a factory that constructs another concrete reports another identifier
+      * `[ ]`   Act: `create_key_derivation(&deps, params, payload)`
+      * `[ ]`   Assert: the success arm is bound through `expect`; `adapter.declaration().identifier` equals `KdfIdentifier::MockV1`, the identifier the family's mock concrete declares, by `assert!`, the expectation a literal and not read from the arrangement
+    * `[ ]`   `create_key_derivation_refuses_a_concrete_that_declares_another_identifier`
+      * `[ ]`   Contract: `create_key_derivation`, unsupported identifier: the named concrete's `DECLARATION.identifier` is not `params.identifier` → `Err(CreateKeyDerivationErrorReturn::UnsupportedKdfIdentifier)`
+      * `[ ]`   Collaborators: the family's mock concrete, reached through `create_key_derivation` by `build_create_key_derivation_params`; `build_create_key_derivation_deps` and `build_create_key_derivation_payload` at their defaults; no test names a concrete
+      * `[ ]`   Arrange: `build_create_key_derivation_deps` and `build_create_key_derivation_payload` with no override; `build_create_key_derivation_params` with the identifier override `KdfIdentifier::Blake3KeyedV1`, an identifier the mock concrete does not declare, so the declared identifier differs from the required one
+      * `[ ]`   Act: `create_key_derivation(&deps, params, payload)`
+      * `[ ]`   Assert: `result.err()` equals `Some(CreateKeyDerivationErrorReturn::UnsupportedKdfIdentifier)` by `assert_eq!`
 
   * `[✅]`   `construction`
     * `[✅]`   The composition root calls `create_key_derivation` with `&CreateKeyDerivationDeps`, `CreateKeyDerivationParams` holding the concrete the configuration names and the identifier the hash-card requires, and `CreateKeyDerivationPayload`, and places the returned `Box<dyn IKeyDerivationAdapter>` in each consumer's deps; no consumer constructs or names a concrete
 
   * `[✅]`   `adapters/kdf/src/factory/mod.rs`
-    * `[✅]`   Adds `#[cfg(test)] mod test;` to the wiring `kdf/blake3_keyed` authored
-    * `[✅]`   `pub fn create_key_derivation(_deps: &CreateKeyDerivationDeps, params: CreateKeyDerivationParams, _payload: CreateKeyDerivationPayload) -> CreateKeyDerivationReturn`, a `match` on `params.concrete` whose `KdfConcrete::Blake3Keyed` arm returns the refusal when `Blake3KeyedKdf::DECLARATION.identifier` is not `params.identifier`, then binds the concrete by `let Ok(kdf) = Blake3KeyedKdf::try_new(Blake3KeyedKdfConstructorParams);` and returns `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(kdf) })`
-    * `[✅]`   Imports `Blake3KeyedKdf` and `Blake3KeyedKdfConstructorParams` from `crate::blake3_keyed::provides`, and this module's types from `interface`
+    * `[✅]`   Adds `#[cfg(test)] mod integration_test;` and `#[cfg(test)] mod test;` to the wiring `kdf/blake3_keyed` authored
+    * `[✅]`   `pub fn create_key_derivation(_deps: &CreateKeyDerivationDeps, params: CreateKeyDerivationParams, _payload: CreateKeyDerivationPayload) -> CreateKeyDerivationReturn`, a `match` on `params.concrete` whose `KdfConcrete::Blake3Keyed` arm returns the refusal when `Blake3KeyedKdf::DECLARATION.identifier` is not `params.identifier`, then binds the concrete by `let Ok(kdf) = Blake3KeyedKdf::try_new(Blake3KeyedKdfConstructorParams);` and returns `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(kdf) })`, and, behind `#[cfg(any(test, feature = "mocks"))]`, whose `KdfConcrete::Mock(failure_mode)` arm returns the refusal when `MockIKeyDerivationAdapter::DECLARATION.identifier` is not `params.identifier`, then binds the concrete by `let Ok(mock) = MockIKeyDerivationAdapter::try_new(MockIKeyDerivationAdapterConstructorParams { failure_mode });` and returns `Ok(CreateKeyDerivationSuccessReturn { adapter: Box::new(mock) })`
+    * `[✅]`   Imports `Blake3KeyedKdf` and `Blake3KeyedKdfConstructorParams` from `crate::blake3_keyed::provides`, and this module's types from `interface`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `MockIKeyDerivationAdapter` and `MockIKeyDerivationAdapterConstructorParams` from `super::mock`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/kdf/src/factory/integration_test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `create_key_derivation`, `DECLARED_KDF_SELECTIONS`, `CreateKeyDerivationErrorReturn`, `CreateKeyDerivationParamsOverrides`, `KdfConcrete`, `IKeyDerivationAdapter`, `KDF_INTERFACE_VERSION`, `DeriveKeyErrorReturn`, `MockIKeyDerivationAdapterFailureMode`, `MockIKeyDerivationAdapterDeriveKeyErrorReturn`, `REFERENCE_LENGTH`, `REFERENCE_PREFIX_LENGTH`, `reference_key_material_bytes`, `DeriveKeyParamsOverrides`, `DeriveKeyPayloadOverrides`, `build_create_key_derivation_deps`, `build_create_key_derivation_params`, `build_create_key_derivation_payload`, `build_derive_key_params`, and `build_derive_key_payload` from `super::provides`, and `build_secret` and `SecretConstructorParamsOverrides` from `domain`
+    * `[ ]`   Cases: every block's body is written once and runs over each entry of `DECLARED_KDF_SELECTIONS` and over the mock selection, `build_create_key_derivation_params` at its defaults; no block names a concrete
+    * `[ ]`   `every_concrete_is_constructed_under_the_identifier_it_declares`
+      * `[ ]`   Contract: `create_key_derivation` is called with the selection of a concrete and the identifier that concrete declares → `Ok(CreateKeyDerivationSuccessReturn { adapter })` with `adapter.declaration()` reporting the identifier required and the interface version `KDF_INTERFACE_VERSION`
+      * `[ ]`   Arrange: for each case, `build_create_key_derivation_deps`, `build_create_key_derivation_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_key_derivation_payload`; the cases declare different identifiers, so a factory that constructs a concrete other than the selected one reports another identifier
+      * `[ ]`   Act: `create_key_derivation(&deps, params, payload)` for the case
+      * `[ ]`   Assert: the success arm is bound through `expect`; `adapter.declaration().identifier` equals the case's identifier by `assert!`, and `adapter.declaration().interface_version` equals `KDF_INTERFACE_VERSION` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_key_derivation` through the selected concrete's `try_new`, with the declaration read through the returned adapter
+      * `[ ]`   Mocked: nothing; the declared concretes and the mock concrete run as themselves, so this block does not prove a derivation
+    * `[ ]`   `every_concrete_is_refused_under_an_identifier_it_does_not_declare`
+      * `[ ]`   Contract: `create_key_derivation` is called with the selection of a concrete and an identifier that concrete does not declare → `Err(CreateKeyDerivationErrorReturn::UnsupportedKdfIdentifier)`
+      * `[ ]`   Arrange: for each pair of cases whose declared identifiers differ, `build_create_key_derivation_deps`, `build_create_key_derivation_params` overriding `concrete` with the first case's selection and `identifier` with the second case's identifier, and `build_create_key_derivation_payload`; every pairing carries an identifier the selected concrete does not declare, so an admission that compares against a constant or ignores the selection admits a pairing it must refuse
+      * `[ ]`   Act: `create_key_derivation(&deps, params, payload)` for the pairing
+      * `[ ]`   Assert: `result.err()` equals `Some(CreateKeyDerivationErrorReturn::UnsupportedKdfIdentifier)` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_key_derivation`, whose admission reads the selected concrete's declaration
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `every_concrete_derives_a_key_of_the_requested_length`
+      * `[ ]`   Contract: the adapter `create_key_derivation` returns derives with a `params.length` → `Ok(DeriveKeySuccessReturn { key })` with the key's byte length equal to `params.length`
+      * `[ ]`   Arrange: for each case, the adapter from `create_key_derivation` over `build_create_key_derivation_deps`, the case's params, and `build_create_key_derivation_payload`, bound through `expect`; for each length of `REFERENCE_LENGTH`, `REFERENCE_PREFIX_LENGTH`, and zero, `build_derive_key_params` with the length override and `build_derive_key_payload` with no override; the lengths differ, so a concrete that returns the reference length whatever is requested fails
+      * `[ ]`   Act: `adapter.derive_key(params, payload)` for the case and the length
+      * `[ ]`   Assert: the success arm is bound through `expect`; the key's `expose().len()` equals the length override by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_key_derivation` through the selected concrete's `try_new`, then the returned adapter's `derive_key`
+      * `[ ]`   Mocked: nothing; `blake3`, `zeroize`, and `domain` run for real
+    * `[ ]`   `every_concrete_returns_its_own_error_when_the_key_material_length_cannot_be_framed`
+      * `[ ]`   Contract: the adapter `create_key_derivation` returns for the mock selection under the failure mode `KeyMaterialLengthUnrepresentable` derives → `Err(DeriveKeyErrorReturn::Mock(MockIKeyDerivationAdapterDeriveKeyErrorReturn::KeyMaterialLengthUnrepresentable { length }))` with `length` the key material's length
+      * `[ ]`   Arrange: the case is the mock selection alone, which the declared set cannot reach; `build_create_key_derivation_params` with the `concrete` override `KdfConcrete::Mock(MockIKeyDerivationAdapterFailureMode::KeyMaterialLengthUnrepresentable)`; the adapter from `create_key_derivation` over `build_create_key_derivation_deps`, those params, and `build_create_key_derivation_payload`, bound through `expect`; `build_derive_key_params` and `build_derive_key_payload` with no override, whose key material is the reference key material
+      * `[ ]`   Act: `adapter.derive_key(params, payload)`
+      * `[ ]`   Assert: `result.err()` equals `Some(DeriveKeyErrorReturn::Mock(MockIKeyDerivationAdapterDeriveKeyErrorReturn::KeyMaterialLengthUnrepresentable { length }))` by `assert_eq!`, with `length` the length of `reference_key_material_bytes()`
+      * `[ ]`   Boundary: the crate-internal path `create_key_derivation` through the mock concrete's `try_new` with the configured failure mode, then the returned adapter's `derive_key`
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `every_concrete_leaves_the_borrowed_key_material_intact`
+      * `[ ]`   Contract: the absorbed entry `kdf/blake3_keyed` `derive_key_leaves_the_borrowed_key_material_intact`, in this node's terms: `derive_key` is called on the adapter `create_key_derivation` returns with a living `Secret<Vec<u8>>` borrowed in the payload → after the call the secret's `expose()` equals the bytes it held before the call
+      * `[ ]`   Arrange: `build_secret` with the value override `reference_key_material_bytes()`, whose bytes are not all zero, so a zeroized secret differs from an intact one; for each case, the adapter from `create_key_derivation` over `build_create_key_derivation_deps`, the case's params, and `build_create_key_derivation_payload`, bound through `expect`; `build_derive_key_params` with no override; `build_derive_key_payload` with the key material override set to a borrow of that secret
+      * `[ ]`   Act: `adapter.derive_key(params, payload)` for the case
+      * `[ ]`   Assert: the success arm is bound through `expect`; the secret's `expose()` equals `reference_key_material_bytes()` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_key_derivation` through the selected concrete's `try_new`, then the returned adapter's `derive_key`, with `Secret::expose` reading the key material
+      * `[ ]`   Mocked: nothing; `blake3`, `zeroize`, and `domain` run for real, so this block does not prove the zeroization of a vendor's hasher and reader themselves, which no caller can observe
+    * `[ ]`   `every_concrete_returns_a_key_that_outlives_the_key_material`
+      * `[ ]`   Contract: the absorbed entry `kdf/blake3_keyed` `derive_key_returns_a_key_that_outlives_the_key_material`, in this node's terms: `derive_key` returns `Ok` on the adapter `create_key_derivation` returns and the key material's secret is then dropped, its drop zeroizing its value → the returned key's `expose()` still equals the bytes it held before the drop
+      * `[ ]`   Arrange: `build_secret` with the value override `reference_key_material_bytes()`, so the dropped secret holds non-zero bytes that its drop overwrites; for each case, the adapter from `create_key_derivation` over `build_create_key_derivation_deps`, the case's params, and `build_create_key_derivation_payload`, bound through `expect`; `build_derive_key_params` with no override; `build_derive_key_payload` with the key material override set to a borrow of that secret
+      * `[ ]`   Act: `adapter.derive_key(params, payload)` for the case
+      * `[ ]`   Assert: the success arm is bound through `expect`; a copy of the key's `expose()` bytes is read before `drop` of the key material's secret, and the key's `expose()` after the drop equals that copy by `assert_eq!`, so a key that shares storage with the key material reads as zeros
+      * `[ ]`   Boundary: the crate-internal path `create_key_derivation` through the selected concrete's `try_new`, then the returned adapter's `derive_key`, with the key material's `Secret` drop running for real
+      * `[ ]`   Mocked: nothing; `blake3`, `zeroize`, and `domain` run for real
 
   * `[✅]`   `adapters/kdf/src/factory/provides.rs`
     * `[✅]`   Adds `pub use super::create_key_derivation;` to the re-exports `kdf/blake3_keyed` authored
 
-  * `[ ]`   `adapters/kdf/tests/integration_test.rs`
+  * `[ ]`   `adapters/kdf/tests/factory_integration_test.rs`
+    * `[ ]`   Imports from the crate's public surface under the `mocks` feature `create_key_derivation`, `DECLARED_KDF_SELECTIONS`, `KdfIdentifier`, `IKeyDerivationAdapter`, `DerivationPurpose`, `REFERENCE_LENGTH`, `expected_derived_key`, `reference_context`, `build_create_key_derivation_deps`, `build_create_key_derivation_params`, `CreateKeyDerivationParamsOverrides`, `build_create_key_derivation_payload`, `build_derive_key_params`, `DeriveKeyParamsOverrides`, `build_derive_key_payload`, and `DeriveKeyPayloadOverrides`; from `encoding` under its `mocks` feature `create_encoding`, `DECLARED_ENCODING_SELECTIONS`, `build_create_encoding_deps`, `build_create_encoding_params`, `CreateEncodingParamsOverrides`, `build_create_encoding_payload`, `build_mock_i_encoding_consumer`, and `build_derivation_context_description`; and `build_derivation_context` from `domain` under its `mocks` feature; module-level `#![allow(clippy::expect_used)]`
+    * `[ ]`   Cases: every block's body is written once and runs over each entry of `DECLARED_KDF_SELECTIONS` whose identifier is `KdfIdentifier::Blake3KeyedV1`; no block names a concrete
+    * `[ ]`   `every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_reference_inputs`
+      * `[ ]`   Contract: `create_key_derivation` is called with the selection of a concrete that declares `KdfIdentifier::Blake3KeyedV1` and that identifier, and the adapter derives with `DerivationPurpose::WrappingKey` and `REFERENCE_LENGTH` over the reference key material and the reference context → the key equals `expected_derived_key` over the wrapping-key purpose, the reference context, and `REFERENCE_LENGTH`
+      * `[ ]`   Arrange: for each case, the adapter from `create_key_derivation` over `build_create_key_derivation_deps`, `build_create_key_derivation_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_key_derivation_payload`, bound through `expect`; `build_derive_key_params` overriding the purpose with `DerivationPurpose::WrappingKey` and the length with `REFERENCE_LENGTH`; `build_derive_key_payload` with no override, whose key material and context are the reference key material and the reference context, so the oracle's inputs are the arrangement's inputs and its output is not
+      * `[ ]`   Act: `adapter.derive_key(params, payload)` for the case
+      * `[ ]`   Assert: the success arm is bound through `expect`; the key's `expose()` equals `expected_derived_key` over `DerivationPurpose::WrappingKey`, `reference_context()`, and `REFERENCE_LENGTH` by `assert_eq!`, the expectation computed by the independent oracle and not read from the arrangement
+      * `[ ]`   Boundary: the public call `create_key_derivation` and the returned adapter's `derive_key`; the route `create_key_derivation`, the selected concrete's constructor, and its `derive_key`
+      * `[ ]`   Mocked: nothing; `blake3`, `zeroize`, and `domain` run for real
+    * `[ ]`   `every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes`
+      * `[ ]`   Contract: `create_key_derivation` is called with the selection of a concrete that declares `KdfIdentifier::Blake3KeyedV1` and that identifier, and the adapter derives with `DerivationPurpose::WrappingKey` and `REFERENCE_LENGTH` over the reference key material and the bytes `create_encoding` returns for a derivation context → the key equals `expected_derived_key` over the wrapping-key purpose, those bytes, and `REFERENCE_LENGTH`
+      * `[ ]`   Arrange: for each case and each entry of `DECLARED_ENCODING_SELECTIONS`, the context bytes obtained from `create_encoding` over `build_create_encoding_deps` taking `build_mock_i_encoding_consumer` over `build_derivation_context_description`, `build_derivation_context` with no override, and no bytes, `build_create_encoding_params` overriding `concrete` and `identifier` with the encoding entry's selection and identifier, and `build_create_encoding_payload`, the `encoded` of the output bound through `expect`; the adapter as in the block above; `build_derive_key_params` as in the block above; `build_derive_key_payload` with the context override set to a borrow of those bytes, whose length and content differ from the reference context's, so a derivation that frames the context by the reference context's shape fails
+      * `[ ]`   Act: `adapter.derive_key(params, payload)` for the case and the encoding entry
+      * `[ ]`   Assert: the success arm is bound through `expect`; the key's `expose()` equals `expected_derived_key` over `DerivationPurpose::WrappingKey`, the context bytes, and `REFERENCE_LENGTH` by `assert_eq!`, the expectation computed by the independent oracle and not read from the arrangement
+      * `[ ]`   Boundary: the public calls `create_encoding`, `create_key_derivation`, and the returned adapter's `derive_key`; the route `create_encoding`, the selected encoding concrete's `encode`, `DerivationContextDescription::to_fields`, and `domain`'s accessors, then `create_key_derivation`, the selected concrete's constructor, and its `derive_key`
+      * `[ ]`   Mocked: the encoding consumer, replaced by the official `MockIEncodingConsumer`, so the test does not prove what a real consumer does with the concrete; the description, `domain`, `blake3`, and `zeroize` run for real
 
   * `[✅]`   `directionality`
     * `[✅]`   The `factory` module depends on the `blake3_keyed` concrete through `crate::blake3_keyed::provides` and on its own interface; `blake3_keyed` depends on the `factory` module's surface, the family form's recorded cycle; the crate's public surface is the `factory` module's `provides`
@@ -1148,8 +1243,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[ ]`   `requirements`
     * `[✅]`   `CreateKeyDerivationErrorReturn` derives `Debug`, `PartialEq`, and `Eq`
     * `[✅]`   `adapters/kdf/Cargo.toml` carries exactly the dev-dependencies stated above, and every other table `kdf/blake3_keyed` stated is unchanged
-    * `[ ]`   `create_key_derivation_returns_an_admitted_blake3_keyed_adapter` passes
-    * `[ ]`   `the_factory_adapter_derives_the_wrapping_key_over_the_reference_vector` and `the_factory_adapter_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes` pass (CR-11, the wrapping-key derivation over the encoded derivation context reached through both families' surfaces)
+    * `[ ]`   `create_key_derivation_returns_the_adapter_of_the_selected_concrete` and `create_key_derivation_refuses_a_concrete_that_declares_another_identifier` pass
+    * `[ ]`   `every_concrete_is_constructed_under_the_identifier_it_declares`, `every_concrete_is_refused_under_an_identifier_it_does_not_declare`, `every_concrete_derives_a_key_of_the_requested_length`, `every_concrete_returns_its_own_error_when_the_key_material_length_cannot_be_framed`, `every_concrete_leaves_the_borrowed_key_material_intact`, and `every_concrete_returns_a_key_that_outlives_the_key_material` pass
+    * `[ ]`   `every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_reference_inputs` and `every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes` pass (CR-11, the wrapping-key derivation over the encoded derivation context reached through both families' surfaces)
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning in every target, the `blake3_keyed` concrete's unused-item warnings having no remaining cause
     * `[✅]`   `blake3` is named nowhere outside `adapters/kdf/src/blake3_keyed`, and no code outside `adapters/kdf` can name `Blake3KeyedKdf`
 
@@ -1161,7 +1257,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Functional: the constructor refuses an empty tag, a tag longer than 255 bytes, so its length fits the one-byte prefix the hash-to-scalar concrete absorbs, and any byte outside printable ASCII, `0x20` through `0x7E`
     * `[✅]`   Functional: the constructor refuses a space, `0x20`, as the tag's first or last byte, so every byte at a tag's edges is visible where the tag is written, mirrored to Solidity, or quoted; a space between visible bytes is admitted
     * `[✅]`   Functional: a refusal names the failed check and the values it failed on, and the same input always yields the same refusal: the length checks precede the byte scan, the byte scan precedes the edge checks, within the scan the lowest offending index decides, and the leading edge is checked before the trailing edge
-    * `[✅]`   Non-functional: the module depends on the standard library alone; the crate names no hash library and no pairing library
+    * `[✅]`   Non-functional: the module depends on the standard library alone, and its `mock.rs` additionally uses `serde_json` under the `mocks` feature; the crate names no hash library and no pairing library
 
   * `[✅]`   `role`
     * `[✅]`   Adapter family: the hash-to-scalar family's family-owned value type, and the family's first source file, so it creates the crate; the tag is a family-owned module beside the factory because a type lives in the module that implements it, and the tag's constructor is its implementation
@@ -1178,16 +1274,20 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
   * `[✅]`   `deps`
     * `[✅]`   The standard library: `Vec<u8>`, `u8::is_ascii_graphic`, `Iterator::enumerate`, and `Iterator::find`, through the prelude
-    * `[✅]`   No external crate and no repository crate; no reverse dependency; nothing depends on the crate yet
+    * `[✅]`   `serde_json` `1.0.151`, external crate, MIT OR Apache-2.0, optional runtime dependency enabled by this crate's `mocks` feature and a dev-dependency; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type the invalidator returns, in `mock.rs` only
+    * `[✅]`   No repository crate; no reverse dependency; nothing depends on the crate yet
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `<[u8]>::is_empty`, `<[u8]>::len`, `<[u8]>::iter`, `<[u8]>::first`, `<[u8]>::last`, `Iterator::enumerate`, `Iterator::find`, and `u8::is_ascii_graphic`, which is true exactly for `0x21` through `0x7E`, so a byte is printable ASCII when it is `b' '` or `is_ascii_graphic` holds
+    * `[✅]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers and arrays, in `mock.rs` only
 
   * `[✅]`   `adapters/hash-to-scalar/Cargo.toml`
     * `[✅]`   `[package]` with `name = "hash-to-scalar"`, `edition.workspace = true`, `rust-version.workspace = true`, and `publish.workspace = true`; no `version` key
-    * `[✅]`   `[features]` with `mocks = []`
+    * `[✅]`   `[dependencies]` with `serde_json = { version = "1.0.151", optional = true }`
+    * `[✅]`   `[dev-dependencies]` with `serde_json = "1.0.151"`
+    * `[✅]`   `[features]` with `mocks = ["dep:serde_json"]`
     * `[✅]`   `[lints]` with `workspace = true`
-    * `[✅]`   No other table; `hash-to-scalar/keccak256` adds the dependency tables
+    * `[✅]`   No other table; `hash-to-scalar/keccak256` adds its own entries to the dependency tables
 
   * `[✅]`   `adapters/hash-to-scalar/src/lib.rs`
     * `[✅]`   The crate barrel: `mod domain_tag;` and `pub use domain_tag::provides::*;`, nothing else
@@ -1211,10 +1311,102 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `DomainTag::as_bytes(&self) -> &[u8]`: one branch; outcome a shared reference to the held bytes, no copy, no side effect
     * `[✅]`   Ordering: emptiness, then length, then the byte scan, then the leading edge, then the trailing edge; the same params always yield the same outcome
     * `[✅]`   Invariants: every `DomainTag` holds between 1 and 255 bytes, each printable ASCII, its first and last byte visible ASCII; its only producer is `try_new`
+    * `[ ]`   Own entry, an admitted tag reads back through the crate root: condition a caller outside the crate names `DomainTag`, `DomainTagConstructorParams`, and `DOMAIN_TAG_MAXIMUM_LENGTH` through the crate root and passes `try_new` a tag of exactly `DOMAIN_TAG_MAXIMUM_LENGTH` printable bytes with an interior space and a visible byte at each edge; outcome `Ok(tag)` whose `as_bytes()` yields exactly the bytes passed; variation the maximum length with an interior space, which a read that truncates, trims, or re-encodes fails; edge that must survive: the bytes an outside caller reads are the bytes the tag was constructed from, reached through the accessor alone
+    * `[ ]`   Own entry, a refusal reaches the caller whole and yields no tag: condition a caller outside the crate passes `try_new` a tag of `DOMAIN_TAG_MAXIMUM_LENGTH + 1` printable bytes; outcome `Err(DomainTagTryNewErrorReturn::TooLong { length: DOMAIN_TAG_MAXIMUM_LENGTH + 1, maximum: DOMAIN_TAG_MAXIMUM_LENGTH })`, matched through the crate-root error type, and no `DomainTag` exists to read; variation one byte over the length the read-back entry admits; edge that must survive: the refusal carries both values it failed on
+    * `[ ]`   Route, both own entries: the crate barrel `lib.rs`, then `domain_tag::provides`, then `DomainTag::try_new`, and for the read-back entry `DomainTag::as_bytes`; the route reaches no outer-edge collaborator
+    * `[ ]`   Public surface: an outside caller invokes `DomainTag::try_new` and `DomainTag::as_bytes`, building params with `build_domain_tag_constructor_params` from the `mocks` feature; it observes the `Ok` tag through `as_bytes` and the `Err` through `DomainTagTryNewErrorReturn`; the entries proven are the read-back entry and the refusal entry
 
   * `[✅]`   `adapters/hash-to-scalar/src/domain_tag/mock.rs`
+    * `[ ]`   `DomainTagConstructorParamsOverrides`, a struct with `#[derive(Default)]` and the one field `bytes: Option<Vec<u8>>`
+    * `[ ]`   `build_domain_tag_constructor_params(overrides: DomainTagConstructorParamsOverrides) -> DomainTagConstructorParams`, taking `bytes` from the override when present; the default is a byte string constant declared in `mock.rs` that is non-empty, at most `DOMAIN_TAG_MAXIMUM_LENGTH` bytes, printable ASCII, and without a space at either edge
+    * `[ ]`   `DomainTagConstructorParamsCorruptions`, a struct with `#[derive(Default)]` and the one field `bytes: Option<serde_json::Value>`
+    * `[ ]`   `invalidate_domain_tag_constructor_params(corruptions: DomainTagConstructorParamsCorruptions) -> serde_json::Value`, a `Map` holding the built params' `bytes` converted with `Value::from` to an array of integers, overwritten by the corrupted key when present; `DomainTagConstructorParams` stays free of derives
+    * `[ ]`   `build_domain_tag(overrides: DomainTagConstructorParamsOverrides) -> DomainTag`, the result of `DomainTag::try_new` over `build_domain_tag_constructor_params(overrides)`, a real instance with its field private
+    * `[ ]`   Enumeration of the interface's exports: `DOMAIN_TAG_MAXIMUM_LENGTH` is a constant used by its production value; `DomainTagTryNewErrorReturn` is an enum and `DomainTagTryNewReturn` is an alias, used directly by their production types; `DomainTag` takes `build_domain_tag` alone, its corruption living in the params invalidator; `DomainTagConstructorParams` takes the four symbols above; `DomainTag::try_new` and `DomainTag::as_bytes` take no function mock because the interface declares no function type for them
+    * `[ ]`   Imports `DomainTag` and `DomainTagConstructorParams` from `super::interface`, and `serde_json::Value` and `serde_json::Map`
 
   * `[ ]`   `adapters/hash-to-scalar/src/domain_tag/test.rs`
+    * `[ ]`   Imports `DomainTag` from `super`, `DomainTagTryNewErrorReturn` and `DOMAIN_TAG_MAXIMUM_LENGTH` from `super::interface`, and `build_domain_tag`, `build_domain_tag_constructor_params`, and `DomainTagConstructorParamsOverrides` from `super::mock`; the module's only dependency is the standard library, so no collaborator is replaced; every fixture is a direct builder call overriding only the `bytes` the block's variation needs; every refusal is asserted by `assert_eq!` against the whole expected `Err`
+    * `[ ]`   `try_new_rejects_an_empty_tag`
+      * `[ ]`   Contract: `params.bytes.is_empty()` yields `Err(DomainTagTryNewErrorReturn::Empty)`
+      * `[ ]`   Arrange: params whose `bytes` is the empty vector
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::Empty)`
+    * `[ ]`   `try_new_rejects_a_tag_one_byte_over_the_maximum`
+      * `[ ]`   Contract: a non-empty tag longer than `DOMAIN_TAG_MAXIMUM_LENGTH` yields `Err(DomainTagTryNewErrorReturn::TooLong { length, maximum: DOMAIN_TAG_MAXIMUM_LENGTH })`
+      * `[ ]`   Arrange: params whose `bytes` is `DOMAIN_TAG_MAXIMUM_LENGTH + 1` printable non-space bytes, the least length the check refuses
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::TooLong { length: DOMAIN_TAG_MAXIMUM_LENGTH + 1, maximum: DOMAIN_TAG_MAXIMUM_LENGTH })`
+    * `[ ]`   `try_new_rejects_a_byte_below_the_printable_range`
+      * `[ ]`   Contract: a length-passing tag with a byte below `0x20` yields `Err(DomainTagTryNewErrorReturn::ByteOutsidePrintableAscii { index, byte })`
+      * `[ ]`   Arrange: params whose `bytes` is three bytes, visible at both edges and `0x1F`, the byte directly below the range, at the interior index
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::ByteOutsidePrintableAscii { index: 1, byte: 0x1F })`, the index and byte stated in the assertion
+    * `[ ]`   `try_new_rejects_the_byte_above_the_printable_range`
+      * `[ ]`   Contract: a length-passing tag with a byte above `0x7E` yields `Err(DomainTagTryNewErrorReturn::ByteOutsidePrintableAscii { index, byte })`
+      * `[ ]`   Arrange: params whose `bytes` is three bytes, visible at both edges and `0x7F`, the byte directly above the range, at the interior index
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::ByteOutsidePrintableAscii { index: 1, byte: 0x7F })`, the index and byte stated in the assertion
+    * `[ ]`   `try_new_rejects_a_non_ascii_byte`
+      * `[ ]`   Contract: a length-passing tag with a byte above `0x7F` yields `Err(DomainTagTryNewErrorReturn::ByteOutsidePrintableAscii { index, byte })`
+      * `[ ]`   Arrange: params whose `bytes` is three bytes, visible at both edges and `0x80`, the least non-ASCII byte, at the interior index
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::ByteOutsidePrintableAscii { index: 1, byte: 0x80 })`, the index and byte stated in the assertion
+    * `[ ]`   `try_new_rejects_the_lowest_byte_outside_printable_ascii`
+      * `[ ]`   Contract: when several bytes are outside printable ASCII, the outcome names the lowest index
+      * `[ ]`   Arrange: params whose `bytes` is visible at both edges and holds two offending bytes of different values, `0x1F` at index 1 and `0x80` at index 3, so the lowest index and the later one name different bytes
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::ByteOutsidePrintableAscii { index: 1, byte: 0x1F })`
+    * `[ ]`   `try_new_rejects_a_leading_space`
+      * `[ ]`   Contract: every byte printable ASCII and `params.bytes.first()` equal to `Some(&b' ')` yields `Err(DomainTagTryNewErrorReturn::SpaceAtEdge { index: 0 })`
+      * `[ ]`   Arrange: params whose `bytes` is three bytes, a space then two visible bytes
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::SpaceAtEdge { index: 0 })`
+    * `[ ]`   `try_new_rejects_a_trailing_space`
+      * `[ ]`   Contract: a leading byte that is not a space and `params.bytes.last()` equal to `Some(&b' ')` yields `Err(DomainTagTryNewErrorReturn::SpaceAtEdge { index })`, `index` the length less one
+      * `[ ]`   Arrange: params whose `bytes` is three bytes, two visible bytes then a space, so the length less one differs from 0, 1, and the length
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::SpaceAtEdge { index: 2 })`
+    * `[ ]`   `try_new_reports_the_leading_edge_before_the_trailing_edge`
+      * `[ ]`   Contract: the leading edge is checked before the trailing edge
+      * `[ ]`   Arrange: params whose `bytes` is three bytes, a space, a visible byte, a space, so both edges fail
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::SpaceAtEdge { index: 0 })`
+    * `[ ]`   `try_new_reports_the_bytes_before_the_edges`
+      * `[ ]`   Contract: the byte scan precedes the edge checks
+      * `[ ]`   Arrange: params whose `bytes` is a leading space, a visible byte, `0x1F` at index 2, and a visible byte, so an edge check and the scan both fail
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::ByteOutsidePrintableAscii { index: 2, byte: 0x1F })`
+    * `[ ]`   `try_new_reports_the_length_before_the_bytes`
+      * `[ ]`   Contract: the length check precedes the byte scan
+      * `[ ]`   Arrange: params whose `bytes` is `DOMAIN_TAG_MAXIMUM_LENGTH + 1` bytes, printable except `0x1F` at an interior index, so the length check and the scan both fail
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(DomainTagTryNewErrorReturn::TooLong { length: DOMAIN_TAG_MAXIMUM_LENGTH + 1, maximum: DOMAIN_TAG_MAXIMUM_LENGTH })`
+    * `[ ]`   `try_new_admits_a_tag_with_interior_spaces`
+      * `[ ]`   Contract: every check passing yields `Ok(DomainTag { bytes })`, and a space between visible bytes passes
+      * `[ ]`   Arrange: params whose `bytes` is a visible byte, a space, a visible byte
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result mapped to the held `bytes` equals `Ok` of the same three bytes, stated in the assertion, read from the field the test module's visibility reaches
+    * `[ ]`   `try_new_admits_a_tag_of_the_maximum_length`
+      * `[ ]`   Contract: a tag of exactly `DOMAIN_TAG_MAXIMUM_LENGTH` bytes passes the length check
+      * `[ ]`   Arrange: params whose `bytes` is `DOMAIN_TAG_MAXIMUM_LENGTH` printable non-space bytes, the length directly below the refused length
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result mapped to the held `bytes` equals `Ok` of `DOMAIN_TAG_MAXIMUM_LENGTH` bytes stated in the assertion
+    * `[ ]`   `try_new_admits_the_lowest_and_highest_graphic_bytes_at_the_edges`
+      * `[ ]`   Contract: `0x21` through `0x7E` are printable and visible, so they pass the scan and the edge checks
+      * `[ ]`   Arrange: params whose `bytes` is two bytes, `0x21` first and `0x7E` last
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result mapped to the held `bytes` equals `Ok` of `0x21` then `0x7E`, stated in the assertion
+    * `[ ]`   `try_new_moves_the_params_bytes_into_the_tag`
+      * `[ ]`   Contract: the admitted outcome moves the vector from the params without copy
+      * `[ ]`   Arrange: params from the builder with its default bytes, the address and length of `params.bytes` read before the call
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result is `Ok`, and the held `bytes` has the address and the length read before the call
+    * `[ ]`   `as_bytes_returns_the_held_bytes_without_copy`
+      * `[ ]`   Contract: `as_bytes` returns a shared reference to the held bytes, no copy
+      * `[ ]`   Arrange: a tag from `build_domain_tag` whose `bytes` override is distinct visible bytes
+      * `[ ]`   Act: `DomainTag::as_bytes` on that tag
+      * `[ ]`   Assert: the returned slice has the address and the length of the tag's held `bytes`
 
   * `[✅]`   `construction`
     * `[✅]`   `DomainTag::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a consumer states its tag bytes as a constant and constructs the tag once, handling the refusal arm
@@ -1228,14 +1420,33 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `adapters/hash-to-scalar/src/domain_tag/provides.rs`
     * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
 
+  * `[ ]`   `adapters/hash-to-scalar/tests/domain_tag_integration_test.rs`
+    * `[ ]`   Imports `DomainTag`, `DomainTagTryNewErrorReturn`, and `DOMAIN_TAG_MAXIMUM_LENGTH` through the crate root `hash_to_scalar`, and `build_domain_tag_constructor_params` and `DomainTagConstructorParamsOverrides` from the crate root under the `mocks` feature; nothing is imported from a module path
+    * `[ ]`   `a_tag_of_the_maximum_length_reads_back_through_the_crate_root`
+      * `[ ]`   Contract: the own entry, an admitted tag reads back through the crate root; a tag of exactly `DOMAIN_TAG_MAXIMUM_LENGTH` printable bytes with an interior space and a visible byte at each edge yields `Ok(tag)` whose `as_bytes()` yields exactly the bytes passed
+      * `[ ]`   Arrange: params from `build_domain_tag_constructor_params` whose `bytes` is `DOMAIN_TAG_MAXIMUM_LENGTH` printable bytes with an interior space and visible edge bytes, the variation a read that truncates, trims, or re-encodes fails
+      * `[ ]`   Act: `DomainTag::try_new` over those params, the `Ok` tag read through `as_bytes`
+      * `[ ]`   Assert: the result is `Ok`, and the slice `as_bytes` returns equals the expected bytes stated in the assertion as their own value, since the params are moved into the call
+      * `[ ]`   Boundary: the crate-root public call `DomainTag::try_new` and the read `DomainTag::as_bytes`, the route `lib.rs` then `domain_tag::provides` then `try_new` then `as_bytes`
+      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
+    * `[ ]`   `a_tag_one_byte_over_the_maximum_is_refused_whole_through_the_crate_root`
+      * `[ ]`   Contract: the own entry, a refusal reaches the caller whole and yields no tag; a tag of `DOMAIN_TAG_MAXIMUM_LENGTH + 1` printable bytes yields `Err(DomainTagTryNewErrorReturn::TooLong { length: DOMAIN_TAG_MAXIMUM_LENGTH + 1, maximum: DOMAIN_TAG_MAXIMUM_LENGTH })`
+      * `[ ]`   Arrange: params from `build_domain_tag_constructor_params` whose `bytes` is `DOMAIN_TAG_MAXIMUM_LENGTH + 1` printable non-space bytes, one byte over the length the read-back block admits
+      * `[ ]`   Act: `DomainTag::try_new` over those params
+      * `[ ]`   Assert: the result equals the whole `Err(DomainTagTryNewErrorReturn::TooLong { length: DOMAIN_TAG_MAXIMUM_LENGTH + 1, maximum: DOMAIN_TAG_MAXIMUM_LENGTH })`, matched through the crate-root error type, so no `DomainTag` is held
+      * `[ ]`   Boundary: the crate-root public call `DomainTag::try_new`, the route `lib.rs` then `domain_tag::provides` then `try_new`
+      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
+    * `[ ]`   Enumeration: the read-back entry is proven by `a_tag_of_the_maximum_length_reads_back_through_the_crate_root`, and the refusal entry by `a_tag_one_byte_over_the_maximum_is_refused_whole_through_the_crate_root`
+
   * `[✅]`   `directionality`
-    * `[✅]`   `domain_tag` depends on the standard library alone; the crate depends on no repository crate; `hash-to-scalar/keccak256` consumes the tag through `crate::domain_tag::provides` in the generic interface's payload; no cycle
+    * `[✅]`   `domain_tag` depends on the standard library alone, and its `mock.rs` additionally depends on `serde_json` under the `mocks` feature; the crate depends on no repository crate; `hash-to-scalar/keccak256` consumes the tag through `crate::domain_tag::provides` in the generic interface's payload; no cycle
 
   * `[✅]`   `requirements`
     * `[✅]`   `adapters/hash-to-scalar/Cargo.toml` carries exactly the tables and keys stated above, and `adapters/hash-to-scalar/src/lib.rs` carries exactly the barrel stated above
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[✅]`   `try_new_admits_a_tag_with_interior_spaces` and `try_new_admits_a_tag_of_the_maximum_length` pass
-    * `[✅]`   `try_new_rejects_an_empty_tag`, `try_new_rejects_a_tag_one_byte_over_the_maximum`, `try_new_rejects_the_lowest_byte_outside_printable_ascii`, `try_new_rejects_a_non_ascii_byte`, `try_new_rejects_a_leading_space`, `try_new_rejects_a_trailing_space`, `try_new_reports_the_leading_edge_before_the_trailing_edge`, `try_new_reports_the_bytes_before_the_edges`, and `try_new_reports_the_length_before_the_bytes` pass (CR-11, a tag has one byte form, refused before any hash)
+    * `[✅]`   `try_new_admits_a_tag_with_interior_spaces`, `try_new_admits_a_tag_of_the_maximum_length`, `try_new_admits_the_lowest_and_highest_graphic_bytes_at_the_edges`, `try_new_moves_the_params_bytes_into_the_tag`, and `as_bytes_returns_the_held_bytes_without_copy` pass
+    * `[✅]`   `try_new_rejects_an_empty_tag`, `try_new_rejects_a_tag_one_byte_over_the_maximum`, `try_new_rejects_a_byte_below_the_printable_range`, `try_new_rejects_the_byte_above_the_printable_range`, `try_new_rejects_the_lowest_byte_outside_printable_ascii`, `try_new_rejects_a_non_ascii_byte`, `try_new_rejects_a_leading_space`, `try_new_rejects_a_trailing_space`, `try_new_reports_the_leading_edge_before_the_trailing_edge`, `try_new_reports_the_bytes_before_the_edges`, and `try_new_reports_the_length_before_the_bytes` pass (CR-11, a tag has one byte form, refused before any hash)
+    * `[ ]`   `a_tag_of_the_maximum_length_reads_back_through_the_crate_root` and `a_tag_one_byte_over_the_maximum_is_refused_whole_through_the_crate_root` pass
     * `[✅]`   Code outside `adapters/hash-to-scalar/src/domain_tag` reading the `bytes` field fails to compile
 
 * `[ ]`   `hash-to-scalar/keccak256` **Keccak-256 concrete hashing a length-prefixed domain tag and a message and reducing the digest modulo the group order of whichever pairing scalar it is asked for; authors the hash-to-scalar family's generic interface, identifier, declaration, and mock**

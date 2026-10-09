@@ -7,6 +7,8 @@ pub const PAIRING_INTERFACE_VERSION: u32 = 1;
 pub enum PairingCurve {
     Bn254,
     Bls12381,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -19,6 +21,8 @@ pub enum VerifierGroupArithmetic {
 pub enum PrecompileEncoding {
     Eip196Eip197,
     Eip2537,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -39,6 +43,12 @@ pub enum TargetGroupEncodingIdentifier {
     /// serialized as its twelve base-field coefficients in tower order, each
     /// the coefficient's 48-byte big-endian canonical integer.
     Bls12381V1,
+    /// The mock concrete's toy pairing: the target group is the residues
+    /// modulo `MOCK_GROUP_ORDER`, a term contributing its first-group residue
+    /// times half its second-group residue modulo that order; a target-group
+    /// element is serialized as its residue's eight big-endian bytes.
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 pub struct PairingDeclaration {
@@ -539,6 +549,19 @@ pub enum PairingConcrete {
     Bn254Halo2curves,
     Bls12381Arkworks,
     Bls12381Halo2curves,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIPairingAdapterFailureMode),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum MockIPairingAdapterFailureMode {
+    Succeeds,
+    DecodeG1NotOnCurve,
+    DecodeG1NotInSubgroup,
+    DecodeG2NotOnCurve,
+    G1OutsideSubgroupSearchExhausted,
+    G2OutsideSubgroupSearchExhausted,
 }
 
 pub struct ScalarFieldOrderParams;
@@ -651,6 +674,8 @@ pub enum CreatePairingErrorReturn {
     Bn254Halo2curves(Infallible),
     Bls12381Arkworks(Infallible),
     Bls12381Halo2curves(Infallible),
+    #[cfg(any(test, feature = "mocks"))]
+    MockIPairingAdapter(Infallible),
 }
 
 pub type CreatePairingReturn<O> = Result<CreatePairingSuccessReturn<O>, CreatePairingErrorReturn>;
@@ -660,3 +685,10 @@ pub type CreatePairingFn<C> = fn(
     CreatePairingParams,
     CreatePairingPayload,
 ) -> CreatePairingReturn<<C as IPairingConsumer>::Output>;
+
+pub const PAIRING_CONCRETES: &[PairingConcrete] = &[
+    PairingConcrete::Bn254Arkworks,
+    PairingConcrete::Bn254Halo2curves,
+    PairingConcrete::Bls12381Arkworks,
+    PairingConcrete::Bls12381Halo2curves,
+];

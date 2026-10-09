@@ -22,6 +22,11 @@ use interface::{
     CreatePairingParams, CreatePairingPayload, CreatePairingReturn, CreatePairingSuccessReturn,
     IPairingConsumer, PairingConcrete,
 };
+#[cfg(any(test, feature = "mocks"))]
+use {
+    interface::IPairingAdapter,
+    mock::{MockIPairingAdapter, MockIPairingAdapterConstructorParams},
+};
 
 pub fn create_pairing<C: IPairingConsumer>(
     deps: &CreatePairingDeps<C>,
@@ -102,6 +107,27 @@ pub fn create_pairing<C: IPairingConsumer>(
             }
             let Ok(adapter) =
                 Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);
+            Ok(CreatePairingSuccessReturn {
+                output: deps
+                    .consumer
+                    .consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter }),
+            })
+        }
+        #[cfg(any(test, feature = "mocks"))]
+        PairingConcrete::Mock(failure_mode) => {
+            if !params
+                .supported_encodings
+                .contains(&MockIPairingAdapter::DECLARATION.precompile_encoding)
+            {
+                return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
+            }
+            if MockIPairingAdapter::DECLARATION.target_group_encoding
+                != params.target_group_encoding
+            {
+                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
+            }
+            let Ok(adapter) =
+                MockIPairingAdapter::try_new(MockIPairingAdapterConstructorParams { failure_mode });
             Ok(CreatePairingSuccessReturn {
                 output: deps
                     .consumer
