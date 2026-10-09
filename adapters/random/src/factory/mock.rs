@@ -7,10 +7,13 @@
 
 use super::interface::{
     CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload,
-    CreateRandomSourceReturn, CreateRandomSourceSuccessReturn, FillBytesParams, FillBytesPayload,
-    FillBytesReturn, FillBytesSuccessReturn, IRandomSourceAdapter, RANDOM_SOURCE_INTERFACE_VERSION,
+    CreateRandomSourceReturn, CreateRandomSourceSuccessReturn, FillBytesErrorReturn,
+    FillBytesParams, FillBytesPayload, FillBytesReturn, FillBytesSuccessReturn,
+    IRandomSourceAdapter, MockIRandomSourceAdapterFailureMode, RANDOM_SOURCE_INTERFACE_VERSION,
     RandomSourceDeclaration, RandomSourceKind,
 };
+use core::cell::Cell;
+use core::convert::Infallible;
 use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
 
 #[derive(Default)]
@@ -62,22 +65,86 @@ pub fn build_fill_bytes_success_return(
     }
 }
 
-pub struct MockIRandomSourceAdapter;
+pub struct MockIRandomSourceAdapterConstructorParams {
+    pub failure_mode: MockIRandomSourceAdapterFailureMode,
+}
+
+#[derive(Default)]
+pub struct MockIRandomSourceAdapterConstructorParamsOverrides {
+    pub failure_mode: Option<MockIRandomSourceAdapterFailureMode>,
+}
+
+pub fn build_mock_i_random_source_adapter_constructor_params(
+    overrides: MockIRandomSourceAdapterConstructorParamsOverrides,
+) -> MockIRandomSourceAdapterConstructorParams {
+    MockIRandomSourceAdapterConstructorParams {
+        failure_mode: overrides
+            .failure_mode
+            .unwrap_or(MockIRandomSourceAdapterFailureMode::Succeeds),
+    }
+}
+
+pub(crate) struct MockIRandomSourceAdapter {
+    pub(super) failure_mode: MockIRandomSourceAdapterFailureMode,
+    pub(super) counter: Cell<u64>,
+}
+
+pub(crate) type MockIRandomSourceAdapterTryNewReturn = Result<MockIRandomSourceAdapter, Infallible>;
+
+impl MockIRandomSourceAdapter {
+    pub(crate) fn try_new(
+        params: MockIRandomSourceAdapterConstructorParams,
+    ) -> MockIRandomSourceAdapterTryNewReturn {
+        Ok(MockIRandomSourceAdapter {
+            failure_mode: params.failure_mode,
+            counter: Cell::new(0),
+        })
+    }
+}
 
 impl IRandomSourceAdapter for MockIRandomSourceAdapter {
     fn declaration(&self) -> RandomSourceDeclaration {
-        build_random_source_declaration(Default::default())
+        RandomSourceDeclaration {
+            source: RandomSourceKind::Mock(self.failure_mode),
+            adapter_version: 1,
+            interface_version: RANDOM_SOURCE_INTERFACE_VERSION,
+        }
     }
 
     fn fill_bytes(&self, _params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn {
-        Ok(build_fill_bytes_success_return(
-            FillBytesSuccessReturnOverrides {
-                bytes: Some(build_secret(SecretConstructorParamsOverrides {
-                    value: Some(vec![0u8; payload.length]),
-                })),
-            },
-        ))
+        if matches!(
+            self.failure_mode,
+            MockIRandomSourceAdapterFailureMode::FillBytesRefused
+        ) {
+            return Err(FillBytesErrorReturn::MockIRandomSourceAdapter);
+        }
+        let mut buffer = vec![0u8; payload.length];
+        for byte in &mut buffer {
+            let counter = self.counter.get().wrapping_add(1);
+            self.counter.set(counter);
+            let mut mixed = counter;
+            mixed ^= mixed >> 30;
+            mixed = mixed.wrapping_mul(0xbf58_476d_1ce4_e5b9);
+            mixed ^= mixed >> 27;
+            mixed = mixed.wrapping_mul(0x94d0_49bb_1331_11eb);
+            mixed ^= mixed >> 31;
+            *byte = mixed as u8;
+        }
+        Ok(FillBytesSuccessReturn {
+            bytes: build_secret(SecretConstructorParamsOverrides {
+                value: Some(buffer),
+            }),
+        })
     }
+}
+
+pub(crate) fn build_mock_i_random_source_adapter(
+    overrides: MockIRandomSourceAdapterConstructorParamsOverrides,
+) -> MockIRandomSourceAdapter {
+    let Ok(adapter) = MockIRandomSourceAdapter::try_new(
+        build_mock_i_random_source_adapter_constructor_params(overrides),
+    );
+    adapter
 }
 
 #[derive(Default)]
@@ -89,7 +156,9 @@ pub fn build_create_random_source_params(
     overrides: CreateRandomSourceParamsOverrides,
 ) -> CreateRandomSourceParams {
     CreateRandomSourceParams {
-        kind: overrides.kind.unwrap_or(RandomSourceKind::OperatingSystem),
+        kind: overrides.kind.unwrap_or(RandomSourceKind::Mock(
+            MockIRandomSourceAdapterFailureMode::Succeeds,
+        )),
     }
 }
 
@@ -104,7 +173,7 @@ pub fn build_create_random_source_success_return(
     CreateRandomSourceSuccessReturn {
         adapter: overrides
             .adapter
-            .unwrap_or_else(|| Box::new(MockIRandomSourceAdapter)),
+            .unwrap_or_else(|| Box::new(build_mock_i_random_source_adapter(Default::default()))),
     }
 }
 

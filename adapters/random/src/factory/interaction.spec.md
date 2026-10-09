@@ -7,6 +7,7 @@ Branch contract for `create_random_source` in the `factory` module of the `rando
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
 | operating system | `params.kind` is `RandomSourceKind::OperatingSystem` | a `match` on `params.kind` | `OsRandomSource::try_new(OsRandomSourceConstructorParams)`, exactly once | `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source) })`; the boxed source reports `OsRandomSource::DECLARATION` through the trait method |
+| mock | `params.kind` is `RandomSourceKind::Mock(mode)`; present under `#[cfg(any(test, feature = "mocks"))]` | the same `match` on `params.kind` | `MockIRandomSourceAdapter::try_new(MockIRandomSourceAdapterConstructorParams { failure_mode: mode })`, exactly once | `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source) })`; the boxed source reports `RandomSourceKind::Mock(mode)` as its declaration's source, and its constructor error arm is uninhabited |
 
 ## Invariants and edges
 

@@ -4,8 +4,17 @@ use domain::Secret;
 
 pub const RANDOM_SOURCE_INTERFACE_VERSION: u32 = 1;
 
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Clone, Copy)]
+pub enum MockIRandomSourceAdapterFailureMode {
+    Succeeds,
+    FillBytesRefused,
+}
+
 pub enum RandomSourceKind {
     OperatingSystem,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIRandomSourceAdapterFailureMode),
 }
 
 pub struct RandomSourceDeclaration {
@@ -27,6 +36,8 @@ pub struct FillBytesSuccessReturn {
 #[derive(Debug, PartialEq, Eq)]
 pub enum FillBytesErrorReturn {
     OperatingSystem(OsRandomSourceFillBytesErrorReturn),
+    #[cfg(any(test, feature = "mocks"))]
+    MockIRandomSourceAdapter,
 }
 
 pub type FillBytesReturn = Result<FillBytesSuccessReturn, FillBytesErrorReturn>;
@@ -51,6 +62,8 @@ pub struct CreateRandomSourceSuccessReturn {
 #[derive(Debug, PartialEq, Eq)]
 pub enum CreateRandomSourceErrorReturn {
     OperatingSystem(Infallible),
+    #[cfg(any(test, feature = "mocks"))]
+    MockIRandomSourceAdapter(Infallible),
 }
 
 pub type CreateRandomSourceReturn =

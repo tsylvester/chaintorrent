@@ -12,7 +12,10 @@ use super::interface::{
 use core::num::NonZeroU32;
 use core::time::Duration;
 use pairing::PairingConcrete;
-use random::{IRandomSourceAdapter, MockIRandomSourceAdapter};
+use random::{
+    CreateRandomSourceDeps, CreateRandomSourcePayload, IRandomSourceAdapter,
+    build_create_random_source_params, create_random_source,
+};
 
 #[derive(Default)]
 pub struct PairingBenchmarkConstructorParamsOverrides {
@@ -24,9 +27,14 @@ pub fn build_pairing_benchmark_constructor_params(
     overrides: PairingBenchmarkConstructorParamsOverrides,
 ) -> PairingBenchmarkConstructorParams {
     PairingBenchmarkConstructorParams {
-        random: overrides
-            .random
-            .unwrap_or_else(|| Box::new(MockIRandomSourceAdapter)),
+        random: overrides.random.unwrap_or_else(|| {
+            let Ok(created) = create_random_source(
+                &CreateRandomSourceDeps,
+                build_create_random_source_params(Default::default()),
+                CreateRandomSourcePayload,
+            );
+            created.adapter
+        }),
         iterations: overrides.iterations.unwrap_or(NonZeroU32::MIN),
     }
 }
@@ -37,6 +45,12 @@ pub fn build_pairing_benchmark(
     let Ok(benchmark) =
         PairingBenchmark::try_new(build_pairing_benchmark_constructor_params(overrides));
     benchmark
+}
+
+impl Default for PairingBenchmark {
+    fn default() -> Self {
+        build_pairing_benchmark(Default::default())
+    }
 }
 
 #[derive(Default)]

@@ -1,4 +1,6 @@
 mod interface;
+#[cfg(test)]
+mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
 mod test;
