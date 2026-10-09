@@ -40,7 +40,7 @@ The private integration test lives in the function's module directory as `integr
 The public integration test lives under the crate's `tests/` as `[module]_integration_test.rs`, hosted by a node whose boundary is a public entry (see [boundaries](boundaries.md#public-entries)). It proves the entries, own and carried, that the spec's public surface lists.
 
 - It consumes only the crate's public surface and the official mocks under the `mocks` feature. The scenario is set up the way an outside caller reaches the behavior; when the behavior seems to need a private member, the scenario changes and the access never does.
-- Its concretes come from the factory's declared set and configuration. Each block's body is written once and run over the declared set, so the test names no concrete and a new adapter adds a case without editing the test.
+- Its concretes come from the factory's declared set and configuration. Each block's body is written once and run over the declared set, so the test names no concrete and a new adapter adds a case without editing the test. Where the route receives a family's types, that body is the test's consumer (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
 - Its `Boundary` is the public call and the route the entry carries, and its `Mocked` is the outer-edge collaborators on that route.
 - A carried entry that no public call can observe is a discovery, not a gap to fill: the report names the entry, its route, and the consumer node whose disposition carried it, and proposes the correction to that disposition (see [discovery-halt](discovery-halt.md)). The test never drops the entry and never widens its access to reach it.
 - A function in an entry's route that is not built yet is a halt.

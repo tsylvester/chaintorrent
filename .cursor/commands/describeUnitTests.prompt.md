@@ -18,12 +18,12 @@ Work on the provided workplan only. You will read the first indicated node, read
 
 **Unit test.** It proves only the function its node writes:
 - Every collaborator is replaced by that family's official mock: the family's mock concrete, reached through its factory by configuration and never named. A test needing another outcome reaches it by input, or by a failure mode the selecting configuration names, as `mocks.md` states.
-- It never drives outside functions through test-local probe consumers or stubs.
-- Act is the single call to the function under test, and no other function of the module runs in the block. Where the family's factory hands the subject its concrete, the single call is that factory call (`unitTest.md`).
+- It never drives an outside function through a test-local consumer or stub; a test's consumer exists only to receive a family's types and make the single call to the subject (`mocks.md`).
+- Act is the single call to the function under test, and no other function of the module runs in the block. Where the subject receives its types from a family's factory, the single call to the subject is made inside the test's consumer, which the factory call runs with configuration selecting the mock concrete (`unitTest.md`, `mocks.md`); the subject is the only function of its module that runs.
 - One behavior per test.
 - It never proves an integration entry of the spec. A block that runs more than the subject is not a unit test; integration entries belong to the integration test elements (`docs/agents/integrationTest.md`).
 - Fixtures come only from builders and invalidators.
-- The test file holds only imports, contract headers, test blocks, and assertions. Constants, fixtures, and helpers belong in the mock file.
+- The test file holds only imports, contract headers, test blocks, and assertions; a test's consumer is part of its block. Constants, fixtures, and helpers belong in the mock file.
 - An error is asserted whole.
 - The expectation is stated independently of the arrangement. A value a mock or builder supplied that the subject only relays is never asserted as if it proved the subject.
 
