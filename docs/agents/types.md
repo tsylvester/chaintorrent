@@ -25,7 +25,7 @@ Intentionally malformed test data is **not** an exception. Corruption is produce
 
 `unknown` may **not** substitute for locating and applying a specific application or database type. Typing something `unknown` to avoid finding its real type is a laziness dodge and is prohibited.
 
-`unknown` **is** required at a genuine runtime boundary — where untrusted data enters (queue, JSON, external API, DB row, user input) and is immediately narrowed by a guard. This is the strictest possible handling, not the weakest: `unknown` forbids all access until proven. See [guards](guards.md#guard-on-entry-validating-functions-take-unknown). In Rust the boundary type is the untrusted input the guard consumes, `serde_json::Value` for structured data and `&[u8]` for wire bytes, and it forbids the same access until the guard has produced the owned type.
+`unknown` **is** required at a genuine runtime boundary — where untrusted data enters (queue, JSON, external API, DB row, user input) and is immediately narrowed by a guard. This is the strictest possible handling, not the weakest: `unknown` forbids all access until proven. See [guards](guards.md#guard-on-entry--validating-functions-take-unknown). In Rust the boundary type is the untrusted input the guard consumes, `serde_json::Value` for structured data and `&[u8]` for wire bytes, and it forbids the same access until the guard has produced the owned type.
 
 ## No inline or renegotiated types
 

@@ -21,7 +21,7 @@ A deliverable is invalid if either the way it was produced or its resulting cont
 - Implement exactly the described solution and the user's instruction. Expedient shortcuts are forbidden without explicit approval.
 - When you are told to explain something, explain and halt — do not continue into action.
 - When you are told to do something, do it and halt — do not explain and ask for permission to do the thing you were already told to do.
-- Stay in the exact scope you were given. Do not expand it, and do not discuss work outside it. Work outside scope is a discovery, not a liberty (see [discovery-halt](discovery-halt.md)). What scope *is* — and what it does not bound — is owned by [scope](scope.md).
+- Respect the scope you were given (see [scope](scope.md#respecting-a-scope)).
 
 ## Answering questions
 

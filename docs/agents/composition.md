@@ -18,7 +18,7 @@ myFunction: MyFunctionFn {
 
 // VALIDATING form — payload arrives as untrusted data from a runtime boundary
 // (queue, JSON, API, DB row). Typed `unknown`, guarded on the first line, narrowed
-// to MyFunctionPayload for the whole body. Mechanics: guards.md#guard-on-entry.
+// to MyFunctionPayload for the whole body. Mechanics: guards.md#guard-on-entry--validating-functions-take-unknown.
 myFunction: MyFunctionFn {
   deps:    MyFunctionDeps
   params:  MyFunctionParams
@@ -31,7 +31,12 @@ The Rust form, with the same slots and the same two-arm return:
 ```rust
 // interface.rs
 pub type MyFunctionReturn = Result<MyFunctionSuccessReturn, MyFunctionErrorReturn>;
+
+// interface.rs — TRUSTED form
 pub type MyFunctionFn = fn(&MyFunctionDeps, MyFunctionParams, MyFunctionPayload) -> MyFunctionReturn;
+
+// interface.rs — VALIDATING form: the payload slot is the untrusted type the guard consumes
+pub type MyFunctionFn = fn(&MyFunctionDeps, MyFunctionParams, serde_json::Value) -> MyFunctionReturn;
 
 // mod.rs — TRUSTED form: payload arrives already narrowed, from an in-crate caller
 pub fn my_function(
@@ -134,7 +139,7 @@ The three parameters differ by where their values come from, which decides how t
 
 - **`deps`** — constructed in trusted TypeScript by the composition root, never serialized. Typed strong, never `unknown`, never guarded at entry. Typing deps `unknown` would blind the compiler where it is competent and break DI. See [dependency-injection](dependency-injection.md).
 - **`params`** — assembled by the caller in-TS from already-narrowed values. Typed strong. A field that provably originates from outside the type system is payload-natured and belongs in `payload`.
-- **`payload`** — the data the function operates on. When it arrives from a runtime boundary (queue, JSON, external) and the function validates it, the parameter is typed `unknown` and guarded on the first line. See [guards](guards.md#guard-on-entry-validating-functions-take-unknown).
+- **`payload`** — the data the function operates on. When it arrives from a runtime boundary (queue, JSON, external) and the function validates it, the parameter is typed `unknown` and guarded on the first line. See [guards](guards.md#guard-on-entry--validating-functions-take-unknown).
 
 The rule the agent cannot fumble: **does this value arrive as data from outside the type system?** Yes → `unknown` + guard. No → strong type, trust it.
 

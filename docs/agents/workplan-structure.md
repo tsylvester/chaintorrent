@@ -22,13 +22,13 @@ A node names **elements**, not the symbols inside them. That is not an omission 
 
 ## Planning sections and conditional omission
 
-Some node elements are **planning sections**, not files: intent and position (§1), dependencies and injection (§2), interaction semantics (§5, `interaction.spec`), construction (§9), directionality (§13), and completion criteria (§14). The node reasons through them; it does not create a file for them.
+Some node elements are **planning sections**, not files: intent and position, dependencies and injection, interaction semantics (`interaction.spec`), construction, directionality, and completion criteria. The node reasons through them; it does not create a file for them.
 
 An element — file or planning section — is included whenever the work touches its concern, and omitted **only** when the work's nature removes that concern (for example, a minor edit to an existing, well-constructed file that changes no interaction pattern and touches nothing about construction). This is conditional, not discretionary: the context decides whether an element applies, never the author's preference or convenience. When in doubt, include it.
 
 ## The interaction spec is a branch contract
 
-The implementation body is the one element no template can capture — its logic is the variable. The `interaction.spec` (§5) fills that gap: it specifies the body as a **branch contract** so the implementer assembles it rather than inventing it.
+The implementation body is the one element no template can capture — its logic is the variable. The `interaction.spec` fills that gap: it specifies the body as a **branch contract** so the implementer assembles it rather than inventing it.
 
 For each branch the function takes, the spec states:
 
@@ -103,7 +103,7 @@ When a requirement changes, revise the node **in place** so it reads as the sing
 
 A workplan carries a **To-Do list** alongside its nodes. It holds work that has been *found* but deliberately not *scheduled*: non-compliance an agent met while doing something else, and correctly did not stop for.
 
-Its only supplier is the first of the three locate-before-create outcomes (see [tdd-ordering](tdd-ordering.md#three-outcomes-and-only-one-of-them-is-create-it)) — a resource found and usable, but non-compliant in ways that do not block the task. A builder under the wrong name, a mock in the wrong folder, a guard owned by an interface that should not own it. The work proceeds using what exists, and the defect is recorded rather than fixed in passing, because fixing legacy opportunistically in the middle of another task is how one file's work becomes four.
+Its only supplier is the found-and-usable outcome of locate-before-create (see [tdd-ordering](tdd-ordering.md#outcomes-of-the-search)) — a resource found and usable, but non-compliant in ways that do not block the task. A builder under the wrong name, a mock in the wrong folder, a guard owned by an interface that should not own it. The work proceeds using what exists, and the defect is recorded rather than fixed in passing, because fixing legacy opportunistically in the middle of another task is how one file's work becomes several.
 
 ### It is not a way to defer a halt
 
@@ -113,7 +113,7 @@ An entry that would have been a halt is a halt that was skipped, and the file it
 
 ### An entry is not a node
 
-Entries are prose, not node structure. They are not dependency-ordered, carry no elements, and are never numbered ([Identity and ordering](#identity-and-ordering) applies here as everywhere). Each states four things:
+Entries are prose, not node structure. They are not dependency-ordered, carry no elements, and are never numbered ([Identity and ordering](#identity-and-ordering) applies here as everywhere). Each states:
 
 - **What was found** — the actual symbol or file, not a category.
 - **Where** — the real path.
@@ -125,7 +125,7 @@ When an entry is scheduled, it becomes a node and is authored through the ordina
 
 Recording debt is not an exemption from anything. The agent does not edit the workplan without instruction (above), does not write to files it was not directed to write ([output](output.md)), and edits one file per turn ([loop](loop.md)) — and the file it is editing is not the workplan.
 
-So the agent **reports the entry in its final response**, in the four-part form above, ready to be placed. Recording it is the user's action, exactly as with a proposed node. An agent that appends to the workplan mid-task has edited a second file to avoid mentioning something.
+So the agent **reports the entry in its final response**, in the form above, ready to be placed. Recording it is the user's action, exactly as with a proposed node. An agent that appends to the workplan mid-task has edited a second file to avoid mentioning something.
 
 ## Canaries
 
@@ -240,27 +240,32 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
     * `[ ]`   Implement the behavior from requirements and the interaction spec
     * `[ ]`   Introduce no undeclared dependencies; bypass no guards or contracts
 
-  ## 11. External Boundary
+  ## 11. Internal Edge Validation — Rust only
+  * Conforms to: tests#integration-private
+  * `[ ]`   `integration_test.rs`
+    * `[ ]`   Prove each entry the spec's private surface lists over the real in-crate chain; mock only the outer-edge collaborators it names
+
+  ## 12. External Boundary
   * Conforms to: boundaries
   * `[ ]`   `[function].provides.ts`
     * `[ ]`   Export the public surface: interfaces, guards, functions, mocks
 
-  ## 12. Edge Validation
+  ## 13. Edge Validation
   * Conforms to: tests#integration
   * `[ ]`   `[function].integration.test.ts`
     * `[ ]`   Validate provider → function → consumer across the approved boundary; mock only at the outer edge
 
-  ## 13. Directionality (Graph Constraint)
+  ## 14. Directionality (Graph Constraint)
   * Conforms to: boundaries
   * `[ ]`   `directionality`
     * `[ ]`   Confirm deps inward, provides outward, no unjustified cycles
 
-  ## 14. Completion Criteria
+  ## 15. Completion Criteria
   * Conforms to: tdd-ordering
   * `[ ]`   `requirements`
     * `[ ]`   Binary, observable, testable acceptance criteria, each mapped to a test
 
-  ## 15. Versioning — only at the end of a complete set of work, not on every node
+  ## 16. Versioning — only at the end of a complete set of work, not on every node
   * Conforms to: workplan-structure
   * `[ ]`   **Commit** `[type] [scope] [summary]`
     * `[ ]`   List structural, behavioral, and contract changes

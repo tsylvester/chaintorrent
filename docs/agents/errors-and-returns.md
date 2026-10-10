@@ -33,6 +33,12 @@ When a function hits a failure, classify it:
 
 There is no third option. You never convert one error type into another, and you never invent an untyped or generic error to stand in for a specific one.
 
+## A family's errors
+
+A family's trait states its failures in the contract entries of its factory module's interaction spec (see [workplan-structure](workplan-structure.md#the-interaction-spec-carries-the-integration-elements)). Each failure a contract entry states is a flavor of that method's error union, declared in the factory module's interface. Every concrete that meets the failure, the mock concrete included, decides it from its inputs and returns that flavor, and the flavor names no concrete. A callee error the entry states surfacing is carried intact in the flavor.
+
+A concrete's own variant in the union carries only what that concrete alone produces — its vendor's error, propagated intact — and appears only in the unions of the methods that produce it. The mock concrete's own variant carries only the errors of its failure modes that stand for a concrete's own error (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
+
 ## The return is always the union
 
 - The function returns a member of `SuccessReturn | ErrorReturn`. "This function only ever succeeds" is not the author's call — the error arm exists on purpose.

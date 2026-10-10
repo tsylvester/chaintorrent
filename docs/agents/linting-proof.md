@@ -9,7 +9,7 @@ Linting does not apply to documents, such as markdown or text.
 ## Lint every edit
 
 - After each edit, lint the touched file and resolve every warning and error.
-- Use your own linter tool, do not attempt to run a terminal command.
+- Use your own linter tool. Where your tools provide no linter for the language, run its read-only lint command from the [terminal-policy](terminal-policy.md) allowlist.
 - Do not claim a lint error is pre-existing and ignore it. If it is fixable within that one file, fix it.
 - Evaluate whether each linter error is in-file or out-of-file. Resolve the in-file ones; report the out-of-file ones and await instruction (fixing them is a multi-file discovery — see [discovery-halt](discovery-halt.md)).
 

@@ -16,7 +16,7 @@ Interface tests do not use mocks.
 
 Provide mocks only for symbols owned by the interface being mocked:
 
-- a builder and an invalidator for every owned **object type**;
+- a builder for every owned **object type**, and an invalidator for every owned object type that has an untrusted form (see [Invalidators](#invalidators--corruption-typed-unknown));
 - a mock for every owned **function**.
 
 An owned symbol that is neither an object type nor a function needs no mock — an enum, a union or primitive/string-literal type alias, or a constant is used directly by its production value or type, and the object-type *members* of a union each get their own builder. Guards are not mocked here (see [guards](guards.md)).
@@ -32,14 +32,14 @@ Imported types are mocked by their own home package — locate and use existing 
 
 ### Locating an existing mock
 
-The general rule and its three outcomes are owned by [tdd-ordering](tdd-ordering.md#search-the-invariant-never-the-convention) — search the structural invariant, never the name or the folder, because those describe where the codebase is going and not the code you are searching. This section names the invariant for each kind of mock.
+The general rule and its outcomes are owned by [tdd-ordering](tdd-ordering.md#search-the-invariant-never-the-convention) — search the structural invariant, never the name or the folder, because those describe where the codebase is going and not the code you are searching. This section names the invariant for each kind of mock.
 
 - **Builder** — it returns the production type. `SomeType` in the return position is the invariant, whatever the function is called and wherever it lives.
 - **Function mock** — it *is* the production function type, so its type annotation is the invariant: a value declared `: SomeFn`.
 - **Family mock concrete** — it is the member the family's selection carries under the `mocks` feature (see [Families](#families--the-mock-is-a-concrete-of-the-family-rust)). Read the selection, never a name.
 - **Invalidator** — it returns `unknown` by mandate, so **its signature ties it to nothing**. There is no invariant to search on. Find the builder first, then read the file the builder turned out to live in — and do not assume that file is beside the interface, or that it holds an invalidator at all.
 
-An invalidator that does not exist is the second outcome in [tdd-ordering](tdd-ordering.md#three-outcomes-and-only-one-of-them-is-create-it), not the third: the mock file exists and is missing a symbol, which is another file's edit and so a discovery. Do not write the invalidator into a foreign mock file, and do not substitute a cast or a hand-rolled malformed object for the one that is missing.
+An invalidator that does not exist is the found-but-missing outcome in [tdd-ordering](tdd-ordering.md#outcomes-of-the-search), not the not-found outcome: the mock file exists and is missing a symbol, which is another file's edit and so a discovery. Do not write the invalidator into a foreign mock file, and do not substitute a cast or a hand-rolled malformed object for the one that is missing.
 
 A mock found under a non-compliant name, or in an unexpected file, is still the mock. Use it and record the debt; a second, correctly-named copy beside it is duplication, which is forbidden below.
 
@@ -47,23 +47,23 @@ A mock found under a non-compliant name, or in an unexpected file, is still the 
 
 For each symbol the interface owns, ask what it is:
 
-1. An **object type** → a builder and an invalidator (`buildX`, `invalidateX`).
-2. A **function** → a function mock (`mockX`).
-3. A **union type** → nothing for the union itself; each object-type member gets its own builder (step 1).
-4. An **enum, primitive/string-literal alias, or constant** → nothing. It is used directly by its production value or type.
-5. A **guard** → nothing here; guards are their own element (see [guards](guards.md)).
-6. A **class** → never mocked as a class. It decomposes by who constructs it: injected → mock the interface it implements (step 1); constructed by the code itself → a builder returning a real instance, plus the four symbols on its constructor-params object type (see [Classes](#classes--decompose-never-mock-the-class)). In Rust a trait a factory selects concretes for takes the [family form](#families--the-mock-is-a-concrete-of-the-family-rust).
+- An **object type** → a builder (`buildX`), and an invalidator (`invalidateX`) where the type has an untrusted form.
+- A **function** → a function mock (`mockX`).
+- A **union type** → nothing for the union itself; each object-type member gets its own builder, as an object type.
+- An **enum, primitive/string-literal alias, or constant** → nothing. It is used directly by its production value or type.
+- A **guard** → nothing here; guards are their own element (see [guards](guards.md)).
+- A **class** → never mocked as a class. It decomposes by who constructs it: injected → mock the interface it implements, as an object type; constructed by the code itself → a builder returning a real instance, plus the object-type symbols on its constructor-params type (see [Classes](#classes--decompose-never-mock-the-class)). In Rust a trait a factory selects concretes for takes the [family form](#families--the-mock-is-a-concrete-of-the-family-rust).
 
 If a symbol is none of these, it does not belong to this interface — do not mock it.
 
-## Naming — four symbols per owned object type
+## Naming — the symbols per owned object type
 
 Use production names. Per owned object type, generate exactly:
 
 - `ObjectNameOverrides` — the override type
 - `buildObjectName` — the builder
-- `ObjectNameCorruptions` — the corruption type
-- `invalidateObjectName` — the invalidator
+- `ObjectNameCorruptions` — the corruption type, where the type has an untrusted form
+- `invalidateObjectName` — the invalidator, where the type has an untrusted form
 
 Per owned function, generate `mockFunctionName`.
 
@@ -105,7 +105,16 @@ pub fn build_my_object(overrides: MyObjectOverrides) -> MyObject {
 }
 ```
 
-Every property has a default. Builders exactly match production types and names; they never invent shapes and never produce invalid objects.
+Every property has a default, except a field the builder is handed (see [Fields with no default](#fields-with-no-default-rust)). Builders exactly match production types and names; they never invent shapes and never produce invalid objects.
+
+### Fields with no default (Rust)
+
+Some fields a builder cannot default on its own. The value's kind decides the form:
+
+- **Handed.** A borrow, whose referent the caller owns; a family's concrete, which nothing constructs outside its factory; a value of the owning family's own associated types, which only that family's concretes produce; any other value of a type parameter that the produced form does not supply. The builder takes each such field as a leading parameter, typed exactly as the field, in field order, ahead of `overrides`, and the overrides struct omits the field.
+- **Produced.** A value of a type a collaborator family supplies — a dependency of the owning module, such as the pairing beneath a KEM — that the collaborator's own operations produce from constants, such as a group element from its generators. Where those operations need the collaborator's instance, the builder takes it as a leading parameter ahead of `overrides`; the field's default is computed through them and the field stays overridable.
+
+A builder never adds a `Default` bound to a type parameter, and never constructs a concrete, to manufacture a default. A type that holds a handed value takes no invalidator (see [Invalidators](#invalidators--corruption-typed-unknown)).
 
 ### Nested object composition
 
@@ -168,7 +177,9 @@ const { foo: _omit, ...missingFoo } = buildMyObject();
 
 ## Invalidators — corruption, typed `unknown`
 
-One invalidator per owned object type, composing its builder for the valid baseline. Keys are checked (`keyof T`); values are unrestricted; the return is `unknown`, so **no cast is ever needed** at the call site.
+One invalidator per owned object type that has an untrusted form, a rendering of its values as data, composing its builder for the valid baseline. Keys are checked (`keyof T`); values are unrestricted; the return is `unknown`, so **no cast is ever needed** at the call site.
+
+In Rust a type with no untrusted form takes no invalidator and no corruptions struct: deps, which are never serialized (see [composition](composition.md#parameter-jurisdiction--what-is-trusted-vs-proven)), and a type holding a handed value, which has no rendering as data (see [Fields with no default](#fields-with-no-default-rust)). An invalidator whose rendering passes through a collaborator, such as a point encoded by the pairing, takes that collaborator's instance as a leading parameter ahead of `corruptions`.
 
 ```ts
 export type MyObjectCorruptions = { [K in keyof MyObject]?: unknown };
@@ -284,7 +295,7 @@ The Rust form: a trait a factory selects concretes for takes the [family form](#
 Errors, value objects, and domain entities are constructed by the code under test, not injected. The mock returns a **real instance**, and the override surface moves from the instance to the constructor:
 
 - the constructor takes exactly **one typed params object**, owned by the interface — the same discipline `deps` / `params` / `payload` imposes on functions (see [composition](composition.md));
-- that params type is an ordinary owned object type and takes the full four symbols;
+- that params type is an ordinary owned object type and takes the symbols an owned object type takes;
 - `buildClassName` accepts the params overrides, composes the params builder, and returns `new ClassName(...)` — prototype intact, private members real, `instanceof` true, no spread, no cast.
 
 ```ts
@@ -329,11 +340,11 @@ export function buildCompressionKey(
 
 **There is no `mockCompressionKey`.** If a call site must defer construction, the seam is a named factory function type declared in the interface — already a function, already covered above: `mockCreateCompressionKey` returns `buildCompressionKey()`. `new` then appears only in the adapter or the composition root.
 
-The Rust form: `build_compression_key(overrides)` returns `CompressionKey::try_new(build_compression_key_constructor_params(overrides)).expect("built params are valid")`, a real instance with private fields intact; the constructor-params struct takes the four symbols, and there is no `invalidate_compression_key` and no `mock_compression_key`.
+The Rust form: `build_compression_key(overrides)` returns `CompressionKey::try_new(build_compression_key_constructor_params(overrides)).expect("built params are valid")`, a real instance with private fields intact; the constructor-params struct takes the symbols an owned object type takes, without an invalidator where it holds a handed value, and there is no `invalidate_compression_key` and no `mock_compression_key`.
 
 ### Naming — per owned class
 
-`buildClassName`, plus the four standard symbols on `ClassNameConstructorParams` (`ClassNameConstructorParamsOverrides`, `buildClassNameConstructorParams`, `ClassNameConstructorParamsCorruptions`, `invalidateClassNameConstructorParams`). Do not invent `ClassNameOverrides`, `invalidateClassName`, or `mockClassName`.
+`buildClassName`, plus the standard symbols on `ClassNameConstructorParams` (`ClassNameConstructorParamsOverrides`, `buildClassNameConstructorParams`, `ClassNameConstructorParamsCorruptions`, `invalidateClassNameConstructorParams`). Do not invent `ClassNameOverrides`, `invalidateClassName`, or `mockClassName`.
 
 ### Forbidden — class-specific
 
@@ -341,15 +352,15 @@ spreading a class instance in a builder or invalidator (`{ ...instance, ...overr
 
 ## Families — the mock is a concrete of the family (Rust)
 
-A family is a factory module that owns a trait and selects its concrete from configuration. Its mock is a concrete of that family, and a test reaches it the way every caller reaches every concrete: through the factory, selected by configuration, admitted by its declaration, received as the family's trait. A test names neither the mock concrete nor any other concrete.
+A family is a factory module that owns a trait and selects its concrete from configuration. Its mock is a concrete of that family, and a test reaches it the way every caller reaches every concrete: through the factory, selected by configuration, admitted by its declaration, received as the family's trait. A test names no concrete but its own subject. Configuration that names a failure mode, and the whole-error assertion of what that failure mode returns, name the failure mode, not the mock concrete.
 
-The mock concrete, `MockI<Trait>` after the trait it implements, lives in the factory module's mock file. Under the `mocks` feature the family's selection, each error union of the family's trait, and the factory's selection branch carry it beside the real concretes. The declared set holds the real concretes alone, so a consumer or an integration test that runs over the declared set never reaches it. Its type is crate-visible; the public surface carries the configuration that selects it.
+The mock concrete, `MockI<Trait>` after the trait it implements, lives in the factory module's mock file. Under the `mocks` feature the family's selection and the factory's selection branch carry it beside the real concretes, and the error union of a method carries its error variant where a failure mode of that method returns the mock concrete's own error. The declared set holds the real concretes alone, so a consumer or an integration test that runs over the declared set never reaches it. Its type is crate-visible; the public surface carries the configuration that selects it.
 
-It is self-contained. Its declaration, associated types, and error variant are its own; it never takes a concrete as a type parameter, wraps or delegates to a concrete, or borrows a concrete's declaration, associated types, or errors.
+It is self-contained. Its declaration, associated types, and error variant are its own; it never takes a concrete as a type parameter, wraps or delegates to a concrete, or borrows a concrete's declaration, associated types, or errors. A failure a contract entry states as the family's, reached by an input or by a failure mode, it returns as the family's flavor, as every concrete does (see [errors-and-returns](errors-and-returns.md#a-familys-errors)); its error variant carries only the errors of failure modes that stand for a concrete's own error.
 
 It answers the family's contract. The factory module's private integration test runs every contract entry of the family's trait over the declared set and the mock concrete (see [integrationTest](integrationTest.md#integration-private)), so its methods compute from their inputs the outcomes the entries state: a working simplified implementation, never a constant an entry would reject. A consumer test that passes against the mock concrete holds for every concrete in the declared set.
 
-A test reaches each outcome the way a caller reaches it from a real concrete. The mock concrete computes every arm the contract states from its inputs, as the real concretes do, so a test reaches an arm by passing the input that produces it. An arm no input reaches, an outer-edge failure such as the operating system refusing a draw, is a failure mode: `MockI<Trait>FailureMode`, an enum the factory module's interface declares under the `mocks` feature and the selection's mock member carries. The selecting configuration names the failure mode, and the mock concrete returns its own error variant from the method that mode fails. Each failure mode stands for an error arm that a contract entry states a concrete returns. A failure mode is a selecting param; configuration never carries a function, an outcome, or an override for the mock concrete.
+A test reaches each outcome the way a caller reaches it from a real concrete. The mock concrete computes every arm the contract states from its inputs, as the real concretes do, so a test reaches an arm by passing the input that produces it. An arm no input reaches, an outer-edge failure such as the operating system refusing a draw, is a failure mode: `MockI<Trait>FailureMode`, an enum the factory module's interface declares under the `mocks` feature and the selection's mock member carries. The selecting configuration names the failure mode, and from the method that mode fails the mock concrete returns the family's flavor where the entry states the failure as the family's, and its own error variant where the failure stands for a concrete's own error. Each failure mode stands for an error arm that a contract entry states a concrete returns. A failure mode is a selecting param; configuration never carries a function, an outcome, or an override for the mock concrete.
 
 A family that hands its concrete to a consumer generic over its traits delivers its types only inside that consumer's method, and Rust has no generic closure, so a test of a subject generic over that family's types receives them the way every caller does: by implementing the family's consumer trait. The test's consumer is the block's harness, not a test double. It implements the consumer trait and nothing else, holds only the block's arrangement, and its method makes the block's single call to the subject with the received types. Where the subject's return names no received type, the method returns it whole as its output and the block asserts on it; where it does, the method asserts on it in place and its output is `()`. The block calls the factory with configuration selecting the mock concrete in a unit test, or once per member of the declared set in an integration test. A test never implements a trait a family's concretes implement.
 
@@ -367,7 +378,7 @@ This topic outranks the workplan. If a node step instructs a null/undefined-acce
 
 ## Forbidden (summary)
 
-modify or widen production types · invent shapes or type names · `as` · `satisfies` · overloads · type aliases that weaken checking · generic merge helpers · specialized mock variants instead of overrides · wrap one mock with another · duplicate builders · mock imported symbols / databases / repositories / external services · generic or shared invalidators · spread a class instance · cast an object literal to a class type · type a dep by a class instead of the interface it implements · a positional-argument constructor · a class instance invalidator or a constructor mock · a mock parameterized by, wrapping, or borrowing from a concrete · a test naming a concrete or a family's mock concrete · a test-local implementation of a trait a family's concretes implement · a test's consumer that does anything beyond the subject's single call · a function, outcome, or override carried in configuration for a mock concrete.
+modify or widen production types · invent shapes or type names · `as` · `satisfies` · overloads · type aliases that weaken checking · generic merge helpers · specialized mock variants instead of overrides · wrap one mock with another · duplicate builders · mock imported symbols / databases / repositories / external services · generic or shared invalidators · spread a class instance · cast an object literal to a class type · type a dep by a class instead of the interface it implements · a positional-argument constructor · a class instance invalidator or a constructor mock · a mock parameterized by, wrapping, or borrowing from a concrete · a test naming a concrete other than its subject · a test-local implementation of a trait a family's concretes implement · a test's consumer that does anything beyond the subject's single call · a function, outcome, or override carried in configuration for a mock concrete.
 
 ## Architecture
 

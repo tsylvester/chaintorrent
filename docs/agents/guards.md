@@ -16,6 +16,8 @@ The guard is only a tripwire if the guard itself is complete. The thing that cer
 
 Write a guard for **every** type the interface exports, deps included. The implementer never classifies a type as "needs a guard or not" — every owned type gets one.
 
+Rust has no guard element (see [workplan-structure](workplan-structure.md#element-files-by-language)); a Rust function narrows untrusted input on entry as [Guard on entry](#guard-on-entry--validating-functions-take-unknown) shows.
+
 The **body** of each guard is what varies, and choosing it is author guidance, not implementer judgment:
 
 - **Data types** (payload, params, produced objects) → check invariants: presence, non-empty, ranges, enum membership, cross-field rules, and the type of every property (delegating to owned or imported guards).
@@ -65,13 +67,13 @@ Run these in order; stop at the first hit:
 3. Search the whole repo for `is SomeType` (shared guards live in shared packages).
 4. Search for existing callers — another guard already importing it. Copy its import.
 
-Only if all four return nothing may you report no guard exists, and the halt report must include the exact patterns you searched and where. A halt report without search evidence is a guess.
+Only if every search returns nothing may you report no guard exists, and the halt report must include the exact patterns you searched and where. A halt report without search evidence is a guess.
 
-Step 2 is a fast path, not a boundary. The owning folder is where the guard *should* be, so it is worth trying first — but a miss there proves nothing, and step 3 is not optional after it. The general rule is owned by [tdd-ordering](tdd-ordering.md#search-the-invariant-never-the-convention): search the structural invariant, never the name or the placement, because those describe where the codebase is going and not the code you are searching.
+The owning-folder search is a fast path, not a boundary. The owning folder is where the guard *should* be, so it is worth trying first — but a miss there proves nothing, and the whole-repo search is not optional after it. The general rule is owned by [tdd-ordering](tdd-ordering.md#search-the-invariant-never-the-convention): search the structural invariant, never the name or the placement, because those describe where the codebase is going and not the code you are searching.
 
 ### What the search finds is not always a whole guard
 
-The four steps end in one of three states, and only the last is "no guard exists" (see [tdd-ordering](tdd-ordering.md#three-outcomes-and-only-one-of-them-is-create-it)).
+A search that finds something ends in one of the states below; a search that finds nothing ends in [Missing guard → halt](#missing-guard--halt) (see [tdd-ordering](tdd-ordering.md#outcomes-of-the-search)).
 
 **A guard that checks what you need.** Import it and call it. If it is non-compliant in ways that do not weaken the check — an unexpected name, an unexpected file — use it and record the debt. Do not write a second guard for a type that already has one.
 

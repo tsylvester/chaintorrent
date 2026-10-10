@@ -9,12 +9,10 @@ Written **before** the implementation (TDD). Validates behavior.
 - Only imports, contract headers, test blocks, and assertions; a test's consumer is part of its block. Import the function from its implementation file.
 - **RED is the implementation not yet existing.** Import from its path; the compiler error is the deliverable; never create or edit the implementation file. Missing producer owned by another interface → halt (same rule as the interface test).
 - Factories and helpers go in the **mock file**, never in the test (see [mocks](mocks.md)). Do not build mocks for imported functions — use theirs.
-- A family collaborator is the family's mock concrete, reached through the family's factory by configuration (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)). The test names no concrete.
+- A family collaborator is the family's mock concrete, reached through the family's factory by configuration and named as [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust) states.
 - **When updating an existing suite for new requirements, update the existing tests in the same pass.** Do not leave stale tests for a second pass after the implementation changes — add the new tests and correct the existing ones together.
 - Focus on correct transformations and branching logic. Do **not** re-test type shape (interface test) or guard correctness (guard test).
 - One behavior per test.
-- An error outcome is asserted by equality with the whole expected error, every field and every carried callee error stated — `assert_eq!` in Rust. A pattern that elides fields with `..` asserts less than the branch returns.
-- Never run any terminal commands.
 
 ### The contract header here
 

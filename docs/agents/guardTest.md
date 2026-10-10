@@ -63,6 +63,6 @@ test("isOwnedObject rejects each omitted required property", () => {
 
 Scope: test only guards for types this interface owns. A foreign guard is tested in its home package and is exercised here only indirectly through case 4 — never imported into this test.
 
-Forbidden: running any terminal commands, importing the implementation, creating/editing the guard file; defining a guard in the test; silencing the compiler; hand-rolled fixtures duplicating builders; testing a foreign guard; hand-building fixtures for imported types. If the mock file lacks a needed builder or invalidator, add it there in the four-symbol form (see [mocks](mocks.md)); if it belongs to an imported type, find it in its home or halt.
+Forbidden: importing the implementation, creating/editing the guard file; defining a guard in the test; silencing the compiler; hand-rolled fixtures duplicating builders; testing a foreign guard; hand-building fixtures for imported types. A needed builder or invalidator that its mock file lacks — this node's mock element or an imported type's home — is a discovery: report it against that mock file and halt (see [tdd-ordering](tdd-ordering.md#outcomes-of-the-search), [discovery-halt](discovery-halt.md)).
 
 

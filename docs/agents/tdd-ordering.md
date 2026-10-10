@@ -21,7 +21,7 @@ Within a node, elements are built producers-first so every dependency exists whe
 interface test → interface → mock → guard test → guard → unit test → implementation → private integration test → provides → public integration test
 ```
 
-This order is not stylistic — it is the dependency graph. The mock precedes the guard test so the guard test can use its builders; the guard precedes the unit test so the implementation can rely on it; the private integration test follows the implementations it runs; provides precedes the public integration test so the consumer can import the finished surface. The private and public integration tests are Rust forms; TypeScript and Solidity omit the private test and keep a single integration test last.
+This order is not stylistic — it is the dependency graph. The mock precedes the guard test so the guard test can use its builders; the guard precedes the unit test so the implementation can rely on it; the private integration test follows the implementations it runs; provides precedes the public integration test so the consumer can import the finished surface. The private and public integration tests are Rust forms; TypeScript and Solidity omit the private test and keep a single integration test last. Rust has no interface test, guard test, or guard element (see [workplan-structure](workplan-structure.md#element-files-by-language)) and omits them from the order.
 
 ### The order is immutable
 
@@ -49,7 +49,7 @@ Search on the **structural invariant** — the property that makes a thing what 
 
 When the invariant search comes up empty, existing **call sites** are the last fact available: if anything already consumes the resource, it imports it from wherever it truly lives. Follow the consumer to the definition.
 
-### Three outcomes, and only one of them is "create it"
+### Outcomes of the search
 
 **Found and usable.** Use it. If it is non-compliant in ways that do not block you — wrong name, wrong folder, owned by an interface that should not own it — **use it anyway and record the debt** in the workplan's To-Do list (see [workplan-structure](workplan-structure.md)). Writing a second, compliant copy beside it is duplication, and the duplicate is a worse defect than the non-compliance it was meant to avoid. Legacy is closed incrementally, by scheduled work, never opportunistically in the middle of another task.
 
@@ -57,11 +57,11 @@ When the invariant search comes up empty, existing **call sites** are the last f
 
 **Not found.** Report and halt — and the report carries the **exact patterns searched and the paths searched**. A halt report without search evidence is a guess (see [guards](guards.md), [discovery-halt](discovery-halt.md)).
 
-**Two candidates.** Where the search returns more than one — the one the repo actually imports, and another nearer the interface that should own it — report both and let the user choose. Picking silently entrenches whichever you picked, and if you picked the wrong one the next agent finds three.
+**More than one candidate.** Where the search returns more than one — the one the repo actually imports, and another nearer the interface that should own it — report both and let the user choose. Picking silently entrenches whichever you picked, and if you picked the wrong one the next agent finds yet another.
 
 ## Types and interfaces are test-exempt
 
-Types and interfaces are exempt from RED/GREEN unit testing — their contract is proven by the interface test's typed assignments (see [tests](tests.md#interface)), not by a behavioral test of their own. They still follow the Read → … → Halt loop.
+Types and interfaces are exempt from RED/GREEN unit testing — their contract is proven by the interface test's typed assignments (see [tests](tests.md#interface)), not by a behavioral test of their own. Rust has no interface test element; there the compiler checks the interface's contract wherever the elements that follow it consume it. They still follow the Read → … → Halt loop.
 
 ## Precedence
 

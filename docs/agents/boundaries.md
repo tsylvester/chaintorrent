@@ -28,8 +28,10 @@ mod mock;
 pub mod provides;
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod integration_test;
 
-pub(crate) fn enqueue_compress_jobs(…) -> EnqueueCompressJobsReturn { … }
+pub fn enqueue_compress_jobs(…) -> EnqueueCompressJobsReturn { … }
 
 // provides.rs
 pub use super::enqueue_compress_jobs;

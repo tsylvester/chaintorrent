@@ -13,6 +13,7 @@ Cited by: construction view (workplan node `interface.test`, `guard.test`, `unit
 - Each test covers **one** behavior, so a failure names the exact defect.
 - Use production types, objects, helpers, and mocks. Never invent parallel types or shadow implementations. Each mock must name the production type it mirrors.
 - Never change an assertion to match broken code — fix the code.
+- An error outcome is asserted by equality with the whole expected error, every field and every carried callee error stated — `assert_eq!` in Rust. A pattern that elides fields with `..`, or an assertion of the arm alone, asserts less than the branch returns.
 - Fixtures come from the mock file's builders and invalidators (see [mocks](mocks.md)), never hand-rolled.
 - Test files mirror the source tree and may split by behavior (`bar.basic.test.ts`, `bar.error.test.ts`, `bar.edge.test.ts`); group related tests in nested `Deno.test` / `t.step` blocks.
 - In Rust each test element is a `#[cfg(test)]` module file in the function's module directory, `test.rs`, splitting by behavior as `test_basic.rs`, `test_error.rs`; the runner is `cargo test` with `assert!` and `assert_eq!`, and the agent still never runs it. A private integration test is `integration_test.rs`, a `#[cfg(test)]` module of its own beside `test.rs`, and a public integration test is a file under the crate's `tests/`; neither is ever a `test_*.rs` split of the unit test.
@@ -206,7 +207,7 @@ The behavior asserted belongs to a different function. The subject appears in th
 
 ### Audit evidence — the carve-out from Reviewer mode
 
-[modes](modes.md) requires each EO&D finding to be proven by a test that fails now and passes once the defect is fixed. A deranged test is the one exception: the defect **is** the test, so there is no failing test to write. The evidence is the probe result stated concretely — "no-op the filter and this test still passes," "the expected id is the id the fixture was built with." A fabricated failing test is not evidence, and a finding with no probe result is not a finding.
+[modes](modes.md) requires each EO&D finding to be proven by a test that fails now and passes once the defect is fixed. A deranged test is an exception: the defect **is** the test, so there is no failing test to write. The evidence is the probe result stated concretely — "no-op the filter and this test still passes," "the expected id is the id the fixture was built with." A fabricated failing test is not evidence, and a finding with no probe result is not a finding.
 
 The audit reports and halts; it does not edit ([discovery-halt](discovery-halt.md)).
 
