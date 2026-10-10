@@ -27,3 +27,21 @@ The error arm is uninhabited (`Result<_, Infallible>`): `NonZeroU32` already exc
 - The body names no curve library and no concrete: `P` is bound only by `IPairingAdapter`, and `P::Scalar` only by `ISampleUniformScalar`.
 - Decoding, encoding, and sampling itself are not timed.
 
+## Integration: callee dispositions
+
+The `pairing/factory` entries this node's route reaches, each proven by the public integration block of the same name. The route of each is `create_pairing`, the arm's concrete through its `try_new`, `PairingBenchmark::consume_pairing`, and the calls it makes on that concrete and on the source `create_random_source` constructs; the outer-edge collaborators on that route are the operating system's generator and monotonic clock, both run real, except where an entry names the pairing family's mock concrete.
+
+- `the_consumer_receives_the_concrete_the_params_name`: carried; restated where this node transforms it: the `concrete` of the `Ok` measurement the benchmark returns equals `params.concrete`, read from the benchmark's output instead of a consumer's own reading of `P::CONCRETE`.
+- `a_sampled_scalar_encodes_through_secret`: carried; restated where this node transforms it: the benchmark draws `P::Scalar::UNIFORM_BYTES_LENGTH` bytes into a `Secret`, samples both scalars with `sample_from_uniform_bytes`, and consumes them in the group operations instead of `encode_scalar`, so the output is `Ok` for every concrete.
+- `a_sampling_refusal_reaches_the_caller_unchanged`: carried; restated where this node transforms it: a sampling refusal is the output's `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, the error whole; its concrete is the pairing family's mock concrete selected by `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`.
+
+## Integration: own entries
+
+Each entry is named and proven by the public integration block of the same name.
+
+- `every_operation_is_timed_on_every_concrete`: condition the benchmark runs through `create_pairing` on a concrete of `PAIRING_CONCRETES` with the source `create_random_source` constructs for `RandomSourceKind::OperatingSystem`; outcome `Ok` whose timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`; variation every concrete of the declared set, whose operations are real, so a timing left at its zero default fails; edge each operation runs on scalars sampled from the draw and on the concrete's own points, so none is skipped.
+
+## Integration: public surface
+
+An outside caller constructs `PairingBenchmark` with `PairingBenchmark::try_new` from `PairingBenchmarkConstructorParams` holding the source `create_random_source` returns and an iteration count, passes it as `CreatePairingDeps { consumer }` to `create_pairing` from `pairing`'s public surface with `CreatePairingParams` naming a concrete and `CreatePairingPayload`, and observes the benchmark's `PairingBenchmarkReturn` in `CreatePairingSuccessReturn`. The entries proven are every carried entry and the own entry above. The route of each is as the callee dispositions state; the outer-edge collaborators are the operating system's generator and monotonic clock, run real, and, for `a_sampling_refusal_reaches_the_caller_unchanged`, the pairing family's mock concrete. The fixtures are `build_pairing_benchmark`, `build_create_random_source_params`, `build_create_pairing_deps`, and `build_create_pairing_params`.
+

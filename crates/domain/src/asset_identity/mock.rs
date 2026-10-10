@@ -5,7 +5,7 @@
     clippy::as_conversions
 )]
 
-use super::interface::{AssetIdentity, AssetIdentityConstructorParams};
+use super::interface::{AssetCoordinate, AssetIdentity, AssetIdentityConstructorParams};
 
 #[derive(Default)]
 pub struct AssetIdentityConstructorParamsOverrides {
@@ -27,4 +27,10 @@ pub fn build_asset_identity_constructor_params(
 pub fn build_asset_identity(overrides: AssetIdentityConstructorParamsOverrides) -> AssetIdentity {
     AssetIdentity::try_new(build_asset_identity_constructor_params(overrides))
         .expect("built asset identity constructor params are admitted")
+}
+
+pub fn build_asset_coordinate(
+    overrides: AssetIdentityConstructorParamsOverrides,
+) -> AssetCoordinate {
+    build_asset_identity(overrides).coordinate()
 }

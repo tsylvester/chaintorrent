@@ -11,7 +11,7 @@ use super::interface::{
 };
 use core::num::NonZeroU32;
 use core::time::Duration;
-use pairing::PairingConcrete;
+use pairing::{MockIPairingAdapterFailureMode, PairingConcrete};
 use random::{
     CreateRandomSourceDeps, CreateRandomSourcePayload, IRandomSourceAdapter,
     build_create_random_source_params, create_random_source,
@@ -85,7 +85,9 @@ pub fn build_pairing_benchmark_success_return(
     overrides: PairingBenchmarkSuccessReturnOverrides,
 ) -> PairingBenchmarkSuccessReturn {
     PairingBenchmarkSuccessReturn {
-        concrete: overrides.concrete.unwrap_or(PairingConcrete::Bn254Arkworks),
+        concrete: overrides.concrete.unwrap_or(PairingConcrete::Mock(
+            MockIPairingAdapterFailureMode::Succeeds,
+        )),
         iterations: overrides.iterations.unwrap_or(NonZeroU32::MIN),
         timings: overrides
             .timings

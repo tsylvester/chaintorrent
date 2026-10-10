@@ -614,7 +614,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Does not compute in the target group beyond the pairing product, its correction to the identifier's value, and its encoding: no target-group multiplication, exponentiation, or inversion is exposed
     * `[✅]`   Does not map a target-group value to a key; the key-derivation family derives from the encoding
     * `[✅]`   Does not read the correction from configuration; it is a property of this library under this identifier and is computed in `try_new`
-    * `[✅]`   Does not decode, classify, or emit a rejection vector; `harness-crypto/generate/evm/rejection_vectors` runs the encoding through the family's decoders and emits it with their verdict
+    * `[✅]`   Does not decode, classify, or emit a rejection vector; `harness-crypto/generate/evm/rejection_vectors` emits the reference encodings it reads from the reference trait, and each decoder's refusal of them is proven by `pairing/factory`'s public integration test
     * `[✅]`   Does not carry a commit
 
   * `[✅]`   `module`
@@ -658,7 +658,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `PAIRING_INTERFACE_VERSION`, a `pub const` of type `u32` with value `1`
     * `[✅]`   `PairingCurve`, an enum with the variant `Bn254` and, under `#[cfg(any(test, feature = "mocks"))]`, the variant `Mock`; `VerifierGroupArithmetic`, an enum with the variant `FirstGroupOnly`; `PrecompileEncoding`, an enum with the variant `Eip196Eip197` and, under the same `cfg`, the variant `Mock`; the mock variants are the mock concrete's own declaration values
     * `[✅]`   `PairingConcrete`, an enum with `#[derive(Clone, Copy, PartialEq, Eq)]` and the variants `Bn254Arkworks`, `Bn254Halo2curves`, `Bls12381Arkworks`, and `Bls12381Halo2curves`, so `IPairingAdapter::CONCRETE` names a type this node produces, and, under `#[cfg(any(test, feature = "mocks"))]`, the variant `Mock(MockIPairingAdapterFailureMode)`, the mock concrete carrying the failure mode its configuration names
-    * `[✅]`   `MockIPairingAdapterFailureMode`, under `#[cfg(any(test, feature = "mocks"))]`, an enum with `#[derive(Clone, Copy, PartialEq, Eq)]` and the variants `Succeeds`, `DecodeG1NotOnCurve`, `DecodeG1NotInSubgroup`, `DecodeG2NotOnCurve`, `G1OutsideSubgroupSearchExhausted`, and `G2OutsideSubgroupSearchExhausted`, each failing variant standing for an error arm of the contract that no input reaches on the mock concrete
+    * `[✅]`   `MockIPairingAdapterFailureMode`, under `#[cfg(any(test, feature = "mocks"))]`, an enum with `#[derive(Clone, Copy, PartialEq, Eq)]` and the variants `Succeeds`, `DecodeG1NotOnCurve`, `DecodeG1NotInSubgroup`, `DecodeG2NotOnCurve`, `G1OutsideSubgroupSearchExhausted`, `G2OutsideSubgroupSearchExhausted`, and `SampleScalarWrongLength`, each failing variant standing for an error arm of the contract that no input reaches on the mock concrete
     * `[✅]`   `TargetGroupEncodingIdentifier`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variants `Bn254V1` and `Bls12381V1`, each with a doc comment, and, under `#[cfg(any(test, feature = "mocks"))]`, the variant `Mock`, its doc comment stating the mock concrete's toy target group as the mock section defines it; `Bn254V1`'s reads "The optimal ate pairing as EIP-197 fixes it, over the EIP-197 generators, on the tower `Fp2 = Fp[u] / (u^2 + 1)`, `Fp6 = Fp2[v] / (v^3 - (u + 9))`, `Fp12 = Fp6[w] / (w^2 - v)`; the pairing value is the Miller loop's value raised to the exact exponent `(p^12 - 1) / r`, not a fixed multiple of it; a target-group element is serialized as its twelve base-field coefficients in tower order, each the coefficient's 32-byte big-endian canonical integer."; `Bls12381V1`'s reads the same with "the CFRG pairing-friendly-curves draft" as the standard, "the EIP-2537 generators", the tower `Fp6 = Fp2[v] / (v^3 - (u + 1))`, and "48-byte"
     * `[✅]`   `PairingDeclaration`, a struct with `pub curve: PairingCurve`, `pub verifier_group_arithmetic: VerifierGroupArithmetic`, `pub precompile_encoding: PrecompileEncoding`, `pub target_group_encoding: TargetGroupEncodingIdentifier`, `pub adapter_version: u32`, and `pub interface_version: u32`
     * `[✅]`   The sampling bound's types: the fieldless `SampleUniformScalarParams`; `SampleUniformScalarPayload` with `pub uniform: Secret<Vec<u8>>`; `SampleUniformScalarSuccessReturn<S: Zeroize>` with `pub scalar: Secret<S>`; `SampleUniformScalarErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the struct variant `WrongLength { expected: usize, actual: usize }`; `SampleUniformScalarReturn<S>`, the alias `Result<SampleUniformScalarSuccessReturn<S>, SampleUniformScalarErrorReturn>`
@@ -736,9 +736,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The mock concrete's toy algebra, `pub(crate)` throughout: `MOCK_GROUP_ORDER`, a `const` of type `u64` with value `65521`, a prime; `MockScalar`, `MockG1`, and `MockGt`, each a struct with one `u64` residue modulo `MOCK_GROUP_ORDER`, and `MockG2`, a struct with one `u64` residue modulo twice `MOCK_GROUP_ORDER`, whose subgroup is the even residues; each derives `Clone`, implements `Zeroize` by clearing the residue and `ZeroizeOnDrop` through a `Drop` that does, and implements `Default` returning residue `1` for the scalar, the first group, and the target group and residue `2` for the second group, the generators
     * `[✅]`   `MockEncodedG1`, `MockEncodedG2`, `MockEncodedScalar`, and `MockEncodedGt`, distinct `pub(crate)` structs each holding a private `[u8; 8]`, the residue in big-endian; each derives `Default` and implements `AsRef<[u8]>`; `MockEncodedG1` and `MockEncodedG2` derive `Clone`, `PartialEq`, and `Eq`; `MockEncodedScalar` and `MockEncodedGt` implement `Zeroize`
     * `[✅]`   `MockIPairingAdapterConstructorParams`, a `pub(crate)` struct with `pub failure_mode: MockIPairingAdapterFailureMode`; `MockIPairingAdapterConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub failure_mode: Option<MockIPairingAdapterFailureMode>`; `build_mock_i_pairing_adapter_constructor_params(overrides: MockIPairingAdapterConstructorParamsOverrides) -> MockIPairingAdapterConstructorParams`, the mode defaulting to `MockIPairingAdapterFailureMode::Succeeds`; no corruptions type and no invalidator, since the params arrive typed from the factory
-    * `[✅]`   `MockIPairingAdapter`, the family's mock concrete, a `pub(crate) struct` with `pub(super) failure_mode: MockIPairingAdapterFailureMode`; `MockIPairingAdapterTryNewReturn`, the alias `Result<MockIPairingAdapter, Infallible>`; `impl MockIPairingAdapter` with `pub(crate) fn try_new(params: MockIPairingAdapterConstructorParams) -> MockIPairingAdapterTryNewReturn` returning `Ok` holding the params' mode; `build_mock_i_pairing_adapter(overrides: MockIPairingAdapterConstructorParamsOverrides) -> MockIPairingAdapter`, the real instance from `try_new` through the irrefutable pattern `let Ok(adapter) = …;`; the type is crate-visible and the public surface carries the configuration that selects it; it takes no concrete as a type parameter and borrows nothing from one
+    * `[✅]`   `MockIPairingAdapter`, the family's mock concrete, a `pub(crate) struct` with `pub(super) failure_mode: MockIPairingAdapterFailureMode`; `MockIPairingAdapterTryNewReturn`, the alias `Result<MockIPairingAdapter, Infallible>`; `impl MockIPairingAdapter` with `pub(crate) fn try_new(params: MockIPairingAdapterConstructorParams) -> MockIPairingAdapterTryNewReturn` returning `Ok` holding the params' mode and setting `MOCK_SAMPLING_MODE` to it; `build_mock_i_pairing_adapter(overrides: MockIPairingAdapterConstructorParamsOverrides) -> MockIPairingAdapter`, the real instance from `try_new` through the irrefutable pattern `let Ok(adapter) = …;`; the type is crate-visible and the public surface carries the configuration that selects it; it takes no concrete as a type parameter and borrows nothing from one
     * `[✅]`   `impl IPairingAdapter for MockIPairingAdapter`, self-contained and answering the family's contract by computing from its inputs: `DECLARATION` is `PairingDeclaration { curve: PairingCurve::Mock, verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly, precompile_encoding: PrecompileEncoding::Mock, target_group_encoding: TargetGroupEncodingIdentifier::Mock, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }` and `CONCRETE` is `PairingConcrete::Mock(MockIPairingAdapterFailureMode::Succeeds)`; `Scalar`, `G1`, and `G2` are `MockScalar`, `MockG1`, and `MockG2`, and the encoded types are `MockEncodedG1`, `MockEncodedG2`, and `MockEncodedScalar`; the generators are the `Default` residues; `add_g1` and `add_g2` add residues modulo the group's modulus; `mul_g1` and `mul_g2` multiply the point's residue by the scalar's modulo the group's modulus; `msm_g1` and `msm_g2` sum the products, an empty list yielding residue `0`, the identity; `pairing_product_is_one` is true exactly when the sum over the terms of the first-group residue times half the second-group residue, modulo `MOCK_GROUP_ORDER`, is `0`, an empty list yielding true; each encoder writes the residue as eight big-endian bytes, `encode_scalar` moving the bytes into a `Secret`; `decode_g1` and `decode_g2` check in the contract's order: length against eight bytes with `WrongLength { expected: 8, actual }`; canonicality against the group's modulus with `NonCanonicalCoordinate`; identity at residue `0` with `Ok`; curve, where `NotOnCurve` is returned under the mode `DecodeG1NotOnCurve` or `DecodeG2NotOnCurve` and every residue is otherwise on the curve; subgroup, where `decode_g1` returns `NotInSubgroup` under the mode `DecodeG1NotInSubgroup` and `decode_g2` returns `NotInSubgroup` for an odd residue, an arm the input reaches; then `Ok`; `decode_scalar` checks length against eight bytes with `WrongLength { expected: 8, actual }` and canonicality against `MOCK_GROUP_ORDER` with `NonCanonical`
-    * `[✅]`   `impl ISampleUniformScalar for MockScalar`: `UNIFORM_BYTES_LENGTH` is `16`, twice the scalar's byte width; `sample_from_uniform_bytes` returns `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual })` for any other length, and otherwise `Ok` with the sixteen big-endian bytes reduced modulo `MOCK_GROUP_ORDER`, moved into a `Secret`
+    * `[✅]`   `impl ISampleUniformScalar for MockScalar`: `UNIFORM_BYTES_LENGTH` is `16`, twice the scalar's byte width; `sample_from_uniform_bytes` returns `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual })` for any other length, and otherwise `Ok` with the sixteen big-endian bytes reduced modulo `MOCK_GROUP_ORDER`, moved into a `Secret`; under the mode `SampleScalarWrongLength` it returns `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual })` for a sixteen-byte input as well, `actual` being the input's length; the sampler holds no adapter, so the mode reaches it through `MOCK_SAMPLING_MODE`, a `pub(crate)` `thread_local!` `Cell<MockIPairingAdapterFailureMode>` initialized to `Succeeds`, which `MockIPairingAdapter::try_new` sets to its params' mode and `sample_from_uniform_bytes` reads
     * `[✅]`   `impl IPairingArithmetic for MockIPairingAdapter` with `Gt` as `MockGt` and `EncodedGt` as `MockEncodedGt`: `add_scalar`, `mul_scalar`, and `neg_scalar` compute modulo `MOCK_GROUP_ORDER`; `neg_g1` and `neg_g2` return the modulus minus the residue, `0` for `0`; `is_identity_g1` and `is_identity_g2` are true exactly at residue `0`; `pairing_product` returns the `MockGt` residue that `pairing_product_is_one` sums, an empty list yielding `0`; `encode_gt` writes the residue as eight big-endian bytes inside a `Secret`
     * `[✅]`   `impl IPairingReference for MockIPairingAdapter`: `scalar_field_order` returns `MOCK_GROUP_ORDER` as eight big-endian bytes; `g1_outside_subgroup_encoding` returns `Ok` with `bytes: None`, the first group having cofactor one, or `Err(G1OutsideSubgroupEncodingErrorReturn::SearchExhausted)` under the mode `G1OutsideSubgroupSearchExhausted`; `g2_outside_subgroup_encoding` returns `Ok` with the encoding of residue `1`, the least odd residue and so outside the second group's subgroup, or `Err(G2OutsideSubgroupEncodingErrorReturn::SearchExhausted)` under the mode `G2OutsideSubgroupSearchExhausted`
     * `[✅]`   No builder for the fieldless params and payloads, for the error enums, or for the declaration's enums, each used by its production value; no corruptions type and no invalidator, since no struct this interface owns arrives as untrusted data and the decoders take the untrusted bytes directly
@@ -3400,7 +3400,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Each `the_…_concrete_from_the_factory_samples_and_encodes_through_secret` integration test passes, each proving its `Secret → <Concrete> → create_pairing` chain with every link real (CR-07, secret material crosses the family inside `Secret`; CR-10, every concrete reached through the factory)
     * `[✅]`   No `ark-` crate or `halo2curves` is named outside its concretes, and no code outside `adapters/pairing` can name a concrete
 
-* `[ ]`   `harness-crypto/benchmark` **Pairing benchmark timing scalar multiplication, multi-scalar multiplication, and the pairing-product check on whichever concrete the pairing factory hands it; creates the `apps/harness-crypto` crate**
+* `[✅]`   `harness-crypto/benchmark` **Pairing benchmark timing scalar multiplication, multi-scalar multiplication, and the pairing-product check on whichever concrete the pairing factory hands it; creates the `apps/harness-crypto` crate**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: the default pairing concrete per curve is a configured value set from measurement, so each concrete's cost for the operations the KEM, envelope, and proof perform is measured through the factory, with no module naming a library
@@ -3422,27 +3422,28 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Creates the crate at `apps/harness-crypto`, admitted by the `apps/*` glob this node adds
     * `[✅]`   Outside: the choice of which concretes to run, the iteration count's configured value, the recording of timings, and every other harness module
 
-  * `[ ]`   `deps`
-    * `[ ]`   `pairing`, `adapters/pairing`, adapter ring, path dependency; supplies `IPairingConsumer`, `ConsumePairingParams`, `ConsumePairingPayload`, `IPairingAdapter`, `ISampleUniformScalar`, `SampleUniformScalarParams`, `SampleUniformScalarPayload`, `SampleUniformScalarErrorReturn`, and every method's params and payload types used below; in the unit test and the integration test `create_pairing`, `CreatePairingDepsOverrides`, `CreatePairingPayload`, `build_create_pairing_deps`, `build_create_pairing_params`, and `CreatePairingParamsOverrides`, and in the integration test `PairingConcrete`; direction inward, app on adapter
-    * `[ ]`   `random`, `adapters/random`, adapter ring, path dependency; supplies `IRandomSourceAdapter`, `FillBytesParams`, `FillBytesPayload`, and `FillBytesErrorReturn`; the source `create_random_source` returns for `build_create_random_source_params` with no override, the family's mock concrete, is the benchmark builder's default source, which the unit test and the pairing-chain integration tests use; in the unit test and the integration test `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `RandomSourceKind`, and in the unit test `MockIRandomSourceAdapterFailureMode` and `FillBytesErrorReturn`
+  * `[✅]`   `deps`
+    * `[✅]`   `pairing`, `adapters/pairing`, adapter ring, path dependency; supplies `IPairingConsumer`, `ConsumePairingParams`, `ConsumePairingPayload`, `IPairingAdapter`, `ISampleUniformScalar`, `SampleUniformScalarParams`, `SampleUniformScalarPayload`, `SampleUniformScalarErrorReturn`, and every method's params and payload types used below; in the unit test and the integration test `create_pairing`, `CreatePairingDepsOverrides`, `CreatePairingPayload`, `build_create_pairing_deps`, `build_create_pairing_params`, and `CreatePairingParamsOverrides`; `PairingConcrete` and `MockIPairingAdapterFailureMode` in the mock, the unit test, and the integration test, and `PAIRING_CONCRETES` in the integration test; direction inward, app on adapter
+    * `[✅]`   `random`, `adapters/random`, adapter ring, path dependency; supplies `IRandomSourceAdapter`, `FillBytesParams`, `FillBytesPayload`, and `FillBytesErrorReturn`; the source `create_random_source` returns for `build_create_random_source_params` with no override, the family's mock concrete, is the benchmark builder's default source, which the unit test and the pairing-chain integration tests use; in the unit test and the integration test `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `RandomSourceKind`, and in the unit test `MockIRandomSourceAdapterFailureMode` and `FillBytesErrorReturn`
     * `[✅]`   `pairing` and `random` with their `mocks` features, as dev-dependencies and through this crate's `mocks` feature
     * `[✅]`   `std::time::Instant` and `core::time::Duration`, standard library, the monotonic clock and its measure; `core::num::NonZeroU32`, standard library, the iteration count, so the mean never divides by zero; `core::convert::Infallible`, standard library, the constructor's error arm
-    * `[ ]`   No external crate at runtime; no reverse dependency
+    * `[✅]`   No external crate at runtime; no reverse dependency
 
-  * `[ ]`   `context_slice`
+  * `[✅]`   `context_slice`
     * `[✅]`   From `pairing`: `IPairingConsumer` with `type Output` and `consume_pairing<P: IPairingAdapter>(&self, ConsumePairingParams, ConsumePairingPayload<P>) -> Self::Output`; `ConsumePairingPayload<P>` with only `adapter`, and `P::DECLARATION` and `P::CONCRETE` read from the trait; the adapter methods `g1_generator`, `g2_generator`, `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one`, each returning `Result<_, Infallible>`; `ISampleUniformScalar` with `UNIFORM_BYTES_LENGTH` and `sample_from_uniform_bytes`
-    * `[ ]`   From `pairing`'s mocks, in the unit test: `build_create_pairing_params(CreatePairingParamsOverrides) -> CreatePairingParams`, whose default selects the family's mock concrete, and `build_create_pairing_deps::<C>(CreatePairingDepsOverrides<C>) -> CreatePairingDeps<C>` for `C: IPairingConsumer + Default`, so the unit test reaches the adapter through `create_pairing`, the benchmark being the deps' consumer
-    * `[ ]`   From `random`, in the unit test: `create_random_source(&CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload) -> CreateRandomSourceReturn` with `CreateRandomSourceSuccessReturn { adapter }`, `build_create_random_source_params(CreateRandomSourceParamsOverrides)` whose default selects the family's mock concrete, and `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode)`, the mode `FillBytesRefused` refusing every draw with `FillBytesErrorReturn::MockIRandomSourceAdapter`
+    * `[✅]`   From `pairing`'s mocks, in the unit test: `build_create_pairing_params(CreatePairingParamsOverrides) -> CreatePairingParams`, whose default selects the family's mock concrete, and `build_create_pairing_deps::<C>(CreatePairingDepsOverrides<C>) -> CreatePairingDeps<C>` for `C: IPairingConsumer + Default`, so the unit test reaches the adapter through `create_pairing`, the benchmark being the deps' consumer
+    * `[✅]`   From `random`, in the unit test: `create_random_source(&CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload) -> CreateRandomSourceReturn` with `CreateRandomSourceSuccessReturn { adapter }`, `build_create_random_source_params(CreateRandomSourceParamsOverrides)` whose default selects the family's mock concrete, and `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode)`, the mode `FillBytesRefused` refusing every draw with `FillBytesErrorReturn::MockIRandomSourceAdapter`
+    * `[✅]`   From `pairing`: `PAIRING_CONCRETES`, the declared set of real concretes the integration test runs over, and `PairingConcrete::Mock(MockIPairingAdapterFailureMode)`, whose default `Succeeds` is the selection `build_create_pairing_params` makes and whose mode `SampleScalarWrongLength` makes the mock concrete's sampling return `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })`
     * `[✅]`   From `random`: `IRandomSourceAdapter::fill_bytes(&self, FillBytesParams, FillBytesPayload) -> Result<FillBytesSuccessReturn, FillBytesErrorReturn>`, the draw inside a `Secret`
     * `[✅]`   From the standard library: `Instant::now()` and `Instant::elapsed()`, `Duration`'s division by `u32`, and `NonZeroU32::get()`
 
   * `[✅]`   `Cargo.toml`
     * `[✅]`   Adds `"apps/*"` to `[workspace] members`, which reads `["crates/*", "adapters/*", "apps/*"]`; every other table and key is unchanged
 
-  * `[ ]`   `apps/harness-crypto/Cargo.toml`
+  * `[✅]`   `apps/harness-crypto/Cargo.toml`
     * `[✅]`   `[package]` with `name = "harness-crypto"`, `edition.workspace = true`, `rust-version.workspace = true`, and `publish.workspace = true`; no `version` key
     * `[✅]`   `[dependencies]` with `pairing = { path = "../../adapters/pairing" }` and `random = { path = "../../adapters/random" }`
-    * `[ ]`   `[dev-dependencies]` with `pairing = { path = "../../adapters/pairing", features = ["mocks"] }` and `random = { path = "../../adapters/random", features = ["mocks"] }`
+    * `[✅]`   `[dev-dependencies]` with `pairing = { path = "../../adapters/pairing", features = ["mocks"] }` and `random = { path = "../../adapters/random", features = ["mocks"] }`
     * `[✅]`   `[features]` with `mocks = ["pairing/mocks", "random/mocks"]`
     * `[✅]`   `[lints]` with `workspace = true`
     * `[✅]`   No other table
@@ -3468,32 +3469,45 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Measured: both scalars `a` and `b` sampled; the setup takes the generators `g1` and `g2` and computes `p1 = g1 · a` and `p2 = g2 · b` through `mul_g1` and `mul_g2`, untimed; then, for each operation in turn, `Instant::now()` is read, the operation runs `self.iterations.get()` times, and `elapsed()` divided by `self.iterations.get()` is its mean: `mul_g1` of a clone of `p1` by a clone of `a`; `mul_g2` of a clone of `p2` by a clone of `b`; `msm_g1` over the terms `MsmG1Term { base: p1, scalar: a }` and `MsmG1Term { base: g1, scalar: b }`; `msm_g2` over the corresponding `MsmG2Term` values; `pairing_product_is_one` over the terms `(p1, g2)` and `(g1, p2)`, each term's elements cloned per call; outcome `Ok(PairingBenchmarkSuccessReturn { concrete: P::CONCRETE, iterations: self.iterations, timings })`
     * `[✅]`   Every adapter call returns `Result<_, Infallible>` and is unpacked irrefutably; the scalars are cloned from their `Secret`s by `expose().clone()`, and each clone is cleared when the payload holding it drops
     * `[✅]`   Ordering: both draws and both samplings precede any timing, so a failure returns before the clock is read; `P::CONCRETE` is carried into the result; no independently supplied metadata is read
+    * `[✅]`   `Integration: callee dispositions`, the `pairing/factory` entries this node's route reaches, each proven by the public integration block of the same name; the route of each is `create_pairing`, the arm's concrete through its `try_new`, `PairingBenchmark::consume_pairing`, and the calls it makes on that concrete and on the source `create_random_source` constructs; the outer-edge collaborators on that route are the operating system's generator and monotonic clock, both run real, except where an entry names the pairing family's mock concrete
+      * `[✅]`   `the_consumer_receives_the_concrete_the_params_name`: carried; restated where this node transforms it: the `concrete` of the `Ok` measurement the benchmark returns equals `params.concrete`, read from the benchmark's output instead of a consumer's own reading of `P::CONCRETE`
+      * `[✅]`   `a_sampled_scalar_encodes_through_secret`: carried; restated where this node transforms it: the benchmark draws `P::Scalar::UNIFORM_BYTES_LENGTH` bytes into a `Secret`, samples both scalars with `sample_from_uniform_bytes`, and consumes them in the group operations instead of `encode_scalar`, so the output is `Ok` for every concrete
+      * `[✅]`   `a_sampling_refusal_reaches_the_caller_unchanged`: carried; restated where this node transforms it: a sampling refusal is the output's `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, the error whole; its concrete is the pairing family's mock concrete selected by `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`
+    * `[✅]`   `Integration: own entries`, a bulleted section, each entry named and proven by the public integration block of the same name
+      * `[✅]`   `every_operation_is_timed_on_every_concrete`: condition the benchmark runs through `create_pairing` on a concrete of `PAIRING_CONCRETES` with the source `create_random_source` constructs for `RandomSourceKind::OperatingSystem`; outcome `Ok` whose timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`; variation every concrete of the declared set, whose operations are real, so a timing left at its zero default fails; edge each operation runs on scalars sampled from the draw and on the concrete's own points, so none is skipped
+    * `[✅]`   `Integration: public surface`: an outside caller constructs `PairingBenchmark` with `PairingBenchmark::try_new` from `PairingBenchmarkConstructorParams` holding the source `create_random_source` returns and an iteration count, passes it as `CreatePairingDeps { consumer }` to `create_pairing` from `pairing`'s public surface with `CreatePairingParams` naming a concrete and `CreatePairingPayload`, and observes the benchmark's `PairingBenchmarkReturn` in `CreatePairingSuccessReturn`; the entries proven are every carried entry and the own entry above; the route of each is as the callee dispositions state; the outer-edge collaborators are the operating system's generator and monotonic clock, run real, and, for `a_sampling_refusal_reaches_the_caller_unchanged`, the pairing family's mock concrete; the fixtures are `build_pairing_benchmark`, `build_create_random_source_params`, `build_create_pairing_deps`, and `build_create_pairing_params`
 
-  * `[ ]`   `apps/harness-crypto/src/benchmark/mock.rs`
+  * `[✅]`   `apps/harness-crypto/src/benchmark/mock.rs`
     * `[✅]`   Module-level `#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::as_conversions)]`
-    * `[ ]`   `PairingBenchmarkConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub random: Option<Box<dyn IRandomSourceAdapter>>` and `pub iterations: Option<NonZeroU32>`; `build_pairing_benchmark_constructor_params(overrides: PairingBenchmarkConstructorParamsOverrides) -> PairingBenchmarkConstructorParams`, defaulting `random` to the `adapter` of the success arm of `create_random_source(&CreateRandomSourceDeps, build_create_random_source_params(Default::default()), CreateRandomSourcePayload)`, bound by the irrefutable pattern `let Ok(success) = …;` since every constructor error of the family is uninhabited, and `iterations` to `NonZeroU32::MIN`
+    * `[✅]`   `PairingBenchmarkConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub random: Option<Box<dyn IRandomSourceAdapter>>` and `pub iterations: Option<NonZeroU32>`; `build_pairing_benchmark_constructor_params(overrides: PairingBenchmarkConstructorParamsOverrides) -> PairingBenchmarkConstructorParams`, defaulting `random` to the `adapter` of the success arm of `create_random_source(&CreateRandomSourceDeps, build_create_random_source_params(Default::default()), CreateRandomSourcePayload)`, bound by the irrefutable pattern `let Ok(success) = …;` since every constructor error of the family is uninhabited, and `iterations` to `NonZeroU32::MIN`
     * `[✅]`   `build_pairing_benchmark(overrides: PairingBenchmarkConstructorParamsOverrides) -> PairingBenchmark`, returning the real instance from `PairingBenchmark::try_new(build_pairing_benchmark_constructor_params(overrides))` through the irrefutable pattern `let Ok(benchmark) = …;`
     * `[✅]`   `PairingOperationTimingsOverrides`, `#[derive(Default)]`, one `Option<Duration>` per field; `build_pairing_operation_timings(overrides: PairingOperationTimingsOverrides) -> PairingOperationTimings`, each field defaulting to `Duration::ZERO`
-    * `[✅]`   `PairingBenchmarkSuccessReturnOverrides`, `#[derive(Default)]`, fields `pub concrete: Option<PairingConcrete>`, `pub iterations: Option<NonZeroU32>`, and `pub timings: Option<PairingOperationTimings>`; `build_pairing_benchmark_success_return(overrides: PairingBenchmarkSuccessReturnOverrides) -> PairingBenchmarkSuccessReturn`, defaulting to `PairingConcrete::Bn254Arkworks`, `NonZeroU32::MIN`, and `build_pairing_operation_timings(Default::default())`
-    * `[ ]`   `impl Default for PairingBenchmark` returning `build_pairing_benchmark(Default::default())`, so `build_create_pairing_deps`, which requires `Default` of its consumer type, accepts the benchmark as `C`
-    * `[✅]`   No mock of `PairingBenchmark` or of `consume_pairing`: it is injected as an `IPairingConsumer`, whose mock `pairing` owns; no corruptions type and no invalidator, since nothing this interface owns arrives as untrusted data
-    * `[ ]`   Imports `IRandomSourceAdapter`, `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, and `build_create_random_source_params` from `random`, the standard-library names above, and this module's types from `super::interface`
+    * `[✅]`   `PairingBenchmarkSuccessReturnOverrides`, `#[derive(Default)]`, fields `pub concrete: Option<PairingConcrete>`, `pub iterations: Option<NonZeroU32>`, and `pub timings: Option<PairingOperationTimings>`; `build_pairing_benchmark_success_return(overrides: PairingBenchmarkSuccessReturnOverrides) -> PairingBenchmarkSuccessReturn`, defaulting to `PairingConcrete::Mock(MockIPairingAdapterFailureMode::Succeeds)`, `NonZeroU32::MIN`, and `build_pairing_operation_timings(Default::default())`
+    * `[✅]`   `impl Default for PairingBenchmark` returning `build_pairing_benchmark(Default::default())`, so `build_create_pairing_deps`, which requires `Default` of its consumer type, accepts the benchmark as `C`
+    * `[✅]`   `PairingBenchmarkConstructorParams`, `PairingOperationTimings`, and `PairingBenchmarkSuccessReturn` take an Overrides type and a builder, and no corruptions type and no invalidator; `PairingBenchmark` takes `build_pairing_benchmark` and no mock of the class; `PairingBenchmarkErrorReturn`, `PairingBenchmarkTryNewReturn`, and `PairingBenchmarkReturn` take no mock; no function mock, `consume_pairing` being the method of the injected `IPairingConsumer`, whose mock `pairing` owns
+    * `[✅]`   Imports `IRandomSourceAdapter`, `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, and `build_create_random_source_params` from `random`, `PairingConcrete` and `MockIPairingAdapterFailureMode` from `pairing`, the standard-library names above, and this module's types from `super::interface`
 
-  * `[ ]`   `apps/harness-crypto/src/benchmark/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `create_pairing`, `CreatePairingDepsOverrides`, `CreatePairingParamsOverrides`, `CreatePairingPayload`, `build_create_pairing_deps`, and `build_create_pairing_params` from `pairing`; `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourceParamsOverrides`, `CreateRandomSourcePayload`, `FillBytesErrorReturn`, `MockIRandomSourceAdapterFailureMode`, `RandomSourceKind`, and `build_create_random_source_params` from `random`; `PairingBenchmarkConstructorParamsOverrides`, `PairingBenchmarkErrorReturn`, and `build_pairing_benchmark` from `super::provides`; and `NonZeroU32` from `core::num`
-    * `[ ]`   Every block: the subject is `PairingBenchmark::consume_pairing`; its adapter is the pairing family's mock concrete and its random source is the randomness family's mock concrete, each reached through its family's factory by configuration, so the single call is `create_pairing(&deps, params, CreatePairingPayload)` with `deps` from `build_create_pairing_deps(CreatePairingDepsOverrides { consumer: Some(benchmark) })`, `benchmark` from `build_pairing_benchmark`, and `params` from `build_create_pairing_params(CreatePairingParamsOverrides::default())`, whose default selects the pairing mock concrete; the benchmark's `consume_pairing` is the only function of its module that runs; the result is observed through `result.ok()`
-    * `[ ]`   `consume_pairing_returns_the_draw_error_unchanged`
-      * `[ ]`   Contract: `self.random.fill_bytes` returns `Err(error)` → `Err(PairingBenchmarkErrorReturn::FillBytes(error))`, with nothing timed
-      * `[ ]`   Collaborators: the randomness family's mock concrete, obtained from `create_random_source` selecting the mode that refuses every draw; the pairing family's mock concrete through `create_pairing`; fixtures `build_pairing_benchmark`, `build_create_random_source_params`, `build_create_pairing_deps`, and `build_create_pairing_params`; `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, and `CreatePairingPayload` by their production values
-      * `[ ]`   Arrange: `create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)` with `params` from `build_create_random_source_params` carrying the kind override `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused)`, a mode that differs from the builder's default `Succeeds`, so a benchmark that ignores a refused draw fails; the success arm bound by the irrefutable pattern `let Ok(created) = …;`; `build_pairing_benchmark` with the `random` override set to `created.adapter`
-      * `[ ]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
-      * `[ ]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::FillBytes(FillBytesErrorReturn::MockIRandomSourceAdapter)))`, the whole error, the `FillBytes` variant being the subject's wrapping and the carried error the mock concrete's own variant written as a literal
-    * `[ ]`   `consume_pairing_carries_the_selected_concrete_and_the_iteration_count`
-      * `[ ]`   Contract: both scalars drawn and sampled → `Ok(PairingBenchmarkSuccessReturn { concrete: P::CONCRETE, iterations: self.iterations, timings })`
-      * `[ ]`   Collaborators: the randomness family's mock concrete, from the builder's default source; the pairing family's mock concrete through `create_pairing`; fixtures `build_pairing_benchmark`, `build_create_pairing_deps`, and `build_create_pairing_params`; `CreatePairingPayload` by its production value
-      * `[ ]`   Arrange: `build_pairing_benchmark` with the `iterations` override set to `NonZeroU32::MIN.saturating_add(2)`, which is 3 and differs from the builder's default of `NonZeroU32::MIN`, so a benchmark that returns a fixed count fails; `params` from `build_create_pairing_params` with no override, its `concrete` read into `selected` before the call
-      * `[ ]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
-      * `[ ]`   Assert: the measurement is extracted with `expect` from `result.ok().and_then(|success| success.output.ok())`; `measurement.concrete == selected` holds under `assert!`; `measurement.iterations.get()` equals the literal 3 written in the assertion; the timings are not asserted
+  * `[✅]`   `apps/harness-crypto/src/benchmark/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; imports `create_pairing`, `CreatePairingDepsOverrides`, `CreatePairingParamsOverrides`, `CreatePairingPayload`, `MockIPairingAdapterFailureMode`, `PairingConcrete`, `SampleUniformScalarErrorReturn`, `build_create_pairing_deps`, and `build_create_pairing_params` from `pairing`; `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourceParamsOverrides`, `CreateRandomSourcePayload`, `FillBytesErrorReturn`, `MockIRandomSourceAdapterFailureMode`, `RandomSourceKind`, and `build_create_random_source_params` from `random`; `PairingBenchmarkConstructorParamsOverrides`, `PairingBenchmarkErrorReturn`, and `build_pairing_benchmark` from `super::provides`
+    * `[✅]`   Every block: the subject is `PairingBenchmark::consume_pairing`; its adapter is the pairing family's mock concrete and its random source is the randomness family's mock concrete, each reached through its family's factory by configuration, so the single call is `create_pairing(&deps, params, CreatePairingPayload)` with `deps` from `build_create_pairing_deps(CreatePairingDepsOverrides { consumer: Some(benchmark) })`, `benchmark` from `build_pairing_benchmark`, and `params` from `build_create_pairing_params` with only the fields the block varies overridden, whose default selects the pairing mock concrete; the benchmark's `consume_pairing` is the only function of its module that runs; the result is observed through `result.ok()`
+    * `[✅]`   `consume_pairing_returns_the_draw_error_unchanged`
+      * `[✅]`   Contract: `self.random.fill_bytes` returns `Err(error)` → `Err(PairingBenchmarkErrorReturn::FillBytes(error))`, with nothing timed
+      * `[✅]`   Collaborators: the randomness family's mock concrete, obtained from `create_random_source` selecting the mode that refuses every draw; the pairing family's mock concrete through `create_pairing`; fixtures `build_pairing_benchmark`, `build_create_random_source_params`, `build_create_pairing_deps`, and `build_create_pairing_params`; `CreateRandomSourceDeps`, `CreateRandomSourcePayload`, and `CreatePairingPayload` by their production values
+      * `[✅]`   Arrange: `create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)` with `params` from `build_create_random_source_params` carrying the kind override `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused)`, a mode that differs from the builder's default `Succeeds`, so a benchmark that ignores a refused draw fails; the success arm bound by the irrefutable pattern `let Ok(created) = …;`; `build_pairing_benchmark` with the `random` override set to `created.adapter`
+      * `[✅]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
+      * `[✅]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::FillBytes(FillBytesErrorReturn::MockIRandomSourceAdapter)))`, the whole error, the `FillBytes` variant being the subject's wrapping and the carried error the mock concrete's own variant written as a literal
+    * `[✅]`   `consume_pairing_draws_the_length_the_sampling_bound_requires`
+      * `[✅]`   Contract: both scalars drawn with `P::Scalar::UNIFORM_BYTES_LENGTH` bytes and sampled → `Ok(PairingBenchmarkSuccessReturn { concrete: P::CONCRETE, iterations: self.iterations, timings })`
+      * `[✅]`   Collaborators: the randomness family's mock concrete, from the builder's default source; the pairing family's mock concrete through `create_pairing`; fixtures `build_pairing_benchmark`, `build_create_pairing_deps`, and `build_create_pairing_params`; `CreatePairingPayload` by its production value
+      * `[✅]`   Arrange: `build_pairing_benchmark` with no override, whose source draws exactly the requested length; `params` from `build_create_pairing_params` with no override; the pairing mock concrete's sampling refuses an input whose length differs from its bound, so a benchmark that requests another length fails
+      * `[✅]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
+      * `[✅]`   Assert: `assert_eq!(result.ok().map(|success| success.output.err()), Some(None))`, the factory's success arm present and the output's error arm empty, the whole error shown on failure; the expectation is the success arm itself, and the measurement's `concrete`, `iterations`, and timings are not asserted
+    * `[✅]`   `consume_pairing_returns_the_sampling_error_unchanged`
+      * `[✅]`   Contract: `P::Scalar::sample_from_uniform_bytes` returns `Err(error)` → `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, with nothing timed
+      * `[✅]`   Collaborators: the randomness family's mock concrete, from the builder's default source; the pairing family's mock concrete through `create_pairing`, selected by the mode that refuses its sampling; fixtures `build_pairing_benchmark`, `build_create_pairing_deps`, and `build_create_pairing_params`; `CreatePairingPayload` by its production value
+      * `[✅]`   Arrange: `params` from `build_create_pairing_params` with the `concrete` override set to `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`, a mode that differs from the builder's default `Succeeds`, so a benchmark that ignores a refused sampling fails; `build_pairing_benchmark` with no override
+      * `[✅]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
+      * `[✅]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })))`, the whole error, the `SampleScalar` variant being the subject's wrapping and the carried error the mock concrete's own value for that mode written as a literal
 
   * `[✅]`   `construction`
     * `[✅]`   `PairingBenchmark::try_new` is the only producer; the harness run constructs one per concrete from the random source `create_random_source` returns and the configured iteration count, and passes it as `CreatePairingDeps { consumer }`
@@ -3508,23 +3522,56 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `apps/harness-crypto/src/benchmark/provides.rs`
     * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
 
-  * `[ ]`   `apps/harness-crypto/tests/integration_test.rs`
+  * `[✅]`   `apps/harness-crypto/tests/benchmark_integration_test.rs`
+    * `[✅]`   Outside the crate, so it reaches only the crate's public surface and the official mocks under the `mocks` feature: module-level `#![allow(clippy::expect_used)]`; imports from `harness_crypto` `PairingBenchmarkConstructorParamsOverrides`, `PairingBenchmarkErrorReturn`, and `build_pairing_benchmark`; from `pairing` `PAIRING_CONCRETES`, `PairingConcrete`, `MockIPairingAdapterFailureMode`, `SampleUniformScalarErrorReturn`, `create_pairing`, `CreatePairingDepsOverrides`, `build_create_pairing_deps`, `CreatePairingParamsOverrides`, `build_create_pairing_params`, and `CreatePairingPayload`; from `random` `create_random_source`, `CreateRandomSourceDeps`, `CreateRandomSourceParamsOverrides`, `build_create_random_source_params`, `CreateRandomSourcePayload`, and `RandomSourceKind`; and `Duration` from `core::time`
+    * `[✅]`   Every block: its body is written once and runs over `PAIRING_CONCRETES`, naming no concrete, except `a_sampling_refusal_reaches_the_caller_unchanged`, whose concrete is the configuration's mock selection; per concrete, `created` is the success arm of `create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)` with `params` from `build_create_random_source_params` carrying the kind override `RandomSourceKind::OperatingSystem`, bound by the irrefutable pattern `let Ok(created) = …;`, `benchmark` is `build_pairing_benchmark` with the `random` override set to `created.adapter`, `deps` is `build_create_pairing_deps(CreatePairingDepsOverrides { consumer: Some(benchmark) })`, `params` is `build_create_pairing_params(CreatePairingParamsOverrides { concrete: Some(concrete), ..Default::default() })`, and the call is `create_pairing(&deps, params, CreatePairingPayload)`, whose result is observed as `result.ok().map(|success| success.output)`; the operating system's generator and monotonic clock run real
+    * `[✅]`   `the_consumer_receives_the_concrete_the_params_name`
+      * `[✅]`   Contract: entry `the_consumer_receives_the_concrete_the_params_name`; given `params.concrete` is a variant of `PAIRING_CONCRETES` and the admissions pass, the `concrete` of the `Ok` measurement equals `params.concrete`
+      * `[✅]`   Arrange: every variant of the declared set in turn, including both libraries of one curve, so a benchmark that returns a fixed concrete, or the factory constructing a sibling library, fails
+      * `[✅]`   Act: `create_pairing(&deps, params, CreatePairingPayload)` per concrete
+      * `[✅]`   Assert: per concrete, `assert!(result.ok().and_then(|success| success.output.ok()).map(|measurement| measurement.concrete) == Some(*concrete))`, the variant coming from the declared set and not from the call
+      * `[✅]`   Boundary: the public `create_pairing`; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations
+      * `[✅]`   Mocked: none
+    * `[✅]`   `a_sampled_scalar_encodes_through_secret`
+      * `[✅]`   Contract: entry `a_sampled_scalar_encodes_through_secret`; the draw of `P::Scalar::UNIFORM_BYTES_LENGTH` bytes crosses inside a `Secret` into `sample_from_uniform_bytes`, and the sampled scalars are consumed by the concrete's group operations, so the output is `Ok`
+      * `[✅]`   Arrange: every concrete of the declared set in turn, each sampling bound its own, so a benchmark that draws a length the bound does not name fails for the concrete whose bound differs
+      * `[✅]`   Act: `create_pairing(&deps, params, CreatePairingPayload)` per concrete
+      * `[✅]`   Assert: per concrete, `assert_eq!(result.ok().map(|success| success.output.err()), Some(None))`, the factory's success arm present and the output's error arm empty, the whole error shown on failure
+      * `[✅]`   Boundary: the public `create_pairing`; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations
+      * `[✅]`   Mocked: none
+    * `[✅]`   `a_sampling_refusal_reaches_the_caller_unchanged`
+      * `[✅]`   Contract: entry `a_sampling_refusal_reaches_the_caller_unchanged`; a sampling refusal is the output's `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, the error whole
+      * `[✅]`   Arrange: `params` from `build_create_pairing_params` with the `concrete` override set to `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`, against the `Ok` outputs of the entries above, so a benchmark that ignores a refused sampling fails
+      * `[✅]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
+      * `[✅]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })))`, the whole error, the carried error the mock concrete's own value for that mode written as a literal
+      * `[✅]`   Boundary: the public `create_pairing`; the real chain is `create_pairing`, the mock arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, and `sample_from_uniform_bytes`
+      * `[✅]`   Mocked: the pairing family's mock concrete, selected by configuration; this block does not prove a real concrete's sampling
+    * `[✅]`   `every_operation_is_timed_on_every_concrete`
+      * `[✅]`   Contract: entry `every_operation_is_timed_on_every_concrete`; the `Ok` measurement's timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`
+      * `[✅]`   Arrange: every concrete of the declared set in turn, whose operations are real, so a timing left at its zero default fails
+      * `[✅]`   Act: `create_pairing(&deps, params, CreatePairingPayload)` per concrete
+      * `[✅]`   Assert: per concrete, the measurement is extracted with `expect` from `result.ok().and_then(|success| success.output.ok())`; each of the five timings is greater than `Duration::ZERO` under `assert!`; the exact means are not asserted
+      * `[✅]`   Boundary: the public `create_pairing`; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations and clock reads
+      * `[✅]`   Mocked: none
 
   * `[✅]`   `directionality`
     * `[✅]`   `benchmark` depends on `pairing`'s and `random`'s public surfaces and on the standard library; it names no concrete and no curve library; nothing depends on the crate yet; no cycle
 
-  * `[ ]`   `requirements`
+  * `[✅]`   `requirements`
     * `[✅]`   The root `Cargo.toml` lists `members = ["crates/*", "adapters/*", "apps/*"]` and is otherwise unchanged; `apps/harness-crypto/Cargo.toml` carries exactly the tables and keys stated above
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --check`, and `cargo deny check` complete without error or warning
-    * `[ ]`   `PairingBenchmarkErrorReturn` derives `Debug`, `PartialEq`, and `Eq`
-    * `[ ]`   `consume_pairing_returns_the_draw_error_unchanged` passes, asserting the whole error by `assert_eq!`
-    * `[ ]`   `consume_pairing_carries_the_selected_concrete_and_the_iteration_count` passes
-    * `[ ]`   Each `the_factory_hands_the_…_concrete_to_the_benchmark` integration test passes, each proving the concrete the factory constructs reaches the benchmark and every operation is timed on it (CR-10)
-    * `[ ]`   `the_benchmark_samples_a_draw_from_the_operating_system_source_the_factory_constructs` passes (CR-05, a production draw passes through the randomness factory and is sampled by a concrete's sampling bound)
-    * `[ ]`   Each `the_benchmark_samples_through_the_…_scalar_inside_secret` integration test and `the_benchmark_receives_each_operating_system_draw_inside_secret` pass, each proving its chain through `Secret` with every link real (CR-07, draws and scalars cross the families inside `Secret`)
+    * `[✅]`   `PairingBenchmarkErrorReturn` derives `Debug`, `PartialEq`, and `Eq`
+    * `[✅]`   `consume_pairing_returns_the_draw_error_unchanged` passes, asserting the whole error by `assert_eq!`
+    * `[✅]`   `consume_pairing_draws_the_length_the_sampling_bound_requires` passes
+    * `[✅]`   `consume_pairing_returns_the_sampling_error_unchanged` passes, asserting the whole error by `assert_eq!`
+    * `[✅]`   `the_consumer_receives_the_concrete_the_params_name` passes over every concrete of the declared set (CR-10, the concrete the factory constructs reaches the benchmark)
+    * `[✅]`   `a_sampled_scalar_encodes_through_secret` passes over every concrete of the declared set (CR-05, a production draw passes through the randomness factory and is sampled by a concrete's sampling bound; CR-07, draws and scalars cross the families inside `Secret` with every link real)
+    * `[✅]`   `a_sampling_refusal_reaches_the_caller_unchanged` passes, asserting the whole error by `assert_eq!`
+    * `[✅]`   `every_operation_is_timed_on_every_concrete` passes over every concrete of the declared set
+    * `[✅]`   `MockIPairingAdapterFailureMode` carries `SampleScalarWrongLength`, and the pairing mock concrete's sampling answers it
     * `[✅]`   No module of `apps/harness-crypto` names `ark-`, `halo2curves`, or a pairing concrete
 
-* `[ ]`   `domain/asset_identity` **Canonical asset identity, the package name and version whose `name@version` join is the input to the Registry's identity hash, admitted only when that join names exactly one coordinate in exactly one byte form**
+* `[✅]`   `domain/asset_identity` **Canonical asset identity, the package name and version whose `name@version` join is the input to the Registry's identity hash, admitted only when that join names exactly one coordinate in exactly one byte form**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: every record, hash-card, and derivation names an asset, and the Registry keys the asset by `BLAKE3(name@version)`, so equivalent coordinates must yield one identity and a malformed coordinate must be refused deterministically, in every process, before anything is derived from it (PR-02)
@@ -3586,98 +3633,98 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `AssetIdentityConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub name: Option<String>` and `pub version: Option<String>`
     * `[✅]`   `build_asset_identity_constructor_params(overrides: AssetIdentityConstructorParamsOverrides) -> AssetIdentityConstructorParams`, the name defaulting to `"example-package"` and the version to `"1.0.0"`
     * `[✅]`   `build_asset_identity(overrides: AssetIdentityConstructorParamsOverrides) -> AssetIdentity`, returning the real instance from `AssetIdentity::try_new(build_asset_identity_constructor_params(overrides))` through `.expect("built asset identity constructor params are admitted")`
-    * `[ ]`   `build_asset_coordinate(overrides: AssetIdentityConstructorParamsOverrides) -> AssetCoordinate`, returning the real instance `build_asset_identity(overrides).coordinate()`, the coordinate of the identity those overrides build
-    * `[ ]`   No corruptions type and no invalidator: the constructor params are typed strings, every coordinate the constructor refuses is a string value the params builder's overrides carry, and the crate has no serialization dependency; no `AssetIdentity` or `AssetCoordinate` overrides type, invalidator, or mock function, since each type is built as a real instance and owns no free function
-    * `[ ]`   Imports `AssetCoordinate`, `AssetIdentity`, and `AssetIdentityConstructorParams` from `super::interface`
+    * `[✅]`   `build_asset_coordinate(overrides: AssetIdentityConstructorParamsOverrides) -> AssetCoordinate`, returning the real instance `build_asset_identity(overrides).coordinate()`, the coordinate of the identity those overrides build
+    * `[✅]`   No corruptions type and no invalidator: the constructor params are typed strings, every coordinate the constructor refuses is a string value the params builder's overrides carry, and the crate has no serialization dependency; no `AssetIdentity` or `AssetCoordinate` overrides type, invalidator, or mock function, since each type is built as a real instance and owns no free function
+    * `[✅]`   Imports `AssetCoordinate`, `AssetIdentity`, and `AssetIdentityConstructorParams` from `super::interface`
 
-  * `[ ]`   `crates/domain/src/asset_identity/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`
-    * `[ ]`   Assertions on the held strings and the held coordinate bytes read the `name`, `version`, and `bytes` fields, which the `pub(super)` visibility admits to this child module
-    * `[ ]`   `try_new_admits_a_scoped_name_and_a_prerelease_version`
-      * `[ ]`   Contract: every check passes → `Ok(AssetIdentity { name, version })`; a name may contain `@`
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the name with the scoped name `@scope/pkg` and the version with the prerelease version `1.0.0-beta.1`; the name carries `@` and `/` and the version carries `-` and `.`, so a constructor that refuses `@` in a name, or admits only alphanumerics, fails
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the identity's `name` field equals the literal `"@scope/pkg"` and its `version` field equals the literal `"1.0.0-beta.1"`
-    * `[ ]`   `try_new_admits_the_lowest_and_highest_visible_ascii_bytes`
-      * `[ ]`   Contract: every check passes → `Ok(AssetIdentity { name, version })`; visible ASCII is `0x21` through `0x7E`, ends included
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `!~` and the version with `!~`, the bytes `0x21` and `0x7E` in each string, so a range that excludes either end fails
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the identity's `name` field equals the literal `"!~"` and its `version` field equals the literal `"!~"`
-    * `[ ]`   `try_new_rejects_an_empty_name`
-      * `[ ]`   Contract: `params.name.is_empty()` → `Err(AssetIdentityTryNewErrorReturn::EmptyName)`
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the name with the empty string; the version keeps its valid default, so the emptiness check is the only refusal the params can meet
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::EmptyName)` by `assert_eq!`
-    * `[ ]`   `try_new_rejects_the_lowest_name_byte_outside_visible_ascii`
-      * `[ ]`   Contract: the name is non-empty and some byte of `params.name.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })` for the lowest such index
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `ab cd` followed by a tab byte and `e`, which places a space byte at offset 2 and a tab byte at offset 5, offending bytes of different values at different offsets, so a scan that reports the last offender, or none, fails; the version keeps its valid default
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 2, byte: 0x20 })` by `assert_eq!`, the offset and value of the lowest offending byte the arrangement places
-    * `[ ]`   `try_new_rejects_a_non_ascii_name`
-      * `[ ]`   Contract: the name is non-empty and some byte of `params.name.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })`, the error carrying the byte and never the character
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `aé`, an ASCII byte followed by the character U+00E9, whose UTF-8 bytes `0xC3 0xA9` sit at offsets 1 and 2; the version keeps its valid default
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 1, byte: 0xC3 })` by `assert_eq!`, the offset and value of the first byte of the encoded character
-    * `[ ]`   `try_new_rejects_an_empty_version`
-      * `[ ]`   Contract: the name passes and `params.version.is_empty()` → `Err(AssetIdentityTryNewErrorReturn::EmptyVersion)`
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the version with the empty string; the name keeps its valid default, so the emptiness check is the only refusal the params can meet
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::EmptyVersion)` by `assert_eq!`
-    * `[ ]`   `try_new_rejects_a_version_byte_outside_visible_ascii`
-      * `[ ]`   Contract: the name passes, the version is non-empty, and some byte of `params.version.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })`
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1.0` followed by the DEL byte `0x7F`, the byte just above the range, at offset 3; the name keeps its valid default
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index: 3, byte: 0x7F })` by `assert_eq!`, the offset and value of the offending byte the arrangement places
-    * `[ ]`   `try_new_rejects_a_non_ascii_version`
-      * `[ ]`   Contract: the name passes, the version is non-empty, and some byte of `params.version.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })`, the error carrying the byte and never the character
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1é`, an ASCII byte followed by the character U+00E9, whose UTF-8 bytes `0xC3 0xA9` sit at offsets 1 and 2; the name keeps its valid default
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index: 1, byte: 0xC3 })` by `assert_eq!`, the offset and value of the first byte of the encoded character
-    * `[ ]`   `try_new_rejects_a_version_containing_the_separator`
-      * `[ ]`   Contract: the name passes, the version is non-empty, and some byte of `params.version.bytes()` equals `ASSET_COORDINATE_SEPARATOR` → `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index })`
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1.0@0`, the separator at offset 3; the name keeps its valid default
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index: 3 })` by `assert_eq!`, the offset of the separator the arrangement places
-    * `[ ]`   `try_new_reports_a_version_separator_before_a_later_byte_outside_visible_ascii`
-      * `[ ]`   Contract: the version is scanned once left to right and the first byte that fails `is_ascii_graphic` or equals `ASSET_COORDINATE_SEPARATOR` decides → `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index })` when that byte is the separator
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1@0` followed by the DEL byte `0x7F`, the separator at offset 1 and the DEL byte at offset 3, so a check of bytes outside visible ASCII that runs ahead of the separator check fails; the name keeps its valid default
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index: 1 })` by `assert_eq!`, the offset of the lowest offending byte the arrangement places
-    * `[ ]`   `try_new_reports_a_version_byte_outside_visible_ascii_before_a_later_separator`
-      * `[ ]`   Contract: the version is scanned once left to right and the first byte that fails `is_ascii_graphic` or equals `ASSET_COORDINATE_SEPARATOR` decides → `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })` when that byte fails `is_ascii_graphic`
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1`, the DEL byte `0x7F`, `0`, and `@`, the DEL byte at offset 1 and the separator at offset 3, so a separator check that runs ahead of the check of bytes outside visible ASCII fails; the name keeps its valid default
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index: 1, byte: 0x7F })` by `assert_eq!`, the offset and value of the lowest offending byte the arrangement places
-    * `[ ]`   `try_new_reports_the_name_before_an_empty_version`
-      * `[ ]`   Contract: the name's checks precede the version's → a name byte outside visible ASCII with an empty version yields `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })`
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `a b`, a space byte at offset 1, and the version with the empty string, so every check of the version that runs ahead of the name's byte check fails
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 1, byte: 0x20 })` by `assert_eq!`, the offset and value of the offending byte the arrangement places in the name
-    * `[ ]`   `try_new_reports_the_name_before_the_version_bytes`
-      * `[ ]`   Contract: the name's checks precede the version's → a name byte outside visible ASCII with a version containing the separator yields `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })`
-      * `[ ]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `a b`, a space byte at offset 1, and the version with `1@0`, the separator at offset 1, so a scan of the version that runs ahead of the scan of the name fails
-      * `[ ]`   Act: `AssetIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 1, byte: 0x20 })` by `assert_eq!`, the offset and value of the offending byte the arrangement places in the name
-    * `[ ]`   `name_returns_the_held_name`
-      * `[ ]`   Contract: `AssetIdentity::name(&self) -> &str` → a shared reference to the held name
-      * `[ ]`   Arrange: `build_asset_identity` overriding the name with `example-name` and the version with `9.9.9`, distinct strings, so an accessor that returns the version fails
-      * `[ ]`   Act: `identity.name()`
-      * `[ ]`   Assert: the returned `&str` equals the literal `"example-name"` by `assert_eq!`
-    * `[ ]`   `version_returns_the_held_version`
-      * `[ ]`   Contract: `AssetIdentity::version(&self) -> &str` → a shared reference to the held version
-      * `[ ]`   Arrange: `build_asset_identity` overriding the name with `example-name` and the version with `9.9.9`, distinct strings, so an accessor that returns the name fails
-      * `[ ]`   Act: `identity.version()`
-      * `[ ]`   Assert: the returned `&str` equals the literal `"9.9.9"` by `assert_eq!`
-    * `[ ]`   `coordinate_writes_the_only_registry_hash_preimage`
-      * `[ ]`   Contract: `AssetIdentity::coordinate(&self) -> AssetCoordinate` appends the name's ASCII bytes, `ASSET_COORDINATE_SEPARATOR`, and the version's ASCII bytes in that order, with no alternate join or normalization
-      * `[ ]`   Arrange: `build_asset_identity` overriding the name with `@scope/pkg` and the version with `1.0.0-beta.1`; the name carries the separator byte, so a join that splits, drops, or repeats the separator at the name's `@` fails
-      * `[ ]`   Act: `identity.coordinate()`
-      * `[ ]`   Assert: the coordinate's `bytes` field equals the bytes of the literal `@scope/pkg@1.0.0-beta.1` by `assert_eq!`
-    * `[ ]`   `as_ref_returns_the_registry_hash_preimage`
-      * `[ ]`   Contract: `AssetCoordinate` implements `AsRef<[u8]>` → `as_ref` returns the held coordinate bytes as a shared byte slice
-      * `[ ]`   Arrange: `build_asset_coordinate` overriding the name with `left-pad` and the version with `1.3.0`
-      * `[ ]`   Act: `coordinate.as_ref()`
-      * `[ ]`   Assert: the returned slice equals the bytes of the literal `left-pad@1.3.0` by `assert_eq!`
+  * `[✅]`   `crates/domain/src/asset_identity/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`
+    * `[✅]`   Assertions on the held strings and the held coordinate bytes read the `name`, `version`, and `bytes` fields, which the `pub(super)` visibility admits to this child module
+    * `[✅]`   `try_new_admits_a_scoped_name_and_a_prerelease_version`
+      * `[✅]`   Contract: every check passes → `Ok(AssetIdentity { name, version })`; a name may contain `@`
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with the scoped name `@scope/pkg` and the version with the prerelease version `1.0.0-beta.1`; the name carries `@` and `/` and the version carries `-` and `.`, so a constructor that refuses `@` in a name, or admits only alphanumerics, fails
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the identity's `name` field equals the literal `"@scope/pkg"` and its `version` field equals the literal `"1.0.0-beta.1"`
+    * `[✅]`   `try_new_admits_the_lowest_and_highest_visible_ascii_bytes`
+      * `[✅]`   Contract: every check passes → `Ok(AssetIdentity { name, version })`; visible ASCII is `0x21` through `0x7E`, ends included
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `!~` and the version with `!~`, the bytes `0x21` and `0x7E` in each string, so a range that excludes either end fails
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the identity's `name` field equals the literal `"!~"` and its `version` field equals the literal `"!~"`
+    * `[✅]`   `try_new_rejects_an_empty_name`
+      * `[✅]`   Contract: `params.name.is_empty()` → `Err(AssetIdentityTryNewErrorReturn::EmptyName)`
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with the empty string; the version keeps its valid default, so the emptiness check is the only refusal the params can meet
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::EmptyName)` by `assert_eq!`
+    * `[✅]`   `try_new_rejects_the_lowest_name_byte_outside_visible_ascii`
+      * `[✅]`   Contract: the name is non-empty and some byte of `params.name.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })` for the lowest such index
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `ab cd` followed by a tab byte and `e`, which places a space byte at offset 2 and a tab byte at offset 5, offending bytes of different values at different offsets, so a scan that reports the last offender, or none, fails; the version keeps its valid default
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 2, byte: 0x20 })` by `assert_eq!`, the offset and value of the lowest offending byte the arrangement places
+    * `[✅]`   `try_new_rejects_a_non_ascii_name`
+      * `[✅]`   Contract: the name is non-empty and some byte of `params.name.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })`, the error carrying the byte and never the character
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `aé`, an ASCII byte followed by the character U+00E9, whose UTF-8 bytes `0xC3 0xA9` sit at offsets 1 and 2; the version keeps its valid default
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 1, byte: 0xC3 })` by `assert_eq!`, the offset and value of the first byte of the encoded character
+    * `[✅]`   `try_new_rejects_an_empty_version`
+      * `[✅]`   Contract: the name passes and `params.version.is_empty()` → `Err(AssetIdentityTryNewErrorReturn::EmptyVersion)`
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with the empty string; the name keeps its valid default, so the emptiness check is the only refusal the params can meet
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::EmptyVersion)` by `assert_eq!`
+    * `[✅]`   `try_new_rejects_a_version_byte_outside_visible_ascii`
+      * `[✅]`   Contract: the name passes, the version is non-empty, and some byte of `params.version.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })`
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1.0` followed by the DEL byte `0x7F`, the byte just above the range, at offset 3; the name keeps its valid default
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index: 3, byte: 0x7F })` by `assert_eq!`, the offset and value of the offending byte the arrangement places
+    * `[✅]`   `try_new_rejects_a_non_ascii_version`
+      * `[✅]`   Contract: the name passes, the version is non-empty, and some byte of `params.version.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })`, the error carrying the byte and never the character
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1é`, an ASCII byte followed by the character U+00E9, whose UTF-8 bytes `0xC3 0xA9` sit at offsets 1 and 2; the name keeps its valid default
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index: 1, byte: 0xC3 })` by `assert_eq!`, the offset and value of the first byte of the encoded character
+    * `[✅]`   `try_new_rejects_a_version_containing_the_separator`
+      * `[✅]`   Contract: the name passes, the version is non-empty, and some byte of `params.version.bytes()` equals `ASSET_COORDINATE_SEPARATOR` → `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index })`
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1.0@0`, the separator at offset 3; the name keeps its valid default
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index: 3 })` by `assert_eq!`, the offset of the separator the arrangement places
+    * `[✅]`   `try_new_reports_a_version_separator_before_a_later_byte_outside_visible_ascii`
+      * `[✅]`   Contract: the version is scanned once left to right and the first byte that fails `is_ascii_graphic` or equals `ASSET_COORDINATE_SEPARATOR` decides → `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index })` when that byte is the separator
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1@0` followed by the DEL byte `0x7F`, the separator at offset 1 and the DEL byte at offset 3, so a check of bytes outside visible ASCII that runs ahead of the separator check fails; the name keeps its valid default
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index: 1 })` by `assert_eq!`, the offset of the lowest offending byte the arrangement places
+    * `[✅]`   `try_new_reports_a_version_byte_outside_visible_ascii_before_a_later_separator`
+      * `[✅]`   Contract: the version is scanned once left to right and the first byte that fails `is_ascii_graphic` or equals `ASSET_COORDINATE_SEPARATOR` decides → `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })` when that byte fails `is_ascii_graphic`
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1`, the DEL byte `0x7F`, `0`, and `@`, the DEL byte at offset 1 and the separator at offset 3, so a separator check that runs ahead of the check of bytes outside visible ASCII fails; the name keeps its valid default
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index: 1, byte: 0x7F })` by `assert_eq!`, the offset and value of the lowest offending byte the arrangement places
+    * `[✅]`   `try_new_reports_the_name_before_an_empty_version`
+      * `[✅]`   Contract: the name's checks precede the version's → a name byte outside visible ASCII with an empty version yields `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })`
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `a b`, a space byte at offset 1, and the version with the empty string, so every check of the version that runs ahead of the name's byte check fails
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 1, byte: 0x20 })` by `assert_eq!`, the offset and value of the offending byte the arrangement places in the name
+    * `[✅]`   `try_new_reports_the_name_before_the_version_bytes`
+      * `[✅]`   Contract: the name's checks precede the version's → a name byte outside visible ASCII with a version containing the separator yields `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })`
+      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `a b`, a space byte at offset 1, and the version with `1@0`, the separator at offset 1, so a scan of the version that runs ahead of the scan of the name fails
+      * `[✅]`   Act: `AssetIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 1, byte: 0x20 })` by `assert_eq!`, the offset and value of the offending byte the arrangement places in the name
+    * `[✅]`   `name_returns_the_held_name`
+      * `[✅]`   Contract: `AssetIdentity::name(&self) -> &str` → a shared reference to the held name
+      * `[✅]`   Arrange: `build_asset_identity` overriding the name with `example-name` and the version with `9.9.9`, distinct strings, so an accessor that returns the version fails
+      * `[✅]`   Act: `identity.name()`
+      * `[✅]`   Assert: the returned `&str` equals the literal `"example-name"` by `assert_eq!`
+    * `[✅]`   `version_returns_the_held_version`
+      * `[✅]`   Contract: `AssetIdentity::version(&self) -> &str` → a shared reference to the held version
+      * `[✅]`   Arrange: `build_asset_identity` overriding the name with `example-name` and the version with `9.9.9`, distinct strings, so an accessor that returns the name fails
+      * `[✅]`   Act: `identity.version()`
+      * `[✅]`   Assert: the returned `&str` equals the literal `"9.9.9"` by `assert_eq!`
+    * `[✅]`   `coordinate_writes_the_only_registry_hash_preimage`
+      * `[✅]`   Contract: `AssetIdentity::coordinate(&self) -> AssetCoordinate` appends the name's ASCII bytes, `ASSET_COORDINATE_SEPARATOR`, and the version's ASCII bytes in that order, with no alternate join or normalization
+      * `[✅]`   Arrange: `build_asset_identity` overriding the name with `@scope/pkg` and the version with `1.0.0-beta.1`; the name carries the separator byte, so a join that splits, drops, or repeats the separator at the name's `@` fails
+      * `[✅]`   Act: `identity.coordinate()`
+      * `[✅]`   Assert: the coordinate's `bytes` field equals the bytes of the literal `@scope/pkg@1.0.0-beta.1` by `assert_eq!`
+    * `[✅]`   `as_ref_returns_the_registry_hash_preimage`
+      * `[✅]`   Contract: `AssetCoordinate` implements `AsRef<[u8]>` → `as_ref` returns the held coordinate bytes as a shared byte slice
+      * `[✅]`   Arrange: `build_asset_coordinate` overriding the name with `left-pad` and the version with `1.3.0`
+      * `[✅]`   Act: `coordinate.as_ref()`
+      * `[✅]`   Assert: the returned slice equals the bytes of the literal `left-pad@1.3.0` by `assert_eq!`
 
   * `[✅]`   `construction`
     * `[✅]`   `AssetIdentity::try_new` is the only producer of `AssetIdentity`; no `Default`, `From`, `FromStr`, or other constructor exists; a caller holding a name and a version from any source passes them as `AssetIdentityConstructorParams` and handles the refusal arm; `AssetIdentity::coordinate` is the only producer of `AssetCoordinate`
@@ -3697,17 +3744,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `requirements`
     * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
     * `[✅]`   `coordinate_writes_the_only_registry_hash_preimage` passes, and downstream Registry hashing consumes `AssetCoordinate::as_ref()` instead of joining the two strings again
-    * `[ ]`   `as_ref_returns_the_registry_hash_preimage` passes
-    * `[ ]`   `name_returns_the_held_name` and `version_returns_the_held_version` pass
+    * `[✅]`   `as_ref_returns_the_registry_hash_preimage` passes
+    * `[✅]`   `name_returns_the_held_name` and `version_returns_the_held_version` pass
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
     * `[✅]`   `try_new_admits_a_scoped_name_and_a_prerelease_version` passes
-    * `[ ]`   `try_new_admits_the_lowest_and_highest_visible_ascii_bytes` passes
+    * `[✅]`   `try_new_admits_the_lowest_and_highest_visible_ascii_bytes` passes
     * `[✅]`   `try_new_rejects_an_empty_name`, `try_new_rejects_the_lowest_name_byte_outside_visible_ascii`, `try_new_rejects_a_non_ascii_name`, `try_new_rejects_an_empty_version`, `try_new_rejects_a_version_byte_outside_visible_ascii`, and `try_new_rejects_a_version_containing_the_separator` pass (PR-02, a malformed coordinate is refused)
-    * `[ ]`   `try_new_rejects_a_non_ascii_version` passes (PR-02, a malformed coordinate is refused)
-    * `[ ]`   `try_new_reports_a_version_separator_before_a_later_byte_outside_visible_ascii`, `try_new_reports_a_version_byte_outside_visible_ascii_before_a_later_separator`, `try_new_reports_the_name_before_an_empty_version`, and `try_new_reports_the_name_before_the_version_bytes` pass (PR-02, the refusal is deterministic)
+    * `[✅]`   `try_new_rejects_a_non_ascii_version` passes (PR-02, a malformed coordinate is refused)
+    * `[✅]`   `try_new_reports_a_version_separator_before_a_later_byte_outside_visible_ascii`, `try_new_reports_a_version_byte_outside_visible_ascii_before_a_later_separator`, `try_new_reports_the_name_before_an_empty_version`, and `try_new_reports_the_name_before_the_version_bytes` pass (PR-02, the refusal is deterministic)
     * `[✅]`   Code outside `crates/domain/src/asset_identity` reading the `name` or `version` field fails to compile
 
-* `[ ]`   `domain/deployment_identity` **Registry-assigned deployment identity, the 32 bytes of the Registry's `bytes32` deployment key, admitted only when it can name an assigned deployment**
+* `[✅]`   `domain/deployment_identity` **Registry-assigned deployment identity, the 32 bytes of the Registry's `bytes32` deployment key, admitted only when it can name an assigned deployment**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: every derivation, capsule, sidecar, and escrow record is bound to one deployment by the Registry's globally unique, non-reusable `deployment_id`, the `bytes32` key its deployment and escrow records carry, so a value naming no deployment must be refused before anything is derived from it (CR-05; the nonce invariant of Deployment Cryptographic Setup)
@@ -3764,34 +3811,34 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array, the one value the constructor refuses is an array the params builder's overrides carry, and the crate has no serialization dependency; no `DeploymentIdentity` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
     * `[✅]`   Imports `DeploymentIdentity`, `DeploymentIdentityConstructorParams`, and `DEPLOYMENT_IDENTITY_LENGTH` from `super::interface`
 
-  * `[ ]`   `crates/domain/src/deployment_identity/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`
-    * `[ ]`   Assertions on the held bytes read the `bytes` field, which the `pub(super)` visibility admits to this child module
-    * `[ ]`   `try_new_rejects_the_all_zero_identity`
-      * `[ ]`   Contract: every byte of `params.bytes` is `0` → `Err(DeploymentIdentityTryNewErrorReturn::AllZero)`
-      * `[ ]`   Arrange: `build_deployment_identity_constructor_params` overriding the bytes with the array of `DEPLOYMENT_IDENTITY_LENGTH` zero bytes, the value an unassigned `bytes32` slot reads as; the builder's default array is nonzero, so the override establishes the refused value
-      * `[ ]`   Act: `DeploymentIdentity::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(DeploymentIdentityTryNewErrorReturn::AllZero)` by `assert_eq!`
-    * `[ ]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last`
-      * `[ ]`   Contract: some byte of `params.bytes` is nonzero → `Ok(DeploymentIdentity { bytes })`
-      * `[ ]`   Arrange: `build_deployment_identity_constructor_params` overriding the bytes with an array of zeros whose last offset holds `0x01`, so a check of the first byte alone fails
-      * `[ ]`   Act: `DeploymentIdentity::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the identity's `bytes` field equals the array literal of zeros with `0x01` at the last offset
-    * `[ ]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first`
-      * `[ ]`   Contract: some byte of `params.bytes` is nonzero → `Ok(DeploymentIdentity { bytes })`
-      * `[ ]`   Arrange: `build_deployment_identity_constructor_params` overriding the bytes with an array of zeros whose first offset holds `0xFF`, so a check of the last byte alone fails
-      * `[ ]`   Act: `DeploymentIdentity::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the identity's `bytes` field equals the array literal of zeros with `0xFF` at the first offset
-    * `[ ]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_interior`
-      * `[ ]`   Contract: some byte of `params.bytes` is nonzero → `Ok(DeploymentIdentity { bytes })`
-      * `[ ]`   Arrange: `build_deployment_identity_constructor_params` overriding the bytes with an array of zeros whose offset 16 holds `0x80`, so a check of the first and last bytes alone fails
-      * `[ ]`   Act: `DeploymentIdentity::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the identity's `bytes` field equals the array literal of zeros with `0x80` at offset 16
-    * `[ ]`   `as_bytes_returns_the_held_bytes`
-      * `[ ]`   Contract: `DeploymentIdentity::as_bytes(&self) -> &[u8; DEPLOYMENT_IDENTITY_LENGTH]` → a shared reference to the held array
-      * `[ ]`   Arrange: `build_deployment_identity` overriding the bytes with the array of `0x01` through `0x20` in ascending order, each offset holding a value different from every other offset, so a reversed, rotated, or partial copy fails
-      * `[ ]`   Act: `identity.as_bytes()`
-      * `[ ]`   Assert: the returned array equals the array literal of `0x01` through `0x20` in ascending order by `assert_eq!`
+  * `[✅]`   `crates/domain/src/deployment_identity/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`
+    * `[✅]`   Assertions on the held bytes read the `bytes` field, which the `pub(super)` visibility admits to this child module
+    * `[✅]`   `try_new_rejects_the_all_zero_identity`
+      * `[✅]`   Contract: every byte of `params.bytes` is `0` → `Err(DeploymentIdentityTryNewErrorReturn::AllZero)`
+      * `[✅]`   Arrange: `build_deployment_identity_constructor_params` overriding the bytes with the array of `DEPLOYMENT_IDENTITY_LENGTH` zero bytes, the value an unassigned `bytes32` slot reads as; the builder's default array is nonzero, so the override establishes the refused value
+      * `[✅]`   Act: `DeploymentIdentity::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(DeploymentIdentityTryNewErrorReturn::AllZero)` by `assert_eq!`
+    * `[✅]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last`
+      * `[✅]`   Contract: some byte of `params.bytes` is nonzero → `Ok(DeploymentIdentity { bytes })`
+      * `[✅]`   Arrange: `build_deployment_identity_constructor_params` overriding the bytes with an array of zeros whose last offset holds `0x01`, so a check of the first byte alone fails
+      * `[✅]`   Act: `DeploymentIdentity::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the identity's `bytes` field equals the array literal of zeros with `0x01` at the last offset
+    * `[✅]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first`
+      * `[✅]`   Contract: some byte of `params.bytes` is nonzero → `Ok(DeploymentIdentity { bytes })`
+      * `[✅]`   Arrange: `build_deployment_identity_constructor_params` overriding the bytes with an array of zeros whose first offset holds `0xFF`, so a check of the last byte alone fails
+      * `[✅]`   Act: `DeploymentIdentity::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the identity's `bytes` field equals the array literal of zeros with `0xFF` at the first offset
+    * `[✅]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_interior`
+      * `[✅]`   Contract: some byte of `params.bytes` is nonzero → `Ok(DeploymentIdentity { bytes })`
+      * `[✅]`   Arrange: `build_deployment_identity_constructor_params` overriding the bytes with an array of zeros whose offset 16 holds `0x80`, so a check of the first and last bytes alone fails
+      * `[✅]`   Act: `DeploymentIdentity::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the identity's `bytes` field equals the array literal of zeros with `0x80` at offset 16
+    * `[✅]`   `as_bytes_returns_the_held_bytes`
+      * `[✅]`   Contract: `DeploymentIdentity::as_bytes(&self) -> &[u8; DEPLOYMENT_IDENTITY_LENGTH]` → a shared reference to the held array
+      * `[✅]`   Arrange: `build_deployment_identity` overriding the bytes with the array of `0x01` through `0x20` in ascending order, each offset holding a value different from every other offset, so a reversed, rotated, or partial copy fails
+      * `[✅]`   Act: `identity.as_bytes()`
+      * `[✅]`   Assert: the returned array equals the array literal of `0x01` through `0x20` in ascending order by `assert_eq!`
 
   * `[✅]`   `construction`
     * `[✅]`   `DeploymentIdentity::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded `bytes32` passes it as `DeploymentIdentityConstructorParams` and handles the refusal arm
@@ -3812,12 +3859,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
     * `[✅]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last` and `try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first` pass
-    * `[ ]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_interior` passes
+    * `[✅]`   `try_new_admits_an_identity_whose_only_nonzero_byte_is_interior` passes
     * `[✅]`   `try_new_rejects_the_all_zero_identity` passes
-    * `[ ]`   `as_bytes_returns_the_held_bytes` passes
+    * `[✅]`   `as_bytes_returns_the_held_bytes` passes
     * `[✅]`   Code outside `crates/domain/src/deployment_identity` reading the `bytes` field fails to compile
 
-* `[ ]`   `domain/suite_identifier` **Cryptographic suite identifier and version, the hash-card field that fixes a deployment's whole cryptographic composition, admitted only when both can name a registered suite**
+* `[✅]`   `domain/suite_identifier` **Cryptographic suite identifier and version, the hash-card field that fixes a deployment's whole cryptographic composition, admitted only when both can name a registered suite**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a deployment's hash-card names one immutable suite by its identifier and version, and that pair fixes the pairing, credential KEM, envelope, delivery proof, payload cipher, commitment scheme, KDF and hash-to-scalar mappings, delivery-statement version, and attempt-rule parameters every derivation and attempt resolves against, so a pair naming no suite must be refused before anything resolves from it (Adapter Composition; IC-09)
@@ -3879,49 +3926,49 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array and a `u16`, every value the constructor refuses is one the params builder's overrides carry, and the crate has no serialization dependency; no `SuiteIdentifier` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
     * `[✅]`   Imports `SuiteIdentifier`, `SuiteIdentifierConstructorParams`, and `SUITE_IDENTIFIER_LENGTH` from `super::interface`
 
-  * `[ ]`   `crates/domain/src/suite_identifier/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`
-    * `[ ]`   Assertions on the held identifier and the held version read the `identifier` and `version` fields, which the `pub(super)` visibility admits to this child module
-    * `[ ]`   `try_new_rejects_an_all_zero_identifier`
-      * `[ ]`   Contract: every byte of `params.identifier` is `0` → `Err(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier)`
-      * `[ ]`   Arrange: `build_suite_identifier_constructor_params` overriding the identifier with the array of `SUITE_IDENTIFIER_LENGTH` zero bytes, the value an unassigned `bytes32` slot reads as; the version keeps its valid default, so the identifier is the only refusal the params can meet
-      * `[ ]`   Act: `SuiteIdentifier::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier)` by `assert_eq!`
-    * `[ ]`   `try_new_rejects_a_zero_version`
-      * `[ ]`   Contract: the identifier passes and `params.version` is `0` → `Err(SuiteIdentifierTryNewErrorReturn::ZeroVersion)`
-      * `[ ]`   Arrange: `build_suite_identifier_constructor_params` overriding the version with `0`; the identifier keeps its valid nonzero default, so the version is the only refusal the params can meet
-      * `[ ]`   Act: `SuiteIdentifier::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(SuiteIdentifierTryNewErrorReturn::ZeroVersion)` by `assert_eq!`
-    * `[ ]`   `try_new_reports_the_identifier_before_the_version`
-      * `[ ]`   Contract: the identifier's check precedes the version's → an all-zero identifier with a zero version yields `Err(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier)`
-      * `[ ]`   Arrange: `build_suite_identifier_constructor_params` overriding the identifier with the array of `SUITE_IDENTIFIER_LENGTH` zero bytes and the version with `0`, so a version check that runs ahead of the identifier check fails
-      * `[ ]`   Act: `SuiteIdentifier::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier)` by `assert_eq!`
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one`
-      * `[ ]`   Contract: some byte of the identifier is nonzero and the version is nonzero → `Ok(SuiteIdentifier { identifier, version })`
-      * `[ ]`   Arrange: `build_suite_identifier_constructor_params` overriding the identifier with an array of zeros whose last offset holds `0x01` and the version with `1`, the smallest admitted version, so a check of the first identifier byte alone fails
-      * `[ ]`   Act: `SuiteIdentifier::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the suite identifier's `identifier` field equals the array literal of zeros with `0x01` at the last offset and its `version` field equals the literal `1`
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version`
-      * `[ ]`   Contract: some byte of the identifier is nonzero and the version is nonzero → `Ok(SuiteIdentifier { identifier, version })`
-      * `[ ]`   Arrange: `build_suite_identifier_constructor_params` overriding the identifier with an array of zeros whose first offset holds `0xFF` and the version with the largest `u16`, `0xFFFF`, so a check of the last identifier byte alone fails
-      * `[ ]`   Act: `SuiteIdentifier::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the suite identifier's `identifier` field equals the array literal of zeros with `0xFF` at the first offset and its `version` field equals the literal `0xFFFF`
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior_with_version_one`
-      * `[ ]`   Contract: some byte of the identifier is nonzero and the version is nonzero → `Ok(SuiteIdentifier { identifier, version })`
-      * `[ ]`   Arrange: `build_suite_identifier_constructor_params` overriding the identifier with an array of zeros whose offset 16 holds `0x80` and the version with `1`, so a check of the first and last identifier bytes alone fails
-      * `[ ]`   Act: `SuiteIdentifier::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the suite identifier's `identifier` field equals the array literal of zeros with `0x80` at offset 16 and its `version` field equals the literal `1`
-    * `[ ]`   `identifier_returns_the_held_identifier`
-      * `[ ]`   Contract: `SuiteIdentifier::identifier(&self) -> &[u8; SUITE_IDENTIFIER_LENGTH]` → a shared reference to the held array
-      * `[ ]`   Arrange: `build_suite_identifier` overriding the identifier with the array of `0x01` through `0x20` in ascending order, each offset holding a value different from every other offset, so a reversed, rotated, or partial copy fails
-      * `[ ]`   Act: `suite_identifier.identifier()`
-      * `[ ]`   Assert: the returned array equals the array literal of `0x01` through `0x20` in ascending order by `assert_eq!`
-    * `[ ]`   `version_returns_the_held_version`
-      * `[ ]`   Contract: `SuiteIdentifier::version(&self) -> u16` → the held version
-      * `[ ]`   Arrange: `build_suite_identifier` overriding the version with `0x0102`, a value whose two bytes differ, so a byte-swapped or truncated return fails
-      * `[ ]`   Act: `suite_identifier.version()`
-      * `[ ]`   Assert: the returned `u16` equals the literal `0x0102` by `assert_eq!`
+  * `[✅]`   `crates/domain/src/suite_identifier/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`
+    * `[✅]`   Assertions on the held identifier and the held version read the `identifier` and `version` fields, which the `pub(super)` visibility admits to this child module
+    * `[✅]`   `try_new_rejects_an_all_zero_identifier`
+      * `[✅]`   Contract: every byte of `params.identifier` is `0` → `Err(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier)`
+      * `[✅]`   Arrange: `build_suite_identifier_constructor_params` overriding the identifier with the array of `SUITE_IDENTIFIER_LENGTH` zero bytes, the value an unassigned `bytes32` slot reads as; the version keeps its valid default, so the identifier is the only refusal the params can meet
+      * `[✅]`   Act: `SuiteIdentifier::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier)` by `assert_eq!`
+    * `[✅]`   `try_new_rejects_a_zero_version`
+      * `[✅]`   Contract: the identifier passes and `params.version` is `0` → `Err(SuiteIdentifierTryNewErrorReturn::ZeroVersion)`
+      * `[✅]`   Arrange: `build_suite_identifier_constructor_params` overriding the version with `0`; the identifier keeps its valid nonzero default, so the version is the only refusal the params can meet
+      * `[✅]`   Act: `SuiteIdentifier::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(SuiteIdentifierTryNewErrorReturn::ZeroVersion)` by `assert_eq!`
+    * `[✅]`   `try_new_reports_the_identifier_before_the_version`
+      * `[✅]`   Contract: the identifier's check precedes the version's → an all-zero identifier with a zero version yields `Err(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier)`
+      * `[✅]`   Arrange: `build_suite_identifier_constructor_params` overriding the identifier with the array of `SUITE_IDENTIFIER_LENGTH` zero bytes and the version with `0`, so a version check that runs ahead of the identifier check fails
+      * `[✅]`   Act: `SuiteIdentifier::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier)` by `assert_eq!`
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one`
+      * `[✅]`   Contract: some byte of the identifier is nonzero and the version is nonzero → `Ok(SuiteIdentifier { identifier, version })`
+      * `[✅]`   Arrange: `build_suite_identifier_constructor_params` overriding the identifier with an array of zeros whose last offset holds `0x01` and the version with `1`, the smallest admitted version, so a check of the first identifier byte alone fails
+      * `[✅]`   Act: `SuiteIdentifier::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the suite identifier's `identifier` field equals the array literal of zeros with `0x01` at the last offset and its `version` field equals the literal `1`
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version`
+      * `[✅]`   Contract: some byte of the identifier is nonzero and the version is nonzero → `Ok(SuiteIdentifier { identifier, version })`
+      * `[✅]`   Arrange: `build_suite_identifier_constructor_params` overriding the identifier with an array of zeros whose first offset holds `0xFF` and the version with the largest `u16`, `0xFFFF`, so a check of the last identifier byte alone fails
+      * `[✅]`   Act: `SuiteIdentifier::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the suite identifier's `identifier` field equals the array literal of zeros with `0xFF` at the first offset and its `version` field equals the literal `0xFFFF`
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior_with_version_one`
+      * `[✅]`   Contract: some byte of the identifier is nonzero and the version is nonzero → `Ok(SuiteIdentifier { identifier, version })`
+      * `[✅]`   Arrange: `build_suite_identifier_constructor_params` overriding the identifier with an array of zeros whose offset 16 holds `0x80` and the version with `1`, so a check of the first and last identifier bytes alone fails
+      * `[✅]`   Act: `SuiteIdentifier::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the suite identifier's `identifier` field equals the array literal of zeros with `0x80` at offset 16 and its `version` field equals the literal `1`
+    * `[✅]`   `identifier_returns_the_held_identifier`
+      * `[✅]`   Contract: `SuiteIdentifier::identifier(&self) -> &[u8; SUITE_IDENTIFIER_LENGTH]` → a shared reference to the held array
+      * `[✅]`   Arrange: `build_suite_identifier` overriding the identifier with the array of `0x01` through `0x20` in ascending order, each offset holding a value different from every other offset, so a reversed, rotated, or partial copy fails
+      * `[✅]`   Act: `suite_identifier.identifier()`
+      * `[✅]`   Assert: the returned array equals the array literal of `0x01` through `0x20` in ascending order by `assert_eq!`
+    * `[✅]`   `version_returns_the_held_version`
+      * `[✅]`   Contract: `SuiteIdentifier::version(&self) -> u16` → the held version
+      * `[✅]`   Arrange: `build_suite_identifier` overriding the version with `0x0102`, a value whose two bytes differ, so a byte-swapped or truncated return fails
+      * `[✅]`   Act: `suite_identifier.version()`
+      * `[✅]`   Assert: the returned `u16` equals the literal `0x0102` by `assert_eq!`
 
   * `[✅]`   `construction`
     * `[✅]`   `SuiteIdentifier::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded identifier and version passes them as `SuiteIdentifierConstructorParams` and handles the refusal arm
@@ -3942,12 +3989,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
     * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one` and `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version` pass
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior_with_version_one` passes
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior_with_version_one` passes
     * `[✅]`   `try_new_rejects_an_all_zero_identifier`, `try_new_rejects_a_zero_version`, and `try_new_reports_the_identifier_before_the_version` pass
-    * `[ ]`   `identifier_returns_the_held_identifier` and `version_returns_the_held_version` pass
+    * `[✅]`   `identifier_returns_the_held_identifier` and `version_returns_the_held_version` pass
     * `[✅]`   Code outside `crates/domain/src/suite_identifier` reading the `identifier` or `version` field fails to compile
 
-* `[ ]`   `domain/parameter_set_identifier` **Parameter-set identifier, the 32 bytes of the Registry's `bytes32` parameter-set key, admitted only when it can name a registered set**
+* `[✅]`   `domain/parameter_set_identifier` **Parameter-set identifier, the 32 bytes of the Registry's `bytes32` parameter-set key, admitted only when it can name a registered set**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: every capsule, sidecar, wrapping key, and entitlement is bound to one parameter set by the identifier the Registry keys it under, the `bytes32` that the parameter-set, entitlement, and escrow records and the sidecar list of a hash-card carry, so a value naming no set must be refused before anything is derived from it (CR-11; LC-09)
@@ -4005,34 +4052,34 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No corruptions type and no invalidator: the constructor params are a typed 32-byte array, the one value the constructor refuses is an array the params builder's overrides carry, and the crate has no serialization dependency; no `ParameterSetIdentifier` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
     * `[✅]`   Imports `ParameterSetIdentifier`, `ParameterSetIdentifierConstructorParams`, and `PARAMETER_SET_IDENTIFIER_LENGTH` from `super::interface`
 
-  * `[ ]`   `crates/domain/src/parameter_set_identifier/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`
-    * `[ ]`   Assertions on the held bytes read the `bytes` field, which the `pub(super)` visibility admits to this child module
-    * `[ ]`   `try_new_rejects_the_all_zero_identifier`
-      * `[ ]`   Contract: every byte of `params.bytes` is `0` → `Err(ParameterSetIdentifierTryNewErrorReturn::AllZero)`
-      * `[ ]`   Arrange: `build_parameter_set_identifier_constructor_params` overriding the bytes with the array of `PARAMETER_SET_IDENTIFIER_LENGTH` zero bytes, the value an unassigned `bytes32` slot reads as; the builder's default array is nonzero, so the override establishes the refused value
-      * `[ ]`   Act: `ParameterSetIdentifier::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(ParameterSetIdentifierTryNewErrorReturn::AllZero)` by `assert_eq!`
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last`
-      * `[ ]`   Contract: some byte of `params.bytes` is nonzero → `Ok(ParameterSetIdentifier { bytes })`
-      * `[ ]`   Arrange: `build_parameter_set_identifier_constructor_params` overriding the bytes with an array of zeros whose last offset holds `0x01`, so a check of the first byte alone fails
-      * `[ ]`   Act: `ParameterSetIdentifier::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the parameter-set identifier's `bytes` field equals the array literal of zeros with `0x01` at the last offset
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first`
-      * `[ ]`   Contract: some byte of `params.bytes` is nonzero → `Ok(ParameterSetIdentifier { bytes })`
-      * `[ ]`   Arrange: `build_parameter_set_identifier_constructor_params` overriding the bytes with an array of zeros whose first offset holds `0xFF`, so a check of the last byte alone fails
-      * `[ ]`   Act: `ParameterSetIdentifier::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the parameter-set identifier's `bytes` field equals the array literal of zeros with `0xFF` at the first offset
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior`
-      * `[ ]`   Contract: some byte of `params.bytes` is nonzero → `Ok(ParameterSetIdentifier { bytes })`
-      * `[ ]`   Arrange: `build_parameter_set_identifier_constructor_params` overriding the bytes with an array of zeros whose offset 16 holds `0x80`, so a check of the first and last bytes alone fails
-      * `[ ]`   Act: `ParameterSetIdentifier::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the parameter-set identifier's `bytes` field equals the array literal of zeros with `0x80` at offset 16
-    * `[ ]`   `as_bytes_returns_the_held_bytes`
-      * `[ ]`   Contract: `ParameterSetIdentifier::as_bytes(&self) -> &[u8; PARAMETER_SET_IDENTIFIER_LENGTH]` → a shared reference to the held array
-      * `[ ]`   Arrange: `build_parameter_set_identifier` overriding the bytes with the array of `0x01` through `0x20` in ascending order, each offset holding a value different from every other offset, so a reversed, rotated, or partial copy fails
-      * `[ ]`   Act: `parameter_set_identifier.as_bytes()`
-      * `[ ]`   Assert: the returned array equals the array literal of `0x01` through `0x20` in ascending order by `assert_eq!`
+  * `[✅]`   `crates/domain/src/parameter_set_identifier/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`
+    * `[✅]`   Assertions on the held bytes read the `bytes` field, which the `pub(super)` visibility admits to this child module
+    * `[✅]`   `try_new_rejects_the_all_zero_identifier`
+      * `[✅]`   Contract: every byte of `params.bytes` is `0` → `Err(ParameterSetIdentifierTryNewErrorReturn::AllZero)`
+      * `[✅]`   Arrange: `build_parameter_set_identifier_constructor_params` overriding the bytes with the array of `PARAMETER_SET_IDENTIFIER_LENGTH` zero bytes, the value an unassigned `bytes32` slot reads as; the builder's default array is nonzero, so the override establishes the refused value
+      * `[✅]`   Act: `ParameterSetIdentifier::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(ParameterSetIdentifierTryNewErrorReturn::AllZero)` by `assert_eq!`
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last`
+      * `[✅]`   Contract: some byte of `params.bytes` is nonzero → `Ok(ParameterSetIdentifier { bytes })`
+      * `[✅]`   Arrange: `build_parameter_set_identifier_constructor_params` overriding the bytes with an array of zeros whose last offset holds `0x01`, so a check of the first byte alone fails
+      * `[✅]`   Act: `ParameterSetIdentifier::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the parameter-set identifier's `bytes` field equals the array literal of zeros with `0x01` at the last offset
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first`
+      * `[✅]`   Contract: some byte of `params.bytes` is nonzero → `Ok(ParameterSetIdentifier { bytes })`
+      * `[✅]`   Arrange: `build_parameter_set_identifier_constructor_params` overriding the bytes with an array of zeros whose first offset holds `0xFF`, so a check of the last byte alone fails
+      * `[✅]`   Act: `ParameterSetIdentifier::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the parameter-set identifier's `bytes` field equals the array literal of zeros with `0xFF` at the first offset
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior`
+      * `[✅]`   Contract: some byte of `params.bytes` is nonzero → `Ok(ParameterSetIdentifier { bytes })`
+      * `[✅]`   Arrange: `build_parameter_set_identifier_constructor_params` overriding the bytes with an array of zeros whose offset 16 holds `0x80`, so a check of the first and last bytes alone fails
+      * `[✅]`   Act: `ParameterSetIdentifier::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the parameter-set identifier's `bytes` field equals the array literal of zeros with `0x80` at offset 16
+    * `[✅]`   `as_bytes_returns_the_held_bytes`
+      * `[✅]`   Contract: `ParameterSetIdentifier::as_bytes(&self) -> &[u8; PARAMETER_SET_IDENTIFIER_LENGTH]` → a shared reference to the held array
+      * `[✅]`   Arrange: `build_parameter_set_identifier` overriding the bytes with the array of `0x01` through `0x20` in ascending order, each offset holding a value different from every other offset, so a reversed, rotated, or partial copy fails
+      * `[✅]`   Act: `parameter_set_identifier.as_bytes()`
+      * `[✅]`   Assert: the returned array equals the array literal of `0x01` through `0x20` in ascending order by `assert_eq!`
 
   * `[✅]`   `construction`
     * `[✅]`   `ParameterSetIdentifier::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded `bytes32` passes it as `ParameterSetIdentifierConstructorParams` and handles the refusal arm
@@ -4053,12 +4100,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
     * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last` and `try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first` pass
-    * `[ ]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior` passes
+    * `[✅]`   `try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior` passes
     * `[✅]`   `try_new_rejects_the_all_zero_identifier` passes
-    * `[ ]`   `as_bytes_returns_the_held_bytes` passes
+    * `[✅]`   `as_bytes_returns_the_held_bytes` passes
     * `[✅]`   Code outside `crates/domain/src/parameter_set_identifier` reading the `bytes` field fails to compile
 
-* `[ ]`   `domain/group_index` **Piece-group index, the position of one piece group within a deployment's continuous stream, held as a distinct type so no other integer stands in for it**
+* `[✅]`   `domain/group_index` **Piece-group index, the position of one piece group within a deployment's continuous stream, held as a distinct type so no other integer stands in for it**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: every capsule's randomness, every piece-group key, and every wrapping key is domain-separated by the group it belongs to, so the group index enters each derivation context as its own type and cannot be confused with a piece index, an interval, a version, or a count (CR-05; CR-11; the nonce invariant of Deployment Cryptographic Setup)
@@ -4111,24 +4158,24 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No corruptions type and no invalidator: the constructor params are a typed `u64` and the constructor admits every value; no `GroupIndex` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
     * `[✅]`   Imports `GroupIndex` and `GroupIndexConstructorParams` from `super::interface`
 
-  * `[ ]`   `crates/domain/src/group_index/test.rs`
-    * `[ ]`   The `Ok` arm is taken through the irrefutable pattern `let Ok(index) = …;`, the error arm being `Infallible`
-    * `[ ]`   Assertions on the held index read the `value` field, which the `pub(super)` visibility admits to this child module
-    * `[ ]`   `try_new_admits_the_lowest_index`
-      * `[ ]`   Contract: any params → `Ok(GroupIndex { value })` holding `params.value`
-      * `[ ]`   Arrange: `build_group_index_constructor_params` overriding the value with `0`, the lowest `u64` and not the builder's default, so an implementation that rewrites zero fails
-      * `[ ]`   Act: `GroupIndex::try_new(params)`
-      * `[ ]`   Assert: the index's `value` field equals the literal `0`
-    * `[ ]`   `try_new_admits_the_highest_index`
-      * `[ ]`   Contract: any params → `Ok(GroupIndex { value })` holding `params.value`
-      * `[ ]`   Arrange: `build_group_index_constructor_params` overriding the value with `u64::MAX`, the highest `u64`, so an implementation that clamps or narrows the value fails
-      * `[ ]`   Act: `GroupIndex::try_new(params)`
-      * `[ ]`   Assert: the index's `value` field equals the literal `u64::MAX`
-    * `[ ]`   `value_returns_the_held_index`
-      * `[ ]`   Contract: `GroupIndex::value(&self) -> u64` → the held index
-      * `[ ]`   Arrange: `build_group_index` overriding the value with `0x0102_0304_0506_0708`, a value whose eight bytes all differ, so a byte-swapped or truncated return fails
-      * `[ ]`   Act: `index.value()`
-      * `[ ]`   Assert: the returned `u64` equals the literal `0x0102_0304_0506_0708` by `assert_eq!`
+  * `[✅]`   `crates/domain/src/group_index/test.rs`
+    * `[✅]`   The `Ok` arm is taken through the irrefutable pattern `let Ok(index) = …;`, the error arm being `Infallible`
+    * `[✅]`   Assertions on the held index read the `value` field, which the `pub(super)` visibility admits to this child module
+    * `[✅]`   `try_new_admits_the_lowest_index`
+      * `[✅]`   Contract: any params → `Ok(GroupIndex { value })` holding `params.value`
+      * `[✅]`   Arrange: `build_group_index_constructor_params` overriding the value with `0`, the lowest `u64` and not the builder's default, so an implementation that rewrites zero fails
+      * `[✅]`   Act: `GroupIndex::try_new(params)`
+      * `[✅]`   Assert: the index's `value` field equals the literal `0`
+    * `[✅]`   `try_new_admits_the_highest_index`
+      * `[✅]`   Contract: any params → `Ok(GroupIndex { value })` holding `params.value`
+      * `[✅]`   Arrange: `build_group_index_constructor_params` overriding the value with `u64::MAX`, the highest `u64`, so an implementation that clamps or narrows the value fails
+      * `[✅]`   Act: `GroupIndex::try_new(params)`
+      * `[✅]`   Assert: the index's `value` field equals the literal `u64::MAX`
+    * `[✅]`   `value_returns_the_held_index`
+      * `[✅]`   Contract: `GroupIndex::value(&self) -> u64` → the held index
+      * `[✅]`   Arrange: `build_group_index` overriding the value with `0x0102_0304_0506_0708`, a value whose eight bytes all differ, so a byte-swapped or truncated return fails
+      * `[✅]`   Act: `index.value()`
+      * `[✅]`   Assert: the returned `u64` equals the literal `0x0102_0304_0506_0708` by `assert_eq!`
 
   * `[✅]`   `construction`
     * `[✅]`   `GroupIndex::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a group's position passes it as `GroupIndexConstructorParams`, and the derivation context that composes it bounds it against the deployment's group count
@@ -4145,14 +4192,14 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `directionality`
     * `[✅]`   `group_index` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `group_index::provides`; no cycle
 
-  * `[ ]`   `requirements`
+  * `[✅]`   `requirements`
     * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[ ]`   `try_new_admits_the_lowest_index` and `try_new_admits_the_highest_index` pass, each proving the admitted index is read back unchanged
-    * `[ ]`   `value_returns_the_held_index` passes
+    * `[✅]`   `try_new_admits_the_lowest_index` and `try_new_admits_the_highest_index` pass, each proving the admitted index is read back unchanged
+    * `[✅]`   `value_returns_the_held_index` passes
     * `[✅]`   Code outside `crates/domain/src/group_index` reading the `value` field fails to compile
 
-* `[ ]`   `domain/piece_geometry` **Piece geometry, the piece size, piece-group size, and total extent a hash-card declares, admitted only when pieces align and groups are whole multiples of pieces, with the piece and group counts they imply**
+* `[✅]`   `domain/piece_geometry` **Piece geometry, the piece size, piece-group size, and total extent a hash-card declares, admitted only when pieces align and groups are whole multiples of pieces, with the piece and group counts they imply**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a hash-card's declared geometry drives every offset, counter, and key boundary, so it is untrusted until its sizes are mutually consistent, and a geometry that fails is refused before any piece-group key is derived (EC-01; CR-06; Manifest Bounds Validation)
@@ -4220,114 +4267,114 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No corruptions type and no invalidator: the constructor params are typed integers, every geometry the constructor refuses is a value the params builder's overrides carry, and the crate has no serialization dependency; no `PieceGeometry` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
     * `[✅]`   Imports `PieceGeometry`, `PieceGeometryConstructorParams`, and `MINIMUM_PIECE_SIZE` from `super::interface`
 
-  * `[ ]`   `crates/domain/src/piece_geometry/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`
-    * `[ ]`   Assertions on the held sizes and the held extent read the `piece_size`, `piece_group_size`, and `total_extent` fields, which the `pub(super)` visibility admits to this child module
-    * `[ ]`   `try_new_rejects_a_piece_size_that_is_not_a_power_of_two`
-      * `[ ]`   Contract: `!params.piece_size.is_power_of_two()` → `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size })`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `49152` and the piece-group size with `49152`; `49152` is a multiple of the minimum piece size and above it but not a power of two, so a check of the minimum or of a multiple of it fails, and the sizes agree, so the power-of-two check is the only refusal the params can meet; the extent keeps its valid default
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 49152 })` by `assert_eq!`
-    * `[ ]`   `try_new_rejects_a_zero_piece_size`
-      * `[ ]`   Contract: `!params.piece_size.is_power_of_two()`, zero included → `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size })`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `0`; the piece-group size and the extent keep their valid defaults, so a remainder taken by the piece size before the piece size is checked fails
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 0 })` by `assert_eq!`
-    * `[ ]`   `try_new_rejects_a_piece_size_below_the_minimum`
-      * `[ ]`   Contract: the piece size is a power of two and `params.piece_size < MINIMUM_PIECE_SIZE` → `Err(PieceGeometryTryNewErrorReturn::PieceSizeBelowMinimum { piece_size, minimum: MINIMUM_PIECE_SIZE })`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `8192`, the power of two just below 16 KiB, and the piece-group size with `8192`, so the sizes agree and the minimum is the only refusal the params can meet; the extent keeps its valid default
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceSizeBelowMinimum { piece_size: 8192, minimum: 16384 })` by `assert_eq!`, the minimum being the 16 KiB the objective states
-    * `[ ]`   `try_new_rejects_a_zero_piece_group_size`
-      * `[ ]`   Contract: the piece size passes and `params.piece_group_size == 0` → `Err(PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize)`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece-group size with `0`; the piece size and the extent keep their valid defaults, so a remainder check alone, which reads zero as a multiple, fails
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize)` by `assert_eq!`
-    * `[ ]`   `try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size`
-      * `[ ]`   Contract: the piece size passes, the piece-group size is nonzero, and `params.piece_group_size % params.piece_size != 0` → `Err(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size, piece_size })`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `16384` and the piece-group size with `24576`, a group larger than a piece and one and a half pieces long; the extent keeps its valid default
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 24576, piece_size: 16384 })` by `assert_eq!`
-    * `[ ]`   `try_new_rejects_a_piece_group_smaller_than_a_piece`
-      * `[ ]`   Contract: the piece size passes, the piece-group size is nonzero, and `params.piece_group_size % params.piece_size != 0` → `Err(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size, piece_size })`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `32768` and the piece-group size with `16384`, a group smaller than a piece, so a remainder taken with its operands exchanged, which reads zero, fails; the extent keeps its valid default
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 16384, piece_size: 32768 })` by `assert_eq!`
-    * `[ ]`   `try_new_rejects_a_zero_total_extent`
-      * `[ ]`   Contract: both sizes pass and `params.total_extent == 0` → `Err(PieceGeometryTryNewErrorReturn::ZeroTotalExtent)`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the extent with `0`; the sizes keep their valid defaults, so the extent is the only refusal the params can meet
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::ZeroTotalExtent)` by `assert_eq!`
-    * `[ ]`   `try_new_reports_the_piece_size_before_the_piece_group_size`
-      * `[ ]`   Contract: the piece size's checks precede the piece-group size's → a piece size that is not a power of two with a zero piece-group size yields `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size })`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `49152` and the piece-group size with `0`; the extent keeps its valid default, so a piece-group size check that runs ahead of the piece size check fails
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 49152 })` by `assert_eq!`
-    * `[ ]`   `try_new_reports_the_piece_group_size_before_the_total_extent`
-      * `[ ]`   Contract: the piece-group size's checks precede the total extent's → a zero piece-group size with a zero extent yields `Err(PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize)`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece-group size with `0` and the extent with `0`; the piece size keeps its valid default, so an extent check that runs ahead of the piece-group size check fails
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize)` by `assert_eq!`
-    * `[ ]`   `try_new_reports_the_piece_size_before_the_total_extent`
-      * `[ ]`   Contract: the piece size's checks precede the total extent's → a piece size that is not a power of two with a zero extent yields `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size })`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `49152`, the piece-group size with `49152`, and the extent with `0`, so the sizes agree and an extent check that runs ahead of the piece size check fails
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 49152 })` by `assert_eq!`
-    * `[ ]`   `try_new_admits_the_smallest_geometry`
-      * `[ ]`   Contract: every check passes → `Ok(PieceGeometry { piece_size, piece_group_size, total_extent })`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `16384`, the minimum, the piece-group size with `16384`, one piece, and the extent with `1`, the smallest nonzero extent, so a minimum check that refuses the minimum itself, a group check that requires more than one piece, and an extent check that requires more than one byte each fail
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the geometry's `piece_size` field equals the literal `16384`, its `piece_group_size` field equals the literal `16384`, and its `total_extent` field equals the literal `1`
-    * `[ ]`   `try_new_admits_a_piece_group_size_that_is_an_odd_multiple_of_the_piece_size`
-      * `[ ]`   Contract: every check passes → `Ok(PieceGeometry { piece_size, piece_group_size, total_extent })`
-      * `[ ]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `16384` and the piece-group size with `49152`, an odd multiple of the piece size and not a power of two, so a group check that requires a power of two fails; the extent keeps its valid default
-      * `[ ]`   Act: `PieceGeometry::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the geometry's `piece_size` field equals the literal `16384` and its `piece_group_size` field equals the literal `49152`
-    * `[ ]`   `piece_size_returns_the_held_piece_size`
-      * `[ ]`   Contract: `PieceGeometry::piece_size(&self) -> u32` → the held piece size
-      * `[ ]`   Arrange: `build_piece_geometry` overriding the piece size with `32768`, the piece-group size with `131072`, and the extent with `0x0102_0304_0506_0708`, three values that differ from one another, so an accessor that returns another field fails
-      * `[ ]`   Act: `geometry.piece_size()`
-      * `[ ]`   Assert: the returned `u32` equals the literal `32768` by `assert_eq!`
-    * `[ ]`   `piece_group_size_returns_the_held_piece_group_size`
-      * `[ ]`   Contract: `PieceGeometry::piece_group_size(&self) -> u32` → the held piece-group size
-      * `[ ]`   Arrange: `build_piece_geometry` overriding the piece size with `32768`, the piece-group size with `131072`, and the extent with `0x0102_0304_0506_0708`, three values that differ from one another, so an accessor that returns another field fails
-      * `[ ]`   Act: `geometry.piece_group_size()`
-      * `[ ]`   Assert: the returned `u32` equals the literal `131072` by `assert_eq!`
-    * `[ ]`   `total_extent_returns_the_held_total_extent`
-      * `[ ]`   Contract: `PieceGeometry::total_extent(&self) -> u64` → the held total extent
-      * `[ ]`   Arrange: `build_piece_geometry` overriding the piece size with `32768`, the piece-group size with `131072`, and the extent with `0x0102_0304_0506_0708`, a value whose eight bytes all differ, so a narrowed or byte-swapped return fails
-      * `[ ]`   Act: `geometry.total_extent()`
-      * `[ ]`   Assert: the returned `u64` equals the literal `0x0102_0304_0506_0708` by `assert_eq!`
-    * `[ ]`   `piece_count_rounds_up_a_partial_piece`
-      * `[ ]`   Contract: `PieceGeometry::piece_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_size))`
-      * `[ ]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `16385`, one byte past a whole piece, so a count that rounds down, and a count taken by the piece-group size, fail
-      * `[ ]`   Act: `geometry.piece_count()`
-      * `[ ]`   Assert: the returned `u64` equals the literal `2`, the pieces `16385` bytes need at `16384` bytes each, by `assert_eq!`
-    * `[ ]`   `group_count_rounds_up_a_partial_group`
-      * `[ ]`   Contract: `PieceGeometry::group_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_group_size))`
-      * `[ ]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `65537`, one byte past a whole group, so a count that rounds down, and a count taken by the piece size, fail
-      * `[ ]`   Act: `geometry.group_count()`
-      * `[ ]`   Assert: the returned `u64` equals the literal `2`, the groups `65537` bytes need at `65536` bytes each, by `assert_eq!`
-    * `[ ]`   `piece_count_does_not_round_up_an_exact_extent`
-      * `[ ]`   Contract: `PieceGeometry::piece_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_size))`
-      * `[ ]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `49152`, a whole number of pieces, so a count that adds one past the quotient, and a count taken by the piece-group size, fail
-      * `[ ]`   Act: `geometry.piece_count()`
-      * `[ ]`   Assert: the returned `u64` equals the literal `3`, the pieces `49152` bytes fill at `16384` bytes each, by `assert_eq!`
-    * `[ ]`   `group_count_does_not_round_up_an_exact_extent`
-      * `[ ]`   Contract: `PieceGeometry::group_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_group_size))`
-      * `[ ]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `131072`, a whole number of groups, so a count that adds one past the quotient, and a count taken by the piece size, fail
-      * `[ ]`   Act: `geometry.group_count()`
-      * `[ ]`   Assert: the returned `u64` equals the literal `2`, the groups `131072` bytes fill at `65536` bytes each, by `assert_eq!`
-    * `[ ]`   `piece_count_holds_at_the_largest_extent`
-      * `[ ]`   Contract: `PieceGeometry::piece_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_size))`
-      * `[ ]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `u64::MAX`, so a count that adds the divisor before dividing overflows
-      * `[ ]`   Act: `geometry.piece_count()`
-      * `[ ]`   Assert: the returned `u64` equals the literal `1 << 50`, the quotient of `2^64` by the piece size `2^14`, which rounding up `u64::MAX`, one below `2^64`, reaches, by `assert_eq!`
-    * `[ ]`   `group_count_holds_at_the_largest_extent`
-      * `[ ]`   Contract: `PieceGeometry::group_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_group_size))`
-      * `[ ]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `u64::MAX`, so a count that adds the divisor before dividing overflows
-      * `[ ]`   Act: `geometry.group_count()`
-      * `[ ]`   Assert: the returned `u64` equals the literal `1 << 48`, the quotient of `2^64` by the piece-group size `2^16`, which rounding up `u64::MAX`, one below `2^64`, reaches, by `assert_eq!`
+  * `[✅]`   `crates/domain/src/piece_geometry/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`
+    * `[✅]`   Assertions on the held sizes and the held extent read the `piece_size`, `piece_group_size`, and `total_extent` fields, which the `pub(super)` visibility admits to this child module
+    * `[✅]`   `try_new_rejects_a_piece_size_that_is_not_a_power_of_two`
+      * `[✅]`   Contract: `!params.piece_size.is_power_of_two()` → `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size })`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `49152` and the piece-group size with `49152`; `49152` is a multiple of the minimum piece size and above it but not a power of two, so a check of the minimum or of a multiple of it fails, and the sizes agree, so the power-of-two check is the only refusal the params can meet; the extent keeps its valid default
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 49152 })` by `assert_eq!`
+    * `[✅]`   `try_new_rejects_a_zero_piece_size`
+      * `[✅]`   Contract: `!params.piece_size.is_power_of_two()`, zero included → `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size })`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `0`; the piece-group size and the extent keep their valid defaults, so a remainder taken by the piece size before the piece size is checked fails
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 0 })` by `assert_eq!`
+    * `[✅]`   `try_new_rejects_a_piece_size_below_the_minimum`
+      * `[✅]`   Contract: the piece size is a power of two and `params.piece_size < MINIMUM_PIECE_SIZE` → `Err(PieceGeometryTryNewErrorReturn::PieceSizeBelowMinimum { piece_size, minimum: MINIMUM_PIECE_SIZE })`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `8192`, the power of two just below 16 KiB, and the piece-group size with `8192`, so the sizes agree and the minimum is the only refusal the params can meet; the extent keeps its valid default
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceSizeBelowMinimum { piece_size: 8192, minimum: 16384 })` by `assert_eq!`, the minimum being the 16 KiB the objective states
+    * `[✅]`   `try_new_rejects_a_zero_piece_group_size`
+      * `[✅]`   Contract: the piece size passes and `params.piece_group_size == 0` → `Err(PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize)`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece-group size with `0`; the piece size and the extent keep their valid defaults, so a remainder check alone, which reads zero as a multiple, fails
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize)` by `assert_eq!`
+    * `[✅]`   `try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size`
+      * `[✅]`   Contract: the piece size passes, the piece-group size is nonzero, and `params.piece_group_size % params.piece_size != 0` → `Err(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size, piece_size })`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `16384` and the piece-group size with `24576`, a group larger than a piece and one and a half pieces long; the extent keeps its valid default
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 24576, piece_size: 16384 })` by `assert_eq!`
+    * `[✅]`   `try_new_rejects_a_piece_group_smaller_than_a_piece`
+      * `[✅]`   Contract: the piece size passes, the piece-group size is nonzero, and `params.piece_group_size % params.piece_size != 0` → `Err(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size, piece_size })`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `32768` and the piece-group size with `16384`, a group smaller than a piece, so a remainder taken with its operands exchanged, which reads zero, fails; the extent keeps its valid default
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 16384, piece_size: 32768 })` by `assert_eq!`
+    * `[✅]`   `try_new_rejects_a_zero_total_extent`
+      * `[✅]`   Contract: both sizes pass and `params.total_extent == 0` → `Err(PieceGeometryTryNewErrorReturn::ZeroTotalExtent)`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the extent with `0`; the sizes keep their valid defaults, so the extent is the only refusal the params can meet
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::ZeroTotalExtent)` by `assert_eq!`
+    * `[✅]`   `try_new_reports_the_piece_size_before_the_piece_group_size`
+      * `[✅]`   Contract: the piece size's checks precede the piece-group size's → a piece size that is not a power of two with a zero piece-group size yields `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size })`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `49152` and the piece-group size with `0`; the extent keeps its valid default, so a piece-group size check that runs ahead of the piece size check fails
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 49152 })` by `assert_eq!`
+    * `[✅]`   `try_new_reports_the_piece_group_size_before_the_total_extent`
+      * `[✅]`   Contract: the piece-group size's checks precede the total extent's → a zero piece-group size with a zero extent yields `Err(PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize)`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece-group size with `0` and the extent with `0`; the piece size keeps its valid default, so an extent check that runs ahead of the piece-group size check fails
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::ZeroPieceGroupSize)` by `assert_eq!`
+    * `[✅]`   `try_new_reports_the_piece_size_before_the_total_extent`
+      * `[✅]`   Contract: the piece size's checks precede the total extent's → a piece size that is not a power of two with a zero extent yields `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size })`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `49152`, the piece-group size with `49152`, and the extent with `0`, so the sizes agree and an extent check that runs ahead of the piece size check fails
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(PieceGeometryTryNewErrorReturn::PieceSizeNotPowerOfTwo { piece_size: 49152 })` by `assert_eq!`
+    * `[✅]`   `try_new_admits_the_smallest_geometry`
+      * `[✅]`   Contract: every check passes → `Ok(PieceGeometry { piece_size, piece_group_size, total_extent })`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `16384`, the minimum, the piece-group size with `16384`, one piece, and the extent with `1`, the smallest nonzero extent, so a minimum check that refuses the minimum itself, a group check that requires more than one piece, and an extent check that requires more than one byte each fail
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the geometry's `piece_size` field equals the literal `16384`, its `piece_group_size` field equals the literal `16384`, and its `total_extent` field equals the literal `1`
+    * `[✅]`   `try_new_admits_a_piece_group_size_that_is_an_odd_multiple_of_the_piece_size`
+      * `[✅]`   Contract: every check passes → `Ok(PieceGeometry { piece_size, piece_group_size, total_extent })`
+      * `[✅]`   Arrange: `build_piece_geometry_constructor_params` overriding the piece size with `16384` and the piece-group size with `49152`, an odd multiple of the piece size and not a power of two, so a group check that requires a power of two fails; the extent keeps its valid default
+      * `[✅]`   Act: `PieceGeometry::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the geometry's `piece_size` field equals the literal `16384` and its `piece_group_size` field equals the literal `49152`
+    * `[✅]`   `piece_size_returns_the_held_piece_size`
+      * `[✅]`   Contract: `PieceGeometry::piece_size(&self) -> u32` → the held piece size
+      * `[✅]`   Arrange: `build_piece_geometry` overriding the piece size with `32768`, the piece-group size with `131072`, and the extent with `0x0102_0304_0506_0708`, three values that differ from one another, so an accessor that returns another field fails
+      * `[✅]`   Act: `geometry.piece_size()`
+      * `[✅]`   Assert: the returned `u32` equals the literal `32768` by `assert_eq!`
+    * `[✅]`   `piece_group_size_returns_the_held_piece_group_size`
+      * `[✅]`   Contract: `PieceGeometry::piece_group_size(&self) -> u32` → the held piece-group size
+      * `[✅]`   Arrange: `build_piece_geometry` overriding the piece size with `32768`, the piece-group size with `131072`, and the extent with `0x0102_0304_0506_0708`, three values that differ from one another, so an accessor that returns another field fails
+      * `[✅]`   Act: `geometry.piece_group_size()`
+      * `[✅]`   Assert: the returned `u32` equals the literal `131072` by `assert_eq!`
+    * `[✅]`   `total_extent_returns_the_held_total_extent`
+      * `[✅]`   Contract: `PieceGeometry::total_extent(&self) -> u64` → the held total extent
+      * `[✅]`   Arrange: `build_piece_geometry` overriding the piece size with `32768`, the piece-group size with `131072`, and the extent with `0x0102_0304_0506_0708`, a value whose eight bytes all differ, so a narrowed or byte-swapped return fails
+      * `[✅]`   Act: `geometry.total_extent()`
+      * `[✅]`   Assert: the returned `u64` equals the literal `0x0102_0304_0506_0708` by `assert_eq!`
+    * `[✅]`   `piece_count_rounds_up_a_partial_piece`
+      * `[✅]`   Contract: `PieceGeometry::piece_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_size))`
+      * `[✅]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `16385`, one byte past a whole piece, so a count that rounds down, and a count taken by the piece-group size, fail
+      * `[✅]`   Act: `geometry.piece_count()`
+      * `[✅]`   Assert: the returned `u64` equals the literal `2`, the pieces `16385` bytes need at `16384` bytes each, by `assert_eq!`
+    * `[✅]`   `group_count_rounds_up_a_partial_group`
+      * `[✅]`   Contract: `PieceGeometry::group_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_group_size))`
+      * `[✅]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `65537`, one byte past a whole group, so a count that rounds down, and a count taken by the piece size, fail
+      * `[✅]`   Act: `geometry.group_count()`
+      * `[✅]`   Assert: the returned `u64` equals the literal `2`, the groups `65537` bytes need at `65536` bytes each, by `assert_eq!`
+    * `[✅]`   `piece_count_does_not_round_up_an_exact_extent`
+      * `[✅]`   Contract: `PieceGeometry::piece_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_size))`
+      * `[✅]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `49152`, a whole number of pieces, so a count that adds one past the quotient, and a count taken by the piece-group size, fail
+      * `[✅]`   Act: `geometry.piece_count()`
+      * `[✅]`   Assert: the returned `u64` equals the literal `3`, the pieces `49152` bytes fill at `16384` bytes each, by `assert_eq!`
+    * `[✅]`   `group_count_does_not_round_up_an_exact_extent`
+      * `[✅]`   Contract: `PieceGeometry::group_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_group_size))`
+      * `[✅]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `131072`, a whole number of groups, so a count that adds one past the quotient, and a count taken by the piece size, fail
+      * `[✅]`   Act: `geometry.group_count()`
+      * `[✅]`   Assert: the returned `u64` equals the literal `2`, the groups `131072` bytes fill at `65536` bytes each, by `assert_eq!`
+    * `[✅]`   `piece_count_holds_at_the_largest_extent`
+      * `[✅]`   Contract: `PieceGeometry::piece_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_size))`
+      * `[✅]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `u64::MAX`, so a count that adds the divisor before dividing overflows
+      * `[✅]`   Act: `geometry.piece_count()`
+      * `[✅]`   Assert: the returned `u64` equals the literal `1 << 50`, the quotient of `2^64` by the piece size `2^14`, which rounding up `u64::MAX`, one below `2^64`, reaches, by `assert_eq!`
+    * `[✅]`   `group_count_holds_at_the_largest_extent`
+      * `[✅]`   Contract: `PieceGeometry::group_count(&self) -> u64` → `self.total_extent.div_ceil(u64::from(self.piece_group_size))`
+      * `[✅]`   Arrange: `build_piece_geometry` overriding the piece size with `16384`, the piece-group size with `65536`, and the extent with `u64::MAX`, so a count that adds the divisor before dividing overflows
+      * `[✅]`   Act: `geometry.group_count()`
+      * `[✅]`   Assert: the returned `u64` equals the literal `1 << 48`, the quotient of `2^64` by the piece-group size `2^16`, which rounding up `u64::MAX`, one below `2^64`, reaches, by `assert_eq!`
 
   * `[✅]`   `construction`
     * `[✅]`   `PieceGeometry::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a hash-card's decoded `pieceSize`, `pieceGroupSize`, and `totalExtent` passes them as `PieceGeometryConstructorParams` and handles the refusal arm
@@ -4344,17 +4391,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `directionality`
     * `[✅]`   `piece_geometry` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `piece_geometry::provides`; no cycle
 
-  * `[ ]`   `requirements`
+  * `[✅]`   `requirements`
     * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[ ]`   `try_new_admits_the_smallest_geometry`, `piece_count_rounds_up_a_partial_piece`, `group_count_rounds_up_a_partial_group`, `piece_count_does_not_round_up_an_exact_extent`, `group_count_does_not_round_up_an_exact_extent`, `piece_count_holds_at_the_largest_extent`, and `group_count_holds_at_the_largest_extent` pass
+    * `[✅]`   `try_new_admits_the_smallest_geometry`, `piece_count_rounds_up_a_partial_piece`, `group_count_rounds_up_a_partial_group`, `piece_count_does_not_round_up_an_exact_extent`, `group_count_does_not_round_up_an_exact_extent`, `piece_count_holds_at_the_largest_extent`, and `group_count_holds_at_the_largest_extent` pass
     * `[✅]`   `try_new_rejects_a_piece_size_that_is_not_a_power_of_two`, `try_new_rejects_a_zero_piece_size`, `try_new_rejects_a_piece_size_below_the_minimum`, `try_new_rejects_a_zero_piece_group_size`, `try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size`, `try_new_rejects_a_piece_group_smaller_than_a_piece`, `try_new_rejects_a_zero_total_extent`, and `try_new_reports_the_piece_size_before_the_total_extent` pass (EC-01, CR-06, a malformed geometry is refused before any key is derived)
-    * `[ ]`   `try_new_reports_the_piece_size_before_the_piece_group_size` and `try_new_reports_the_piece_group_size_before_the_total_extent` pass (EC-01, CR-06, the refusal is deterministic)
-    * `[ ]`   `try_new_admits_a_piece_group_size_that_is_an_odd_multiple_of_the_piece_size` passes
-    * `[ ]`   `piece_size_returns_the_held_piece_size`, `piece_group_size_returns_the_held_piece_group_size`, and `total_extent_returns_the_held_total_extent` pass
+    * `[✅]`   `try_new_reports_the_piece_size_before_the_piece_group_size` and `try_new_reports_the_piece_group_size_before_the_total_extent` pass (EC-01, CR-06, the refusal is deterministic)
+    * `[✅]`   `try_new_admits_a_piece_group_size_that_is_an_odd_multiple_of_the_piece_size` passes
+    * `[✅]`   `piece_size_returns_the_held_piece_size`, `piece_group_size_returns_the_held_piece_group_size`, and `total_extent_returns_the_held_total_extent` pass
     * `[✅]`   Code outside `crates/domain/src/piece_geometry` reading the `piece_size`, `piece_group_size`, or `total_extent` field fails to compile
 
-* `[ ]`   `domain/derivation_context` **Derivation context, the asset, deployment, suite, parameter set, group index, and geometry every wrapping key and lineage derivation is domain-separated by, admitted only when the group index falls within the geometry's group count; the first encodable domain type**
+* `[✅]`   `domain/derivation_context` **Derivation context, the asset, deployment, suite, parameter set, group index, and geometry every wrapping key and lineage derivation is domain-separated by, admitted only when the group index falls within the geometry's group count; the first encodable domain type**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: each parameter set's wrapping key is a domain-separated KDF of the encapsulated value and the context, asset, deployment, suite, parameter set, group index, and geometry, so those six values travel together as one type, and a context naming a group the deployment does not have is refused before any key is derived from it (CR-11; Credential KEM; Manifest Bounds Validation)
@@ -4417,57 +4464,57 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No corruptions type and no invalidator: every component arrives as an admitted instance, the one context the constructor refuses is a combination the params builder's overrides carry, and the crate has no serialization dependency; no `DerivationContext` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
     * `[✅]`   Imports `DerivationContext` and `DerivationContextConstructorParams` from `super::interface`, and each component's type, builder, and constructor-params overrides from its module's `provides`, which re-exports its mocks in the crate's test build and under the `mocks` feature
 
-  * `[ ]`   `crates/domain/src/derivation_context/test.rs`
-    * `[ ]`   `try_new_rejects_a_group_index_equal_to_the_group_count`
-      * `[ ]`   Contract: `params.group_index.value() >= params.geometry.group_count()` → `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index, group_count })` holding the two values compared
-      * `[ ]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `4` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `65536`, a geometry of four groups, so a comparison of `>` instead of `>=` fails; the other four components keep their builder defaults
-      * `[ ]`   Act: `DerivationContext::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: 4, group_count: 4 })` by `assert_eq!`, the group count being the four groups the arrangement's extent holds at its piece-group size
-    * `[ ]`   `try_new_rejects_the_largest_group_index`
-      * `[ ]`   Contract: `params.group_index.value() >= params.geometry.group_count()` → `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index, group_count })` holding the two values compared
-      * `[ ]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `u64::MAX` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `65536`, a geometry of four groups, so the two values compared differ and an error that swaps them, or a comparison that narrows the index, fails; the other four components keep their builder defaults
-      * `[ ]`   Act: `DerivationContext::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: u64::MAX, group_count: 4 })` by `assert_eq!`, the group count being the four groups the arrangement's extent holds at its piece-group size
-    * `[ ]`   `try_new_admits_the_last_group_of_the_geometry`
-      * `[ ]`   Contract: the group index is below the group count → `Ok(DerivationContext { asset, deployment, suite, parameter_set, group_index, geometry })`
-      * `[ ]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `3` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `65536`, a geometry of four groups, so index `3` is its last group and a comparison that refuses the last group fails; the other four components keep their builder defaults
-      * `[ ]`   Act: `DerivationContext::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`
-    * `[ ]`   `try_new_admits_index_zero_of_a_one_group_geometry`
-      * `[ ]`   Contract: the group index is below the group count → `Ok(DerivationContext { asset, deployment, suite, parameter_set, group_index, geometry })`
-      * `[ ]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `0` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `16384`, a geometry of one group, so a comparison that refuses the only group fails; the other four components keep their builder defaults
-      * `[ ]`   Act: `DerivationContext::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`
-    * `[ ]`   `asset_returns_the_held_asset`
-      * `[ ]`   Contract: `DerivationContext::asset(&self) -> &AssetIdentity` → a shared reference to the held asset
-      * `[ ]`   Arrange: `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, values that differ from the builder's defaults, so an accessor that returns any other asset fails
-      * `[ ]`   Act: `context.asset()`
-      * `[ ]`   Assert: the returned asset's `name()` equals the literal `"left-pad"` and its `version()` equals the literal `"1.3.0"` by `assert_eq!`
-    * `[ ]`   `deployment_returns_the_held_deployment`
-      * `[ ]`   Contract: `DerivationContext::deployment(&self) -> &DeploymentIdentity` → a shared reference to the held deployment
-      * `[ ]`   Arrange: `build_derivation_context` overriding the deployment with `build_deployment_identity` at bytes of `DEPLOYMENT_IDENTITY_LENGTH` bytes each `0x44`, a value that differs from the builder's default, so an accessor that returns any other deployment fails
-      * `[ ]`   Act: `context.deployment()`
-      * `[ ]`   Assert: the returned deployment's `as_bytes()` equals the array literal of `DEPLOYMENT_IDENTITY_LENGTH` bytes each `0x44` by `assert_eq!`
-    * `[ ]`   `suite_returns_the_held_suite`
-      * `[ ]`   Contract: `DerivationContext::suite(&self) -> &SuiteIdentifier` → a shared reference to the held suite
-      * `[ ]`   Arrange: `build_derivation_context` overriding the suite with `build_suite_identifier` at identifier of `SUITE_IDENTIFIER_LENGTH` bytes each `0x55` and version `0x0102`, values that differ from the builder's defaults, so an accessor that returns any other suite fails
-      * `[ ]`   Act: `context.suite()`
-      * `[ ]`   Assert: the returned suite's `identifier()` equals the array literal of `SUITE_IDENTIFIER_LENGTH` bytes each `0x55` and its `version()` equals the literal `0x0102` by `assert_eq!`
-    * `[ ]`   `parameter_set_returns_the_held_parameter_set`
-      * `[ ]`   Contract: `DerivationContext::parameter_set(&self) -> &ParameterSetIdentifier` → a shared reference to the held parameter set
-      * `[ ]`   Arrange: `build_derivation_context` overriding the parameter set with `build_parameter_set_identifier` at bytes of `PARAMETER_SET_IDENTIFIER_LENGTH` bytes each `0x66`, a value that differs from the builder's default, so an accessor that returns any other parameter set fails
-      * `[ ]`   Act: `context.parameter_set()`
-      * `[ ]`   Assert: the returned parameter set's `as_bytes()` equals the array literal of `PARAMETER_SET_IDENTIFIER_LENGTH` bytes each `0x66` by `assert_eq!`
-    * `[ ]`   `group_index_returns_the_held_group_index`
-      * `[ ]`   Contract: `DerivationContext::group_index(&self) -> &GroupIndex` → a shared reference to the held group index
-      * `[ ]`   Arrange: `build_derivation_context` overriding the group index with `build_group_index` at value `2`, a value that differs from the builder's default and falls within the default geometry's groups, so an accessor that returns any other group index fails
-      * `[ ]`   Act: `context.group_index()`
-      * `[ ]`   Assert: the returned group index's `value()` equals the literal `2` by `assert_eq!`
-    * `[ ]`   `geometry_returns_the_held_geometry`
-      * `[ ]`   Contract: `DerivationContext::geometry(&self) -> &PieceGeometry` → a shared reference to the held geometry
-      * `[ ]`   Arrange: `build_derivation_context` overriding the geometry with `build_piece_geometry` at piece size `32768` and piece-group size `65536`, values that differ from the builder's defaults, with the extent keeping its builder default so the default group index falls within the geometry's groups, so an accessor that returns any other geometry fails
-      * `[ ]`   Act: `context.geometry()`
-      * `[ ]`   Assert: the returned geometry's `piece_size()` equals the literal `32768` and its `piece_group_size()` equals the literal `65536` by `assert_eq!`
+  * `[✅]`   `crates/domain/src/derivation_context/test.rs`
+    * `[✅]`   `try_new_rejects_a_group_index_equal_to_the_group_count`
+      * `[✅]`   Contract: `params.group_index.value() >= params.geometry.group_count()` → `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index, group_count })` holding the two values compared
+      * `[✅]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `4` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `65536`, a geometry of four groups, so a comparison of `>` instead of `>=` fails; the other four components keep their builder defaults
+      * `[✅]`   Act: `DerivationContext::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: 4, group_count: 4 })` by `assert_eq!`, the group count being the four groups the arrangement's extent holds at its piece-group size
+    * `[✅]`   `try_new_rejects_the_largest_group_index`
+      * `[✅]`   Contract: `params.group_index.value() >= params.geometry.group_count()` → `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index, group_count })` holding the two values compared
+      * `[✅]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `u64::MAX` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `65536`, a geometry of four groups, so the two values compared differ and an error that swaps them, or a comparison that narrows the index, fails; the other four components keep their builder defaults
+      * `[✅]`   Act: `DerivationContext::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: u64::MAX, group_count: 4 })` by `assert_eq!`, the group count being the four groups the arrangement's extent holds at its piece-group size
+    * `[✅]`   `try_new_admits_the_last_group_of_the_geometry`
+      * `[✅]`   Contract: the group index is below the group count → `Ok(DerivationContext { asset, deployment, suite, parameter_set, group_index, geometry })`
+      * `[✅]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `3` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `65536`, a geometry of four groups, so index `3` is its last group and a comparison that refuses the last group fails; the other four components keep their builder defaults
+      * `[✅]`   Act: `DerivationContext::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`
+    * `[✅]`   `try_new_admits_index_zero_of_a_one_group_geometry`
+      * `[✅]`   Contract: the group index is below the group count → `Ok(DerivationContext { asset, deployment, suite, parameter_set, group_index, geometry })`
+      * `[✅]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `0` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `16384`, a geometry of one group, so a comparison that refuses the only group fails; the other four components keep their builder defaults
+      * `[✅]`   Act: `DerivationContext::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`
+    * `[✅]`   `asset_returns_the_held_asset`
+      * `[✅]`   Contract: `DerivationContext::asset(&self) -> &AssetIdentity` → a shared reference to the held asset
+      * `[✅]`   Arrange: `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, values that differ from the builder's defaults, so an accessor that returns any other asset fails
+      * `[✅]`   Act: `context.asset()`
+      * `[✅]`   Assert: the returned asset's `name()` equals the literal `"left-pad"` and its `version()` equals the literal `"1.3.0"` by `assert_eq!`
+    * `[✅]`   `deployment_returns_the_held_deployment`
+      * `[✅]`   Contract: `DerivationContext::deployment(&self) -> &DeploymentIdentity` → a shared reference to the held deployment
+      * `[✅]`   Arrange: `build_derivation_context` overriding the deployment with `build_deployment_identity` at bytes of `DEPLOYMENT_IDENTITY_LENGTH` bytes each `0x44`, a value that differs from the builder's default, so an accessor that returns any other deployment fails
+      * `[✅]`   Act: `context.deployment()`
+      * `[✅]`   Assert: the returned deployment's `as_bytes()` equals the array literal of `DEPLOYMENT_IDENTITY_LENGTH` bytes each `0x44` by `assert_eq!`
+    * `[✅]`   `suite_returns_the_held_suite`
+      * `[✅]`   Contract: `DerivationContext::suite(&self) -> &SuiteIdentifier` → a shared reference to the held suite
+      * `[✅]`   Arrange: `build_derivation_context` overriding the suite with `build_suite_identifier` at identifier of `SUITE_IDENTIFIER_LENGTH` bytes each `0x55` and version `0x0102`, values that differ from the builder's defaults, so an accessor that returns any other suite fails
+      * `[✅]`   Act: `context.suite()`
+      * `[✅]`   Assert: the returned suite's `identifier()` equals the array literal of `SUITE_IDENTIFIER_LENGTH` bytes each `0x55` and its `version()` equals the literal `0x0102` by `assert_eq!`
+    * `[✅]`   `parameter_set_returns_the_held_parameter_set`
+      * `[✅]`   Contract: `DerivationContext::parameter_set(&self) -> &ParameterSetIdentifier` → a shared reference to the held parameter set
+      * `[✅]`   Arrange: `build_derivation_context` overriding the parameter set with `build_parameter_set_identifier` at bytes of `PARAMETER_SET_IDENTIFIER_LENGTH` bytes each `0x66`, a value that differs from the builder's default, so an accessor that returns any other parameter set fails
+      * `[✅]`   Act: `context.parameter_set()`
+      * `[✅]`   Assert: the returned parameter set's `as_bytes()` equals the array literal of `PARAMETER_SET_IDENTIFIER_LENGTH` bytes each `0x66` by `assert_eq!`
+    * `[✅]`   `group_index_returns_the_held_group_index`
+      * `[✅]`   Contract: `DerivationContext::group_index(&self) -> &GroupIndex` → a shared reference to the held group index
+      * `[✅]`   Arrange: `build_derivation_context` overriding the group index with `build_group_index` at value `2`, a value that differs from the builder's default and falls within the default geometry's groups, so an accessor that returns any other group index fails
+      * `[✅]`   Act: `context.group_index()`
+      * `[✅]`   Assert: the returned group index's `value()` equals the literal `2` by `assert_eq!`
+    * `[✅]`   `geometry_returns_the_held_geometry`
+      * `[✅]`   Contract: `DerivationContext::geometry(&self) -> &PieceGeometry` → a shared reference to the held geometry
+      * `[✅]`   Arrange: `build_derivation_context` overriding the geometry with `build_piece_geometry` at piece size `32768` and piece-group size `65536`, values that differ from the builder's defaults, with the extent keeping its builder default so the default group index falls within the geometry's groups, so an accessor that returns any other geometry fails
+      * `[✅]`   Act: `context.geometry()`
+      * `[✅]`   Assert: the returned geometry's `piece_size()` equals the literal `32768` and its `piece_group_size()` equals the literal `65536` by `assert_eq!`
 
   * `[✅]`   `construction`
     * `[✅]`   `DerivationContext::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding admitted components passes them as `DerivationContextConstructorParams` and handles the refusal arm
@@ -4489,7 +4536,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
     * `[✅]`   `try_new_admits_the_last_group_of_the_geometry` and `try_new_admits_index_zero_of_a_one_group_geometry` pass
     * `[✅]`   `try_new_rejects_a_group_index_equal_to_the_group_count` and `try_new_rejects_the_largest_group_index` pass (CR-11, a context names only a group its deployment has)
-    * `[ ]`   `asset_returns_the_held_asset`, `deployment_returns_the_held_deployment`, `suite_returns_the_held_suite`, `parameter_set_returns_the_held_parameter_set`, `group_index_returns_the_held_group_index`, and `geometry_returns_the_held_geometry` pass
+    * `[✅]`   `asset_returns_the_held_asset`, `deployment_returns_the_held_deployment`, `suite_returns_the_held_suite`, `parameter_set_returns_the_held_parameter_set`, `group_index_returns_the_held_group_index`, and `geometry_returns_the_held_geometry` pass
     * `[✅]`   Code outside `crates/domain/src/derivation_context` reading any field of `DerivationContext` fails to compile
 
 # To-Do List

@@ -562,6 +562,7 @@ pub enum MockIPairingAdapterFailureMode {
     DecodeG2NotOnCurve,
     G1OutsideSubgroupSearchExhausted,
     G2OutsideSubgroupSearchExhausted,
+    SampleScalarWrongLength,
 }
 
 pub struct ScalarFieldOrderParams;

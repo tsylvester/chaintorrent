@@ -42,6 +42,7 @@ use super::interface::{
     ScalarFieldOrderPayload, ScalarFieldOrderReturn, ScalarFieldOrderSuccessReturn,
     TargetGroupEncodingIdentifier, VerifierGroupArithmetic,
 };
+use core::cell::Cell;
 use core::convert::Infallible;
 use domain::{Secret, SecretConstructorParams, SecretConstructorParamsOverrides, build_secret};
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -935,6 +936,11 @@ pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
     }
 }
 
+std::thread_local! {
+    pub(crate) static MOCK_SAMPLING_MODE: Cell<MockIPairingAdapterFailureMode> =
+        const { Cell::new(MockIPairingAdapterFailureMode::Succeeds) };
+}
+
 pub(crate) struct MockIPairingAdapter {
     pub(super) failure_mode: MockIPairingAdapterFailureMode,
 }
@@ -945,6 +951,7 @@ impl MockIPairingAdapter {
     pub(crate) fn try_new(
         params: MockIPairingAdapterConstructorParams,
     ) -> MockIPairingAdapterTryNewReturn {
+        MOCK_SAMPLING_MODE.with(|mode| mode.set(params.failure_mode));
         Ok(MockIPairingAdapter {
             failure_mode: params.failure_mode,
         })
@@ -1210,7 +1217,10 @@ impl ISampleUniformScalar for MockScalar {
         payload: SampleUniformScalarPayload,
     ) -> SampleUniformScalarReturn<Self> {
         let actual = payload.uniform.expose().len();
-        if actual != Self::UNIFORM_BYTES_LENGTH {
+        if actual != Self::UNIFORM_BYTES_LENGTH
+            || MOCK_SAMPLING_MODE.with(|mode| mode.get())
+                == MockIPairingAdapterFailureMode::SampleScalarWrongLength
+        {
             return Err(SampleUniformScalarErrorReturn::WrongLength {
                 expected: Self::UNIFORM_BYTES_LENGTH,
                 actual,

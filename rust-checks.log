@@ -1,4 +1,4 @@
-Rust checks started: 2026-10-09 14:58:17 -05:00
+Rust checks started: 2026-10-10 11:39:58 -05:00
 
 > cargo check --workspace --all-targets --all-features
 
@@ -7,82 +7,6 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-    Checking pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
-warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:15:12
-   |
-15 | pub struct EvmIdentityFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `build_evm_identity_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:19:8
-   |
-19 | pub fn build_evm_identity_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_identity_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:27:8
-   |
-27 | pub fn build_evm_identity_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmEntitlementFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:35:12
-   |
-35 | pub struct EvmEntitlementFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_entitlement_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:39:8
-   |
-39 | pub fn build_evm_entitlement_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_entitlement_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:47:8
-   |
-47 | pub fn build_evm_entitlement_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmIntervalFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:56:12
-   |
-56 | pub struct EvmIntervalFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_interval_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:60:8
-   |
-60 | pub fn build_evm_interval_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_interval_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:68:8
-   |
-68 | pub fn build_evm_interval_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmChainIdentifierFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:76:12
-   |
-76 | pub struct EvmChainIdentifierFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_chain_identifier_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:80:8
-   |
-80 | pub fn build_evm_chain_identifier_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_chain_identifier_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:88:8
-   |
-88 | pub fn build_evm_chain_identifier_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: `chain` (lib test) generated 12 warnings
 warning: unused imports: `Fq12`, `Fq2`, and `Fq`
   --> adapters\pairing\src\bls12_381_arkworks\mock.rs:13:32
    |
@@ -412,45 +336,114 @@ warning: function `build_bn254_halo2curves_encoded_gt` is never used
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_mock_i_pairing_adapter_constructor_params` is never used
-   --> adapters\pairing\src\factory\mock.rs:928:15
+   --> adapters\pairing\src\factory\mock.rs:929:15
     |
-928 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
+929 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_mock_i_pairing_adapter` is never used
-   --> adapters\pairing\src\factory\mock.rs:954:15
+   --> adapters\pairing\src\factory\mock.rs:961:15
     |
-954 | pub(crate) fn build_mock_i_pairing_adapter(
+961 | pub(crate) fn build_mock_i_pairing_adapter(
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `ConsumePairingPayloadOverrides` is never constructed
-    --> adapters\pairing\src\factory\mock.rs:1434:19
+    --> adapters\pairing\src\factory\mock.rs:1444:19
      |
-1434 | pub(crate) struct ConsumePairingPayloadOverrides {
+1444 | pub(crate) struct ConsumePairingPayloadOverrides {
      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_consume_pairing_payload` is never used
-    --> adapters\pairing\src\factory\mock.rs:1438:15
+    --> adapters\pairing\src\factory\mock.rs:1448:15
      |
-1438 | pub(crate) fn build_consume_pairing_payload(
+1448 | pub(crate) fn build_consume_pairing_payload(
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: `pairing` (lib) generated 58 warnings (run `cargo fix --lib -p pairing` to apply 2 suggestions)
-    Checking hash-to-scalar v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar)
-    Checking kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
-    Checking envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
-    Checking workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
 warning: function `build_mock_i_pairing_adapter_constructor_params` is never used
-   --> adapters\pairing\src\factory\mock.rs:928:15
+   --> adapters\pairing\src\factory\mock.rs:929:15
     |
-928 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
+929 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
-    Checking proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
+warning: `pairing` (lib) generated 58 warnings (run `cargo fix --lib -p pairing` to apply 2 suggestions)
 warning: `pairing` (lib test) generated 4 warnings (3 duplicates)
-    Checking harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
+warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:15:12
+   |
+15 | pub struct EvmIdentityFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `build_evm_identity_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:19:8
+   |
+19 | pub fn build_evm_identity_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_identity_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:27:8
+   |
+27 | pub fn build_evm_identity_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmEntitlementFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:35:12
+   |
+35 | pub struct EvmEntitlementFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_entitlement_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:39:8
+   |
+39 | pub fn build_evm_entitlement_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_entitlement_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:47:8
+   |
+47 | pub fn build_evm_entitlement_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmIntervalFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:56:12
+   |
+56 | pub struct EvmIntervalFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_interval_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:60:8
+   |
+60 | pub fn build_evm_interval_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_interval_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:68:8
+   |
+68 | pub fn build_evm_interval_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmChainIdentifierFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:76:12
+   |
+76 | pub struct EvmChainIdentifierFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_chain_identifier_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:80:8
+   |
+80 | pub fn build_evm_chain_identifier_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_chain_identifier_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:88:8
+   |
+88 | pub fn build_evm_chain_identifier_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `chain` (lib test) generated 12 warnings
 warning: unused import: `super::constants`
  --> apps\harness-crypto\src\generate\evm\constants\provides.rs:1:9
   |
@@ -2254,7 +2247,7 @@ warning: function `build_render_payload` is never used
 
 warning: `harness-crypto` (lib) generated 287 warnings (run `cargo fix --lib -p harness-crypto` to apply 15 suggestions)
 warning: `harness-crypto` (lib test) generated 287 warnings (287 duplicates)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.55s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.33s
 
 [exit code: 0]
 
@@ -2266,82 +2259,11 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
+    Checking domain v0.0.0 (C:\Users\Tim\ChainTorrent\crates\domain)
     Checking pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
-warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:15:12
-   |
-15 | pub struct EvmIdentityFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `build_evm_identity_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:19:8
-   |
-19 | pub fn build_evm_identity_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_identity_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:27:8
-   |
-27 | pub fn build_evm_identity_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmEntitlementFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:35:12
-   |
-35 | pub struct EvmEntitlementFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_entitlement_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:39:8
-   |
-39 | pub fn build_evm_entitlement_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_entitlement_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:47:8
-   |
-47 | pub fn build_evm_entitlement_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmIntervalFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:56:12
-   |
-56 | pub struct EvmIntervalFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_interval_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:60:8
-   |
-60 | pub fn build_evm_interval_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_interval_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:68:8
-   |
-68 | pub fn build_evm_interval_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmChainIdentifierFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:76:12
-   |
-76 | pub struct EvmChainIdentifierFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_chain_identifier_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:80:8
-   |
-80 | pub fn build_evm_chain_identifier_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_chain_identifier_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:88:8
-   |
-88 | pub fn build_evm_chain_identifier_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: `chain` (lib test) generated 12 warnings
+    Checking encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
+    Checking random v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\random)
+    Checking kdf v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kdf)
 warning: unused imports: `Fq12`, `Fq2`, and `Fq`
   --> adapters\pairing\src\bls12_381_arkworks\mock.rs:13:32
    |
@@ -2671,42 +2593,118 @@ warning: function `build_bn254_halo2curves_encoded_gt` is never used
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_mock_i_pairing_adapter_constructor_params` is never used
-   --> adapters\pairing\src\factory\mock.rs:928:15
+   --> adapters\pairing\src\factory\mock.rs:929:15
     |
-928 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
+929 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_mock_i_pairing_adapter` is never used
-   --> adapters\pairing\src\factory\mock.rs:954:15
+   --> adapters\pairing\src\factory\mock.rs:961:15
     |
-954 | pub(crate) fn build_mock_i_pairing_adapter(
+961 | pub(crate) fn build_mock_i_pairing_adapter(
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `ConsumePairingPayloadOverrides` is never constructed
-    --> adapters\pairing\src\factory\mock.rs:1434:19
+    --> adapters\pairing\src\factory\mock.rs:1444:19
      |
-1434 | pub(crate) struct ConsumePairingPayloadOverrides {
+1444 | pub(crate) struct ConsumePairingPayloadOverrides {
      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_consume_pairing_payload` is never used
-    --> adapters\pairing\src\factory\mock.rs:1438:15
+    --> adapters\pairing\src\factory\mock.rs:1448:15
      |
-1438 | pub(crate) fn build_consume_pairing_payload(
+1448 | pub(crate) fn build_consume_pairing_payload(
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    Checking chain v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\chain)
 warning: `pairing` (lib) generated 58 warnings (run `cargo clippy --fix --lib -p pairing -- ` to apply 2 suggestions)
     Checking hash-to-scalar v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar)
+warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:15:12
+   |
+15 | pub struct EvmIdentityFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `build_evm_identity_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:19:8
+   |
+19 | pub fn build_evm_identity_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_identity_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:27:8
+   |
+27 | pub fn build_evm_identity_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmEntitlementFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:35:12
+   |
+35 | pub struct EvmEntitlementFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_entitlement_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:39:8
+   |
+39 | pub fn build_evm_entitlement_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_entitlement_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:47:8
+   |
+47 | pub fn build_evm_entitlement_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmIntervalFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:56:12
+   |
+56 | pub struct EvmIntervalFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_interval_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:60:8
+   |
+60 | pub fn build_evm_interval_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_interval_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:68:8
+   |
+68 | pub fn build_evm_interval_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmChainIdentifierFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:76:12
+   |
+76 | pub struct EvmChainIdentifierFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_chain_identifier_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:80:8
+   |
+80 | pub fn build_evm_chain_identifier_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_chain_identifier_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:88:8
+   |
+88 | pub fn build_evm_chain_identifier_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `chain` (lib test) generated 12 warnings
     Checking kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
-    Checking envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
-    Checking workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
 warning: function `build_mock_i_pairing_adapter_constructor_params` is never used
-   --> adapters\pairing\src\factory\mock.rs:928:15
+   --> adapters\pairing\src\factory\mock.rs:929:15
     |
-928 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
+929 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
+    Checking envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
+    Checking workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
     Checking proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
 warning: `pairing` (lib test) generated 4 warnings (3 duplicates)
     Checking harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
@@ -4511,9 +4509,9 @@ warning: function `build_render_payload` is never used
 379 | pub fn build_render_payload(overrides: RenderPayloadOverrides) -> RenderPayload {
     |        ^^^^^^^^^^^^^^^^^^^^
 
-warning: `harness-crypto` (lib test) generated 287 warnings (15 duplicates)
-warning: `harness-crypto` (lib) generated 287 warnings (272 duplicates) (run `cargo clippy --fix --lib -p harness-crypto -- ` to apply 15 suggestions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.58s
+warning: `harness-crypto` (lib) generated 287 warnings (run `cargo clippy --fix --lib -p harness-crypto -- ` to apply 15 suggestions)
+warning: `harness-crypto` (lib test) generated 287 warnings (287 duplicates)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.68s
 
 [exit code: 0]
 
@@ -4531,24 +4529,6 @@ warning[unmatched-source]: allowed source was not encountered
    Γöé
 37 Γöé allow-git = ["https://github.com/tsylvester/rqbit", "https://github.com/tsylvester/halo2curves"]
    Γöé               ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü no crate source matched these criteria
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:20:6
-   Γöé
-20 Γöé     "BSL-1.0",
-   Γöé      ΓöüΓöüΓöüΓöüΓöüΓöüΓöü unmatched license allowance
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:17:6
-   Γöé
-17 Γöé     "ISC",
-   Γöé      ΓöüΓöüΓöü unmatched license allowance
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:18:6
-   Γöé
-18 Γöé     "Zlib",
-   Γöé      ΓöüΓöüΓöüΓöü unmatched license allowance
 
 warning[duplicate]: found 2 duplicate entries for crate 'block-buffer'
    ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:27:1
@@ -4967,6 +4947,24 @@ warning[duplicate]: found 2 duplicate entries for crate 'pairing'
              Γö£ΓöÇΓöÇ proof v0.0.0 (*)
              ΓööΓöÇΓöÇ (dev) workflows v0.0.0 (*)
 
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:20:6
+   Γöé
+20 Γöé     "BSL-1.0",
+   Γöé      ΓöüΓöüΓöüΓöüΓöüΓöüΓöü unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:17:6
+   Γöé
+17 Γöé     "ISC",
+   Γöé      ΓöüΓöüΓöü unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:18:6
+   Γöé
+18 Γöé     "Zlib",
+   Γöé      ΓöüΓöüΓöüΓöü unmatched license allowance
+
 warning[duplicate]: found 2 duplicate entries for crate 'sha3'
     ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:107:1
     Γöé  
@@ -5216,82 +5214,7 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
-warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:15:12
-   |
-15 | pub struct EvmIdentityFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `build_evm_identity_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:19:8
-   |
-19 | pub fn build_evm_identity_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_identity_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:27:8
-   |
-27 | pub fn build_evm_identity_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmEntitlementFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:35:12
-   |
-35 | pub struct EvmEntitlementFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_entitlement_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:39:8
-   |
-39 | pub fn build_evm_entitlement_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_entitlement_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:47:8
-   |
-47 | pub fn build_evm_entitlement_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmIntervalFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:56:12
-   |
-56 | pub struct EvmIntervalFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_interval_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:60:8
-   |
-60 | pub fn build_evm_interval_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_interval_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:68:8
-   |
-68 | pub fn build_evm_interval_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmChainIdentifierFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:76:12
-   |
-76 | pub struct EvmChainIdentifierFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_chain_identifier_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:80:8
-   |
-80 | pub fn build_evm_chain_identifier_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_chain_identifier_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:88:8
-   |
-88 | pub fn build_evm_chain_identifier_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: `chain` (lib test) generated 12 warnings
+   Compiling domain v0.0.0 (C:\Users\Tim\ChainTorrent\crates\domain)
 warning: unused imports: `Fq12`, `Fq2`, and `Fq`
   --> adapters\pairing\src\bls12_381_arkworks\mock.rs:13:32
    |
@@ -5621,44 +5544,114 @@ warning: function `build_bn254_halo2curves_encoded_gt` is never used
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_mock_i_pairing_adapter_constructor_params` is never used
-   --> adapters\pairing\src\factory\mock.rs:928:15
+   --> adapters\pairing\src\factory\mock.rs:929:15
     |
-928 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
+929 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_mock_i_pairing_adapter` is never used
-   --> adapters\pairing\src\factory\mock.rs:954:15
+   --> adapters\pairing\src\factory\mock.rs:961:15
     |
-954 | pub(crate) fn build_mock_i_pairing_adapter(
+961 | pub(crate) fn build_mock_i_pairing_adapter(
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `ConsumePairingPayloadOverrides` is never constructed
-    --> adapters\pairing\src\factory\mock.rs:1434:19
+    --> adapters\pairing\src\factory\mock.rs:1444:19
      |
-1434 | pub(crate) struct ConsumePairingPayloadOverrides {
+1444 | pub(crate) struct ConsumePairingPayloadOverrides {
      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_consume_pairing_payload` is never used
-    --> adapters\pairing\src\factory\mock.rs:1438:15
+    --> adapters\pairing\src\factory\mock.rs:1448:15
      |
-1438 | pub(crate) fn build_consume_pairing_payload(
+1448 | pub(crate) fn build_consume_pairing_payload(
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   Compiling hash-to-scalar v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar)
-   Compiling kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
-warning: `pairing` (lib) generated 58 warnings (run `cargo fix --lib -p pairing` to apply 2 suggestions)
-   Compiling envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
-   Compiling workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
-   Compiling proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
 warning: function `build_mock_i_pairing_adapter_constructor_params` is never used
-   --> adapters\pairing\src\factory\mock.rs:928:15
+   --> adapters\pairing\src\factory\mock.rs:929:15
     |
-928 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
+929 | pub(crate) fn build_mock_i_pairing_adapter_constructor_params(
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
-   Compiling harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
+warning: `pairing` (lib) generated 58 warnings (run `cargo fix --lib -p pairing` to apply 2 suggestions)
+warning: `pairing` (lib test) generated 4 warnings (3 duplicates)
+warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:15:12
+   |
+15 | pub struct EvmIdentityFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `build_evm_identity_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:19:8
+   |
+19 | pub fn build_evm_identity_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_identity_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:27:8
+   |
+27 | pub fn build_evm_identity_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmEntitlementFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:35:12
+   |
+35 | pub struct EvmEntitlementFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_entitlement_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:39:8
+   |
+39 | pub fn build_evm_entitlement_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_entitlement_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:47:8
+   |
+47 | pub fn build_evm_entitlement_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmIntervalFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:56:12
+   |
+56 | pub struct EvmIntervalFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_interval_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:60:8
+   |
+60 | pub fn build_evm_interval_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_interval_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:68:8
+   |
+68 | pub fn build_evm_interval_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmChainIdentifierFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:76:12
+   |
+76 | pub struct EvmChainIdentifierFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_chain_identifier_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:80:8
+   |
+80 | pub fn build_evm_chain_identifier_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_chain_identifier_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:88:8
+   |
+88 | pub fn build_evm_chain_identifier_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `chain` (lib test) generated 12 warnings
 warning: unused import: `super::constants`
  --> apps\harness-crypto\src\generate\evm\constants\provides.rs:1:9
   |
@@ -7460,9 +7453,9 @@ warning: function `build_render_payload` is never used
 379 | pub fn build_render_payload(overrides: RenderPayloadOverrides) -> RenderPayload {
     |        ^^^^^^^^^^^^^^^^^^^^
 
-warning: `harness-crypto` (lib test) generated 287 warnings (run `cargo fix --lib -p harness-crypto --tests` to apply 15 suggestions)
-warning: `pairing` (lib test) generated 4 warnings (3 duplicates)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.01s
+warning: `harness-crypto` (lib) generated 287 warnings (run `cargo fix --lib -p harness-crypto` to apply 15 suggestions)
+warning: `harness-crypto` (lib test) generated 287 warnings (287 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.88s
      Running unittests src\lib.rs (target\debug\deps\chain-ff7643f463e984f5.exe)
 
 running 0 tests
@@ -7471,15 +7464,84 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
      Running unittests src\lib.rs (target\debug\deps\domain-8bf3307dd67c6836.exe)
 
-running 6 tests
+running 75 tests
+test asset_identity::test::as_ref_returns_the_registry_hash_preimage ... ok
+test asset_identity::test::try_new_rejects_a_non_ascii_name ... ok
+test asset_identity::test::name_returns_the_held_name ... ok
+test asset_identity::test::try_new_admits_a_scoped_name_and_a_prerelease_version ... ok
+test asset_identity::test::try_new_reports_a_version_byte_outside_visible_ascii_before_a_later_separator ... ok
+test asset_identity::test::try_new_reports_the_name_before_an_empty_version ... ok
+test asset_identity::test::try_new_rejects_a_non_ascii_version ... ok
+test asset_identity::test::try_new_rejects_a_version_byte_outside_visible_ascii ... ok
+test derivation_context::test::asset_returns_the_held_asset ... ok
+test derivation_context::test::geometry_returns_the_held_geometry ... ok
+test asset_identity::test::try_new_rejects_an_empty_name ... ok
+test derivation_context::test::try_new_admits_index_zero_of_a_one_group_geometry ... ok
+test asset_identity::test::try_new_rejects_an_empty_version ... ok
+test asset_identity::test::try_new_rejects_the_lowest_name_byte_outside_visible_ascii ... ok
+test asset_identity::test::try_new_admits_the_lowest_and_highest_visible_ascii_bytes ... ok
+test asset_identity::test::try_new_reports_a_version_separator_before_a_later_byte_outside_visible_ascii ... ok
+test asset_identity::test::coordinate_writes_the_only_registry_hash_preimage ... ok
+test asset_identity::test::try_new_reports_the_name_before_the_version_bytes ... ok
+test asset_identity::test::version_returns_the_held_version ... ok
+test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_interior ... ok
+test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first ... ok
+test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last ... ok
+test deployment_identity::test::try_new_rejects_the_all_zero_identity ... ok
+test derivation_context::test::deployment_returns_the_held_deployment ... ok
+test derivation_context::test::group_index_returns_the_held_group_index ... ok
+test derivation_context::test::parameter_set_returns_the_held_parameter_set ... ok
+test derivation_context::test::suite_returns_the_held_suite ... ok
+test group_index::test::try_new_admits_the_highest_index ... ok
+test derivation_context::test::try_new_admits_the_last_group_of_the_geometry ... ok
+test derivation_context::test::try_new_rejects_the_largest_group_index ... ok
+test deployment_identity::test::as_bytes_returns_the_held_bytes ... ok
+test asset_identity::test::try_new_rejects_a_version_containing_the_separator ... ok
+test group_index::test::try_new_admits_the_lowest_index ... ok
+test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior ... ok
+test group_index::test::value_returns_the_held_index ... ok
+test derivation_context::test::try_new_rejects_a_group_index_equal_to_the_group_count ... ok
+test parameter_set_identifier::test::as_bytes_returns_the_held_bytes ... ok
+test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first ... ok
+test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last ... ok
+test parameter_set_identifier::test::try_new_rejects_the_all_zero_identifier ... ok
+test piece_geometry::test::group_count_does_not_round_up_an_exact_extent ... ok
+test piece_geometry::test::group_count_holds_at_the_largest_extent ... ok
+test piece_geometry::test::group_count_rounds_up_a_partial_group ... ok
+test piece_geometry::test::piece_count_does_not_round_up_an_exact_extent ... ok
+test piece_geometry::test::piece_count_holds_at_the_largest_extent ... ok
+test piece_geometry::test::piece_count_rounds_up_a_partial_piece ... ok
+test piece_geometry::test::piece_group_size_returns_the_held_piece_group_size ... ok
+test piece_geometry::test::piece_size_returns_the_held_piece_size ... ok
+test piece_geometry::test::total_extent_returns_the_held_total_extent ... ok
+test piece_geometry::test::try_new_admits_a_piece_group_size_that_is_an_odd_multiple_of_the_piece_size ... ok
+test piece_geometry::test::try_new_admits_the_smallest_geometry ... ok
+test piece_geometry::test::try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size ... ok
+test piece_geometry::test::try_new_rejects_a_piece_group_smaller_than_a_piece ... ok
+test piece_geometry::test::try_new_rejects_a_piece_size_below_the_minimum ... ok
+test piece_geometry::test::try_new_rejects_a_piece_size_that_is_not_a_power_of_two ... ok
+test piece_geometry::test::try_new_rejects_a_zero_piece_group_size ... ok
+test piece_geometry::test::try_new_rejects_a_zero_piece_size ... ok
+test piece_geometry::test::try_new_rejects_a_zero_total_extent ... ok
+test piece_geometry::test::try_new_reports_the_piece_group_size_before_the_total_extent ... ok
+test piece_geometry::test::try_new_reports_the_piece_size_before_the_piece_group_size ... ok
+test piece_geometry::test::try_new_reports_the_piece_size_before_the_total_extent ... ok
 test secret::test::dropping_a_secret_zeroizes_its_value ... ok
-test secret::test::expose_returns_a_reference_to_the_held_value ... ok
 test secret::test::dropping_a_secret_during_unwinding_zeroizes_its_value ... ok
+test secret::test::expose_returns_a_reference_to_the_held_value ... ok
 test secret::test::exposing_a_secret_does_not_zeroize_it ... ok
 test secret::test::try_new_holds_the_value_in_params ... ok
 test secret::test::try_new_moves_the_value_without_copying_it ... ok
+test suite_identifier::test::identifier_returns_the_held_identifier ... ok
+test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior_with_version_one ... ok
+test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version ... ok
+test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one ... ok
+test suite_identifier::test::try_new_rejects_a_zero_version ... ok
+test suite_identifier::test::try_new_rejects_an_all_zero_identifier ... ok
+test suite_identifier::test::try_new_reports_the_identifier_before_the_version ... ok
+test suite_identifier::test::version_returns_the_held_version ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 75 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
      Running unittests src\lib.rs (target\debug\deps\encoding-f95004d0a7191223.exe)
 
@@ -7495,9 +7557,23 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
      Running unittests src\lib.rs (target\debug\deps\harness_crypto-4503ab01463fb4cc.exe)
 
-running 0 tests
+running 4 tests
+test benchmark::test::consume_pairing_carries_the_selected_concrete_and_the_iteration_count ... ok
+test benchmark::test::consume_pairing_draws_the_length_the_sampling_bound_requires ... ok
+test benchmark::test::consume_pairing_returns_the_draw_error_unchanged ... ok
+test benchmark::test::consume_pairing_returns_the_sampling_error_unchanged ... ok
 
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\benchmark_integration_test.rs (target\debug\deps\benchmark_integration_test-8a08f36d5713636d.exe)
+
+running 4 tests
+test a_sampling_refusal_reaches_the_caller_unchanged ... ok
+test a_sampled_scalar_encodes_through_secret ... ok
+test every_operation_is_timed_on_every_concrete ... ok
+test the_consumer_receives_the_concrete_the_params_name ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
 
      Running unittests src\lib.rs (target\debug\deps\hash_to_scalar-2e9b9ad305d85c7b.exe)
 
@@ -7520,242 +7596,243 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
      Running unittests src\lib.rs (target\debug\deps\pairing-524d17892812df53.exe)
 
 running 341 tests
-test bls12_381_arkworks::test::bls12_381_arkworks_g1_zeroize_clears_its_value ... ok
 test bls12_381_arkworks::test::bls12_381_arkworks_encoded_gt_zeroize_clears_its_bytes ... ok
 test bls12_381_arkworks::test::bls12_381_arkworks_encoded_scalar_zeroize_clears_its_bytes ... ok
-test bls12_381_arkworks::test::add_scalar_reduces_modulo_the_group_order ... ok
-test bls12_381_arkworks::test::add_g1_of_a_point_and_its_negation_is_the_identity ... ok
-test bls12_381_arkworks::test::add_g1_of_the_identity_and_a_point_is_the_point ... ok
-test bls12_381_arkworks::test::add_g2_of_the_identity_and_a_point_is_the_point ... ok
-test bls12_381_arkworks::test::add_g2_of_a_point_and_its_negation_is_the_identity ... ok
 test bls12_381_arkworks::test::add_scalar_of_two_and_three_is_five ... ok
-test bls12_381_arkworks::test::bls12_381_arkworks_scalar_is_zeroize_on_drop ... ok
+test bls12_381_arkworks::test::add_g2_of_the_identity_and_a_point_is_the_point ... ok
+test bls12_381_arkworks::test::add_g1_of_the_identity_and_a_point_is_the_point ... ok
+test bls12_381_arkworks::test::add_g1_of_a_point_and_its_negation_is_the_identity ... ok
+test bls12_381_arkworks::test::add_g2_of_a_point_and_its_negation_is_the_identity ... ok
+test bls12_381_arkworks::test::add_scalar_reduces_modulo_the_group_order ... ok
 test bls12_381_arkworks::test::bls12_381_arkworks_scalar_zeroize_clears_its_value ... ok
+test bls12_381_arkworks::test::bls12_381_arkworks_g1_zeroize_clears_its_value ... ok
 test bls12_381_arkworks::test::bls12_381_arkworks_g2_zeroize_clears_its_value ... ok
+test bls12_381_arkworks::test::bls12_381_arkworks_scalar_is_zeroize_on_drop ... ok
 test bls12_381_arkworks::test::decode_g1_rejects_a_wrong_length ... ok
+test bls12_381_arkworks::test::decode_g1_rejects_a_point_off_the_curve ... ok
+test bls12_381_arkworks::test::decode_g1_rejects_a_non_canonical_coordinate ... ok
+test bls12_381_arkworks::test::decode_g1_decodes_the_identity_from_zero_bytes ... ok
 test bls12_381_arkworks::test::decode_g2_rejects_a_wrong_length ... ok
 test bls12_381_arkworks::test::decode_scalar_rejects_a_wrong_length ... ok
-test bls12_381_arkworks::test::decode_g1_rejects_a_non_canonical_coordinate ... ok
-test bls12_381_arkworks::test::decode_g1_rejects_a_point_off_the_curve ... ok
-test bls12_381_arkworks::test::decode_g1_decodes_the_identity_from_zero_bytes ... ok
-test bls12_381_arkworks::test::encode_g2_writes_the_identity_as_zero_bytes ... ok
 test bls12_381_arkworks::test::encode_g1_writes_the_identity_as_zero_bytes ... ok
-test bls12_381_arkworks::test::decode_scalar_decodes_the_largest_canonical_scalar ... ok
-test bls12_381_arkworks::test::g1_generator_returns_the_eip_2537_generator ... ok
-test bls12_381_arkworks::test::decode_g2_rejects_a_non_canonical_coordinate ... ok
-test bls12_381_arkworks::test::decode_g2_decodes_the_identity_from_zero_bytes ... ok
 test bls12_381_arkworks::test::decode_g2_rejects_a_point_off_the_curve ... ok
 test bls12_381_arkworks::test::decode_g1_decodes_the_eip_2537_generator ... ok
-test bls12_381_arkworks::test::decode_g1_rejects_a_nonzero_padding_byte ... ok
+test bls12_381_arkworks::test::decode_g2_decodes_the_identity_from_zero_bytes ... ok
+test bls12_381_arkworks::test::encode_g2_writes_the_identity_as_zero_bytes ... ok
+test bls12_381_arkworks::test::decode_g2_rejects_a_non_canonical_coordinate ... ok
+test bls12_381_arkworks::test::decode_g2_decodes_the_eip_2537_generator ... ok
+test bls12_381_arkworks::test::g1_generator_returns_the_eip_2537_generator ... ok
+test bls12_381_arkworks::test::decode_scalar_decodes_the_largest_canonical_scalar ... ok
 test bls12_381_arkworks::test::decode_g2_rejects_a_nonzero_padding_byte ... ok
-test bls12_381_arkworks::test::encode_g1_writes_the_eip_2537_generator ... ok
 test bls12_381_arkworks::test::decode_scalar_rejects_the_group_order ... ok
 test bls12_381_arkworks::test::encode_gt_writes_the_target_group_identity_with_c0_c0_c0_first ... ok
+test bls12_381_arkworks::test::decode_g1_rejects_a_nonzero_padding_byte ... ok
+test bls12_381_arkworks::test::encode_scalar_writes_the_largest_canonical_scalar ... ok
+test bls12_381_arkworks::test::encode_g1_writes_the_eip_2537_generator ... ok
 test bls12_381_arkworks::test::encode_g2_writes_the_eip_2537_generator ... ok
 test bls12_381_arkworks::test::g2_generator_returns_the_eip_2537_generator ... ok
-test bls12_381_arkworks::test::encode_scalar_writes_the_largest_canonical_scalar ... ok
 test bls12_381_arkworks::test::is_identity_g1_is_false_for_the_generator ... ok
 test bls12_381_arkworks::test::is_identity_g1_is_true_for_the_identity ... ok
 test bls12_381_arkworks::test::is_identity_g2_is_false_for_the_generator ... ok
 test bls12_381_arkworks::test::is_identity_g2_is_true_for_the_identity ... ok
-test bls12_381_arkworks::test::decode_g2_decodes_the_eip_2537_generator ... ok
 test bls12_381_arkworks::test::msm_g1_of_no_terms_is_the_identity ... ok
-test bls12_381_arkworks::test::decode_g1_rejects_a_point_outside_the_subgroup ... ok
 test bls12_381_arkworks::test::msm_g2_of_no_terms_is_the_identity ... ok
+test bls12_381_arkworks::test::decode_g1_rejects_a_point_outside_the_subgroup ... ok
 test bls12_381_arkworks::test::msm_g1_pairs_each_base_with_its_own_scalar ... ok
 test bls12_381_arkworks::test::msm_g1_sums_its_terms ... ok
-test bls12_381_arkworks::test::mul_scalar_of_two_and_three_is_six ... ok
-test bls12_381_arkworks::test::mul_scalar_reduces_modulo_the_group_order ... ok
-test bls12_381_arkworks::test::g1_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
-test bls12_381_arkworks::test::neg_g1_of_the_generator_is_the_negated_generator ... ok
+test bls12_381_arkworks::test::g1_outside_subgroup_encoding_takes_the_lesser_root ... ok
 test bls12_381_arkworks::test::mul_g1_by_one_is_the_point ... ok
-test bls12_381_arkworks::test::neg_g1_of_the_identity_is_the_identity ... ok
-test bls12_381_arkworks::test::mul_g1_by_zero_is_the_identity ... ok
 test bls12_381_arkworks::test::msm_g2_sums_its_terms ... ok
 test bls12_381_arkworks::test::msm_g2_pairs_each_base_with_its_own_scalar ... ok
-test bls12_381_arkworks::test::g1_outside_subgroup_encoding_takes_the_lesser_root ... ok
+test bls12_381_arkworks::test::mul_scalar_of_two_and_three_is_six ... ok
+test bls12_381_arkworks::test::mul_g1_by_zero_is_the_identity ... ok
+test bls12_381_arkworks::test::mul_scalar_reduces_modulo_the_group_order ... ok
+test bls12_381_arkworks::test::g1_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
+test bls12_381_arkworks::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
+test bls12_381_arkworks::test::neg_g1_of_the_generator_is_the_negated_generator ... ok
+test bls12_381_arkworks::test::mul_g2_by_one_is_the_point ... ok
+test bls12_381_arkworks::test::neg_g1_of_the_identity_is_the_identity ... ok
 test bls12_381_arkworks::test::mul_g2_by_zero_is_the_identity ... ok
 test bls12_381_arkworks::test::neg_g2_of_the_identity_is_the_identity ... ok
-test bls12_381_arkworks::test::mul_g2_by_one_is_the_point ... ok
 test bls12_381_arkworks::test::neg_scalar_of_one_is_the_group_order_minus_one ... ok
-test bls12_381_arkworks::test::neg_g2_negates_each_y_coefficient_modulo_the_base_field ... ok
 test bls12_381_arkworks::test::neg_scalar_of_zero_is_zero ... ok
-test bls12_381_arkworks::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
-test bls12_381_arkworks::test::reduced_pairing_correction_inverts_three ... ok
+test bls12_381_arkworks::test::neg_g2_negates_each_y_coefficient_modulo_the_base_field ... ok
 test bls12_381_arkworks::test::sample_from_uniform_bytes_reads_the_input_as_a_big_endian_integer ... ok
-test bls12_381_arkworks::test::sample_from_uniform_bytes_reduces_the_group_order_to_zero ... ok
 test bls12_381_arkworks::test::sample_from_uniform_bytes_rejects_a_wrong_length ... ok
+test bls12_381_arkworks::test::reduced_pairing_correction_inverts_three ... ok
+test bls12_381_arkworks::test::sample_from_uniform_bytes_reduces_the_group_order_to_zero ... ok
+test bls12_381_arkworks::test::g1_outside_subgroup_encoding_uses_the_least_first_coordinate ... ok
 test bls12_381_arkworks::test::uniform_bytes_length_is_twice_the_group_order_width ... ok
 test bls12_381_arkworks::test::scalar_field_order_is_the_group_order ... ok
+test bls12_381_arkworks::test::mul_g1_by_the_group_order_minus_one_is_the_negated_generator ... ok
 test bls12_381_halo2curves::test::add_g1_of_a_point_and_its_negation_is_the_identity ... ok
+test bls12_381_halo2curves::test::bls12_381_halo2curves_encoded_gt_zeroize_clears_its_bytes ... ok
 test bls12_381_halo2curves::test::add_g1_of_the_identity_and_a_point_is_the_point ... ok
 test bls12_381_halo2curves::test::add_scalar_of_two_and_three_is_five ... ok
-test bls12_381_halo2curves::test::bls12_381_halo2curves_encoded_gt_zeroize_clears_its_bytes ... ok
-test bls12_381_halo2curves::test::add_g2_of_a_point_and_its_negation_is_the_identity ... ok
-test bls12_381_halo2curves::test::add_scalar_reduces_modulo_the_group_order ... ok
-test bls12_381_halo2curves::test::add_g2_of_the_identity_and_a_point_is_the_point ... ok
 test bls12_381_halo2curves::test::bls12_381_halo2curves_encoded_scalar_zeroize_clears_its_bytes ... ok
+test bls12_381_halo2curves::test::add_g2_of_a_point_and_its_negation_is_the_identity ... ok
+test bls12_381_halo2curves::test::add_g2_of_the_identity_and_a_point_is_the_point ... ok
+test bls12_381_halo2curves::test::add_scalar_reduces_modulo_the_group_order ... ok
 test bls12_381_halo2curves::test::bls12_381_halo2curves_g1_zeroize_clears_its_value ... ok
 test bls12_381_halo2curves::test::bls12_381_halo2curves_g2_zeroize_clears_its_value ... ok
+test bls12_381_arkworks::test::g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
 test bls12_381_halo2curves::test::bls12_381_halo2curves_scalar_is_zeroize_on_drop ... ok
-test bls12_381_arkworks::test::mul_g1_by_the_group_order_minus_one_is_the_negated_generator ... ok
 test bls12_381_halo2curves::test::bls12_381_halo2curves_scalar_zeroize_clears_its_value ... ok
 test bls12_381_halo2curves::test::decode_g1_decodes_the_identity_from_zero_bytes ... ok
-test bls12_381_arkworks::test::g1_outside_subgroup_encoding_uses_the_least_first_coordinate ... ok
-test bls12_381_halo2curves::test::decode_g1_rejects_a_non_canonical_coordinate ... ok
 test bls12_381_halo2curves::test::decode_g1_rejects_a_nonzero_padding_byte ... ok
+test bls12_381_halo2curves::test::decode_g1_rejects_a_non_canonical_coordinate ... ok
 test bls12_381_halo2curves::test::decode_g1_rejects_a_point_off_the_curve ... ok
 test bls12_381_halo2curves::test::decode_g1_rejects_a_wrong_length ... ok
 test bls12_381_halo2curves::test::decode_g2_decodes_the_identity_from_zero_bytes ... ok
 test bls12_381_halo2curves::test::decode_g2_rejects_a_non_canonical_coordinate ... ok
 test bls12_381_halo2curves::test::decode_g2_rejects_a_nonzero_padding_byte ... ok
 test bls12_381_halo2curves::test::decode_g2_rejects_a_point_off_the_curve ... ok
-test bls12_381_arkworks::test::g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
 test bls12_381_halo2curves::test::decode_g2_rejects_a_wrong_length ... ok
-test bls12_381_halo2curves::test::decode_g1_decodes_the_eip_2537_generator ... ok
-test bls12_381_halo2curves::test::decode_scalar_rejects_a_wrong_length ... ok
 test bls12_381_halo2curves::test::decode_scalar_decodes_the_largest_canonical_scalar ... ok
+test bls12_381_halo2curves::test::decode_scalar_rejects_a_wrong_length ... ok
 test bls12_381_halo2curves::test::decode_scalar_rejects_the_group_order ... ok
 test bls12_381_halo2curves::test::encode_g1_writes_the_eip_2537_generator ... ok
 test bls12_381_halo2curves::test::encode_g1_writes_the_identity_as_zero_bytes ... ok
 test bls12_381_halo2curves::test::encode_g2_writes_the_eip_2537_generator ... ok
 test bls12_381_halo2curves::test::encode_g2_writes_the_identity_as_zero_bytes ... ok
-test bls12_381_halo2curves::test::encode_scalar_writes_the_largest_canonical_scalar ... ok
 test bls12_381_halo2curves::test::encode_gt_writes_the_target_group_identity_with_c0_c0_c0_first ... ok
-test bls12_381_halo2curves::test::g1_generator_returns_the_eip_2537_generator ... ok
-test bls12_381_halo2curves::test::g2_generator_returns_the_eip_2537_generator ... ok
+test bls12_381_halo2curves::test::decode_g1_decodes_the_eip_2537_generator ... ok
+test bls12_381_halo2curves::test::encode_scalar_writes_the_largest_canonical_scalar ... ok
 test bls12_381_arkworks::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
 test bls12_381_halo2curves::test::decode_g2_decodes_the_eip_2537_generator ... ok
+test bls12_381_halo2curves::test::g1_generator_returns_the_eip_2537_generator ... ok
+test bls12_381_halo2curves::test::g2_generator_returns_the_eip_2537_generator ... ok
 test bls12_381_halo2curves::test::is_identity_g1_is_false_for_the_generator ... ok
-test bls12_381_halo2curves::test::is_identity_g2_is_false_for_the_generator ... ok
 test bls12_381_halo2curves::test::is_identity_g1_is_true_for_the_identity ... ok
+test bls12_381_halo2curves::test::is_identity_g2_is_false_for_the_generator ... ok
 test bls12_381_halo2curves::test::is_identity_g2_is_true_for_the_identity ... ok
 test bls12_381_halo2curves::test::msm_g1_of_no_terms_is_the_identity ... ok
-test bls12_381_halo2curves::test::msm_g1_pairs_each_base_with_its_own_scalar ... ok
-test bls12_381_halo2curves::test::decode_g1_rejects_a_point_outside_the_subgroup ... ok
-test bls12_381_halo2curves::test::msm_g2_pairs_each_base_with_its_own_scalar ... ok
-test bls12_381_halo2curves::test::g1_outside_subgroup_encoding_takes_the_lesser_root ... ok
-test bls12_381_halo2curves::test::msm_g2_sums_its_terms ... ok
 test bls12_381_halo2curves::test::msm_g2_of_no_terms_is_the_identity ... ok
-test bls12_381_halo2curves::test::mul_scalar_of_two_and_three_is_six ... ok
+test bls12_381_halo2curves::test::msm_g1_pairs_each_base_with_its_own_scalar ... ok
 test bls12_381_halo2curves::test::msm_g1_sums_its_terms ... ok
+test bls12_381_halo2curves::test::mul_scalar_of_two_and_three_is_six ... ok
 test bls12_381_halo2curves::test::mul_scalar_reduces_modulo_the_group_order ... ok
 test bls12_381_halo2curves::test::neg_g1_of_the_generator_is_the_negated_generator ... ok
 test bls12_381_halo2curves::test::neg_g1_of_the_identity_is_the_identity ... ok
-test bls12_381_halo2curves::test::g1_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
-test bls12_381_arkworks::test::mul_g2_by_the_group_order_minus_one_is_the_negated_point ... ok
-test bls12_381_halo2curves::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
-test bls12_381_halo2curves::test::g1_outside_subgroup_encoding_uses_the_least_first_coordinate ... ok
-test bls12_381_halo2curves::test::neg_g2_negates_the_y_coordinate_and_keeps_x ... ok
-test bls12_381_halo2curves::test::mul_g1_by_one_is_the_point ... ok
+test bls12_381_halo2curves::test::msm_g2_pairs_each_base_with_its_own_scalar ... ok
 test bls12_381_halo2curves::test::neg_g2_of_the_identity_is_the_identity ... ok
+test bls12_381_halo2curves::test::msm_g2_sums_its_terms ... ok
+test bls12_381_halo2curves::test::neg_g2_negates_the_y_coordinate_and_keeps_x ... ok
 test bls12_381_halo2curves::test::neg_scalar_of_one_is_the_group_order_minus_one ... ok
 test bls12_381_halo2curves::test::neg_scalar_of_zero_is_zero ... ok
+test bls12_381_halo2curves::test::decode_g1_rejects_a_point_outside_the_subgroup ... ok
+test bls12_381_halo2curves::test::g1_outside_subgroup_encoding_takes_the_lesser_root ... ok
+test bls12_381_halo2curves::test::g1_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
+test bls12_381_halo2curves::test::mul_g1_by_one_is_the_point ... ok
 test bls12_381_halo2curves::test::mul_g1_by_zero_is_the_identity ... ok
+test bls12_381_halo2curves::test::reduced_pairing_correction_inverts_three ... ok
+test bls12_381_halo2curves::test::sample_from_uniform_bytes_reads_the_input_as_a_big_endian_integer ... ok
 test bls12_381_halo2curves::test::mul_g1_by_the_group_order_minus_one_is_the_negated_generator ... ok
-test bls12_381_arkworks::test::pairing_product_is_one_of_no_terms_is_true ... ok
-test bls12_381_halo2curves::test::g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
 test bls12_381_halo2curves::test::sample_from_uniform_bytes_rejects_a_wrong_length ... ok
 test bls12_381_halo2curves::test::sample_from_uniform_bytes_reduces_the_group_order_to_zero ... ok
-test bls12_381_halo2curves::test::scalar_field_order_is_the_group_order ... ok
-test bls12_381_halo2curves::test::sample_from_uniform_bytes_reads_the_input_as_a_big_endian_integer ... ok
 test bls12_381_halo2curves::test::uniform_bytes_length_is_twice_the_group_order_width ... ok
-test bls12_381_halo2curves::test::reduced_pairing_correction_inverts_three ... ok
+test bls12_381_halo2curves::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
+test bls12_381_halo2curves::test::scalar_field_order_is_the_group_order ... ok
 test bn254_arkworks::test::add_g1_of_a_point_and_its_negation_is_the_identity ... ok
 test bn254_arkworks::test::add_g1_of_the_identity_and_a_point_is_the_point ... ok
 test bn254_arkworks::test::add_g2_of_a_point_and_its_negation_is_the_identity ... ok
 test bn254_arkworks::test::add_g2_of_the_identity_and_a_point_is_the_point ... ok
+test bls12_381_arkworks::test::mul_g2_by_the_group_order_minus_one_is_the_negated_point ... ok
+test bls12_381_halo2curves::test::g1_outside_subgroup_encoding_uses_the_least_first_coordinate ... ok
+test bn254_arkworks::test::add_scalar_reduces_modulo_the_group_order ... ok
 test bn254_arkworks::test::bn254_arkworks_encoded_gt_zeroize_clears_its_bytes ... ok
 test bn254_arkworks::test::add_scalar_of_two_and_three_is_five ... ok
-test bn254_arkworks::test::bn254_arkworks_g1_zeroize_clears_its_value ... ok
-test bn254_arkworks::test::add_scalar_reduces_modulo_the_group_order ... ok
 test bn254_arkworks::test::bn254_arkworks_encoded_scalar_zeroize_clears_its_bytes ... ok
+test bn254_arkworks::test::bn254_arkworks_g1_zeroize_clears_its_value ... ok
 test bn254_arkworks::test::bn254_arkworks_g2_zeroize_clears_its_value ... ok
-test bn254_arkworks::test::bn254_arkworks_scalar_zeroize_clears_its_value ... ok
 test bn254_arkworks::test::bn254_arkworks_scalar_is_zeroize_on_drop ... ok
+test bn254_arkworks::test::bn254_arkworks_scalar_zeroize_clears_its_value ... ok
 test bn254_arkworks::test::decode_g1_decodes_the_eip_196_generator ... ok
 test bn254_arkworks::test::decode_g1_decodes_the_identity_from_zero_bytes ... ok
+test bn254_arkworks::test::decode_g1_rejects_a_non_canonical_coordinate ... ok
 test bn254_arkworks::test::decode_g1_rejects_a_point_off_the_curve ... ok
 test bn254_arkworks::test::decode_g1_rejects_a_wrong_length ... ok
-test bn254_arkworks::test::decode_g1_rejects_a_non_canonical_coordinate ... ok
-test bls12_381_halo2curves::test::bls12_381_halo2curves_gt_zeroize_clears_its_value ... ok
-test bn254_arkworks::test::decode_g2_rejects_a_non_canonical_coordinate ... ok
 test bn254_arkworks::test::decode_g2_decodes_the_identity_from_zero_bytes ... ok
-test bn254_arkworks::test::decode_g2_rejects_a_wrong_length ... ok
+test bn254_arkworks::test::decode_g2_rejects_a_non_canonical_coordinate ... ok
 test bn254_arkworks::test::decode_g2_rejects_a_point_off_the_curve ... ok
-test bn254_arkworks::test::decode_scalar_decodes_the_largest_canonical_scalar ... ok
+test bls12_381_halo2curves::test::g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
+test bn254_arkworks::test::decode_g2_rejects_a_wrong_length ... ok
 test bn254_arkworks::test::decode_scalar_rejects_a_wrong_length ... ok
-test bn254_arkworks::test::encode_g1_writes_the_eip_196_generator ... ok
+test bn254_arkworks::test::decode_scalar_decodes_the_largest_canonical_scalar ... ok
 test bn254_arkworks::test::decode_scalar_rejects_the_group_order ... ok
-test bls12_381_halo2curves::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
+test bn254_arkworks::test::encode_g1_writes_the_eip_196_generator ... ok
+test bn254_arkworks::test::encode_g1_writes_the_identity_as_zero_bytes ... ok
 test bn254_arkworks::test::encode_g2_writes_the_identity_as_zero_bytes ... ok
 test bn254_arkworks::test::encode_g2_writes_the_eip_197_generator ... ok
-test bn254_arkworks::test::encode_g1_writes_the_identity_as_zero_bytes ... ok
+test bn254_arkworks::test::encode_gt_writes_the_target_group_identity_with_c0_c0_c0_first ... ok
 test bn254_arkworks::test::encode_gt_writes_the_twelve_coefficients_in_tower_order ... ok
 test bn254_arkworks::test::g1_generator_returns_the_eip_196_generator ... ok
-test bn254_arkworks::test::encode_gt_writes_the_target_group_identity_with_c0_c0_c0_first ... ok
-test bn254_arkworks::test::g1_outside_subgroup_encoding_is_absent_where_the_cofactor_is_one ... ok
 test bn254_arkworks::test::encode_scalar_writes_the_largest_canonical_scalar ... ok
+test bn254_arkworks::test::g1_outside_subgroup_encoding_is_absent_where_the_cofactor_is_one ... ok
 test bn254_arkworks::test::g2_generator_returns_the_eip_197_generator ... ok
 test bn254_arkworks::test::is_identity_g1_is_false_for_the_generator ... ok
 test bn254_arkworks::test::is_identity_g1_is_true_for_the_identity ... ok
+test bls12_381_arkworks::test::pairing_product_is_one_of_no_terms_is_true ... ok
 test bn254_arkworks::test::is_identity_g2_is_false_for_the_generator ... ok
 test bn254_arkworks::test::is_identity_g2_is_true_for_the_identity ... ok
 test bn254_arkworks::test::msm_g1_of_no_terms_is_the_identity ... ok
-test bn254_arkworks::test::msm_g2_of_no_terms_is_the_identity ... ok
+test bn254_arkworks::test::decode_g2_decodes_the_eip_197_generator ... ok
 test bn254_arkworks::test::msm_g1_pairs_each_base_with_its_own_scalar ... ok
+test bn254_arkworks::test::msm_g2_of_no_terms_is_the_identity ... ok
+test bls12_381_halo2curves::test::bls12_381_halo2curves_gt_zeroize_clears_its_value ... ok
 test bn254_arkworks::test::msm_g1_sums_its_terms ... ok
+test bn254_arkworks::test::msm_g2_sums_its_terms ... ok
 test bn254_arkworks::test::msm_g2_pairs_each_base_with_its_own_scalar ... ok
 test bn254_arkworks::test::mul_g1_by_one_is_the_point ... ok
-test bn254_arkworks::test::msm_g2_sums_its_terms ... ok
 test bn254_arkworks::test::mul_g1_by_zero_is_the_identity ... ok
 test bn254_arkworks::test::mul_g2_by_one_is_the_point ... ok
-test bn254_arkworks::test::decode_g2_decodes_the_eip_197_generator ... ok
-test bn254_arkworks::test::mul_g1_by_the_group_order_minus_one_is_the_negated_generator ... ok
-test bls12_381_arkworks::test::bls12_381_arkworks_gt_zeroize_clears_its_value ... ok
-test bn254_arkworks::test::mul_scalar_of_two_and_three_is_six ... ok
-test bls12_381_halo2curves::test::mul_g2_by_one_is_the_point ... ok
 test bn254_arkworks::test::mul_g2_by_zero_is_the_identity ... ok
+test bn254_arkworks::test::mul_scalar_of_two_and_three_is_six ... ok
+test bn254_arkworks::test::mul_scalar_reduces_modulo_the_group_order ... ok
 test bn254_arkworks::test::neg_g1_of_the_generator_is_the_negated_generator ... ok
 test bn254_arkworks::test::neg_g1_of_the_identity_is_the_identity ... ok
-test bn254_arkworks::test::mul_scalar_reduces_modulo_the_group_order ... ok
-test bn254_arkworks::test::neg_scalar_of_one_is_the_group_order_minus_one ... ok
+test bn254_arkworks::test::mul_g1_by_the_group_order_minus_one_is_the_negated_generator ... ok
+test bls12_381_halo2curves::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
 test bn254_arkworks::test::neg_g2_negates_each_y_coefficient_modulo_the_base_field ... ok
-test bn254_arkworks::test::neg_scalar_of_zero_is_zero ... ok
 test bn254_arkworks::test::neg_g2_of_the_identity_is_the_identity ... ok
-test bls12_381_halo2curves::test::mul_g2_by_the_group_order_minus_one_is_the_negated_point ... ok
+test bn254_arkworks::test::neg_scalar_of_one_is_the_group_order_minus_one ... ok
+test bn254_arkworks::test::neg_scalar_of_zero_is_zero ... ok
 test bls12_381_halo2curves::test::pairing_product_is_one_of_no_terms_is_true ... ok
+test bls12_381_halo2curves::test::pairing_product_is_one_of_the_generators_is_false ... ok
 test bn254_arkworks::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
-test bls12_381_halo2curves::test::mul_g2_by_zero_is_the_identity ... ok
-test bn254_arkworks::test::g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
-test bn254_arkworks::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
+test bls12_381_halo2curves::test::mul_g2_by_the_group_order_minus_one_is_the_negated_point ... ok
+test bls12_381_halo2curves::test::mul_g2_by_one_is_the_point ... ok
+test bls12_381_arkworks::test::bls12_381_arkworks_gt_zeroize_clears_its_value ... ok
 test bn254_arkworks::test::reduced_pairing_correction_inverts_the_library_multiple ... ok
+test bls12_381_halo2curves::test::mul_g2_by_zero_is_the_identity ... ok
 test bn254_arkworks::test::sample_from_uniform_bytes_reduces_the_group_order_to_zero ... ok
 test bn254_arkworks::test::sample_from_uniform_bytes_rejects_a_wrong_length ... ok
-test bn254_arkworks::test::mul_g2_by_the_group_order_minus_one_is_the_negated_point ... ok
 test bn254_arkworks::test::scalar_field_order_is_the_group_order ... ok
 test bn254_arkworks::test::uniform_bytes_length_is_twice_the_group_order_width ... ok
-test bn254_halo2curves::test::add_g2_of_a_point_and_its_negation_is_the_identity ... ok
-test bn254_halo2curves::test::add_g1_of_a_point_and_its_negation_is_the_identity ... ok
+test bn254_arkworks::test::g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
 test bn254_halo2curves::test::add_g1_of_the_identity_and_a_point_is_the_point ... ok
-test bn254_halo2curves::test::add_g2_of_the_identity_and_a_point_is_the_point ... ok
+test bn254_halo2curves::test::add_g1_of_a_point_and_its_negation_is_the_identity ... ok
+test bn254_halo2curves::test::add_g2_of_a_point_and_its_negation_is_the_identity ... ok
 test bn254_halo2curves::test::add_scalar_of_two_and_three_is_five ... ok
+test bn254_halo2curves::test::add_g2_of_the_identity_and_a_point_is_the_point ... ok
 test bn254_halo2curves::test::add_scalar_reduces_modulo_the_group_order ... ok
 test bn254_halo2curves::test::bn254_halo2curves_encoded_gt_zeroize_clears_its_bytes ... ok
+test bn254_arkworks::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
 test bn254_halo2curves::test::bn254_halo2curves_encoded_scalar_zeroize_clears_its_bytes ... ok
 test bn254_halo2curves::test::bn254_halo2curves_g1_zeroize_clears_its_value ... ok
 test bn254_halo2curves::test::bn254_halo2curves_g2_zeroize_clears_its_value ... ok
 test bn254_halo2curves::test::bn254_halo2curves_scalar_is_zeroize_on_drop ... ok
 test bn254_halo2curves::test::bn254_halo2curves_scalar_zeroize_clears_its_value ... ok
+test bn254_arkworks::test::mul_g2_by_the_group_order_minus_one_is_the_negated_point ... ok
 test bn254_halo2curves::test::decode_g1_decodes_the_eip_196_generator ... ok
-test bls12_381_halo2curves::test::pairing_product_is_one_of_the_generators_is_false ... ok
 test bn254_halo2curves::test::decode_g1_decodes_the_identity_from_zero_bytes ... ok
-test bn254_halo2curves::test::decode_g1_rejects_a_non_canonical_coordinate ... ok
 test bn254_halo2curves::test::decode_g1_rejects_a_point_off_the_curve ... ok
+test bn254_halo2curves::test::decode_g1_rejects_a_non_canonical_coordinate ... ok
 test bn254_halo2curves::test::decode_g1_rejects_a_wrong_length ... ok
 test bn254_halo2curves::test::decode_g2_decodes_the_identity_from_zero_bytes ... ok
 test bn254_halo2curves::test::decode_g2_rejects_a_non_canonical_coordinate ... ok
 test bn254_halo2curves::test::decode_g2_rejects_a_point_off_the_curve ... ok
+test bn254_halo2curves::test::decode_g2_decodes_the_eip_197_generator ... ok
 test bn254_halo2curves::test::decode_g2_rejects_a_wrong_length ... ok
 test bn254_halo2curves::test::decode_scalar_decodes_the_largest_canonical_scalar ... ok
 test bn254_halo2curves::test::decode_scalar_rejects_a_wrong_length ... ok
@@ -7764,120 +7841,119 @@ test bn254_halo2curves::test::encode_g1_writes_the_eip_196_generator ... ok
 test bn254_halo2curves::test::encode_g1_writes_the_identity_as_zero_bytes ... ok
 test bn254_halo2curves::test::encode_g2_writes_the_eip_197_generator ... ok
 test bn254_halo2curves::test::encode_g2_writes_the_identity_as_zero_bytes ... ok
-test bn254_halo2curves::test::decode_g2_decodes_the_eip_197_generator ... ok
-test bls12_381_arkworks::test::pairing_product_is_one_of_the_generators_is_false ... ok
+test bls12_381_halo2curves::test::pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true ... ok
 test bn254_halo2curves::test::encode_gt_writes_the_target_group_identity_with_c0_c0_c0_first ... ok
 test bn254_halo2curves::test::encode_scalar_writes_the_largest_canonical_scalar ... ok
 test bn254_halo2curves::test::g1_generator_returns_the_eip_196_generator ... ok
 test bn254_halo2curves::test::g1_outside_subgroup_encoding_is_absent_where_the_cofactor_is_one ... ok
 test bn254_halo2curves::test::g2_generator_returns_the_eip_197_generator ... ok
-test bn254_arkworks::test::pairing_product_is_one_of_no_terms_is_true ... ok
 test bn254_halo2curves::test::is_identity_g1_is_false_for_the_generator ... ok
 test bn254_halo2curves::test::is_identity_g1_is_true_for_the_identity ... ok
 test bn254_halo2curves::test::is_identity_g2_is_false_for_the_generator ... ok
-test bls12_381_arkworks::test::pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true ... ok
 test bn254_halo2curves::test::is_identity_g2_is_true_for_the_identity ... ok
 test bn254_halo2curves::test::msm_g1_of_no_terms_is_the_identity ... ok
-test bn254_halo2curves::test::msm_g1_sums_its_terms ... ok
 test bn254_halo2curves::test::msm_g1_pairs_each_base_with_its_own_scalar ... ok
-test bn254_halo2curves::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
+test bn254_halo2curves::test::msm_g1_sums_its_terms ... ok
 test bn254_halo2curves::test::msm_g2_of_no_terms_is_the_identity ... ok
 test bn254_halo2curves::test::msm_g2_pairs_each_base_with_its_own_scalar ... ok
+test bn254_halo2curves::test::decode_g2_rejects_a_point_outside_the_subgroup ... ok
+test bn254_arkworks::test::pairing_product_is_one_of_no_terms_is_true ... ok
 test bn254_halo2curves::test::msm_g2_sums_its_terms ... ok
-test bls12_381_halo2curves::test::pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true ... ok
 test bn254_halo2curves::test::g2_outside_subgroup_encoding_encodes_an_on_curve_point_outside_the_subgroup ... ok
-test bn254_arkworks::test::bn254_arkworks_gt_zeroize_clears_its_value ... ok
+test bls12_381_arkworks::test::pairing_product_is_one_of_the_generators_is_false ... ok
 test bn254_halo2curves::test::mul_g1_by_one_is_the_point ... ok
-test bls12_381_arkworks::test::pairing_product_of_no_terms_is_the_target_group_identity ... ok
-test bn254_halo2curves::test::mul_scalar_of_two_and_three_is_six ... ok
-test bn254_halo2curves::test::mul_scalar_reduces_modulo_the_group_order ... ok
 test bn254_halo2curves::test::mul_g1_by_the_group_order_minus_one_is_the_negated_generator ... ok
+test bn254_halo2curves::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
+test bn254_halo2curves::test::mul_g1_by_zero_is_the_identity ... ok
+test bn254_halo2curves::test::mul_scalar_reduces_modulo_the_group_order ... ok
+test bn254_halo2curves::test::mul_scalar_of_two_and_three_is_six ... ok
 test bn254_halo2curves::test::neg_g1_of_the_identity_is_the_identity ... ok
 test bn254_halo2curves::test::neg_g1_of_the_generator_is_the_negated_generator ... ok
-test bn254_halo2curves::test::mul_g1_by_zero_is_the_identity ... ok
-test bn254_halo2curves::test::neg_g2_of_the_identity_is_the_identity ... ok
+test bn254_arkworks::test::bn254_arkworks_gt_zeroize_clears_its_value ... ok
 test bn254_halo2curves::test::neg_g2_negates_the_y_coordinate_and_keeps_x ... ok
+test bn254_halo2curves::test::neg_g2_of_the_identity_is_the_identity ... ok
 test bn254_halo2curves::test::neg_scalar_of_one_is_the_group_order_minus_one ... ok
 test bn254_halo2curves::test::neg_scalar_of_zero_is_zero ... ok
-test bn254_halo2curves::test::g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root ... ok
 test bn254_halo2curves::test::bn254_halo2curves_gt_zeroize_clears_its_value ... ok
-test bn254_halo2curves::test::mul_g2_by_one_is_the_point ... ok
-test bn254_halo2curves::test::pairing_product_is_one_of_no_terms_is_true ... ok
-test bn254_halo2curves::test::mul_g2_by_the_group_order_minus_one_is_the_negated_point ... ok
+test bls12_381_arkworks::test::pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true ... ok
+test bls12_381_arkworks::test::pairing_product_of_no_terms_is_the_target_group_identity ... ok
 test bn254_arkworks::test::pairing_product_is_one_of_the_generators_is_false ... ok
-test bn254_halo2curves::test::mul_g2_by_zero_is_the_identity ... ok
+test bn254_halo2curves::test::mul_g2_by_one_is_the_point ... ok
+test bn254_halo2curves::test::mul_g2_by_the_group_order_minus_one_is_the_negated_point ... ok
 test bn254_halo2curves::test::sample_from_uniform_bytes_reads_the_input_as_a_big_endian_integer ... ok
-test bn254_arkworks::test::pairing_product_of_no_terms_is_the_target_group_identity ... ok
-test bn254_halo2curves::test::sample_from_uniform_bytes_rejects_a_wrong_length ... ok
 test bn254_halo2curves::test::sample_from_uniform_bytes_reduces_the_group_order_to_zero ... ok
+test bn254_halo2curves::test::sample_from_uniform_bytes_rejects_a_wrong_length ... ok
 test bn254_halo2curves::test::scalar_field_order_is_the_group_order ... ok
 test bn254_halo2curves::test::try_new_returns_the_halo2curves_pairing ... ok
-test factory::test::create_pairing_admits_the_bn254_arkworks_concrete ... ok
-test factory::test::create_pairing_admits_the_bls12_381_halo2curves_concrete ... ok
+test bn254_halo2curves::test::pairing_product_is_one_of_no_terms_is_true ... ok
 test bn254_halo2curves::test::uniform_bytes_length_is_twice_the_group_order_width ... ok
-test bls12_381_arkworks::test::pairing_product_of_the_generators_is_not_the_target_group_identity ... ok
+test bn254_halo2curves::test::mul_g2_by_zero_is_the_identity ... ok
+test factory::test::create_pairing_admits_the_bls12_381_halo2curves_concrete ... ok
 test factory::test::create_pairing_admits_the_bls12_381_arkworks_concrete ... ok
+test factory::test::create_pairing_admits_the_bn254_arkworks_concrete ... ok
 test factory::test::create_pairing_admits_the_bn254_halo2curves_concrete ... ok
 test factory::test::create_pairing_admits_the_mock_concrete ... ok
 test factory::test::create_pairing_refuses_the_bls12_381_arkworks_concrete_whose_encoding_the_chain_does_not_deploy ... ok
 test factory::test::create_pairing_refuses_the_bls12_381_arkworks_concrete_whose_target_group_encoding_the_suite_does_not_require ... ok
 test factory::test::create_pairing_refuses_the_bls12_381_halo2curves_concrete_whose_encoding_the_chain_does_not_deploy ... ok
 test factory::test::create_pairing_refuses_the_bls12_381_halo2curves_concrete_whose_target_group_encoding_the_suite_does_not_require ... ok
+test factory::test::create_pairing_refuses_the_bn254_arkworks_concrete_whose_encoding_the_chain_does_not_deploy ... ok
 test factory::test::create_pairing_refuses_the_bn254_arkworks_concrete_whose_target_group_encoding_the_suite_does_not_require ... ok
 test factory::test::create_pairing_refuses_the_bn254_halo2curves_concrete_whose_encoding_the_chain_does_not_deploy ... ok
-test factory::test::create_pairing_refuses_the_bn254_arkworks_concrete_whose_encoding_the_chain_does_not_deploy ... ok
 test factory::test::create_pairing_refuses_the_bn254_halo2curves_concrete_whose_target_group_encoding_the_suite_does_not_require ... ok
 test factory::test::create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_bls12_381_arkworks_concrete ... ok
 test factory::test::create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_bls12_381_halo2curves_concrete ... ok
 test factory::test::create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_bn254_arkworks_concrete ... ok
 test factory::test::create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_bn254_halo2curves_concrete ... ok
-test bn254_halo2curves::test::pairing_product_is_one_of_the_generators_is_false ... ok
 test factory::test::create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_mock_concrete ... ok
 test factory::test::create_pairing_refuses_the_mock_concrete_whose_encoding_the_chain_does_not_deploy ... ok
 test factory::test::create_pairing_refuses_the_mock_concrete_whose_target_group_encoding_the_suite_does_not_require ... ok
-test bls12_381_halo2curves::test::encode_gt_writes_the_published_pairing_of_the_generators ... ok
+test bn254_arkworks::test::pairing_product_of_no_terms_is_the_target_group_identity ... ok
+test bn254_halo2curves::test::pairing_product_is_one_of_the_generators_is_false ... ok
 test bn254_arkworks::test::pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true ... ok
 test bn254_halo2curves::test::pairing_product_of_no_terms_is_the_target_group_identity ... ok
 test bn254_halo2curves::test::pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true ... ok
-test bn254_halo2curves::test::pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity ... ok
+test bls12_381_halo2curves::test::encode_gt_writes_the_published_pairing_of_the_generators ... ok
 test bls12_381_halo2curves::test::pairing_product_of_no_terms_is_the_target_group_identity ... ok
 test bn254_halo2curves::test::pairing_product_of_the_generators_is_not_the_target_group_identity ... ok
-test bn254_arkworks::test::pairing_product_of_the_generators_is_not_the_target_group_identity ... ok
+test bn254_halo2curves::test::pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity ... ok
+test bls12_381_arkworks::test::pairing_product_of_the_generators_is_not_the_target_group_identity ... ok
+test bls12_381_halo2curves::test::pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity ... ok
 test bls12_381_halo2curves::test::pairing_product_of_the_generators_is_not_the_target_group_identity ... ok
 test bls12_381_arkworks::test::pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity ... ok
-test bls12_381_halo2curves::test::pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity ... ok
+test bn254_arkworks::test::pairing_product_of_the_generators_is_not_the_target_group_identity ... ok
 test bn254_arkworks::test::pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity ... ok
 test bn254_halo2curves::test::encode_gt_writes_the_definition_value_in_tower_order ... ok
-test bn254_halo2curves::test::pairing_product_of_the_generators_equals_the_definition ... ok
 test bn254_halo2curves::test::pairing_product_multiplies_its_terms ... ok
 test bn254_halo2curves::test::pairing_product_is_bilinear ... ok
-test bn254_arkworks::test::pairing_product_of_the_generators_equals_the_definition ... ok
+test bn254_halo2curves::test::pairing_product_of_the_generators_equals_the_definition ... ok
 test bn254_arkworks::test::pairing_product_multiplies_its_terms ... ok
 test bn254_arkworks::test::pairing_product_is_bilinear ... ok
+test bn254_arkworks::test::pairing_product_of_the_generators_equals_the_definition ... ok
+test bls12_381_halo2curves::test::pairing_product_of_the_generators_equals_the_definition ... ok
 test bls12_381_halo2curves::test::pairing_product_is_bilinear ... ok
 test bls12_381_halo2curves::test::pairing_product_multiplies_its_terms ... ok
-test bls12_381_halo2curves::test::pairing_product_of_the_generators_equals_the_definition ... ok
 test bls12_381_arkworks::test::encode_gt_writes_the_published_pairing_of_the_generators ... ok
-test bls12_381_arkworks::test::pairing_product_of_the_generators_equals_the_definition ... ok
 test bls12_381_arkworks::test::pairing_product_multiplies_its_terms ... ok
+test bls12_381_arkworks::test::pairing_product_of_the_generators_equals_the_definition ... ok
 test bls12_381_arkworks::test::pairing_product_is_bilinear ... ok
 
-test result: ok. 341 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
+test result: ok. 341 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.70s
 
      Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-384903293828f228.exe)
 
 running 9 tests
 test a_sampling_refusal_reaches_the_caller_unchanged ... ok
-test a_sampled_scalar_encodes_through_secret ... ok
 test libraries_sharing_an_identifier_return_the_same_scalar_field_order ... ok
 test the_consumer_receives_the_concrete_the_params_name ... ok
+test a_sampled_scalar_encodes_through_secret ... ok
 test libraries_sharing_an_identifier_return_the_same_first_group_reference_encoding ... ok
 test each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists ... ok
 test libraries_sharing_an_identifier_return_the_same_second_group_reference_encoding ... ok
 test each_second_group_decoder_refuses_the_second_group_reference_encoding ... ok
 test libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes ... ok
 
-test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
 
      Running unittests src\lib.rs (target\debug\deps\proof-c24a936fe119acc8.exe)
 
@@ -7889,14 +7965,14 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 running 9 tests
 test factory::test::create_random_source_returns_the_mock_source_carrying_the_failure_mode_its_kind_names ... ok
-test os::test::fill_bytes_returns_an_empty_draw_for_a_zero_length ... ok
-test os::test::fill_bytes_draws_pairwise_distinct_segments_within_a_draw ... ok
-test os::test::try_new_returns_the_operating_system_source ... ok
 test os::test::fill_bytes_returns_the_number_of_bytes_requested ... ok
-test os::test::fill_bytes_fills_a_draw_with_more_than_one_distinct_byte_value ... ok
-test os::test::os_random_source_declares_its_adapter_and_interface_versions ... ok
+test os::test::fill_bytes_draws_pairwise_distinct_segments_within_a_draw ... ok
 test factory::test::create_random_source_returns_the_operating_system_source_for_its_kind ... ok
+test os::test::fill_bytes_returns_an_empty_draw_for_a_zero_length ... ok
+test os::test::fill_bytes_fills_a_draw_with_more_than_one_distinct_byte_value ... ok
 test os::test::declaration_returns_the_associated_declaration ... ok
+test os::test::try_new_returns_the_operating_system_source ... ok
+test os::test::os_random_source_declares_its_adapter_and_interface_versions ... ok
 
 test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
