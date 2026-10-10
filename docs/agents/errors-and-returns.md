@@ -39,6 +39,32 @@ A family's trait states its failures in the contract entries of its factory modu
 
 A concrete's own variant in the union carries only what that concrete alone produces — its vendor's error, propagated intact — and appears only in the unions of the methods that produce it. The mock concrete's own variant carries only the errors of its failure modes that stand for a concrete's own error (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
 
+### What reaches the failure decides where it is declared
+
+- **An input every concrete can check.** The failure is the family's flavor, declared in the factory module's interface. Every concrete decides it from its inputs before its vendor runs, and the flavor names no concrete.
+- **An input only one concrete's vendor detects.** The failure is that concrete's own error, propagated intact in that concrete's variant. The contract entry states it as each concrete's own, never as the family's.
+- **No input at all, an outer-edge failure.** A concrete that can meet it states it as its own typed error. The mock concrete's own variant carries one only where a failure mode stands for it.
+- **A conversion that cannot fail on a supported target.** A concrete's production code states it as its own typed error, because production code carries no `unwrap` or `expect` (see [types](types.md)). The mock concrete makes the same conversion with `expect` and carries no variant for it.
+
+The mock concrete's own variant is never an arm an input reaches. Where the mock concrete refuses an input, the refusal is a family flavor and the contract entry states it for every concrete.
+
+```rust
+// interface.rs — the error union of one method of a family
+#[derive(Debug, PartialEq, Eq)]
+pub enum MyMethodErrorReturn {
+    Truncated { index: usize },                           // the family's flavor, decided from inputs by every concrete
+    MyVendor(MyVendorMyMethodErrorReturn),                // one concrete's own error, carried intact
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIMyAdapterMyMethodErrorReturn),              // the mock concrete's own error, failure modes only
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum MockIMyAdapterMyMethodErrorReturn {
+    LengthUnrepresentable { length: usize },              // stands for a concrete's own error; no input reaches it
+}
+```
+
 ## The return is always the union
 
 - The function returns a member of `SuccessReturn | ErrorReturn`. "This function only ever succeeds" is not the author's call — the error arm exists on purpose.

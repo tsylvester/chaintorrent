@@ -53,6 +53,7 @@ For each symbol the interface owns, ask what it is:
 - An **enum, primitive/string-literal alias, or constant** → nothing. It is used directly by its production value or type.
 - A **guard** → nothing here; guards are their own element (see [guards](guards.md)).
 - A **class** → never mocked as a class. It decomposes by who constructs it: injected → mock the interface it implements, as an object type; constructed by the code itself → a builder returning a real instance, plus the object-type symbols on its constructor-params type (see [Classes](#classes--decompose-never-mock-the-class)). In Rust a trait a factory selects concretes for takes the [family form](#families--the-mock-is-a-concrete-of-the-family-rust).
+- A **function whose return carries a consumer's type** → a function mock in the [consumer-invoking form](#a-return-that-carries-the-consumers-type-rust).
 
 If a symbol is none of these, it does not belong to this interface — do not mock it.
 
@@ -111,10 +112,55 @@ Every property has a default, except a field the builder is handed (see [Fields 
 
 Some fields a builder cannot default on its own. The value's kind decides the form:
 
-- **Handed.** A borrow, whose referent the caller owns; a family's concrete, which nothing constructs outside its factory; a value of the owning family's own associated types, which only that family's concretes produce; any other value of a type parameter that the produced form does not supply. The builder takes each such field as a leading parameter, typed exactly as the field, in field order, ahead of `overrides`, and the overrides struct omits the field.
-- **Produced.** A value of a type a collaborator family supplies — a dependency of the owning module, such as the pairing beneath a KEM — that the collaborator's own operations produce from constants, such as a group element from its generators. Where those operations need the collaborator's instance, the builder takes it as a leading parameter ahead of `overrides`; the field's default is computed through them and the field stays overridable.
+- **Handed.** A borrow, whose referent the caller owns; a family's concrete, which nothing constructs outside its factory; a collaborator or consumer the produced type holds; the output a consumer returns; a value of the owning family's own associated types, which only that family's concretes produce; any other value of a type parameter that the produced form does not supply. The builder takes each such field as a leading parameter, typed exactly as the field, in field order, ahead of `overrides`, and the overrides struct omits the field.
+- **Produced.** A value of a type a collaborator family supplies — a dependency of the owning module, such as the pairing beneath a KEM — that the collaborator's own operations produce from constants, such as a group element from its generators. Where those operations need the collaborator's instance, the builder takes it as a leading parameter ahead of `overrides`; the field's default is computed through them and the field stays overridable. A value of the field's own type parameter is produced the same way, through the operations the type parameter's production bound declares, such as a constructor or a constant the trait carries, called with constants. The bound is the production item's own, so the builder adds none.
 
-A builder never adds a `Default` bound to a type parameter, and never constructs a concrete, to manufacture a default. A type that holds a handed value takes no invalidator (see [Invalidators](#invalidators--corruption-typed-unknown)).
+A builder never adds a `Default` bound to a type parameter, never constructs a concrete to manufacture a default, and never lets the compiler add the bound: `#[derive(Default)]` over a struct generic in a type parameter bounds that parameter by `Default`, so an overrides struct generic in a type parameter implements `Default` by hand, every field `None`. A type that holds a handed value takes no invalidator (see [Invalidators](#invalidators--corruption-typed-unknown)).
+
+```rust
+// Handed — the output is a leading parameter; the overrides struct omits it and derives Default
+#[derive(Default)]
+pub struct MyObjectOverrides {
+    pub label: Option<Label>,
+}
+
+pub fn build_my_object<O>(output: O, overrides: MyObjectOverrides) -> MyObject<O> {
+    MyObject {
+        output,
+        label: overrides.label.unwrap_or_else(|| build_label(Default::default())),
+    }
+}
+
+// Handed, fieldless — nothing else to override
+#[derive(Default)]
+pub struct MyOutputObjectOverrides;
+
+pub fn build_my_output_object<O>(output: O, _overrides: MyOutputObjectOverrides) -> MyOutputObject<O> {
+    MyOutputObject { output }
+}
+
+// Produced through the type parameter's production bound — the overrides struct is generic,
+// so it implements Default by hand; the bound is IMyScalar, which the production item carries
+pub struct MyScalarObjectOverrides<S> {
+    pub scalar: Option<S>,
+}
+
+impl<S> Default for MyScalarObjectOverrides<S> {
+    fn default() -> Self {
+        Self { scalar: None }
+    }
+}
+
+pub fn build_my_scalar_object<S: IMyScalar>(overrides: MyScalarObjectOverrides<S>) -> MyScalarObject<S> {
+    MyScalarObject {
+        scalar: overrides.scalar.unwrap_or_else(|| {
+            S::from_uniform_bytes(FromUniformBytesParams, FromUniformBytesPayload { bytes: vec![1; S::UNIFORM_BYTES_LENGTH] })
+                .expect("constant bytes of the declared length are a valid scalar")
+                .scalar
+        }),
+    }
+}
+```
 
 ### Nested object composition
 
@@ -220,7 +266,7 @@ Runtime type safety is never bypassed anywhere, **including the invalidator**. I
 
 ## Function mocks — the production function, nothing else
 
-`mockFunctionName` **is** an implementation of `FunctionName`: identical signature, identical return type, zero extra parameters. It returns built defaults.
+`mockFunctionName` **is** an implementation of `FunctionName`: identical signature, identical return type, zero extra parameters. It returns built defaults; where its return carries a consumer's type, it returns the built success return around the consumer's output (see [A return that carries the consumer's type](#a-return-that-carries-the-consumers-type-rust)).
 
 ```ts
 export const mockFunctionName: FunctionName = async (deps, params, payload) => {
@@ -254,6 +300,30 @@ mockFunctionName(result: FunctionNameReturn)        // parameterized factory
 ```
 
 No call-recording in mocks — no `calls` arrays, counters, captured args, `.mock` properties, or `reset()` methods. The test framework's spy facility wraps any function and records invocations; recording is applied by the test author at the call site, never baked into the mock.
+
+### A return that carries the consumer's type (Rust)
+
+A function whose return carries a type its caller's consumer chooses has no built default of that type, and no bound supplies one: the type is the caller's and nothing the mock owns constructs it. The function mock obtains it the way every implementation of the function does, by calling the consumer held in `deps` exactly once with built values, and wraps the consumer's output in the built success return, which takes the output as its leading parameter (see [Fields with no default](#fields-with-no-default-rust)). The function mock stays the production function type at every consumer, so a test supplies whichever consumer it needs.
+
+The consumer is called with the family's mock concrete, which the function mock builds through the concrete's own builder: the function mock stands in for the factory, and the factory is the function that constructs a concrete. The output is relayed, never inspected or altered, so a test asserts what the subject did to it (see [tests](tests.md#audit)).
+
+```rust
+pub fn mock_my_function<C: IMyConsumer>(
+    deps: &MyFunctionDeps<C>,
+    _params: MyFunctionParams,
+    _payload: MyFunctionPayload,
+) -> MyFunctionReturn<C::Output> {
+    let adapter = build_mock_i_my_adapter(Default::default());
+    let output = deps.consumer.consume(
+        build_consume_params(Default::default()),
+        build_consume_payload(adapter, Default::default()),
+    );
+    Ok(build_my_function_success_return(output, Default::default()))
+}
+// `let f: MyFunctionFn<MyConsumer> = mock_my_function;` holds for every consumer
+```
+
+Forbidden here: a `Default`, `Arbitrary`, or `Dummy` bound on the consumer's output; a mock fixed to one consumer, which is narrower than the production function type; a returned error arm in place of the success; `panic!`, `unimplemented!`, `todo!`, or a diverging body; a configurable result.
 
 ## Classes — decompose, never mock the class
 
@@ -289,6 +359,18 @@ export function buildLoggerAdapter(overrides?: LoggerAdapterOverrides): LoggerAd
 An external class reaches this rule already resolved: DI mandates a repo-owned adapter interface for every external dependency, and external services are never mocked (see *Ownership* above). You mock the adapter interface, never the vendor's class.
 
 The Rust form: a trait a factory selects concretes for takes the [family form](#families--the-mock-is-a-concrete-of-the-family-rust). Any other injected trait takes a struct implementing it, `MockLoggerAdapter` for `LoggerAdapter`, whose every method returns built defaults. No test implements a trait that concretes or mocks implement; a family's consumer trait is implemented only as the family form states.
+
+A consumer trait a function holds in `deps` takes the same form, its `Output` the unit type and its method built from nothing:
+
+```rust
+pub struct MockIMyConsumer;
+
+impl IMyConsumer for MockIMyConsumer {
+    type Output = ();
+
+    fn consume<K: IMyAdapter>(&self, _params: ConsumeParams, _payload: ConsumePayload<K>) {}
+}
+```
 
 ### Constructed by the code itself → build a real instance
 
@@ -364,13 +446,60 @@ A test reaches each outcome the way a caller reaches it from a real concrete. Th
 
 A family that hands its concrete to a consumer generic over its traits delivers its types only inside that consumer's method, and Rust has no generic closure, so a test of a subject generic over that family's types receives them the way every caller does: by implementing the family's consumer trait. The test's consumer is the block's harness, not a test double. It implements the consumer trait and nothing else, holds only the block's arrangement, and its method makes the block's single call to the subject with the received types. Where the subject's return names no received type, the method returns it whole as its output and the block asserts on it; where it does, the method asserts on it in place and its output is `()`. The block calls the factory with configuration selecting the mock concrete in a unit test, or once per member of the declared set in an integration test. A test never implements a trait a family's concretes implement.
 
+### The mock concrete's types and failures (Rust)
+
+The mock concrete names its own associated types, each a concrete type the mock file owns and builds, so no generic value is left to fill. A trait generic in a type parameter is implemented by a mock concrete generic in that parameter, and its values come through the parameter's production bound (see [Fields with no default](#fields-with-no-default-rust)).
+
+```rust
+// associated type — the mock concrete names it
+pub struct MockIMyAdapter;
+
+impl IMyAdapter for MockIMyAdapter {
+    type Scalar = MockScalar;
+
+    fn my_method(&self, _params: MyMethodParams, _payload: MyMethodPayload) -> MyMethodReturn<MockScalar> {
+        Ok(build_my_method_success_return(build_mock_scalar(Default::default()), Default::default()))
+    }
+}
+
+// trait parameter — the mock concrete is generic; the value comes through the production bound
+pub struct MockIMyGenericAdapter<S> {
+    scalar: PhantomData<S>,
+}
+
+impl<S: IMyScalar> IMyGenericAdapter<S> for MockIMyGenericAdapter<S> {
+    fn my_method(&self, _params: MyMethodParams, _payload: MyMethodPayload) -> MyMethodReturn<S> {
+        Ok(build_my_method_success_return(Default::default()))
+    }
+}
+```
+
+A failure mode returns the mock concrete's own variant. An input-reached failure returns the family's flavor, decided from the inputs. A conversion that cannot fail on a supported target uses `expect` and carries no variant (see [errors-and-returns](errors-and-returns.md#what-reaches-the-failure-decides-where-it-is-declared)).
+
+```rust
+fn my_method(&self, params: MyMethodParams, payload: MyMethodPayload<'_>) -> MyMethodReturn {
+    match self.failure_mode {
+        MockIMyAdapterFailureMode::LengthUnrepresentable => Err(MyMethodErrorReturn::Mock(
+            MockIMyAdapterMyMethodErrorReturn::LengthUnrepresentable { length: payload.bytes.len() },
+        )),
+        MockIMyAdapterFailureMode::NoFailure => {
+            let prefix = u64::try_from(payload.bytes.len()).expect("a usize fits a u64 on every supported target");
+            if payload.bytes.len() < params.expected {
+                return Err(MyMethodErrorReturn::Truncated { index: payload.bytes.len() });
+            }
+            Ok(build_my_method_success_return(build_my_bytes(prefix, &payload.bytes), Default::default()))
+        }
+    }
+}
+```
+
 ## Litmus
 
 Every export in the mock file is typed by a name from the interface file — builders return production object types, invalidators return `unknown`, function mocks are production function types. Any export whose type had to be invented is not a mock of this interface; it is new machinery, and new machinery is forbidden.
 
 ## Precedence
 
-This topic outranks the workplan. If a node step instructs a null/undefined-accepting builder, a configurable mock factory, a call-recording mock, or a `createXMock` bundle, the step is defective — build the compliant symbols and report the discrepancy in your final report. Do not implement the defective step; do not silently ignore it.
+This topic outranks the workplan. If a node step instructs a null/undefined-accepting builder, a `Default` bound on a type parameter, a configurable mock factory, a call-recording mock, or a `createXMock` bundle, the step is defective — build the compliant symbols and report the discrepancy in your final report. Do not implement the defective step; do not silently ignore it.
 
 ## Residual limitation — exactOptionalPropertyTypes
 
@@ -378,7 +507,7 @@ This topic outranks the workplan. If a node step instructs a null/undefined-acce
 
 ## Forbidden (summary)
 
-modify or widen production types · invent shapes or type names · `as` · `satisfies` · overloads · type aliases that weaken checking · generic merge helpers · specialized mock variants instead of overrides · wrap one mock with another · duplicate builders · mock imported symbols / databases / repositories / external services · generic or shared invalidators · spread a class instance · cast an object literal to a class type · type a dep by a class instead of the interface it implements · a positional-argument constructor · a class instance invalidator or a constructor mock · a mock parameterized by, wrapping, or borrowing from a concrete · a test naming a concrete other than its subject · a test-local implementation of a trait a family's concretes implement · a test's consumer that does anything beyond the subject's single call · a function, outcome, or override carried in configuration for a mock concrete.
+modify or widen production types · invent shapes or type names · `as` · `satisfies` · overloads · type aliases that weaken checking · generic merge helpers · specialized mock variants instead of overrides · wrap one mock with another · duplicate builders · mock imported symbols / databases / repositories / external services · generic or shared invalidators · spread a class instance · cast an object literal to a class type · type a dep by a class instead of the interface it implements · a positional-argument constructor · a class instance invalidator or a constructor mock · a mock parameterized by, wrapping, or borrowing from a concrete · a test naming a concrete other than its subject · a test-local implementation of a trait a family's concretes implement · a test's consumer that does anything beyond the subject's single call · a function, outcome, or override carried in configuration for a mock concrete · a `Default`, `Arbitrary`, or `Dummy` bound to manufacture a value · `#[derive(Default)]` over a struct generic in a type parameter · a function mock fixed to one consumer · a function mock that panics or diverges · a mock concrete's own variant for an arm an input reaches · a dead error branch in the mock's no-failure path.
 
 ## Architecture
 

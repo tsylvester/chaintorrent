@@ -175,7 +175,7 @@ The test cannot fail because the answer was supplied to it. The input was constr
 
 **Probe.** Is any expected value produced by, derived from, or identical to the arrangement, rather than stated independently? If yes, it is tautological.
 
-**Pass-through form.** The asserted value came from a builder default or a mock's return and the subject merely relayed it. The test proves the fixture, not the transform.
+**Pass-through form.** The asserted value came from a builder default or a mock's return and the subject merely relayed it. The test proves the fixture, not the transform. A value a function mock relayed from a consumer is a pass-through, whichever consumer the test supplied.
 
 **Remedy.** State expectations as independent literals, and arrange inputs that are not already the answer. Where the value must originate in a builder, assert what the subject *did to it*, never the value itself.
 

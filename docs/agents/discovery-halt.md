@@ -37,7 +37,7 @@ The permission you are waiting for is **for the boundary crossing** — the seco
 
 A halt report names **the compliant action** and the boundary that blocks it. It does not present the user with options, and it never presents an option that violates a topic — not as a question, not as an alternative, not as "or I could."
 
-**Every prohibition in this instruction set is paired with a prescription.** [guards](guards.md) forbids re-authoring a foreign guard **and** gives the predicate search and the halt that follows it. [mocks](mocks.md) forbids mocking an imported symbol **and** says to locate the builder in its home package. [types](types.md) forbids minting a union inline **and** says to propose the node that declares it in its owning interface. There is no rule here that only forbids.
+**Every prohibition in this instruction set is paired with a prescription.** [guards](guards.md) forbids re-authoring a foreign guard **and** gives the predicate search and the halt that follows it. [mocks](mocks.md) forbids mocking an imported symbol **and** says to locate the builder in its home package. [types](types.md) forbids minting a union inline **and** says to propose the node that declares it in its owning interface. [mocks](mocks.md) forbids a `Default` bound to manufacture a value **and** names the forms that replace it: handed, produced through the production bound, named by the mock concrete, and invoked through the consumer. There is no rule here that only forbids.
 
 So a prohibition is never the end of your analysis. If you have found the rule that blocks your plan and not the rule that replaces it, you have stopped reading one paragraph early — go back to the same topic and finish it.
 

@@ -30,7 +30,7 @@ Single source of truth for how agents work in this repo. Every rule lives in exa
 - [types](types.md) — strict typing, narrowest type, `unknown` only at a boundary
 - [composition](composition.md) — function signature shape (deps / params / payload / return union)
 - [dependency-injection](dependency-injection.md) — DI at the boundary, context factory
-- [mocks](mocks.md) — builders, invalidators, function mocks
+- [mocks](mocks.md) — builders, invalidators, function mocks, values the mock cannot construct, family mock concretes and their failures
 - [guards](guards.md) — guard everything, authorship, boundary litmus
 - [tests](tests.md) — test authoring, contract headers, derangement audit; anchors `#interface` `#guard` `#unit` `#integration` `#integration-private` `#integration-public` `#e2e` `#audit`
 - [errors-and-returns](errors-and-returns.md) — `Success | Error` handling
@@ -48,8 +48,8 @@ A map from the file you are building to the topic that governs it, the template 
 | Building | Conforms to | Copy from | Halt if |
 |---|---|---|---|
 | interface test (TypeScript, Solidity) | [tests](tests.md#interface), [composition](composition.md), [types](types.md), [errors-and-returns](errors-and-returns.md) | typed-assignment example ([tests#interface](tests.md#interface)) | a type it needs lives in another interface that does not exist yet |
-| interface | [composition](composition.md), [types](types.md), [errors-and-returns](errors-and-returns.md), [dependency-injection](dependency-injection.md) | signature template ([composition](composition.md)) | a required type has no locatable definition |
-| mock | [mocks](mocks.md) | builder / invalidator / function-mock templates ([mocks](mocks.md)); the family mock concrete ([mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)) | an imported type's mock is missing from its home package, or the family's selection does not carry its mock concrete |
+| interface | [composition](composition.md), [types](types.md), [errors-and-returns](errors-and-returns.md), [dependency-injection](dependency-injection.md) | signature template ([composition](composition.md)); the consumer-generic return template ([composition](composition.md#a-return-that-carries-the-callers-type-rust)) | a required type has no locatable definition |
+| mock | [mocks](mocks.md) | builder / invalidator / function-mock templates ([mocks](mocks.md)); the family mock concrete ([mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)); the handed, produced, and consumer-invoking templates ([mocks](mocks.md#fields-with-no-default-rust), [mocks](mocks.md#a-return-that-carries-the-consumers-type-rust)) | an imported type's mock is missing from its home package, or the family's selection does not carry its mock concrete |
 | guard test (TypeScript, Solidity) | [tests](tests.md#guard), [guards](guards.md), [mocks](mocks.md) | case-checklist example ([tests#guard](tests.md#guard)) | a needed builder or invalidator is absent from its mock file |
 | guard (TypeScript, Solidity) | [guards](guards.md) | guard skeleton + forbidden substitutes ([guards](guards.md)) | an imported type's guard is absent after the predicate search |
 | unit test | [tests](tests.md#unit), [errors-and-returns](errors-and-returns.md), [composition](composition.md) | no positive template — the branch contract ([interaction spec](workplan-structure.md#the-interaction-spec-is-a-branch-contract)) and the forbidden catalog | the implementation's producer does not exist yet, or a family collaborator's mock concrete is not selectable through its factory |

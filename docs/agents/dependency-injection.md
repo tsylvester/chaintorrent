@@ -30,7 +30,7 @@ A single, strictly typed, immutable context object may be created at the operati
 
 Leaf functions accept either only the context object or explicit deps derived from it — choose one consistent pattern per module.
 
-The Rust form: `deps` is a struct of handles typed by repo-owned traits, `Box<dyn Trait>` or a generic bound, never by an implementing type, built once at the composition root; the context object is an immutable struct with no `Option` field, built by a typed factory that sets every field.
+The Rust form: `deps` is a struct of handles typed by repo-owned traits, `Box<dyn Trait>` or a generic bound, never by an implementing type, built once at the composition root; the context object is an immutable struct with no `Option` field, built by a typed factory that sets every field. A consumer a function's `deps` holds is one such handle: its type is the repo-owned consumer trait through a generic bound, and a builder of those deps receives it as a leading parameter (see [mocks](mocks.md#fields-with-no-default-rust)).
 
 How a factory carries its family's mock concrete is owned by [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust).
 

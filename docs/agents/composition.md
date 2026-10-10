@@ -70,6 +70,38 @@ Rules:
 - **The return is always the union.** "This function only ever succeeds, so it returns only the success type" is not the author's call. The union is deliberate. See [errors-and-returns](errors-and-returns.md) for how the union is handled; this topic owns only its shape.
 - **One function per file, one file per function.** Tempted to add a second function to a file → stop, report, propose the node, halt (see [discovery-halt](discovery-halt.md)).
 
+## A return that carries the caller's type (Rust)
+
+A function that hands its caller a value only it can produce, such as the concrete a factory selects, delivers it by calling a consumer the caller supplies. The caller cannot name the concrete's type, so the signature stays generic over the consumer and the output the consumer returns is the caller's type.
+
+- The consumer is a repo-owned trait declared in the function's `interface.rs` with one associated `Output`, held in `deps` like any other collaborator.
+- The success return is generic over the output and holds it in a field.
+- The function type names the output through the trait, so the return is the two-arm union at every consumer.
+
+```rust
+// interface.rs
+pub trait IMyConsumer {
+    type Output;
+
+    fn consume<K: IMyAdapter>(&self, params: ConsumeParams, payload: ConsumePayload<K>) -> Self::Output;
+}
+
+pub struct MyFunctionDeps<C: IMyConsumer> {
+    pub consumer: C,
+}
+
+pub struct MyFunctionSuccessReturn<O> {
+    pub output: O,
+}
+
+pub type MyFunctionReturn<O> = Result<MyFunctionSuccessReturn<O>, MyFunctionErrorReturn>;
+
+pub type MyFunctionFn<C> = fn(&MyFunctionDeps<C>, MyFunctionParams, MyFunctionPayload)
+    -> MyFunctionReturn<<C as IMyConsumer>::Output>;
+```
+
+How the builders take the output and the consumer is owned by [mocks](mocks.md#fields-with-no-default-rust); how the function is mocked is owned by [mocks](mocks.md#a-return-that-carries-the-consumers-type-rust).
+
 ## Classes — two admitted roles, and how the signature maps
 
 "One function per file" governs **exported standalone functions**. A class holding several methods is not an exception to that rule and not a way around it; it is a different kind of symbol, admitted in exactly two roles:

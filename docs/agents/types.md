@@ -6,7 +6,7 @@ Cited by: construction view (workplan node `interface` element) and implementati
 
 ## Strict typing
 
-- Explicit types everywhere for any object the repo owns. No `any`, `as`, `as const`, inline ad-hoc types, or casts. In Rust: no numeric `as` on a repo-owned value (`TryFrom` instead), no `unwrap`, `expect`, or `panic!` in production code, no `Box<dyn Any>`, no `unsafe`.
+- Explicit types everywhere for any object the repo owns. No `any`, `as`, `as const`, inline ad-hoc types, or casts. In Rust: no numeric `as` on a repo-owned value (`TryFrom` instead), no `unwrap`, `expect`, or `panic!` in production code, no `Box<dyn Any>`, no `unsafe`. A mock file, which exists only for tests, carries `expect` on a conversion or construction whose success the built values guarantee, the message naming the invariant (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
 - Every object and variable is typed. If you find an untyped var or object while working, stop, report the discovery, propose the node to type it, and halt (see [discovery-halt](discovery-halt.md)).
 - Construct full objects that satisfy their interface. Compose complex objects from smaller typed components. Never rely on defaults, fallbacks, or backfilling to "heal" missing data.
 
@@ -130,6 +130,8 @@ If you discover a value must be nullable but its definition does not say so, tha
 ## No production defaults
 
 A ternary is not a type guard — a ternary supplies a default value. Default values are prohibited in production code. The only defaults permitted anywhere are the documented, domain-approved defaults inside builders and factories (see [mocks](mocks.md)), which are test fixtures, not production code.
+
+In Rust the documented defaults a builder or factory holds are values it computes from its owner's builders, from constants, or from operations a production bound declares. A `Default` bound on a type parameter is not a documented default, and neither is `#[derive(Default)]` over a struct generic in a type parameter, which adds that bound (see [mocks](mocks.md#fields-with-no-default-rust)).
 
 ## Imports
 

@@ -31,6 +31,37 @@ The private integration test lives in the function's module directory as `integr
 - It proves every own entry and every absorbed callee entry the spec places on its private surface, one block per entry.
 - It runs the real chain through crate-internal paths and mocks only the outer-edge collaborators the private surface names. Fixtures come from the mock file's builders.
 - In a family's factory module it proves every contract entry of the family's trait, each block's body written once and run over the declared set and the mock concrete (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)), so a further concrete answers every entry without an edit to the test.
+- A failure mode a family declares gets one block, run over the mock concrete alone, since the declared set cannot reach it. The block selects the mode through configuration and asserts the whole error the mode returns (see [mocks](mocks.md#the-mock-concretes-types-and-failures-rust)).
+
+```rust
+/// Contract: the adapter the factory returns for the mock selection under the failure mode
+///   LengthUnrepresentable returns the mock concrete's own error with the payload's length.
+/// Arrange: the mock selection under that failure mode; the default payload, 32 bytes long.
+/// Act:     my_method on the adapter.
+/// Assert:  the error equals the mock variant carrying 32.
+#[test]
+fn my_method_returns_the_mock_error_when_the_length_is_unrepresentable() {
+    // Arrange
+    let created = create_my_adapter(
+        &build_create_my_adapter_deps(Default::default()),
+        build_create_my_adapter_params(CreateMyAdapterParamsOverrides {
+            concrete: Some(MyConcrete::Mock(MockIMyAdapterFailureMode::LengthUnrepresentable)),
+            ..Default::default()
+        }),
+        build_create_my_adapter_payload(Default::default()),
+    )
+    .expect("the mock selection constructs");
+
+    // Act
+    let result = created.adapter.my_method(build_my_method_params(Default::default()), build_my_method_payload(Default::default()));
+
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(MyMethodErrorReturn::Mock(MockIMyAdapterMyMethodErrorReturn::LengthUnrepresentable { length: 32 })),
+    );
+}
+```
 - A function in the chain that is not built yet is a halt (see [discovery-halt](discovery-halt.md)).
 - It reports its enumeration: every entry the private surface lists and the block that proves it. A file proving fewer entries than the spec lists is incomplete (see [scope](scope.md#coverage-canary)).
 
