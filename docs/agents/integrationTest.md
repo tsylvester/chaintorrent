@@ -21,7 +21,7 @@ Naming what is mocked is what lets an audit catch a test that proves a mock inst
 
 ### A block transcribes an entry (Rust)
 
-In Rust the `Contract` of every block transcribes one entry of the node's `interaction.spec.md` (see [workplan-structure](workplan-structure.md#the-interaction-spec-carries-the-integration-elements)), and `Arrange` names the input variation the entry declares. A block whose arrangement lacks that variation is incidental (see [tests](tests.md#audit)).
+In Rust the `Contract` of every block transcribes one entry of the node's `interaction.spec.md` (see [workplan-structure](workplan-structure.md#the-interaction-spec-carries-the-integration-elements)), and `Arrange` names the input variation the entry declares. A block whose arrangement lacks that variation is incidental (see [tests](tests.md#audit)). An arm no input reaches (a constant-fixed refusal, an uninhabited error, a single-variant enum) is never an integration entry. It is not carried, absorbed, or reported.
 
 <a id="integration-private"></a>
 ## Private integration test (Rust)

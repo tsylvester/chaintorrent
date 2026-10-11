@@ -62,7 +62,7 @@ Authoring the integration elements of a node touches exactly these parts of that
 
 The private integration test element is `integration_test.rs`, never a unit test file; the unit test element holds no integration block (see [integrationTest](integrationTest.md#integration-private)).
 
-**Disposition canary.** A node whose spec leaves a direct dependency's entry undispositioned, cites an entry that does not exist, marks an entry absorbed without citing the private integration test element that proves it, or states a carried entry without its route is malformed and discarded (see [traceability](traceability.md)).
+**Disposition canary.** A node whose spec leaves undispositioned a direct dependency's entry that passes through one of its functions or ends at one of its tests, cites an entry that does not exist, marks an entry absorbed without citing the private integration test element that proves it, or states a carried entry without its route is malformed and discarded (see [traceability](traceability.md)). An entry for an arm no input reaches is outside this canary.
 
 ## What is never its own node
 
