@@ -7,9 +7,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use static_assertions::assert_not_impl_any;
 use zeroize::Zeroize;
 
-use super::provides::{
-    Secret, SecretConstructorParamsOverrides, build_secret, build_secret_constructor_params,
-};
+use super::provides::{Secret, build_secret, build_secret_constructor_params};
 
 // Contract: `Secret<T>` implements none of `core::fmt::Debug`, `core::fmt::Display`,
 //   `Clone`, or `Copy`.
@@ -20,8 +18,8 @@ use super::provides::{
 assert_not_impl_any!(Secret<Vec<u8>>: core::fmt::Debug, core::fmt::Display, Clone, Copy);
 
 /// Contract: any params → `Ok(Secret)` holding `params.value`.
-/// Arrange: `build_secret_constructor_params` with the value override set to a nonempty
-///   byte sequence, so the default empty vector and the given value differ.
+/// Arrange: `build_secret_constructor_params` with a nonempty byte sequence handed as
+///   the value, so an empty vector and the given value differ.
 /// Act:     `Secret::try_new` on the built params.
 /// Assert:  the result binds through the irrefutable `let Ok(secret) = …;`; the held
 ///   `value`, read through the field the child test module reaches, equals the same byte
@@ -29,9 +27,7 @@ assert_not_impl_any!(Secret<Vec<u8>>: core::fmt::Debug, core::fmt::Display, Clon
 #[test]
 fn try_new_holds_the_value_in_params() {
     // Arrange
-    let params = build_secret_constructor_params::<Vec<u8>>(SecretConstructorParamsOverrides {
-        value: Some(vec![1, 2, 3, 4]),
-    });
+    let params = build_secret_constructor_params::<Vec<u8>>(vec![1, 2, 3, 4], Default::default());
 
     // Act
     let Ok(secret) = Secret::try_new(params);
@@ -41,8 +37,8 @@ fn try_new_holds_the_value_in_params() {
 }
 
 /// Contract: a living secret → a shared reference to the held value, no copy.
-/// Arrange: `build_secret` with the value override set to a nonempty byte sequence, so the
-///   default empty vector and the held value differ.
+/// Arrange: `build_secret` with a nonempty byte sequence handed as the value, so an
+///   empty vector and the held value differ.
 /// Act:     `secret.expose()`.
 /// Assert:  the returned reference equals the same byte sequence written as a literal in
 ///   the assertion; the returned reference is address-identical to the secret's held
@@ -50,9 +46,7 @@ fn try_new_holds_the_value_in_params() {
 #[test]
 fn expose_returns_a_reference_to_the_held_value() {
     // Arrange
-    let secret = build_secret::<Vec<u8>>(SecretConstructorParamsOverrides {
-        value: Some(vec![5, 6, 7, 8]),
-    });
+    let secret = build_secret::<Vec<u8>>(vec![5, 6, 7, 8], Default::default());
 
     // Act
     let exposed = secret.expose();
@@ -65,20 +59,13 @@ fn expose_returns_a_reference_to_the_held_value() {
 /// Contract: the secret's lifetime ends by move into a consumer that drops it →
 ///   `Zeroize::zeroize` is called on the held value exactly once.
 /// Arrange: the shared counter at its initial value; the recorder holding a handle to it;
-///   `build_secret` with the value override set to the recorder.
+///   `build_secret` with the recorder handed as the value.
 /// Act:     `drop(secret)`.
 /// Assert:  the shared counter equals the literal one.
 #[test]
 fn dropping_a_secret_zeroizes_its_value() {
     struct ZeroizeRecorder {
         count: Arc<AtomicUsize>,
-    }
-    impl Default for ZeroizeRecorder {
-        fn default() -> Self {
-            Self {
-                count: Arc::new(AtomicUsize::new(0)),
-            }
-        }
     }
     impl Zeroize for ZeroizeRecorder {
         fn zeroize(&mut self) {
@@ -91,9 +78,7 @@ fn dropping_a_secret_zeroizes_its_value() {
     let recorder = ZeroizeRecorder {
         count: Arc::clone(&counter),
     };
-    let secret = build_secret::<ZeroizeRecorder>(SecretConstructorParamsOverrides {
-        value: Some(recorder),
-    });
+    let secret = build_secret::<ZeroizeRecorder>(recorder, Default::default());
 
     // Act
     drop(secret);
@@ -105,20 +90,13 @@ fn dropping_a_secret_zeroizes_its_value() {
 /// Contract: a living secret → `expose` returns a shared reference with no side effect on
 ///   the held value.
 /// Arrange: the shared counter at its initial value; the recorder holding a handle to it;
-///   `build_secret` with the value override set to the recorder.
+///   `build_secret` with the recorder handed as the value.
 /// Act:     `secret.expose()`.
 /// Assert:  the shared counter equals the literal zero while the secret is alive.
 #[test]
 fn exposing_a_secret_does_not_zeroize_it() {
     struct ZeroizeRecorder {
         count: Arc<AtomicUsize>,
-    }
-    impl Default for ZeroizeRecorder {
-        fn default() -> Self {
-            Self {
-                count: Arc::new(AtomicUsize::new(0)),
-            }
-        }
     }
     impl Zeroize for ZeroizeRecorder {
         fn zeroize(&mut self) {
@@ -131,9 +109,7 @@ fn exposing_a_secret_does_not_zeroize_it() {
     let recorder = ZeroizeRecorder {
         count: Arc::clone(&counter),
     };
-    let secret = build_secret::<ZeroizeRecorder>(SecretConstructorParamsOverrides {
-        value: Some(recorder),
-    });
+    let secret = build_secret::<ZeroizeRecorder>(recorder, Default::default());
 
     // Act
     let _ = secret.expose();
@@ -144,7 +120,7 @@ fn exposing_a_secret_does_not_zeroize_it() {
 
 /// Contract: any params → `Ok(Secret)` holding `params.value`, moved without copy.
 /// Arrange: a nonempty byte vector bound to a local whose heap address is read before the
-///   call; `build_secret_constructor_params` with the value override set to that vector.
+///   call; `build_secret_constructor_params` with that vector handed as the value.
 /// Act:     `Secret::try_new` on the built params.
 /// Assert:  the result binds through the irrefutable `let Ok(secret) = …;`; the heap
 ///   address of the held `value` equals the address read before the call.
@@ -153,9 +129,7 @@ fn try_new_moves_the_value_without_copying_it() {
     // Arrange
     let value = vec![9, 8, 7, 6];
     let heap_address = value.as_ptr();
-    let params = build_secret_constructor_params::<Vec<u8>>(SecretConstructorParamsOverrides {
-        value: Some(value),
-    });
+    let params = build_secret_constructor_params::<Vec<u8>>(value, Default::default());
 
     // Act
     let Ok(secret) = Secret::try_new(params);
@@ -167,7 +141,7 @@ fn try_new_moves_the_value_without_copying_it() {
 /// Contract: the secret's lifetime ends by unwinding → `Zeroize::zeroize` is called on the
 ///   held value exactly once.
 /// Arrange: the shared counter at its initial value; the recorder holding a handle to it;
-///   `build_secret` with the value override set to the recorder; a closure that takes the
+///   `build_secret` with the recorder handed as the value; a closure that takes the
 ///   secret by move and panics.
 /// Act:     `std::panic::catch_unwind` on the closure.
 /// Assert:  the outcome is `Err`; the shared counter equals the literal one.
@@ -175,13 +149,6 @@ fn try_new_moves_the_value_without_copying_it() {
 fn dropping_a_secret_during_unwinding_zeroizes_its_value() {
     struct ZeroizeRecorder {
         count: Arc<AtomicUsize>,
-    }
-    impl Default for ZeroizeRecorder {
-        fn default() -> Self {
-            Self {
-                count: Arc::new(AtomicUsize::new(0)),
-            }
-        }
     }
     impl Zeroize for ZeroizeRecorder {
         fn zeroize(&mut self) {
@@ -194,9 +161,7 @@ fn dropping_a_secret_during_unwinding_zeroizes_its_value() {
     let recorder = ZeroizeRecorder {
         count: Arc::clone(&counter),
     };
-    let secret = build_secret::<ZeroizeRecorder>(SecretConstructorParamsOverrides {
-        value: Some(recorder),
-    });
+    let secret = build_secret::<ZeroizeRecorder>(recorder, Default::default());
     let consume_and_panic = move || {
         let _moved = secret;
         panic!("unwind");

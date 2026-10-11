@@ -3,19 +3,19 @@
 use super::provides::{
     Bn254ArkworksEncodedG1, Bn254ArkworksEncodedG2, Bn254ArkworksEncodedGt,
     Bn254ArkworksEncodedGtOverrides, Bn254ArkworksEncodedScalar,
-    Bn254ArkworksEncodedScalarOverrides, Bn254ArkworksG1, Bn254ArkworksG1Overrides,
-    Bn254ArkworksG2, Bn254ArkworksG2Overrides, Bn254ArkworksGtOverrides, Bn254ArkworksPairing,
-    Bn254ArkworksPairingConstructorParams, Bn254ArkworksScalar, Bn254ArkworksScalarOverrides,
-    G1_GENERATOR_HEX, G1_OFF_CURVE_HEX, G1_X_AT_MODULUS_HEX, G2_GENERATOR_HEX,
-    G2_GENERATOR_OFF_CURVE_HEX, G2_X_C1_AT_MODULUS_HEX, GROUP_ORDER_HEX, GROUP_ORDER_MINUS_ONE_HEX,
-    GROUP_ORDER_MINUS_TWO_HEX, UNIFORM_GROUP_ORDER_HEX, base_field_modulus,
-    build_bn254_arkworks_encoded_gt, build_bn254_arkworks_encoded_scalar, build_bn254_arkworks_g1,
-    build_bn254_arkworks_g2, build_bn254_arkworks_gt, build_bn254_arkworks_pairing,
-    build_bn254_arkworks_scalar, definition_value, definition_value_power,
-    eip_196_doubled_generator, eip_196_generator, eip_196_negated_generator, eip_197_generator,
-    g2_outside_subgroup_bytes, g2_point_from_encoding, gt_identity_encoding,
-    gt_with_sequential_coefficients, library_multiple, requires_zeroize_on_drop, scalar_value,
-    sequential_gt_encoding, vector_bytes, zero_bytes,
+    Bn254ArkworksEncodedScalarOverrides, Bn254ArkworksG1Overrides, Bn254ArkworksG2Overrides,
+    Bn254ArkworksGtOverrides, Bn254ArkworksPairing, Bn254ArkworksPairingConstructorParams,
+    Bn254ArkworksScalar, Bn254ArkworksScalarOverrides, G1_GENERATOR_HEX, G1_OFF_CURVE_HEX,
+    G1_X_AT_MODULUS_HEX, G2_GENERATOR_HEX, G2_GENERATOR_OFF_CURVE_HEX, G2_X_C1_AT_MODULUS_HEX,
+    GROUP_ORDER_HEX, GROUP_ORDER_MINUS_ONE_HEX, GROUP_ORDER_MINUS_TWO_HEX, UNIFORM_GROUP_ORDER_HEX,
+    base_field_modulus, build_bn254_arkworks_encoded_gt, build_bn254_arkworks_encoded_scalar,
+    build_bn254_arkworks_g1, build_bn254_arkworks_g2, build_bn254_arkworks_gt,
+    build_bn254_arkworks_pairing, build_bn254_arkworks_scalar, definition_value,
+    definition_value_power, eip_196_doubled_generator, eip_196_generator,
+    eip_196_negated_generator, eip_197_generator, g2_outside_subgroup_bytes,
+    g2_point_from_encoding, gt_identity_encoding, gt_with_sequential_coefficients,
+    library_multiple, requires_zeroize_on_drop, scalar_value, sequential_gt_encoding, vector_bytes,
+    zero_bytes,
 };
 use crate::factory::provides::{
     AddG1Params, AddG1PayloadOverrides, AddG2Params, AddG2PayloadOverrides, AddScalarParams,
@@ -140,12 +140,15 @@ fn g2_generator_returns_the_eip_197_generator() {
 #[test]
 fn add_g1_of_a_point_and_its_negation_is_the_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_add_g1_payload(AddG1PayloadOverrides {
-        left: Some(build_bn254_arkworks_g1(Default::default())),
-        right: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
-            value: Some(eip_196_negated_generator()),
-        })),
-    });
+    let payload = build_add_g1_payload(
+        &pairing,
+        AddG1PayloadOverrides {
+            left: Some(build_bn254_arkworks_g1(Default::default())),
+            right: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
+                value: Some(eip_196_negated_generator()),
+            })),
+        },
+    );
     let Ok(success) = pairing.add_g1(AddG1Params, payload);
     assert_eq!(success.sum.value, G1Affine::identity());
 }
@@ -153,12 +156,15 @@ fn add_g1_of_a_point_and_its_negation_is_the_identity() {
 #[test]
 fn add_g1_of_the_identity_and_a_point_is_the_point() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_add_g1_payload(AddG1PayloadOverrides {
-        left: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
-            value: Some(G1Affine::identity()),
-        })),
-        right: Some(build_bn254_arkworks_g1(Default::default())),
-    });
+    let payload = build_add_g1_payload(
+        &pairing,
+        AddG1PayloadOverrides {
+            left: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
+                value: Some(G1Affine::identity()),
+            })),
+            right: Some(build_bn254_arkworks_g1(Default::default())),
+        },
+    );
     let Ok(success) = pairing.add_g1(AddG1Params, payload);
     assert_eq!(success.sum.value, eip_196_generator());
 }
@@ -166,12 +172,15 @@ fn add_g1_of_the_identity_and_a_point_is_the_point() {
 #[test]
 fn add_g2_of_a_point_and_its_negation_is_the_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_add_g2_payload(AddG2PayloadOverrides {
-        left: Some(build_bn254_arkworks_g2(Default::default())),
-        right: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
-            value: Some(-eip_197_generator()),
-        })),
-    });
+    let payload = build_add_g2_payload(
+        &pairing,
+        AddG2PayloadOverrides {
+            left: Some(build_bn254_arkworks_g2(Default::default())),
+            right: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
+                value: Some(-eip_197_generator()),
+            })),
+        },
+    );
     let Ok(success) = pairing.add_g2(AddG2Params, payload);
     assert_eq!(success.sum.value, G2Affine::identity());
 }
@@ -179,12 +188,15 @@ fn add_g2_of_a_point_and_its_negation_is_the_identity() {
 #[test]
 fn add_g2_of_the_identity_and_a_point_is_the_point() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_add_g2_payload(AddG2PayloadOverrides {
-        left: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
-            value: Some(G2Affine::identity()),
-        })),
-        right: Some(build_bn254_arkworks_g2(Default::default())),
-    });
+    let payload = build_add_g2_payload(
+        &pairing,
+        AddG2PayloadOverrides {
+            left: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
+                value: Some(G2Affine::identity()),
+            })),
+            right: Some(build_bn254_arkworks_g2(Default::default())),
+        },
+    );
     let Ok(success) = pairing.add_g2(AddG2Params, payload);
     assert_eq!(success.sum.value, eip_197_generator());
 }
@@ -192,12 +204,15 @@ fn add_g2_of_the_identity_and_a_point_is_the_point() {
 #[test]
 fn mul_g1_by_one_is_the_point() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_mul_g1_payload(MulG1PayloadOverrides {
-        point: Some(build_bn254_arkworks_g1(Default::default())),
-        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(1u64)),
-        })),
-    });
+    let payload = build_mul_g1_payload(
+        &pairing,
+        MulG1PayloadOverrides {
+            point: Some(build_bn254_arkworks_g1(Default::default())),
+            scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(1u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.mul_g1(MulG1Params, payload);
     assert_eq!(success.product.value, eip_196_generator());
 }
@@ -205,12 +220,15 @@ fn mul_g1_by_one_is_the_point() {
 #[test]
 fn mul_g1_by_zero_is_the_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_mul_g1_payload(MulG1PayloadOverrides {
-        point: Some(build_bn254_arkworks_g1(Default::default())),
-        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(0u64)),
-        })),
-    });
+    let payload = build_mul_g1_payload(
+        &pairing,
+        MulG1PayloadOverrides {
+            point: Some(build_bn254_arkworks_g1(Default::default())),
+            scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(0u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.mul_g1(MulG1Params, payload);
     assert_eq!(success.product.value, G1Affine::identity());
 }
@@ -218,12 +236,15 @@ fn mul_g1_by_zero_is_the_identity() {
 #[test]
 fn mul_g1_by_the_group_order_minus_one_is_the_negated_generator() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_mul_g1_payload(MulG1PayloadOverrides {
-        point: Some(build_bn254_arkworks_g1(Default::default())),
-        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(scalar_value(GROUP_ORDER_MINUS_ONE_HEX)),
-        })),
-    });
+    let payload = build_mul_g1_payload(
+        &pairing,
+        MulG1PayloadOverrides {
+            point: Some(build_bn254_arkworks_g1(Default::default())),
+            scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(scalar_value(GROUP_ORDER_MINUS_ONE_HEX)),
+            })),
+        },
+    );
     let Ok(success) = pairing.mul_g1(MulG1Params, payload);
     assert_eq!(success.product.value, eip_196_negated_generator());
 }
@@ -231,12 +252,15 @@ fn mul_g1_by_the_group_order_minus_one_is_the_negated_generator() {
 #[test]
 fn mul_g2_by_one_is_the_point() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_mul_g2_payload(MulG2PayloadOverrides {
-        point: Some(build_bn254_arkworks_g2(Default::default())),
-        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(1u64)),
-        })),
-    });
+    let payload = build_mul_g2_payload(
+        &pairing,
+        MulG2PayloadOverrides {
+            point: Some(build_bn254_arkworks_g2(Default::default())),
+            scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(1u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.mul_g2(MulG2Params, payload);
     assert_eq!(success.product.value, eip_197_generator());
 }
@@ -244,12 +268,15 @@ fn mul_g2_by_one_is_the_point() {
 #[test]
 fn mul_g2_by_zero_is_the_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_mul_g2_payload(MulG2PayloadOverrides {
-        point: Some(build_bn254_arkworks_g2(Default::default())),
-        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(0u64)),
-        })),
-    });
+    let payload = build_mul_g2_payload(
+        &pairing,
+        MulG2PayloadOverrides {
+            point: Some(build_bn254_arkworks_g2(Default::default())),
+            scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(0u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.mul_g2(MulG2Params, payload);
     assert_eq!(success.product.value, G2Affine::identity());
 }
@@ -257,12 +284,15 @@ fn mul_g2_by_zero_is_the_identity() {
 #[test]
 fn mul_g2_by_the_group_order_minus_one_is_the_negated_point() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_mul_g2_payload(MulG2PayloadOverrides {
-        point: Some(build_bn254_arkworks_g2(Default::default())),
-        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(scalar_value(GROUP_ORDER_MINUS_ONE_HEX)),
-        })),
-    });
+    let payload = build_mul_g2_payload(
+        &pairing,
+        MulG2PayloadOverrides {
+            point: Some(build_bn254_arkworks_g2(Default::default())),
+            scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(scalar_value(GROUP_ORDER_MINUS_ONE_HEX)),
+            })),
+        },
+    );
     let Ok(success) = pairing.mul_g2(MulG2Params, payload);
     assert_eq!(success.product.value, -eip_197_generator());
 }
@@ -270,7 +300,7 @@ fn mul_g2_by_the_group_order_minus_one_is_the_negated_point() {
 #[test]
 fn msm_g1_of_no_terms_is_the_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_msm_g1_payload::<Bn254ArkworksG1, Bn254ArkworksScalar>(Default::default());
+    let payload = build_msm_g1_payload(&pairing, Default::default());
     let Ok(success) = pairing.msm_g1(MsmG1Params, payload);
     assert_eq!(success.sum.value, G1Affine::identity());
 }
@@ -278,25 +308,33 @@ fn msm_g1_of_no_terms_is_the_identity() {
 #[test]
 fn msm_g1_pairs_each_base_with_its_own_scalar() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload =
-        build_msm_g1_payload::<Bn254ArkworksG1, Bn254ArkworksScalar>(MsmG1PayloadOverrides {
+    let payload = build_msm_g1_payload(
+        &pairing,
+        MsmG1PayloadOverrides {
             terms: Some(vec![
-                build_msm_g1_term(MsmG1TermOverrides {
-                    base: Some(build_bn254_arkworks_g1(Default::default())),
-                    scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-                        value: Some(Fr::from(1u64)),
-                    })),
-                }),
-                build_msm_g1_term(MsmG1TermOverrides {
-                    base: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
-                        value: Some(eip_196_negated_generator()),
-                    })),
-                    scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-                        value: Some(Fr::from(0u64)),
-                    })),
-                }),
+                build_msm_g1_term(
+                    &pairing,
+                    MsmG1TermOverrides {
+                        base: Some(build_bn254_arkworks_g1(Default::default())),
+                        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                            value: Some(Fr::from(1u64)),
+                        })),
+                    },
+                ),
+                build_msm_g1_term(
+                    &pairing,
+                    MsmG1TermOverrides {
+                        base: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
+                            value: Some(eip_196_negated_generator()),
+                        })),
+                        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                            value: Some(Fr::from(0u64)),
+                        })),
+                    },
+                ),
             ]),
-        });
+        },
+    );
     let Ok(success) = pairing.msm_g1(MsmG1Params, payload);
     assert_eq!(success.sum.value, eip_196_generator());
 }
@@ -304,25 +342,33 @@ fn msm_g1_pairs_each_base_with_its_own_scalar() {
 #[test]
 fn msm_g1_sums_its_terms() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload =
-        build_msm_g1_payload::<Bn254ArkworksG1, Bn254ArkworksScalar>(MsmG1PayloadOverrides {
+    let payload = build_msm_g1_payload(
+        &pairing,
+        MsmG1PayloadOverrides {
             terms: Some(vec![
-                build_msm_g1_term(MsmG1TermOverrides {
-                    base: Some(build_bn254_arkworks_g1(Default::default())),
-                    scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-                        value: Some(Fr::from(1u64)),
-                    })),
-                }),
-                build_msm_g1_term(MsmG1TermOverrides {
-                    base: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
-                        value: Some(eip_196_negated_generator()),
-                    })),
-                    scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-                        value: Some(Fr::from(1u64)),
-                    })),
-                }),
+                build_msm_g1_term(
+                    &pairing,
+                    MsmG1TermOverrides {
+                        base: Some(build_bn254_arkworks_g1(Default::default())),
+                        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                            value: Some(Fr::from(1u64)),
+                        })),
+                    },
+                ),
+                build_msm_g1_term(
+                    &pairing,
+                    MsmG1TermOverrides {
+                        base: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
+                            value: Some(eip_196_negated_generator()),
+                        })),
+                        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                            value: Some(Fr::from(1u64)),
+                        })),
+                    },
+                ),
             ]),
-        });
+        },
+    );
     let Ok(success) = pairing.msm_g1(MsmG1Params, payload);
     assert_eq!(success.sum.value, G1Affine::identity());
 }
@@ -330,7 +376,7 @@ fn msm_g1_sums_its_terms() {
 #[test]
 fn msm_g2_of_no_terms_is_the_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_msm_g2_payload::<Bn254ArkworksG2, Bn254ArkworksScalar>(Default::default());
+    let payload = build_msm_g2_payload(&pairing, Default::default());
     let Ok(success) = pairing.msm_g2(MsmG2Params, payload);
     assert_eq!(success.sum.value, G2Affine::identity());
 }
@@ -338,25 +384,33 @@ fn msm_g2_of_no_terms_is_the_identity() {
 #[test]
 fn msm_g2_pairs_each_base_with_its_own_scalar() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload =
-        build_msm_g2_payload::<Bn254ArkworksG2, Bn254ArkworksScalar>(MsmG2PayloadOverrides {
+    let payload = build_msm_g2_payload(
+        &pairing,
+        MsmG2PayloadOverrides {
             terms: Some(vec![
-                build_msm_g2_term(MsmG2TermOverrides {
-                    base: Some(build_bn254_arkworks_g2(Default::default())),
-                    scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-                        value: Some(Fr::from(1u64)),
-                    })),
-                }),
-                build_msm_g2_term(MsmG2TermOverrides {
-                    base: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
-                        value: Some(-eip_197_generator()),
-                    })),
-                    scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-                        value: Some(Fr::from(0u64)),
-                    })),
-                }),
+                build_msm_g2_term(
+                    &pairing,
+                    MsmG2TermOverrides {
+                        base: Some(build_bn254_arkworks_g2(Default::default())),
+                        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                            value: Some(Fr::from(1u64)),
+                        })),
+                    },
+                ),
+                build_msm_g2_term(
+                    &pairing,
+                    MsmG2TermOverrides {
+                        base: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
+                            value: Some(-eip_197_generator()),
+                        })),
+                        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                            value: Some(Fr::from(0u64)),
+                        })),
+                    },
+                ),
             ]),
-        });
+        },
+    );
     let Ok(success) = pairing.msm_g2(MsmG2Params, payload);
     assert_eq!(success.sum.value, eip_197_generator());
 }
@@ -364,25 +418,33 @@ fn msm_g2_pairs_each_base_with_its_own_scalar() {
 #[test]
 fn msm_g2_sums_its_terms() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload =
-        build_msm_g2_payload::<Bn254ArkworksG2, Bn254ArkworksScalar>(MsmG2PayloadOverrides {
+    let payload = build_msm_g2_payload(
+        &pairing,
+        MsmG2PayloadOverrides {
             terms: Some(vec![
-                build_msm_g2_term(MsmG2TermOverrides {
-                    base: Some(build_bn254_arkworks_g2(Default::default())),
-                    scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-                        value: Some(Fr::from(1u64)),
-                    })),
-                }),
-                build_msm_g2_term(MsmG2TermOverrides {
-                    base: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
-                        value: Some(-eip_197_generator()),
-                    })),
-                    scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-                        value: Some(Fr::from(1u64)),
-                    })),
-                }),
+                build_msm_g2_term(
+                    &pairing,
+                    MsmG2TermOverrides {
+                        base: Some(build_bn254_arkworks_g2(Default::default())),
+                        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                            value: Some(Fr::from(1u64)),
+                        })),
+                    },
+                ),
+                build_msm_g2_term(
+                    &pairing,
+                    MsmG2TermOverrides {
+                        base: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
+                            value: Some(-eip_197_generator()),
+                        })),
+                        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                            value: Some(Fr::from(1u64)),
+                        })),
+                    },
+                ),
             ]),
-        });
+        },
+    );
     let Ok(success) = pairing.msm_g2(MsmG2Params, payload);
     assert_eq!(success.sum.value, G2Affine::identity());
 }
@@ -390,9 +452,7 @@ fn msm_g2_sums_its_terms() {
 #[test]
 fn pairing_product_is_one_of_no_terms_is_true() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_pairing_product_is_one_payload::<Bn254ArkworksG1, Bn254ArkworksG2>(
-        Default::default(),
-    );
+    let payload = build_pairing_product_is_one_payload(&pairing, Default::default());
     let Ok(success) = pairing.pairing_product_is_one(PairingProductIsOneParams, payload);
     assert!(success.is_one);
 }
@@ -400,16 +460,20 @@ fn pairing_product_is_one_of_no_terms_is_true() {
 #[test]
 fn pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_pairing_product_is_one_payload::<Bn254ArkworksG1, Bn254ArkworksG2>(
+    let payload = build_pairing_product_is_one_payload(
+        &pairing,
         PairingProductIsOnePayloadOverrides {
             terms: Some(vec![
-                build_pairing_product_term(Default::default()),
-                build_pairing_product_term(PairingProductTermOverrides {
-                    g1: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
-                        value: Some(eip_196_negated_generator()),
-                    })),
-                    g2: Some(build_bn254_arkworks_g2(Default::default())),
-                }),
+                build_pairing_product_term(&pairing, Default::default()),
+                build_pairing_product_term(
+                    &pairing,
+                    PairingProductTermOverrides {
+                        g1: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
+                            value: Some(eip_196_negated_generator()),
+                        })),
+                        g2: Some(build_bn254_arkworks_g2(Default::default())),
+                    },
+                ),
             ]),
         },
     );
@@ -420,9 +484,13 @@ fn pairing_product_is_one_of_a_pairing_and_its_first_group_negation_is_true() {
 #[test]
 fn pairing_product_is_one_of_the_generators_is_false() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_pairing_product_is_one_payload::<Bn254ArkworksG1, Bn254ArkworksG2>(
+    let payload = build_pairing_product_is_one_payload(
+        &pairing,
         PairingProductIsOnePayloadOverrides {
-            terms: Some(vec![build_pairing_product_term(Default::default())]),
+            terms: Some(vec![build_pairing_product_term(
+                &pairing,
+                Default::default(),
+            )]),
         },
     );
     let Ok(success) = pairing.pairing_product_is_one(PairingProductIsOneParams, payload);
@@ -578,9 +646,12 @@ fn decode_scalar_decodes_the_largest_canonical_scalar() {
 #[test]
 fn encode_g1_writes_the_eip_196_generator() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_encode_g1_payload(EncodeG1PayloadOverrides {
-        point: Some(build_bn254_arkworks_g1(Default::default())),
-    });
+    let payload = build_encode_g1_payload(
+        &pairing,
+        EncodeG1PayloadOverrides {
+            point: Some(build_bn254_arkworks_g1(Default::default())),
+        },
+    );
     let Ok(success) = pairing.encode_g1(EncodeG1Params, payload);
     let bytes: Bn254ArkworksEncodedG1 = success.bytes;
     assert_eq!(bytes.as_ref(), vector_bytes(G1_GENERATOR_HEX).as_slice());
@@ -589,11 +660,14 @@ fn encode_g1_writes_the_eip_196_generator() {
 #[test]
 fn encode_g1_writes_the_identity_as_zero_bytes() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_encode_g1_payload(EncodeG1PayloadOverrides {
-        point: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
-            value: Some(G1Affine::identity()),
-        })),
-    });
+    let payload = build_encode_g1_payload(
+        &pairing,
+        EncodeG1PayloadOverrides {
+            point: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
+                value: Some(G1Affine::identity()),
+            })),
+        },
+    );
     let Ok(success) = pairing.encode_g1(EncodeG1Params, payload);
     assert_eq!(success.bytes.as_ref(), zero_bytes(64).as_slice());
 }
@@ -601,9 +675,12 @@ fn encode_g1_writes_the_identity_as_zero_bytes() {
 #[test]
 fn encode_g2_writes_the_eip_197_generator() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_encode_g2_payload(EncodeG2PayloadOverrides {
-        point: Some(build_bn254_arkworks_g2(Default::default())),
-    });
+    let payload = build_encode_g2_payload(
+        &pairing,
+        EncodeG2PayloadOverrides {
+            point: Some(build_bn254_arkworks_g2(Default::default())),
+        },
+    );
     let Ok(success) = pairing.encode_g2(EncodeG2Params, payload);
     let bytes: Bn254ArkworksEncodedG2 = success.bytes;
     assert_eq!(bytes.as_ref(), vector_bytes(G2_GENERATOR_HEX).as_slice());
@@ -612,11 +689,14 @@ fn encode_g2_writes_the_eip_197_generator() {
 #[test]
 fn encode_g2_writes_the_identity_as_zero_bytes() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_encode_g2_payload(EncodeG2PayloadOverrides {
-        point: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
-            value: Some(G2Affine::identity()),
-        })),
-    });
+    let payload = build_encode_g2_payload(
+        &pairing,
+        EncodeG2PayloadOverrides {
+            point: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
+                value: Some(G2Affine::identity()),
+            })),
+        },
+    );
     let Ok(success) = pairing.encode_g2(EncodeG2Params, payload);
     assert_eq!(success.bytes.as_ref(), zero_bytes(128).as_slice());
 }
@@ -624,11 +704,14 @@ fn encode_g2_writes_the_identity_as_zero_bytes() {
 #[test]
 fn encode_scalar_writes_the_largest_canonical_scalar() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_encode_scalar_payload(EncodeScalarPayloadOverrides {
-        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(-Fr::from(1u64)),
-        })),
-    });
+    let payload = build_encode_scalar_payload(
+        &pairing,
+        EncodeScalarPayloadOverrides {
+            scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(-Fr::from(1u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.encode_scalar(EncodeScalarParams, payload);
     let bytes: &Bn254ArkworksEncodedScalar = success.bytes.expose();
     assert_eq!(
@@ -640,9 +723,10 @@ fn encode_scalar_writes_the_largest_canonical_scalar() {
 #[test]
 fn sample_from_uniform_bytes_rejects_a_wrong_length() {
     let payload = build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-        uniform: Some(build_secret(SecretConstructorParamsOverrides {
-            value: Some(zero_bytes(63)),
-        })),
+        uniform: Some(build_secret(
+            zero_bytes(63),
+            SecretConstructorParamsOverrides,
+        )),
     });
     let result = Bn254ArkworksScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload);
     assert_eq!(
@@ -657,9 +741,10 @@ fn sample_from_uniform_bytes_rejects_a_wrong_length() {
 #[test]
 fn sample_from_uniform_bytes_reduces_the_group_order_to_zero() {
     let payload = build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-        uniform: Some(build_secret(SecretConstructorParamsOverrides {
-            value: Some(vector_bytes(UNIFORM_GROUP_ORDER_HEX)),
-        })),
+        uniform: Some(build_secret(
+            vector_bytes(UNIFORM_GROUP_ORDER_HEX),
+            SecretConstructorParamsOverrides,
+        )),
     });
     let success =
         Bn254ArkworksScalar::sample_from_uniform_bytes(SampleUniformScalarParams, payload)
@@ -670,14 +755,17 @@ fn sample_from_uniform_bytes_reduces_the_group_order_to_zero() {
 #[test]
 fn add_scalar_of_two_and_three_is_five() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_add_scalar_payload(AddScalarPayloadOverrides {
-        left: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(2u64)),
-        })),
-        right: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(3u64)),
-        })),
-    });
+    let payload = build_add_scalar_payload(
+        &pairing,
+        AddScalarPayloadOverrides {
+            left: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(2u64)),
+            })),
+            right: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(3u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.add_scalar(AddScalarParams, payload);
     assert_eq!(success.sum.value, Fr::from(5u64));
 }
@@ -685,14 +773,17 @@ fn add_scalar_of_two_and_three_is_five() {
 #[test]
 fn add_scalar_reduces_modulo_the_group_order() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_add_scalar_payload(AddScalarPayloadOverrides {
-        left: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(scalar_value(GROUP_ORDER_MINUS_ONE_HEX)),
-        })),
-        right: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(2u64)),
-        })),
-    });
+    let payload = build_add_scalar_payload(
+        &pairing,
+        AddScalarPayloadOverrides {
+            left: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(scalar_value(GROUP_ORDER_MINUS_ONE_HEX)),
+            })),
+            right: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(2u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.add_scalar(AddScalarParams, payload);
     assert_eq!(success.sum.value, Fr::from(1u64));
 }
@@ -700,14 +791,17 @@ fn add_scalar_reduces_modulo_the_group_order() {
 #[test]
 fn mul_scalar_of_two_and_three_is_six() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_mul_scalar_payload(MulScalarPayloadOverrides {
-        left: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(2u64)),
-        })),
-        right: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(3u64)),
-        })),
-    });
+    let payload = build_mul_scalar_payload(
+        &pairing,
+        MulScalarPayloadOverrides {
+            left: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(2u64)),
+            })),
+            right: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(3u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.mul_scalar(MulScalarParams, payload);
     assert_eq!(success.product.value, Fr::from(6u64));
 }
@@ -715,14 +809,17 @@ fn mul_scalar_of_two_and_three_is_six() {
 #[test]
 fn mul_scalar_reduces_modulo_the_group_order() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_mul_scalar_payload(MulScalarPayloadOverrides {
-        left: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(scalar_value(GROUP_ORDER_MINUS_ONE_HEX)),
-        })),
-        right: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(2u64)),
-        })),
-    });
+    let payload = build_mul_scalar_payload(
+        &pairing,
+        MulScalarPayloadOverrides {
+            left: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(scalar_value(GROUP_ORDER_MINUS_ONE_HEX)),
+            })),
+            right: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(2u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.mul_scalar(MulScalarParams, payload);
     assert_eq!(
         success.product.value,
@@ -733,11 +830,14 @@ fn mul_scalar_reduces_modulo_the_group_order() {
 #[test]
 fn neg_scalar_of_one_is_the_group_order_minus_one() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_neg_scalar_payload(NegScalarPayloadOverrides {
-        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(1u64)),
-        })),
-    });
+    let payload = build_neg_scalar_payload(
+        &pairing,
+        NegScalarPayloadOverrides {
+            scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(1u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.neg_scalar(NegScalarParams, payload);
     assert_eq!(
         success.negation.value,
@@ -748,11 +848,14 @@ fn neg_scalar_of_one_is_the_group_order_minus_one() {
 #[test]
 fn neg_scalar_of_zero_is_zero() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_neg_scalar_payload(NegScalarPayloadOverrides {
-        scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
-            value: Some(Fr::from(0u64)),
-        })),
-    });
+    let payload = build_neg_scalar_payload(
+        &pairing,
+        NegScalarPayloadOverrides {
+            scalar: Some(build_bn254_arkworks_scalar(Bn254ArkworksScalarOverrides {
+                value: Some(Fr::from(0u64)),
+            })),
+        },
+    );
     let Ok(success) = pairing.neg_scalar(NegScalarParams, payload);
     assert_eq!(success.negation.value, Fr::from(0u64));
 }
@@ -760,9 +863,12 @@ fn neg_scalar_of_zero_is_zero() {
 #[test]
 fn neg_g1_of_the_generator_is_the_negated_generator() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_neg_g1_payload(NegG1PayloadOverrides {
-        point: Some(build_bn254_arkworks_g1(Default::default())),
-    });
+    let payload = build_neg_g1_payload(
+        &pairing,
+        NegG1PayloadOverrides {
+            point: Some(build_bn254_arkworks_g1(Default::default())),
+        },
+    );
     let Ok(success) = pairing.neg_g1(NegG1Params, payload);
     assert_eq!(success.negation.value, eip_196_negated_generator());
 }
@@ -770,11 +876,14 @@ fn neg_g1_of_the_generator_is_the_negated_generator() {
 #[test]
 fn neg_g1_of_the_identity_is_the_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_neg_g1_payload(NegG1PayloadOverrides {
-        point: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
-            value: Some(G1Affine::identity()),
-        })),
-    });
+    let payload = build_neg_g1_payload(
+        &pairing,
+        NegG1PayloadOverrides {
+            point: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
+                value: Some(G1Affine::identity()),
+            })),
+        },
+    );
     let Ok(success) = pairing.neg_g1(NegG1Params, payload);
     assert_eq!(success.negation.value, G1Affine::identity());
 }
@@ -782,9 +891,12 @@ fn neg_g1_of_the_identity_is_the_identity() {
 #[test]
 fn neg_g2_negates_each_y_coefficient_modulo_the_base_field() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_neg_g2_payload(NegG2PayloadOverrides {
-        point: Some(build_bn254_arkworks_g2(Default::default())),
-    });
+    let payload = build_neg_g2_payload(
+        &pairing,
+        NegG2PayloadOverrides {
+            point: Some(build_bn254_arkworks_g2(Default::default())),
+        },
+    );
     let Ok(success) = pairing.neg_g2(NegG2Params, payload);
     let (x, y) = success
         .negation
@@ -808,11 +920,14 @@ fn neg_g2_negates_each_y_coefficient_modulo_the_base_field() {
 #[test]
 fn neg_g2_of_the_identity_is_the_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_neg_g2_payload(NegG2PayloadOverrides {
-        point: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
-            value: Some(G2Affine::identity()),
-        })),
-    });
+    let payload = build_neg_g2_payload(
+        &pairing,
+        NegG2PayloadOverrides {
+            point: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
+                value: Some(G2Affine::identity()),
+            })),
+        },
+    );
     let Ok(success) = pairing.neg_g2(NegG2Params, payload);
     assert_eq!(success.negation.value, G2Affine::identity());
 }
@@ -820,11 +935,14 @@ fn neg_g2_of_the_identity_is_the_identity() {
 #[test]
 fn is_identity_g1_is_true_for_the_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_is_identity_g1_payload(IsIdentityG1PayloadOverrides {
-        point: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
-            value: Some(G1Affine::identity()),
-        })),
-    });
+    let payload = build_is_identity_g1_payload(
+        &pairing,
+        IsIdentityG1PayloadOverrides {
+            point: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
+                value: Some(G1Affine::identity()),
+            })),
+        },
+    );
     let Ok(success) = pairing.is_identity_g1(IsIdentityG1Params, payload);
     assert!(success.is_identity);
 }
@@ -832,9 +950,12 @@ fn is_identity_g1_is_true_for_the_identity() {
 #[test]
 fn is_identity_g1_is_false_for_the_generator() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_is_identity_g1_payload(IsIdentityG1PayloadOverrides {
-        point: Some(build_bn254_arkworks_g1(Default::default())),
-    });
+    let payload = build_is_identity_g1_payload(
+        &pairing,
+        IsIdentityG1PayloadOverrides {
+            point: Some(build_bn254_arkworks_g1(Default::default())),
+        },
+    );
     let Ok(success) = pairing.is_identity_g1(IsIdentityG1Params, payload);
     assert!(!success.is_identity);
 }
@@ -842,11 +963,14 @@ fn is_identity_g1_is_false_for_the_generator() {
 #[test]
 fn is_identity_g2_is_true_for_the_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_is_identity_g2_payload(IsIdentityG2PayloadOverrides {
-        point: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
-            value: Some(G2Affine::identity()),
-        })),
-    });
+    let payload = build_is_identity_g2_payload(
+        &pairing,
+        IsIdentityG2PayloadOverrides {
+            point: Some(build_bn254_arkworks_g2(Bn254ArkworksG2Overrides {
+                value: Some(G2Affine::identity()),
+            })),
+        },
+    );
     let Ok(success) = pairing.is_identity_g2(IsIdentityG2Params, payload);
     assert!(success.is_identity);
 }
@@ -854,9 +978,12 @@ fn is_identity_g2_is_true_for_the_identity() {
 #[test]
 fn is_identity_g2_is_false_for_the_generator() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_is_identity_g2_payload(IsIdentityG2PayloadOverrides {
-        point: Some(build_bn254_arkworks_g2(Default::default())),
-    });
+    let payload = build_is_identity_g2_payload(
+        &pairing,
+        IsIdentityG2PayloadOverrides {
+            point: Some(build_bn254_arkworks_g2(Default::default())),
+        },
+    );
     let Ok(success) = pairing.is_identity_g2(IsIdentityG2Params, payload);
     assert!(!success.is_identity);
 }
@@ -864,8 +991,7 @@ fn is_identity_g2_is_false_for_the_generator() {
 #[test]
 fn pairing_product_of_no_terms_is_the_target_group_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload =
-        build_pairing_product_payload::<Bn254ArkworksG1, Bn254ArkworksG2>(Default::default());
+    let payload = build_pairing_product_payload(&pairing, Default::default());
     let Ok(success) = pairing.pairing_product(PairingProductParams, payload);
     assert!(success.product.value.is_zero());
 }
@@ -873,9 +999,13 @@ fn pairing_product_of_no_terms_is_the_target_group_identity() {
 #[test]
 fn pairing_product_of_the_generators_is_not_the_target_group_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_pairing_product_payload::<Bn254ArkworksG1, Bn254ArkworksG2>(
+    let payload = build_pairing_product_payload(
+        &pairing,
         PairingProductPayloadOverrides {
-            terms: Some(vec![build_pairing_product_term(Default::default())]),
+            terms: Some(vec![build_pairing_product_term(
+                &pairing,
+                Default::default(),
+            )]),
         },
     );
     let Ok(success) = pairing.pairing_product(PairingProductParams, payload);
@@ -885,9 +1015,11 @@ fn pairing_product_of_the_generators_is_not_the_target_group_identity() {
 #[test]
 fn pairing_product_is_bilinear() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_pairing_product_payload::<Bn254ArkworksG1, Bn254ArkworksG2>(
+    let payload = build_pairing_product_payload(
+        &pairing,
         PairingProductPayloadOverrides {
             terms: Some(vec![build_pairing_product_term(
+                &pairing,
                 PairingProductTermOverrides {
                     g1: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
                         value: Some(eip_196_doubled_generator()),
@@ -907,11 +1039,12 @@ fn pairing_product_is_bilinear() {
 #[test]
 fn pairing_product_multiplies_its_terms() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_pairing_product_payload::<Bn254ArkworksG1, Bn254ArkworksG2>(
+    let payload = build_pairing_product_payload(
+        &pairing,
         PairingProductPayloadOverrides {
             terms: Some(vec![
-                build_pairing_product_term(Default::default()),
-                build_pairing_product_term(Default::default()),
+                build_pairing_product_term(&pairing, Default::default()),
+                build_pairing_product_term(&pairing, Default::default()),
             ]),
         },
     );
@@ -925,16 +1058,20 @@ fn pairing_product_multiplies_its_terms() {
 #[test]
 fn pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group_identity() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_pairing_product_payload::<Bn254ArkworksG1, Bn254ArkworksG2>(
+    let payload = build_pairing_product_payload(
+        &pairing,
         PairingProductPayloadOverrides {
             terms: Some(vec![
-                build_pairing_product_term(Default::default()),
-                build_pairing_product_term(PairingProductTermOverrides {
-                    g1: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
-                        value: Some(eip_196_negated_generator()),
-                    })),
-                    g2: Some(build_bn254_arkworks_g2(Default::default())),
-                }),
+                build_pairing_product_term(&pairing, Default::default()),
+                build_pairing_product_term(
+                    &pairing,
+                    PairingProductTermOverrides {
+                        g1: Some(build_bn254_arkworks_g1(Bn254ArkworksG1Overrides {
+                            value: Some(eip_196_negated_generator()),
+                        })),
+                        g2: Some(build_bn254_arkworks_g2(Default::default())),
+                    },
+                ),
             ]),
         },
     );
@@ -945,9 +1082,13 @@ fn pairing_product_of_a_pairing_and_its_first_group_negation_is_the_target_group
 #[test]
 fn pairing_product_of_the_generators_equals_the_definition() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_pairing_product_payload::<Bn254ArkworksG1, Bn254ArkworksG2>(
+    let payload = build_pairing_product_payload(
+        &pairing,
         PairingProductPayloadOverrides {
-            terms: Some(vec![build_pairing_product_term(Default::default())]),
+            terms: Some(vec![build_pairing_product_term(
+                &pairing,
+                Default::default(),
+            )]),
         },
     );
     let Ok(success) = pairing.pairing_product(PairingProductParams, payload);
@@ -960,11 +1101,14 @@ fn pairing_product_of_the_generators_equals_the_definition() {
 #[test]
 fn encode_gt_writes_the_target_group_identity_with_c0_c0_c0_first() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_encode_gt_payload(EncodeGtPayloadOverrides {
-        value: Some(build_bn254_arkworks_gt(Bn254ArkworksGtOverrides {
-            value: Some(PairingOutput(Fq12::ONE)),
-        })),
-    });
+    let payload = build_encode_gt_payload(
+        &pairing,
+        EncodeGtPayloadOverrides {
+            value: Some(build_bn254_arkworks_gt(Bn254ArkworksGtOverrides {
+                value: Some(PairingOutput(Fq12::ONE)),
+            })),
+        },
+    );
     let Ok(success) = pairing.encode_gt(EncodeGtParams, payload);
     let bytes: &Bn254ArkworksEncodedGt = success.bytes.expose();
     assert_eq!(bytes.as_ref(), gt_identity_encoding().as_slice());
@@ -1033,11 +1177,14 @@ fn g2_outside_subgroup_encoding_has_a_real_first_coordinate_and_the_lesser_root(
 #[test]
 fn encode_gt_writes_the_twelve_coefficients_in_tower_order() {
     let pairing = build_bn254_arkworks_pairing();
-    let payload = build_encode_gt_payload(EncodeGtPayloadOverrides {
-        value: Some(build_bn254_arkworks_gt(Bn254ArkworksGtOverrides {
-            value: Some(gt_with_sequential_coefficients()),
-        })),
-    });
+    let payload = build_encode_gt_payload(
+        &pairing,
+        EncodeGtPayloadOverrides {
+            value: Some(build_bn254_arkworks_gt(Bn254ArkworksGtOverrides {
+                value: Some(gt_with_sequential_coefficients()),
+            })),
+        },
+    );
     let Ok(success) = pairing.encode_gt(EncodeGtParams, payload);
     assert_eq!(
         success.bytes.expose().as_ref(),

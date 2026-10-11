@@ -2,10 +2,9 @@
 
 use super::create_pairing;
 use super::provides::{
-    CreatePairingDepsOverrides, CreatePairingErrorReturn, CreatePairingParamsOverrides,
-    CreatePairingPayload, MockIPairingAdapterFailureMode, MockIPairingConsumer, PairingConcrete,
-    PrecompileEncoding, TargetGroupEncodingIdentifier, build_create_pairing_deps,
-    build_create_pairing_params,
+    CreatePairingErrorReturn, CreatePairingParamsOverrides, CreatePairingPayload,
+    MockIPairingAdapterFailureMode, MockIPairingConsumer, PairingConcrete, PrecompileEncoding,
+    TargetGroupEncodingIdentifier, build_create_pairing_deps, build_create_pairing_params,
 };
 
 /// Contract: given `params.concrete` is `Bn254Arkworks`, its declared precompile encoding
@@ -19,8 +18,7 @@ use super::provides::{
 #[test]
 fn create_pairing_admits_the_bn254_arkworks_concrete() {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Arkworks),
         ..Default::default()
@@ -44,8 +42,7 @@ fn create_pairing_admits_the_bn254_arkworks_concrete() {
 #[test]
 fn create_pairing_admits_the_bn254_halo2curves_concrete() {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Halo2curves),
         ..Default::default()
@@ -69,8 +66,7 @@ fn create_pairing_admits_the_bn254_halo2curves_concrete() {
 #[test]
 fn create_pairing_admits_the_bls12_381_arkworks_concrete() {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Arkworks),
         ..Default::default()
@@ -94,8 +90,7 @@ fn create_pairing_admits_the_bls12_381_arkworks_concrete() {
 #[test]
 fn create_pairing_admits_the_bls12_381_halo2curves_concrete() {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Halo2curves),
         ..Default::default()
@@ -120,8 +115,7 @@ fn create_pairing_admits_the_bls12_381_halo2curves_concrete() {
 #[test]
 fn create_pairing_admits_the_mock_concrete() {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::Succeeds,
@@ -147,8 +141,7 @@ fn create_pairing_admits_the_mock_concrete() {
 #[test]
 fn create_pairing_refuses_the_bn254_arkworks_concrete_whose_encoding_the_chain_does_not_deploy() {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Arkworks),
         supported_encodings: Some(vec![PrecompileEncoding::Eip2537]),
@@ -177,8 +170,7 @@ fn create_pairing_refuses_the_bn254_arkworks_concrete_whose_encoding_the_chain_d
 fn create_pairing_refuses_the_bn254_halo2curves_concrete_whose_encoding_the_chain_does_not_deploy()
 {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Halo2curves),
         supported_encodings: Some(vec![PrecompileEncoding::Eip2537]),
@@ -208,8 +200,7 @@ fn create_pairing_refuses_the_bn254_halo2curves_concrete_whose_encoding_the_chai
 fn create_pairing_refuses_the_bls12_381_arkworks_concrete_whose_encoding_the_chain_does_not_deploy()
 {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Arkworks),
         supported_encodings: Some(vec![PrecompileEncoding::Eip196Eip197]),
@@ -239,8 +230,7 @@ fn create_pairing_refuses_the_bls12_381_arkworks_concrete_whose_encoding_the_cha
 fn create_pairing_refuses_the_bls12_381_halo2curves_concrete_whose_encoding_the_chain_does_not_deploy()
  {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Halo2curves),
         supported_encodings: Some(vec![PrecompileEncoding::Eip196Eip197]),
@@ -269,8 +259,7 @@ fn create_pairing_refuses_the_bls12_381_halo2curves_concrete_whose_encoding_the_
 #[test]
 fn create_pairing_refuses_the_mock_concrete_whose_encoding_the_chain_does_not_deploy() {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::Succeeds,
@@ -302,8 +291,7 @@ fn create_pairing_refuses_the_mock_concrete_whose_encoding_the_chain_does_not_de
 fn create_pairing_refuses_the_bn254_arkworks_concrete_whose_target_group_encoding_the_suite_does_not_require()
  {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Arkworks),
         target_group_encoding: Some(TargetGroupEncodingIdentifier::Bls12381V1),
@@ -333,8 +321,7 @@ fn create_pairing_refuses_the_bn254_arkworks_concrete_whose_target_group_encodin
 fn create_pairing_refuses_the_bn254_halo2curves_concrete_whose_target_group_encoding_the_suite_does_not_require()
  {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Halo2curves),
         target_group_encoding: Some(TargetGroupEncodingIdentifier::Bls12381V1),
@@ -364,8 +351,7 @@ fn create_pairing_refuses_the_bn254_halo2curves_concrete_whose_target_group_enco
 fn create_pairing_refuses_the_bls12_381_arkworks_concrete_whose_target_group_encoding_the_suite_does_not_require()
  {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Arkworks),
         target_group_encoding: Some(TargetGroupEncodingIdentifier::Bn254V1),
@@ -395,8 +381,7 @@ fn create_pairing_refuses_the_bls12_381_arkworks_concrete_whose_target_group_enc
 fn create_pairing_refuses_the_bls12_381_halo2curves_concrete_whose_target_group_encoding_the_suite_does_not_require()
  {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Halo2curves),
         target_group_encoding: Some(TargetGroupEncodingIdentifier::Bn254V1),
@@ -427,8 +412,7 @@ fn create_pairing_refuses_the_bls12_381_halo2curves_concrete_whose_target_group_
 fn create_pairing_refuses_the_mock_concrete_whose_target_group_encoding_the_suite_does_not_require()
 {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::Succeeds,
@@ -461,8 +445,7 @@ fn create_pairing_refuses_the_mock_concrete_whose_target_group_encoding_the_suit
 fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_bn254_arkworks_concrete()
  {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Arkworks),
         supported_encodings: Some(vec![PrecompileEncoding::Eip2537]),
@@ -493,8 +476,7 @@ fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_
 fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_bn254_halo2curves_concrete()
  {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Halo2curves),
         supported_encodings: Some(vec![PrecompileEncoding::Eip2537]),
@@ -525,8 +507,7 @@ fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_
 fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_bls12_381_arkworks_concrete()
  {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Arkworks),
         supported_encodings: Some(vec![PrecompileEncoding::Eip196Eip197]),
@@ -557,8 +538,7 @@ fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_
 fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_bls12_381_halo2curves_concrete()
  {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Halo2curves),
         supported_encodings: Some(vec![PrecompileEncoding::Eip196Eip197]),
@@ -589,8 +569,7 @@ fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_
 #[test]
 fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_mock_concrete() {
     // Arrange
-    let deps =
-        build_create_pairing_deps::<MockIPairingConsumer>(CreatePairingDepsOverrides::default());
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::Succeeds,

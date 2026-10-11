@@ -30,38 +30,6 @@ use num_bigint::BigUint;
 #[cfg(test)]
 use zeroize::ZeroizeOnDrop;
 
-impl Default for Bn254ArkworksScalar {
-    fn default() -> Self {
-        Bn254ArkworksScalar {
-            value: Fr::from(1u64),
-        }
-    }
-}
-
-impl Default for Bn254ArkworksG1 {
-    fn default() -> Self {
-        Bn254ArkworksG1 {
-            value: G1Affine::generator(),
-        }
-    }
-}
-
-impl Default for Bn254ArkworksG2 {
-    fn default() -> Self {
-        Bn254ArkworksG2 {
-            value: G2Affine::generator(),
-        }
-    }
-}
-
-impl Default for Bn254ArkworksGt {
-    fn default() -> Self {
-        Bn254ArkworksGt {
-            value: Bn254::pairing(G1Affine::generator(), G2Affine::generator()),
-        }
-    }
-}
-
 #[derive(Default)]
 pub(crate) struct Bn254ArkworksScalarOverrides {
     pub value: Option<Fr>,
@@ -71,9 +39,7 @@ pub(crate) fn build_bn254_arkworks_scalar(
     overrides: Bn254ArkworksScalarOverrides,
 ) -> Bn254ArkworksScalar {
     Bn254ArkworksScalar {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bn254ArkworksScalar::default().value),
+        value: overrides.value.unwrap_or_else(|| Fr::from(1u64)),
     }
 }
 
@@ -84,9 +50,7 @@ pub(crate) struct Bn254ArkworksG1Overrides {
 
 pub(crate) fn build_bn254_arkworks_g1(overrides: Bn254ArkworksG1Overrides) -> Bn254ArkworksG1 {
     Bn254ArkworksG1 {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bn254ArkworksG1::default().value),
+        value: overrides.value.unwrap_or_else(G1Affine::generator),
     }
 }
 
@@ -97,9 +61,7 @@ pub(crate) struct Bn254ArkworksG2Overrides {
 
 pub(crate) fn build_bn254_arkworks_g2(overrides: Bn254ArkworksG2Overrides) -> Bn254ArkworksG2 {
     Bn254ArkworksG2 {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bn254ArkworksG2::default().value),
+        value: overrides.value.unwrap_or_else(G2Affine::generator),
     }
 }
 
@@ -112,7 +74,7 @@ pub(crate) fn build_bn254_arkworks_gt(overrides: Bn254ArkworksGtOverrides) -> Bn
     Bn254ArkworksGt {
         value: overrides
             .value
-            .unwrap_or_else(|| Bn254ArkworksGt::default().value),
+            .unwrap_or_else(|| Bn254::pairing(G1Affine::generator(), G2Affine::generator())),
     }
 }
 

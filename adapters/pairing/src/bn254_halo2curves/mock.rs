@@ -36,36 +36,6 @@ use num_bigint::BigUint;
 #[cfg(test)]
 use zeroize::ZeroizeOnDrop;
 
-impl Default for Bn254Halo2curvesScalar {
-    fn default() -> Self {
-        Bn254Halo2curvesScalar { value: Fr::ONE }
-    }
-}
-
-impl Default for Bn254Halo2curvesG1 {
-    fn default() -> Self {
-        Bn254Halo2curvesG1 {
-            value: G1Affine::generator(),
-        }
-    }
-}
-
-impl Default for Bn254Halo2curvesG2 {
-    fn default() -> Self {
-        Bn254Halo2curvesG2 {
-            value: G2Affine::generator(),
-        }
-    }
-}
-
-impl Default for Bn254Halo2curvesGt {
-    fn default() -> Self {
-        Bn254Halo2curvesGt {
-            value: Bn256::pairing(&G1Affine::generator(), &G2Affine::generator()),
-        }
-    }
-}
-
 #[derive(Default)]
 pub(crate) struct Bn254Halo2curvesScalarOverrides {
     pub value: Option<Fr>,
@@ -75,9 +45,7 @@ pub(crate) fn build_bn254_halo2curves_scalar(
     overrides: Bn254Halo2curvesScalarOverrides,
 ) -> Bn254Halo2curvesScalar {
     Bn254Halo2curvesScalar {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bn254Halo2curvesScalar::default().value),
+        value: overrides.value.unwrap_or(Fr::ONE),
     }
 }
 
@@ -90,9 +58,7 @@ pub(crate) fn build_bn254_halo2curves_g1(
     overrides: Bn254Halo2curvesG1Overrides,
 ) -> Bn254Halo2curvesG1 {
     Bn254Halo2curvesG1 {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bn254Halo2curvesG1::default().value),
+        value: overrides.value.unwrap_or_else(G1Affine::generator),
     }
 }
 
@@ -105,9 +71,7 @@ pub(crate) fn build_bn254_halo2curves_g2(
     overrides: Bn254Halo2curvesG2Overrides,
 ) -> Bn254Halo2curvesG2 {
     Bn254Halo2curvesG2 {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bn254Halo2curvesG2::default().value),
+        value: overrides.value.unwrap_or_else(G2Affine::generator),
     }
 }
 
@@ -122,7 +86,7 @@ pub(crate) fn build_bn254_halo2curves_gt(
     Bn254Halo2curvesGt {
         value: overrides
             .value
-            .unwrap_or_else(|| Bn254Halo2curvesGt::default().value),
+            .unwrap_or_else(|| Bn256::pairing(&G1Affine::generator(), &G2Affine::generator())),
     }
 }
 

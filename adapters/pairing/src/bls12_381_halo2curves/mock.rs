@@ -36,36 +36,6 @@ use num_bigint::BigUint;
 #[cfg(test)]
 use zeroize::ZeroizeOnDrop;
 
-impl Default for Bls12381Halo2curvesScalar {
-    fn default() -> Self {
-        Bls12381Halo2curvesScalar { value: Fr::ONE }
-    }
-}
-
-impl Default for Bls12381Halo2curvesG1 {
-    fn default() -> Self {
-        Bls12381Halo2curvesG1 {
-            value: G1Affine::generator(),
-        }
-    }
-}
-
-impl Default for Bls12381Halo2curvesG2 {
-    fn default() -> Self {
-        Bls12381Halo2curvesG2 {
-            value: G2Affine::generator(),
-        }
-    }
-}
-
-impl Default for Bls12381Halo2curvesGt {
-    fn default() -> Self {
-        Bls12381Halo2curvesGt {
-            value: Bls12381::pairing(&G1Affine::generator(), &G2Affine::generator()),
-        }
-    }
-}
-
 #[derive(Default)]
 pub(crate) struct Bls12381Halo2curvesScalarOverrides {
     pub value: Option<Fr>,
@@ -75,9 +45,7 @@ pub(crate) fn build_bls12_381_halo2curves_scalar(
     overrides: Bls12381Halo2curvesScalarOverrides,
 ) -> Bls12381Halo2curvesScalar {
     Bls12381Halo2curvesScalar {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bls12381Halo2curvesScalar::default().value),
+        value: overrides.value.unwrap_or(Fr::ONE),
     }
 }
 
@@ -90,9 +58,7 @@ pub(crate) fn build_bls12_381_halo2curves_g1(
     overrides: Bls12381Halo2curvesG1Overrides,
 ) -> Bls12381Halo2curvesG1 {
     Bls12381Halo2curvesG1 {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bls12381Halo2curvesG1::default().value),
+        value: overrides.value.unwrap_or_else(G1Affine::generator),
     }
 }
 
@@ -105,9 +71,7 @@ pub(crate) fn build_bls12_381_halo2curves_g2(
     overrides: Bls12381Halo2curvesG2Overrides,
 ) -> Bls12381Halo2curvesG2 {
     Bls12381Halo2curvesG2 {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bls12381Halo2curvesG2::default().value),
+        value: overrides.value.unwrap_or_else(G2Affine::generator),
     }
 }
 
@@ -122,7 +86,7 @@ pub(crate) fn build_bls12_381_halo2curves_gt(
     Bls12381Halo2curvesGt {
         value: overrides
             .value
-            .unwrap_or_else(|| Bls12381Halo2curvesGt::default().value),
+            .unwrap_or_else(|| Bls12381::pairing(&G1Affine::generator(), &G2Affine::generator())),
     }
 }
 

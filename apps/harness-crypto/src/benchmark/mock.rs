@@ -12,45 +12,31 @@ use super::interface::{
 use core::num::NonZeroU32;
 use core::time::Duration;
 use pairing::{MockIPairingAdapterFailureMode, PairingConcrete};
-use random::{
-    CreateRandomSourceDeps, CreateRandomSourcePayload, IRandomSourceAdapter,
-    build_create_random_source_params, create_random_source,
-};
+use random::IRandomSourceAdapter;
 
 #[derive(Default)]
 pub struct PairingBenchmarkConstructorParamsOverrides {
-    pub random: Option<Box<dyn IRandomSourceAdapter>>,
     pub iterations: Option<NonZeroU32>,
 }
 
 pub fn build_pairing_benchmark_constructor_params(
+    random: Box<dyn IRandomSourceAdapter>,
     overrides: PairingBenchmarkConstructorParamsOverrides,
 ) -> PairingBenchmarkConstructorParams {
     PairingBenchmarkConstructorParams {
-        random: overrides.random.unwrap_or_else(|| {
-            let Ok(created) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            created.adapter
-        }),
+        random,
         iterations: overrides.iterations.unwrap_or(NonZeroU32::MIN),
     }
 }
 
 pub fn build_pairing_benchmark(
+    random: Box<dyn IRandomSourceAdapter>,
     overrides: PairingBenchmarkConstructorParamsOverrides,
 ) -> PairingBenchmark {
-    let Ok(benchmark) =
-        PairingBenchmark::try_new(build_pairing_benchmark_constructor_params(overrides));
+    let Ok(benchmark) = PairingBenchmark::try_new(build_pairing_benchmark_constructor_params(
+        random, overrides,
+    ));
     benchmark
-}
-
-impl Default for PairingBenchmark {
-    fn default() -> Self {
-        build_pairing_benchmark(Default::default())
-    }
 }
 
 #[derive(Default)]

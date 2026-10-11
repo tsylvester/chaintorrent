@@ -2,15 +2,11 @@
 #![allow(clippy::expect_used)]
 
 use core::time::Duration;
-use harness_crypto::{
-    PairingBenchmarkConstructorParamsOverrides, PairingBenchmarkErrorReturn,
-    build_pairing_benchmark,
-};
+use harness_crypto::{PairingBenchmarkErrorReturn, build_pairing_benchmark};
 use pairing::{
-    CreatePairingDepsOverrides, CreatePairingParamsOverrides, CreatePairingPayload,
-    MockIPairingAdapterFailureMode, PAIRING_CONCRETES, PairingConcrete,
-    SampleUniformScalarErrorReturn, build_create_pairing_deps, build_create_pairing_params,
-    create_pairing,
+    CreatePairingParamsOverrides, CreatePairingPayload, MockIPairingAdapterFailureMode,
+    PAIRING_CONCRETES, PairingConcrete, SampleUniformScalarErrorReturn, build_create_pairing_deps,
+    build_create_pairing_params, create_pairing,
 };
 use random::{
     CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
@@ -43,13 +39,8 @@ fn the_consumer_receives_the_concrete_the_params_name() {
             }),
             CreateRandomSourcePayload,
         );
-        let benchmark = build_pairing_benchmark(PairingBenchmarkConstructorParamsOverrides {
-            random: Some(created.adapter),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides {
-            consumer: Some(benchmark),
-        });
+        let benchmark = build_pairing_benchmark(created.adapter, Default::default());
+        let deps = build_create_pairing_deps(benchmark, Default::default());
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
             concrete: Some(*concrete),
             ..Default::default()
@@ -96,13 +87,8 @@ fn a_sampled_scalar_encodes_through_secret() {
             }),
             CreateRandomSourcePayload,
         );
-        let benchmark = build_pairing_benchmark(PairingBenchmarkConstructorParamsOverrides {
-            random: Some(created.adapter),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides {
-            consumer: Some(benchmark),
-        });
+        let benchmark = build_pairing_benchmark(created.adapter, Default::default());
+        let deps = build_create_pairing_deps(benchmark, Default::default());
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
             concrete: Some(*concrete),
             ..Default::default()
@@ -146,13 +132,8 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
         }),
         CreateRandomSourcePayload,
     );
-    let benchmark = build_pairing_benchmark(PairingBenchmarkConstructorParamsOverrides {
-        random: Some(created.adapter),
-        ..Default::default()
-    });
-    let deps = build_create_pairing_deps(CreatePairingDepsOverrides {
-        consumer: Some(benchmark),
-    });
+    let benchmark = build_pairing_benchmark(created.adapter, Default::default());
+    let deps = build_create_pairing_deps(benchmark, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::SampleScalarWrongLength,
@@ -200,13 +181,8 @@ fn every_operation_is_timed_on_every_concrete() {
             }),
             CreateRandomSourcePayload,
         );
-        let benchmark = build_pairing_benchmark(PairingBenchmarkConstructorParamsOverrides {
-            random: Some(created.adapter),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides {
-            consumer: Some(benchmark),
-        });
+        let benchmark = build_pairing_benchmark(created.adapter, Default::default());
+        let deps = build_create_pairing_deps(benchmark, Default::default());
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
             concrete: Some(*concrete),
             ..Default::default()

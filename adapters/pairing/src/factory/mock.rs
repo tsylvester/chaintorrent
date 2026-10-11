@@ -76,245 +76,456 @@ pub fn build_pairing_declaration(overrides: PairingDeclarationOverrides) -> Pair
     }
 }
 
-#[derive(Default)]
+fn default_g1<P: IPairingAdapter>(pairing: &P) -> P::G1 {
+    let Ok(generator) = pairing.g1_generator(G1GeneratorParams, G1GeneratorPayload);
+    generator.point
+}
+
+fn default_g2<P: IPairingAdapter>(pairing: &P) -> P::G2 {
+    let Ok(generator) = pairing.g2_generator(G2GeneratorParams, G2GeneratorPayload);
+    generator.point
+}
+
+fn default_scalar_secret<P: IPairingAdapter>() -> Secret<P::Scalar> {
+    P::Scalar::sample_from_uniform_bytes(
+        SampleUniformScalarParams,
+        SampleUniformScalarPayload {
+            uniform: build_secret(
+                vec![1u8; P::Scalar::UNIFORM_BYTES_LENGTH],
+                SecretConstructorParamsOverrides,
+            ),
+        },
+    )
+    .expect("a uniform input of UNIFORM_BYTES_LENGTH samples a scalar")
+    .scalar
+}
+
+fn default_scalar<P: IPairingAdapter>() -> P::Scalar {
+    default_scalar_secret::<P>().expose().clone()
+}
+
+fn default_encoded_g1<P: IPairingAdapter>(pairing: &P) -> P::EncodedG1 {
+    let Ok(encoded) = pairing.encode_g1(
+        EncodeG1Params,
+        EncodeG1Payload {
+            point: default_g1(pairing),
+        },
+    );
+    encoded.bytes
+}
+
+fn default_encoded_g2<P: IPairingAdapter>(pairing: &P) -> P::EncodedG2 {
+    let Ok(encoded) = pairing.encode_g2(
+        EncodeG2Params,
+        EncodeG2Payload {
+            point: default_g2(pairing),
+        },
+    );
+    encoded.bytes
+}
+
+fn default_encoded_scalar<P: IPairingAdapter>(pairing: &P) -> Secret<P::EncodedScalar> {
+    let Ok(encoded) = pairing.encode_scalar(
+        EncodeScalarParams,
+        EncodeScalarPayload {
+            scalar: default_scalar::<P>(),
+        },
+    );
+    encoded.bytes
+}
+
+fn default_gt<P: IPairingArithmetic>(pairing: &P) -> P::Gt {
+    let Ok(product) = pairing.pairing_product(
+        PairingProductParams,
+        PairingProductPayload {
+            terms: vec![PairingProductTerm {
+                g1: default_g1(pairing),
+                g2: default_g2(pairing),
+            }],
+        },
+    );
+    product.product
+}
+
+fn default_encoded_gt<P: IPairingArithmetic>(pairing: &P) -> Secret<P::EncodedGt> {
+    let Ok(encoded) = pairing.encode_gt(
+        EncodeGtParams,
+        EncodeGtPayload {
+            value: default_gt(pairing),
+        },
+    );
+    encoded.bytes
+}
+
 pub struct G1GeneratorSuccessReturnOverrides<G> {
     pub point: Option<G>,
 }
 
-pub fn build_g1_generator_success_return<G: Default>(
-    overrides: G1GeneratorSuccessReturnOverrides<G>,
-) -> G1GeneratorSuccessReturn<G> {
-    G1GeneratorSuccessReturn {
-        point: overrides.point.unwrap_or_default(),
+impl<G> Default for G1GeneratorSuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { point: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_g1_generator_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: G1GeneratorSuccessReturnOverrides<P::G1>,
+) -> G1GeneratorSuccessReturn<P::G1> {
+    G1GeneratorSuccessReturn {
+        point: overrides.point.unwrap_or_else(|| default_g1(pairing)),
+    }
+}
+
 pub struct G2GeneratorSuccessReturnOverrides<G> {
     pub point: Option<G>,
 }
 
-pub fn build_g2_generator_success_return<G: Default>(
-    overrides: G2GeneratorSuccessReturnOverrides<G>,
-) -> G2GeneratorSuccessReturn<G> {
-    G2GeneratorSuccessReturn {
-        point: overrides.point.unwrap_or_default(),
+impl<G> Default for G2GeneratorSuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { point: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_g2_generator_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: G2GeneratorSuccessReturnOverrides<P::G2>,
+) -> G2GeneratorSuccessReturn<P::G2> {
+    G2GeneratorSuccessReturn {
+        point: overrides.point.unwrap_or_else(|| default_g2(pairing)),
+    }
+}
+
 pub struct AddG1PayloadOverrides<G> {
     pub left: Option<G>,
     pub right: Option<G>,
 }
 
-pub fn build_add_g1_payload<G: Default>(overrides: AddG1PayloadOverrides<G>) -> AddG1Payload<G> {
-    AddG1Payload {
-        left: overrides.left.unwrap_or_default(),
-        right: overrides.right.unwrap_or_default(),
+impl<G> Default for AddG1PayloadOverrides<G> {
+    fn default() -> Self {
+        Self {
+            left: None,
+            right: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_add_g1_payload<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: AddG1PayloadOverrides<P::G1>,
+) -> AddG1Payload<P::G1> {
+    AddG1Payload {
+        left: overrides.left.unwrap_or_else(|| default_g1(pairing)),
+        right: overrides.right.unwrap_or_else(|| default_g1(pairing)),
+    }
+}
+
 pub struct AddG1SuccessReturnOverrides<G> {
     pub sum: Option<G>,
 }
 
-pub fn build_add_g1_success_return<G: Default>(
-    overrides: AddG1SuccessReturnOverrides<G>,
-) -> AddG1SuccessReturn<G> {
-    AddG1SuccessReturn {
-        sum: overrides.sum.unwrap_or_default(),
+impl<G> Default for AddG1SuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { sum: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_add_g1_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: AddG1SuccessReturnOverrides<P::G1>,
+) -> AddG1SuccessReturn<P::G1> {
+    AddG1SuccessReturn {
+        sum: overrides.sum.unwrap_or_else(|| default_g1(pairing)),
+    }
+}
+
 pub struct AddG2PayloadOverrides<G> {
     pub left: Option<G>,
     pub right: Option<G>,
 }
 
-pub fn build_add_g2_payload<G: Default>(overrides: AddG2PayloadOverrides<G>) -> AddG2Payload<G> {
-    AddG2Payload {
-        left: overrides.left.unwrap_or_default(),
-        right: overrides.right.unwrap_or_default(),
+impl<G> Default for AddG2PayloadOverrides<G> {
+    fn default() -> Self {
+        Self {
+            left: None,
+            right: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_add_g2_payload<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: AddG2PayloadOverrides<P::G2>,
+) -> AddG2Payload<P::G2> {
+    AddG2Payload {
+        left: overrides.left.unwrap_or_else(|| default_g2(pairing)),
+        right: overrides.right.unwrap_or_else(|| default_g2(pairing)),
+    }
+}
+
 pub struct AddG2SuccessReturnOverrides<G> {
     pub sum: Option<G>,
 }
 
-pub fn build_add_g2_success_return<G: Default>(
-    overrides: AddG2SuccessReturnOverrides<G>,
-) -> AddG2SuccessReturn<G> {
-    AddG2SuccessReturn {
-        sum: overrides.sum.unwrap_or_default(),
+impl<G> Default for AddG2SuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { sum: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_add_g2_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: AddG2SuccessReturnOverrides<P::G2>,
+) -> AddG2SuccessReturn<P::G2> {
+    AddG2SuccessReturn {
+        sum: overrides.sum.unwrap_or_else(|| default_g2(pairing)),
+    }
+}
+
 pub struct MulG1PayloadOverrides<G, S> {
     pub point: Option<G>,
     pub scalar: Option<S>,
 }
 
-pub fn build_mul_g1_payload<G: Default, S: Default>(
-    overrides: MulG1PayloadOverrides<G, S>,
-) -> MulG1Payload<G, S> {
-    MulG1Payload {
-        point: overrides.point.unwrap_or_default(),
-        scalar: overrides.scalar.unwrap_or_default(),
+impl<G, S> Default for MulG1PayloadOverrides<G, S> {
+    fn default() -> Self {
+        Self {
+            point: None,
+            scalar: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_mul_g1_payload<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: MulG1PayloadOverrides<P::G1, P::Scalar>,
+) -> MulG1Payload<P::G1, P::Scalar> {
+    MulG1Payload {
+        point: overrides.point.unwrap_or_else(|| default_g1(pairing)),
+        scalar: overrides.scalar.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct MulG1SuccessReturnOverrides<G> {
     pub product: Option<G>,
 }
 
-pub fn build_mul_g1_success_return<G: Default>(
-    overrides: MulG1SuccessReturnOverrides<G>,
-) -> MulG1SuccessReturn<G> {
-    MulG1SuccessReturn {
-        product: overrides.product.unwrap_or_default(),
+impl<G> Default for MulG1SuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { product: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_mul_g1_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: MulG1SuccessReturnOverrides<P::G1>,
+) -> MulG1SuccessReturn<P::G1> {
+    MulG1SuccessReturn {
+        product: overrides.product.unwrap_or_else(|| default_g1(pairing)),
+    }
+}
+
 pub struct MulG2PayloadOverrides<G, S> {
     pub point: Option<G>,
     pub scalar: Option<S>,
 }
 
-pub fn build_mul_g2_payload<G: Default, S: Default>(
-    overrides: MulG2PayloadOverrides<G, S>,
-) -> MulG2Payload<G, S> {
-    MulG2Payload {
-        point: overrides.point.unwrap_or_default(),
-        scalar: overrides.scalar.unwrap_or_default(),
+impl<G, S> Default for MulG2PayloadOverrides<G, S> {
+    fn default() -> Self {
+        Self {
+            point: None,
+            scalar: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_mul_g2_payload<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: MulG2PayloadOverrides<P::G2, P::Scalar>,
+) -> MulG2Payload<P::G2, P::Scalar> {
+    MulG2Payload {
+        point: overrides.point.unwrap_or_else(|| default_g2(pairing)),
+        scalar: overrides.scalar.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct MulG2SuccessReturnOverrides<G> {
     pub product: Option<G>,
 }
 
-pub fn build_mul_g2_success_return<G: Default>(
-    overrides: MulG2SuccessReturnOverrides<G>,
-) -> MulG2SuccessReturn<G> {
-    MulG2SuccessReturn {
-        product: overrides.product.unwrap_or_default(),
+impl<G> Default for MulG2SuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { product: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_mul_g2_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: MulG2SuccessReturnOverrides<P::G2>,
+) -> MulG2SuccessReturn<P::G2> {
+    MulG2SuccessReturn {
+        product: overrides.product.unwrap_or_else(|| default_g2(pairing)),
+    }
+}
+
 pub struct MsmG1TermOverrides<G, S> {
     pub base: Option<G>,
     pub scalar: Option<S>,
 }
 
-pub fn build_msm_g1_term<G: Default, S: Default>(
-    overrides: MsmG1TermOverrides<G, S>,
-) -> MsmG1Term<G, S> {
-    MsmG1Term {
-        base: overrides.base.unwrap_or_default(),
-        scalar: overrides.scalar.unwrap_or_default(),
+impl<G, S> Default for MsmG1TermOverrides<G, S> {
+    fn default() -> Self {
+        Self {
+            base: None,
+            scalar: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_msm_g1_term<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: MsmG1TermOverrides<P::G1, P::Scalar>,
+) -> MsmG1Term<P::G1, P::Scalar> {
+    MsmG1Term {
+        base: overrides.base.unwrap_or_else(|| default_g1(pairing)),
+        scalar: overrides.scalar.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct MsmG1PayloadOverrides<G, S> {
     pub terms: Option<Vec<MsmG1Term<G, S>>>,
 }
 
-pub fn build_msm_g1_payload<G: Default, S: Default>(
-    overrides: MsmG1PayloadOverrides<G, S>,
-) -> MsmG1Payload<G, S> {
+impl<G, S> Default for MsmG1PayloadOverrides<G, S> {
+    fn default() -> Self {
+        Self { terms: None }
+    }
+}
+
+pub fn build_msm_g1_payload<P: IPairingAdapter>(
+    _pairing: &P,
+    overrides: MsmG1PayloadOverrides<P::G1, P::Scalar>,
+) -> MsmG1Payload<P::G1, P::Scalar> {
     MsmG1Payload {
         terms: overrides.terms.unwrap_or_default(),
     }
 }
 
-#[derive(Default)]
 pub struct MsmG1SuccessReturnOverrides<G> {
     pub sum: Option<G>,
 }
 
-pub fn build_msm_g1_success_return<G: Default>(
-    overrides: MsmG1SuccessReturnOverrides<G>,
-) -> MsmG1SuccessReturn<G> {
-    MsmG1SuccessReturn {
-        sum: overrides.sum.unwrap_or_default(),
+impl<G> Default for MsmG1SuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { sum: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_msm_g1_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: MsmG1SuccessReturnOverrides<P::G1>,
+) -> MsmG1SuccessReturn<P::G1> {
+    MsmG1SuccessReturn {
+        sum: overrides.sum.unwrap_or_else(|| default_g1(pairing)),
+    }
+}
+
 pub struct MsmG2TermOverrides<G, S> {
     pub base: Option<G>,
     pub scalar: Option<S>,
 }
 
-pub fn build_msm_g2_term<G: Default, S: Default>(
-    overrides: MsmG2TermOverrides<G, S>,
-) -> MsmG2Term<G, S> {
-    MsmG2Term {
-        base: overrides.base.unwrap_or_default(),
-        scalar: overrides.scalar.unwrap_or_default(),
+impl<G, S> Default for MsmG2TermOverrides<G, S> {
+    fn default() -> Self {
+        Self {
+            base: None,
+            scalar: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_msm_g2_term<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: MsmG2TermOverrides<P::G2, P::Scalar>,
+) -> MsmG2Term<P::G2, P::Scalar> {
+    MsmG2Term {
+        base: overrides.base.unwrap_or_else(|| default_g2(pairing)),
+        scalar: overrides.scalar.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct MsmG2PayloadOverrides<G, S> {
     pub terms: Option<Vec<MsmG2Term<G, S>>>,
 }
 
-pub fn build_msm_g2_payload<G: Default, S: Default>(
-    overrides: MsmG2PayloadOverrides<G, S>,
-) -> MsmG2Payload<G, S> {
+impl<G, S> Default for MsmG2PayloadOverrides<G, S> {
+    fn default() -> Self {
+        Self { terms: None }
+    }
+}
+
+pub fn build_msm_g2_payload<P: IPairingAdapter>(
+    _pairing: &P,
+    overrides: MsmG2PayloadOverrides<P::G2, P::Scalar>,
+) -> MsmG2Payload<P::G2, P::Scalar> {
     MsmG2Payload {
         terms: overrides.terms.unwrap_or_default(),
     }
 }
 
-#[derive(Default)]
 pub struct MsmG2SuccessReturnOverrides<G> {
     pub sum: Option<G>,
 }
 
-pub fn build_msm_g2_success_return<G: Default>(
-    overrides: MsmG2SuccessReturnOverrides<G>,
-) -> MsmG2SuccessReturn<G> {
-    MsmG2SuccessReturn {
-        sum: overrides.sum.unwrap_or_default(),
+impl<G> Default for MsmG2SuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { sum: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_msm_g2_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: MsmG2SuccessReturnOverrides<P::G2>,
+) -> MsmG2SuccessReturn<P::G2> {
+    MsmG2SuccessReturn {
+        sum: overrides.sum.unwrap_or_else(|| default_g2(pairing)),
+    }
+}
+
 pub struct PairingProductTermOverrides<G1, G2> {
     pub g1: Option<G1>,
     pub g2: Option<G2>,
 }
 
-pub fn build_pairing_product_term<G1: Default, G2: Default>(
-    overrides: PairingProductTermOverrides<G1, G2>,
-) -> PairingProductTerm<G1, G2> {
-    PairingProductTerm {
-        g1: overrides.g1.unwrap_or_default(),
-        g2: overrides.g2.unwrap_or_default(),
+impl<G1, G2> Default for PairingProductTermOverrides<G1, G2> {
+    fn default() -> Self {
+        Self { g1: None, g2: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_pairing_product_term<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: PairingProductTermOverrides<P::G1, P::G2>,
+) -> PairingProductTerm<P::G1, P::G2> {
+    PairingProductTerm {
+        g1: overrides.g1.unwrap_or_else(|| default_g1(pairing)),
+        g2: overrides.g2.unwrap_or_else(|| default_g2(pairing)),
+    }
+}
+
 pub struct PairingProductIsOnePayloadOverrides<G1, G2> {
     pub terms: Option<Vec<PairingProductTerm<G1, G2>>>,
 }
 
-pub fn build_pairing_product_is_one_payload<G1: Default, G2: Default>(
-    overrides: PairingProductIsOnePayloadOverrides<G1, G2>,
-) -> PairingProductIsOnePayload<G1, G2> {
+impl<G1, G2> Default for PairingProductIsOnePayloadOverrides<G1, G2> {
+    fn default() -> Self {
+        Self { terms: None }
+    }
+}
+
+pub fn build_pairing_product_is_one_payload<P: IPairingAdapter>(
+    _pairing: &P,
+    overrides: PairingProductIsOnePayloadOverrides<P::G1, P::G2>,
+) -> PairingProductIsOnePayload<P::G1, P::G2> {
     PairingProductIsOnePayload {
         terms: overrides.terms.unwrap_or_default(),
     }
@@ -333,265 +544,399 @@ pub fn build_pairing_product_is_one_success_return(
     }
 }
 
-#[derive(Default)]
 pub struct DecodeG1SuccessReturnOverrides<G> {
     pub point: Option<G>,
 }
 
-pub fn build_decode_g1_success_return<G: Default>(
-    overrides: DecodeG1SuccessReturnOverrides<G>,
-) -> DecodeG1SuccessReturn<G> {
-    DecodeG1SuccessReturn {
-        point: overrides.point.unwrap_or_default(),
+impl<G> Default for DecodeG1SuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { point: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_decode_g1_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: DecodeG1SuccessReturnOverrides<P::G1>,
+) -> DecodeG1SuccessReturn<P::G1> {
+    DecodeG1SuccessReturn {
+        point: overrides.point.unwrap_or_else(|| default_g1(pairing)),
+    }
+}
+
 pub struct DecodeG2SuccessReturnOverrides<G> {
     pub point: Option<G>,
 }
 
-pub fn build_decode_g2_success_return<G: Default>(
-    overrides: DecodeG2SuccessReturnOverrides<G>,
-) -> DecodeG2SuccessReturn<G> {
-    DecodeG2SuccessReturn {
-        point: overrides.point.unwrap_or_default(),
+impl<G> Default for DecodeG2SuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { point: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_decode_g2_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: DecodeG2SuccessReturnOverrides<P::G2>,
+) -> DecodeG2SuccessReturn<P::G2> {
+    DecodeG2SuccessReturn {
+        point: overrides.point.unwrap_or_else(|| default_g2(pairing)),
+    }
+}
+
 pub struct DecodeScalarSuccessReturnOverrides<S> {
     pub scalar: Option<S>,
 }
 
-pub fn build_decode_scalar_success_return<S: Default>(
-    overrides: DecodeScalarSuccessReturnOverrides<S>,
-) -> DecodeScalarSuccessReturn<S> {
-    DecodeScalarSuccessReturn {
-        scalar: overrides.scalar.unwrap_or_default(),
+impl<S> Default for DecodeScalarSuccessReturnOverrides<S> {
+    fn default() -> Self {
+        Self { scalar: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_decode_scalar_success_return<P: IPairingAdapter>(
+    _pairing: &P,
+    overrides: DecodeScalarSuccessReturnOverrides<P::Scalar>,
+) -> DecodeScalarSuccessReturn<P::Scalar> {
+    DecodeScalarSuccessReturn {
+        scalar: overrides.scalar.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct EncodeG1PayloadOverrides<G> {
     pub point: Option<G>,
 }
 
-pub fn build_encode_g1_payload<G: Default>(
-    overrides: EncodeG1PayloadOverrides<G>,
-) -> EncodeG1Payload<G> {
-    EncodeG1Payload {
-        point: overrides.point.unwrap_or_default(),
+impl<G> Default for EncodeG1PayloadOverrides<G> {
+    fn default() -> Self {
+        Self { point: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_encode_g1_payload<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: EncodeG1PayloadOverrides<P::G1>,
+) -> EncodeG1Payload<P::G1> {
+    EncodeG1Payload {
+        point: overrides.point.unwrap_or_else(|| default_g1(pairing)),
+    }
+}
+
 pub struct EncodeG1SuccessReturnOverrides<E> {
     pub bytes: Option<E>,
 }
 
-pub fn build_encode_g1_success_return<E: Default>(
-    overrides: EncodeG1SuccessReturnOverrides<E>,
-) -> EncodeG1SuccessReturn<E> {
-    EncodeG1SuccessReturn {
-        bytes: overrides.bytes.unwrap_or_default(),
+impl<E> Default for EncodeG1SuccessReturnOverrides<E> {
+    fn default() -> Self {
+        Self { bytes: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_encode_g1_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: EncodeG1SuccessReturnOverrides<P::EncodedG1>,
+) -> EncodeG1SuccessReturn<P::EncodedG1> {
+    EncodeG1SuccessReturn {
+        bytes: overrides
+            .bytes
+            .unwrap_or_else(|| default_encoded_g1(pairing)),
+    }
+}
+
 pub struct EncodeG2PayloadOverrides<G> {
     pub point: Option<G>,
 }
 
-pub fn build_encode_g2_payload<G: Default>(
-    overrides: EncodeG2PayloadOverrides<G>,
-) -> EncodeG2Payload<G> {
-    EncodeG2Payload {
-        point: overrides.point.unwrap_or_default(),
+impl<G> Default for EncodeG2PayloadOverrides<G> {
+    fn default() -> Self {
+        Self { point: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_encode_g2_payload<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: EncodeG2PayloadOverrides<P::G2>,
+) -> EncodeG2Payload<P::G2> {
+    EncodeG2Payload {
+        point: overrides.point.unwrap_or_else(|| default_g2(pairing)),
+    }
+}
+
 pub struct EncodeG2SuccessReturnOverrides<E> {
     pub bytes: Option<E>,
 }
 
-pub fn build_encode_g2_success_return<E: Default>(
-    overrides: EncodeG2SuccessReturnOverrides<E>,
-) -> EncodeG2SuccessReturn<E> {
-    EncodeG2SuccessReturn {
-        bytes: overrides.bytes.unwrap_or_default(),
+impl<E> Default for EncodeG2SuccessReturnOverrides<E> {
+    fn default() -> Self {
+        Self { bytes: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_encode_g2_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: EncodeG2SuccessReturnOverrides<P::EncodedG2>,
+) -> EncodeG2SuccessReturn<P::EncodedG2> {
+    EncodeG2SuccessReturn {
+        bytes: overrides
+            .bytes
+            .unwrap_or_else(|| default_encoded_g2(pairing)),
+    }
+}
+
 pub struct EncodeScalarPayloadOverrides<S> {
     pub scalar: Option<S>,
 }
 
-pub fn build_encode_scalar_payload<S: Default>(
-    overrides: EncodeScalarPayloadOverrides<S>,
-) -> EncodeScalarPayload<S> {
-    EncodeScalarPayload {
-        scalar: overrides.scalar.unwrap_or_default(),
+impl<S> Default for EncodeScalarPayloadOverrides<S> {
+    fn default() -> Self {
+        Self { scalar: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_encode_scalar_payload<P: IPairingAdapter>(
+    _pairing: &P,
+    overrides: EncodeScalarPayloadOverrides<P::Scalar>,
+) -> EncodeScalarPayload<P::Scalar> {
+    EncodeScalarPayload {
+        scalar: overrides.scalar.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct EncodeScalarSuccessReturnOverrides<E: Zeroize> {
     pub bytes: Option<Secret<E>>,
 }
 
-pub fn build_encode_scalar_success_return<E: Zeroize + Default>(
-    overrides: EncodeScalarSuccessReturnOverrides<E>,
-) -> EncodeScalarSuccessReturn<E> {
-    EncodeScalarSuccessReturn {
-        bytes: overrides
-            .bytes
-            .unwrap_or_else(|| build_secret::<E>(SecretConstructorParamsOverrides::default())),
+impl<E: Zeroize> Default for EncodeScalarSuccessReturnOverrides<E> {
+    fn default() -> Self {
+        Self { bytes: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_encode_scalar_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: EncodeScalarSuccessReturnOverrides<P::EncodedScalar>,
+) -> EncodeScalarSuccessReturn<P::EncodedScalar> {
+    EncodeScalarSuccessReturn {
+        bytes: overrides
+            .bytes
+            .unwrap_or_else(|| default_encoded_scalar(pairing)),
+    }
+}
+
 pub struct AddScalarPayloadOverrides<S> {
     pub left: Option<S>,
     pub right: Option<S>,
 }
 
-pub fn build_add_scalar_payload<S: Default>(
-    overrides: AddScalarPayloadOverrides<S>,
-) -> AddScalarPayload<S> {
-    AddScalarPayload {
-        left: overrides.left.unwrap_or_default(),
-        right: overrides.right.unwrap_or_default(),
+impl<S> Default for AddScalarPayloadOverrides<S> {
+    fn default() -> Self {
+        Self {
+            left: None,
+            right: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_add_scalar_payload<P: IPairingArithmetic>(
+    _pairing: &P,
+    overrides: AddScalarPayloadOverrides<P::Scalar>,
+) -> AddScalarPayload<P::Scalar> {
+    AddScalarPayload {
+        left: overrides.left.unwrap_or_else(default_scalar::<P>),
+        right: overrides.right.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct AddScalarSuccessReturnOverrides<S> {
     pub sum: Option<S>,
 }
 
-pub fn build_add_scalar_success_return<S: Default>(
-    overrides: AddScalarSuccessReturnOverrides<S>,
-) -> AddScalarSuccessReturn<S> {
-    AddScalarSuccessReturn {
-        sum: overrides.sum.unwrap_or_default(),
+impl<S> Default for AddScalarSuccessReturnOverrides<S> {
+    fn default() -> Self {
+        Self { sum: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_add_scalar_success_return<P: IPairingArithmetic>(
+    _pairing: &P,
+    overrides: AddScalarSuccessReturnOverrides<P::Scalar>,
+) -> AddScalarSuccessReturn<P::Scalar> {
+    AddScalarSuccessReturn {
+        sum: overrides.sum.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct MulScalarPayloadOverrides<S> {
     pub left: Option<S>,
     pub right: Option<S>,
 }
 
-pub fn build_mul_scalar_payload<S: Default>(
-    overrides: MulScalarPayloadOverrides<S>,
-) -> MulScalarPayload<S> {
-    MulScalarPayload {
-        left: overrides.left.unwrap_or_default(),
-        right: overrides.right.unwrap_or_default(),
+impl<S> Default for MulScalarPayloadOverrides<S> {
+    fn default() -> Self {
+        Self {
+            left: None,
+            right: None,
+        }
     }
 }
 
-#[derive(Default)]
+pub fn build_mul_scalar_payload<P: IPairingArithmetic>(
+    _pairing: &P,
+    overrides: MulScalarPayloadOverrides<P::Scalar>,
+) -> MulScalarPayload<P::Scalar> {
+    MulScalarPayload {
+        left: overrides.left.unwrap_or_else(default_scalar::<P>),
+        right: overrides.right.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct MulScalarSuccessReturnOverrides<S> {
     pub product: Option<S>,
 }
 
-pub fn build_mul_scalar_success_return<S: Default>(
-    overrides: MulScalarSuccessReturnOverrides<S>,
-) -> MulScalarSuccessReturn<S> {
-    MulScalarSuccessReturn {
-        product: overrides.product.unwrap_or_default(),
+impl<S> Default for MulScalarSuccessReturnOverrides<S> {
+    fn default() -> Self {
+        Self { product: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_mul_scalar_success_return<P: IPairingArithmetic>(
+    _pairing: &P,
+    overrides: MulScalarSuccessReturnOverrides<P::Scalar>,
+) -> MulScalarSuccessReturn<P::Scalar> {
+    MulScalarSuccessReturn {
+        product: overrides.product.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct NegScalarPayloadOverrides<S> {
     pub scalar: Option<S>,
 }
 
-pub fn build_neg_scalar_payload<S: Default>(
-    overrides: NegScalarPayloadOverrides<S>,
-) -> NegScalarPayload<S> {
-    NegScalarPayload {
-        scalar: overrides.scalar.unwrap_or_default(),
+impl<S> Default for NegScalarPayloadOverrides<S> {
+    fn default() -> Self {
+        Self { scalar: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_neg_scalar_payload<P: IPairingArithmetic>(
+    _pairing: &P,
+    overrides: NegScalarPayloadOverrides<P::Scalar>,
+) -> NegScalarPayload<P::Scalar> {
+    NegScalarPayload {
+        scalar: overrides.scalar.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct NegScalarSuccessReturnOverrides<S> {
     pub negation: Option<S>,
 }
 
-pub fn build_neg_scalar_success_return<S: Default>(
-    overrides: NegScalarSuccessReturnOverrides<S>,
-) -> NegScalarSuccessReturn<S> {
-    NegScalarSuccessReturn {
-        negation: overrides.negation.unwrap_or_default(),
+impl<S> Default for NegScalarSuccessReturnOverrides<S> {
+    fn default() -> Self {
+        Self { negation: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_neg_scalar_success_return<P: IPairingArithmetic>(
+    _pairing: &P,
+    overrides: NegScalarSuccessReturnOverrides<P::Scalar>,
+) -> NegScalarSuccessReturn<P::Scalar> {
+    NegScalarSuccessReturn {
+        negation: overrides.negation.unwrap_or_else(default_scalar::<P>),
+    }
+}
+
 pub struct NegG1PayloadOverrides<G> {
     pub point: Option<G>,
 }
 
-pub fn build_neg_g1_payload<G: Default>(overrides: NegG1PayloadOverrides<G>) -> NegG1Payload<G> {
-    NegG1Payload {
-        point: overrides.point.unwrap_or_default(),
+impl<G> Default for NegG1PayloadOverrides<G> {
+    fn default() -> Self {
+        Self { point: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_neg_g1_payload<P: IPairingArithmetic>(
+    pairing: &P,
+    overrides: NegG1PayloadOverrides<P::G1>,
+) -> NegG1Payload<P::G1> {
+    NegG1Payload {
+        point: overrides.point.unwrap_or_else(|| default_g1(pairing)),
+    }
+}
+
 pub struct NegG1SuccessReturnOverrides<G> {
     pub negation: Option<G>,
 }
 
-pub fn build_neg_g1_success_return<G: Default>(
-    overrides: NegG1SuccessReturnOverrides<G>,
-) -> NegG1SuccessReturn<G> {
-    NegG1SuccessReturn {
-        negation: overrides.negation.unwrap_or_default(),
+impl<G> Default for NegG1SuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { negation: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_neg_g1_success_return<P: IPairingArithmetic>(
+    pairing: &P,
+    overrides: NegG1SuccessReturnOverrides<P::G1>,
+) -> NegG1SuccessReturn<P::G1> {
+    NegG1SuccessReturn {
+        negation: overrides.negation.unwrap_or_else(|| default_g1(pairing)),
+    }
+}
+
 pub struct NegG2PayloadOverrides<G> {
     pub point: Option<G>,
 }
 
-pub fn build_neg_g2_payload<G: Default>(overrides: NegG2PayloadOverrides<G>) -> NegG2Payload<G> {
-    NegG2Payload {
-        point: overrides.point.unwrap_or_default(),
+impl<G> Default for NegG2PayloadOverrides<G> {
+    fn default() -> Self {
+        Self { point: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_neg_g2_payload<P: IPairingArithmetic>(
+    pairing: &P,
+    overrides: NegG2PayloadOverrides<P::G2>,
+) -> NegG2Payload<P::G2> {
+    NegG2Payload {
+        point: overrides.point.unwrap_or_else(|| default_g2(pairing)),
+    }
+}
+
 pub struct NegG2SuccessReturnOverrides<G> {
     pub negation: Option<G>,
 }
 
-pub fn build_neg_g2_success_return<G: Default>(
-    overrides: NegG2SuccessReturnOverrides<G>,
-) -> NegG2SuccessReturn<G> {
-    NegG2SuccessReturn {
-        negation: overrides.negation.unwrap_or_default(),
+impl<G> Default for NegG2SuccessReturnOverrides<G> {
+    fn default() -> Self {
+        Self { negation: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_neg_g2_success_return<P: IPairingArithmetic>(
+    pairing: &P,
+    overrides: NegG2SuccessReturnOverrides<P::G2>,
+) -> NegG2SuccessReturn<P::G2> {
+    NegG2SuccessReturn {
+        negation: overrides.negation.unwrap_or_else(|| default_g2(pairing)),
+    }
+}
+
 pub struct IsIdentityG1PayloadOverrides<G> {
     pub point: Option<G>,
 }
 
-pub fn build_is_identity_g1_payload<G: Default>(
-    overrides: IsIdentityG1PayloadOverrides<G>,
-) -> IsIdentityG1Payload<G> {
+impl<G> Default for IsIdentityG1PayloadOverrides<G> {
+    fn default() -> Self {
+        Self { point: None }
+    }
+}
+
+pub fn build_is_identity_g1_payload<P: IPairingArithmetic>(
+    pairing: &P,
+    overrides: IsIdentityG1PayloadOverrides<P::G1>,
+) -> IsIdentityG1Payload<P::G1> {
     IsIdentityG1Payload {
-        point: overrides.point.unwrap_or_default(),
+        point: overrides.point.unwrap_or_else(|| default_g1(pairing)),
     }
 }
 
@@ -608,16 +953,22 @@ pub fn build_is_identity_g1_success_return(
     }
 }
 
-#[derive(Default)]
 pub struct IsIdentityG2PayloadOverrides<G> {
     pub point: Option<G>,
 }
 
-pub fn build_is_identity_g2_payload<G: Default>(
-    overrides: IsIdentityG2PayloadOverrides<G>,
-) -> IsIdentityG2Payload<G> {
+impl<G> Default for IsIdentityG2PayloadOverrides<G> {
+    fn default() -> Self {
+        Self { point: None }
+    }
+}
+
+pub fn build_is_identity_g2_payload<P: IPairingArithmetic>(
+    pairing: &P,
+    overrides: IsIdentityG2PayloadOverrides<P::G2>,
+) -> IsIdentityG2Payload<P::G2> {
     IsIdentityG2Payload {
-        point: overrides.point.unwrap_or_default(),
+        point: overrides.point.unwrap_or_else(|| default_g2(pairing)),
     }
 }
 
@@ -634,57 +985,81 @@ pub fn build_is_identity_g2_success_return(
     }
 }
 
-#[derive(Default)]
 pub struct PairingProductPayloadOverrides<G1, G2> {
     pub terms: Option<Vec<PairingProductTerm<G1, G2>>>,
 }
 
-pub fn build_pairing_product_payload<G1: Default, G2: Default>(
-    overrides: PairingProductPayloadOverrides<G1, G2>,
-) -> PairingProductPayload<G1, G2> {
+impl<G1, G2> Default for PairingProductPayloadOverrides<G1, G2> {
+    fn default() -> Self {
+        Self { terms: None }
+    }
+}
+
+pub fn build_pairing_product_payload<P: IPairingArithmetic>(
+    _pairing: &P,
+    overrides: PairingProductPayloadOverrides<P::G1, P::G2>,
+) -> PairingProductPayload<P::G1, P::G2> {
     PairingProductPayload {
         terms: overrides.terms.unwrap_or_default(),
     }
 }
 
-#[derive(Default)]
 pub struct PairingProductSuccessReturnOverrides<T> {
     pub product: Option<T>,
 }
 
-pub fn build_pairing_product_success_return<T: Default>(
-    overrides: PairingProductSuccessReturnOverrides<T>,
-) -> PairingProductSuccessReturn<T> {
-    PairingProductSuccessReturn {
-        product: overrides.product.unwrap_or_default(),
+impl<T> Default for PairingProductSuccessReturnOverrides<T> {
+    fn default() -> Self {
+        Self { product: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_pairing_product_success_return<P: IPairingArithmetic>(
+    pairing: &P,
+    overrides: PairingProductSuccessReturnOverrides<P::Gt>,
+) -> PairingProductSuccessReturn<P::Gt> {
+    PairingProductSuccessReturn {
+        product: overrides.product.unwrap_or_else(|| default_gt(pairing)),
+    }
+}
+
 pub struct EncodeGtPayloadOverrides<T> {
     pub value: Option<T>,
 }
 
-pub fn build_encode_gt_payload<T: Default>(
-    overrides: EncodeGtPayloadOverrides<T>,
-) -> EncodeGtPayload<T> {
-    EncodeGtPayload {
-        value: overrides.value.unwrap_or_default(),
+impl<T> Default for EncodeGtPayloadOverrides<T> {
+    fn default() -> Self {
+        Self { value: None }
     }
 }
 
-#[derive(Default)]
+pub fn build_encode_gt_payload<P: IPairingArithmetic>(
+    pairing: &P,
+    overrides: EncodeGtPayloadOverrides<P::Gt>,
+) -> EncodeGtPayload<P::Gt> {
+    EncodeGtPayload {
+        value: overrides.value.unwrap_or_else(|| default_gt(pairing)),
+    }
+}
+
 pub struct EncodeGtSuccessReturnOverrides<E: Zeroize> {
     pub bytes: Option<Secret<E>>,
 }
 
-pub fn build_encode_gt_success_return<E: Zeroize + Default>(
-    overrides: EncodeGtSuccessReturnOverrides<E>,
-) -> EncodeGtSuccessReturn<E> {
+impl<E: Zeroize> Default for EncodeGtSuccessReturnOverrides<E> {
+    fn default() -> Self {
+        Self { bytes: None }
+    }
+}
+
+pub fn build_encode_gt_success_return<P: IPairingArithmetic>(
+    pairing: &P,
+    overrides: EncodeGtSuccessReturnOverrides<P::EncodedGt>,
+) -> EncodeGtSuccessReturn<P::EncodedGt> {
     EncodeGtSuccessReturn {
         bytes: overrides
             .bytes
-            .unwrap_or_else(|| build_secret::<E>(SecretConstructorParamsOverrides::default())),
+            .unwrap_or_else(|| default_encoded_gt(pairing)),
     }
 }
 
@@ -697,26 +1072,28 @@ pub fn build_sample_uniform_scalar_payload(
     overrides: SampleUniformScalarPayloadOverrides,
 ) -> SampleUniformScalarPayload {
     SampleUniformScalarPayload {
-        uniform: overrides.uniform.unwrap_or_else(|| {
-            build_secret::<Vec<u8>>(SecretConstructorParamsOverrides {
-                value: Some(vec![0u8; 64]),
-            })
-        }),
+        uniform: overrides
+            .uniform
+            .unwrap_or_else(|| build_secret(vec![0u8; 64], SecretConstructorParamsOverrides)),
     }
 }
 
-#[derive(Default)]
 pub struct SampleUniformScalarSuccessReturnOverrides<S: Zeroize> {
     pub scalar: Option<Secret<S>>,
 }
 
-pub fn build_sample_uniform_scalar_success_return<S: Zeroize + Default>(
-    overrides: SampleUniformScalarSuccessReturnOverrides<S>,
-) -> SampleUniformScalarSuccessReturn<S> {
+impl<S: Zeroize> Default for SampleUniformScalarSuccessReturnOverrides<S> {
+    fn default() -> Self {
+        Self { scalar: None }
+    }
+}
+
+pub fn build_sample_uniform_scalar_success_return<P: IPairingAdapter>(
+    _pairing: &P,
+    overrides: SampleUniformScalarSuccessReturnOverrides<P::Scalar>,
+) -> SampleUniformScalarSuccessReturn<P::Scalar> {
     SampleUniformScalarSuccessReturn {
-        scalar: overrides
-            .scalar
-            .unwrap_or_else(|| build_secret::<S>(SecretConstructorParamsOverrides::default())),
+        scalar: overrides.scalar.unwrap_or_else(default_scalar_secret::<P>),
     }
 }
 
@@ -733,29 +1110,43 @@ pub fn build_scalar_field_order_success_return(
     }
 }
 
-#[derive(Default)]
 pub struct G1OutsideSubgroupEncodingSuccessReturnOverrides<E> {
     pub bytes: Option<Option<E>>,
 }
 
-pub fn build_g1_outside_subgroup_encoding_success_return<E>(
-    overrides: G1OutsideSubgroupEncodingSuccessReturnOverrides<E>,
-) -> G1OutsideSubgroupEncodingSuccessReturn<E> {
+impl<E> Default for G1OutsideSubgroupEncodingSuccessReturnOverrides<E> {
+    fn default() -> Self {
+        Self { bytes: None }
+    }
+}
+
+pub fn build_g1_outside_subgroup_encoding_success_return<P: IPairingAdapter>(
+    _pairing: &P,
+    overrides: G1OutsideSubgroupEncodingSuccessReturnOverrides<P::EncodedG1>,
+) -> G1OutsideSubgroupEncodingSuccessReturn<P::EncodedG1> {
     G1OutsideSubgroupEncodingSuccessReturn {
         bytes: overrides.bytes.unwrap_or_default(),
     }
 }
 
-#[derive(Default)]
 pub struct G2OutsideSubgroupEncodingSuccessReturnOverrides<E> {
     pub bytes: Option<E>,
 }
 
-pub fn build_g2_outside_subgroup_encoding_success_return<E: Default>(
-    overrides: G2OutsideSubgroupEncodingSuccessReturnOverrides<E>,
-) -> G2OutsideSubgroupEncodingSuccessReturn<E> {
+impl<E> Default for G2OutsideSubgroupEncodingSuccessReturnOverrides<E> {
+    fn default() -> Self {
+        Self { bytes: None }
+    }
+}
+
+pub fn build_g2_outside_subgroup_encoding_success_return<P: IPairingAdapter>(
+    pairing: &P,
+    overrides: G2OutsideSubgroupEncodingSuccessReturnOverrides<P::EncodedG2>,
+) -> G2OutsideSubgroupEncodingSuccessReturn<P::EncodedG2> {
     G2OutsideSubgroupEncodingSuccessReturn {
-        bytes: overrides.bytes.unwrap_or_default(),
+        bytes: overrides
+            .bytes
+            .unwrap_or_else(|| default_encoded_g2(pairing)),
     }
 }
 
@@ -764,12 +1155,6 @@ pub(crate) const MOCK_GROUP_ORDER: u64 = 65521;
 #[derive(Clone)]
 pub(crate) struct MockScalar {
     residue: u64,
-}
-
-impl Default for MockScalar {
-    fn default() -> Self {
-        Self { residue: 1 }
-    }
 }
 
 impl Zeroize for MockScalar {
@@ -791,12 +1176,6 @@ pub(crate) struct MockG1 {
     residue: u64,
 }
 
-impl Default for MockG1 {
-    fn default() -> Self {
-        Self { residue: 1 }
-    }
-}
-
 impl Zeroize for MockG1 {
     fn zeroize(&mut self) {
         self.residue.zeroize();
@@ -814,12 +1193,6 @@ impl ZeroizeOnDrop for MockG1 {}
 #[derive(Clone)]
 pub(crate) struct MockG2 {
     residue: u64,
-}
-
-impl Default for MockG2 {
-    fn default() -> Self {
-        Self { residue: 2 }
-    }
 }
 
 impl Zeroize for MockG2 {
@@ -841,12 +1214,6 @@ pub(crate) struct MockGt {
     residue: u64,
 }
 
-impl Default for MockGt {
-    fn default() -> Self {
-        Self { residue: 1 }
-    }
-}
-
 impl Zeroize for MockGt {
     fn zeroize(&mut self) {
         self.residue.zeroize();
@@ -861,7 +1228,7 @@ impl Drop for MockGt {
 
 impl ZeroizeOnDrop for MockGt {}
 
-#[derive(Clone, Default, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub(crate) struct MockEncodedG1 {
     bytes: [u8; 8],
 }
@@ -872,7 +1239,7 @@ impl AsRef<[u8]> for MockEncodedG1 {
     }
 }
 
-#[derive(Clone, Default, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub(crate) struct MockEncodedG2 {
     bytes: [u8; 8],
 }
@@ -883,7 +1250,6 @@ impl AsRef<[u8]> for MockEncodedG2 {
     }
 }
 
-#[derive(Default)]
 pub(crate) struct MockEncodedScalar {
     bytes: [u8; 8],
 }
@@ -900,7 +1266,6 @@ impl Zeroize for MockEncodedScalar {
     }
 }
 
-#[derive(Default)]
 pub(crate) struct MockEncodedGt {
     bytes: [u8; 8],
 }
@@ -990,7 +1355,7 @@ impl IPairingAdapter for MockIPairingAdapter {
         _payload: G1GeneratorPayload,
     ) -> G1GeneratorReturn<Self::G1> {
         Ok(G1GeneratorSuccessReturn {
-            point: MockG1::default(),
+            point: MockG1 { residue: 1 },
         })
     }
 
@@ -1000,7 +1365,7 @@ impl IPairingAdapter for MockIPairingAdapter {
         _payload: G2GeneratorPayload,
     ) -> G2GeneratorReturn<Self::G2> {
         Ok(G2GeneratorSuccessReturn {
-            point: MockG2::default(),
+            point: MockG2 { residue: 2 },
         })
     }
 
@@ -1428,31 +1793,23 @@ pub fn build_create_pairing_params(overrides: CreatePairingParamsOverrides) -> C
 }
 
 #[derive(Default)]
-pub struct CreatePairingSuccessReturnOverrides<O> {
-    pub output: Option<O>,
-}
+pub struct CreatePairingSuccessReturnOverrides;
 
-pub fn build_create_pairing_success_return<O: Default>(
-    overrides: CreatePairingSuccessReturnOverrides<O>,
+pub fn build_create_pairing_success_return<O>(
+    output: O,
+    _overrides: CreatePairingSuccessReturnOverrides,
 ) -> CreatePairingSuccessReturn<O> {
-    CreatePairingSuccessReturn {
-        output: overrides.output.unwrap_or_default(),
-    }
+    CreatePairingSuccessReturn { output }
 }
 
 #[derive(Default)]
-pub(crate) struct ConsumePairingPayloadOverrides {
-    pub adapter: Option<MockIPairingAdapter>,
-}
+pub(crate) struct ConsumePairingPayloadOverrides;
 
-pub(crate) fn build_consume_pairing_payload(
-    overrides: ConsumePairingPayloadOverrides,
-) -> ConsumePairingPayload<MockIPairingAdapter> {
-    ConsumePairingPayload {
-        adapter: overrides
-            .adapter
-            .unwrap_or_else(|| build_mock_i_pairing_adapter(Default::default())),
-    }
+pub(crate) fn build_consume_pairing_payload<P: IPairingAdapter>(
+    adapter: P,
+    _overrides: ConsumePairingPayloadOverrides,
+) -> ConsumePairingPayload<P> {
+    ConsumePairingPayload { adapter }
 }
 
 #[derive(Default)]
@@ -1469,32 +1826,28 @@ impl IPairingConsumer for MockIPairingConsumer {
     }
 }
 
-pub struct CreatePairingDepsOverrides<C: IPairingConsumer> {
-    pub consumer: Option<C>,
-}
+#[derive(Default)]
+pub struct CreatePairingDepsOverrides;
 
-impl<C: IPairingConsumer> Default for CreatePairingDepsOverrides<C> {
-    fn default() -> Self {
-        Self { consumer: None }
-    }
-}
-
-pub fn build_create_pairing_deps<C: IPairingConsumer + Default>(
-    overrides: CreatePairingDepsOverrides<C>,
+pub fn build_create_pairing_deps<C: IPairingConsumer>(
+    consumer: C,
+    _overrides: CreatePairingDepsOverrides,
 ) -> CreatePairingDeps<C> {
-    CreatePairingDeps {
-        consumer: overrides.consumer.unwrap_or_default(),
-    }
+    CreatePairingDeps { consumer }
 }
 
-pub fn mock_create_pairing<C>(
-    _deps: &CreatePairingDeps<C>,
+pub fn mock_create_pairing<C: IPairingConsumer>(
+    deps: &CreatePairingDeps<C>,
     _params: CreatePairingParams,
     _payload: CreatePairingPayload,
-) -> CreatePairingReturn<C::Output>
-where
-    C: IPairingConsumer,
-    C::Output: Default,
-{
-    Ok(build_create_pairing_success_return(Default::default()))
+) -> CreatePairingReturn<C::Output> {
+    let adapter = build_mock_i_pairing_adapter(Default::default());
+    let output = deps.consumer.consume_pairing(
+        ConsumePairingParams,
+        build_consume_pairing_payload(adapter, Default::default()),
+    );
+    Ok(build_create_pairing_success_return(
+        output,
+        Default::default(),
+    ))
 }

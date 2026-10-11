@@ -1,13 +1,12 @@
 #![cfg(feature = "mocks")]
 #![allow(clippy::expect_used)]
 
-use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
+use domain::{Secret, build_secret};
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingDepsOverrides,
-    CreatePairingParamsOverrides, CreatePairingPayload, DecodeG1ErrorReturn, DecodeG1Params,
-    DecodeG2ErrorReturn, DecodeG2Params, EncodeGtParams, EncodeGtPayload, EncodeScalarParams,
-    EncodeScalarPayload, G1GeneratorParams, G1GeneratorPayload,
-    G1OutsideSubgroupEncodingErrorReturn, G1OutsideSubgroupEncodingParams,
+    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
+    CreatePairingPayload, DecodeG1ErrorReturn, DecodeG1Params, DecodeG2ErrorReturn, DecodeG2Params,
+    EncodeGtParams, EncodeGtPayload, EncodeScalarParams, EncodeScalarPayload, G1GeneratorParams,
+    G1GeneratorPayload, G1OutsideSubgroupEncodingErrorReturn, G1OutsideSubgroupEncodingParams,
     G1OutsideSubgroupEncodingPayload, G2GeneratorParams, G2GeneratorPayload,
     G2OutsideSubgroupEncodingErrorReturn, G2OutsideSubgroupEncodingParams,
     G2OutsideSubgroupEncodingPayload, IPairingAdapter, IPairingArithmetic, IPairingConsumer,
@@ -53,7 +52,7 @@ fn the_consumer_receives_the_concrete_the_params_name() {
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides::<Consumer>::default());
+        let deps = build_create_pairing_deps(Consumer, Default::default());
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -94,8 +93,7 @@ fn a_sampled_scalar_encodes_through_secret() {
         ) -> Self::Output {
             let mut bytes = vec![0u8; P::Scalar::UNIFORM_BYTES_LENGTH];
             bytes[P::Scalar::UNIFORM_BYTES_LENGTH - 1] = 7;
-            let uniform: Secret<Vec<u8>> =
-                build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
+            let uniform: Secret<Vec<u8>> = build_secret(bytes, Default::default());
             let sampled = P::Scalar::sample_from_uniform_bytes(
                 SampleUniformScalarParams,
                 SampleUniformScalarPayload { uniform },
@@ -116,7 +114,7 @@ fn a_sampled_scalar_encodes_through_secret() {
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides::<Consumer>::default());
+        let deps = build_create_pairing_deps(Consumer, Default::default());
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -158,8 +156,7 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
         ) -> Self::Output {
             let mut bytes = vec![0u8; P::Scalar::UNIFORM_BYTES_LENGTH - 1];
             bytes[P::Scalar::UNIFORM_BYTES_LENGTH - 2] = 7;
-            let uniform: Secret<Vec<u8>> =
-                build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
+            let uniform: Secret<Vec<u8>> = build_secret(bytes, Default::default());
             let sampled = P::Scalar::sample_from_uniform_bytes(
                 SampleUniformScalarParams,
                 SampleUniformScalarPayload { uniform },
@@ -177,7 +174,7 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides::<Consumer>::default());
+        let deps = build_create_pairing_deps(Consumer, Default::default());
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -230,8 +227,7 @@ fn libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes(
         ) -> Self::Output {
             let mut bytes = vec![0u8; P::Scalar::UNIFORM_BYTES_LENGTH];
             bytes[P::Scalar::UNIFORM_BYTES_LENGTH - 1] = 7;
-            let uniform: Secret<Vec<u8>> =
-                build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
+            let uniform: Secret<Vec<u8>> = build_secret(bytes, Default::default());
             let sampled = P::Scalar::sample_from_uniform_bytes(
                 SampleUniformScalarParams,
                 SampleUniformScalarPayload { uniform },
@@ -281,7 +277,7 @@ fn libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes(
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides::<Consumer>::default());
+        let deps = build_create_pairing_deps(Consumer, Default::default());
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -350,7 +346,7 @@ fn libraries_sharing_an_identifier_return_the_same_scalar_field_order() {
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides::<Consumer>::default());
+        let deps = build_create_pairing_deps(Consumer, Default::default());
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -422,7 +418,7 @@ fn libraries_sharing_an_identifier_return_the_same_first_group_reference_encodin
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides::<Consumer>::default());
+        let deps = build_create_pairing_deps(Consumer, Default::default());
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -509,7 +505,7 @@ fn libraries_sharing_an_identifier_return_the_same_second_group_reference_encodi
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides::<Consumer>::default());
+        let deps = build_create_pairing_deps(Consumer, Default::default());
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -583,7 +579,7 @@ fn each_second_group_decoder_refuses_the_second_group_reference_encoding() {
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides::<Consumer>::default());
+        let deps = build_create_pairing_deps(Consumer, Default::default());
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -647,7 +643,7 @@ fn each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(CreatePairingDepsOverrides::<Consumer>::default());
+        let deps = build_create_pairing_deps(Consumer, Default::default());
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);

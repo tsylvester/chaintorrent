@@ -10,13 +10,16 @@ use super::interface::{
     Bls12381ArkworksG2, Bls12381ArkworksGt, Bls12381ArkworksPairing,
     Bls12381ArkworksPairingConstructorParams, Bls12381ArkworksScalar,
 };
-use ark_bls12_381::{Bls12_381, Fq, Fq2, Fq12, Fr, G1Affine, G2Affine};
+use ark_bls12_381::{Bls12_381, Fr, G1Affine, G2Affine};
+#[cfg(test)]
+use ark_bls12_381::{Fq, Fq2, Fq12};
 #[cfg(test)]
 use ark_ec::CurveGroup;
 use ark_ec::{
     AffineRepr,
     pairing::{Pairing, PairingOutput},
 };
+#[cfg(test)]
 use ark_ff::{BigInteger, Field, PrimeField};
 #[cfg(test)]
 use hex::decode;
@@ -24,38 +27,6 @@ use hex::decode;
 use num_bigint::BigUint;
 #[cfg(test)]
 use zeroize::ZeroizeOnDrop;
-
-impl Default for Bls12381ArkworksScalar {
-    fn default() -> Self {
-        Bls12381ArkworksScalar {
-            value: Fr::from(1u64),
-        }
-    }
-}
-
-impl Default for Bls12381ArkworksG1 {
-    fn default() -> Self {
-        Bls12381ArkworksG1 {
-            value: G1Affine::generator(),
-        }
-    }
-}
-
-impl Default for Bls12381ArkworksG2 {
-    fn default() -> Self {
-        Bls12381ArkworksG2 {
-            value: G2Affine::generator(),
-        }
-    }
-}
-
-impl Default for Bls12381ArkworksGt {
-    fn default() -> Self {
-        Bls12381ArkworksGt {
-            value: Bls12_381::pairing(G1Affine::generator(), G2Affine::generator()),
-        }
-    }
-}
 
 #[derive(Default)]
 pub(crate) struct Bls12381ArkworksScalarOverrides {
@@ -66,9 +37,7 @@ pub(crate) fn build_bls12_381_arkworks_scalar(
     overrides: Bls12381ArkworksScalarOverrides,
 ) -> Bls12381ArkworksScalar {
     Bls12381ArkworksScalar {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bls12381ArkworksScalar::default().value),
+        value: overrides.value.unwrap_or_else(|| Fr::from(1u64)),
     }
 }
 
@@ -81,9 +50,7 @@ pub(crate) fn build_bls12_381_arkworks_g1(
     overrides: Bls12381ArkworksG1Overrides,
 ) -> Bls12381ArkworksG1 {
     Bls12381ArkworksG1 {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bls12381ArkworksG1::default().value),
+        value: overrides.value.unwrap_or_else(G1Affine::generator),
     }
 }
 
@@ -96,9 +63,7 @@ pub(crate) fn build_bls12_381_arkworks_g2(
     overrides: Bls12381ArkworksG2Overrides,
 ) -> Bls12381ArkworksG2 {
     Bls12381ArkworksG2 {
-        value: overrides
-            .value
-            .unwrap_or_else(|| Bls12381ArkworksG2::default().value),
+        value: overrides.value.unwrap_or_else(G2Affine::generator),
     }
 }
 
@@ -113,7 +78,7 @@ pub(crate) fn build_bls12_381_arkworks_gt(
     Bls12381ArkworksGt {
         value: overrides
             .value
-            .unwrap_or_else(|| Bls12381ArkworksGt::default().value),
+            .unwrap_or_else(|| Bls12_381::pairing(G1Affine::generator(), G2Affine::generator())),
     }
 }
 

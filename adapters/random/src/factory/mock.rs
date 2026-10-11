@@ -14,7 +14,7 @@ use super::interface::{
 };
 use core::cell::Cell;
 use core::convert::Infallible;
-use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
+use domain::{Secret, build_secret};
 
 #[derive(Default)]
 pub struct RandomSourceDeclarationOverrides {
@@ -57,11 +57,9 @@ pub fn build_fill_bytes_success_return(
     overrides: FillBytesSuccessReturnOverrides,
 ) -> FillBytesSuccessReturn {
     FillBytesSuccessReturn {
-        bytes: overrides.bytes.unwrap_or_else(|| {
-            build_secret::<Vec<u8>>(SecretConstructorParamsOverrides {
-                value: Some(vec![0u8; 32]),
-            })
-        }),
+        bytes: overrides
+            .bytes
+            .unwrap_or_else(|| build_secret(vec![0u8; 32], Default::default())),
     }
 }
 
@@ -131,9 +129,7 @@ impl IRandomSourceAdapter for MockIRandomSourceAdapter {
             *byte = mixed as u8;
         }
         Ok(FillBytesSuccessReturn {
-            bytes: build_secret(SecretConstructorParamsOverrides {
-                value: Some(buffer),
-            }),
+            bytes: build_secret(buffer, Default::default()),
         })
     }
 }
@@ -163,18 +159,13 @@ pub fn build_create_random_source_params(
 }
 
 #[derive(Default)]
-pub struct CreateRandomSourceSuccessReturnOverrides {
-    pub adapter: Option<Box<dyn IRandomSourceAdapter>>,
-}
+pub struct CreateRandomSourceSuccessReturnOverrides;
 
 pub fn build_create_random_source_success_return(
-    overrides: CreateRandomSourceSuccessReturnOverrides,
+    adapter: Box<dyn IRandomSourceAdapter>,
+    _overrides: CreateRandomSourceSuccessReturnOverrides,
 ) -> CreateRandomSourceSuccessReturn {
-    CreateRandomSourceSuccessReturn {
-        adapter: overrides
-            .adapter
-            .unwrap_or_else(|| Box::new(build_mock_i_random_source_adapter(Default::default()))),
-    }
+    CreateRandomSourceSuccessReturn { adapter }
 }
 
 pub fn mock_create_random_source(
@@ -182,5 +173,9 @@ pub fn mock_create_random_source(
     _params: CreateRandomSourceParams,
     _payload: CreateRandomSourcePayload,
 ) -> CreateRandomSourceReturn {
-    Ok(build_create_random_source_success_return(Default::default()))
+    let adapter = build_mock_i_random_source_adapter(Default::default());
+    Ok(build_create_random_source_success_return(
+        Box::new(adapter),
+        Default::default(),
+    ))
 }

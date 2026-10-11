@@ -1,14 +1,10 @@
 #![allow(clippy::expect_used)]
 
-use super::provides::{
-    PairingBenchmarkConstructorParamsOverrides, PairingBenchmarkErrorReturn,
-    build_pairing_benchmark,
-};
-use core::num::NonZeroU32;
+use super::provides::{PairingBenchmarkErrorReturn, build_pairing_benchmark};
 use pairing::{
-    CreatePairingDepsOverrides, CreatePairingParamsOverrides, CreatePairingPayload,
-    MockIPairingAdapterFailureMode, PairingConcrete, SampleUniformScalarErrorReturn,
-    build_create_pairing_deps, build_create_pairing_params, create_pairing,
+    CreatePairingParamsOverrides, CreatePairingPayload, MockIPairingAdapterFailureMode,
+    PairingConcrete, SampleUniformScalarErrorReturn, build_create_pairing_deps,
+    build_create_pairing_params, create_pairing,
 };
 use random::{
     CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
@@ -45,13 +41,8 @@ fn consume_pairing_returns_the_draw_error_unchanged() {
         random_params,
         CreateRandomSourcePayload,
     );
-    let benchmark = build_pairing_benchmark(PairingBenchmarkConstructorParamsOverrides {
-        random: Some(created.adapter),
-        ..Default::default()
-    });
-    let deps = build_create_pairing_deps(CreatePairingDepsOverrides {
-        consumer: Some(benchmark),
-    });
+    let benchmark = build_pairing_benchmark(created.adapter, Default::default());
+    let deps = build_create_pairing_deps(benchmark, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides::default());
 
     // Act
@@ -66,53 +57,17 @@ fn consume_pairing_returns_the_draw_error_unchanged() {
     );
 }
 
-/// Contract: both scalars drawn and sampled → `Ok(PairingBenchmarkSuccessReturn
-///   { concrete: P::CONCRETE, iterations: self.iterations, timings })`.
-/// Arrange: the randomness family's mock concrete from the builder's default
-///   source; the benchmark built with `iterations` set to
-///   `NonZeroU32::MIN.saturating_add(2)`, which is 3 and differs from the
-///   builder's default of `NonZeroU32::MIN`, so a benchmark that returns a
-///   fixed count fails; `params.concrete` read into `selected` before the call.
-/// Act:    `create_pairing(&deps, params, CreatePairingPayload)`, whose consumer
-///   is the benchmark, so the only function of its module that runs is
-///   `PairingBenchmark::consume_pairing`.
-/// Assert: the measurement extracted by `expect` carries `concrete` equal to
-///   `selected` and `iterations.get()` equal to the literal `3`; the timings
-///   are not asserted.
-#[test]
-fn consume_pairing_carries_the_selected_concrete_and_the_iteration_count() {
-    // Arrange
-    let benchmark = build_pairing_benchmark(PairingBenchmarkConstructorParamsOverrides {
-        iterations: Some(NonZeroU32::MIN.saturating_add(2)),
-        ..Default::default()
-    });
-    let deps = build_create_pairing_deps(CreatePairingDepsOverrides {
-        consumer: Some(benchmark),
-    });
-    let params = build_create_pairing_params(CreatePairingParamsOverrides::default());
-    let selected = params.concrete;
-
-    // Act
-    let result = create_pairing(&deps, params, CreatePairingPayload);
-
-    // Assert
-    let measurement = result
-        .ok()
-        .and_then(|success| success.output.ok())
-        .expect("the measured arm");
-    assert!(measurement.concrete == selected);
-    assert_eq!(measurement.iterations.get(), 3);
-}
-
 /// Contract: both scalars drawn with `P::Scalar::UNIFORM_BYTES_LENGTH` bytes
 ///   and sampled → `Ok(PairingBenchmarkSuccessReturn { concrete: P::CONCRETE,
 ///   iterations: self.iterations, timings })`.
-/// Arrange: `build_pairing_benchmark` with no override, whose source is the
-///   randomness family's mock concrete drawing exactly the requested length;
-///   `params` from `build_create_pairing_params` with no override, selecting
-///   the pairing family's mock concrete, whose sampling refuses an input whose
-///   length differs from its bound, so a benchmark that requests another
-///   length fails.
+/// Arrange: `created` the success arm of `create_random_source` under
+///   `build_create_random_source_params` with no override, the randomness
+///   family's mock concrete drawing exactly the requested length;
+///   `build_pairing_benchmark` with `created.adapter` handed as the random
+///   source; `params` from `build_create_pairing_params` with no override,
+///   selecting the pairing family's mock concrete, whose sampling refuses an
+///   input whose length differs from its bound, so a benchmark that requests
+///   another length fails.
 /// Act:    `create_pairing(&deps, params, CreatePairingPayload)`, whose consumer
 ///   is the benchmark, so the only function of its module that runs is
 ///   `PairingBenchmark::consume_pairing`.
@@ -123,10 +78,14 @@ fn consume_pairing_carries_the_selected_concrete_and_the_iteration_count() {
 #[test]
 fn consume_pairing_draws_the_length_the_sampling_bound_requires() {
     // Arrange
-    let benchmark = build_pairing_benchmark(Default::default());
-    let deps = build_create_pairing_deps(CreatePairingDepsOverrides {
-        consumer: Some(benchmark),
-    });
+    let random_params = build_create_random_source_params(Default::default());
+    let Ok(created) = create_random_source(
+        &CreateRandomSourceDeps,
+        random_params,
+        CreateRandomSourcePayload,
+    );
+    let benchmark = build_pairing_benchmark(created.adapter, Default::default());
+    let deps = build_create_pairing_deps(benchmark, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides::default());
 
     // Act
@@ -143,8 +102,10 @@ fn consume_pairing_draws_the_length_the_sampling_bound_requires() {
 ///   override set to `PairingConcrete::Mock(
 ///   MockIPairingAdapterFailureMode::SampleScalarWrongLength)`, a mode that
 ///   differs from the builder's default `Succeeds`, so a benchmark that
-///   ignores a refused sampling fails; `build_pairing_benchmark` with no
-///   override, its source the randomness family's mock concrete.
+///   ignores a refused sampling fails; `build_pairing_benchmark` with
+///   `created.adapter` handed as the random source, `created` the success arm
+///   of `create_random_source` under `build_create_random_source_params` with
+///   no override, the randomness family's mock concrete.
 /// Act:    `create_pairing(&deps, params, CreatePairingPayload)`, whose consumer
 ///   is the benchmark, so the only function of its module that runs is
 ///   `PairingBenchmark::consume_pairing`.
@@ -157,10 +118,14 @@ fn consume_pairing_draws_the_length_the_sampling_bound_requires() {
 #[test]
 fn consume_pairing_returns_the_sampling_error_unchanged() {
     // Arrange
-    let benchmark = build_pairing_benchmark(Default::default());
-    let deps = build_create_pairing_deps(CreatePairingDepsOverrides {
-        consumer: Some(benchmark),
-    });
+    let random_params = build_create_random_source_params(Default::default());
+    let Ok(created) = create_random_source(
+        &CreateRandomSourceDeps,
+        random_params,
+        CreateRandomSourcePayload,
+    );
+    let benchmark = build_pairing_benchmark(created.adapter, Default::default());
+    let deps = build_create_pairing_deps(benchmark, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::SampleScalarWrongLength,
