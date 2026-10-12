@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod integration_test;
 mod interface;
 #[cfg(any(test, feature = "mocks"))]
 mod mock;
@@ -11,6 +13,8 @@ use interface::{
     CreateHashToScalarPayload, CreateHashToScalarReturn, CreateHashToScalarSuccessReturn,
     HashToScalarConcrete,
 };
+#[cfg(any(test, feature = "mocks"))]
+use mock::{MockIHashToScalarAdapter, MockIHashToScalarAdapterConstructorParams};
 use pairing::ISampleUniformScalar;
 
 pub fn create_hash_to_scalar<S: ISampleUniformScalar + Clone>(
@@ -26,6 +30,19 @@ pub fn create_hash_to_scalar<S: ISampleUniformScalar + Clone>(
             let Ok(hasher) = Keccak256HashToScalar::try_new(Keccak256HashToScalarConstructorParams);
             Ok(CreateHashToScalarSuccessReturn {
                 adapter: Box::new(hasher),
+            })
+        }
+        #[cfg(any(test, feature = "mocks"))]
+        HashToScalarConcrete::Mock(failure_mode) => {
+            if MockIHashToScalarAdapter::<S>::DECLARATION.identifier != params.identifier {
+                return Err(CreateHashToScalarErrorReturn::UnsupportedHashToScalarIdentifier);
+            }
+            let Ok(mock) =
+                MockIHashToScalarAdapter::try_new(MockIHashToScalarAdapterConstructorParams {
+                    failure_mode,
+                });
+            Ok(CreateHashToScalarSuccessReturn {
+                adapter: Box::new(mock),
             })
         }
     }

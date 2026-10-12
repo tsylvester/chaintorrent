@@ -1,13 +1,15 @@
 use crate::domain_tag::provides::DomainTag;
 use crate::keccak256::provides::Keccak256HashToScalarErrorReturn;
 use core::convert::Infallible;
-use pairing::ISampleUniformScalar;
+use pairing::{ISampleUniformScalar, SampleUniformScalarErrorReturn};
 
 pub const HASH_TO_SCALAR_INTERFACE_VERSION: u32 = 1;
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum HashToScalarIdentifier {
     Keccak256V1,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 pub struct HashToScalarDeclaration {
@@ -30,7 +32,15 @@ pub struct HashToScalarSuccessReturn<S> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum HashToScalarErrorReturn {
+    Sampling(SampleUniformScalarErrorReturn),
     Keccak256(Keccak256HashToScalarErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum MockIHashToScalarAdapterFailureMode {
+    Succeeds,
+    SamplingRefused,
 }
 
 pub type HashToScalarReturn<S> = Result<HashToScalarSuccessReturn<S>, HashToScalarErrorReturn>;
@@ -45,12 +55,16 @@ pub trait IHashToScalarAdapter<S: ISampleUniformScalar + Clone> {
     ) -> HashToScalarReturn<S>;
 }
 
+#[derive(Clone, Copy)]
 pub enum HashToScalarConcrete {
     Keccak256,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIHashToScalarAdapterFailureMode),
 }
 
 pub struct CreateHashToScalarDeps;
 
+#[derive(Clone, Copy)]
 pub struct CreateHashToScalarParams {
     pub concrete: HashToScalarConcrete,
     pub identifier: HashToScalarIdentifier,
@@ -66,6 +80,8 @@ pub struct CreateHashToScalarSuccessReturn<S> {
 pub enum CreateHashToScalarErrorReturn {
     UnsupportedHashToScalarIdentifier,
     Keccak256(Infallible),
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(Infallible),
 }
 
 pub type CreateHashToScalarReturn<S> =
@@ -76,3 +92,9 @@ pub type CreateHashToScalarFn<S> = fn(
     CreateHashToScalarParams,
     CreateHashToScalarPayload,
 ) -> CreateHashToScalarReturn<S>;
+
+pub const DECLARED_HASH_TO_SCALAR_SELECTIONS: &[CreateHashToScalarParams] =
+    &[CreateHashToScalarParams {
+        concrete: HashToScalarConcrete::Keccak256,
+        identifier: HashToScalarIdentifier::Keccak256V1,
+    }];

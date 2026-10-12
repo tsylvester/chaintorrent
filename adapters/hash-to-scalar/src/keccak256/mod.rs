@@ -1,4 +1,8 @@
+#[cfg(test)]
+mod integration_test;
 mod interface;
+#[cfg(any(test, feature = "mocks"))]
+mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
 mod test;
@@ -68,9 +72,7 @@ impl<S: ISampleUniformScalar + Clone> IHashToScalarAdapter<S> for Keccak256HashT
         ) {
             Ok(success) => success,
             Err(error) => {
-                return Err(HashToScalarErrorReturn::Keccak256(
-                    Keccak256HashToScalarErrorReturn::Sampling(error),
-                ));
+                return Err(HashToScalarErrorReturn::Sampling(error));
             }
         };
         Ok(HashToScalarSuccessReturn {

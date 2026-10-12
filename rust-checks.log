@@ -1,4 +1,4 @@
-Rust checks started: 2026-10-12 13:52:25 -05:00
+Rust checks started: 2026-10-12 15:33:19 -05:00
 
 > cargo check --workspace --all-targets --all-features
 
@@ -7,6 +7,97 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
+    Checking pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
+warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:15:12
+   |
+15 | pub struct EvmIdentityFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `build_evm_identity_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:19:8
+   |
+19 | pub fn build_evm_identity_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_identity_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:27:8
+   |
+27 | pub fn build_evm_identity_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmEntitlementFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:35:12
+   |
+35 | pub struct EvmEntitlementFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_entitlement_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:39:8
+   |
+39 | pub fn build_evm_entitlement_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_entitlement_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:47:8
+   |
+47 | pub fn build_evm_entitlement_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmIntervalFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:56:12
+   |
+56 | pub struct EvmIntervalFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_interval_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:60:8
+   |
+60 | pub fn build_evm_interval_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_interval_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:68:8
+   |
+68 | pub fn build_evm_interval_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmChainIdentifierFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:76:12
+   |
+76 | pub struct EvmChainIdentifierFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_chain_identifier_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:80:8
+   |
+80 | pub fn build_evm_chain_identifier_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_chain_identifier_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:88:8
+   |
+88 | pub fn build_evm_chain_identifier_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
+  --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
+   |
+25 | pub struct Blake3KeyedKdfConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
+  --> adapters\kdf\src\blake3_keyed\mock.rs:28:8
+   |
+28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `chain` (lib test) generated 12 warnings
+warning: `kdf` (lib test) generated 2 warnings
 warning: struct `Bls12381ArkworksScalarOverrides` is never constructed
   --> adapters\pairing\src\bls12_381_arkworks\mock.rs:32:19
    |
@@ -323,97 +414,51 @@ warning: function `build_bn254_halo2curves_encoded_gt` is never used
 
 warning: `pairing` (lib) generated 52 warnings
     Checking hash-to-scalar v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar)
-warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
-  --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
+warning: constant `BINDING_TAG` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
    |
-25 | pub struct Blake3KeyedKdfConstructorParamsCorruptions;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
-  --> adapters\kdf\src\blake3_keyed\mock.rs:28:8
-   |
-28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:15:12
-   |
-15 | pub struct EvmIdentityFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
+   |           ^^^^^^^^^^^
    |
    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
-warning: function `build_evm_identity_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:19:8
+warning: constant `BINDING_MESSAGE` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:55:11
    |
-19 | pub fn build_evm_identity_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+55 | pub const BINDING_MESSAGE: &[u8] = b"def";
+   |           ^^^^^^^^^^^^^^^
 
-warning: function `build_evm_identity_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:27:8
-   |
-27 | pub fn build_evm_identity_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmEntitlementFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:35:12
-   |
-35 | pub struct EvmEntitlementFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_entitlement_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:39:8
-   |
-39 | pub fn build_evm_entitlement_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_entitlement_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:47:8
-   |
-47 | pub fn build_evm_entitlement_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmIntervalFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:56:12
-   |
-56 | pub struct EvmIntervalFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_interval_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:60:8
-   |
-60 | pub fn build_evm_interval_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_interval_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:68:8
-   |
-68 | pub fn build_evm_interval_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmChainIdentifierFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:76:12
-   |
-76 | pub struct EvmChainIdentifierFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_chain_identifier_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:80:8
-   |
-80 | pub fn build_evm_chain_identifier_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_chain_identifier_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:88:8
-   |
-88 | pub fn build_evm_chain_identifier_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: `kdf` (lib test) generated 2 warnings
-warning: `chain` (lib test) generated 12 warnings
+warning: `hash-to-scalar` (lib) generated 2 warnings
     Checking kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
+warning: unused import: `IPairingAdapter`
+  --> adapters\hash-to-scalar\src\keccak256\integration_test.rs:15:68
+   |
+15 |     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
+   |                                                                    ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `Keccak256HashToScalarConstructorParamsCorruptions` is never constructed
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:25:12
+   |
+25 | pub struct Keccak256HashToScalarConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_keccak256_hash_to_scalar_constructor_params` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:28:8
+   |
+28 | pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `BINDING_TAG` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
+   |
+53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
+   |           ^^^^^^^^^^^
+
+warning: `hash-to-scalar` (lib test) generated 5 warnings (1 duplicate)
 error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
   --> adapters\kem\src\factory\mock.rs:82:61
    |
@@ -562,11 +607,21 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-    Checking random v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\random)
-    Checking kdf v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kdf)
     Checking pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
-    Checking encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
-    Checking chain v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\chain)
+warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
+  --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
+   |
+25 | pub struct Blake3KeyedKdfConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
+  --> adapters\kdf\src\blake3_keyed\mock.rs:28:8
+   |
+28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
   --> adapters\chain\src\evm_forms\mock.rs:15:12
    |
@@ -641,22 +696,8 @@ warning: function `build_evm_chain_identifier_form` is never used
 88 | pub fn build_evm_chain_identifier_form(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
-  --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
-   |
-25 | pub struct Blake3KeyedKdfConstructorParamsCorruptions;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
-  --> adapters\kdf\src\blake3_keyed\mock.rs:28:8
-   |
-28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: `chain` (lib test) generated 12 warnings
 warning: `kdf` (lib test) generated 2 warnings
+warning: `chain` (lib test) generated 12 warnings
 warning: struct `Bls12381ArkworksScalarOverrides` is never constructed
   --> adapters\pairing\src\bls12_381_arkworks\mock.rs:32:19
    |
@@ -973,7 +1014,51 @@ warning: function `build_bn254_halo2curves_encoded_gt` is never used
 
 warning: `pairing` (lib) generated 52 warnings
     Checking hash-to-scalar v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar)
+warning: constant `BINDING_TAG` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
+   |
+53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
+   |           ^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `BINDING_MESSAGE` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:55:11
+   |
+55 | pub const BINDING_MESSAGE: &[u8] = b"def";
+   |           ^^^^^^^^^^^^^^^
+
+warning: `hash-to-scalar` (lib) generated 2 warnings
     Checking kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
+warning: unused import: `IPairingAdapter`
+  --> adapters\hash-to-scalar\src\keccak256\integration_test.rs:15:68
+   |
+15 |     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
+   |                                                                    ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `Keccak256HashToScalarConstructorParamsCorruptions` is never constructed
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:25:12
+   |
+25 | pub struct Keccak256HashToScalarConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_keccak256_hash_to_scalar_constructor_params` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:28:8
+   |
+28 | pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `BINDING_TAG` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
+   |
+53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
+   |           ^^^^^^^^^^^
+
+warning: `hash-to-scalar` (lib test) generated 5 warnings (1 duplicate)
 error[E0560]: struct `domain::SecretConstructorParamsOverrides` has no field named `value`
   --> adapters\kem\src\factory\mock.rs:82:61
    |
@@ -1128,24 +1213,6 @@ warning[unmatched-source]: allowed source was not encountered
    Γöé
 37 Γöé allow-git = ["https://github.com/tsylvester/rqbit", "https://github.com/tsylvester/halo2curves"]
    Γöé               ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü no crate source matched these criteria
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:20:6
-   Γöé
-20 Γöé     "BSL-1.0",
-   Γöé      ΓöüΓöüΓöüΓöüΓöüΓöüΓöü unmatched license allowance
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:17:6
-   Γöé
-17 Γöé     "ISC",
-   Γöé      ΓöüΓöüΓöü unmatched license allowance
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:18:6
-   Γöé
-18 Γöé     "Zlib",
-   Γöé      ΓöüΓöüΓöüΓöü unmatched license allowance
 
 warning[duplicate]: found 2 duplicate entries for crate 'block-buffer'
    ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:27:1
@@ -1516,6 +1583,24 @@ warning[duplicate]: found 2 duplicate entries for crate 'digest'
      ΓööΓöÇΓöÇ sha3 v0.12.0
          ΓööΓöÇΓöÇ hash-to-scalar v0.0.0 (*)
 
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:20:6
+   Γöé
+20 Γöé     "BSL-1.0",
+   Γöé      ΓöüΓöüΓöüΓöüΓöüΓöüΓöü unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:17:6
+   Γöé
+17 Γöé     "ISC",
+   Γöé      ΓöüΓöüΓöü unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:18:6
+   Γöé
+18 Γöé     "Zlib",
+   Γöé      ΓöüΓöüΓöüΓöü unmatched license allowance
+
 warning[duplicate]: found 2 duplicate entries for crate 'pairing'
    ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:84:1
    Γöé  
@@ -1813,6 +1898,97 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
+   Compiling pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
+warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
+  --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
+   |
+25 | pub struct Blake3KeyedKdfConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
+  --> adapters\kdf\src\blake3_keyed\mock.rs:28:8
+   |
+28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:15:12
+   |
+15 | pub struct EvmIdentityFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `build_evm_identity_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:19:8
+   |
+19 | pub fn build_evm_identity_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_identity_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:27:8
+   |
+27 | pub fn build_evm_identity_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmEntitlementFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:35:12
+   |
+35 | pub struct EvmEntitlementFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_entitlement_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:39:8
+   |
+39 | pub fn build_evm_entitlement_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_entitlement_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:47:8
+   |
+47 | pub fn build_evm_entitlement_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmIntervalFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:56:12
+   |
+56 | pub struct EvmIntervalFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_interval_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:60:8
+   |
+60 | pub fn build_evm_interval_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_interval_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:68:8
+   |
+68 | pub fn build_evm_interval_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EvmChainIdentifierFormConstructorParamsOverrides` is never constructed
+  --> adapters\chain\src\evm_forms\mock.rs:76:12
+   |
+76 | pub struct EvmChainIdentifierFormConstructorParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_chain_identifier_form_constructor_params` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:80:8
+   |
+80 | pub fn build_evm_chain_identifier_form_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_evm_chain_identifier_form` is never used
+  --> adapters\chain\src\evm_forms\mock.rs:88:8
+   |
+88 | pub fn build_evm_chain_identifier_form(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `kdf` (lib test) generated 2 warnings
+warning: `chain` (lib test) generated 12 warnings
 warning: struct `Bls12381ArkworksScalarOverrides` is never constructed
   --> adapters\pairing\src\bls12_381_arkworks\mock.rs:32:19
    |
@@ -2127,98 +2303,21 @@ warning: function `build_bn254_halo2curves_encoded_gt` is never used
 116 | pub(crate) fn build_bn254_halo2curves_encoded_gt(
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: `pairing` (lib) generated 52 warnings
    Compiling hash-to-scalar v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar)
-warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:15:12
+warning: constant `BINDING_TAG` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
    |
-15 | pub struct EvmIdentityFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `build_evm_identity_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:19:8
-   |
-19 | pub fn build_evm_identity_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_identity_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:27:8
-   |
-27 | pub fn build_evm_identity_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmEntitlementFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:35:12
-   |
-35 | pub struct EvmEntitlementFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_entitlement_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:39:8
-   |
-39 | pub fn build_evm_entitlement_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_entitlement_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:47:8
-   |
-47 | pub fn build_evm_entitlement_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmIntervalFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:56:12
-   |
-56 | pub struct EvmIntervalFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_interval_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:60:8
-   |
-60 | pub fn build_evm_interval_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_interval_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:68:8
-   |
-68 | pub fn build_evm_interval_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `EvmChainIdentifierFormConstructorParamsOverrides` is never constructed
-  --> adapters\chain\src\evm_forms\mock.rs:76:12
-   |
-76 | pub struct EvmChainIdentifierFormConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_chain_identifier_form_constructor_params` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:80:8
-   |
-80 | pub fn build_evm_chain_identifier_form_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_evm_chain_identifier_form` is never used
-  --> adapters\chain\src\evm_forms\mock.rs:88:8
-   |
-88 | pub fn build_evm_chain_identifier_form(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
-  --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
-   |
-25 | pub struct Blake3KeyedKdfConstructorParamsCorruptions;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
+   |           ^^^^^^^^^^^
    |
    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
-warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
-  --> adapters\kdf\src\blake3_keyed\mock.rs:28:8
+warning: constant `BINDING_MESSAGE` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:55:11
    |
-28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+55 | pub const BINDING_MESSAGE: &[u8] = b"def";
+   |           ^^^^^^^^^^^^^^^
 
-warning: `chain` (lib test) generated 12 warnings
-warning: `kdf` (lib test) generated 2 warnings
    Compiling kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
 error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
   --> adapters\kem\src\factory\mock.rs:82:61
@@ -2356,6 +2455,8 @@ Some errors have detailed explanations: E0061, E0560.
 For more information about an error, try `rustc --explain E0061`.
 error: could not compile `kem` (lib) due to 10 previous errors
 warning: build failed, waiting for other jobs to finish...
+warning: `hash-to-scalar` (lib) generated 2 warnings
+warning: `pairing` (lib) generated 52 warnings
 
 [exit code: 101]
 

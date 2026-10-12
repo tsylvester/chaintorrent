@@ -78,7 +78,7 @@ pub enum SampleUniformScalarErrorReturn {
 pub type SampleUniformScalarReturn<S> =
     Result<SampleUniformScalarSuccessReturn<S>, SampleUniformScalarErrorReturn>;
 
-pub trait ISampleUniformScalar: Zeroize + ZeroizeOnDrop + Sized {
+pub trait ISampleUniformScalar: Zeroize + ZeroizeOnDrop + Sized + 'static {
     const UNIFORM_BYTES_LENGTH: usize;
 
     fn sample_from_uniform_bytes(

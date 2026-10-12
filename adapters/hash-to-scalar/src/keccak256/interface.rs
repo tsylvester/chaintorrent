@@ -1,5 +1,4 @@
 use core::convert::Infallible;
-use pairing::SampleUniformScalarErrorReturn;
 
 pub const KECCAK256_DIGEST_LENGTH: usize = 32;
 
@@ -18,5 +17,4 @@ pub enum Keccak256HashToScalarErrorReturn {
         uniform_length: usize,
         digest_length: usize,
     },
-    Sampling(SampleUniformScalarErrorReturn),
 }
