@@ -93,6 +93,8 @@ pub const ENCODING_INTERFACE_VERSION: u32 = 1;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EncodingIdentifier {
     EthereumAbiV1,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -148,6 +150,7 @@ pub enum DecodeErrorReturn<E> {
     Abi(AbiDecoderErrorReturn),
     Description(E),
     EncoderContract(EncodeErrorReturn),
+    NonCanonical,
 }
 
 pub type DecodeReturn<T, E> = Result<DecodeSuccessReturn<T>, DecodeErrorReturn<E>>;
@@ -163,6 +166,8 @@ pub trait IDecoderAdapter {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EncodingConcrete {
     Abi,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 pub trait IEncodingConsumer {
@@ -210,3 +215,24 @@ pub type CreateEncodingFn<C> = fn(
     CreateEncodingParams,
     CreateEncodingPayload,
 ) -> CreateEncodingReturn<<C as IEncodingConsumer>::Output>;
+
+pub const DECLARED_ENCODING_SELECTIONS: &[CreateEncodingParams] = &[CreateEncodingParams {
+    concrete: EncodingConcrete::Abi,
+    identifier: EncodingIdentifier::EthereumAbiV1,
+}];
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum MockIEncodingContractFromFieldsErrorReturn {
+    EmptyText { index: usize },
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct MockIEncodingConsumerOutput<D: IEncodingContract> {
+    pub declaration: EncodingDeclaration,
+    pub encoded: EncodeReturn,
+    pub round_trip: DecodeReturn<D::Described, D::FromFieldsErrorReturn>,
+    pub trailing_bytes: DecodeReturn<D::Described, D::FromFieldsErrorReturn>,
+    pub truncated_bytes: DecodeReturn<D::Described, D::FromFieldsErrorReturn>,
+    pub decoded: DecodeReturn<D::Described, D::FromFieldsErrorReturn>,
+}

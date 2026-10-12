@@ -38,3 +38,13 @@ Ordering: the count precedes every kind, every kind precedes every constructor, 
 
 - The kinds of the values `to_fields` returns are `DERIVATION_CONTEXT_FIELD_KINDS` in order, and `fields_to_value` admits exactly that sequence.
 
+## Integration: own entries
+
+Each entry is named and proven by the public integration block of the same name.
+
+- `a_context_survives_the_round_trip_through_its_canonical_fields`: condition an admitted `DerivationContext` is handed to `to_fields` and the fields it returns are handed to `fields_to_value`; outcome `Ok(FromFieldsSuccessReturn { described })` with `described` equal to the original context; variation a context whose same-kind fields hold distinct values, among the text values, among the 32-byte values, among the 32-bit values, and among the 64-bit values, whose 16-bit suite version is at its maximum, whose piece-group size exceeds the `i32` range, and whose group index and total extent exceed the 32-bit range, so a swap of same-kind fields, a dropped field, or a narrowed width yields a refusal or an unequal context; edge that must survive the composition: the context constructor's group-index rule admits the rebuilt context at the full width of the extent, so the fields of an admitted context are never refused on the way back.
+
+## Integration: public surface
+
+An outside caller invokes `DerivationContextDescription::try_new` — under the `mocks` feature, through the official mock builder `build_derivation_context_description` — `IEncodingContract::to_fields`, and `IEncodingContract::fields_to_value`, and observes the fields, the context, or the refusal each returns. The entry proven is `a_context_survives_the_round_trip_through_its_canonical_fields` above. Its route is `to_fields` then `fields_to_value`, each running `domain`'s accessors and constructors as themselves; the outer-edge collaborators on that route are none, `domain` being a pure value library, and the fixtures are `build_derivation_context_description`, `build_to_fields_params`, and `build_from_fields_params` of this crate's mocks and `build_derivation_context`, `build_asset_identity`, `build_deployment_identity`, `build_suite_identifier`, `build_parameter_set_identifier`, `build_group_index`, and `build_piece_geometry` of `domain`'s mocks.
+

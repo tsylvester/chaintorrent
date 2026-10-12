@@ -1,12 +1,16 @@
+#[cfg(any(test, feature = "mocks"))]
+use super::mock::MockIKeyDerivationAdapterDeriveKeyErrorReturn;
 use crate::blake3_keyed::provides::Blake3KeyedKdfDeriveKeyErrorReturn;
 use core::convert::Infallible;
 use domain::Secret;
 
 pub const KDF_INTERFACE_VERSION: u32 = 1;
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum KdfIdentifier {
     Blake3KeyedV1,
+    #[cfg(any(test, feature = "mocks"))]
+    MockV1,
 }
 
 pub struct KdfDeclaration {
@@ -43,9 +47,18 @@ pub struct DeriveKeySuccessReturn {
 #[derive(Debug, PartialEq, Eq)]
 pub enum DeriveKeyErrorReturn {
     Blake3Keyed(Blake3KeyedKdfDeriveKeyErrorReturn),
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIKeyDerivationAdapterDeriveKeyErrorReturn),
 }
 
 pub type DeriveKeyReturn = Result<DeriveKeySuccessReturn, DeriveKeyErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Clone, Copy)]
+pub enum MockIKeyDerivationAdapterFailureMode {
+    NoFailure,
+    KeyMaterialLengthUnrepresentable,
+}
 
 pub trait IKeyDerivationAdapter {
     fn declaration(&self) -> KdfDeclaration;
@@ -53,12 +66,16 @@ pub trait IKeyDerivationAdapter {
     -> DeriveKeyReturn;
 }
 
+#[derive(Clone, Copy)]
 pub enum KdfConcrete {
     Blake3Keyed,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIKeyDerivationAdapterFailureMode),
 }
 
 pub struct CreateKeyDerivationDeps;
 
+#[derive(Clone, Copy)]
 pub struct CreateKeyDerivationParams {
     pub concrete: KdfConcrete,
     pub identifier: KdfIdentifier,
@@ -74,6 +91,8 @@ pub struct CreateKeyDerivationSuccessReturn {
 pub enum CreateKeyDerivationErrorReturn {
     UnsupportedKdfIdentifier,
     Blake3Keyed(Infallible),
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(Infallible),
 }
 
 pub type CreateKeyDerivationReturn =
@@ -84,3 +103,8 @@ pub type CreateKeyDerivationFn = fn(
     CreateKeyDerivationParams,
     CreateKeyDerivationPayload,
 ) -> CreateKeyDerivationReturn;
+
+pub const DECLARED_KDF_SELECTIONS: &[CreateKeyDerivationParams] = &[CreateKeyDerivationParams {
+    concrete: KdfConcrete::Blake3Keyed,
+    identifier: KdfIdentifier::Blake3KeyedV1,
+}];

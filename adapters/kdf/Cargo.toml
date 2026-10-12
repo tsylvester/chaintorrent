@@ -8,14 +8,15 @@ publish.workspace = true
 domain = { path = "../../crates/domain" }
 zeroize = "1.9.0"
 blake3 = { version = "1.8.7", features = ["zeroize"] }
+serde_json = { version = "1.0.151", optional = true }
 
 [dev-dependencies]
 domain = { path = "../../crates/domain", features = ["mocks"] }
+serde_json = "1.0.151"
 encoding = { path = "../encoding", features = ["mocks"] }
-hex = "0.4.3"
 
 [features]
-mocks = ["domain/mocks"]
+mocks = ["domain/mocks", "dep:serde_json"]
 
 [lints]
 workspace = true

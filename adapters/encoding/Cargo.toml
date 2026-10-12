@@ -6,14 +6,15 @@ publish.workspace = true
 
 [dependencies]
 domain = { path = "../../crates/domain" }
-alloy = { version = "2.5.0", default-features = false, features = ["std", "dyn-abi"] }
+alloy = { version = "2.5.0", default-features = false, features = ["std", "dyn-abi", "sol-types"] }
+hex = { version = "0.4.3", optional = true }
 
 [dev-dependencies]
 domain = { path = "../../crates/domain", features = ["mocks"] }
 hex = "0.4.3"
 
 [features]
-mocks = []
+mocks = ["dep:hex"]
 
 [lints]
 workspace = true

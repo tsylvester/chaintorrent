@@ -1,4 +1,8 @@
+#[cfg(test)]
+mod integration_test;
 mod interface;
+#[cfg(any(test, feature = "mocks"))]
+mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
 mod test;
@@ -276,7 +280,7 @@ impl IDecoderAdapter for AbiEncoding {
             Err(error) => return Err(DecodeErrorReturn::EncoderContract(error)),
         };
         if re_encoded != payload {
-            return Err(DecodeErrorReturn::Abi(AbiDecoderErrorReturn::NonCanonical));
+            return Err(DecodeErrorReturn::NonCanonical);
         }
         Ok(DecodeSuccessReturn { described })
     }

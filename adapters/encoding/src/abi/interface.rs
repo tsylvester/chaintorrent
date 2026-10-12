@@ -17,5 +17,4 @@ pub enum AbiDecoderErrorReturn {
         index: usize,
         kind: CanonicalFieldKind,
     },
-    NonCanonical,
 }

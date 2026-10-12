@@ -1,4 +1,6 @@
 mod interface;
+#[cfg(any(test, feature = "mocks"))]
+mod mock;
 pub mod provides;
 #[cfg(test)]
 mod test;

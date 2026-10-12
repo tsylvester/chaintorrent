@@ -1627,6 +1627,7 @@ dependencies = [
  "encoding",
  "hex",
  "pairing 0.0.0",
+ "serde_json",
  "sha3 0.12.0",
 ]
 
@@ -1893,7 +1894,7 @@ dependencies = [
  "blake3",
  "domain",
  "encoding",
- "hex",
+ "serde_json",
  "zeroize",
 ]
 
