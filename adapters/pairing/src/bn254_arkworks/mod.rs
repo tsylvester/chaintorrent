@@ -1,5 +1,5 @@
 mod interface;
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
