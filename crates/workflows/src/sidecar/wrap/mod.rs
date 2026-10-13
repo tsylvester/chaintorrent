@@ -11,18 +11,19 @@ use encoding::{
     IEncoderAdapter,
 };
 use interface::{
-    PIECE_GROUP_KEY_LENGTH, PieceGroupKey, PieceGroupKeyErrorReturn, WrapPieceGroupKeyDeps,
-    WrapPieceGroupKeyErrorReturn, WrapPieceGroupKeyParams, WrapPieceGroupKeyPayload,
-    WrapPieceGroupKeyReturn, WrapPieceGroupKeySuccessReturn, WrappedPieceGroupKey,
+    PIECE_GROUP_KEY_LENGTH, PieceGroupKey, PieceGroupKeyConstructorParams,
+    PieceGroupKeyErrorReturn, WrapPieceGroupKeyDeps, WrapPieceGroupKeyErrorReturn,
+    WrapPieceGroupKeyParams, WrapPieceGroupKeyPayload, WrapPieceGroupKeyReturn,
+    WrapPieceGroupKeySuccessReturn, WrappedPieceGroupKey, WrappedPieceGroupKeyConstructorParams,
     WrappedPieceGroupKeyErrorReturn,
 };
 use kdf::{DerivationPurpose, DeriveKeyParams, DeriveKeyPayload};
 
 impl PieceGroupKey {
-    pub fn try_from_secret_bytes(
-        secret: Secret<Vec<u8>>,
+    pub fn try_new(
+        params: PieceGroupKeyConstructorParams,
     ) -> Result<PieceGroupKey, PieceGroupKeyErrorReturn> {
-        let actual = secret.expose().len();
+        let actual = params.secret.expose().len();
         if actual != PIECE_GROUP_KEY_LENGTH {
             return Err(PieceGroupKeyErrorReturn::WrongLength {
                 expected: PIECE_GROUP_KEY_LENGTH,
@@ -30,13 +31,9 @@ impl PieceGroupKey {
             });
         }
         let mut key = [0u8; PIECE_GROUP_KEY_LENGTH];
-        key.copy_from_slice(secret.expose());
+        key.copy_from_slice(params.secret.expose());
         let Ok(key) = Secret::try_new(SecretConstructorParams { value: key });
         Ok(PieceGroupKey { key })
-    }
-
-    pub(crate) fn from_array(key: Secret<[u8; PIECE_GROUP_KEY_LENGTH]>) -> PieceGroupKey {
-        PieceGroupKey { key }
     }
 
     pub fn expose(&self) -> &[u8; PIECE_GROUP_KEY_LENGTH] {
@@ -45,23 +42,19 @@ impl PieceGroupKey {
 }
 
 impl WrappedPieceGroupKey {
-    pub fn try_from_bytes(
-        bytes: Vec<u8>,
+    pub fn try_new(
+        params: WrappedPieceGroupKeyConstructorParams,
     ) -> Result<WrappedPieceGroupKey, WrappedPieceGroupKeyErrorReturn> {
-        let actual = bytes.len();
+        let actual = params.bytes.len();
         if actual != PIECE_GROUP_KEY_LENGTH {
             return Err(WrappedPieceGroupKeyErrorReturn::WrongLength {
                 expected: PIECE_GROUP_KEY_LENGTH,
                 actual,
             });
         }
-        let mut wrapped = [0u8; PIECE_GROUP_KEY_LENGTH];
-        wrapped.copy_from_slice(&bytes);
-        Ok(WrappedPieceGroupKey { bytes: wrapped })
-    }
-
-    pub(crate) fn from_array(bytes: [u8; PIECE_GROUP_KEY_LENGTH]) -> WrappedPieceGroupKey {
-        WrappedPieceGroupKey { bytes }
+        let mut bytes = [0u8; PIECE_GROUP_KEY_LENGTH];
+        bytes.copy_from_slice(&params.bytes);
+        Ok(WrappedPieceGroupKey { bytes })
     }
 
     pub fn as_bytes(&self) -> &[u8; PIECE_GROUP_KEY_LENGTH] {
@@ -105,17 +98,15 @@ pub fn wrap_piece_group_key<E: IEncoderAdapter>(
             actual,
         });
     }
-    let mut bytes = [0u8; PIECE_GROUP_KEY_LENGTH];
-    for (slot, (key_byte, wrap_byte)) in bytes.iter_mut().zip(
-        payload
-            .piece_group_key
-            .expose()
-            .iter()
-            .zip(wrapping_key.expose().iter()),
-    ) {
-        *slot = key_byte ^ wrap_byte;
+    let bytes = payload
+        .piece_group_key
+        .expose()
+        .iter()
+        .zip(wrapping_key.expose().iter())
+        .map(|(key_byte, wrap_byte)| key_byte ^ wrap_byte)
+        .collect();
+    match WrappedPieceGroupKey::try_new(WrappedPieceGroupKeyConstructorParams { bytes }) {
+        Ok(wrapped) => Ok(WrapPieceGroupKeySuccessReturn { wrapped }),
+        Err(error) => Err(WrapPieceGroupKeyErrorReturn::WrappedKey(error)),
     }
-    Ok(WrapPieceGroupKeySuccessReturn {
-        wrapped: WrappedPieceGroupKey::from_array(bytes),
-    })
 }

@@ -5,7 +5,9 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
-use crate::sidecar::wrap::provides::{PIECE_GROUP_KEY_LENGTH, PieceGroupKey};
+use crate::sidecar::wrap::provides::{
+    PIECE_GROUP_KEY_LENGTH, PieceGroupKey, PieceGroupKeyConstructorParams,
+};
 use domain::{Secret, SecretConstructorParams};
 use encoding::{
     DerivationContextDescription, DerivationContextDescriptionConstructorParams, EncodeParams,
@@ -53,7 +55,7 @@ pub fn unwrap_piece_group_key<E: IEncoderAdapter>(
             actual,
         });
     }
-    let mut bytes = [0u8; PIECE_GROUP_KEY_LENGTH];
+    let mut bytes = vec![0u8; PIECE_GROUP_KEY_LENGTH];
     for (slot, (wrapped_byte, wrap_byte)) in bytes.iter_mut().zip(
         payload
             .wrapped
@@ -63,8 +65,9 @@ pub fn unwrap_piece_group_key<E: IEncoderAdapter>(
     ) {
         *slot = wrapped_byte ^ wrap_byte;
     }
-    let Ok(key) = Secret::try_new(SecretConstructorParams { value: bytes });
-    Ok(UnwrapPieceGroupKeySuccessReturn {
-        piece_group_key: PieceGroupKey::from_array(key),
-    })
+    let Ok(secret) = Secret::try_new(SecretConstructorParams { value: bytes });
+    match PieceGroupKey::try_new(PieceGroupKeyConstructorParams { secret }) {
+        Ok(piece_group_key) => Ok(UnwrapPieceGroupKeySuccessReturn { piece_group_key }),
+        Err(error) => Err(UnwrapPieceGroupKeyErrorReturn::PieceGroupKey(error)),
+    }
 }

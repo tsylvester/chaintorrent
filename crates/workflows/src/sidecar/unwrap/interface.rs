@@ -1,4 +1,6 @@
-use crate::sidecar::wrap::provides::{PieceGroupKey, WrappedPieceGroupKey};
+use crate::sidecar::wrap::provides::{
+    PieceGroupKey, PieceGroupKeyErrorReturn, WrappedPieceGroupKey,
+};
 use domain::DerivationContext;
 use encoding::{EncodeErrorReturn, IEncoderAdapter};
 use kdf::{DeriveKeyErrorReturn, IKeyDerivationAdapter};
@@ -26,6 +28,7 @@ pub enum UnwrapPieceGroupKeyErrorReturn {
     Encoding(EncodeErrorReturn),
     KeyDerivation(DeriveKeyErrorReturn),
     WrappingKeyLength { expected: usize, actual: usize },
+    PieceGroupKey(PieceGroupKeyErrorReturn),
 }
 
 pub type UnwrapPieceGroupKeyReturn =

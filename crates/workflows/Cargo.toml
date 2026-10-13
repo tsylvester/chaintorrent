@@ -9,6 +9,7 @@ domain = { path = "../domain" }
 encoding = { path = "../../adapters/encoding" }
 kdf = { path = "../../adapters/kdf" }
 kem = { path = "../../adapters/kem" }
+serde_json = { version = "1.0.151", optional = true }
 
 [dev-dependencies]
 domain = { path = "../domain", features = ["mocks"] }
@@ -18,10 +19,10 @@ kem = { path = "../../adapters/kem", features = ["mocks"] }
 pairing = { path = "../../adapters/pairing", features = ["mocks"] }
 hash-to-scalar = { path = "../../adapters/hash-to-scalar", features = ["mocks"] }
 random = { path = "../../adapters/random", features = ["mocks"] }
-hex = "0.4.3"
+serde_json = "1.0.151"
 
 [features]
-mocks = ["domain/mocks"]
+mocks = ["domain/mocks", "dep:serde_json"]
 
 [lints]
 workspace = true

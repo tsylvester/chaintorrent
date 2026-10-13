@@ -1,4 +1,4 @@
-Rust checks started: 2026-10-12 19:12:34 -05:00
+Rust checks started: 2026-10-13 11:00:44 -05:00
 
 > cargo check --workspace --all-targets --all-features
 
@@ -20,34 +20,6 @@ warning: constant `BINDING_MESSAGE` is never used
    |
 55 | pub const BINDING_MESSAGE: &[u8] = b"def";
    |           ^^^^^^^^^^^^^^^
-
-warning: unused import: `IPairingAdapter`
-  --> adapters\hash-to-scalar\src\keccak256\integration_test.rs:15:68
-   |
-15 |     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
-   |                                                                    ^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
-
-warning: struct `Keccak256HashToScalarConstructorParamsCorruptions` is never constructed
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:25:12
-   |
-25 | pub struct Keccak256HashToScalarConstructorParamsCorruptions;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `invalidate_keccak256_hash_to_scalar_constructor_params` is never used
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:28:8
-   |
-28 | pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `BINDING_TAG` is never used
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
-   |
-53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
-   |           ^^^^^^^^^^^
 
 warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
   --> adapters\chain\src\evm_forms\mock.rs:15:12
@@ -123,6 +95,34 @@ warning: function `build_evm_chain_identifier_form` is never used
 88 | pub fn build_evm_chain_identifier_form(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+warning: unused import: `IPairingAdapter`
+  --> adapters\hash-to-scalar\src\keccak256\integration_test.rs:15:68
+   |
+15 |     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
+   |                                                                    ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `Keccak256HashToScalarConstructorParamsCorruptions` is never constructed
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:25:12
+   |
+25 | pub struct Keccak256HashToScalarConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_keccak256_hash_to_scalar_constructor_params` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:28:8
+   |
+28 | pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `BINDING_TAG` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
+   |
+53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
+   |           ^^^^^^^^^^^
+
 warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
   --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
    |
@@ -138,8 +138,8 @@ warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: `hash-to-scalar` (lib) generated 2 warnings
-warning: `hash-to-scalar` (lib test) generated 5 warnings (1 duplicate)
 warning: `chain` (lib test) generated 12 warnings
+warning: `hash-to-scalar` (lib test) generated 5 warnings (1 duplicate)
 warning: `kdf` (lib test) generated 2 warnings
 warning: function `uniform_bytes` is never used
   --> adapters\kem\src\bb1_depth_one\mock.rs:19:4
@@ -378,96 +378,6 @@ warning: `kem` (lib test) generated 13 warnings (12 duplicates)
     Checking envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
     Checking workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
 error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:66
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                                                                  ^^^^^ `SecretConstructorParamsOverrides` does not have this field
-   |
-   = note: all struct fields are already assigned
-
-error[E0277]: the trait bound `SecretConstructorParamsOverrides: zeroize::Zeroize` is not satisfied
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:31
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                  ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `zeroize::DefaultIsZeroes` is not implemented for `SecretConstructorParamsOverrides`
-   |                  |
-   |                  required by a bound introduced by this call
-   |
-   = help: the following other types implement trait `zeroize::DefaultIsZeroes`:
-             ()
-             PhantomPinned
-             bool
-             char
-             f32
-             f64
-             i128
-             i16
-           and 10 others
-   = note: required for `SecretConstructorParamsOverrides` to implement `zeroize::Zeroize`
-note: required by a bound in `build_secret`
-  --> crates\domain\src\secret\mock.rs:21:24
-   |
-21 | pub fn build_secret<T: Zeroize>(
-   |                        ^^^^^^^ required by this bound in `build_secret`
-
-error[E0061]: this function takes 2 arguments but 1 argument was supplied
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:18
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                  ^^^^^^^^^^^^--------------------------------------------------------- argument #2 of type `SecretConstructorParamsOverrides` is missing
-   |
-note: function defined here
-  --> crates\domain\src\secret\mock.rs:21:8
-   |
-21 | pub fn build_secret<T: Zeroize>(
-   |        ^^^^^^^^^^^^
-help: provide the argument
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) }, /* SecretConstructorParamsOverrides */);
-   |                                                                                      ++++++++++++++++++++++++++++++++++++++++
-
-error[E0277]: the trait bound `SecretConstructorParamsOverrides: zeroize::DefaultIsZeroes` is not satisfied
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:18
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `zeroize::DefaultIsZeroes` is not implemented for `SecretConstructorParamsOverrides`
-   |
-   = help: the following other types implement trait `zeroize::DefaultIsZeroes`:
-             ()
-             PhantomPinned
-             bool
-             char
-             f32
-             f64
-             i128
-             i16
-           and 10 others
-   = note: required for `SecretConstructorParamsOverrides` to implement `zeroize::Zeroize`
-note: required by a bound in `Secret`
-  --> crates\domain\src\secret\interface.rs:4:22
-   |
- 4 | pub struct Secret<T: Zeroize> {
-   |                      ^^^^^^^ required by this bound in `Secret`
-
-error[E0308]: mismatched types
-  --> crates\workflows\src\sidecar\wrap\mock.rs:26:56
-   |
-26 |     let Ok(key) = PieceGroupKey::try_from_secret_bytes(secret) else {
-   |                   ------------------------------------ ^^^^^^ expected `Secret<Vec<u8>>`, found `Secret<SecretConstructorParamsOverrides>`
-   |                   |
-   |                   arguments to this function are incorrect
-   |
-   = note: expected struct `Secret<Vec<u8>>`
-              found struct `Secret<SecretConstructorParamsOverrides>`
-note: associated function defined here
-  --> crates\workflows\src\sidecar\wrap\mod.rs:22:12
-   |
-22 |     pub fn try_from_secret_bytes(
-   |            ^^^^^^^^^^^^^^^^^^^^^
-23 |         secret: Secret<Vec<u8>>,
-   |         -----------------------
-
-error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
   --> adapters\envelope\src\factory\mock.rs:93:17
    |
 93 |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
@@ -548,13 +458,10 @@ help: provide the argument
 175 |             build_secret(/* Vec<u8> */, SecretConstructorParamsOverrides {
     |                          ++++++++++++++
 
-Some errors have detailed explanations: E0061, E0277, E0308, E0560.
-For more information about an error, try `rustc --explain E0061`.
-error: could not compile `workflows` (lib) due to 5 previous errors
-warning: build failed, waiting for other jobs to finish...
-error: could not compile `workflows` (lib test) due to 5 previous errors
 Some errors have detailed explanations: E0061, E0560.
+For more information about an error, try `rustc --explain E0061`.
 error: could not compile `envelope` (lib) due to 6 previous errors
+warning: build failed, waiting for other jobs to finish...
 error: could not compile `envelope` (lib test) due to 6 previous errors
 
 [exit code: 101]
@@ -947,96 +854,6 @@ warning: `kem` (lib test) generated 14 warnings (12 duplicates)
     Checking envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
     Checking workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
 error[E0560]: struct `domain::SecretConstructorParamsOverrides` has no field named `value`
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:66
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                                                                  ^^^^^ `domain::SecretConstructorParamsOverrides` does not have this field
-   |
-   = note: all struct fields are already assigned
-
-error[E0277]: the trait bound `domain::SecretConstructorParamsOverrides: zeroize::Zeroize` is not satisfied
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:31
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                  ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `zeroize::DefaultIsZeroes` is not implemented for `domain::SecretConstructorParamsOverrides`
-   |                  |
-   |                  required by a bound introduced by this call
-   |
-   = help: the following other types implement trait `zeroize::DefaultIsZeroes`:
-             ()
-             bool
-             char
-             f32
-             f64
-             i128
-             i16
-             i32
-           and 10 others
-   = note: required for `domain::SecretConstructorParamsOverrides` to implement `zeroize::Zeroize`
-note: required by a bound in `domain::build_secret`
-  --> crates\domain\src\secret\mock.rs:21:24
-   |
-21 | pub fn build_secret<T: Zeroize>(
-   |                        ^^^^^^^ required by this bound in `build_secret`
-
-error[E0061]: this function takes 2 arguments but 1 argument was supplied
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:18
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                  ^^^^^^^^^^^^--------------------------------------------------------- argument #2 of type `domain::SecretConstructorParamsOverrides` is missing
-   |
-note: function defined here
-  --> crates\domain\src\secret\mock.rs:21:8
-   |
-21 | pub fn build_secret<T: Zeroize>(
-   |        ^^^^^^^^^^^^
-help: provide the argument
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) }, /* domain::SecretConstructorParamsOverrides */);
-   |                                                                                      ++++++++++++++++++++++++++++++++++++++++++++++++
-
-error[E0277]: the trait bound `domain::SecretConstructorParamsOverrides: zeroize::DefaultIsZeroes` is not satisfied
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:18
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `zeroize::DefaultIsZeroes` is not implemented for `domain::SecretConstructorParamsOverrides`
-   |
-   = help: the following other types implement trait `zeroize::DefaultIsZeroes`:
-             ()
-             bool
-             char
-             f32
-             f64
-             i128
-             i16
-             i32
-           and 10 others
-   = note: required for `domain::SecretConstructorParamsOverrides` to implement `zeroize::Zeroize`
-note: required by a bound in `domain::Secret`
-  --> crates\domain\src\secret\interface.rs:4:22
-   |
- 4 | pub struct Secret<T: Zeroize> {
-   |                      ^^^^^^^ required by this bound in `Secret`
-
-error[E0308]: mismatched types
-  --> crates\workflows\src\sidecar\wrap\mock.rs:26:56
-   |
-26 |     let Ok(key) = PieceGroupKey::try_from_secret_bytes(secret) else {
-   |                   ------------------------------------ ^^^^^^ expected `Secret<Vec<u8>>`, found `Secret<SecretConstructorParamsOverrides>`
-   |                   |
-   |                   arguments to this function are incorrect
-   |
-   = note: expected struct `domain::Secret<std::vec::Vec<u8>>`
-              found struct `domain::Secret<domain::SecretConstructorParamsOverrides>`
-note: associated function defined here
-  --> crates\workflows\src\sidecar\wrap\mod.rs:22:12
-   |
-22 |     pub fn try_from_secret_bytes(
-   |            ^^^^^^^^^^^^^^^^^^^^^
-23 |         secret: Secret<Vec<u8>>,
-   |         -----------------------
-
-error[E0560]: struct `domain::SecretConstructorParamsOverrides` has no field named `value`
   --> adapters\envelope\src\factory\mock.rs:93:17
    |
 93 |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
@@ -1117,13 +934,10 @@ help: provide the argument
 175 |             build_secret(/* std::vec::Vec<u8> */, SecretConstructorParamsOverrides {
     |                          ++++++++++++++++++++++++
 
-Some errors have detailed explanations: E0061, E0277, E0308, E0560.
-For more information about an error, try `rustc --explain E0061`.
-error: could not compile `workflows` (lib) due to 5 previous errors
-warning: build failed, waiting for other jobs to finish...
-error: could not compile `workflows` (lib test) due to 5 previous errors
 Some errors have detailed explanations: E0061, E0560.
+For more information about an error, try `rustc --explain E0061`.
 error: could not compile `envelope` (lib) due to 6 previous errors
+warning: build failed, waiting for other jobs to finish...
 error: could not compile `envelope` (lib test) due to 6 previous errors
 
 [exit code: 101]
@@ -1142,6 +956,24 @@ warning[unmatched-source]: allowed source was not encountered
    Γöé
 37 Γöé allow-git = ["https://github.com/tsylvester/rqbit", "https://github.com/tsylvester/halo2curves"]
    Γöé               ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü no crate source matched these criteria
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:20:6
+   Γöé
+20 Γöé     "BSL-1.0",
+   Γöé      ΓöüΓöüΓöüΓöüΓöüΓöüΓöü unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:17:6
+   Γöé
+17 Γöé     "ISC",
+   Γöé      ΓöüΓöüΓöü unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:18:6
+   Γöé
+18 Γöé     "Zlib",
+   Γöé      ΓöüΓöüΓöüΓöü unmatched license allowance
 
 warning[duplicate]: found 2 duplicate entries for crate 'block-buffer'
    ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:27:1
@@ -1427,24 +1259,6 @@ warning[duplicate]: found 2 duplicate entries for crate 'crypto-common'
          Γöé           ΓööΓöÇΓöÇ alloy-sol-types v1.7.3 (*)
          ΓööΓöÇΓöÇ sha3 v0.12.0
              ΓööΓöÇΓöÇ hash-to-scalar v0.0.0 (*)
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:20:6
-   Γöé
-20 Γöé     "BSL-1.0",
-   Γöé      ΓöüΓöüΓöüΓöüΓöüΓöüΓöü unmatched license allowance
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:17:6
-   Γöé
-17 Γöé     "ISC",
-   Γöé      ΓöüΓöüΓöü unmatched license allowance
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:18:6
-   Γöé
-18 Γöé     "Zlib",
-   Γöé      ΓöüΓöüΓöüΓöü unmatched license allowance
 
 warning[duplicate]: found 2 duplicate entries for crate 'digest'
    ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:43:1
@@ -1849,34 +1663,6 @@ warning: constant `BINDING_MESSAGE` is never used
 55 | pub const BINDING_MESSAGE: &[u8] = b"def";
    |           ^^^^^^^^^^^^^^^
 
-warning: unused import: `IPairingAdapter`
-  --> adapters\hash-to-scalar\src\keccak256\integration_test.rs:15:68
-   |
-15 |     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
-   |                                                                    ^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
-
-warning: struct `Keccak256HashToScalarConstructorParamsCorruptions` is never constructed
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:25:12
-   |
-25 | pub struct Keccak256HashToScalarConstructorParamsCorruptions;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `invalidate_keccak256_hash_to_scalar_constructor_params` is never used
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:28:8
-   |
-28 | pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `BINDING_TAG` is never used
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
-   |
-53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
-   |           ^^^^^^^^^^^
-
 warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
   --> adapters\chain\src\evm_forms\mock.rs:15:12
    |
@@ -1965,10 +1751,38 @@ warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
 28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+warning: unused import: `IPairingAdapter`
+  --> adapters\hash-to-scalar\src\keccak256\integration_test.rs:15:68
+   |
+15 |     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
+   |                                                                    ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `Keccak256HashToScalarConstructorParamsCorruptions` is never constructed
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:25:12
+   |
+25 | pub struct Keccak256HashToScalarConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_keccak256_hash_to_scalar_constructor_params` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:28:8
+   |
+28 | pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `BINDING_TAG` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
+   |
+53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
+   |           ^^^^^^^^^^^
+
 warning: `hash-to-scalar` (lib) generated 2 warnings
-warning: `hash-to-scalar` (lib test) generated 5 warnings (1 duplicate)
 warning: `chain` (lib test) generated 12 warnings
 warning: `kdf` (lib test) generated 2 warnings
+warning: `hash-to-scalar` (lib test) generated 5 warnings (1 duplicate)
 warning: function `uniform_bytes` is never used
   --> adapters\kem\src\bb1_depth_one\mock.rs:19:4
    |
@@ -2288,101 +2102,9 @@ help: provide the argument
 
 Some errors have detailed explanations: E0061, E0560.
 For more information about an error, try `rustc --explain E0061`.
-error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:66
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                                                                  ^^^^^ `SecretConstructorParamsOverrides` does not have this field
-   |
-   = note: all struct fields are already assigned
-
 error: could not compile `envelope` (lib) due to 6 previous errors
 warning: build failed, waiting for other jobs to finish...
-error[E0277]: the trait bound `SecretConstructorParamsOverrides: zeroize::Zeroize` is not satisfied
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:31
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                  ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `zeroize::DefaultIsZeroes` is not implemented for `SecretConstructorParamsOverrides`
-   |                  |
-   |                  required by a bound introduced by this call
-   |
-   = help: the following other types implement trait `zeroize::DefaultIsZeroes`:
-             ()
-             PhantomPinned
-             bool
-             char
-             f32
-             f64
-             i128
-             i16
-           and 10 others
-   = note: required for `SecretConstructorParamsOverrides` to implement `zeroize::Zeroize`
-note: required by a bound in `build_secret`
-  --> crates\domain\src\secret\mock.rs:21:24
-   |
-21 | pub fn build_secret<T: Zeroize>(
-   |                        ^^^^^^^ required by this bound in `build_secret`
-
-error[E0061]: this function takes 2 arguments but 1 argument was supplied
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:18
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                  ^^^^^^^^^^^^--------------------------------------------------------- argument #2 of type `SecretConstructorParamsOverrides` is missing
-   |
-note: function defined here
-  --> crates\domain\src\secret\mock.rs:21:8
-   |
-21 | pub fn build_secret<T: Zeroize>(
-   |        ^^^^^^^^^^^^
-help: provide the argument
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) }, /* SecretConstructorParamsOverrides */);
-   |                                                                                      ++++++++++++++++++++++++++++++++++++++++
-
-error[E0277]: the trait bound `SecretConstructorParamsOverrides: zeroize::DefaultIsZeroes` is not satisfied
-  --> crates\workflows\src\sidecar\wrap\mock.rs:25:18
-   |
-25 |     let secret = build_secret(SecretConstructorParamsOverrides { value: Some(bytes) });
-   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `zeroize::DefaultIsZeroes` is not implemented for `SecretConstructorParamsOverrides`
-   |
-   = help: the following other types implement trait `zeroize::DefaultIsZeroes`:
-             ()
-             PhantomPinned
-             bool
-             char
-             f32
-             f64
-             i128
-             i16
-           and 10 others
-   = note: required for `SecretConstructorParamsOverrides` to implement `zeroize::Zeroize`
-note: required by a bound in `Secret`
-  --> crates\domain\src\secret\interface.rs:4:22
-   |
- 4 | pub struct Secret<T: Zeroize> {
-   |                      ^^^^^^^ required by this bound in `Secret`
-
 error: could not compile `envelope` (lib test) due to 6 previous errors
-error[E0308]: mismatched types
-  --> crates\workflows\src\sidecar\wrap\mock.rs:26:56
-   |
-26 |     let Ok(key) = PieceGroupKey::try_from_secret_bytes(secret) else {
-   |                   ------------------------------------ ^^^^^^ expected `Secret<Vec<u8>>`, found `Secret<SecretConstructorParamsOverrides>`
-   |                   |
-   |                   arguments to this function are incorrect
-   |
-   = note: expected struct `Secret<Vec<u8>>`
-              found struct `Secret<SecretConstructorParamsOverrides>`
-note: associated function defined here
-  --> crates\workflows\src\sidecar\wrap\mod.rs:22:12
-   |
-22 |     pub fn try_from_secret_bytes(
-   |            ^^^^^^^^^^^^^^^^^^^^^
-23 |         secret: Secret<Vec<u8>>,
-   |         -----------------------
-
-Some errors have detailed explanations: E0061, E0277, E0308, E0560.
-error: could not compile `workflows` (lib test) due to 5 previous errors
 
 [exit code: 101]
 
