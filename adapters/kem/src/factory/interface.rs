@@ -1,20 +1,20 @@
 use core::convert::Infallible;
 use domain::{AssetIdentityHash, Secret};
-use hash_to_scalar::IHashToScalarAdapter;
-use pairing::{IPairingAdapter, IPairingArithmetic};
+#[cfg(any(test, feature = "mocks"))]
+use hash_to_scalar::DomainTagTryNewErrorReturn;
+use hash_to_scalar::{HashToScalarErrorReturn, IHashToScalarAdapter};
+use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorReturn};
 use zeroize::Zeroize;
 
-use crate::bb1_depth_one::provides::{
-    Bb1DepthOneDeriveIdentityErrorReturn, Bb1DepthOneEncapsulateErrorReturn,
-    Bb1DepthOneIssueErrorReturn, Bb1DepthOneKemTryNewErrorReturn,
-    Bb1DepthOneRerandomizeErrorReturn, Bb1DepthOneSetupErrorReturn,
-};
+use crate::bb1_depth_one::provides::Bb1DepthOneKemTryNewErrorReturn;
 
 pub const KEM_INTERFACE_VERSION: u32 = 1;
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum KemIdentifier {
     Bb1DepthOneV1,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -59,7 +59,11 @@ pub struct SetupSuccessReturn<PS, M> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum SetupErrorReturn {
-    Bb1DepthOne(Bb1DepthOneSetupErrorReturn),
+    MasterScalarSampling(SampleUniformScalarErrorReturn),
+    U0Sampling(SampleUniformScalarErrorReturn),
+    U1Sampling(SampleUniformScalarErrorReturn),
+    HashToScalar(HashToScalarErrorReturn),
+    TrivialIdentityElement,
 }
 
 pub type SetupReturn<PS, M> = Result<SetupSuccessReturn<PS, M>, SetupErrorReturn>;
@@ -86,7 +90,10 @@ pub struct DeriveIdentitySuccessReturn<IE> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum DeriveIdentityErrorReturn {
-    Bb1DepthOne(Bb1DepthOneDeriveIdentityErrorReturn),
+    WrongIdentityScope,
+    HashToScalar(HashToScalarErrorReturn),
+    TrivialIdentityElement,
+    OutsideAssetScope,
 }
 
 pub type DeriveIdentityReturn<IE> =
@@ -108,7 +115,7 @@ pub struct IssueSuccessReturn<C, S: Zeroize> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum IssueErrorReturn {
-    Bb1DepthOne(Bb1DepthOneIssueErrorReturn),
+    Sampling(SampleUniformScalarErrorReturn),
 }
 
 pub type IssueReturn<C, S> = Result<IssueSuccessReturn<C, S>, IssueErrorReturn>;
@@ -129,7 +136,7 @@ pub struct RerandomizeSuccessReturn<C, S: Zeroize> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RerandomizeErrorReturn {
-    Bb1DepthOne(Bb1DepthOneRerandomizeErrorReturn),
+    Sampling(SampleUniformScalarErrorReturn),
 }
 
 pub type RerandomizeReturn<C, S> = Result<RerandomizeSuccessReturn<C, S>, RerandomizeErrorReturn>;
@@ -162,7 +169,7 @@ pub struct EncapsulateSuccessReturn<CA> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum EncapsulateErrorReturn {
-    Bb1DepthOne(Bb1DepthOneEncapsulateErrorReturn),
+    Sampling(SampleUniformScalarErrorReturn),
 }
 
 pub type EncapsulateReturn<CA> = Result<EncapsulateSuccessReturn<CA>, EncapsulateErrorReturn>;
@@ -486,6 +493,8 @@ pub trait ICredentialKemAdapter {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum KemConcrete {
     Bb1DepthOne,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 pub trait IKemConsumer<P: IPairingAdapter> {
@@ -517,6 +526,7 @@ pub struct CreateKemDeps<'a, P: IPairingArithmetic, C> {
     pub consumer: C,
 }
 
+#[derive(Clone, Copy)]
 pub struct CreateKemParams {
     pub concrete: KemConcrete,
     pub identifier: KemIdentifier,
@@ -534,6 +544,8 @@ pub enum CreateKemErrorReturn {
     UnsupportedKemIdentifier,
     UnsupportedIdentityScope,
     Bb1DepthOne(Bb1DepthOneKemTryNewErrorReturn),
+    #[cfg(any(test, feature = "mocks"))]
+    MockICredentialKemAdapter(DomainTagTryNewErrorReturn),
 }
 
 pub type CreateKemReturn<O> = Result<CreateKemSuccessReturn<O>, CreateKemErrorReturn>;
@@ -543,3 +555,16 @@ pub type CreateKemFn<'a, P, C> = fn(
     CreateKemParams,
     CreateKemPayload,
 ) -> CreateKemReturn<<C as IKemConsumer<P>>::Output>;
+
+pub const DECLARED_KEM_SELECTIONS: &[CreateKemParams] = &[
+    CreateKemParams {
+        concrete: KemConcrete::Bb1DepthOne,
+        identifier: KemIdentifier::Bb1DepthOneV1,
+        scope: IdentityScope::Entitlement,
+    },
+    CreateKemParams {
+        concrete: KemConcrete::Bb1DepthOne,
+        identifier: KemIdentifier::Bb1DepthOneV1,
+        scope: IdentityScope::Asset,
+    },
+];

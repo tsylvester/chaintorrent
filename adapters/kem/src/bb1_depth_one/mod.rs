@@ -1,4 +1,8 @@
+#[cfg(test)]
+mod integration_test;
 mod interface;
+#[cfg(any(test, feature = "mocks"))]
+mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
 mod test;
@@ -37,11 +41,9 @@ use hash_to_scalar::{
 };
 use interface::{
     BB1_DEPTH_ONE_DECLARATION, BB1_DEPTH_ONE_IDENTITY_TAG, Bb1DepthOneCapsule,
-    Bb1DepthOneCredential, Bb1DepthOneDeriveIdentityErrorReturn, Bb1DepthOneEncapsulateErrorReturn,
-    Bb1DepthOneIdentityElement, Bb1DepthOneIssueErrorReturn, Bb1DepthOneKem,
+    Bb1DepthOneCredential, Bb1DepthOneIdentityElement, Bb1DepthOneKem,
     Bb1DepthOneKemConstructorParams, Bb1DepthOneKemTryNewErrorReturn, Bb1DepthOneKemTryNewReturn,
     Bb1DepthOneMasterScalar, Bb1DepthOneParameterSet, Bb1DepthOneParameterSetScope,
-    Bb1DepthOneRerandomizeErrorReturn, Bb1DepthOneSetupErrorReturn,
 };
 use pairing::{
     AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, EncodeG1Params, EncodeG1Payload,
@@ -98,9 +100,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         ) {
             Ok(success) => success.scalar,
             Err(error) => {
-                return Err(SetupErrorReturn::Bb1DepthOne(
-                    Bb1DepthOneSetupErrorReturn::MasterScalarSampling(error),
-                ));
+                return Err(SetupErrorReturn::MasterScalarSampling(error));
             }
         };
         let a = match P::Scalar::sample_from_uniform_bytes(
@@ -111,9 +111,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         ) {
             Ok(success) => success.scalar,
             Err(error) => {
-                return Err(SetupErrorReturn::Bb1DepthOne(
-                    Bb1DepthOneSetupErrorReturn::U0Sampling(error),
-                ));
+                return Err(SetupErrorReturn::U0Sampling(error));
             }
         };
         let b = match P::Scalar::sample_from_uniform_bytes(
@@ -124,9 +122,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         ) {
             Ok(success) => success.scalar,
             Err(error) => {
-                return Err(SetupErrorReturn::Bb1DepthOne(
-                    Bb1DepthOneSetupErrorReturn::U1Sampling(error),
-                ));
+                return Err(SetupErrorReturn::U1Sampling(error));
             }
         };
         let Ok(g1) = self
@@ -167,9 +163,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
                 ) {
                     Ok(mapped) => mapped,
                     Err(error) => {
-                        return Err(SetupErrorReturn::Bb1DepthOne(
-                            Bb1DepthOneSetupErrorReturn::HashToScalar(error),
-                        ));
+                        return Err(SetupErrorReturn::HashToScalar(error));
                     }
                 };
                 let Ok(i_times_u1) = self.pairing.mul_g1(
@@ -193,9 +187,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
                     },
                 );
                 if trivial.is_identity {
-                    return Err(SetupErrorReturn::Bb1DepthOne(
-                        Bb1DepthOneSetupErrorReturn::TrivialIdentityElement,
-                    ));
+                    return Err(SetupErrorReturn::TrivialIdentityElement);
                 }
                 Bb1DepthOneParameterSetScope::Asset {
                     identity_element: element.sum,
@@ -232,9 +224,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
                 KemIdentity::Entitlement { .. }
             )
         ) {
-            return Err(DeriveIdentityErrorReturn::Bb1DepthOne(
-                Bb1DepthOneDeriveIdentityErrorReturn::WrongIdentityScope,
-            ));
+            return Err(DeriveIdentityErrorReturn::WrongIdentityScope);
         }
         let bytes = match payload.identity {
             KemIdentity::Entitlement { canonical } => canonical,
@@ -246,9 +236,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         ) {
             Ok(mapped) => mapped,
             Err(error) => {
-                return Err(DeriveIdentityErrorReturn::Bb1DepthOne(
-                    Bb1DepthOneDeriveIdentityErrorReturn::HashToScalar(error),
-                ));
+                return Err(DeriveIdentityErrorReturn::HashToScalar(error));
             }
         };
         let Ok(i_times_u1) = self.pairing.mul_g1(
@@ -272,9 +260,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
             },
         );
         if trivial.is_identity {
-            return Err(DeriveIdentityErrorReturn::Bb1DepthOne(
-                Bb1DepthOneDeriveIdentityErrorReturn::TrivialIdentityElement,
-            ));
+            return Err(DeriveIdentityErrorReturn::TrivialIdentityElement);
         }
         if let Bb1DepthOneParameterSetScope::Asset { identity_element } =
             &payload.parameter_set.scope
@@ -292,9 +278,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
                 },
             );
             if derived.bytes != fixed.bytes {
-                return Err(DeriveIdentityErrorReturn::Bb1DepthOne(
-                    Bb1DepthOneDeriveIdentityErrorReturn::OutsideAssetScope,
-                ));
+                return Err(DeriveIdentityErrorReturn::OutsideAssetScope);
             }
         }
         Ok(DeriveIdentitySuccessReturn {
@@ -318,9 +302,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         ) {
             Ok(success) => success.scalar,
             Err(error) => {
-                return Err(IssueErrorReturn::Bb1DepthOne(
-                    Bb1DepthOneIssueErrorReturn::Sampling(error),
-                ));
+                return Err(IssueErrorReturn::Sampling(error));
             }
         };
         let Ok(a) = self.pairing.msm_g1(
@@ -372,9 +354,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         ) {
             Ok(success) => success.scalar,
             Err(error) => {
-                return Err(RerandomizeErrorReturn::Bb1DepthOne(
-                    Bb1DepthOneRerandomizeErrorReturn::Sampling(error),
-                ));
+                return Err(RerandomizeErrorReturn::Sampling(error));
             }
         };
         let Ok(s_times_f) = self.pairing.mul_g1(
@@ -465,9 +445,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         ) {
             Ok(success) => success.scalar,
             Err(error) => {
-                return Err(EncapsulateErrorReturn::Bb1DepthOne(
-                    Bb1DepthOneEncapsulateErrorReturn::Sampling(error),
-                ));
+                return Err(EncapsulateErrorReturn::Sampling(error));
             }
         };
         let Ok(u) = self.pairing.mul_g2(

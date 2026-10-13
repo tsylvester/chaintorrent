@@ -1,8 +1,6 @@
 use domain::Secret;
-use hash_to_scalar::{
-    DomainTag, DomainTagTryNewErrorReturn, HashToScalarErrorReturn, IHashToScalarAdapter,
-};
-use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorReturn};
+use hash_to_scalar::{DomainTag, DomainTagTryNewErrorReturn, IHashToScalarAdapter};
+use pairing::{IPairingAdapter, IPairingArithmetic};
 
 use crate::factory::provides::{
     IdentityScope, KEM_INTERFACE_VERSION, KemDeclaration, KemIdentifier,
@@ -68,36 +66,4 @@ pub struct Bb1DepthOneCredential<P: IPairingAdapter> {
 pub enum Bb1DepthOneCapsule<P: IPairingAdapter> {
     Entitlement { u: P::G2, v: P::G1, w: P::G1 },
     Asset { u: P::G2, v: P::G1 },
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Bb1DepthOneSetupErrorReturn {
-    MasterScalarSampling(SampleUniformScalarErrorReturn),
-    U0Sampling(SampleUniformScalarErrorReturn),
-    U1Sampling(SampleUniformScalarErrorReturn),
-    HashToScalar(HashToScalarErrorReturn),
-    TrivialIdentityElement,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Bb1DepthOneDeriveIdentityErrorReturn {
-    WrongIdentityScope,
-    HashToScalar(HashToScalarErrorReturn),
-    TrivialIdentityElement,
-    OutsideAssetScope,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Bb1DepthOneIssueErrorReturn {
-    Sampling(SampleUniformScalarErrorReturn),
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Bb1DepthOneRerandomizeErrorReturn {
-    Sampling(SampleUniformScalarErrorReturn),
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Bb1DepthOneEncapsulateErrorReturn {
-    Sampling(SampleUniformScalarErrorReturn),
 }

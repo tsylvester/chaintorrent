@@ -1924,9 +1924,11 @@ name = "kem"
 version = "0.0.0"
 dependencies = [
  "domain",
+ "encoding",
  "hash-to-scalar",
  "pairing 0.0.0",
  "random",
+ "serde_json",
  "zeroize",
 ]
 
