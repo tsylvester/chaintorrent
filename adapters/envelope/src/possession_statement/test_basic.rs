@@ -354,7 +354,6 @@ fn g1_fields_to_value_returns_the_statement_the_fields_describe() {
                     &payload.adapter,
                     EncodeG1PayloadOverrides {
                         point: Some(success.described.key),
-                        ..Default::default()
                     },
                 ),
             );
@@ -364,7 +363,6 @@ fn g1_fields_to_value_returns_the_statement_the_fields_describe() {
                     &payload.adapter,
                     EncodeG1PayloadOverrides {
                         point: Some(success.described.commitment),
-                        ..Default::default()
                     },
                 ),
             );
@@ -423,7 +421,6 @@ fn g2_fields_to_value_returns_the_statement_the_fields_describe() {
                     &payload.adapter,
                     EncodeG2PayloadOverrides {
                         point: Some(success.described.key),
-                        ..Default::default()
                     },
                 ),
             );
@@ -433,7 +430,6 @@ fn g2_fields_to_value_returns_the_statement_the_fields_describe() {
                     &payload.adapter,
                     EncodeG2PayloadOverrides {
                         point: Some(success.described.commitment),
-                        ..Default::default()
                     },
                 ),
             );

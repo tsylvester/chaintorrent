@@ -4,8 +4,6 @@
 use super::interface::{Keccak256HashToScalar, Keccak256HashToScalarConstructorParams};
 #[cfg(any(test, feature = "mocks"))]
 use crate::domain_tag::provides::DomainTag;
-#[cfg(test)]
-use serde_json::{Map, Value};
 #[cfg(any(test, feature = "mocks"))]
 use sha3::{Digest, Keccak256};
 
@@ -18,17 +16,6 @@ pub fn build_keccak256_hash_to_scalar_constructor_params(
     _overrides: Keccak256HashToScalarConstructorParamsOverrides,
 ) -> Keccak256HashToScalarConstructorParams {
     Keccak256HashToScalarConstructorParams
-}
-
-#[cfg(test)]
-#[derive(Default)]
-pub struct Keccak256HashToScalarConstructorParamsCorruptions;
-
-#[cfg(test)]
-pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
-    _corruptions: Keccak256HashToScalarConstructorParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
 }
 
 #[cfg(test)]
@@ -49,10 +36,6 @@ pub const REFERENCE_MESSAGE: &[u8] = b"reference message";
 pub const EMPTY_MESSAGE: &[u8] = b"";
 #[cfg(any(test, feature = "mocks"))]
 pub const OTHER_TAG: &[u8] = b"ChainTorrent v1 other tag";
-#[cfg(any(test, feature = "mocks"))]
-pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
-#[cfg(any(test, feature = "mocks"))]
-pub const BINDING_MESSAGE: &[u8] = b"def";
 #[cfg(any(test, feature = "mocks"))]
 pub const BINDING_LONGER_TAG: &[u8] = b"binding-tag-abcd";
 #[cfg(any(test, feature = "mocks"))]

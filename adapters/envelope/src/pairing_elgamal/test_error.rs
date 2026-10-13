@@ -2493,7 +2493,6 @@ fn public_keys_from_components_checks_the_first_group_proof_before_the_second() 
                         &*random,
                         Default::default(),
                     );
-                    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
                     let other_key_pair = build_pairing_elgamal_key_pair(
                         pairing,
                         PairingElGamalKeyPairOverrides {

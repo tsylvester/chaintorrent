@@ -18,9 +18,8 @@ use pairing::{
     G1OutsideSubgroupEncodingErrorReturn, G1OutsideSubgroupEncodingParams,
     G1OutsideSubgroupEncodingPayload, G2OutsideSubgroupEncodingErrorReturn,
     G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload, IPairingAdapter,
-    IPairingArithmetic, IPairingConsumer, IPairingReference, PAIRING_CONCRETES,
-    TargetGroupEncodingIdentifier, build_create_pairing_deps, build_create_pairing_params,
-    create_pairing,
+    IPairingConsumer, IPairingReference, PAIRING_CONCRETES, TargetGroupEncodingIdentifier,
+    build_create_pairing_deps, build_create_pairing_params, create_pairing,
 };
 
 /// Contract: entry `a_first_group_statement_survives_the_round_trip_through_its_fields`;

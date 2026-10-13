@@ -12,10 +12,10 @@ use crate::factory::provides::{
 use domain::build_secret;
 use pairing::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
-    CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
-    IPairingArithmetic, IPairingConsumer, IPairingReference, ISampleUniformScalar,
-    PAIRING_CONCRETES, SampleUniformScalarParams, SampleUniformScalarPayload,
-    build_create_pairing_deps, build_create_pairing_params, create_pairing,
+    CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingArithmetic,
+    IPairingConsumer, IPairingReference, ISampleUniformScalar, PAIRING_CONCRETES,
+    SampleUniformScalarParams, SampleUniformScalarPayload, build_create_pairing_deps,
+    build_create_pairing_params, create_pairing,
 };
 
 /// Contract: entry `hash_to_scalar_matches_the_oracle_for_the_reference_tag_and_message`;

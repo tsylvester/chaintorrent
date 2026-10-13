@@ -7,8 +7,7 @@ use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorRetur
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
 use crate::possession_statement::provides::{
-    PossessionG1Statement, PossessionG1StatementDescription, PossessionG2Statement,
-    PossessionG2StatementDescription,
+    PossessionG1StatementDescription, PossessionG2StatementDescription,
 };
 
 pub const PAIRING_ELGAMAL_POSSESSION_G1_TAG: &[u8] = b"ChainTorrent-v1-envelope-possession-g1";

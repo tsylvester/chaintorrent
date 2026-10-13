@@ -101,7 +101,6 @@ pub fn invalidate_possession_g1_statement<P: IPairingAdapter>(
             pairing,
             EncodeG1PayloadOverrides {
                 point: Some(statement.key),
-                ..Default::default()
             },
         ),
     );
@@ -111,7 +110,6 @@ pub fn invalidate_possession_g1_statement<P: IPairingAdapter>(
             pairing,
             EncodeG1PayloadOverrides {
                 point: Some(statement.commitment),
-                ..Default::default()
             },
         ),
     );
@@ -145,7 +143,6 @@ pub fn invalidate_possession_g2_statement<P: IPairingAdapter>(
             pairing,
             EncodeG2PayloadOverrides {
                 point: Some(statement.key),
-                ..Default::default()
             },
         ),
     );
@@ -155,7 +152,6 @@ pub fn invalidate_possession_g2_statement<P: IPairingAdapter>(
             pairing,
             EncodeG2PayloadOverrides {
                 point: Some(statement.commitment),
-                ..Default::default()
             },
         ),
     );

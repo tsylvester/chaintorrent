@@ -1,10 +1,7 @@
 #![allow(clippy::expect_used)]
 
 use crate::factory::provides::{
-    EnvelopeAlgebra, EnvelopeFromComponentsPayloadOverrides, GenerateKeysPayloadOverrides,
-    IKeyAgreementAdapter, KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementIdentifier,
-    KeyPairComponentsOverrides, KeyPairFromComponentsPayloadOverrides,
-    PossessionFromComponentsPayloadOverrides, PublicKeysFromComponentsPayloadOverrides,
+    EnvelopeAlgebra, IKeyAgreementAdapter, KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementIdentifier,
     WrapToPayloadOverrides, build_envelope_components_params, build_envelope_components_payload,
     build_envelope_from_components_params, build_envelope_from_components_payload,
     build_generate_keys_params, build_generate_keys_payload, build_key_pair_components_params,
@@ -36,7 +33,7 @@ use encoding::{
 };
 use hash_to_scalar::{
     DomainTag, DomainTagConstructorParams, HashToScalarParams, HashToScalarPayload,
-    IHashToScalarAdapter, build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
+    build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
     build_create_hash_to_scalar_payload, create_hash_to_scalar,
 };
 use kem::{CredentialComponentsOverrides, build_credential_components};

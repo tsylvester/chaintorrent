@@ -194,7 +194,6 @@ fn encode_g1_bytes<P: IPairingAdapter>(pairing: &P, point: &P::G1) -> Vec<u8> {
                 pairing,
                 EncodeG1PayloadOverrides {
                     point: Some(point.clone()),
-                    ..Default::default()
                 },
             ),
         )
@@ -212,7 +211,6 @@ fn encode_scalar_bytes<P: IPairingAdapter>(pairing: &P, scalar: &P::Scalar) -> V
                 pairing,
                 EncodeScalarPayloadOverrides {
                     scalar: Some(scalar.clone()),
-                    ..Default::default()
                 },
             ),
         )
@@ -231,7 +229,6 @@ fn encode_g2_bytes<P: IPairingAdapter>(pairing: &P, point: &P::G2) -> Vec<u8> {
                 pairing,
                 EncodeG2PayloadOverrides {
                     point: Some(point.clone()),
-                    ..Default::default()
                 },
             ),
         )
@@ -3891,11 +3888,13 @@ fn every_concrete_refuses_equal_secret_draws() {
                             );
 
                             let defaults = build_generate_keys_payload(pairing, Default::default());
-                            let mut overrides = GenerateKeysPayloadOverrides::default();
-                            overrides.y_uniform = Some(build_secret(
-                                defaults.x_uniform.expose().clone(),
-                                SecretConstructorParamsOverrides,
-                            ));
+                            let overrides = GenerateKeysPayloadOverrides {
+                                y_uniform: Some(build_secret(
+                                    defaults.x_uniform.expose().clone(),
+                                    SecretConstructorParamsOverrides,
+                                )),
+                                ..Default::default()
+                            };
                             let payload = build_generate_keys_payload(pairing, overrides);
 
                             // Assert
@@ -4026,17 +4025,18 @@ fn every_concrete_refuses_a_key_pair_of_equal_secrets() {
                             );
 
                             let defaults = build_key_pair_components(pairing, Default::default());
-                            let mut overrides = KeyPairFromComponentsPayloadOverrides::default();
-                            overrides.components = Some(build_key_pair_components(
-                                pairing,
-                                KeyPairComponentsOverrides {
-                                    y: Some(build_secret(
-                                        defaults.x.expose().clone(),
-                                        SecretConstructorParamsOverrides,
-                                    )),
-                                    ..Default::default()
-                                },
-                            ));
+                            let overrides = KeyPairFromComponentsPayloadOverrides {
+                                components: Some(build_key_pair_components(
+                                    pairing,
+                                    KeyPairComponentsOverrides {
+                                        y: Some(build_secret(
+                                            defaults.x.expose().clone(),
+                                            SecretConstructorParamsOverrides,
+                                        )),
+                                        ..Default::default()
+                                    },
+                                )),
+                            };
 
                             // Act
                             let result = adapter.key_pair_from_components(
@@ -4466,14 +4466,15 @@ fn every_concrete_refuses_a_key_pair_of_a_zero_x_secret() {
                             )
                             .expect("a full-length uniform samples")
                             .scalar;
-                            let mut overrides = KeyPairFromComponentsPayloadOverrides::default();
-                            overrides.components = Some(build_key_pair_components(
-                                pairing,
-                                KeyPairComponentsOverrides {
-                                    x: Some(zero_x),
-                                    ..Default::default()
-                                },
-                            ));
+                            let overrides = KeyPairFromComponentsPayloadOverrides {
+                                components: Some(build_key_pair_components(
+                                    pairing,
+                                    KeyPairComponentsOverrides {
+                                        x: Some(zero_x),
+                                        ..Default::default()
+                                    },
+                                )),
+                            };
 
                             // Act
                             let result = adapter.key_pair_from_components(
@@ -4620,14 +4621,15 @@ fn every_concrete_refuses_a_key_pair_of_a_zero_y_secret() {
                             )
                             .expect("a full-length uniform samples")
                             .scalar;
-                            let mut overrides = KeyPairFromComponentsPayloadOverrides::default();
-                            overrides.components = Some(build_key_pair_components(
-                                pairing,
-                                KeyPairComponentsOverrides {
-                                    y: Some(zero_y),
-                                    ..Default::default()
-                                },
-                            ));
+                            let overrides = KeyPairFromComponentsPayloadOverrides {
+                                components: Some(build_key_pair_components(
+                                    pairing,
+                                    KeyPairComponentsOverrides {
+                                        y: Some(zero_y),
+                                        ..Default::default()
+                                    },
+                                )),
+                            };
 
                             // Act
                             let result = adapter.key_pair_from_components(

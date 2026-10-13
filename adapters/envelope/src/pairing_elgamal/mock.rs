@@ -10,27 +10,21 @@ use crate::factory::provides::{
     build_envelope_components, build_key_pair_components, build_public_keys_components,
 };
 use crate::possession_statement::provides::{
-    PossessionG1Statement, PossessionG1StatementDescription, PossessionG1StatementOverrides,
-    PossessionG2Statement, PossessionG2StatementDescription, PossessionG2StatementOverrides,
-    build_possession_g1_statement, build_possession_g1_statement_description,
-    build_possession_g2_statement, build_possession_g2_statement_description,
+    PossessionG1StatementOverrides, PossessionG2StatementOverrides, build_possession_g1_statement,
+    build_possession_g2_statement,
 };
 use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
 use encoding::{EncodeParams, IEncoderAdapter};
 use hash_to_scalar::{HashToScalarParams, HashToScalarPayload, IHashToScalarAdapter};
-use kem::{CredentialComponents, CredentialComponentsOverrides, build_credential_components};
 use pairing::{
-    AddScalarParams, AddScalarPayloadOverrides, EncodeG1Params, EncodeG1PayloadOverrides,
-    EncodeG2Params, EncodeG2PayloadOverrides, EncodeScalarParams, EncodeScalarPayloadOverrides,
-    G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter,
-    IPairingArithmetic, ISampleUniformScalar, MulG1Params, MulG1PayloadOverrides, MulG2Params,
-    MulG2PayloadOverrides, MulScalarParams, MulScalarPayloadOverrides, SampleUniformScalarParams,
-    SampleUniformScalarPayloadOverrides, build_add_scalar_payload, build_encode_g1_payload,
-    build_encode_g2_payload, build_encode_scalar_payload, build_mul_g1_payload,
+    AddScalarParams, AddScalarPayloadOverrides, G1GeneratorParams, G1GeneratorPayload,
+    G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingArithmetic,
+    ISampleUniformScalar, MulG1Params, MulG1PayloadOverrides, MulG2Params, MulG2PayloadOverrides,
+    MulScalarParams, MulScalarPayloadOverrides, SampleUniformScalarParams,
+    SampleUniformScalarPayloadOverrides, build_add_scalar_payload, build_mul_g1_payload,
     build_mul_g2_payload, build_mul_scalar_payload, build_sample_uniform_scalar_payload,
 };
 use random::IRandomSourceAdapter;
-use serde_json::{Map, Value};
 
 #[derive(Default)]
 pub struct PairingElGamalKeyAgreementConstructorParamsOverrides;
@@ -85,49 +79,6 @@ fn sampled_scalar<P: IPairingAdapter>(fill: u8) -> P::Scalar {
     .scalar
     .expose()
     .clone()
-}
-
-fn byte_array(bytes: &[u8]) -> Value {
-    Value::Array(bytes.iter().map(|byte| Value::from(*byte)).collect())
-}
-
-fn encoded_g1_value<P: IPairingAdapter>(pairing: &P, point: &P::G1) -> Value {
-    let Ok(encoded) = pairing.encode_g1(
-        EncodeG1Params,
-        build_encode_g1_payload(
-            pairing,
-            EncodeG1PayloadOverrides {
-                point: Some(point.clone()),
-            },
-        ),
-    );
-    byte_array(encoded.bytes.as_ref())
-}
-
-fn encoded_g2_value<P: IPairingAdapter>(pairing: &P, point: &P::G2) -> Value {
-    let Ok(encoded) = pairing.encode_g2(
-        EncodeG2Params,
-        build_encode_g2_payload(
-            pairing,
-            EncodeG2PayloadOverrides {
-                point: Some(point.clone()),
-            },
-        ),
-    );
-    byte_array(encoded.bytes.as_ref())
-}
-
-fn encoded_scalar_value<P: IPairingAdapter>(pairing: &P, scalar: &P::Scalar) -> Value {
-    let Ok(encoded) = pairing.encode_scalar(
-        EncodeScalarParams,
-        build_encode_scalar_payload(
-            pairing,
-            EncodeScalarPayloadOverrides {
-                scalar: Some(scalar.clone()),
-            },
-        ),
-    );
-    byte_array(encoded.bytes.expose().as_ref())
 }
 
 fn challenge_g1<P: IPairingArithmetic, E: IEncoderAdapter>(
@@ -263,45 +214,6 @@ pub fn build_pairing_elgamal_key_pair<P: IPairingAdapter>(
     }
 }
 
-#[derive(Default)]
-pub struct PairingElGamalKeyPairCorruptions {
-    pub x: Option<Value>,
-    pub y: Option<Value>,
-    pub pk1: Option<Value>,
-    pub pk2: Option<Value>,
-}
-
-pub fn invalidate_pairing_elgamal_key_pair<P: IPairingAdapter>(
-    pairing: &P,
-    corruptions: PairingElGamalKeyPairCorruptions,
-) -> Value {
-    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "x".to_string(),
-        encoded_scalar_value(pairing, key_pair.x.expose()),
-    );
-    fields.insert(
-        "y".to_string(),
-        encoded_scalar_value(pairing, key_pair.y.expose()),
-    );
-    fields.insert("pk1".to_string(), encoded_g1_value(pairing, &key_pair.pk1));
-    fields.insert("pk2".to_string(), encoded_g2_value(pairing, &key_pair.pk2));
-    if let Some(x) = corruptions.x {
-        fields.insert("x".to_string(), x);
-    }
-    if let Some(y) = corruptions.y {
-        fields.insert("y".to_string(), y);
-    }
-    if let Some(pk1) = corruptions.pk1 {
-        fields.insert("pk1".to_string(), pk1);
-    }
-    if let Some(pk2) = corruptions.pk2 {
-        fields.insert("pk2".to_string(), pk2);
-    }
-    Value::Object(fields)
-}
-
 pub struct PairingElGamalPublicKeysOverrides<P: IPairingAdapter> {
     pub pk1: Option<P::G1>,
     pub pk2: Option<P::G2>,
@@ -331,35 +243,6 @@ pub fn build_pairing_elgamal_public_keys<P: IPairingAdapter>(
         pk1: components.pk1,
         pk2: components.pk2,
     }
-}
-
-#[derive(Default)]
-pub struct PairingElGamalPublicKeysCorruptions {
-    pub pk1: Option<Value>,
-    pub pk2: Option<Value>,
-}
-
-pub fn invalidate_pairing_elgamal_public_keys<P: IPairingAdapter>(
-    pairing: &P,
-    corruptions: PairingElGamalPublicKeysCorruptions,
-) -> Value {
-    let public_keys = build_pairing_elgamal_public_keys(pairing, Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "pk1".to_string(),
-        encoded_g1_value(pairing, &public_keys.pk1),
-    );
-    fields.insert(
-        "pk2".to_string(),
-        encoded_g2_value(pairing, &public_keys.pk2),
-    );
-    if let Some(pk1) = corruptions.pk1 {
-        fields.insert("pk1".to_string(), pk1);
-    }
-    if let Some(pk2) = corruptions.pk2 {
-        fields.insert("pk2".to_string(), pk2);
-    }
-    Value::Object(fields)
 }
 
 pub struct PairingElGamalEnvelopeOverrides<P: IPairingAdapter> {
@@ -399,39 +282,6 @@ pub fn build_pairing_elgamal_envelope<P: IPairingAdapter>(
         d1: components.d1,
         d2: components.d2,
     }
-}
-
-#[derive(Default)]
-pub struct PairingElGamalEnvelopeCorruptions {
-    pub c1: Option<Value>,
-    pub c2: Option<Value>,
-    pub d1: Option<Value>,
-    pub d2: Option<Value>,
-}
-
-pub fn invalidate_pairing_elgamal_envelope<P: IPairingAdapter>(
-    pairing: &P,
-    corruptions: PairingElGamalEnvelopeCorruptions,
-) -> Value {
-    let envelope = build_pairing_elgamal_envelope(pairing, Default::default());
-    let mut fields = Map::new();
-    fields.insert("c1".to_string(), encoded_g1_value(pairing, &envelope.c1));
-    fields.insert("c2".to_string(), encoded_g1_value(pairing, &envelope.c2));
-    fields.insert("d1".to_string(), encoded_g2_value(pairing, &envelope.d1));
-    fields.insert("d2".to_string(), encoded_g2_value(pairing, &envelope.d2));
-    if let Some(c1) = corruptions.c1 {
-        fields.insert("c1".to_string(), c1);
-    }
-    if let Some(c2) = corruptions.c2 {
-        fields.insert("c2".to_string(), c2);
-    }
-    if let Some(d1) = corruptions.d1 {
-        fields.insert("d1".to_string(), d1);
-    }
-    if let Some(d2) = corruptions.d2 {
-        fields.insert("d2".to_string(), d2);
-    }
-    Value::Object(fields)
 }
 
 pub struct PairingElGamalPossessionOverrides<P: IPairingAdapter> {
@@ -532,45 +382,4 @@ pub fn build_pairing_elgamal_possession<P: IPairingArithmetic, E: IEncoderAdapte
         r2: overrides.r2.unwrap_or(r2),
         z2: overrides.z2.unwrap_or(z2.sum),
     }
-}
-
-#[derive(Default)]
-pub struct PairingElGamalPossessionCorruptions {
-    pub r1: Option<Value>,
-    pub z1: Option<Value>,
-    pub r2: Option<Value>,
-    pub z2: Option<Value>,
-}
-
-pub fn invalidate_pairing_elgamal_possession<P: IPairingArithmetic, E: IEncoderAdapter>(
-    adapter: &PairingElGamalKeyAgreement<'_, P, E>,
-    key_pair: &PairingElGamalKeyPair<P>,
-    corruptions: PairingElGamalPossessionCorruptions,
-) -> Value {
-    let possession = build_pairing_elgamal_possession(adapter, key_pair, Default::default());
-    let pairing = adapter.pairing;
-    let mut fields = Map::new();
-    fields.insert("r1".to_string(), encoded_g1_value(pairing, &possession.r1));
-    fields.insert(
-        "z1".to_string(),
-        encoded_scalar_value(pairing, &possession.z1),
-    );
-    fields.insert("r2".to_string(), encoded_g2_value(pairing, &possession.r2));
-    fields.insert(
-        "z2".to_string(),
-        encoded_scalar_value(pairing, &possession.z2),
-    );
-    if let Some(r1) = corruptions.r1 {
-        fields.insert("r1".to_string(), r1);
-    }
-    if let Some(z1) = corruptions.z1 {
-        fields.insert("z1".to_string(), z1);
-    }
-    if let Some(r2) = corruptions.r2 {
-        fields.insert("r2".to_string(), r2);
-    }
-    if let Some(z2) = corruptions.z2 {
-        fields.insert("z2".to_string(), z2);
-    }
-    Value::Object(fields)
 }

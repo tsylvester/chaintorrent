@@ -61,7 +61,7 @@ use pairing::{
     NegScalarPayload, PairingProductIsOneParams, PairingProductIsOnePayload, PairingProductTerm,
     SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
 };
-use random::{FillBytesErrorReturn, FillBytesParams, FillBytesPayload, IRandomSourceAdapter};
+use random::{FillBytesErrorReturn, FillBytesParams, FillBytesPayload};
 
 impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> PairingElGamalKeyAgreement<'a, P, E> {
     pub const DECLARATION: KeyAgreementDeclaration = KeyAgreementDeclaration {
