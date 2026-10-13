@@ -1,7 +1,13 @@
+#[cfg(test)]
+mod integration_test;
 mod interface;
+#[cfg(test)]
+mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
-mod test;
+mod test_basic;
+#[cfg(test)]
+mod test_error;
 
 use crate::factory::provides::{
     EnvelopeAlgebra, EnvelopeCoins, EnvelopeComponents, EnvelopeComponentsParams,
@@ -40,8 +46,7 @@ use interface::{
     PAIRING_ELGAMAL_POSSESSION_G1_TAG, PAIRING_ELGAMAL_POSSESSION_G2_TAG, PairingElGamalEnvelope,
     PairingElGamalGenerateKeysErrorReturn, PairingElGamalKeyAgreement,
     PairingElGamalKeyAgreementConstructorParams, PairingElGamalKeyAgreementTryNewErrorReturn,
-    PairingElGamalKeyAgreementTryNewReturn, PairingElGamalKeyPair,
-    PairingElGamalKeyPairFromComponentsErrorReturn, PairingElGamalPossession,
+    PairingElGamalKeyAgreementTryNewReturn, PairingElGamalKeyPair, PairingElGamalPossession,
     PairingElGamalPublicKeys, PairingElGamalPublicKeysFromComponentsErrorReturn,
     PairingElGamalWrapToErrorReturn,
 };
@@ -56,7 +61,7 @@ use pairing::{
     NegScalarPayload, PairingProductIsOneParams, PairingProductIsOnePayload, PairingProductTerm,
     SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
 };
-use random::{FillBytesErrorReturn, FillBytesParams, FillBytesPayload};
+use random::{FillBytesErrorReturn, FillBytesParams, FillBytesPayload, IRandomSourceAdapter};
 
 impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> PairingElGamalKeyAgreement<'a, P, E> {
     pub const DECLARATION: KeyAgreementDeclaration = KeyAgreementDeclaration {
@@ -209,9 +214,7 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
         ) {
             Ok(sampled) => sampled.scalar,
             Err(error) => {
-                return Err(GenerateKeysErrorReturn::PairingElGamal(
-                    PairingElGamalGenerateKeysErrorReturn::XSampling(error),
-                ));
+                return Err(GenerateKeysErrorReturn::XSampling(error));
             }
         };
         let y = match P::Scalar::sample_from_uniform_bytes(
@@ -222,9 +225,7 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
         ) {
             Ok(sampled) => sampled.scalar,
             Err(error) => {
-                return Err(GenerateKeysErrorReturn::PairingElGamal(
-                    PairingElGamalGenerateKeysErrorReturn::YSampling(error),
-                ));
+                return Err(GenerateKeysErrorReturn::YSampling(error));
             }
         };
 
@@ -256,18 +257,14 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
             IsIdentityG1Payload { point: pk1.clone() },
         );
         if identity1.is_identity {
-            return Err(GenerateKeysErrorReturn::PairingElGamal(
-                PairingElGamalGenerateKeysErrorReturn::IdentityKeyG1,
-            ));
+            return Err(GenerateKeysErrorReturn::IdentityKeyG1);
         }
         let Ok(identity2) = self.pairing.is_identity_g2(
             IsIdentityG2Params,
             IsIdentityG2Payload { point: pk2.clone() },
         );
         if identity2.is_identity {
-            return Err(GenerateKeysErrorReturn::PairingElGamal(
-                PairingElGamalGenerateKeysErrorReturn::IdentityKeyG2,
-            ));
+            return Err(GenerateKeysErrorReturn::IdentityKeyG2);
         }
 
         let Ok(negated_g1) = self.pairing.neg_g1(
@@ -292,9 +289,7 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
             },
         );
         if shared.is_one {
-            return Err(GenerateKeysErrorReturn::PairingElGamal(
-                PairingElGamalGenerateKeysErrorReturn::SharedSecret,
-            ));
+            return Err(GenerateKeysErrorReturn::SharedSecret);
         }
 
         let k1 = match self.draw_uniform_secret() {
@@ -659,18 +654,14 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
             IsIdentityG1Payload { point: pk1.clone() },
         );
         if identity1.is_identity {
-            return Err(KeyPairFromComponentsErrorReturn::PairingElGamal(
-                PairingElGamalKeyPairFromComponentsErrorReturn::IdentityKeyG1,
-            ));
+            return Err(KeyPairFromComponentsErrorReturn::IdentityKeyG1);
         }
         let Ok(identity2) = self.pairing.is_identity_g2(
             IsIdentityG2Params,
             IsIdentityG2Payload { point: pk2.clone() },
         );
         if identity2.is_identity {
-            return Err(KeyPairFromComponentsErrorReturn::PairingElGamal(
-                PairingElGamalKeyPairFromComponentsErrorReturn::IdentityKeyG2,
-            ));
+            return Err(KeyPairFromComponentsErrorReturn::IdentityKeyG2);
         }
 
         let Ok(negated_g1) = self.pairing.neg_g1(
@@ -695,9 +686,7 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
             },
         );
         if shared.is_one {
-            return Err(KeyPairFromComponentsErrorReturn::PairingElGamal(
-                PairingElGamalKeyPairFromComponentsErrorReturn::SharedSecret,
-            ));
+            return Err(KeyPairFromComponentsErrorReturn::SharedSecret);
         }
 
         Ok(KeyPairFromComponentsSuccessReturn {
@@ -725,9 +714,7 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
             },
         );
         if identity1.is_identity {
-            return Err(PublicKeysFromComponentsErrorReturn::PairingElGamal(
-                PairingElGamalPublicKeysFromComponentsErrorReturn::IdentityKeyG1,
-            ));
+            return Err(PublicKeysFromComponentsErrorReturn::IdentityKeyG1);
         }
         let Ok(identity2) = self.pairing.is_identity_g2(
             IsIdentityG2Params,
@@ -736,9 +723,7 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
             },
         );
         if identity2.is_identity {
-            return Err(PublicKeysFromComponentsErrorReturn::PairingElGamal(
-                PairingElGamalPublicKeysFromComponentsErrorReturn::IdentityKeyG2,
-            ));
+            return Err(PublicKeysFromComponentsErrorReturn::IdentityKeyG2);
         }
 
         let Ok(g1) = self
@@ -769,9 +754,7 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
             },
         );
         if shared.is_one {
-            return Err(PublicKeysFromComponentsErrorReturn::PairingElGamal(
-                PairingElGamalPublicKeysFromComponentsErrorReturn::SharedSecret,
-            ));
+            return Err(PublicKeysFromComponentsErrorReturn::SharedSecret);
         }
 
         let c1 = match self.challenge_g1(&components.pk1, &possession.r1) {
@@ -825,9 +808,7 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
             },
         );
         if !identity1.is_identity {
-            return Err(PublicKeysFromComponentsErrorReturn::PairingElGamal(
-                PairingElGamalPublicKeysFromComponentsErrorReturn::PossessionG1,
-            ));
+            return Err(PublicKeysFromComponentsErrorReturn::PossessionG1);
         }
 
         let c2 = match self.challenge_g2(&components.pk2, &possession.r2) {
@@ -881,9 +862,7 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter> IKeyAgreementAdapter
             },
         );
         if !identity2.is_identity {
-            return Err(PublicKeysFromComponentsErrorReturn::PairingElGamal(
-                PairingElGamalPublicKeysFromComponentsErrorReturn::PossessionG2,
-            ));
+            return Err(PublicKeysFromComponentsErrorReturn::PossessionG2);
         }
 
         Ok(PublicKeysFromComponentsSuccessReturn {

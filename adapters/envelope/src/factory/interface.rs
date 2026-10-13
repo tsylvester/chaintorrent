@@ -3,21 +3,22 @@ use domain::Secret;
 use encoding::IEncoderAdapter;
 use hash_to_scalar::IHashToScalarAdapter;
 use kem::CredentialComponents;
-use pairing::{IPairingAdapter, IPairingArithmetic};
+use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorReturn};
 use random::IRandomSourceAdapter;
 use zeroize::Zeroize;
 
 use crate::pairing_elgamal::provides::{
     PairingElGamalGenerateKeysErrorReturn, PairingElGamalKeyAgreementTryNewErrorReturn,
-    PairingElGamalKeyPairFromComponentsErrorReturn,
     PairingElGamalPublicKeysFromComponentsErrorReturn, PairingElGamalWrapToErrorReturn,
 };
 
 pub const KEY_AGREEMENT_INTERFACE_VERSION: u32 = 1;
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum KeyAgreementIdentifier {
     PairingElGamalV1,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -53,7 +54,14 @@ pub struct GenerateKeysSuccessReturn<KP, PO> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum GenerateKeysErrorReturn {
+    XSampling(SampleUniformScalarErrorReturn),
+    YSampling(SampleUniformScalarErrorReturn),
+    IdentityKeyG1,
+    IdentityKeyG2,
+    SharedSecret,
     PairingElGamal(PairingElGamalGenerateKeysErrorReturn),
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIKeyAgreementAdapterGenerateKeysErrorReturn),
 }
 
 pub type GenerateKeysReturn<KP, PO> =
@@ -74,6 +82,8 @@ pub struct WrapToSuccessReturn<E, S: Zeroize> {
 #[derive(Debug, PartialEq, Eq)]
 pub enum WrapToErrorReturn {
     PairingElGamal(PairingElGamalWrapToErrorReturn),
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIKeyAgreementAdapterWrapToErrorReturn),
 }
 
 pub type WrapToReturn<E, S> = Result<WrapToSuccessReturn<E, S>, WrapToErrorReturn>;
@@ -191,7 +201,9 @@ pub struct KeyPairFromComponentsSuccessReturn<KP> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum KeyPairFromComponentsErrorReturn {
-    PairingElGamal(PairingElGamalKeyPairFromComponentsErrorReturn),
+    IdentityKeyG1,
+    IdentityKeyG2,
+    SharedSecret,
 }
 
 pub type KeyPairFromComponentsReturn<KP> =
@@ -210,6 +222,11 @@ pub struct PublicKeysFromComponentsSuccessReturn<PK> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PublicKeysFromComponentsErrorReturn {
+    IdentityKeyG1,
+    IdentityKeyG2,
+    SharedSecret,
+    PossessionG1,
+    PossessionG2,
     PairingElGamal(PairingElGamalPublicKeysFromComponentsErrorReturn),
 }
 
@@ -359,6 +376,8 @@ pub trait IKeyAgreementAdapter {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum KeyAgreementConcrete {
     PairingElGamal,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIKeyAgreementAdapterFailureMode),
 }
 
 pub trait IKeyAgreementConsumer<P: IPairingAdapter> {
@@ -385,6 +404,7 @@ pub struct CreateKeyAgreementDeps<'a, P: IPairingArithmetic, E: IEncoderAdapter,
     pub consumer: C,
 }
 
+#[derive(Clone, Copy)]
 pub struct CreateKeyAgreementParams {
     pub concrete: KeyAgreementConcrete,
     pub identifier: KeyAgreementIdentifier,
@@ -413,3 +433,30 @@ pub type CreateKeyAgreementFn<'a, P, E, C> =
         CreateKeyAgreementParams,
         CreateKeyAgreementPayload,
     ) -> CreateKeyAgreementReturn<<C as IKeyAgreementConsumer<P>>::Output>;
+
+pub const DECLARED_KEY_AGREEMENT_SELECTIONS: &[CreateKeyAgreementParams] =
+    &[CreateKeyAgreementParams {
+        concrete: KeyAgreementConcrete::PairingElGamal,
+        identifier: KeyAgreementIdentifier::PairingElGamalV1,
+        algebra: EnvelopeAlgebra::PairingElGamal,
+    }];
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum MockIKeyAgreementAdapterFailureMode {
+    NoFailure,
+    NonceDrawRefused,
+    CoinDrawRefused,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum MockIKeyAgreementAdapterGenerateKeysErrorReturn {
+    NonceDrawRefused,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum MockIKeyAgreementAdapterWrapToErrorReturn {
+    CoinDrawRefused,
+}

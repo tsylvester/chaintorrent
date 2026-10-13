@@ -1,4 +1,4 @@
-Rust checks started: 2026-10-13 11:00:44 -05:00
+Rust checks started: 2026-10-13 17:37:20 -05:00
 
 > cargo check --workspace --all-targets --all-features
 
@@ -20,6 +20,48 @@ warning: constant `BINDING_MESSAGE` is never used
    |
 55 | pub const BINDING_MESSAGE: &[u8] = b"def";
    |           ^^^^^^^^^^^^^^^
+
+warning: unused import: `IPairingAdapter`
+  --> adapters\hash-to-scalar\src\keccak256\integration_test.rs:15:68
+   |
+15 |     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
+   |                                                                    ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `Keccak256HashToScalarConstructorParamsCorruptions` is never constructed
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:25:12
+   |
+25 | pub struct Keccak256HashToScalarConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_keccak256_hash_to_scalar_constructor_params` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:28:8
+   |
+28 | pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `BINDING_TAG` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
+   |
+53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
+   |           ^^^^^^^^^^^
+
+warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
+  --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
+   |
+25 | pub struct Blake3KeyedKdfConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
+  --> adapters\kdf\src\blake3_keyed\mock.rs:28:8
+   |
+28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
   --> adapters\chain\src\evm_forms\mock.rs:15:12
@@ -95,52 +137,10 @@ warning: function `build_evm_chain_identifier_form` is never used
 88 | pub fn build_evm_chain_identifier_form(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: unused import: `IPairingAdapter`
-  --> adapters\hash-to-scalar\src\keccak256\integration_test.rs:15:68
-   |
-15 |     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
-   |                                                                    ^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
-
-warning: struct `Keccak256HashToScalarConstructorParamsCorruptions` is never constructed
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:25:12
-   |
-25 | pub struct Keccak256HashToScalarConstructorParamsCorruptions;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `invalidate_keccak256_hash_to_scalar_constructor_params` is never used
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:28:8
-   |
-28 | pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `BINDING_TAG` is never used
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
-   |
-53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
-   |           ^^^^^^^^^^^
-
-warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
-  --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
-   |
-25 | pub struct Blake3KeyedKdfConstructorParamsCorruptions;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
-  --> adapters\kdf\src\blake3_keyed\mock.rs:28:8
-   |
-28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 warning: `hash-to-scalar` (lib) generated 2 warnings
-warning: `chain` (lib test) generated 12 warnings
 warning: `hash-to-scalar` (lib test) generated 5 warnings (1 duplicate)
 warning: `kdf` (lib test) generated 2 warnings
+warning: `chain` (lib test) generated 12 warnings
 warning: function `uniform_bytes` is never used
   --> adapters\kem\src\bb1_depth_one\mock.rs:19:4
    |
@@ -376,49 +376,83 @@ warning: function `byte_array` is never used
 warning: `kem` (lib) generated 37 warnings
 warning: `kem` (lib test) generated 13 warnings (12 duplicates)
     Checking envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
-    Checking workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
-error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
-  --> adapters\envelope\src\factory\mock.rs:93:17
+warning: unused imports: `PossessionG1Statement` and `PossessionG2Statement`
+  --> adapters\envelope\src\pairing_elgamal\interface.rs:10:5
    |
-93 |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
-   |                 ^^^^^ `SecretConstructorParamsOverrides` does not have this field
+10 |     PossessionG1Statement, PossessionG1StatementDescription, PossessionG2Statement,
+   |     ^^^^^^^^^^^^^^^^^^^^^                                    ^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: all struct fields are already assigned
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
-error[E0061]: this function takes 2 arguments but 1 argument was supplied
-  --> adapters\envelope\src\factory\mock.rs:92:22
+warning: unused import: `IRandomSourceAdapter`
+  --> adapters\envelope\src\pairing_elgamal\mod.rs:64:71
    |
-92 |               uniform: build_secret(SecretConstructorParamsOverrides {
-   |  ______________________^^^^^^^^^^^^_-
-93 | |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
-94 | |             }),
-   | |_____________- argument #1 of type `Vec<u8>` is missing
-   |
-note: function defined here
-  --> crates\domain\src\secret\mock.rs:21:8
-   |
-21 | pub fn build_secret<T: Zeroize>(
-   |        ^^^^^^^^^^^^
-help: provide the argument
-   |
-92 |             uniform: build_secret(/* Vec<u8> */, SecretConstructorParamsOverrides {
-   |                                   ++++++++++++++
+64 | use random::{FillBytesErrorReturn, FillBytesParams, FillBytesPayload, IRandomSourceAdapter};
+   |                                                                       ^^^^^^^^^^^^^^^^^^^^
 
-error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
-   --> adapters\envelope\src\factory\mock.rs:171:17
+warning: unused imports: `PossessionG1StatementDescription`, `PossessionG1Statement`, `PossessionG2StatementDescription`, `PossessionG2Statement`, `build_possession_g1_statement_description`, and `build_possession_g2_statement_description`
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:13:5
+   |
+13 |     PossessionG1Statement, PossessionG1StatementDescription, PossessionG1StatementOverrides,
+   |     ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |     PossessionG2Statement, PossessionG2StatementDescription, PossessionG2StatementOverrides,
+   |     ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 |     build_possession_g1_statement, build_possession_g1_statement_description,
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 |     build_possession_g2_statement, build_possession_g2_statement_description,
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `CredentialComponentsOverrides`, `CredentialComponents`, and `build_credential_components`
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:21:11
+   |
+21 | use kem::{CredentialComponents, CredentialComponentsOverrides, build_credential_components};
+   |           ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `EnvelopeFromComponentsPayloadOverrides`, `GenerateKeysPayloadOverrides`, `KeyPairComponentsOverrides`, `KeyPairFromComponentsPayloadOverrides`, `PossessionFromComponentsPayloadOverrides`, and `PublicKeysFromComponentsPayloadOverrides`
+ --> adapters\envelope\src\pairing_elgamal\test_basic.rs:4:22
+  |
+4 |     EnvelopeAlgebra, EnvelopeFromComponentsPayloadOverrides, GenerateKeysPayloadOverrides,
+  |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 |     IKeyAgreementAdapter, KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementIdentifier,
+6 |     KeyPairComponentsOverrides, KeyPairFromComponentsPayloadOverrides,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7 |     PossessionFromComponentsPayloadOverrides, PublicKeysFromComponentsPayloadOverrides,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `envelope_coins_value` is never used
+   --> adapters\envelope\src\factory\mock.rs:889:4
     |
-171 |                 value: Some(vec![0x11; 64]),
+889 | fn envelope_coins_value<P: IPairingAdapter>(
+    |    ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `envelope` (lib) generated 3 warnings (run `cargo fix --lib -p envelope` to apply 1 suggestion)
+    Checking proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
+warning: unused import: `IPairingArithmetic`
+  --> adapters\envelope\tests\possession_statement_integration_test.rs:21:5
+   |
+21 |     IPairingArithmetic, IPairingConsumer, IPairingReference, PAIRING_CONCRETES,
+   |     ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `envelope` (test "possession_statement_integration_test") generated 1 warning (run `cargo fix --test "possession_statement_integration_test" -p envelope` to apply 1 suggestion)
+error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
+   --> adapters\proof\src\factory\mock.rs:167:17
+    |
+167 |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
     |                 ^^^^^ `SecretConstructorParamsOverrides` does not have this field
     |
     = note: all struct fields are already assigned
 
 error[E0061]: this function takes 2 arguments but 1 argument was supplied
-   --> adapters\envelope\src\factory\mock.rs:170:13
+   --> adapters\proof\src\factory\mock.rs:166:22
     |
-170 |               build_secret(SecretConstructorParamsOverrides {
-    |  _____________^^^^^^^^^^^^_-
-171 | |                 value: Some(vec![0x11; 64]),
-172 | |             })
+166 |               uniform: build_secret(SecretConstructorParamsOverrides {
+    |  ______________________^^^^^^^^^^^^_-
+167 | |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
+168 | |             }),
     | |_____________- argument #1 of type `Vec<u8>` is missing
     |
 note: function defined here
@@ -428,41 +462,101 @@ note: function defined here
     |        ^^^^^^^^^^^^
 help: provide the argument
     |
-170 |             build_secret(/* Vec<u8> */, SecretConstructorParamsOverrides {
-    |                          ++++++++++++++
-
-error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
-   --> adapters\envelope\src\factory\mock.rs:176:17
-    |
-176 |                 value: Some(vec![0x22; 64]),
-    |                 ^^^^^ `SecretConstructorParamsOverrides` does not have this field
-    |
-    = note: all struct fields are already assigned
-
-error[E0061]: this function takes 2 arguments but 1 argument was supplied
-   --> adapters\envelope\src\factory\mock.rs:175:13
-    |
-175 |               build_secret(SecretConstructorParamsOverrides {
-    |  _____________^^^^^^^^^^^^_-
-176 | |                 value: Some(vec![0x22; 64]),
-177 | |             })
-    | |_____________- argument #1 of type `Vec<u8>` is missing
-    |
-note: function defined here
-   --> crates\domain\src\secret\mock.rs:21:8
-    |
- 21 | pub fn build_secret<T: Zeroize>(
-    |        ^^^^^^^^^^^^
-help: provide the argument
-    |
-175 |             build_secret(/* Vec<u8> */, SecretConstructorParamsOverrides {
-    |                          ++++++++++++++
+166 |             uniform: build_secret(/* Vec<u8> */, SecretConstructorParamsOverrides {
+    |                                   ++++++++++++++
 
 Some errors have detailed explanations: E0061, E0560.
 For more information about an error, try `rustc --explain E0061`.
-error: could not compile `envelope` (lib) due to 6 previous errors
+error: could not compile `proof` (lib) due to 2 previous errors
 warning: build failed, waiting for other jobs to finish...
-error: could not compile `envelope` (lib test) due to 6 previous errors
+error: could not compile `proof` (lib test) due to 2 previous errors
+warning: unused import: `IHashToScalarAdapter`
+  --> adapters\envelope\src\pairing_elgamal\test_basic.rs:39:5
+   |
+39 |     IHashToScalarAdapter, build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `key_pair`
+    --> adapters\envelope\src\pairing_elgamal\test_error.rs:2496:25
+     |
+2496 |                     let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+     |                         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_key_pair`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `byte_array` is never used
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:90:4
+   |
+90 | fn byte_array(bytes: &[u8]) -> Value {
+   |    ^^^^^^^^^^
+
+warning: function `encoded_g1_value` is never used
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:94:4
+   |
+94 | fn encoded_g1_value<P: IPairingAdapter>(pairing: &P, point: &P::G1) -> Value {
+   |    ^^^^^^^^^^^^^^^^
+
+warning: function `encoded_g2_value` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:107:4
+    |
+107 | fn encoded_g2_value<P: IPairingAdapter>(pairing: &P, point: &P::G2) -> Value {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `encoded_scalar_value` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:120:4
+    |
+120 | fn encoded_scalar_value<P: IPairingAdapter>(pairing: &P, scalar: &P::Scalar) -> Value {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalKeyPairCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:267:12
+    |
+267 | pub struct PairingElGamalKeyPairCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_key_pair` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:274:8
+    |
+274 | pub fn invalidate_pairing_elgamal_key_pair<P: IPairingAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalPublicKeysCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:337:12
+    |
+337 | pub struct PairingElGamalPublicKeysCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_public_keys` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:342:8
+    |
+342 | pub fn invalidate_pairing_elgamal_public_keys<P: IPairingAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalEnvelopeCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:405:12
+    |
+405 | pub struct PairingElGamalEnvelopeCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_envelope` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:412:8
+    |
+412 | pub fn invalidate_pairing_elgamal_envelope<P: IPairingAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalPossessionCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:538:12
+    |
+538 | pub struct PairingElGamalPossessionCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_possession` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:545:8
+    |
+545 | pub fn invalidate_pairing_elgamal_possession<P: IPairingArithmetic, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `envelope` (lib test) generated 20 warnings (3 duplicates) (run `cargo fix --lib -p envelope --tests` to apply 4 suggestions)
 
 [exit code: 101]
 
@@ -852,49 +946,184 @@ warning: struct update has no effect, all the fields in the struct have already 
 warning: `kem` (lib) generated 37 warnings
 warning: `kem` (lib test) generated 14 warnings (12 duplicates)
     Checking envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
-    Checking workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
-error[E0560]: struct `domain::SecretConstructorParamsOverrides` has no field named `value`
-  --> adapters\envelope\src\factory\mock.rs:93:17
+warning: unused imports: `PossessionG1Statement` and `PossessionG2Statement`
+  --> adapters\envelope\src\pairing_elgamal\interface.rs:10:5
    |
-93 |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
-   |                 ^^^^^ `domain::SecretConstructorParamsOverrides` does not have this field
+10 |     PossessionG1Statement, PossessionG1StatementDescription, PossessionG2Statement,
+   |     ^^^^^^^^^^^^^^^^^^^^^                                    ^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: all struct fields are already assigned
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
-error[E0061]: this function takes 2 arguments but 1 argument was supplied
-  --> adapters\envelope\src\factory\mock.rs:92:22
+warning: unused import: `IRandomSourceAdapter`
+  --> adapters\envelope\src\pairing_elgamal\mod.rs:64:71
    |
-92 |               uniform: build_secret(SecretConstructorParamsOverrides {
-   |  ______________________^^^^^^^^^^^^_-
-93 | |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
-94 | |             }),
-   | |_____________- argument #1 of type `std::vec::Vec<u8>` is missing
-   |
-note: function defined here
-  --> crates\domain\src\secret\mock.rs:21:8
-   |
-21 | pub fn build_secret<T: Zeroize>(
-   |        ^^^^^^^^^^^^
-help: provide the argument
-   |
-92 |             uniform: build_secret(/* std::vec::Vec<u8> */, SecretConstructorParamsOverrides {
-   |                                   ++++++++++++++++++++++++
+64 | use random::{FillBytesErrorReturn, FillBytesParams, FillBytesPayload, IRandomSourceAdapter};
+   |                                                                       ^^^^^^^^^^^^^^^^^^^^
 
-error[E0560]: struct `domain::SecretConstructorParamsOverrides` has no field named `value`
-   --> adapters\envelope\src\factory\mock.rs:171:17
+warning: unused imports: `PossessionG1StatementDescription`, `PossessionG1Statement`, `PossessionG2StatementDescription`, `PossessionG2Statement`, `build_possession_g1_statement_description`, and `build_possession_g2_statement_description`
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:13:5
+   |
+13 |     PossessionG1Statement, PossessionG1StatementDescription, PossessionG1StatementOverrides,
+   |     ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |     PossessionG2Statement, PossessionG2StatementDescription, PossessionG2StatementOverrides,
+   |     ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 |     build_possession_g1_statement, build_possession_g1_statement_description,
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 |     build_possession_g2_statement, build_possession_g2_statement_description,
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `CredentialComponentsOverrides`, `CredentialComponents`, and `build_credential_components`
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:21:11
+   |
+21 | use kem::{CredentialComponents, CredentialComponentsOverrides, build_credential_components};
+   |           ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `EnvelopeFromComponentsPayloadOverrides`, `GenerateKeysPayloadOverrides`, `KeyPairComponentsOverrides`, `KeyPairFromComponentsPayloadOverrides`, `PossessionFromComponentsPayloadOverrides`, and `PublicKeysFromComponentsPayloadOverrides`
+ --> adapters\envelope\src\pairing_elgamal\test_basic.rs:4:22
+  |
+4 |     EnvelopeAlgebra, EnvelopeFromComponentsPayloadOverrides, GenerateKeysPayloadOverrides,
+  |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 |     IKeyAgreementAdapter, KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementIdentifier,
+6 |     KeyPairComponentsOverrides, KeyPairFromComponentsPayloadOverrides,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7 |     PossessionFromComponentsPayloadOverrides, PublicKeysFromComponentsPayloadOverrides,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `envelope_coins_value` is never used
+   --> adapters\envelope\src\factory\mock.rs:889:4
     |
-171 |                 value: Some(vec![0x11; 64]),
+889 | fn envelope_coins_value<P: IPairingAdapter>(
+    |    ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: this `impl` can be derived
+    --> adapters\envelope\src\factory\mock.rs:1011:1
+     |
+1011 | / impl Default for GenerateKeysPayloadOverrides {
+1012 | |     fn default() -> Self {
+1013 | |         Self {
+1014 | |             x_uniform: None,
+...    |
+1018 | | }
+     | |_^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#derivable_impls
+     = note: `#[warn(clippy::derivable_impls)]` on by default
+help: replace the manual implementation with a derive attribute
+     |
+1006 + #[derive(Default)]
+1007 | pub struct GenerateKeysPayloadOverrides {
+     |
+
+warning: this `impl` can be derived
+    --> adapters\envelope\src\factory\mock.rs:2038:1
+     |
+2038 | / impl Default for MockIKeyAgreementAdapterConstructorParamsOverrides {
+2039 | |     fn default() -> Self {
+2040 | |         Self { failure_mode: None }
+2041 | |     }
+2042 | | }
+     | |_^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#derivable_impls
+help: replace the manual implementation with a derive attribute
+     |
+2034 + #[derive(Default)]
+2035 | pub struct MockIKeyAgreementAdapterConstructorParamsOverrides {
+     |
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\possession_statement\mock.rs:104:19
+    |
+104 |                 ..Default::default()
+    |                   ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+    = note: `#[warn(clippy::needless_update)]` on by default
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\possession_statement\mock.rs:114:19
+    |
+114 |                 ..Default::default()
+    |                   ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\possession_statement\mock.rs:148:19
+    |
+148 |                 ..Default::default()
+    |                   ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\possession_statement\mock.rs:158:19
+    |
+158 |                 ..Default::default()
+    |                   ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: `envelope` (lib) generated 9 warnings (run `cargo clippy --fix --lib -p envelope -- ` to apply 3 suggestions)
+    Checking proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
+warning: unused import: `IPairingArithmetic`
+  --> adapters\envelope\tests\possession_statement_integration_test.rs:21:5
+   |
+21 |     IPairingArithmetic, IPairingConsumer, IPairingReference, PAIRING_CONCRETES,
+   |     ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\tests\factory_integration_test.rs:646:59
+    |
+646 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+    = note: `#[warn(clippy::needless_update)]` on by default
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\tests\factory_integration_test.rs:661:59
+    |
+661 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\tests\factory_integration_test.rs:860:59
+    |
+860 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\tests\factory_integration_test.rs:875:59
+    |
+875 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+error[E0560]: struct `domain::SecretConstructorParamsOverrides` has no field named `value`
+   --> adapters\proof\src\factory\mock.rs:167:17
+    |
+167 |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
     |                 ^^^^^ `domain::SecretConstructorParamsOverrides` does not have this field
     |
     = note: all struct fields are already assigned
 
 error[E0061]: this function takes 2 arguments but 1 argument was supplied
-   --> adapters\envelope\src\factory\mock.rs:170:13
+   --> adapters\proof\src\factory\mock.rs:166:22
     |
-170 |               build_secret(SecretConstructorParamsOverrides {
-    |  _____________^^^^^^^^^^^^_-
-171 | |                 value: Some(vec![0x11; 64]),
-172 | |             })
+166 |               uniform: build_secret(SecretConstructorParamsOverrides {
+    |  ______________________^^^^^^^^^^^^_-
+167 | |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
+168 | |             }),
     | |_____________- argument #1 of type `std::vec::Vec<u8>` is missing
     |
 note: function defined here
@@ -904,41 +1133,466 @@ note: function defined here
     |        ^^^^^^^^^^^^
 help: provide the argument
     |
-170 |             build_secret(/* std::vec::Vec<u8> */, SecretConstructorParamsOverrides {
-    |                          ++++++++++++++++++++++++
+166 |             uniform: build_secret(/* std::vec::Vec<u8> */, SecretConstructorParamsOverrides {
+    |                                   ++++++++++++++++++++++++
 
-error[E0560]: struct `domain::SecretConstructorParamsOverrides` has no field named `value`
-   --> adapters\envelope\src\factory\mock.rs:176:17
-    |
-176 |                 value: Some(vec![0x22; 64]),
-    |                 ^^^^^ `domain::SecretConstructorParamsOverrides` does not have this field
-    |
-    = note: all struct fields are already assigned
-
-error[E0061]: this function takes 2 arguments but 1 argument was supplied
-   --> adapters\envelope\src\factory\mock.rs:175:13
-    |
-175 |               build_secret(SecretConstructorParamsOverrides {
-    |  _____________^^^^^^^^^^^^_-
-176 | |                 value: Some(vec![0x22; 64]),
-177 | |             })
-    | |_____________- argument #1 of type `std::vec::Vec<u8>` is missing
-    |
-note: function defined here
-   --> crates\domain\src\secret\mock.rs:21:8
-    |
- 21 | pub fn build_secret<T: Zeroize>(
-    |        ^^^^^^^^^^^^
-help: provide the argument
-    |
-175 |             build_secret(/* std::vec::Vec<u8> */, SecretConstructorParamsOverrides {
-    |                          ++++++++++++++++++++++++
-
+warning: `envelope` (test "factory_integration_test") generated 4 warnings
+warning: `envelope` (test "possession_statement_integration_test") generated 1 warning (run `cargo clippy --fix --test "possession_statement_integration_test" -p envelope -- ` to apply 1 suggestion)
 Some errors have detailed explanations: E0061, E0560.
 For more information about an error, try `rustc --explain E0061`.
-error: could not compile `envelope` (lib) due to 6 previous errors
+error: could not compile `proof` (lib) due to 2 previous errors
 warning: build failed, waiting for other jobs to finish...
-error: could not compile `envelope` (lib test) due to 6 previous errors
+error: could not compile `proof` (lib test) due to 2 previous errors
+warning: unused import: `IHashToScalarAdapter`
+  --> adapters\envelope\src\pairing_elgamal\test_basic.rs:39:5
+   |
+39 |     IHashToScalarAdapter, build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `key_pair`
+    --> adapters\envelope\src\pairing_elgamal\test_error.rs:2496:25
+     |
+2496 |                     let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+     |                         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_key_pair`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `byte_array` is never used
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:90:4
+   |
+90 | fn byte_array(bytes: &[u8]) -> Value {
+   |    ^^^^^^^^^^
+
+warning: function `encoded_g1_value` is never used
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:94:4
+   |
+94 | fn encoded_g1_value<P: IPairingAdapter>(pairing: &P, point: &P::G1) -> Value {
+   |    ^^^^^^^^^^^^^^^^
+
+warning: function `encoded_g2_value` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:107:4
+    |
+107 | fn encoded_g2_value<P: IPairingAdapter>(pairing: &P, point: &P::G2) -> Value {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `encoded_scalar_value` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:120:4
+    |
+120 | fn encoded_scalar_value<P: IPairingAdapter>(pairing: &P, scalar: &P::Scalar) -> Value {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalKeyPairCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:267:12
+    |
+267 | pub struct PairingElGamalKeyPairCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_key_pair` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:274:8
+    |
+274 | pub fn invalidate_pairing_elgamal_key_pair<P: IPairingAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalPublicKeysCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:337:12
+    |
+337 | pub struct PairingElGamalPublicKeysCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_public_keys` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:342:8
+    |
+342 | pub fn invalidate_pairing_elgamal_public_keys<P: IPairingAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalEnvelopeCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:405:12
+    |
+405 | pub struct PairingElGamalEnvelopeCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_envelope` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:412:8
+    |
+412 | pub fn invalidate_pairing_elgamal_envelope<P: IPairingAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalPossessionCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:538:12
+    |
+538 | pub struct PairingElGamalPossessionCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_possession` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:545:8
+    |
+545 | pub fn invalidate_pairing_elgamal_possession<P: IPairingArithmetic, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\factory\integration_test.rs:278:63
+    |
+278 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+    = note: `#[warn(clippy::needless_update)]` on by default
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\factory\integration_test.rs:296:63
+    |
+296 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\factory\integration_test.rs:313:63
+    |
+313 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\factory\integration_test.rs:632:59
+    |
+632 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\factory\integration_test.rs:647:59
+    |
+647 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\factory\integration_test.rs:664:63
+    |
+664 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\factory\integration_test.rs:682:63
+    |
+682 | ...                   ..Default::default()
+    |                         ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:1016:63
+     |
+1016 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:1031:63
+     |
+1031 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:1048:63
+     |
+1048 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:1063:63
+     |
+1063 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:1476:63
+     |
+1476 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:1493:63
+     |
+1493 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3288:63
+     |
+3288 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3303:63
+     |
+3303 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3320:63
+     |
+3320 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3335:63
+     |
+3335 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3677:63
+     |
+3677 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3692:63
+     |
+3692 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3709:63
+     |
+3709 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3724:63
+     |
+3724 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3950:63
+     |
+3950 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3965:63
+     |
+3965 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3982:63
+     |
+3982 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+    --> adapters\envelope\src\factory\integration_test.rs:3997:63
+     |
+3997 | ...                   ..Default::default()
+     |                         ^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\pairing_elgamal\integration_test.rs:197:23
+    |
+197 |                     ..Default::default()
+    |                       ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\pairing_elgamal\integration_test.rs:215:23
+    |
+215 |                     ..Default::default()
+    |                       ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\pairing_elgamal\integration_test.rs:234:23
+    |
+234 |                     ..Default::default()
+    |                       ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: field assignment outside of initializer for an instance created with Default::default()
+    --> adapters\envelope\src\pairing_elgamal\integration_test.rs:3895:29
+     |
+3895 | / ...                   overrides.y_uniform = Some(build_secret(
+3896 | | ...                       defaults.x_uniform.expose().clone(),
+3897 | | ...                       SecretConstructorParamsOverrides,
+3898 | | ...                   ));
+     | |_________________________^
+     |
+note: consider initializing the variable with `factory::mock::GenerateKeysPayloadOverrides { y_uniform: Some(build_secret(
+                                      defaults.x_uniform.expose().clone(),
+                                      SecretConstructorParamsOverrides,
+                                  )), ..Default::default() }` and removing relevant reassignments
+    --> adapters\envelope\src\pairing_elgamal\integration_test.rs:3894:29
+     |
+3894 | ...                   let mut overrides = GenerateKeysPayloadOverrides::default();
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#field_reassign_with_default
+     = note: `#[warn(clippy::field_reassign_with_default)]` on by default
+
+warning: field assignment outside of initializer for an instance created with Default::default()
+    --> adapters\envelope\src\pairing_elgamal\integration_test.rs:4030:29
+     |
+4030 | / ...                   overrides.components = Some(build_key_pair_components(
+4031 | | ...                       pairing,
+4032 | | ...                       KeyPairComponentsOverrides {
+4033 | | ...                           y: Some(build_secret(
+...    |
+4038 | | ...                       },
+4039 | | ...                   ));
+     | |_________________________^
+     |
+note: consider initializing the variable with `KeyPairFromComponentsPayloadOverrides::<<P as pairing::IPairingAdapter>::Scalar> { components: Some(build_key_pair_components(
+                                      pairing,
+                                      KeyPairComponentsOverrides {
+                                          y: Some(build_secret(
+                                              defaults.x.expose().clone(),
+                                              SecretConstructorParamsOverrides,
+                                          )),
+                                          ..Default::default()
+                                      },
+                                  )) }` and removing relevant reassignments
+    --> adapters\envelope\src\pairing_elgamal\integration_test.rs:4029:29
+     |
+4029 | ...                   let mut overrides = KeyPairFromComponentsPayloadOverrides::default();
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#field_reassign_with_default
+
+warning: field assignment outside of initializer for an instance created with Default::default()
+    --> adapters\envelope\src\pairing_elgamal\integration_test.rs:4470:29
+     |
+4470 | / ...                   overrides.components = Some(build_key_pair_components(
+4471 | | ...                       pairing,
+4472 | | ...                       KeyPairComponentsOverrides {
+4473 | | ...                           x: Some(zero_x),
+4474 | | ...                           ..Default::default()
+4475 | | ...                       },
+4476 | | ...                   ));
+     | |_________________________^
+     |
+note: consider initializing the variable with `KeyPairFromComponentsPayloadOverrides::<<P as pairing::IPairingAdapter>::Scalar> { components: Some(build_key_pair_components(
+                                      pairing,
+                                      KeyPairComponentsOverrides {
+                                          x: Some(zero_x),
+                                          ..Default::default()
+                                      },
+                                  )) }` and removing relevant reassignments
+    --> adapters\envelope\src\pairing_elgamal\integration_test.rs:4469:29
+     |
+4469 | ...                   let mut overrides = KeyPairFromComponentsPayloadOverrides::default();
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#field_reassign_with_default
+
+warning: field assignment outside of initializer for an instance created with Default::default()
+    --> adapters\envelope\src\pairing_elgamal\integration_test.rs:4624:29
+     |
+4624 | / ...                   overrides.components = Some(build_key_pair_components(
+4625 | | ...                       pairing,
+4626 | | ...                       KeyPairComponentsOverrides {
+4627 | | ...                           y: Some(zero_y),
+4628 | | ...                           ..Default::default()
+4629 | | ...                       },
+4630 | | ...                   ));
+     | |_________________________^
+     |
+note: consider initializing the variable with `KeyPairFromComponentsPayloadOverrides::<<P as pairing::IPairingAdapter>::Scalar> { components: Some(build_key_pair_components(
+                                      pairing,
+                                      KeyPairComponentsOverrides {
+                                          y: Some(zero_y),
+                                          ..Default::default()
+                                      },
+                                  )) }` and removing relevant reassignments
+    --> adapters\envelope\src\pairing_elgamal\integration_test.rs:4623:29
+     |
+4623 | ...                   let mut overrides = KeyPairFromComponentsPayloadOverrides::default();
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#field_reassign_with_default
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\possession_statement\mock.rs:104:19
+    |
+104 |                 ..Default::default()
+    |                   ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\possession_statement\test_basic.rs:357:27
+    |
+357 |                         ..Default::default()
+    |                           ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\possession_statement\test_basic.rs:367:27
+    |
+367 |                         ..Default::default()
+    |                           ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\possession_statement\test_basic.rs:426:27
+    |
+426 |                         ..Default::default()
+    |                           ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: struct update has no effect, all the fields in the struct have already been specified
+   --> adapters\envelope\src\possession_statement\test_basic.rs:436:27
+    |
+436 |                         ..Default::default()
+    |                           ^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_update
+
+warning: `envelope` (lib test) generated 62 warnings (8 duplicates) (run `cargo clippy --fix --lib -p envelope --tests -- ` to apply 4 suggestions)
 
 [exit code: 101]
 
@@ -956,24 +1610,6 @@ warning[unmatched-source]: allowed source was not encountered
    Γöé
 37 Γöé allow-git = ["https://github.com/tsylvester/rqbit", "https://github.com/tsylvester/halo2curves"]
    Γöé               ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü no crate source matched these criteria
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:20:6
-   Γöé
-20 Γöé     "BSL-1.0",
-   Γöé      ΓöüΓöüΓöüΓöüΓöüΓöüΓöü unmatched license allowance
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:17:6
-   Γöé
-17 Γöé     "ISC",
-   Γöé      ΓöüΓöüΓöü unmatched license allowance
-
-warning[license-not-encountered]: license was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:18:6
-   Γöé
-18 Γöé     "Zlib",
-   Γöé      ΓöüΓöüΓöüΓöü unmatched license allowance
 
 warning[duplicate]: found 2 duplicate entries for crate 'block-buffer'
    ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:27:1
@@ -1349,6 +1985,24 @@ warning[duplicate]: found 2 duplicate entries for crate 'digest'
      ΓööΓöÇΓöÇ sha3 v0.12.0
          ΓööΓöÇΓöÇ hash-to-scalar v0.0.0 (*)
 
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:20:6
+   Γöé
+20 Γöé     "BSL-1.0",
+   Γöé      ΓöüΓöüΓöüΓöüΓöüΓöüΓöü unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:17:6
+   Γöé
+17 Γöé     "ISC",
+   Γöé      ΓöüΓöüΓöü unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:18:6
+   Γöé
+18 Γöé     "Zlib",
+   Γöé      ΓöüΓöüΓöüΓöü unmatched license allowance
+
 warning[duplicate]: found 2 duplicate entries for crate 'pairing'
    ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:84:1
    Γöé  
@@ -1663,6 +2317,48 @@ warning: constant `BINDING_MESSAGE` is never used
 55 | pub const BINDING_MESSAGE: &[u8] = b"def";
    |           ^^^^^^^^^^^^^^^
 
+warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
+  --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
+   |
+25 | pub struct Blake3KeyedKdfConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
+  --> adapters\kdf\src\blake3_keyed\mock.rs:28:8
+   |
+28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `IPairingAdapter`
+  --> adapters\hash-to-scalar\src\keccak256\integration_test.rs:15:68
+   |
+15 |     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
+   |                                                                    ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `Keccak256HashToScalarConstructorParamsCorruptions` is never constructed
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:25:12
+   |
+25 | pub struct Keccak256HashToScalarConstructorParamsCorruptions;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `invalidate_keccak256_hash_to_scalar_constructor_params` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:28:8
+   |
+28 | pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `BINDING_TAG` is never used
+  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
+   |
+53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
+   |           ^^^^^^^^^^^
+
 warning: struct `EvmIdentityFormConstructorParamsOverrides` is never constructed
   --> adapters\chain\src\evm_forms\mock.rs:15:12
    |
@@ -1737,52 +2433,10 @@ warning: function `build_evm_chain_identifier_form` is never used
 88 | pub fn build_evm_chain_identifier_form(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `Blake3KeyedKdfConstructorParamsCorruptions` is never constructed
-  --> adapters\kdf\src\blake3_keyed\mock.rs:25:12
-   |
-25 | pub struct Blake3KeyedKdfConstructorParamsCorruptions;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `invalidate_blake3_keyed_kdf_constructor_params` is never used
-  --> adapters\kdf\src\blake3_keyed\mock.rs:28:8
-   |
-28 | pub fn invalidate_blake3_keyed_kdf_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `IPairingAdapter`
-  --> adapters\hash-to-scalar\src\keccak256\integration_test.rs:15:68
-   |
-15 |     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
-   |                                                                    ^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
-
-warning: struct `Keccak256HashToScalarConstructorParamsCorruptions` is never constructed
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:25:12
-   |
-25 | pub struct Keccak256HashToScalarConstructorParamsCorruptions;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: function `invalidate_keccak256_hash_to_scalar_constructor_params` is never used
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:28:8
-   |
-28 | pub fn invalidate_keccak256_hash_to_scalar_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `BINDING_TAG` is never used
-  --> adapters\hash-to-scalar\src\keccak256\mock.rs:53:11
-   |
-53 | pub const BINDING_TAG: &[u8] = b"binding-tag-abc";
-   |           ^^^^^^^^^^^
-
 warning: `hash-to-scalar` (lib) generated 2 warnings
-warning: `chain` (lib test) generated 12 warnings
 warning: `kdf` (lib test) generated 2 warnings
 warning: `hash-to-scalar` (lib test) generated 5 warnings (1 duplicate)
+warning: `chain` (lib test) generated 12 warnings
 warning: function `uniform_bytes` is never used
   --> adapters\kem\src\bb1_depth_one\mock.rs:19:4
    |
@@ -2018,49 +2672,74 @@ warning: function `byte_array` is never used
 warning: `kem` (lib) generated 37 warnings
 warning: `kem` (lib test) generated 13 warnings (12 duplicates)
    Compiling envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
-   Compiling workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
-error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
-  --> adapters\envelope\src\factory\mock.rs:93:17
+warning: unused imports: `PossessionG1Statement` and `PossessionG2Statement`
+  --> adapters\envelope\src\pairing_elgamal\interface.rs:10:5
    |
-93 |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
-   |                 ^^^^^ `SecretConstructorParamsOverrides` does not have this field
+10 |     PossessionG1Statement, PossessionG1StatementDescription, PossessionG2Statement,
+   |     ^^^^^^^^^^^^^^^^^^^^^                                    ^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: all struct fields are already assigned
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
-error[E0061]: this function takes 2 arguments but 1 argument was supplied
-  --> adapters\envelope\src\factory\mock.rs:92:22
+warning: unused import: `IRandomSourceAdapter`
+  --> adapters\envelope\src\pairing_elgamal\mod.rs:64:71
    |
-92 |               uniform: build_secret(SecretConstructorParamsOverrides {
-   |  ______________________^^^^^^^^^^^^_-
-93 | |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
-94 | |             }),
-   | |_____________- argument #1 of type `Vec<u8>` is missing
-   |
-note: function defined here
-  --> crates\domain\src\secret\mock.rs:21:8
-   |
-21 | pub fn build_secret<T: Zeroize>(
-   |        ^^^^^^^^^^^^
-help: provide the argument
-   |
-92 |             uniform: build_secret(/* Vec<u8> */, SecretConstructorParamsOverrides {
-   |                                   ++++++++++++++
+64 | use random::{FillBytesErrorReturn, FillBytesParams, FillBytesPayload, IRandomSourceAdapter};
+   |                                                                       ^^^^^^^^^^^^^^^^^^^^
 
-error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
-   --> adapters\envelope\src\factory\mock.rs:171:17
+warning: unused imports: `PossessionG1StatementDescription`, `PossessionG1Statement`, `PossessionG2StatementDescription`, `PossessionG2Statement`, `build_possession_g1_statement_description`, and `build_possession_g2_statement_description`
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:13:5
+   |
+13 |     PossessionG1Statement, PossessionG1StatementDescription, PossessionG1StatementOverrides,
+   |     ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |     PossessionG2Statement, PossessionG2StatementDescription, PossessionG2StatementOverrides,
+   |     ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 |     build_possession_g1_statement, build_possession_g1_statement_description,
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 |     build_possession_g2_statement, build_possession_g2_statement_description,
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `CredentialComponentsOverrides`, `CredentialComponents`, and `build_credential_components`
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:21:11
+   |
+21 | use kem::{CredentialComponents, CredentialComponentsOverrides, build_credential_components};
+   |           ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `EnvelopeFromComponentsPayloadOverrides`, `GenerateKeysPayloadOverrides`, `KeyPairComponentsOverrides`, `KeyPairFromComponentsPayloadOverrides`, `PossessionFromComponentsPayloadOverrides`, and `PublicKeysFromComponentsPayloadOverrides`
+ --> adapters\envelope\src\pairing_elgamal\test_basic.rs:4:22
+  |
+4 |     EnvelopeAlgebra, EnvelopeFromComponentsPayloadOverrides, GenerateKeysPayloadOverrides,
+  |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 |     IKeyAgreementAdapter, KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementIdentifier,
+6 |     KeyPairComponentsOverrides, KeyPairFromComponentsPayloadOverrides,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7 |     PossessionFromComponentsPayloadOverrides, PublicKeysFromComponentsPayloadOverrides,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `envelope_coins_value` is never used
+   --> adapters\envelope\src\factory\mock.rs:889:4
     |
-171 |                 value: Some(vec![0x11; 64]),
+889 | fn envelope_coins_value<P: IPairingAdapter>(
+    |    ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
+warning: `envelope` (lib) generated 3 warnings (run `cargo fix --lib -p envelope` to apply 1 suggestion)
+error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
+   --> adapters\proof\src\factory\mock.rs:167:17
+    |
+167 |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
     |                 ^^^^^ `SecretConstructorParamsOverrides` does not have this field
     |
     = note: all struct fields are already assigned
 
 error[E0061]: this function takes 2 arguments but 1 argument was supplied
-   --> adapters\envelope\src\factory\mock.rs:170:13
+   --> adapters\proof\src\factory\mock.rs:166:22
     |
-170 |               build_secret(SecretConstructorParamsOverrides {
-    |  _____________^^^^^^^^^^^^_-
-171 | |                 value: Some(vec![0x11; 64]),
-172 | |             })
+166 |               uniform: build_secret(SecretConstructorParamsOverrides {
+    |  ______________________^^^^^^^^^^^^_-
+167 | |                 value: Some(vec![fill; P::Scalar::UNIFORM_BYTES_LENGTH]),
+168 | |             }),
     | |_____________- argument #1 of type `Vec<u8>` is missing
     |
 note: function defined here
@@ -2070,41 +2749,110 @@ note: function defined here
     |        ^^^^^^^^^^^^
 help: provide the argument
     |
-170 |             build_secret(/* Vec<u8> */, SecretConstructorParamsOverrides {
-    |                          ++++++++++++++
+166 |             uniform: build_secret(/* Vec<u8> */, SecretConstructorParamsOverrides {
+    |                                   ++++++++++++++
 
-error[E0560]: struct `SecretConstructorParamsOverrides` has no field named `value`
-   --> adapters\envelope\src\factory\mock.rs:176:17
-    |
-176 |                 value: Some(vec![0x22; 64]),
-    |                 ^^^^^ `SecretConstructorParamsOverrides` does not have this field
-    |
-    = note: all struct fields are already assigned
-
-error[E0061]: this function takes 2 arguments but 1 argument was supplied
-   --> adapters\envelope\src\factory\mock.rs:175:13
-    |
-175 |               build_secret(SecretConstructorParamsOverrides {
-    |  _____________^^^^^^^^^^^^_-
-176 | |                 value: Some(vec![0x22; 64]),
-177 | |             })
-    | |_____________- argument #1 of type `Vec<u8>` is missing
-    |
-note: function defined here
-   --> crates\domain\src\secret\mock.rs:21:8
-    |
- 21 | pub fn build_secret<T: Zeroize>(
-    |        ^^^^^^^^^^^^
-help: provide the argument
-    |
-175 |             build_secret(/* Vec<u8> */, SecretConstructorParamsOverrides {
-    |                          ++++++++++++++
+warning: unused import: `IPairingArithmetic`
+  --> adapters\envelope\tests\possession_statement_integration_test.rs:21:5
+   |
+21 |     IPairingArithmetic, IPairingConsumer, IPairingReference, PAIRING_CONCRETES,
+   |     ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 Some errors have detailed explanations: E0061, E0560.
 For more information about an error, try `rustc --explain E0061`.
-error: could not compile `envelope` (lib) due to 6 previous errors
+error: could not compile `proof` (lib) due to 2 previous errors
 warning: build failed, waiting for other jobs to finish...
-error: could not compile `envelope` (lib test) due to 6 previous errors
+warning: unused import: `IHashToScalarAdapter`
+  --> adapters\envelope\src\pairing_elgamal\test_basic.rs:39:5
+   |
+39 |     IHashToScalarAdapter, build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+error: could not compile `proof` (lib test) due to 2 previous errors
+warning: unused variable: `key_pair`
+    --> adapters\envelope\src\pairing_elgamal\test_error.rs:2496:25
+     |
+2496 |                     let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+     |                         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_key_pair`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `envelope` (test "possession_statement_integration_test") generated 1 warning (run `cargo fix --test "possession_statement_integration_test" -p envelope` to apply 1 suggestion)
+warning: function `byte_array` is never used
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:90:4
+   |
+90 | fn byte_array(bytes: &[u8]) -> Value {
+   |    ^^^^^^^^^^
+
+warning: function `encoded_g1_value` is never used
+  --> adapters\envelope\src\pairing_elgamal\mock.rs:94:4
+   |
+94 | fn encoded_g1_value<P: IPairingAdapter>(pairing: &P, point: &P::G1) -> Value {
+   |    ^^^^^^^^^^^^^^^^
+
+warning: function `encoded_g2_value` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:107:4
+    |
+107 | fn encoded_g2_value<P: IPairingAdapter>(pairing: &P, point: &P::G2) -> Value {
+    |    ^^^^^^^^^^^^^^^^
+
+warning: function `encoded_scalar_value` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:120:4
+    |
+120 | fn encoded_scalar_value<P: IPairingAdapter>(pairing: &P, scalar: &P::Scalar) -> Value {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalKeyPairCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:267:12
+    |
+267 | pub struct PairingElGamalKeyPairCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_key_pair` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:274:8
+    |
+274 | pub fn invalidate_pairing_elgamal_key_pair<P: IPairingAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalPublicKeysCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:337:12
+    |
+337 | pub struct PairingElGamalPublicKeysCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_public_keys` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:342:8
+    |
+342 | pub fn invalidate_pairing_elgamal_public_keys<P: IPairingAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalEnvelopeCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:405:12
+    |
+405 | pub struct PairingElGamalEnvelopeCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_envelope` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:412:8
+    |
+412 | pub fn invalidate_pairing_elgamal_envelope<P: IPairingAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PairingElGamalPossessionCorruptions` is never constructed
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:538:12
+    |
+538 | pub struct PairingElGamalPossessionCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_pairing_elgamal_possession` is never used
+   --> adapters\envelope\src\pairing_elgamal\mock.rs:545:8
+    |
+545 | pub fn invalidate_pairing_elgamal_possession<P: IPairingArithmetic, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `envelope` (lib test) generated 20 warnings (3 duplicates) (run `cargo fix --lib -p envelope --tests` to apply 4 suggestions)
 
 [exit code: 101]
 

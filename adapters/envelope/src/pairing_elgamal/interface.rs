@@ -7,7 +7,8 @@ use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorRetur
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
 use crate::possession_statement::provides::{
-    PossessionG1StatementDescription, PossessionG2StatementDescription,
+    PossessionG1Statement, PossessionG1StatementDescription, PossessionG2Statement,
+    PossessionG2StatementDescription,
 };
 
 pub const PAIRING_ELGAMAL_POSSESSION_G1_TAG: &[u8] = b"ChainTorrent-v1-envelope-possession-g1";
@@ -72,11 +73,6 @@ pub struct PairingElGamalEnvelope<P: IPairingAdapter> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PairingElGamalGenerateKeysErrorReturn {
-    XSampling(SampleUniformScalarErrorReturn),
-    YSampling(SampleUniformScalarErrorReturn),
-    IdentityKeyG1,
-    IdentityKeyG2,
-    SharedSecret,
     NonceDraw(FillBytesErrorReturn),
     NonceSampling(SampleUniformScalarErrorReturn),
     Encoding(EncodeErrorReturn),
@@ -84,19 +80,7 @@ pub enum PairingElGamalGenerateKeysErrorReturn {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum PairingElGamalKeyPairFromComponentsErrorReturn {
-    IdentityKeyG1,
-    IdentityKeyG2,
-    SharedSecret,
-}
-
-#[derive(Debug, PartialEq, Eq)]
 pub enum PairingElGamalPublicKeysFromComponentsErrorReturn {
-    IdentityKeyG1,
-    IdentityKeyG2,
-    SharedSecret,
-    PossessionG1,
-    PossessionG2,
     Encoding(EncodeErrorReturn),
     HashToScalar(HashToScalarErrorReturn),
 }

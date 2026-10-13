@@ -12,6 +12,7 @@ pairing = { path = "../pairing" }
 hash-to-scalar = { path = "../hash-to-scalar" }
 random = { path = "../random" }
 kem = { path = "../kem" }
+serde_json = { version = "1.0.151", optional = true }
 
 [dev-dependencies]
 encoding = { path = "../encoding", features = ["mocks"] }
@@ -20,9 +21,10 @@ pairing = { path = "../pairing", features = ["mocks"] }
 hash-to-scalar = { path = "../hash-to-scalar", features = ["mocks"] }
 random = { path = "../random", features = ["mocks"] }
 kem = { path = "../kem", features = ["mocks"] }
+serde_json = "1.0.151"
 
 [features]
-mocks = ["domain/mocks", "kem/mocks"]
+mocks = ["domain/mocks", "kem/mocks", "dep:serde_json"]
 
 [lints]
 workspace = true

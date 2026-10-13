@@ -3,7 +3,11 @@ mod interface;
 mod mock;
 pub mod provides;
 #[cfg(test)]
-mod test;
+mod test_basic;
+#[cfg(test)]
+mod test_error_decode;
+#[cfg(test)]
+mod test_error_shape;
 
 use encoding::{
     CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldsParams, FromFieldsReturn,
