@@ -1,5 +1,3 @@
-#![allow(clippy::panic)]
-
 use super::provides::{
     CreateEncodingErrorReturn, CreateEncodingParamsOverrides, EncodingIdentifier,
     MockIEncodingContract, build_canonical_fields, build_create_encoding_deps,

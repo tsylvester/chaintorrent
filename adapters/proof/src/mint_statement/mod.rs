@@ -55,14 +55,8 @@ impl<'a, P: IPairingAdapter, F: IChainForms> MintStatementDescription<'a, P, F> 
     fn decode_g1(
         &self,
         index: usize,
-        value: CanonicalFieldValue,
-    ) -> Result<P::G1, MintStatementFromFieldsErrorReturn<F>> {
-        let CanonicalFieldValue::Bytes(bytes) = value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
+        bytes: Vec<u8>,
+    ) -> Result<P::G1, MintStatementFromFieldsErrorReturn> {
         match self.pairing.decode_g1(DecodeG1Params, &bytes) {
             Ok(success) => Ok(success.point),
             Err(error) => Err(MintStatementFromFieldsErrorReturn::InvalidG1 { index, error }),
@@ -72,14 +66,8 @@ impl<'a, P: IPairingAdapter, F: IChainForms> MintStatementDescription<'a, P, F> 
     fn decode_g2(
         &self,
         index: usize,
-        value: CanonicalFieldValue,
-    ) -> Result<P::G2, MintStatementFromFieldsErrorReturn<F>> {
-        let CanonicalFieldValue::Bytes(bytes) = value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
+        bytes: Vec<u8>,
+    ) -> Result<P::G2, MintStatementFromFieldsErrorReturn> {
         match self.pairing.decode_g2(DecodeG2Params, &bytes) {
             Ok(success) => Ok(success.point),
             Err(error) => Err(MintStatementFromFieldsErrorReturn::InvalidG2 { index, error }),
@@ -87,12 +75,9 @@ impl<'a, P: IPairingAdapter, F: IChainForms> MintStatementDescription<'a, P, F> 
     }
 }
 
-impl<P: IPairingAdapter, F: IChainForms> IEncodingContract for MintStatementDescription<'_, P, F>
-where
-    MintStatementFromFieldsErrorReturn<F>: core::fmt::Debug + PartialEq + Eq,
-{
+impl<P: IPairingAdapter, F: IChainForms> IEncodingContract for MintStatementDescription<'_, P, F> {
     type Described = MintStatement<P, F>;
-    type FromFieldsErrorReturn = MintStatementFromFieldsErrorReturn<F>;
+    type FromFieldsErrorReturn = MintStatementFromFieldsErrorReturn;
     const FIELDS: &'static [CanonicalFieldKind] = &[
         CanonicalFieldKind::FixedBytes32,
         CanonicalFieldKind::Unsigned16,
@@ -340,23 +325,89 @@ where
                 return Err(MintStatementFromFieldsErrorReturn::Identity { index: 12, error });
             }
         };
-        let pk1 = self.decode_g1(13, pk1_value)?;
-        let pk2 = self.decode_g2(14, pk2_value)?;
-        let envelope_c1 = self.decode_g1(15, envelope_c1_value)?;
-        let envelope_c2 = self.decode_g1(16, envelope_c2_value)?;
-        let envelope_d1 = self.decode_g2(17, envelope_d1_value)?;
-        let envelope_d2 = self.decode_g2(18, envelope_d2_value)?;
+        let CanonicalFieldValue::Bytes(pk1_bytes) = pk1_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 13,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(pk2_bytes) = pk2_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 14,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(envelope_c1_bytes) = envelope_c1_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 15,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(envelope_c2_bytes) = envelope_c2_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 16,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(envelope_d1_bytes) = envelope_d1_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 17,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(envelope_d2_bytes) = envelope_d2_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 18,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
         let CanonicalFieldValue::Unsigned64(expiry) = expiry_value else {
             return Err(MintStatementFromFieldsErrorReturn::FieldKind {
                 index: 19,
                 expected: CanonicalFieldKind::Unsigned64,
             });
         };
-        let hpub = self.decode_g2(20, hpub_value)?;
-        let message_c1 = self.decode_g1(21, message_c1_value)?;
-        let message_c2 = self.decode_g1(22, message_c2_value)?;
-        let message_d1 = self.decode_g2(23, message_d1_value)?;
-        let message_d2 = self.decode_g2(24, message_d2_value)?;
+        let CanonicalFieldValue::Bytes(hpub_bytes) = hpub_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 20,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(message_c1_bytes) = message_c1_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 21,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(message_c2_bytes) = message_c2_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 22,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(message_d1_bytes) = message_d1_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 23,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(message_d2_bytes) = message_d2_value else {
+            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
+                index: 24,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let pk1 = self.decode_g1(13, pk1_bytes)?;
+        let pk2 = self.decode_g2(14, pk2_bytes)?;
+        let envelope_c1 = self.decode_g1(15, envelope_c1_bytes)?;
+        let envelope_c2 = self.decode_g1(16, envelope_c2_bytes)?;
+        let envelope_d1 = self.decode_g2(17, envelope_d1_bytes)?;
+        let envelope_d2 = self.decode_g2(18, envelope_d2_bytes)?;
+        let hpub = self.decode_g2(20, hpub_bytes)?;
+        let message_c1 = self.decode_g1(21, message_c1_bytes)?;
+        let message_c2 = self.decode_g1(22, message_c2_bytes)?;
+        let message_d1 = self.decode_g2(23, message_d1_bytes)?;
+        let message_d2 = self.decode_g2(24, message_d2_bytes)?;
         Ok(FromFieldsSuccessReturn {
             described: MintStatement {
                 suite_identifier,

@@ -56,14 +56,8 @@ impl<'a, P: IPairingAdapter, F: IChainForms> TransferStatementDescription<'a, P,
     fn decode_g1(
         &self,
         index: usize,
-        value: CanonicalFieldValue,
-    ) -> Result<P::G1, TransferStatementFromFieldsErrorReturn<F>> {
-        let CanonicalFieldValue::Bytes(bytes) = value else {
-            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
-                index,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
+        bytes: Vec<u8>,
+    ) -> Result<P::G1, TransferStatementFromFieldsErrorReturn> {
         match self.pairing.decode_g1(DecodeG1Params, &bytes) {
             Ok(success) => Ok(success.point),
             Err(error) => Err(TransferStatementFromFieldsErrorReturn::InvalidG1 { index, error }),
@@ -73,14 +67,8 @@ impl<'a, P: IPairingAdapter, F: IChainForms> TransferStatementDescription<'a, P,
     fn decode_g2(
         &self,
         index: usize,
-        value: CanonicalFieldValue,
-    ) -> Result<P::G2, TransferStatementFromFieldsErrorReturn<F>> {
-        let CanonicalFieldValue::Bytes(bytes) = value else {
-            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
-                index,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
+        bytes: Vec<u8>,
+    ) -> Result<P::G2, TransferStatementFromFieldsErrorReturn> {
         match self.pairing.decode_g2(DecodeG2Params, &bytes) {
             Ok(success) => Ok(success.point),
             Err(error) => Err(TransferStatementFromFieldsErrorReturn::InvalidG2 { index, error }),
@@ -90,11 +78,9 @@ impl<'a, P: IPairingAdapter, F: IChainForms> TransferStatementDescription<'a, P,
 
 impl<P: IPairingAdapter, F: IChainForms> IEncodingContract
     for TransferStatementDescription<'_, P, F>
-where
-    TransferStatementFromFieldsErrorReturn<F>: core::fmt::Debug + PartialEq + Eq,
 {
     type Described = TransferStatement<P, F>;
-    type FromFieldsErrorReturn = TransferStatementFromFieldsErrorReturn<F>;
+    type FromFieldsErrorReturn = TransferStatementFromFieldsErrorReturn;
     const FIELDS: &'static [CanonicalFieldKind] = &[
         CanonicalFieldKind::FixedBytes32,
         CanonicalFieldKind::Unsigned16,
@@ -370,30 +356,138 @@ where
                 return Err(TransferStatementFromFieldsErrorReturn::Identity { index: 12, error });
             }
         };
-        let seller_pk1 = self.decode_g1(13, seller_pk1_value)?;
-        let seller_pk2 = self.decode_g2(14, seller_pk2_value)?;
-        let buyer_pk1 = self.decode_g1(15, buyer_pk1_value)?;
-        let buyer_pk2 = self.decode_g2(16, buyer_pk2_value)?;
-        let old_envelope_c1 = self.decode_g1(17, old_envelope_c1_value)?;
-        let old_envelope_c2 = self.decode_g1(18, old_envelope_c2_value)?;
-        let old_envelope_d1 = self.decode_g2(19, old_envelope_d1_value)?;
-        let old_envelope_d2 = self.decode_g2(20, old_envelope_d2_value)?;
-        let new_envelope_c1 = self.decode_g1(21, new_envelope_c1_value)?;
-        let new_envelope_c2 = self.decode_g1(22, new_envelope_c2_value)?;
-        let new_envelope_d1 = self.decode_g2(23, new_envelope_d1_value)?;
-        let new_envelope_d2 = self.decode_g2(24, new_envelope_d2_value)?;
+        let CanonicalFieldValue::Bytes(seller_pk1_bytes) = seller_pk1_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 13,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(seller_pk2_bytes) = seller_pk2_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 14,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(buyer_pk1_bytes) = buyer_pk1_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 15,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(buyer_pk2_bytes) = buyer_pk2_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 16,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(old_envelope_c1_bytes) = old_envelope_c1_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 17,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(old_envelope_c2_bytes) = old_envelope_c2_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 18,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(old_envelope_d1_bytes) = old_envelope_d1_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 19,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(old_envelope_d2_bytes) = old_envelope_d2_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 20,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(new_envelope_c1_bytes) = new_envelope_c1_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 21,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(new_envelope_c2_bytes) = new_envelope_c2_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 22,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(new_envelope_d1_bytes) = new_envelope_d1_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 23,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(new_envelope_d2_bytes) = new_envelope_d2_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 24,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
         let CanonicalFieldValue::Unsigned64(expiry) = expiry_value else {
             return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
                 index: 25,
                 expected: CanonicalFieldKind::Unsigned64,
             });
         };
-        let message_pk1 = self.decode_g1(26, message_pk1_value)?;
-        let message_c1 = self.decode_g1(27, message_c1_value)?;
-        let message_c2 = self.decode_g1(28, message_c2_value)?;
-        let message_pk2 = self.decode_g2(29, message_pk2_value)?;
-        let message_d1 = self.decode_g2(30, message_d1_value)?;
-        let message_d2 = self.decode_g2(31, message_d2_value)?;
+        let CanonicalFieldValue::Bytes(message_pk1_bytes) = message_pk1_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 26,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(message_c1_bytes) = message_c1_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 27,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(message_c2_bytes) = message_c2_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 28,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(message_pk2_bytes) = message_pk2_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 29,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(message_d1_bytes) = message_d1_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 30,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::Bytes(message_d2_bytes) = message_d2_value else {
+            return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
+                index: 31,
+                expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let seller_pk1 = self.decode_g1(13, seller_pk1_bytes)?;
+        let seller_pk2 = self.decode_g2(14, seller_pk2_bytes)?;
+        let buyer_pk1 = self.decode_g1(15, buyer_pk1_bytes)?;
+        let buyer_pk2 = self.decode_g2(16, buyer_pk2_bytes)?;
+        let old_envelope_c1 = self.decode_g1(17, old_envelope_c1_bytes)?;
+        let old_envelope_c2 = self.decode_g1(18, old_envelope_c2_bytes)?;
+        let old_envelope_d1 = self.decode_g2(19, old_envelope_d1_bytes)?;
+        let old_envelope_d2 = self.decode_g2(20, old_envelope_d2_bytes)?;
+        let new_envelope_c1 = self.decode_g1(21, new_envelope_c1_bytes)?;
+        let new_envelope_c2 = self.decode_g1(22, new_envelope_c2_bytes)?;
+        let new_envelope_d1 = self.decode_g2(23, new_envelope_d1_bytes)?;
+        let new_envelope_d2 = self.decode_g2(24, new_envelope_d2_bytes)?;
+        let message_pk1 = self.decode_g1(26, message_pk1_bytes)?;
+        let message_c1 = self.decode_g1(27, message_c1_bytes)?;
+        let message_c2 = self.decode_g1(28, message_c2_bytes)?;
+        let message_pk2 = self.decode_g2(29, message_pk2_bytes)?;
+        let message_d1 = self.decode_g2(30, message_d1_bytes)?;
+        let message_d2 = self.decode_g2(31, message_d2_bytes)?;
         Ok(FromFieldsSuccessReturn {
             described: TransferStatement {
                 suite_identifier,

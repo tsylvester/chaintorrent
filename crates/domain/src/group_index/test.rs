@@ -1,5 +1,3 @@
-#![allow(clippy::panic)]
-
 use super::provides::{
     GroupIndex, GroupIndexConstructorParamsOverrides, build_group_index,
     build_group_index_constructor_params,

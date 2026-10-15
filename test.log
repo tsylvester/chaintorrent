@@ -1,0 +1,101 @@
+warning: patch `librqbit v9.0.1 (https://github.com/tsylvester/rqbit?branch=chaintorrent-overlay#8ebbd6c8)` was not used in the crate graph
+help: Check that the patched package version and available features are compatible
+      with the dependency requirements. If the patch has a different version from
+      what is locked in the Cargo.lock file, run `cargo update` to use the new
+      version. This may also occur with an optional dependency that is not enabled.
+   Compiling encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.18s
+     Running unittests src\lib.rs (target\debug\deps\encoding-3e3a12831acf5cfa.exe)
+
+running 57 tests
+test abi::integration_test::reference_context_encodes_to_the_reference_vector ... ok
+test abi::integration_test::a_value_the_description_refuses_is_refused_with_the_description_refusal ... ok
+test abi::integration_test::reference_vector_decodes_to_the_reference_context ... ok
+test abi::test::decode_rejects_a_uint16_word_wider_than_sixteen_bits ... ok
+test abi::test::decode_rejects_a_uint32_word_wider_than_thirty_two_bits ... ok
+test abi::integration_test::a_context_survives_the_abi_round_trip ... ok
+test abi::test::decode_rejects_a_uint64_word_wider_than_sixty_four_bits ... ok
+test abi::test::decode_reads_the_vector_as_its_value ... ok
+test abi::test::decode_rejects_input_truncated_to_the_head ... ok
+test abi::test::encode_checks_the_count_before_any_kind ... ok
+test abi::test::decode_rejects_a_non_canonical_offset ... ok
+test abi::test::encode_rejects_a_description_emitting_one_value_long ... ok
+test abi::test::encode_rejects_a_description_emitting_the_wrong_kind ... ok
+test abi::test::decode_rejects_nonzero_byte_string_padding ... ok
+test abi::test::decode_rejects_nonzero_string_padding ... ok
+test abi::test::decode_rejects_trailing_bytes ... ok
+test abi::test::encode_rejects_a_description_emitting_one_value_short ... ok
+test abi::test::encode_reports_the_lowest_field_of_the_wrong_kind ... ok
+test abi::test::try_new_returns_the_adapter ... ok
+test derivation_context::test::fields_to_value_checks_every_kind_before_constructing_any_component ... ok
+test abi::test::decode_rejects_nonzero_fixed_bytes20_padding ... ok
+test abi::test::decode_rejects_the_encoding_of_one_field_too_many ... ok
+test abi::test::encode_writes_every_kind_as_its_abi_parameter_encoding ... ok
+test derivation_context::test::fields_to_value_checks_the_count_before_any_kind ... ok
+test derivation_context::test::fields_to_value_constructs_the_components_in_field_order ... ok
+test derivation_context::test::fields_to_value_rejects_a_deployment_identity_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_rejects_a_field_list_one_long ... ok
+test derivation_context::test::fields_to_value_rejects_a_field_list_one_short ... ok
+test derivation_context::test::fields_to_value_rejects_a_group_index_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_rejects_a_parameter_set_identifier_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_rejects_a_piece_group_size_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_rejects_a_piece_size_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_rejects_a_suite_identifier_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_rejects_a_suite_version_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_rejects_a_total_extent_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_rejects_an_asset_name_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_rejects_an_asset_version_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_reports_the_lowest_field_of_the_wrong_kind ... ok
+test derivation_context::test::fields_to_value_returns_the_asset_identity_refusal_unchanged ... ok
+test derivation_context::test::fields_to_value_returns_the_context_the_reference_fields_describe ... ok
+test derivation_context::test::fields_to_value_returns_the_deployment_identity_refusal_unchanged ... ok
+test derivation_context::test::fields_to_value_returns_the_derivation_context_refusal_unchanged ... ok
+test derivation_context::test::fields_to_value_returns_the_parameter_set_identifier_refusal_unchanged ... ok
+test derivation_context::test::fields_to_value_returns_the_piece_geometry_refusal_unchanged ... ok
+test derivation_context::test::fields_to_value_returns_the_suite_identifier_refusal_unchanged ... ok
+test derivation_context::test::to_fields_lists_the_reference_context_fields_in_canonical_order ... ok
+test derivation_context::test::try_new_returns_the_description ... ok
+test factory::integration_test::every_concrete_is_refused_under_an_identifier_it_does_not_declare ... ok
+test factory::integration_test::every_concrete_decodes_what_it_encodes ... ok
+test factory::integration_test::every_concrete_is_handed_to_the_consumer_under_the_identifier_it_declares ... ok
+test factory::integration_test::every_concrete_refuses_a_description_emitting_the_wrong_count ... ok
+test factory::integration_test::every_concrete_refuses_a_description_emitting_the_wrong_kind ... ok
+test factory::integration_test::every_concrete_refuses_bytes_that_end_inside_an_encoding ... ok
+test factory::integration_test::every_concrete_refuses_bytes_past_a_complete_encoding ... ok
+test factory::test::create_encoding_hands_the_selected_mock_concrete_to_the_consumer ... ok
+test factory::test::create_encoding_refuses_a_concrete_that_declares_another_identifier ... ok
+test factory::integration_test::every_concrete_returns_the_description_refusal_unchanged ... ok
+
+test result: ok. 57 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\derivation_context_integration_test.rs (target\debug\deps\derivation_context_integration_test-68915b8d3a2376d2.exe)
+
+running 1 test
+test a_context_survives_the_round_trip_through_its_canonical_fields ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-4ae1634abd7d5b41.exe)
+
+running 12 tests
+test every_concrete_is_refused_under_an_identifier_it_does_not_declare ... ok
+test every_concrete_refuses_a_description_emitting_the_wrong_count ... ok
+test every_concrete_refuses_a_description_emitting_the_wrong_kind ... ok
+test every_concrete_refuses_bytes_past_a_complete_encoding ... ok
+test every_concrete_decodes_what_it_encodes ... ok
+test every_concrete_refuses_bytes_that_end_inside_an_encoding ... ok
+test every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_context ... ok
+test every_concrete_round_trips_a_context_through_the_real_description ... ok
+test every_concrete_declaring_the_ethereum_abi_identifier_returns_the_domain_refusal_unchanged ... ok
+test every_concrete_is_handed_to_the_consumer_under_the_identifier_it_declares ... ok
+test every_concrete_returns_the_description_refusal_unchanged ... ok
+test every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_context_to_the_reference_vector ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests encoding
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

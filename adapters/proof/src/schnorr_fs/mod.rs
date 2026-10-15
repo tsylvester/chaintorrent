@@ -1,5 +1,9 @@
 mod challenge;
+#[cfg(test)]
+mod integration_test;
 mod interface;
+#[cfg(test)]
+mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
 mod test;
@@ -18,11 +22,8 @@ use crate::factory::provides::{
 };
 use crate::mint_statement::provides::{
     DELIVERY_STATEMENT_VERSION_ONE, MintFirstMessages, MintStatement,
-    MintStatementFromFieldsErrorReturn,
 };
-use crate::transfer_statement::provides::{
-    TransferFirstMessages, TransferStatement, TransferStatementFromFieldsErrorReturn,
-};
+use crate::transfer_statement::provides::{TransferFirstMessages, TransferStatement};
 use chain::IChainForms;
 use challenge::provides::{
     ChallengeDeps, ChallengeErrorReturn, ChallengeParams, ChallengePayload, ChallengeTranscript,
@@ -39,8 +40,7 @@ use hash_to_scalar::{
 use interface::{
     SCHNORR_FS_WEIGHT_TAG, SchnorrFsDeliveryProof, SchnorrFsDeliveryProofConstructorParams,
     SchnorrFsDeliveryProofTryNewErrorReturn, SchnorrFsDeliveryProofTryNewReturn, SchnorrFsProof,
-    SchnorrFsProofFromComponentsErrorReturn, SchnorrFsProveMintErrorReturn,
-    SchnorrFsProveTransferErrorReturn, SchnorrFsVerifyErrorReturn,
+    SchnorrFsProveMintErrorReturn, SchnorrFsProveTransferErrorReturn, SchnorrFsVerifyErrorReturn,
 };
 use pairing::{
     AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, AddScalarParams, AddScalarPayload,
@@ -285,11 +285,7 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms>
     fn challenge_scalar(
         &self,
         transcript: ChallengeTranscript<'_, P, F>,
-    ) -> Result<P::Scalar, ChallengeErrorReturn>
-    where
-        MintStatementFromFieldsErrorReturn<F>: core::fmt::Debug + PartialEq + Eq,
-        TransferStatementFromFieldsErrorReturn<F>: core::fmt::Debug + PartialEq + Eq,
-    {
+    ) -> Result<P::Scalar, ChallengeErrorReturn> {
         match challenge(
             &ChallengeDeps {
                 pairing: self.pairing,
@@ -308,9 +304,6 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms>
 
 impl<'a, P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms> IDeliveryProofAdapter
     for SchnorrFsDeliveryProof<'a, P, E, F>
-where
-    MintStatementFromFieldsErrorReturn<F>: core::fmt::Debug + PartialEq + Eq,
-    TransferStatementFromFieldsErrorReturn<F>: core::fmt::Debug + PartialEq + Eq,
 {
     const DECLARATION: DeliveryProofDeclaration = Self::DECLARATION;
 
@@ -1151,9 +1144,7 @@ where
                 responses,
             } => {
                 if !matches!(self.verifier_form, VerifierGroupArithmetic::BothGroups) {
-                    return Err(ProofFromComponentsErrorReturn::SchnorrFs(
-                        SchnorrFsProofFromComponentsErrorReturn::VerifierFormMismatch,
-                    ));
+                    return Err(ProofFromComponentsErrorReturn::VerifierFormMismatch);
                 }
                 Ok(ProofFromComponentsSuccessReturn {
                     proof: SchnorrFsProof::MintBothGroups {
@@ -1168,9 +1159,7 @@ where
                 first_messages,
             } => {
                 if !matches!(self.verifier_form, VerifierGroupArithmetic::FirstGroupOnly) {
-                    return Err(ProofFromComponentsErrorReturn::SchnorrFs(
-                        SchnorrFsProofFromComponentsErrorReturn::VerifierFormMismatch,
-                    ));
+                    return Err(ProofFromComponentsErrorReturn::VerifierFormMismatch);
                 }
                 Ok(ProofFromComponentsSuccessReturn {
                     proof: SchnorrFsProof::MintFirstGroupOnly {
@@ -1185,9 +1174,7 @@ where
                 responses,
             } => {
                 if !matches!(self.verifier_form, VerifierGroupArithmetic::BothGroups) {
-                    return Err(ProofFromComponentsErrorReturn::SchnorrFs(
-                        SchnorrFsProofFromComponentsErrorReturn::VerifierFormMismatch,
-                    ));
+                    return Err(ProofFromComponentsErrorReturn::VerifierFormMismatch);
                 }
                 Ok(ProofFromComponentsSuccessReturn {
                     proof: SchnorrFsProof::TransferBothGroups {
@@ -1202,9 +1189,7 @@ where
                 first_messages,
             } => {
                 if !matches!(self.verifier_form, VerifierGroupArithmetic::FirstGroupOnly) {
-                    return Err(ProofFromComponentsErrorReturn::SchnorrFs(
-                        SchnorrFsProofFromComponentsErrorReturn::VerifierFormMismatch,
-                    ));
+                    return Err(ProofFromComponentsErrorReturn::VerifierFormMismatch);
                 }
                 Ok(ProofFromComponentsSuccessReturn {
                     proof: SchnorrFsProof::TransferFirstGroupOnly {
@@ -1220,9 +1205,6 @@ where
 
 impl<'a, P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms>
     SchnorrFsDeliveryProof<'a, P, E, F>
-where
-    MintStatementFromFieldsErrorReturn<F>: core::fmt::Debug + PartialEq + Eq,
-    TransferStatementFromFieldsErrorReturn<F>: core::fmt::Debug + PartialEq + Eq,
 {
     fn weight(&self, base_message: &[u8], position: u8) -> Result<P::Scalar, VerifyErrorReturn> {
         let mut message = base_message.to_vec();

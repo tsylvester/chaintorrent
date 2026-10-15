@@ -85,8 +85,3 @@ pub enum SchnorrFsVerifyErrorReturn {
     Challenge(ChallengeErrorReturn),
     Weight(HashToScalarErrorReturn),
 }
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum SchnorrFsProofFromComponentsErrorReturn {
-    VerifierFormMismatch,
-}

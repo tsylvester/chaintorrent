@@ -214,7 +214,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   No corruptions type and no invalidator: the params never arrive as untrusted data, and the crate carries no serialization dependency to express corruption; no `Secret` overrides, invalidator, or mock function, since the class is built as a real instance and owns no free function
 
   * `[✅]`   `crates/domain/src/secret/test.rs`
-    * `[✅]`   Module-level `#![allow(clippy::panic)]`; imports `Secret`, `build_secret`, and `build_secret_constructor_params` from `super::provides`, `Zeroize` from `zeroize`, and `assert_not_impl_any` from `static_assertions`; every test holds `Vec<u8>` except where it holds the block-local recorder named in that test
+    * `[✅]`   Imports `Secret`, `build_secret`, and `build_secret_constructor_params` from `super::provides`, `Zeroize` from `zeroize`, and `assert_not_impl_any` from `static_assertions`; every test holds `Vec<u8>` except where it holds the block-local recorder named in that test
     * `[✅]`   Compile-time assertion over `Secret<Vec<u8>>`
       * `[✅]`   Contract: `Secret<T>` implements none of `core::fmt::Debug`, `core::fmt::Display`, `Clone`, or `Copy`
       * `[✅]`   Arrange: the type `Secret<Vec<u8>>`

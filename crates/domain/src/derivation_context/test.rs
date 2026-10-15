@@ -1,5 +1,3 @@
-#![allow(clippy::panic)]
-
 use super::provides::{
     DerivationContext, DerivationContextConstructorParamsOverrides,
     DerivationContextTryNewErrorReturn, build_derivation_context,

@@ -4,7 +4,11 @@ use core::convert::Infallible;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ChainFormsConcrete {
     Evm,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
+
+pub const CHAIN_FORMS_CONCRETES: &[ChainFormsConcrete] = &[ChainFormsConcrete::Evm];
 
 pub trait IChainFormsConsumer {
     type Output;

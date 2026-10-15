@@ -1,15 +1,17 @@
+#[cfg(test)]
+mod integration_test;
 mod interface;
+#[cfg(test)]
+mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
 mod test;
 
 use crate::mint_statement::provides::{
     MintStatementDescription, MintStatementDescriptionConstructorParams,
-    MintStatementFromFieldsErrorReturn,
 };
 use crate::transfer_statement::provides::{
     TransferStatementDescription, TransferStatementDescriptionConstructorParams,
-    TransferStatementFromFieldsErrorReturn,
 };
 use chain::IChainForms;
 use encoding::{EncodeParams, IEncoderAdapter};
@@ -29,11 +31,7 @@ pub fn challenge<
     deps: &ChallengeDeps<'_, P, E>,
     _params: ChallengeParams,
     payload: ChallengePayload<'_, P, F>,
-) -> ChallengeReturn<S>
-where
-    MintStatementFromFieldsErrorReturn<F>: core::fmt::Debug + PartialEq + Eq,
-    TransferStatementFromFieldsErrorReturn<F>: core::fmt::Debug + PartialEq + Eq,
-{
+) -> ChallengeReturn<S> {
     let bytes = match payload.transcript {
         ChallengeTranscript::Mint(statement) => {
             let Ok(description) = MintStatementDescription::<P, F>::try_new(

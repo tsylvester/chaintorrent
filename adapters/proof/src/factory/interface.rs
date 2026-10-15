@@ -13,8 +13,8 @@ use zeroize::Zeroize;
 
 use crate::mint_statement::provides::{DeliveryRelation, MintPurpose, TransferPurpose};
 use crate::schnorr_fs::provides::{
-    SchnorrFsDeliveryProofTryNewErrorReturn, SchnorrFsProofFromComponentsErrorReturn,
-    SchnorrFsProveMintErrorReturn, SchnorrFsProveTransferErrorReturn, SchnorrFsVerifyErrorReturn,
+    SchnorrFsDeliveryProofTryNewErrorReturn, SchnorrFsProveMintErrorReturn,
+    SchnorrFsProveTransferErrorReturn, SchnorrFsVerifyErrorReturn,
 };
 
 pub const DELIVERY_PROOF_INTERFACE_VERSION: u32 = 1;
@@ -284,6 +284,8 @@ pub struct ProveMintSuccessReturn<PR> {
 #[derive(Debug, PartialEq, Eq)]
 pub enum ProveMintErrorReturn {
     SchnorrFs(SchnorrFsProveMintErrorReturn),
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIDeliveryProofAdapterProveMintErrorReturn),
 }
 
 pub type ProveMintReturn<PR> = Result<ProveMintSuccessReturn<PR>, ProveMintErrorReturn>;
@@ -304,6 +306,8 @@ pub struct ProveTransferSuccessReturn<PR> {
 #[derive(Debug, PartialEq, Eq)]
 pub enum ProveTransferErrorReturn {
     SchnorrFs(SchnorrFsProveTransferErrorReturn),
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIDeliveryProofAdapterProveTransferErrorReturn),
 }
 
 pub type ProveTransferReturn<PR> = Result<ProveTransferSuccessReturn<PR>, ProveTransferErrorReturn>;
@@ -350,7 +354,7 @@ pub struct ProofFromComponentsSuccessReturn<PR> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ProofFromComponentsErrorReturn {
-    SchnorrFs(SchnorrFsProofFromComponentsErrorReturn),
+    VerifierFormMismatch,
 }
 
 pub type ProofFromComponentsReturn<PR> =
@@ -421,8 +425,30 @@ pub trait IDeliveryProofAdapter {
     ) -> ProofFromComponentsReturn<Self::Proof>;
 }
 
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Clone, Copy)]
+pub enum MockIDeliveryProofAdapterFailureMode {
+    NoFailure,
+    NonceDrawRefused,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum MockIDeliveryProofAdapterProveMintErrorReturn {
+    NonceDrawRefused,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum MockIDeliveryProofAdapterProveTransferErrorReturn {
+    NonceDrawRefused,
+}
+
+#[derive(Clone, Copy)]
 pub enum DeliveryProofConcrete {
     SchnorrFs,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIDeliveryProofAdapterFailureMode),
 }
 
 pub trait IDeliveryProofConsumer<P: IPairingAdapter, F: IChainForms> {
@@ -479,3 +505,5 @@ pub type CreateDeliveryProofFn<'a, P, E, F, C> =
         CreateDeliveryProofParams,
         CreateDeliveryProofPayload,
     ) -> CreateDeliveryProofReturn<<C as IDeliveryProofConsumer<P, F>>::Output>;
+
+pub const DELIVERY_PROOF_CONCRETES: &[DeliveryProofConcrete] = &[DeliveryProofConcrete::SchnorrFs];

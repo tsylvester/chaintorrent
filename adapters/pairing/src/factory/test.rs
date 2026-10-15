@@ -1,5 +1,3 @@
-#![allow(clippy::panic)]
-
 use super::create_pairing;
 use super::provides::{
     CreatePairingErrorReturn, CreatePairingParamsOverrides, CreatePairingPayload,

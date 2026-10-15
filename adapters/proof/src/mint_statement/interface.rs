@@ -5,7 +5,7 @@ use domain::{
     AssetIdentityHash, AssetIdentityHashTryNewErrorReturn, ParameterSetIdentifier,
     ParameterSetIdentifierTryNewErrorReturn, SuiteIdentifier, SuiteIdentifierTryNewErrorReturn,
 };
-use encoding::{CanonicalFieldKind, ICanonicalField};
+use encoding::{CanonicalFieldKind, FromFieldErrorReturn};
 use envelope::{EnvelopeComponents, PublicKeysComponents};
 use pairing::{DecodeG1ErrorReturn, DecodeG2ErrorReturn, IPairingAdapter};
 
@@ -156,7 +156,7 @@ pub type MintStatementDescriptionTryNewReturn<'a, P, F> =
     Result<MintStatementDescription<'a, P, F>, Infallible>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum MintStatementFromFieldsErrorReturn<F: IChainForms> {
+pub enum MintStatementFromFieldsErrorReturn {
     FieldCount {
         expected: usize,
         actual: usize,
@@ -182,18 +182,18 @@ pub enum MintStatementFromFieldsErrorReturn<F: IChainForms> {
     },
     ChainIdentifier {
         index: usize,
-        error: <F::ChainIdentifier as ICanonicalField>::FromFieldErrorReturn,
+        error: FromFieldErrorReturn,
     },
     Identity {
         index: usize,
-        error: <F::Identity as ICanonicalField>::FromFieldErrorReturn,
+        error: FromFieldErrorReturn,
     },
     Entitlement {
         index: usize,
-        error: <F::Entitlement as ICanonicalField>::FromFieldErrorReturn,
+        error: FromFieldErrorReturn,
     },
     Interval {
         index: usize,
-        error: <F::Interval as ICanonicalField>::FromFieldErrorReturn,
+        error: FromFieldErrorReturn,
     },
 }

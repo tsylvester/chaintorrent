@@ -1,2 +1,4 @@
 pub(crate) use super::challenge;
 pub(crate) use super::interface::*;
+#[cfg(test)]
+pub(crate) use super::mock::*;

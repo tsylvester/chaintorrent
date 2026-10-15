@@ -1,1 +1,1 @@
-#![allow(clippy::panic)]
+

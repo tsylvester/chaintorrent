@@ -36,3 +36,6 @@ pub enum ChallengeErrorReturn {
 }
 
 pub type ChallengeReturn<S> = Result<ChallengeSuccessReturn<S>, ChallengeErrorReturn>;
+
+pub type ChallengeFn<S, E, P, F> =
+    fn(&ChallengeDeps<'_, P, E>, ChallengeParams, ChallengePayload<'_, P, F>) -> ChallengeReturn<S>;

@@ -6,7 +6,7 @@ use domain::{
     AssetIdentityHash, AssetIdentityHashTryNewErrorReturn, ParameterSetIdentifier,
     ParameterSetIdentifierTryNewErrorReturn, SuiteIdentifier, SuiteIdentifierTryNewErrorReturn,
 };
-use encoding::{CanonicalFieldKind, ICanonicalField};
+use encoding::{CanonicalFieldKind, FromFieldErrorReturn};
 use envelope::{EnvelopeComponents, PublicKeysComponents};
 use pairing::{DecodeG1ErrorReturn, DecodeG2ErrorReturn, IPairingAdapter};
 
@@ -55,7 +55,7 @@ pub type TransferStatementDescriptionTryNewReturn<'a, P, F> =
     Result<TransferStatementDescription<'a, P, F>, Infallible>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum TransferStatementFromFieldsErrorReturn<F: IChainForms> {
+pub enum TransferStatementFromFieldsErrorReturn {
     FieldCount {
         expected: usize,
         actual: usize,
@@ -81,18 +81,18 @@ pub enum TransferStatementFromFieldsErrorReturn<F: IChainForms> {
     },
     ChainIdentifier {
         index: usize,
-        error: <F::ChainIdentifier as ICanonicalField>::FromFieldErrorReturn,
+        error: FromFieldErrorReturn,
     },
     Identity {
         index: usize,
-        error: <F::Identity as ICanonicalField>::FromFieldErrorReturn,
+        error: FromFieldErrorReturn,
     },
     Entitlement {
         index: usize,
-        error: <F::Entitlement as ICanonicalField>::FromFieldErrorReturn,
+        error: FromFieldErrorReturn,
     },
     Interval {
         index: usize,
-        error: <F::Interval as ICanonicalField>::FromFieldErrorReturn,
+        error: FromFieldErrorReturn,
     },
 }

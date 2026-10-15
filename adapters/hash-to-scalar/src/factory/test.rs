@@ -1,5 +1,3 @@
-#![allow(clippy::panic)]
-
 use super::create_hash_to_scalar;
 use super::provides::{
     CreateHashToScalarErrorReturn, CreateHashToScalarParamsOverrides,

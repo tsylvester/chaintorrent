@@ -74,18 +74,19 @@ pub struct FromFieldSuccessReturn<T> {
     pub value: T,
 }
 
-pub type FromFieldReturn<T, E> = Result<FromFieldSuccessReturn<T>, E>;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FromFieldErrorReturn {
+    WrongKind { expected: CanonicalFieldKind },
+}
+
+pub type FromFieldReturn<T> = Result<FromFieldSuccessReturn<T>, FromFieldErrorReturn>;
 
 pub trait ICanonicalField: Sized {
-    type FromFieldErrorReturn: core::fmt::Debug + PartialEq + Eq;
     const KIND: CanonicalFieldKind;
 
     fn to_field(params: ToFieldParams, payload: &Self) -> ToFieldReturn;
 
-    fn from_field(
-        params: FromFieldParams,
-        payload: CanonicalFieldValue,
-    ) -> FromFieldReturn<Self, Self::FromFieldErrorReturn>;
+    fn from_field(params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self>;
 }
 
 pub const ENCODING_INTERFACE_VERSION: u32 = 1;

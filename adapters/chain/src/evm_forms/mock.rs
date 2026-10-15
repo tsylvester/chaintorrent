@@ -1,15 +1,22 @@
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::as_conversions
-)]
-
 use super::interface::{
     EvmChainIdentifierForm, EvmChainIdentifierFormConstructorParams, EvmEntitlementForm,
-    EvmEntitlementFormConstructorParams, EvmIdentityForm, EvmIdentityFormConstructorParams,
-    EvmIntervalForm, EvmIntervalFormConstructorParams,
+    EvmEntitlementFormConstructorParams, EvmForms, EvmFormsConstructorParams, EvmIdentityForm,
+    EvmIdentityFormConstructorParams, EvmIntervalForm, EvmIntervalFormConstructorParams,
 };
+
+#[derive(Default)]
+pub struct EvmFormsConstructorParamsOverrides;
+
+pub fn build_evm_forms_constructor_params(
+    _overrides: EvmFormsConstructorParamsOverrides,
+) -> EvmFormsConstructorParams {
+    EvmFormsConstructorParams
+}
+
+pub fn build_evm_forms(overrides: EvmFormsConstructorParamsOverrides) -> EvmForms {
+    let Ok(forms) = EvmForms::try_new(build_evm_forms_constructor_params(overrides));
+    forms
+}
 
 #[derive(Default)]
 pub struct EvmIdentityFormConstructorParamsOverrides {
@@ -20,7 +27,7 @@ pub fn build_evm_identity_form_constructor_params(
     overrides: EvmIdentityFormConstructorParamsOverrides,
 ) -> EvmIdentityFormConstructorParams {
     EvmIdentityFormConstructorParams {
-        bytes: overrides.bytes.unwrap_or([0x0a; 20]),
+        bytes: overrides.bytes.unwrap_or([0xA1; 20]),
     }
 }
 
@@ -40,7 +47,7 @@ pub fn build_evm_entitlement_form_constructor_params(
     overrides: EvmEntitlementFormConstructorParamsOverrides,
 ) -> EvmEntitlementFormConstructorParams {
     EvmEntitlementFormConstructorParams {
-        bytes: overrides.bytes.unwrap_or([0x0b; 32]),
+        bytes: overrides.bytes.unwrap_or([0xA2; 32]),
     }
 }
 
@@ -61,7 +68,7 @@ pub fn build_evm_interval_form_constructor_params(
     overrides: EvmIntervalFormConstructorParamsOverrides,
 ) -> EvmIntervalFormConstructorParams {
     EvmIntervalFormConstructorParams {
-        value: overrides.value.unwrap_or(1),
+        value: overrides.value.unwrap_or(0xA3),
     }
 }
 
@@ -81,7 +88,7 @@ pub fn build_evm_chain_identifier_form_constructor_params(
     overrides: EvmChainIdentifierFormConstructorParamsOverrides,
 ) -> EvmChainIdentifierFormConstructorParams {
     EvmChainIdentifierFormConstructorParams {
-        bytes: overrides.bytes.unwrap_or([0x0c; 32]),
+        bytes: overrides.bytes.unwrap_or([0xA4; 32]),
     }
 }
 

@@ -1,5 +1,4 @@
 use core::convert::Infallible;
-use encoding::CanonicalFieldKind;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct EvmForms;
@@ -51,8 +50,3 @@ pub struct EvmChainIdentifierFormConstructorParams {
 }
 
 pub type EvmChainIdentifierFormTryNewReturn = Result<EvmChainIdentifierForm, Infallible>;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EvmFormFromFieldErrorReturn {
-    WrongKind { expected: CanonicalFieldKind },
-}

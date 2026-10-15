@@ -12,7 +12,7 @@ The error arm has no branch: `Infallible` is uninhabited.
 
 ## `IEncodingContract` for `MintStatementDescription<'_, P, F>`
 
-`Described` is `MintStatement<P, F>`; `FromFieldsErrorReturn` is `MintStatementFromFieldsErrorReturn<F>`; `FIELDS` is, in index order: `FixedBytes32`, `Unsigned16`, `<F::ChainIdentifier as ICanonicalField>::KIND`, `<F::Identity as ICanonicalField>::KIND`, `FixedBytes32`, `FixedBytes32`, `<F::Entitlement as ICanonicalField>::KIND`, `<F::Entitlement as ICanonicalField>::KIND`, `<F::Interval as ICanonicalField>::KIND`, `<F::Interval as ICanonicalField>::KIND`, `Unsigned16`, `<F::Identity as ICanonicalField>::KIND`, `<F::Identity as ICanonicalField>::KIND`, `Bytes` ×6, `Unsigned64`, `Bytes` ×5.
+`Described` is `MintStatement<P, F>`; `FromFieldsErrorReturn` is `MintStatementFromFieldsErrorReturn`; `FIELDS` is, in index order: `FixedBytes32`, `Unsigned16`, `<F::ChainIdentifier as ICanonicalField>::KIND`, `<F::Identity as ICanonicalField>::KIND`, `FixedBytes32`, `FixedBytes32`, `<F::Entitlement as ICanonicalField>::KIND`, `<F::Entitlement as ICanonicalField>::KIND`, `<F::Interval as ICanonicalField>::KIND`, `<F::Interval as ICanonicalField>::KIND`, `Unsigned16`, `<F::Identity as ICanonicalField>::KIND`, `<F::Identity as ICanonicalField>::KIND`, `Bytes` ×6, `Unsigned64`, `Bytes` ×5.
 
 ## `to_fields(&self, params: ToFieldsParams, payload: &MintStatement<P, F>) -> ToFieldsReturn`
 
@@ -22,7 +22,7 @@ The error arm has no branch: `Infallible` is uninhabited.
 
 Fields `13`–`18` encode `buyer_keys.pk1` (G1), `buyer_keys.pk2` (G2), `envelope.c1` (G1), `envelope.c2` (G1), `envelope.d1` (G2), `envelope.d2` (G2); fields `20`–`24` encode `first_messages.hpub` (G2), `first_messages.c1` (G1), `first_messages.c2` (G1), `first_messages.d1` (G2), `first_messages.d2` (G2). Every `to_field` and `encode_*` return is `Result<_, Infallible>`; each unpack is irrefutable. `params` carries no control.
 
-## `fields_to_value(&self, params: FromFieldsParams, payload: CanonicalFields) -> FromFieldsReturn<MintStatement<P, F>, MintStatementFromFieldsErrorReturn<F>>`
+## `fields_to_value(&self, params: FromFieldsParams, payload: CanonicalFields) -> FromFieldsReturn<MintStatement<P, F>, MintStatementFromFieldsErrorReturn>`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
@@ -42,4 +42,50 @@ Fields `13`–`18` encode `buyer_keys.pk1` (G1), `buyer_keys.pk2` (G2), `envelop
 - The lowest failing index decides; the same payload always yields the same outcome.
 - `params` carries no control and is not read.
 - A reconstructed mint statement contains only group elements admitted by the selected pairing's decoders and a `MintPurpose`; a round trip preserves the exact canonical field order and values.
+
+## `DeliveryPurpose::code(&self) -> u16`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| coded | the purpose | a `match` over the closed variants | none | `1` for `Mint`, `2` for `Transfer`, `3` for `Grant`, `4` for `Replacement` |
+
+## `DeliveryPurpose::relation(&self) -> DeliveryRelation`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| related | the purpose | a `match` over the closed variants | none | `DeliveryRelation::Mint` for `Mint` and `Replacement`, `DeliveryRelation::Transfer` for `Transfer` and `Grant` |
+
+## `TransferPurpose::code(&self) -> u16`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| coded | the purpose | a `match` over the closed variants | none | `2` for `Transfer`, `3` for `Grant` |
+
+## `TransferPurpose::try_from(code: u16) -> Result<TransferPurpose, UndeclaredDeliveryPurposeCode>`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| admitted | `code` is `2` or `3` | a `match` over the code | none | `Ok(TransferPurpose::Transfer)` for `2`, `Ok(TransferPurpose::Grant)` for `3` |
+| refused | any other code, the mint relation's codes included | the same `match`'s fall-through | none | `Err(UndeclaredDeliveryPurposeCode { code })`, the code the relation refuses |
+
+## Integration: callee dispositions
+
+Each `pairing/factory` and `chain/create_chain_forms` entry whose route this node's description extends is carried and restated in this node's terms; no outer-edge collaborator is on any route.
+
+- `pairing/factory` entry `each_second_group_decoder_refuses_the_second_group_reference_encoding`: carried — restated in this node's terms: a field list whose second-group buyer-key position holds the concrete's second-group reference encoding is refused by `fields_to_value` as `Err(MintStatementFromFieldsErrorReturn::InvalidG2 { index: 14, error: DecodeG2ErrorReturn::NotInSubgroup })`. Route: `create_pairing`, the arm's `try_new`, `consume_pairing`, `g2_outside_subgroup_encoding`, the chain family's `create_chain_forms`, the description's `try_new`, `fields_to_value`, and `decode_g2`.
+- `pairing/factory` entry `each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists`: carried — restated in this node's terms: whenever the concrete's `g1_outside_subgroup_encoding` holds bytes, a field list whose first-group buyer-key position holds them is refused by `fields_to_value` as `Err(MintStatementFromFieldsErrorReturn::InvalidG1 { index: 13, error: DecodeG1ErrorReturn::NotInSubgroup })`. Route: `create_pairing`, the arm's `try_new`, `consume_pairing`, `g1_outside_subgroup_encoding`, the chain family's `create_chain_forms`, the description's `try_new`, `fields_to_value`, and `decode_g1`.
+- `chain/create_chain_forms` entry `chain_forms_identity_survives_its_field_round_trip`: carried — restated in this node's terms: the identity forms at positions `3`, `11`, and `12` — the entitlement contract, the seller, and the buyer — that `to_fields` yields as fixed twenty-byte fields are rebuilt by `fields_to_value` into forms equal to the originals, over every member of `CHAIN_FORMS_CONCRETES`. Route: `create_pairing`, `consume_pairing`, `create_chain_forms`, `consume_chain_forms`, the description's `try_new`, `to_fields`, and `fields_to_value`, and the identity form's `to_field` and `from_field`.
+- `chain/create_chain_forms` entry `chain_forms_entitlement_survives_its_field_round_trip`: carried — restated in this node's terms: the entitlement forms at positions `6` and `7` — the source and target entitlements — that `to_fields` yields as 256-bit fields are rebuilt by `fields_to_value` into forms equal to the originals, over every member of `CHAIN_FORMS_CONCRETES`. Route: `create_pairing`, `consume_pairing`, `create_chain_forms`, `consume_chain_forms`, the description's `try_new`, `to_fields`, and `fields_to_value`, and the entitlement form's `to_field` and `from_field`.
+- `chain/create_chain_forms` entry `chain_forms_interval_survives_its_field_round_trip`: carried — restated in this node's terms: the interval forms at positions `8` and `9` — the old and new interval counters — that `to_fields` yields as 64-bit fields are rebuilt by `fields_to_value` into forms equal to the originals, over every member of `CHAIN_FORMS_CONCRETES`. Route: `create_pairing`, `consume_pairing`, `create_chain_forms`, `consume_chain_forms`, the description's `try_new`, `to_fields`, and `fields_to_value`, and the interval form's `to_field` and `from_field`.
+- `chain/create_chain_forms` entry `chain_forms_chain_identifier_survives_its_field_round_trip`: carried — restated in this node's terms: the chain-identifier form at position `2` that `to_fields` yields as a 256-bit field is rebuilt by `fields_to_value` into a form equal to the original, over every member of `CHAIN_FORMS_CONCRETES`. Route: `create_pairing`, `consume_pairing`, `create_chain_forms`, `consume_chain_forms`, the description's `try_new`, `to_fields`, and `fields_to_value`, and the chain-identifier form's `to_field` and `from_field`.
+
+## Integration: own entries
+
+Each entry is proven by the public integration block of the same name in `tests/mint_statement_integration_test.rs`.
+
+- `a_mint_statement_survives_the_encoding_round_trip`: condition a statement from `build_mint_statement` over the pairing the consumer received, handed with its `MintStatementDescription` to the received encoder's `encode` and the bytes returned handed to `decode` with the same description; outcome `Ok(DecodeSuccessReturn { described })` whose every field equals the original's — the forms, the domain values, the purpose, and the expiry by equality, and the group elements through the pairing's `encode_g1` and `encode_g2`; variation every member of `DECLARED_ENCODING_SELECTIONS`, each over every member of `PAIRING_CONCRETES` and of `CHAIN_FORMS_CONCRETES`, the statement's values distinct at every position so that a swap of same-kind fields fails; edge that must survive the composition: the declared field kinds are the kinds the encoder admits, and the group elements the real decoder admits are the elements the real encoder emitted.
+
+## Integration: public surface
+
+An outside caller invokes `create_pairing` with an `IPairingConsumer` it writes, nested inside it the consumers it receives from `create_encoding` and from the chain family's `create_chain_forms`, with the params of each taken from the declared sets, builds the description through `MintStatementDescription::try_new`, and observes what `to_fields`, `fields_to_value`, and the encoder's `encode` and `decode` return; the entries proven are `a_mint_statement_survives_the_encoding_round_trip` and the carried `each_second_group_decoder_refuses_the_second_group_reference_encoding`, `each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists`, `chain_forms_identity_survives_its_field_round_trip`, `chain_forms_entitlement_survives_its_field_round_trip`, `chain_forms_interval_survives_its_field_round_trip`, and `chain_forms_chain_identifier_survives_its_field_round_trip`; the route of the own entry is `create_pairing`, `consume_pairing`, `create_encoding`, `consume_encoding`, `create_chain_forms`, `consume_chain_forms`, the description's `try_new` and `to_fields`, the encoder's `encode`, the encoder's `decode`, the description's `fields_to_value`, and the pairing's `decode_g1` and `decode_g2`; the route of each carried entry is the route stated in its disposition; the outer-edge collaborators are none; the fixtures are `build_mint_statement`, `invalidate_mint_statement`, `MintStatementCorruptions`, and the pairing, encoding, and chain families' official builders.
 

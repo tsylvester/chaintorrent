@@ -1,5 +1,3 @@
-#![allow(clippy::panic)]
-
 use super::provides::{
     CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, CreateEncodingErrorReturn,
     CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, DecodeErrorReturn,

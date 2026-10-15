@@ -19,6 +19,7 @@ Cited by: construction view (workplan node `interface.test`, `guard.test`, `unit
 - In Rust each test element is a `#[cfg(test)]` module file in the function's module directory, `test.rs`, splitting by behavior as `test_basic.rs`, `test_error.rs`; the runner is `cargo test` with `assert!` and `assert_eq!`, and the agent still never runs it. A private integration test is `integration_test.rs`, a `#[cfg(test)]` module of its own beside `test.rs`, and a public integration test is a file under the crate's `tests/`; neither is ever a `test_*.rs` split of the unit test.
 - The agent never runs tests (see [environment](environment.md)). A test's RED or GREEN state is proven by compiler/linter output, not by execution.
 - Examples in this topic use `test(...)` for a test block and `assert(...)` for a truthy assertion as neutral placeholders. Substitute your project's own runner and assertion library — `Deno.test` + `@std/assert`, `test` / `it` + `expect`, and so on — and its module-resolution convention for import paths.
+- End each test block with a comment stating the test's unique name so that every test has a unique start and stop anchor. 
 
 ## Every test states its contract
 

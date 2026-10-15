@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod integration_test;
 mod interface;
 #[cfg(test)]
 mod mock;
@@ -9,16 +11,16 @@ use crate::factory::provides::{
     CHAIN_FORMS_INTERFACE_VERSION, ChainFormsDeclaration, ChainFormsIdentifier, IChainForms,
 };
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, FromFieldParams, FromFieldReturn,
-    FromFieldSuccessReturn, ICanonicalField, ToFieldParams, ToFieldReturn, ToFieldSuccessReturn,
+    CanonicalFieldKind, CanonicalFieldValue, FromFieldErrorReturn, FromFieldParams,
+    FromFieldReturn, FromFieldSuccessReturn, ICanonicalField, ToFieldParams, ToFieldReturn,
+    ToFieldSuccessReturn,
 };
 use interface::{
     EvmChainIdentifierForm, EvmChainIdentifierFormConstructorParams,
     EvmChainIdentifierFormTryNewReturn, EvmEntitlementForm, EvmEntitlementFormConstructorParams,
-    EvmEntitlementFormTryNewReturn, EvmFormFromFieldErrorReturn, EvmForms,
-    EvmFormsConstructorParams, EvmFormsTryNewReturn, EvmIdentityForm,
-    EvmIdentityFormConstructorParams, EvmIdentityFormTryNewReturn, EvmIntervalForm,
-    EvmIntervalFormConstructorParams, EvmIntervalFormTryNewReturn,
+    EvmEntitlementFormTryNewReturn, EvmForms, EvmFormsConstructorParams, EvmFormsTryNewReturn,
+    EvmIdentityForm, EvmIdentityFormConstructorParams, EvmIdentityFormTryNewReturn,
+    EvmIntervalForm, EvmIntervalFormConstructorParams, EvmIntervalFormTryNewReturn,
 };
 
 impl EvmForms {
@@ -51,7 +53,6 @@ impl EvmIdentityForm {
 }
 
 impl ICanonicalField for EvmIdentityForm {
-    type FromFieldErrorReturn = EvmFormFromFieldErrorReturn;
     const KIND: CanonicalFieldKind = CanonicalFieldKind::FixedBytes20;
 
     fn to_field(_params: ToFieldParams, payload: &Self) -> ToFieldReturn {
@@ -60,12 +61,9 @@ impl ICanonicalField for EvmIdentityForm {
         })
     }
 
-    fn from_field(
-        _params: FromFieldParams,
-        payload: CanonicalFieldValue,
-    ) -> FromFieldReturn<Self, Self::FromFieldErrorReturn> {
+    fn from_field(_params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self> {
         let CanonicalFieldValue::FixedBytes20(bytes) = payload else {
-            return Err(EvmFormFromFieldErrorReturn::WrongKind {
+            return Err(FromFieldErrorReturn::WrongKind {
                 expected: CanonicalFieldKind::FixedBytes20,
             });
         };
@@ -83,7 +81,6 @@ impl EvmEntitlementForm {
 }
 
 impl ICanonicalField for EvmEntitlementForm {
-    type FromFieldErrorReturn = EvmFormFromFieldErrorReturn;
     const KIND: CanonicalFieldKind = CanonicalFieldKind::Unsigned256;
 
     fn to_field(_params: ToFieldParams, payload: &Self) -> ToFieldReturn {
@@ -92,12 +89,9 @@ impl ICanonicalField for EvmEntitlementForm {
         })
     }
 
-    fn from_field(
-        _params: FromFieldParams,
-        payload: CanonicalFieldValue,
-    ) -> FromFieldReturn<Self, Self::FromFieldErrorReturn> {
+    fn from_field(_params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self> {
         let CanonicalFieldValue::Unsigned256(bytes) = payload else {
-            return Err(EvmFormFromFieldErrorReturn::WrongKind {
+            return Err(FromFieldErrorReturn::WrongKind {
                 expected: CanonicalFieldKind::Unsigned256,
             });
         };
@@ -115,7 +109,6 @@ impl EvmIntervalForm {
 }
 
 impl ICanonicalField for EvmIntervalForm {
-    type FromFieldErrorReturn = EvmFormFromFieldErrorReturn;
     const KIND: CanonicalFieldKind = CanonicalFieldKind::Unsigned64;
 
     fn to_field(_params: ToFieldParams, payload: &Self) -> ToFieldReturn {
@@ -124,12 +117,9 @@ impl ICanonicalField for EvmIntervalForm {
         })
     }
 
-    fn from_field(
-        _params: FromFieldParams,
-        payload: CanonicalFieldValue,
-    ) -> FromFieldReturn<Self, Self::FromFieldErrorReturn> {
+    fn from_field(_params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self> {
         let CanonicalFieldValue::Unsigned64(value) = payload else {
-            return Err(EvmFormFromFieldErrorReturn::WrongKind {
+            return Err(FromFieldErrorReturn::WrongKind {
                 expected: CanonicalFieldKind::Unsigned64,
             });
         };
@@ -149,7 +139,6 @@ impl EvmChainIdentifierForm {
 }
 
 impl ICanonicalField for EvmChainIdentifierForm {
-    type FromFieldErrorReturn = EvmFormFromFieldErrorReturn;
     const KIND: CanonicalFieldKind = CanonicalFieldKind::Unsigned256;
 
     fn to_field(_params: ToFieldParams, payload: &Self) -> ToFieldReturn {
@@ -158,12 +147,9 @@ impl ICanonicalField for EvmChainIdentifierForm {
         })
     }
 
-    fn from_field(
-        _params: FromFieldParams,
-        payload: CanonicalFieldValue,
-    ) -> FromFieldReturn<Self, Self::FromFieldErrorReturn> {
+    fn from_field(_params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self> {
         let CanonicalFieldValue::Unsigned256(bytes) = payload else {
-            return Err(EvmFormFromFieldErrorReturn::WrongKind {
+            return Err(FromFieldErrorReturn::WrongKind {
                 expected: CanonicalFieldKind::Unsigned256,
             });
         };

@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod integration_test;
 mod interface;
 #[cfg(any(test, feature = "mocks"))]
 mod mock;
@@ -6,6 +8,10 @@ pub mod provides;
 mod test;
 
 use crate::evm_forms::provides::{EvmForms, EvmFormsConstructorParams};
+#[cfg(any(test, feature = "mocks"))]
+use crate::factory::provides::{
+    IChainForms, MockIChainForms, MockIChainFormsOverrides, build_mock_i_chain_forms,
+};
 use interface::{
     ChainFormsConcrete, ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsDeps,
     CreateChainFormsErrorReturn, CreateChainFormsParams, CreateChainFormsPayload,
@@ -23,6 +29,17 @@ pub fn create_chain_forms<C: IChainFormsConsumer>(
                 return Err(CreateChainFormsErrorReturn::UnsupportedChainFormsIdentifier);
             }
             let Ok(forms) = EvmForms::try_new(EvmFormsConstructorParams);
+            let output = deps
+                .consumer
+                .consume_chain_forms(ConsumeChainFormsParams, ConsumeChainFormsPayload { forms });
+            Ok(CreateChainFormsSuccessReturn { output })
+        }
+        #[cfg(any(test, feature = "mocks"))]
+        ChainFormsConcrete::Mock => {
+            if MockIChainForms::DECLARATION.identifier != params.identifier {
+                return Err(CreateChainFormsErrorReturn::UnsupportedChainFormsIdentifier);
+            }
+            let forms = build_mock_i_chain_forms(MockIChainFormsOverrides);
             let output = deps
                 .consumer
                 .consume_chain_forms(ConsumeChainFormsParams, ConsumeChainFormsPayload { forms });

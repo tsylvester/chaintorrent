@@ -1,5 +1,3 @@
-#![allow(clippy::panic)]
-
 use super::DomainTag;
 use super::interface::{DOMAIN_TAG_MAXIMUM_LENGTH, DomainTagTryNewErrorReturn};
 use super::mock::{

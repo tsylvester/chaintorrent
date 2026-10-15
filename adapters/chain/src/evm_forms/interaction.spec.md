@@ -30,7 +30,7 @@ The error arm has no branch: `Infallible` is uninhabited.
 
 ## `ICanonicalField` for `EvmIdentityForm`
 
-`FromFieldErrorReturn` is `EvmFormFromFieldErrorReturn`; `KIND` is `CanonicalFieldKind::FixedBytes20`.
+`KIND` is `CanonicalFieldKind::FixedBytes20`.
 
 ## `EvmIdentityForm::to_field(params: ToFieldParams, payload: &Self) -> ToFieldReturn`
 
@@ -40,11 +40,11 @@ The error arm has no branch: `Infallible` is uninhabited.
 
 `params` carries no control and is not read.
 
-## `EvmIdentityForm::from_field(params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self, EvmFormFromFieldErrorReturn>`
+## `EvmIdentityForm::from_field(params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self>`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| wrong kind | `payload` is not `CanonicalFieldValue::FixedBytes20` | `let CanonicalFieldValue::FixedBytes20(bytes) = payload else { … }` | none | `Err(EvmFormFromFieldErrorReturn::WrongKind { expected: CanonicalFieldKind::FixedBytes20 })` |
+| wrong kind | `payload` is not `CanonicalFieldValue::FixedBytes20` | `let CanonicalFieldValue::FixedBytes20(bytes) = payload else { … }` | none | `Err(FromFieldErrorReturn::WrongKind { expected: CanonicalFieldKind::FixedBytes20 })` |
 | admitted | `payload` is `CanonicalFieldValue::FixedBytes20(bytes)` | the same match | `EvmIdentityForm::try_new(EvmIdentityFormConstructorParams { bytes })`, once, unpacked by `let Ok(value) = …;` | `Ok(FromFieldSuccessReturn { value })` |
 
 ## `EvmEntitlementForm::try_new(params: EvmEntitlementFormConstructorParams) -> EvmEntitlementFormTryNewReturn`
@@ -57,7 +57,7 @@ The error arm has no branch: `Infallible` is uninhabited.
 
 ## `ICanonicalField` for `EvmEntitlementForm`
 
-`FromFieldErrorReturn` is `EvmFormFromFieldErrorReturn`; `KIND` is `CanonicalFieldKind::Unsigned256`.
+`KIND` is `CanonicalFieldKind::Unsigned256`.
 
 ## `EvmEntitlementForm::to_field(params: ToFieldParams, payload: &Self) -> ToFieldReturn`
 
@@ -67,11 +67,11 @@ The error arm has no branch: `Infallible` is uninhabited.
 
 `params` carries no control and is not read.
 
-## `EvmEntitlementForm::from_field(params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self, EvmFormFromFieldErrorReturn>`
+## `EvmEntitlementForm::from_field(params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self>`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| wrong kind | `payload` is not `CanonicalFieldValue::Unsigned256` | `let CanonicalFieldValue::Unsigned256(bytes) = payload else { … }` | none | `Err(EvmFormFromFieldErrorReturn::WrongKind { expected: CanonicalFieldKind::Unsigned256 })` |
+| wrong kind | `payload` is not `CanonicalFieldValue::Unsigned256` | `let CanonicalFieldValue::Unsigned256(bytes) = payload else { … }` | none | `Err(FromFieldErrorReturn::WrongKind { expected: CanonicalFieldKind::Unsigned256 })` |
 | admitted | `payload` is `CanonicalFieldValue::Unsigned256(bytes)` | the same match | `EvmEntitlementForm::try_new(EvmEntitlementFormConstructorParams { bytes })`, once, unpacked by `let Ok(value) = …;` | `Ok(FromFieldSuccessReturn { value })` |
 
 ## `EvmIntervalForm::try_new(params: EvmIntervalFormConstructorParams) -> EvmIntervalFormTryNewReturn`
@@ -84,7 +84,7 @@ The error arm has no branch: `Infallible` is uninhabited.
 
 ## `ICanonicalField` for `EvmIntervalForm`
 
-`FromFieldErrorReturn` is `EvmFormFromFieldErrorReturn`; `KIND` is `CanonicalFieldKind::Unsigned64`.
+`KIND` is `CanonicalFieldKind::Unsigned64`.
 
 ## `EvmIntervalForm::to_field(params: ToFieldParams, payload: &Self) -> ToFieldReturn`
 
@@ -94,11 +94,11 @@ The error arm has no branch: `Infallible` is uninhabited.
 
 `params` carries no control and is not read.
 
-## `EvmIntervalForm::from_field(params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self, EvmFormFromFieldErrorReturn>`
+## `EvmIntervalForm::from_field(params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self>`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| wrong kind | `payload` is not `CanonicalFieldValue::Unsigned64` | `let CanonicalFieldValue::Unsigned64(value) = payload else { … }` | none | `Err(EvmFormFromFieldErrorReturn::WrongKind { expected: CanonicalFieldKind::Unsigned64 })` |
+| wrong kind | `payload` is not `CanonicalFieldValue::Unsigned64` | `let CanonicalFieldValue::Unsigned64(value) = payload else { … }` | none | `Err(FromFieldErrorReturn::WrongKind { expected: CanonicalFieldKind::Unsigned64 })` |
 | admitted | `payload` is `CanonicalFieldValue::Unsigned64(value)` | the same match | `EvmIntervalForm::try_new(EvmIntervalFormConstructorParams { value })`, once, unpacked by `let Ok(value) = …;` | `Ok(FromFieldSuccessReturn { value })` |
 
 ## `EvmChainIdentifierForm::try_new(params: EvmChainIdentifierFormConstructorParams) -> EvmChainIdentifierFormTryNewReturn`
@@ -111,7 +111,7 @@ The error arm has no branch: `Infallible` is uninhabited.
 
 ## `ICanonicalField` for `EvmChainIdentifierForm`
 
-`FromFieldErrorReturn` is `EvmFormFromFieldErrorReturn`; `KIND` is `CanonicalFieldKind::Unsigned256`.
+`KIND` is `CanonicalFieldKind::Unsigned256`.
 
 ## `EvmChainIdentifierForm::to_field(params: ToFieldParams, payload: &Self) -> ToFieldReturn`
 
@@ -121,11 +121,11 @@ The error arm has no branch: `Infallible` is uninhabited.
 
 `params` carries no control and is not read.
 
-## `EvmChainIdentifierForm::from_field(params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self, EvmFormFromFieldErrorReturn>`
+## `EvmChainIdentifierForm::from_field(params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self>`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| wrong kind | `payload` is not `CanonicalFieldValue::Unsigned256` | `let CanonicalFieldValue::Unsigned256(bytes) = payload else { … }` | none | `Err(EvmFormFromFieldErrorReturn::WrongKind { expected: CanonicalFieldKind::Unsigned256 })` |
+| wrong kind | `payload` is not `CanonicalFieldValue::Unsigned256` | `let CanonicalFieldValue::Unsigned256(bytes) = payload else { … }` | none | `Err(FromFieldErrorReturn::WrongKind { expected: CanonicalFieldKind::Unsigned256 })` |
 | admitted | `payload` is `CanonicalFieldValue::Unsigned256(bytes)` | the same match | `EvmChainIdentifierForm::try_new(EvmChainIdentifierFormConstructorParams { bytes })`, once, unpacked by `let Ok(value) = …;` | `Ok(FromFieldSuccessReturn { value })` |
 
 ## Ordering and invariants
@@ -133,4 +133,15 @@ The error arm has no branch: `Infallible` is uninhabited.
 - Each `from_field` decides by the one match before any construction; the same payload always yields the same outcome; no call has a side effect.
 - Each form's `to_field` returns a value of its `KIND`; each form's `from_field` admits every value its `to_field` returns and returns a form equal to the one that yielded it.
 - A form's only constructor is its `try_new`, which its own `from_field` calls.
+
+## Integration: own entries
+
+- `evm_identity_form_survives_its_field_round_trip`: condition `EvmIdentityForm::to_field` is called over a form and `EvmIdentityForm::from_field` over the field it returns; outcome `Ok(FromFieldSuccessReturn { value })` with `value` equal to the original form; variation the ascending bytes, which differ from the builder default in every position, so a rebuild from the default, from truncated bytes, or from reordered bytes fails; edge that must survive the composition: the field `to_field` returns is of the form's `KIND`, which `from_field` admits.
+- `evm_entitlement_form_survives_its_field_round_trip`: condition `EvmEntitlementForm::to_field` is called over a form and `EvmEntitlementForm::from_field` over the field it returns; outcome `Ok(FromFieldSuccessReturn { value })` with `value` equal to the original form; variation the ascending bytes, which differ from the builder default in every position, so a rebuild from the default, from truncated bytes, or from reordered bytes fails; edge that must survive the composition: the field `to_field` returns is of the form's `KIND`, which `from_field` admits.
+- `evm_interval_form_survives_its_field_round_trip`: condition `EvmIntervalForm::to_field` is called over a form and `EvmIntervalForm::from_field` over the field it returns; outcome `Ok(FromFieldSuccessReturn { value })` with `value` equal to the original form; variation the value `0x0102_0304_0506_0708`, which differs from the builder default and whose upper 32 bits are non-zero, so a rebuild from the default or from a value narrowed to 32 bits fails; edge that must survive the composition: the field `to_field` returns is of the form's `KIND`, which `from_field` admits.
+- `evm_chain_identifier_form_survives_its_field_round_trip`: condition `EvmChainIdentifierForm::to_field` is called over a form and `EvmChainIdentifierForm::from_field` over the field it returns; outcome `Ok(FromFieldSuccessReturn { value })` with `value` equal to the original form; variation the ascending bytes, which differ from the builder default in every position, so a rebuild from the default, from truncated bytes, or from reordered bytes fails; edge that must survive the composition: the field `to_field` returns is of the form's `KIND`, which `from_field` admits.
+
+## Integration: private surface
+
+The chain of real functions is each form's `to_field`, `from_field`, and `try_new`; no outer-edge collaborator is mocked; the observable result is the form `from_field` returns for the field `to_field` returned.
 

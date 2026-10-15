@@ -1,26 +1,43 @@
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::as_conversions
-)]
+#![allow(clippy::expect_used)]
 
-use super::interface::{DELIVERY_PURPOSE_MINT, MintFirstMessages, MintPurpose, MintStatement};
+use super::interface::{
+    MintFirstMessages, MintPurpose, MintStatement, MintStatementDescription,
+    MintStatementDescriptionConstructorParams, UndeclaredDeliveryPurposeCode,
+};
 use chain::IChainForms;
 use domain::{
     AssetIdentityHash, AssetIdentityHashConstructorParamsOverrides, ParameterSetIdentifier,
-    ParameterSetIdentifierConstructorParamsOverrides, SuiteIdentifier,
-    SuiteIdentifierConstructorParamsOverrides, build_asset_identity_hash,
-    build_parameter_set_identifier, build_suite_identifier,
+    ParameterSetIdentifierConstructorParamsOverrides, SecretConstructorParamsOverrides,
+    SuiteIdentifier, SuiteIdentifierConstructorParamsOverrides, build_asset_identity_hash,
+    build_parameter_set_identifier, build_secret, build_suite_identifier,
+};
+use encoding::{
+    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldParamsOverrides,
+    ICanonicalField, ToFieldParams, build_from_field_params,
 };
 use envelope::{
-    EnvelopeComponents, PublicKeysComponents, build_envelope_components,
-    build_public_keys_components,
+    EnvelopeComponents, EnvelopeComponentsOverrides, PublicKeysComponents,
+    PublicKeysComponentsOverrides, build_envelope_components, build_public_keys_components,
 };
 use pairing::{
-    AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, G1GeneratorParams, G1GeneratorPayload,
-    G2GeneratorParams, G2GeneratorPayload, IPairingAdapter,
+    EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload, G1GeneratorParams,
+    G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter,
+    ISampleUniformScalar, MulG1Params, MulG1Payload, MulG2Params, MulG2Payload,
+    SampleUniformScalarParams, SampleUniformScalarPayload,
 };
+
+#[derive(Default)]
+pub struct UndeclaredDeliveryPurposeCodeOverrides {
+    pub code: Option<u16>,
+}
+
+pub fn build_undeclared_delivery_purpose_code(
+    overrides: UndeclaredDeliveryPurposeCodeOverrides,
+) -> UndeclaredDeliveryPurposeCode {
+    UndeclaredDeliveryPurposeCode {
+        code: overrides.code.unwrap_or(5),
+    }
+}
 
 pub struct MintFirstMessagesOverrides<G1, G2> {
     pub hpub: Option<G2>,
@@ -46,42 +63,12 @@ pub fn build_mint_first_messages<P: IPairingAdapter>(
     pairing: &P,
     overrides: MintFirstMessagesOverrides<P::G1, P::G2>,
 ) -> MintFirstMessages<P::G1, P::G2> {
-    let Ok(g1) = pairing.g1_generator(G1GeneratorParams, G1GeneratorPayload);
-    let Ok(g2) = pairing.g2_generator(G2GeneratorParams, G2GeneratorPayload);
-    let Ok(g1g1) = pairing.add_g1(
-        AddG1Params,
-        AddG1Payload {
-            left: g1.point.clone(),
-            right: g1.point.clone(),
-        },
-    );
-    let Ok(g1g1g1) = pairing.add_g1(
-        AddG1Params,
-        AddG1Payload {
-            left: g1g1.sum.clone(),
-            right: g1.point.clone(),
-        },
-    );
-    let Ok(g2g2) = pairing.add_g2(
-        AddG2Params,
-        AddG2Payload {
-            left: g2.point.clone(),
-            right: g2.point.clone(),
-        },
-    );
-    let Ok(g2g2g2) = pairing.add_g2(
-        AddG2Params,
-        AddG2Payload {
-            left: g2g2.sum.clone(),
-            right: g2.point.clone(),
-        },
-    );
     MintFirstMessages {
-        hpub: overrides.hpub.unwrap_or(g2g2.sum),
-        c1: overrides.c1.unwrap_or(g1g1.sum),
-        c2: overrides.c2.unwrap_or(g1g1g1.sum),
-        d1: overrides.d1.unwrap_or(g2.point.clone()),
-        d2: overrides.d2.unwrap_or(g2g2g2.sum),
+        hpub: overrides.hpub.unwrap_or_else(|| g2_mul(pairing, 0x27)),
+        c1: overrides.c1.unwrap_or_else(|| g1_mul(pairing, 0x28)),
+        c2: overrides.c2.unwrap_or_else(|| g1_mul(pairing, 0x29)),
+        d1: overrides.d1.unwrap_or_else(|| g2_mul(pairing, 0x2A)),
+        d2: overrides.d2.unwrap_or_else(|| g2_mul(pairing, 0x2B)),
     }
 }
 
@@ -130,19 +117,17 @@ impl<P: IPairingAdapter, F: IChainForms> Default for MintStatementOverrides<P, F
 pub fn build_mint_statement<P: IPairingAdapter, F: IChainForms>(
     pairing: &P,
     overrides: MintStatementOverrides<P, F>,
-) -> MintStatement<P, F>
-where
-    F::ChainIdentifier: Default,
-    F::Entitlement: Default,
-    F::Identity: Default,
-    F::Interval: Default,
-{
+) -> MintStatement<P, F> {
     MintStatement {
         suite_identifier: overrides.suite_identifier.unwrap_or_else(|| {
             build_suite_identifier(SuiteIdentifierConstructorParamsOverrides::default())
         }),
-        chain: overrides.chain.unwrap_or_default(),
-        entitlement_contract: overrides.entitlement_contract.unwrap_or_default(),
+        chain: overrides
+            .chain
+            .unwrap_or_else(|| form_from_seed::<F::ChainIdentifier>(0x11)),
+        entitlement_contract: overrides
+            .entitlement_contract
+            .unwrap_or_else(|| form_from_seed::<F::Identity>(0x12)),
         asset_identity_hash: overrides.asset_identity_hash.unwrap_or_else(|| {
             build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides::default())
         }),
@@ -151,22 +136,274 @@ where
                 ParameterSetIdentifierConstructorParamsOverrides::default(),
             )
         }),
-        source_entitlement: overrides.source_entitlement.unwrap_or_default(),
-        target_entitlement: overrides.target_entitlement.unwrap_or_default(),
-        old_interval: overrides.old_interval.unwrap_or_default(),
-        new_interval: overrides.new_interval.unwrap_or_default(),
-        purpose: overrides.purpose.unwrap_or(DELIVERY_PURPOSE_MINT),
-        seller: overrides.seller.unwrap_or_default(),
-        buyer: overrides.buyer.unwrap_or_default(),
-        buyer_keys: overrides
-            .buyer_keys
-            .unwrap_or_else(|| build_public_keys_components(pairing, Default::default())),
-        envelope: overrides
-            .envelope
-            .unwrap_or_else(|| build_envelope_components(pairing, Default::default())),
+        source_entitlement: overrides
+            .source_entitlement
+            .unwrap_or_else(|| form_from_seed::<F::Entitlement>(0x13)),
+        target_entitlement: overrides
+            .target_entitlement
+            .unwrap_or_else(|| form_from_seed::<F::Entitlement>(0x14)),
+        old_interval: overrides
+            .old_interval
+            .unwrap_or_else(|| form_from_seed::<F::Interval>(0x15)),
+        new_interval: overrides
+            .new_interval
+            .unwrap_or_else(|| form_from_seed::<F::Interval>(0x16)),
+        purpose: overrides.purpose.unwrap_or(MintPurpose::Mint),
+        seller: overrides
+            .seller
+            .unwrap_or_else(|| form_from_seed::<F::Identity>(0x17)),
+        buyer: overrides
+            .buyer
+            .unwrap_or_else(|| form_from_seed::<F::Identity>(0x18)),
+        buyer_keys: overrides.buyer_keys.unwrap_or_else(|| {
+            build_public_keys_components(
+                pairing,
+                PublicKeysComponentsOverrides {
+                    pk1: Some(g1_mul(pairing, 0x21)),
+                    pk2: Some(g2_mul(pairing, 0x22)),
+                },
+            )
+        }),
+        envelope: overrides.envelope.unwrap_or_else(|| {
+            build_envelope_components(
+                pairing,
+                EnvelopeComponentsOverrides {
+                    c1: Some(g1_mul(pairing, 0x23)),
+                    c2: Some(g1_mul(pairing, 0x24)),
+                    d1: Some(g2_mul(pairing, 0x25)),
+                    d2: Some(g2_mul(pairing, 0x26)),
+                },
+            )
+        }),
         expiry: overrides.expiry.unwrap_or(1_700_000_000),
         first_messages: overrides
             .first_messages
             .unwrap_or_else(|| build_mint_first_messages(pairing, Default::default())),
     }
+}
+
+#[derive(Default)]
+pub struct MintStatementCorruptions {
+    pub suite_identifier: Option<Vec<CanonicalFieldValue>>,
+    pub chain: Option<Vec<CanonicalFieldValue>>,
+    pub entitlement_contract: Option<Vec<CanonicalFieldValue>>,
+    pub asset_identity_hash: Option<Vec<CanonicalFieldValue>>,
+    pub parameter_set_identifier: Option<Vec<CanonicalFieldValue>>,
+    pub source_entitlement: Option<Vec<CanonicalFieldValue>>,
+    pub target_entitlement: Option<Vec<CanonicalFieldValue>>,
+    pub old_interval: Option<Vec<CanonicalFieldValue>>,
+    pub new_interval: Option<Vec<CanonicalFieldValue>>,
+    pub purpose: Option<Vec<CanonicalFieldValue>>,
+    pub seller: Option<Vec<CanonicalFieldValue>>,
+    pub buyer: Option<Vec<CanonicalFieldValue>>,
+    pub buyer_keys: Option<Vec<CanonicalFieldValue>>,
+    pub envelope: Option<Vec<CanonicalFieldValue>>,
+    pub expiry: Option<Vec<CanonicalFieldValue>>,
+    pub first_messages: Option<Vec<CanonicalFieldValue>>,
+}
+
+pub fn invalidate_mint_statement<P: IPairingAdapter, F: IChainForms>(
+    pairing: &P,
+    corruptions: MintStatementCorruptions,
+) -> CanonicalFields {
+    let baseline: MintStatement<P, F> =
+        build_mint_statement(pairing, MintStatementOverrides::default());
+    let mut values: Vec<CanonicalFieldValue> = Vec::new();
+    values.extend(corruptions.suite_identifier.unwrap_or_else(|| {
+        vec![
+            CanonicalFieldValue::FixedBytes32(*baseline.suite_identifier.identifier()),
+            CanonicalFieldValue::Unsigned16(baseline.suite_identifier.version()),
+        ]
+    }));
+    values.extend(
+        corruptions
+            .chain
+            .unwrap_or_else(|| vec![render_form(&baseline.chain)]),
+    );
+    values.extend(
+        corruptions
+            .entitlement_contract
+            .unwrap_or_else(|| vec![render_form(&baseline.entitlement_contract)]),
+    );
+    values.extend(corruptions.asset_identity_hash.unwrap_or_else(|| {
+        vec![CanonicalFieldValue::FixedBytes32(
+            *baseline.asset_identity_hash.as_bytes(),
+        )]
+    }));
+    values.extend(corruptions.parameter_set_identifier.unwrap_or_else(|| {
+        vec![CanonicalFieldValue::FixedBytes32(
+            *baseline.parameter_set_identifier.as_bytes(),
+        )]
+    }));
+    values.extend(
+        corruptions
+            .source_entitlement
+            .unwrap_or_else(|| vec![render_form(&baseline.source_entitlement)]),
+    );
+    values.extend(
+        corruptions
+            .target_entitlement
+            .unwrap_or_else(|| vec![render_form(&baseline.target_entitlement)]),
+    );
+    values.extend(
+        corruptions
+            .old_interval
+            .unwrap_or_else(|| vec![render_form(&baseline.old_interval)]),
+    );
+    values.extend(
+        corruptions
+            .new_interval
+            .unwrap_or_else(|| vec![render_form(&baseline.new_interval)]),
+    );
+    values.extend(
+        corruptions
+            .purpose
+            .unwrap_or_else(|| vec![CanonicalFieldValue::Unsigned16(baseline.purpose.code())]),
+    );
+    values.extend(
+        corruptions
+            .seller
+            .unwrap_or_else(|| vec![render_form(&baseline.seller)]),
+    );
+    values.extend(
+        corruptions
+            .buyer
+            .unwrap_or_else(|| vec![render_form(&baseline.buyer)]),
+    );
+    values.extend(corruptions.buyer_keys.unwrap_or_else(|| {
+        vec![
+            encode_g1_field(pairing, &baseline.buyer_keys.pk1),
+            encode_g2_field(pairing, &baseline.buyer_keys.pk2),
+        ]
+    }));
+    values.extend(corruptions.envelope.unwrap_or_else(|| {
+        vec![
+            encode_g1_field(pairing, &baseline.envelope.c1),
+            encode_g1_field(pairing, &baseline.envelope.c2),
+            encode_g2_field(pairing, &baseline.envelope.d1),
+            encode_g2_field(pairing, &baseline.envelope.d2),
+        ]
+    }));
+    values.extend(
+        corruptions
+            .expiry
+            .unwrap_or_else(|| vec![CanonicalFieldValue::Unsigned64(baseline.expiry)]),
+    );
+    values.extend(corruptions.first_messages.unwrap_or_else(|| {
+        vec![
+            encode_g2_field(pairing, &baseline.first_messages.hpub),
+            encode_g1_field(pairing, &baseline.first_messages.c1),
+            encode_g1_field(pairing, &baseline.first_messages.c2),
+            encode_g2_field(pairing, &baseline.first_messages.d1),
+            encode_g2_field(pairing, &baseline.first_messages.d2),
+        ]
+    }));
+    CanonicalFields { values }
+}
+
+#[derive(Default)]
+pub struct MintStatementDescriptionConstructorParamsOverrides;
+
+pub fn build_mint_statement_description_constructor_params<'a, P: IPairingAdapter>(
+    pairing: &'a P,
+    _overrides: MintStatementDescriptionConstructorParamsOverrides,
+) -> MintStatementDescriptionConstructorParams<'a, P> {
+    MintStatementDescriptionConstructorParams { pairing }
+}
+
+pub fn build_mint_statement_description<'a, P: IPairingAdapter, F: IChainForms>(
+    pairing: &'a P,
+    overrides: MintStatementDescriptionConstructorParamsOverrides,
+) -> MintStatementDescription<'a, P, F> {
+    let Ok(description) = MintStatementDescription::try_new(
+        build_mint_statement_description_constructor_params(pairing, overrides),
+    );
+    description
+}
+
+fn form_from_seed<T: ICanonicalField>(seed: u8) -> T {
+    T::from_field(
+        build_from_field_params(FromFieldParamsOverrides::default()),
+        seeded_field(T::KIND, seed),
+    )
+    .expect("a constant of the declared kind is admitted")
+    .value
+}
+
+fn seeded_field(kind: CanonicalFieldKind, seed: u8) -> CanonicalFieldValue {
+    match kind {
+        CanonicalFieldKind::FixedBytes20 => CanonicalFieldValue::FixedBytes20([seed; 20]),
+        CanonicalFieldKind::FixedBytes32 => CanonicalFieldValue::FixedBytes32([seed; 32]),
+        CanonicalFieldKind::Unsigned16 => CanonicalFieldValue::Unsigned16(u16::from(seed)),
+        CanonicalFieldKind::Unsigned32 => CanonicalFieldValue::Unsigned32(u32::from(seed)),
+        CanonicalFieldKind::Unsigned64 => CanonicalFieldValue::Unsigned64(u64::from(seed)),
+        CanonicalFieldKind::Unsigned256 => CanonicalFieldValue::Unsigned256([seed; 32]),
+        CanonicalFieldKind::Bytes => CanonicalFieldValue::Bytes(vec![seed]),
+        CanonicalFieldKind::Text => CanonicalFieldValue::Text(seed.to_string()),
+    }
+}
+
+fn sampled_scalar<P: IPairingAdapter>(fill: u8) -> P::Scalar {
+    P::Scalar::sample_from_uniform_bytes(
+        SampleUniformScalarParams,
+        SampleUniformScalarPayload {
+            uniform: build_secret(
+                vec![fill; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                SecretConstructorParamsOverrides,
+            ),
+        },
+    )
+    .expect("sampling from uniform bytes of the declared length always succeeds")
+    .scalar
+    .expose()
+    .clone()
+}
+
+fn g1_mul<P: IPairingAdapter>(pairing: &P, fill: u8) -> P::G1 {
+    let Ok(generator) = pairing.g1_generator(G1GeneratorParams, G1GeneratorPayload);
+    let Ok(product) = pairing.mul_g1(
+        MulG1Params,
+        MulG1Payload {
+            point: generator.point,
+            scalar: sampled_scalar::<P>(fill),
+        },
+    );
+    product.product
+}
+
+fn g2_mul<P: IPairingAdapter>(pairing: &P, fill: u8) -> P::G2 {
+    let Ok(generator) = pairing.g2_generator(G2GeneratorParams, G2GeneratorPayload);
+    let Ok(product) = pairing.mul_g2(
+        MulG2Params,
+        MulG2Payload {
+            point: generator.point,
+            scalar: sampled_scalar::<P>(fill),
+        },
+    );
+    product.product
+}
+
+fn render_form<T: ICanonicalField>(form: &T) -> CanonicalFieldValue {
+    let Ok(rendered) = T::to_field(ToFieldParams, form);
+    rendered.field
+}
+
+fn encode_g1_field<P: IPairingAdapter>(pairing: &P, point: &P::G1) -> CanonicalFieldValue {
+    let Ok(encoded) = pairing.encode_g1(
+        EncodeG1Params,
+        EncodeG1Payload {
+            point: point.clone(),
+        },
+    );
+    CanonicalFieldValue::Bytes(encoded.bytes.as_ref().to_vec())
+}
+
+fn encode_g2_field<P: IPairingAdapter>(pairing: &P, point: &P::G2) -> CanonicalFieldValue {
+    let Ok(encoded) = pairing.encode_g2(
+        EncodeG2Params,
+        EncodeG2Payload {
+            point: point.clone(),
+        },
+    );
+    CanonicalFieldValue::Bytes(encoded.bytes.as_ref().to_vec())
 }
