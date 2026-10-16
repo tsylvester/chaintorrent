@@ -166,6 +166,7 @@ The author does the thinking so the implementer does not. Every node must be gro
 | A mock step that bounds a type parameter by `Default`, or derives `Default` over a generic overrides struct, to default a field or an output | The field is handed, produced through the production bound, or named by the mock concrete; the output of a function mock comes from the consumer (see [mocks](mocks.md#fields-with-no-default-rust)) |
 | A mock concrete's own error variant for an arm an input reaches | The family's flavor, decided from inputs by every concrete (see [errors-and-returns](errors-and-returns.md#what-reaches-the-failure-decides-where-it-is-declared)) |
 | A dead error branch in a mock's no-failure path | The conversion uses `expect` naming its invariant, and the mock carries no variant for it |
+| A mock step that reaches a mock concrete's constant by choosing a type for its type parameter, or that adds the parameter to a builder not generic in it | The constant is declared once on an item with no type parameter, which the impl's associated item names and the builder reads (see [composition](composition.md#type-parameters-follow-dependency-rust), [mocks](mocks.md#fields-with-no-default-rust)) |
 
 ## Precedence
 

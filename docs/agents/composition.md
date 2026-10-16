@@ -102,6 +102,23 @@ pub type MyFunctionFn<C> = fn(&MyFunctionDeps<C>, MyFunctionParams, MyFunctionPa
 
 How the builders take the output and the consumer is owned by [mocks](mocks.md#fields-with-no-default-rust); how the function is mocked is owned by [mocks](mocks.md#a-return-that-carries-the-consumers-type-rust).
 
+## Type parameters follow dependency (Rust)
+
+An item carries exactly the type parameters its value depends on. A value depends on a type parameter when the parameter's choice can change it. A generic item's associated items are reached only by filling in every parameter of the item, so the item a value is declared on decides who can reach it.
+
+For each value an item declares or computes — an associated constant, a default, a field — list the type parameters it depends on:
+
+- **One or more.** The value is declared on an item generic in those parameters, and a reader reaches it by filling them in. A mock's forms for such a value are handed and produced (see [mocks](mocks.md#fields-with-no-default-rust)).
+- **None.** The value is declared once, on an item that has no type parameter. The generic item's associated item names it rather than repeating it, and a reader not generic in the parameter reads the parameter-free item.
+
+Forbidden as substitutes:
+
+- choosing a type for a parameter only to reach a value that depends on none of it — another family's concrete or mock concrete, or a placeholder such as `()`;
+- adding a type parameter to an item whose output does not carry it;
+- repeating the value as literals in a second item.
+
+This holds for production items and mocks alike. How a mock file declares the parameter-free item is owned by [mocks](mocks.md#fields-with-no-default-rust).
+
 ## Classes — two admitted roles, and how the signature maps
 
 "One function per file" governs **exported standalone functions**. A class holding several methods is not an exception to that rule and not a way around it; it is a different kind of symbol, admitted in exactly two roles:
