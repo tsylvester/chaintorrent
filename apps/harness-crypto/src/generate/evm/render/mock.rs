@@ -6,17 +6,17 @@
 )]
 
 use super::interface::{
-    RenderParams, RenderPayload, SolidityAbiType, SolidityAbiTypeConstructorParams,
-    SolidityCompilerVersion, SolidityConstantName, SolidityConstantNameConstructorParams,
-    SolidityConstantValue, SolidityLibraryBody, SolidityLibraryEntries,
-    SolidityLibraryEntriesConstructorParams, SolidityLibraryEntry, SolidityLibraryName,
-    SolidityLibraryNameConstructorParams, SolidityMemberName, SolidityMemberNameConstructorParams,
-    SolidityRecordDeclaration, SolidityRecordDeclarations,
-    SolidityRecordDeclarationsConstructorParams, SolidityRecordMember, SolidityRecordMembers,
-    SolidityRecordMembersConstructorParams, SolidityStringLiteral,
-    SolidityStringLiteralConstructorParams, SolidityTypeName, SolidityTypeNameConstructorParams,
-    SolidityUint256, SolidityUint256ConstructorParams, SpdxLicenseIdentifier,
-    SpdxLicenseIdentifierConstructorParams,
+    RenderDeps, RenderFn, RenderParams, RenderPayload, RenderReturn, RenderSuccessReturn,
+    SolidityAbiType, SolidityAbiTypeConstructorParams, SolidityCompilerVersion,
+    SolidityConstantName, SolidityConstantNameConstructorParams, SolidityConstantValue,
+    SolidityLibraryBody, SolidityLibraryEntries, SolidityLibraryEntriesConstructorParams,
+    SolidityLibraryEntry, SolidityLibraryName, SolidityLibraryNameConstructorParams,
+    SolidityMemberName, SolidityMemberNameConstructorParams, SolidityRecordDeclaration,
+    SolidityRecordDeclarations, SolidityRecordDeclarationsConstructorParams, SolidityRecordMember,
+    SolidityRecordMembers, SolidityRecordMembersConstructorParams, SoliditySourceText,
+    SolidityStringLiteral, SolidityStringLiteralConstructorParams, SolidityTypeName,
+    SolidityTypeNameConstructorParams, SolidityUint256, SolidityUint256ConstructorParams,
+    SpdxLicenseIdentifier, SpdxLicenseIdentifierConstructorParams,
 };
 use encoding::CanonicalFieldKind;
 
@@ -29,7 +29,9 @@ pub fn build_solidity_library_name_constructor_params(
     overrides: SolidityLibraryNameConstructorParamsOverrides,
 ) -> SolidityLibraryNameConstructorParams {
     SolidityLibraryNameConstructorParams {
-        text: overrides.text.unwrap_or_else(|| "Constants".to_string()),
+        text: overrides
+            .text
+            .unwrap_or_else(|| "SampleLibrary".to_string()),
     }
 }
 
@@ -49,7 +51,9 @@ pub fn build_solidity_constant_name_constructor_params(
     overrides: SolidityConstantNameConstructorParamsOverrides,
 ) -> SolidityConstantNameConstructorParams {
     SolidityConstantNameConstructorParams {
-        text: overrides.text.unwrap_or_else(|| "VALUE".to_string()),
+        text: overrides
+            .text
+            .unwrap_or_else(|| "SAMPLE_CONSTANT".to_string()),
     }
 }
 
@@ -69,7 +73,7 @@ pub fn build_spdx_license_identifier_constructor_params(
     overrides: SpdxLicenseIdentifierConstructorParamsOverrides,
 ) -> SpdxLicenseIdentifierConstructorParams {
     SpdxLicenseIdentifierConstructorParams {
-        text: overrides.text.unwrap_or_else(|| "UNLICENSED".to_string()),
+        text: overrides.text.unwrap_or_else(|| "MIT".to_string()),
     }
 }
 
@@ -89,7 +93,7 @@ pub fn build_solidity_string_literal_constructor_params(
     overrides: SolidityStringLiteralConstructorParamsOverrides,
 ) -> SolidityStringLiteralConstructorParams {
     SolidityStringLiteralConstructorParams {
-        text: overrides.text.unwrap_or_else(|| "uint256".to_string()),
+        text: overrides.text.unwrap_or_else(|| "sample".to_string()),
     }
 }
 
@@ -109,7 +113,10 @@ pub fn build_solidity_uint256_constructor_params(
     overrides: SolidityUint256ConstructorParamsOverrides,
 ) -> SolidityUint256ConstructorParams {
     SolidityUint256ConstructorParams {
-        big_endian: overrides.big_endian.unwrap_or([0x01; 32]),
+        big_endian: overrides.big_endian.unwrap_or([
+            255, 254, 253, 252, 251, 250, 249, 248, 247, 246, 245, 244, 243, 242, 241, 240, 239,
+            238, 237, 236, 235, 234, 233, 232, 231, 230, 229, 228, 227, 226, 225, 224,
+        ]),
     }
 }
 
@@ -133,7 +140,7 @@ pub fn build_solidity_compiler_version(
     SolidityCompilerVersion {
         major: overrides.major.unwrap_or(0),
         minor: overrides.minor.unwrap_or(8),
-        patch: overrides.patch.unwrap_or(28),
+        patch: overrides.patch.unwrap_or(24),
     }
 }
 
@@ -150,7 +157,7 @@ pub fn build_solidity_library_entry(
         name: overrides
             .name
             .unwrap_or_else(|| build_solidity_constant_name(Default::default())),
-        value: overrides.value.unwrap_or(SolidityConstantValue::Uint16(1)),
+        value: overrides.value.unwrap_or(SolidityConstantValue::Bool(true)),
     }
 }
 
@@ -185,7 +192,7 @@ pub fn build_solidity_type_name_constructor_params(
     overrides: SolidityTypeNameConstructorParamsOverrides,
 ) -> SolidityTypeNameConstructorParams {
     SolidityTypeNameConstructorParams {
-        text: overrides.text.unwrap_or_else(|| "Record".to_string()),
+        text: overrides.text.unwrap_or_else(|| "SampleRecord".to_string()),
     }
 }
 
@@ -205,7 +212,7 @@ pub fn build_solidity_member_name_constructor_params(
     overrides: SolidityMemberNameConstructorParamsOverrides,
 ) -> SolidityMemberNameConstructorParams {
     SolidityMemberNameConstructorParams {
-        text: overrides.text.unwrap_or_else(|| "value".to_string()),
+        text: overrides.text.unwrap_or_else(|| "sampleMember".to_string()),
     }
 }
 
@@ -225,7 +232,7 @@ pub fn build_solidity_abi_type_constructor_params(
     overrides: SolidityAbiTypeConstructorParamsOverrides,
 ) -> SolidityAbiTypeConstructorParams {
     SolidityAbiTypeConstructorParams {
-        kind: overrides.kind.unwrap_or(CanonicalFieldKind::Bytes),
+        kind: overrides.kind.unwrap_or(CanonicalFieldKind::FixedBytes32),
     }
 }
 
@@ -249,7 +256,7 @@ pub fn build_solidity_record_member(
         name: overrides
             .name
             .unwrap_or_else(|| build_solidity_member_name(Default::default())),
-        kind: overrides.kind.unwrap_or(CanonicalFieldKind::Bytes),
+        kind: overrides.kind.unwrap_or(CanonicalFieldKind::FixedBytes32),
     }
 }
 
@@ -267,18 +274,18 @@ pub fn build_solidity_record_members_constructor_params(
                 build_solidity_record_member(SolidityRecordMemberOverrides {
                     name: Some(build_solidity_member_name(
                         SolidityMemberNameConstructorParamsOverrides {
-                            text: Some("left".to_string()),
+                            text: Some("alphaMember".to_string()),
                         },
                     )),
-                    kind: Some(CanonicalFieldKind::Bytes),
+                    ..Default::default()
                 }),
                 build_solidity_record_member(SolidityRecordMemberOverrides {
                     name: Some(build_solidity_member_name(
                         SolidityMemberNameConstructorParamsOverrides {
-                            text: Some("right".to_string()),
+                            text: Some("betaMember".to_string()),
                         },
                     )),
-                    kind: Some(CanonicalFieldKind::Unsigned256),
+                    ..Default::default()
                 }),
             ]
         }),
@@ -311,21 +318,15 @@ pub fn build_solidity_record_declaration(
         members: overrides
             .members
             .unwrap_or_else(|| build_solidity_record_members(Default::default())),
-        decode_function_name: overrides.decode_function_name.unwrap_or_else(|| {
-            build_solidity_member_name(SolidityMemberNameConstructorParamsOverrides {
-                text: Some("decodeRecord".to_string()),
-            })
-        }),
-        path_constant_name: overrides.path_constant_name.unwrap_or_else(|| {
-            build_solidity_constant_name(SolidityConstantNameConstructorParamsOverrides {
-                text: Some("RECORD_PATH".to_string()),
-            })
-        }),
-        path: overrides.path.unwrap_or_else(|| {
-            build_solidity_string_literal(SolidityStringLiteralConstructorParamsOverrides {
-                text: Some("vectors/record.txt".to_string()),
-            })
-        }),
+        decode_function_name: overrides
+            .decode_function_name
+            .unwrap_or_else(|| build_solidity_member_name(Default::default())),
+        path_constant_name: overrides
+            .path_constant_name
+            .unwrap_or_else(|| build_solidity_constant_name(Default::default())),
+        path: overrides
+            .path
+            .unwrap_or_else(|| build_solidity_string_literal(Default::default())),
     }
 }
 
@@ -351,6 +352,24 @@ pub fn build_solidity_record_declarations(
         overrides,
     ))
     .expect("built params are valid")
+}
+
+#[derive(Default)]
+pub struct SoliditySourceTextOverrides {
+    pub text: Option<String>,
+}
+
+pub fn build_solidity_source_text(overrides: SoliditySourceTextOverrides) -> SoliditySourceText {
+    SoliditySourceText {
+        text: overrides.text.unwrap_or_else(|| "// sample\n".to_string()),
+    }
+}
+
+#[derive(Default)]
+pub struct RenderDepsOverrides;
+
+pub fn build_render_deps(_overrides: RenderDepsOverrides) -> RenderDeps {
+    RenderDeps
 }
 
 #[derive(Default)]
@@ -385,4 +404,26 @@ pub fn build_render_payload(overrides: RenderPayloadOverrides) -> RenderPayload 
             SolidityLibraryBody::Constants(build_solidity_library_entries(Default::default()))
         }),
     }
+}
+
+#[derive(Default)]
+pub struct RenderSuccessReturnOverrides {
+    pub source: Option<SoliditySourceText>,
+}
+
+pub fn build_render_success_return(overrides: RenderSuccessReturnOverrides) -> RenderSuccessReturn {
+    RenderSuccessReturn {
+        source: overrides
+            .source
+            .unwrap_or_else(|| build_solidity_source_text(Default::default())),
+    }
+}
+
+pub fn mock_render(
+    _deps: &RenderDeps,
+    _params: RenderParams,
+    _payload: RenderPayload,
+) -> RenderReturn {
+    let _: RenderFn = mock_render;
+    Ok(build_render_success_return(Default::default()))
 }

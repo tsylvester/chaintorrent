@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod integration_test;
 mod interface;
 #[cfg(any(test, feature = "mocks"))]
 mod mock;

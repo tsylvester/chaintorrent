@@ -60,3 +60,11 @@
 
 The first group, then the second, then the scalar; the first refusal returned; the same pairing yields the same records; `params` and `payload` are not read; no side effect.
 
+## Integration: callee dispositions
+
+The entries of `pairing/factory` that this node's route reaches, each dispositioned as stated.
+
+- `libraries_sharing_an_identifier_return_the_same_scalar_field_order` (`pairing/factory`): carried; in this node's terms the `Scalar` record's `input` is the order's bytes, equal across any two concretes whose declared target-group encoding identifiers are equal; route `create_pairing`, the arm's concrete through its `try_new`, `rejection_vectors`, and `scalar_field_order`; there is no outer-edge collaborator on that route.
+- `libraries_sharing_an_identifier_return_the_same_first_group_reference_encoding` (`pairing/factory`): carried; in this node's terms no `G1` record exists for `TargetGroupEncodingIdentifier::Bn254V1`, and the `G1` record's `input` is the encoding's bytes, equal across any two concretes whose identifiers are equal, for `TargetGroupEncodingIdentifier::Bls12381V1`; route `create_pairing`, the arm's concrete through its `try_new`, `rejection_vectors`, and `g1_outside_subgroup_encoding`; there is no outer-edge collaborator on that route.
+- `libraries_sharing_an_identifier_return_the_same_second_group_reference_encoding` (`pairing/factory`): carried; in this node's terms the `G2` record's `input` is the encoding's bytes, equal across any two concretes whose identifiers are equal; route `create_pairing`, the arm's concrete through its `try_new`, `rejection_vectors`, and `g2_outside_subgroup_encoding`; there is no outer-edge collaborator on that route.
+

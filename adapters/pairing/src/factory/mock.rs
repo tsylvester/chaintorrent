@@ -1251,7 +1251,7 @@ impl AsRef<[u8]> for MockEncodedG2 {
 }
 
 pub(crate) struct MockEncodedScalar {
-    bytes: [u8; 8],
+    bytes: [u8; 32],
 }
 
 impl AsRef<[u8]> for MockEncodedScalar {
@@ -1519,16 +1519,16 @@ impl IPairingAdapter for MockIPairingAdapter {
         _params: DecodeScalarParams,
         payload: &[u8],
     ) -> DecodeScalarReturn<Self::Scalar> {
-        if payload.len() != 8 {
+        if payload.len() != 32 {
             return Err(DecodeScalarErrorReturn::WrongLength {
-                expected: 8,
+                expected: 32,
                 actual: payload.len(),
             });
         }
         let mut bytes = [0u8; 8];
-        bytes.copy_from_slice(payload);
+        bytes.copy_from_slice(&payload[24..]);
         let residue = u64::from_be_bytes(bytes);
-        if residue >= MOCK_GROUP_ORDER {
+        if payload[..24].iter().any(|byte| *byte != 0) || residue >= MOCK_GROUP_ORDER {
             return Err(DecodeScalarErrorReturn::NonCanonical);
         }
         Ok(DecodeScalarSuccessReturn {
@@ -1565,10 +1565,10 @@ impl IPairingAdapter for MockIPairingAdapter {
         _params: EncodeScalarParams,
         payload: EncodeScalarPayload<Self::Scalar>,
     ) -> EncodeScalarReturn<Self::EncodedScalar> {
+        let mut bytes = [0u8; 32];
+        bytes[24..].copy_from_slice(&payload.scalar.residue.to_be_bytes());
         let Ok(bytes) = Secret::try_new(SecretConstructorParams {
-            value: MockEncodedScalar {
-                bytes: payload.scalar.residue.to_be_bytes(),
-            },
+            value: MockEncodedScalar { bytes },
         });
         Ok(EncodeScalarSuccessReturn { bytes })
     }
@@ -1727,9 +1727,9 @@ impl IPairingReference for MockIPairingAdapter {
         _params: ScalarFieldOrderParams,
         _payload: ScalarFieldOrderPayload,
     ) -> ScalarFieldOrderReturn {
-        Ok(ScalarFieldOrderSuccessReturn {
-            bytes: MOCK_GROUP_ORDER.to_be_bytes().to_vec(),
-        })
+        let mut bytes = vec![0u8; 32];
+        bytes[24..].copy_from_slice(&MOCK_GROUP_ORDER.to_be_bytes());
+        Ok(ScalarFieldOrderSuccessReturn { bytes })
     }
 
     fn g1_outside_subgroup_encoding(
@@ -1824,6 +1824,15 @@ impl IPairingConsumer for MockIPairingConsumer {
         _payload: ConsumePairingPayload<P>,
     ) -> Self::Output {
     }
+}
+
+#[derive(Default)]
+pub struct CreatePairingPayloadOverrides;
+
+pub fn build_create_pairing_payload(
+    _overrides: CreatePairingPayloadOverrides,
+) -> CreatePairingPayload {
+    CreatePairingPayload
 }
 
 #[derive(Default)]
