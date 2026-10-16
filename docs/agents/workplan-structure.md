@@ -82,7 +82,7 @@ A single node **may** edit several interfaces and guards to provide for its one 
 ## Incrementing an existing workplan
 
 - Preserve all existing detail when adding requirements. We increment and improve, not replace — unless the user explicitly changes an existing requirement.
-- If a prior version of a node exists, copy its state and revise that state to match the new requirements.
+- If a prior version of a node exists, copy its state and revise that state to match the new requirements; every line the revision changes reopens, as [Handling the workplan](#handling-the-workplan) states.
 - Console logs and fixes derived from test output are not documented in the workplan **unless** the output shows a requirement is misstated and must be corrected.
 
 ## The workplan states what is, never what it was
@@ -93,7 +93,10 @@ When a requirement changes, revise the node **in place** so it reads as the sing
 
 ## Handling the workplan
 
-- Do not edit the workplan, or any node's status (checkboxes, badges), without explicit instruction. When instructed, change only the specified portion, exactly as described.
+- Do not edit the workplan without explicit instruction. When instructed, make the edit exactly as described and reopen every line it touches, as the next bullet states. Reopening is part of the edit, never a separate permission. Marking a line `[✅]` still requires explicit instruction.
+- **An edit reopens what it touches.** A checkbox records whether the files on disk meet the line as it is written now: `[✅]` means they do; `[ ]` means they do not, or have not been checked since the line was written. Every line an edit adds or revises is set to `[ ]`, and so is every line above it, up to and including the node's top-level line. Deleting a line reopens its parent the same way. Only the edited lines and the lines above them change; their siblings keep their status. A wording-only change reopens too. The editor does not judge whether the code still meets the new text; the implementer does, by diffing each `[ ]` line of the reopened node against the files on disk and doing what is unmet.
+- Never leave an edited line, or any line above it, `[✅]`. A false `[ ]` costs one diff. A false `[✅]` hides the work for good, because no implementer re-reads a node marked done.
+- **Status canary.** An edit that leaves an edited line, or any line above it, marked `[✅]` is discarded (see [traceability](traceability.md)).
 - Do not emit full workplan nodes in chat unless explicitly told to for that turn. The Read → Analyze → Explain → Propose cycle and EO&D reporting do **not** by themselves authorize emitting node content (see [output](output.md), [loop](loop.md)).
 - Document every edit within the workplan. If required edits are missing from the plan, explain the discovery, propose the new node, and halt — do not improvise (see [discovery-halt](discovery-halt.md)).
 - Obey the user first, then the Instructions topics, then the workplan. Never hide behind the workplan to ignore a direct user correction (see [precedence](precedence.md)). If the user tells you to work without updating the workplan, obey without complaint.
@@ -167,6 +170,7 @@ The author does the thinking so the implementer does not. Every node must be gro
 | A mock concrete's own error variant for an arm an input reaches | The family's flavor, decided from inputs by every concrete (see [errors-and-returns](errors-and-returns.md#what-reaches-the-failure-decides-where-it-is-declared)) |
 | A dead error branch in a mock's no-failure path | The conversion uses `expect` naming its invariant, and the mock carries no variant for it |
 | A mock step that reaches a mock concrete's constant by choosing a type for its type parameter, or that adds the parameter to a builder not generic in it | The constant is declared once on an item with no type parameter, which the impl's associated item names and the builder reads (see [composition](composition.md#type-parameters-follow-dependency-rust), [mocks](mocks.md#fields-with-no-default-rust)) |
+| Revising a line of a completed node and leaving it, or any line above it, `[✅]` | The revised line and every line above it, up to the node's top-level line, are `[ ]`, so the implementer diffs the node against the files on disk and does what is unmet |
 
 ## Precedence
 
@@ -304,10 +308,10 @@ Element → topic citations, clickable: `module` → [boundaries](boundaries.md)
 You must use the EXACT format of the node structure. Do not modify, adapt, or "improve" the bullets, square braces, ticks, nesting, or node structuring — they are mandatory and unalterable.
 
 ```
-*   `[ ]` [path]/[workspace] Unstarted work step in a node. Each node is addressed by its deepest unique segment.
+*   `[ ]` [path]/[workspace] Work step the files on disk do not yet meet as written, unstarted or reopened (see Handling the workplan). Each node is addressed by its deepest unique segment.
     *   `[ ]` [subfolder]/`filename`. Elements nest as shown; subnodes show the path/file to address that element.
         *   `[ ]` [subfolder]/[subfolder]/`filename` Nesting can be as deep as logically required.
-*   `[✅]` Represents a completed step at any depth.
+*   `[✅]` A step the files on disk meet as written, at any depth.
 ```
 
 ## Component type labels
