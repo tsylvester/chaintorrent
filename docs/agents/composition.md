@@ -119,6 +119,17 @@ Forbidden as substitutes:
 
 This holds for production items and mocks alike. How a mock file declares the parameter-free item is owned by [mocks](mocks.md#fields-with-no-default-rust).
 
+## Configuration follows ownership (Rust)
+
+A family's factory takes its configuration in two kinds, and each is declared by the owner it belongs to:
+
+- **The family's.** A value the factory takes whichever concrete the selection names, the mock concrete's included, is the family's. Its type is declared in the factory module's interface, it is carried in the factory's params beside the selection, and its builder lives in the factory module's mock file.
+- **A concrete's own.** A value the factory takes for one concrete alone is that concrete's. Its type is declared in the concrete's interface, it is carried in that concrete's variant of the selection, and its builder lives in the concrete's mock file.
+
+The test is the one the type-parameter rule above applies: declare a value on the least specific owner that serves every reader. A family value carried inside one concrete's configuration is repeated in every other concrete's configuration or missing from it; a concrete's own value carried in the family's params is configuration every other concrete must ignore.
+
+How a test varies each kind is owned by [integrationTest](integrationTest.md#configuration-over-the-declared-set-rust); how a test obtains a concrete's default configuration is owned by [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust).
+
 ## Classes — two admitted roles, and how the signature maps
 
 "One function per file" governs **exported standalone functions**. A class holding several methods is not an exception to that rule and not a way around it; it is a different kind of symbol, admitted in exactly two roles:
