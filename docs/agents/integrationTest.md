@@ -25,7 +25,7 @@ In Rust the `Contract` of every block transcribes one entry of the node's `inter
 
 ### Configuration over the declared set (Rust)
 
-A block run over a family's declared set varies configuration only through the overrides of the factory params' builder, which carry the family's configuration (see [composition](composition.md#configuration-follows-ownership-rust)). Each member's selection comes from the family's declared-selection builder at its default configuration (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)). A concrete's own configuration is never varied in such a block; it is varied in that concrete's node, where the concrete is the subject.
+A block run over a family's declared set varies configuration only through the overrides of the factory params' builder, which carry the family's configuration (see [composition](composition.md#configuration-follows-ownership-rust)). Each member's selection, and any family-level value the member's declaration determines, come from the family's declared-selection builders at their defaults (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)). A concrete's own configuration is never varied in such a block; it is varied in that concrete's node, where the concrete is the subject.
 
 <a id="integration-private"></a>
 ## Private integration test (Rust)
