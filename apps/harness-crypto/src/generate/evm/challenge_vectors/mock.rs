@@ -1,3 +1,5 @@
+#![allow(dead_code, clippy::too_many_arguments)]
+
 use domain::{
     AssetIdentityHash, ParameterSetIdentifier, SuiteIdentifier, build_asset_identity_hash,
     build_parameter_set_identifier, build_suite_identifier,

@@ -9,13 +9,11 @@ use super::interface::*;
 use super::mock::*;
 use super::rejection_vectors;
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, FromFieldsParamsOverrides,
-    IEncodingContract, ToFieldsParamsOverrides, build_canonical_fields, build_from_fields_params,
-    build_to_fields_params,
+    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, IEncodingContract,
+    build_canonical_fields, build_from_fields_params, build_to_fields_params,
 };
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingDepsOverrides,
-    CreatePairingParamsOverrides, CreatePairingPayloadOverrides,
+    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
     G1OutsideSubgroupEncodingErrorReturn, G2OutsideSubgroupEncodingErrorReturn,
     G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload, IPairingArithmetic,
     IPairingConsumer, IPairingReference, MockIPairingAdapterFailureMode, PairingConcrete,

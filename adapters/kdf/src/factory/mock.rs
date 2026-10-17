@@ -1,4 +1,4 @@
-#![allow(clippy::expect_used)]
+#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
     CreateKeyDerivationDeps, CreateKeyDerivationParams, CreateKeyDerivationPayload,
@@ -328,15 +328,6 @@ pub fn build_create_key_derivation_deps(
 }
 
 #[derive(Default)]
-pub struct CreateKeyDerivationDepsCorruptions;
-
-pub fn invalidate_create_key_derivation_deps(
-    _corruptions: CreateKeyDerivationDepsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
-}
-
-#[derive(Default)]
 pub struct CreateKeyDerivationParamsOverrides {
     pub concrete: Option<KdfConcrete>,
     pub identifier: Option<KdfIdentifier>,
@@ -406,15 +397,6 @@ pub fn build_create_key_derivation_payload(
     _overrides: CreateKeyDerivationPayloadOverrides,
 ) -> CreateKeyDerivationPayload {
     CreateKeyDerivationPayload
-}
-
-#[derive(Default)]
-pub struct CreateKeyDerivationPayloadCorruptions;
-
-pub fn invalidate_create_key_derivation_payload(
-    _corruptions: CreateKeyDerivationPayloadCorruptions,
-) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]

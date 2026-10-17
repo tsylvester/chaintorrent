@@ -2873,7 +2873,6 @@ fn prove_transfer_returns_the_nonce_draw_refusal_unchanged() {
                                         kind: Some(RandomSourceKind::Mock(
                                             MockIRandomSourceAdapterFailureMode::FillBytesRefused,
                                         )),
-                                        ..Default::default()
                                     },
                                 ),
                                 CreateRandomSourcePayload,

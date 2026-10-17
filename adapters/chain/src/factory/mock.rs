@@ -1,3 +1,5 @@
+#![allow(dead_code, clippy::too_many_arguments)]
+
 use super::interface::{
     CHAIN_FORMS_INTERFACE_VERSION, ChainFormsDeclaration, ChainFormsIdentifier, IChainForms,
 };

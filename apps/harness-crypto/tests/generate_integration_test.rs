@@ -1,10 +1,5 @@
 #![cfg(feature = "mocks")]
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    
-)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use core::marker::PhantomData;
 
@@ -154,7 +149,8 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
             let text = std::fs::read_to_string(&file.path).expect("the emitted file reads");
             assert_eq!(
                 text.lines().count(),
-                self.count.get() as usize,
+                usize::try_from(self.count.get())
+                    .expect("a u32 count fits a usize on every supported target"),
                 "the file holds the configured count of records"
             );
             result

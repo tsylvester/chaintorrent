@@ -1,4 +1,4 @@
-#![allow(clippy::expect_used)]
+#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use chain::IChainForms;
 use core::convert::Infallible;
@@ -35,6 +35,7 @@ use zeroize::Zeroize;
 use crate::mint_statement::provides::{
     DELIVERY_STATEMENT_VERSION_ONE, DeliveryRelation, MintPurpose, TransferPurpose,
 };
+use crate::transfer_statement::provides::TransferFirstMessages;
 
 use super::interface::{
     AlgebraicMintStatement, AlgebraicStatement, AlgebraicTransferStatement,
@@ -346,12 +347,7 @@ fn mint_challenge<P: IPairingAdapter, F: IChainForms>(
 fn transfer_challenge<P: IPairingAdapter, F: IChainForms>(
     pairing: &P,
     statement: &AlgebraicTransferStatement<F, P::G1, P::G2>,
-    t_pk1: &P::G1,
-    t_c1: &P::G1,
-    t_c2: &P::G1,
-    t_pk2: &P::G2,
-    t_d1: &P::G2,
-    t_d2: &P::G2,
+    commitments: &TransferFirstMessages<P::G1, P::G2>,
 ) -> P::Scalar {
     mock_challenge::<P>(vec![
         context_bytes(&statement.context, statement.context.purpose.code()),
@@ -368,12 +364,12 @@ fn transfer_challenge<P: IPairingAdapter, F: IChainForms>(
         encoded_g1_bytes(pairing, &statement.new_envelope.c2),
         encoded_g2_bytes(pairing, &statement.new_envelope.d1),
         encoded_g2_bytes(pairing, &statement.new_envelope.d2),
-        encoded_g1_bytes(pairing, t_pk1),
-        encoded_g1_bytes(pairing, t_c1),
-        encoded_g1_bytes(pairing, t_c2),
-        encoded_g2_bytes(pairing, t_pk2),
-        encoded_g2_bytes(pairing, t_d1),
-        encoded_g2_bytes(pairing, t_d2),
+        encoded_g1_bytes(pairing, &commitments.pk1),
+        encoded_g1_bytes(pairing, &commitments.c1),
+        encoded_g1_bytes(pairing, &commitments.c2),
+        encoded_g2_bytes(pairing, &commitments.pk2),
+        encoded_g2_bytes(pairing, &commitments.d1),
+        encoded_g2_bytes(pairing, &commitments.d2),
     ])
 }
 
@@ -2068,18 +2064,24 @@ fn verify_transfer<P: IPairingArithmetic, F: IChainForms>(
             },
         ],
     );
-    let recomputed = transfer_challenge::<P, F>(
-        pairing, statement, &t_pk1, &t_c1, &t_c2, &t_pk2, &t_d1, &t_d2,
-    );
+    let commitments = TransferFirstMessages {
+        pk1: t_pk1,
+        c1: t_c1,
+        c2: t_c2,
+        pk2: t_pk2,
+        d1: t_d1,
+        d2: t_d2,
+    };
+    let recomputed = transfer_challenge::<P, F>(pairing, statement, &commitments);
     if !scalars_equal(pairing, &recomputed, challenge) {
         return false;
     }
     match first_messages {
         None => true,
         Some(messages) => {
-            g2_equal(pairing, &messages.pk2, &t_pk2)
-                && g2_equal(pairing, &messages.d1, &t_d1)
-                && g2_equal(pairing, &messages.d2, &t_d2)
+            g2_equal(pairing, &messages.pk2, &commitments.pk2)
+                && g2_equal(pairing, &messages.d1, &commitments.d1)
+                && g2_equal(pairing, &messages.d2, &commitments.d2)
         }
     }
 }
@@ -2327,16 +2329,15 @@ impl<'a, P: IPairingArithmetic, F: IChainForms> IDeliveryProofAdapter
                 },
             ],
         );
-        let challenge = transfer_challenge::<P, F>(
-            self.pairing,
-            statement,
-            &t_pk1,
-            &t_c1,
-            &t_c2,
-            &t_pk2,
-            &t_d1,
-            &t_d2,
-        );
+        let commitments = TransferFirstMessages {
+            pk1: t_pk1,
+            c1: t_c1,
+            c2: t_c2,
+            pk2: t_pk2,
+            d1: t_d1,
+            d2: t_d2,
+        };
+        let challenge = transfer_challenge::<P, F>(self.pairing, statement, &commitments);
         let responses = TransferResponses {
             x: response(
                 self.pairing,
@@ -2369,9 +2370,9 @@ impl<'a, P: IPairingArithmetic, F: IChainForms> IDeliveryProofAdapter
                     challenge,
                     responses,
                     first_messages: TransferSecondGroupFirstMessages {
-                        pk2: t_pk2,
-                        d1: t_d1,
-                        d2: t_d2,
+                        pk2: commitments.pk2,
+                        d1: commitments.d1,
+                        d2: commitments.d2,
                     },
                 }
             }

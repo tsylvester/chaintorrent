@@ -295,7 +295,6 @@ fn a_transfer_statement_survives_the_encoding_round_trip() {
                 let params = build_create_encoding_params(CreateEncodingParamsOverrides {
                     concrete: Some(selection.concrete),
                     identifier: Some(selection.identifier),
-                    ..Default::default()
                 });
 
                 create_encoding(&deps, params, CreateEncodingPayload)

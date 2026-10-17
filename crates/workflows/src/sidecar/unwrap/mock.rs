@@ -1,3 +1,5 @@
+#![allow(dead_code, clippy::too_many_arguments)]
+
 use super::interface::{
     UnwrapPieceGroupKeyDeps, UnwrapPieceGroupKeyParams, UnwrapPieceGroupKeyPayload,
     UnwrapPieceGroupKeyReturn, UnwrapPieceGroupKeySuccessReturn,
@@ -34,15 +36,6 @@ pub fn build_unwrap_piece_group_key_params(
     _overrides: UnwrapPieceGroupKeyParamsOverrides,
 ) -> UnwrapPieceGroupKeyParams {
     UnwrapPieceGroupKeyParams
-}
-
-#[derive(Default)]
-pub struct UnwrapPieceGroupKeyParamsCorruptions;
-
-pub fn invalidate_unwrap_piece_group_key_params(
-    _corruptions: UnwrapPieceGroupKeyParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]

@@ -1,3 +1,5 @@
+#![allow(dead_code, clippy::too_many_arguments)]
+
 use chain::IChainForms;
 use encoding::CanonicalFieldValue;
 use envelope::IKeyAgreementAdapter;

@@ -11,7 +11,7 @@ use chain::IChainForms;
 use encoding::{CanonicalFieldKind, IEncodingContract};
 use pairing::{
     EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload, G1GeneratorParams,
-    G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingReference,
+    G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingReference,
     ScalarFieldOrderParams, ScalarFieldOrderPayload, VerifierGroupArithmetic,
 };
 use proof::{

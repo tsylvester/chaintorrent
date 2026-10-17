@@ -1,3 +1,5 @@
+#![allow(dead_code, clippy::too_many_arguments)]
+
 use super::interface::{
     EvmChainIdentifierForm, EvmChainIdentifierFormConstructorParams, EvmEntitlementForm,
     EvmEntitlementFormConstructorParams, EvmForms, EvmFormsConstructorParams, EvmIdentityForm,

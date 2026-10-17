@@ -1,4 +1,10 @@
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![allow(
+    dead_code,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::too_many_arguments
+)]
 
 use super::interface::{
     Bn254Halo2curvesEncodedGt, Bn254Halo2curvesEncodedScalar, Bn254Halo2curvesG1,

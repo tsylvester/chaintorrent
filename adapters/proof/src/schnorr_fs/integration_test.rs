@@ -1,10 +1,10 @@
 #![allow(clippy::expect_used)]
 
+use super::challenge::provides::SCHNORR_FS_CHALLENGE_TAG;
 use super::provides::{
-    SCHNORR_FS_CHALLENGE_TAG, SchnorrFsDeliveryProof,
-    SchnorrFsDeliveryProofConstructorParamsOverrides, SchnorrFsMintProofOverrides, SchnorrFsProof,
-    SchnorrFsTransferProofOverrides, build_schnorr_fs_delivery_proof, build_schnorr_fs_mint_proof,
-    build_schnorr_fs_transfer_proof,
+    SchnorrFsDeliveryProof, SchnorrFsDeliveryProofConstructorParamsOverrides,
+    SchnorrFsMintProofOverrides, SchnorrFsProof, SchnorrFsTransferProofOverrides,
+    build_schnorr_fs_delivery_proof, build_schnorr_fs_mint_proof, build_schnorr_fs_transfer_proof,
 };
 use crate::factory::provides::{
     AlgebraicMintStatementOverrides, AlgebraicStatement, AlgebraicTransferStatementOverrides,

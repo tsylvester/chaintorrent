@@ -1,4 +1,4 @@
-#![allow(clippy::expect_used)]
+#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 #[cfg(test)]
 use super::interface::{Blake3KeyedKdf, Blake3KeyedKdfConstructorParams};
@@ -6,8 +6,6 @@ use super::interface::{Blake3KeyedKdf, Blake3KeyedKdfConstructorParams};
 use crate::factory::provides::{DerivationPurpose, reference_key_material};
 #[cfg(any(test, feature = "mocks"))]
 use blake3::Hasher;
-#[cfg(test)]
-use serde_json::{Map, Value};
 
 #[cfg(test)]
 #[derive(Default)]
@@ -18,17 +16,6 @@ pub fn build_blake3_keyed_kdf_constructor_params(
     _overrides: Blake3KeyedKdfConstructorParamsOverrides,
 ) -> Blake3KeyedKdfConstructorParams {
     Blake3KeyedKdfConstructorParams
-}
-
-#[cfg(test)]
-#[derive(Default)]
-pub struct Blake3KeyedKdfConstructorParamsCorruptions;
-
-#[cfg(test)]
-pub fn invalidate_blake3_keyed_kdf_constructor_params(
-    _corruptions: Blake3KeyedKdfConstructorParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
 }
 
 #[cfg(test)]

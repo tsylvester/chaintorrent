@@ -1,3 +1,5 @@
+#![allow(dead_code, clippy::too_many_arguments)]
+
 use super::interface::{
     ChainFormsConcrete, ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsDeps,
     CreateChainFormsParams, CreateChainFormsPayload, CreateChainFormsReturn,

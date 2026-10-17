@@ -9,12 +9,14 @@ publish = false
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
+dead_code = "warn"
 
 [workspace.lints.clippy]
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
 as_conversions = "deny"
+too_many_arguments = "warn"
 
 [patch.crates-io]
 librqbit = { git = "https://github.com/tsylvester/rqbit", branch = "chaintorrent-overlay" }

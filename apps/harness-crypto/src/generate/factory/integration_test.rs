@@ -1,9 +1,4 @@
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    
-)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use core::marker::PhantomData;
 use std::collections::HashSet;

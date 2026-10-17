@@ -1,4 +1,10 @@
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![allow(
+    dead_code,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::too_many_arguments
+)]
 
 use super::interface::{DerivationContext, DerivationContextConstructorParams};
 use crate::asset_identity::provides::{AssetIdentity, build_asset_identity};

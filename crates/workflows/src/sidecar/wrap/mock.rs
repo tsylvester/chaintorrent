@@ -1,4 +1,4 @@
-#![allow(clippy::expect_used)]
+#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
     PIECE_GROUP_KEY_LENGTH, PieceGroupKey, PieceGroupKeyConstructorParams, WrapPieceGroupKeyDeps,
@@ -33,15 +33,6 @@ pub fn build_wrap_piece_group_key_params(
     _overrides: WrapPieceGroupKeyParamsOverrides,
 ) -> WrapPieceGroupKeyParams {
     WrapPieceGroupKeyParams
-}
-
-#[derive(Default)]
-pub struct WrapPieceGroupKeyParamsCorruptions;
-
-pub fn invalidate_wrap_piece_group_key_params(
-    _corruptions: WrapPieceGroupKeyParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]

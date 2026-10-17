@@ -1714,7 +1714,6 @@ fn a_proof_against_a_statement_differing_in_one_field_is_refused() {
                                     asset_identity_hash: Some(build_asset_identity_hash(
                                         AssetIdentityHashConstructorParamsOverrides {
                                             bytes: Some([0xB4; ASSET_IDENTITY_HASH_LENGTH]),
-                                            ..Default::default()
                                         },
                                     )),
                                     ..Default::default()
@@ -1732,7 +1731,6 @@ fn a_proof_against_a_statement_differing_in_one_field_is_refused() {
                                     parameter_set_identifier: Some(build_parameter_set_identifier(
                                         ParameterSetIdentifierConstructorParamsOverrides {
                                             bytes: Some([0xB5; PARAMETER_SET_IDENTIFIER_LENGTH]),
-                                            ..Default::default()
                                         },
                                     )),
                                     ..Default::default()
@@ -2034,7 +2032,6 @@ fn a_proof_against_a_statement_differing_in_one_field_is_refused() {
                                     asset_identity_hash: Some(build_asset_identity_hash(
                                         AssetIdentityHashConstructorParamsOverrides {
                                             bytes: Some([0xB4; ASSET_IDENTITY_HASH_LENGTH]),
-                                            ..Default::default()
                                         },
                                     )),
                                     ..Default::default()
@@ -2052,7 +2049,6 @@ fn a_proof_against_a_statement_differing_in_one_field_is_refused() {
                                     parameter_set_identifier: Some(build_parameter_set_identifier(
                                         ParameterSetIdentifierConstructorParamsOverrides {
                                             bytes: Some([0xB5; PARAMETER_SET_IDENTIFIER_LENGTH]),
-                                            ..Default::default()
                                         },
                                     )),
                                     ..Default::default()
@@ -2562,7 +2558,6 @@ fn a_proof_with_a_changed_response_or_challenge_is_refused() {
                                         ),
                                         responses: Some(variant_responses),
                                         second_group_first_messages: Some(first_messages.clone()),
-                                        ..Default::default()
                                     },
                                 ),
                             )
@@ -2598,7 +2593,6 @@ fn a_proof_with_a_changed_response_or_challenge_is_refused() {
                                 challenge: Some(challenge.clone()),
                                 responses: Some(responses.clone()),
                                 second_group_first_messages: Some(first_messages.clone()),
-                                ..Default::default()
                             },
                         ))
                         .expect("the wire holds this form's counts"),
@@ -2701,7 +2695,6 @@ fn a_proof_with_a_changed_response_or_challenge_is_refused() {
                                         ),
                                         responses: Some(variant_responses),
                                         second_group_first_messages: Some(first_messages.clone()),
-                                        ..Default::default()
                                     },
                                 ),
                             )
@@ -2737,7 +2730,6 @@ fn a_proof_with_a_changed_response_or_challenge_is_refused() {
                                 challenge: Some(challenge.clone()),
                                 responses: Some(responses.clone()),
                                 second_group_first_messages: Some(first_messages.clone()),
-                                ..Default::default()
                             },
                         ))
                         .expect("the wire holds this form's counts"),

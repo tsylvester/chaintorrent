@@ -1,8 +1,9 @@
 #![allow(
+    dead_code,
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::panic,
-    
+    clippy::too_many_arguments
 )]
 
 use core::convert::Infallible;
@@ -222,7 +223,10 @@ fn vector_kind_size_value(size: VectorKindSize) -> Value {
             fields.insert("count".to_string(), Value::from(count.get()));
             fields.insert(
                 "message_length".to_string(),
-                Value::from(message_length as u64),
+                Value::from(
+                    u64::try_from(message_length)
+                        .expect("a usize fits a u64 on every supported target"),
+                ),
             );
             let mut size_fields = Map::new();
             size_fields.insert("DrawnMessages".to_string(), Value::Object(fields));
@@ -293,9 +297,11 @@ pub fn invalidate_vector_kind_quantities(corruptions: VectorKindQuantitiesCorrup
     );
     fields.insert(
         "message_length".to_string(),
-        quantities
-            .message_length
-            .map_or(Value::Null, |length| Value::from(length as u64)),
+        quantities.message_length.map_or(Value::Null, |length| {
+            Value::from(
+                u64::try_from(length).expect("a usize fits a u64 on every supported target"),
+            )
+        }),
     );
     if let Some(count) = corruptions.count {
         fields.insert("count".to_string(), count);

@@ -1,4 +1,4 @@
-#![allow(clippy::expect_used)]
+#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
     MintFirstMessages, MintPurpose, MintStatement, MintStatementDescription,
@@ -12,8 +12,8 @@ use domain::{
     build_parameter_set_identifier, build_secret, build_suite_identifier,
 };
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldParamsOverrides,
-    ICanonicalField, ToFieldParams, build_from_field_params,
+    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, ICanonicalField, ToFieldParams,
+    build_from_field_params,
 };
 use envelope::{
     EnvelopeComponents, EnvelopeComponentsOverrides, PublicKeysComponents,
@@ -323,7 +323,7 @@ pub fn build_mint_statement_description<'a, P: IPairingAdapter, F: IChainForms>(
 
 fn form_from_seed<T: ICanonicalField>(seed: u8) -> T {
     T::from_field(
-        build_from_field_params(FromFieldParamsOverrides::default()),
+        build_from_field_params(Default::default()),
         seeded_field(T::KIND, seed),
     )
     .expect("a constant of the declared kind is admitted")

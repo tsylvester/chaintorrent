@@ -9,16 +9,14 @@ use super::group_vectors;
 use super::interface::*;
 use super::mock::*;
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, FromFieldsParamsOverrides,
-    IEncodingContract, ToFieldsParamsOverrides, build_canonical_fields, build_from_fields_params,
-    build_to_fields_params,
+    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, IEncodingContract,
+    build_canonical_fields, build_from_fields_params, build_to_fields_params,
 };
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingDepsOverrides,
-    CreatePairingParamsOverrides, CreatePairingPayload, IPairingArithmetic, IPairingConsumer,
-    IPairingReference, MockIPairingAdapterFailureMode, PairingConcrete,
-    SampleUniformScalarErrorReturn, build_create_pairing_deps, build_create_pairing_params,
-    create_pairing,
+    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
+    CreatePairingPayload, IPairingArithmetic, IPairingConsumer, IPairingReference,
+    MockIPairingAdapterFailureMode, PairingConcrete, SampleUniformScalarErrorReturn,
+    build_create_pairing_deps, build_create_pairing_params, create_pairing,
 };
 use random::{
     CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,

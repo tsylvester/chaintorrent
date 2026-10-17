@@ -1,4 +1,10 @@
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![allow(
+    dead_code,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::too_many_arguments
+)]
 
 use super::interface::{
     AddG1Params, AddG1Payload, AddG1Return, AddG1SuccessReturn, AddG2Params, AddG2Payload,
@@ -1588,7 +1594,8 @@ impl ISampleUniformScalar for MockScalar {
         }
         let mut bytes = [0u8; 16];
         bytes.copy_from_slice(payload.uniform.expose());
-        let residue = (u128::from_be_bytes(bytes) % u128::from(MOCK_GROUP_ORDER)) as u64;
+        let residue = u64::try_from(u128::from_be_bytes(bytes) % u128::from(MOCK_GROUP_ORDER))
+            .expect("a residue below the u64 group order fits a u64");
         let Ok(scalar) = Secret::try_new(SecretConstructorParams {
             value: MockScalar { residue },
         });

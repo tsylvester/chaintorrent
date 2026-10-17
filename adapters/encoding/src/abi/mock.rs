@@ -1,4 +1,4 @@
-#![allow(clippy::expect_used)]
+#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 #[cfg(test)]
 use super::interface::{AbiEncoding, AbiEncodingConstructorParams};

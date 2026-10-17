@@ -1,11 +1,11 @@
-#![allow(clippy::expect_used)]
+#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
-    ChallengeDeps, ChallengeParams, ChallengePayload, ChallengeReturn, ChallengeSuccessReturn,
-    ChallengeTranscript,
+    ChallengeDeps, ChallengeFn, ChallengeParams, ChallengePayload, ChallengeReturn,
+    ChallengeSuccessReturn, ChallengeTranscript,
 };
 use chain::IChainForms;
-use domain::{SecretConstructorParamsOverrides, build_secret};
+use domain::build_secret;
 use encoding::IEncoderAdapter;
 use hash_to_scalar::{DomainTag, IHashToScalarAdapter};
 use pairing::{
@@ -68,6 +68,7 @@ where
     P: IPairingAdapter<Scalar = S>,
     F: IChainForms,
 {
+    let _: ChallengeFn<S, E, P, F> = mock_challenge::<S, E, P, F>;
     let scalar = S::sample_from_uniform_bytes(
         SampleUniformScalarParams,
         SampleUniformScalarPayload {

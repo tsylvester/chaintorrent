@@ -1,4 +1,4 @@
-#![allow(clippy::expect_used)]
+#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
     CreateHashToScalarDeps, CreateHashToScalarParams, CreateHashToScalarPayload,
@@ -265,15 +265,6 @@ pub fn build_create_hash_to_scalar_deps(
 }
 
 #[derive(Default)]
-pub struct CreateHashToScalarDepsCorruptions;
-
-pub fn invalidate_create_hash_to_scalar_deps(
-    _corruptions: CreateHashToScalarDepsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
-}
-
-#[derive(Default)]
 pub struct CreateHashToScalarParamsOverrides {
     pub concrete: Option<HashToScalarConcrete>,
     pub identifier: Option<HashToScalarIdentifier>,
@@ -333,15 +324,6 @@ pub fn build_create_hash_to_scalar_payload(
     _overrides: CreateHashToScalarPayloadOverrides,
 ) -> CreateHashToScalarPayload {
     CreateHashToScalarPayload
-}
-
-#[derive(Default)]
-pub struct CreateHashToScalarPayloadCorruptions;
-
-pub fn invalidate_create_hash_to_scalar_payload(
-    _corruptions: CreateHashToScalarPayloadCorruptions,
-) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]

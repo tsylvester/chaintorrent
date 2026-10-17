@@ -1,4 +1,10 @@
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![allow(
+    dead_code,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::too_many_arguments
+)]
 
 #[cfg(test)]
 use super::BN254_SEED;
@@ -214,7 +220,7 @@ pub(crate) fn gt_with_sequential_coefficients() -> PairingOutput<Bn254> {
 pub(crate) fn sequential_gt_encoding() -> Vec<u8> {
     let mut bytes = vec![0u8; 384];
     for i in 0..12 {
-        bytes[32 * i + 31] = (i + 1) as u8;
+        bytes[32 * i + 31] = u8::try_from(i + 1).expect("a position below twelve fits a u8");
     }
     bytes
 }

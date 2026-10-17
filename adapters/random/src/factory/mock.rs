@@ -1,4 +1,10 @@
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![allow(
+    dead_code,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::too_many_arguments
+)]
 
 use super::interface::{
     CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload,
@@ -121,7 +127,8 @@ impl IRandomSourceAdapter for MockIRandomSourceAdapter {
             mixed ^= mixed >> 27;
             mixed = mixed.wrapping_mul(0x94d0_49bb_1331_11eb);
             mixed ^= mixed >> 31;
-            *byte = mixed as u8;
+            *byte =
+                u8::try_from(mixed & 0xff).expect("a value masked to its low eight bits fits a u8");
         }
         Ok(FillBytesSuccessReturn {
             bytes: build_secret(buffer, Default::default()),

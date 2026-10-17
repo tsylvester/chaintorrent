@@ -1466,7 +1466,6 @@ fn every_concrete_rejects_a_capsule_under_another_parameter_set() {
                             vec![0xbu8; P::Scalar::UNIFORM_BYTES_LENGTH],
                             Default::default(),
                         )),
-                        ..Default::default()
                     }),
                 )
                 .expect("the other parameter set's setup admits its uniform inputs");

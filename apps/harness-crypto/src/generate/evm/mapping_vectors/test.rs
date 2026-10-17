@@ -2,9 +2,8 @@
 
 use domain::AssetIdentityHashTryNewErrorReturn;
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, FromFieldsParamsOverrides,
-    IEncodingContract, ToFieldsParamsOverrides, build_canonical_fields, build_from_fields_params,
-    build_to_fields_params,
+    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, IEncodingContract,
+    build_canonical_fields, build_from_fields_params, build_to_fields_params,
 };
 use envelope::{
     KeyAgreementDeclaration, KeyAgreementDeclarationOverrides, build_key_agreement_declaration,

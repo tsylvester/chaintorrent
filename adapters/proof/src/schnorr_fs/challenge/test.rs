@@ -106,7 +106,6 @@ fn challenge_hashes_the_encoding_of_a_mint_transcript_under_the_tag() {
                             );
                             let tag = build_domain_tag(DomainTagConstructorParamsOverrides {
                                 bytes: Some(SCHNORR_FS_CHALLENGE_TAG.to_vec()),
-                                ..Default::default()
                             });
                             let statement = build_mint_statement::<P, F>(
                                 self.pairing,
@@ -290,7 +289,6 @@ fn challenge_hashes_the_encoding_of_a_transfer_transcript_under_the_tag() {
                             );
                             let tag = build_domain_tag(DomainTagConstructorParamsOverrides {
                                 bytes: Some(SCHNORR_FS_CHALLENGE_TAG.to_vec()),
-                                ..Default::default()
                             });
                             let statement = build_transfer_statement::<P, F>(
                                 self.pairing,
@@ -482,7 +480,6 @@ fn challenge_returns_the_hash_to_scalar_refusal_unchanged() {
                             );
                             let tag = build_domain_tag(DomainTagConstructorParamsOverrides {
                                 bytes: Some(SCHNORR_FS_CHALLENGE_TAG.to_vec()),
-                                ..Default::default()
                             });
                             let statement = build_mint_statement::<P, F>(
                                 self.pairing,

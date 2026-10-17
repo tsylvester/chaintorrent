@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use core::marker::PhantomData;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use super::super::factory::provides::{
     EmitErrorReturn, EmittedFile, IGenerateAdapter, VectorKind, VectorKindSettings,
@@ -573,7 +573,8 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
         {
             Some(VectorKindSize::Drawn { count })
             | Some(VectorKindSize::DrawnTerms { count, .. })
-            | Some(VectorKindSize::DrawnMessages { count, .. }) => count.get() as usize,
+            | Some(VectorKindSize::DrawnMessages { count, .. }) => usize::try_from(count.get())
+                .expect("a u32 count fits a usize on every supported target"),
             _ => panic!("the kind carries a drawn count"),
         }
     }

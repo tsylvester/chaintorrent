@@ -1,9 +1,4 @@
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    
-)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use super::super::group_vectors::provides::{
     VectorCount, VectorCountConstructorParamsOverrides, build_vector_count,
@@ -109,7 +104,11 @@ fn every_run_emits_the_configured_count_of_records_with_distinct_secrets() {
 
             // Assert
             let success = result.expect("the declared selections admit the call");
-            assert_eq!(success.records.len(), self.count.get() as usize);
+            assert_eq!(
+                success.records.len(),
+                usize::try_from(self.count.get())
+                    .expect("a u32 count fits a usize on every supported target")
+            );
             for (index, record) in success.records.iter().enumerate() {
                 for other in success.records.iter().skip(index + 1) {
                     assert_ne!(record.x, other.x);
@@ -312,7 +311,11 @@ fn every_record_encodes_its_scalars_in_32_bytes_and_its_points_in_the_pairings_w
 
             // Assert
             let success = result.expect("the declared selections admit the call");
-            assert_eq!(success.records.len(), self.count.get() as usize);
+            assert_eq!(
+                success.records.len(),
+                usize::try_from(self.count.get())
+                    .expect("a u32 count fits a usize on every supported target")
+            );
             for record in &success.records {
                 assert_eq!(record.pk1.len(), reference_g1.bytes.as_ref().len());
                 assert_eq!(record.r1.len(), reference_g1.bytes.as_ref().len());
@@ -525,7 +528,11 @@ fn every_record_carries_public_keys_that_are_the_generators_times_their_secrets(
 
             // Assert
             let success = result.expect("the declared selections admit the call");
-            assert_eq!(success.records.len(), self.count.get() as usize);
+            assert_eq!(
+                success.records.len(),
+                usize::try_from(self.count.get())
+                    .expect("a u32 count fits a usize on every supported target")
+            );
             for record in &success.records {
                 let Ok(x) = self.pairing.decode_scalar(DecodeScalarParams, &record.x) else {
                     panic!("the record's x is a scalar encoding the pairing admits")
@@ -736,7 +743,11 @@ fn every_record_carries_proofs_the_key_agreement_admits() {
                 build_possession_vectors_payload(Default::default()),
             );
             let success = result.expect("the declared selections admit the call");
-            assert_eq!(success.records.len(), self.count.get() as usize);
+            assert_eq!(
+                success.records.len(),
+                usize::try_from(self.count.get())
+                    .expect("a u32 count fits a usize on every supported target")
+            );
             let mut keys = Vec::new();
             let mut possessions = Vec::new();
             for record in &success.records {

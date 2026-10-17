@@ -1,4 +1,4 @@
-#![allow(clippy::expect_used)]
+#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
     CapsuleComponents, CapsuleComponentsParams, CapsuleComponentsPayload, CapsuleComponentsReturn,
@@ -1210,13 +1210,6 @@ pub fn build_derive_identity_params(
 }
 
 #[derive(Default)]
-pub struct DeriveIdentityParamsCorruptions;
-
-pub fn invalidate_derive_identity_params(_corruptions: DeriveIdentityParamsCorruptions) -> Value {
-    Value::Object(Map::new())
-}
-
-#[derive(Default)]
 pub struct DeriveIdentityPayloadOverrides<'a> {
     pub identity: Option<KemIdentity<'a>>,
 }
@@ -1248,13 +1241,6 @@ pub struct IssueParamsOverrides;
 
 pub fn build_issue_params(_overrides: IssueParamsOverrides) -> IssueParams {
     IssueParams
-}
-
-#[derive(Default)]
-pub struct IssueParamsCorruptions;
-
-pub fn invalidate_issue_params(_corruptions: IssueParamsCorruptions) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]
@@ -1308,13 +1294,6 @@ pub fn build_rerandomize_params(_overrides: RerandomizeParamsOverrides) -> Reran
 }
 
 #[derive(Default)]
-pub struct RerandomizeParamsCorruptions;
-
-pub fn invalidate_rerandomize_params(_corruptions: RerandomizeParamsCorruptions) -> Value {
-    Value::Object(Map::new())
-}
-
-#[derive(Default)]
 pub struct RerandomizePayloadOverrides {
     pub uniform: Option<Secret<Vec<u8>>>,
 }
@@ -1362,13 +1341,6 @@ pub struct IsValidParamsOverrides;
 
 pub fn build_is_valid_params(_overrides: IsValidParamsOverrides) -> IsValidParams {
     IsValidParams
-}
-
-#[derive(Default)]
-pub struct IsValidParamsCorruptions;
-
-pub fn invalidate_is_valid_params(_corruptions: IsValidParamsCorruptions) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]
@@ -1423,13 +1395,6 @@ pub fn build_encapsulate_params(_overrides: EncapsulateParamsOverrides) -> Encap
 }
 
 #[derive(Default)]
-pub struct EncapsulateParamsCorruptions;
-
-pub fn invalidate_encapsulate_params(_corruptions: EncapsulateParamsCorruptions) -> Value {
-    Value::Object(Map::new())
-}
-
-#[derive(Default)]
 pub struct EncapsulatePayloadOverrides {
     pub uniform: Option<Secret<Vec<u8>>>,
 }
@@ -1468,13 +1433,6 @@ pub struct IsWellFormedParamsOverrides;
 
 pub fn build_is_well_formed_params(_overrides: IsWellFormedParamsOverrides) -> IsWellFormedParams {
     IsWellFormedParams
-}
-
-#[derive(Default)]
-pub struct IsWellFormedParamsCorruptions;
-
-pub fn invalidate_is_well_formed_params(_corruptions: IsWellFormedParamsCorruptions) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]
@@ -1529,13 +1487,6 @@ pub struct DecapsulateParamsOverrides;
 
 pub fn build_decapsulate_params(_overrides: DecapsulateParamsOverrides) -> DecapsulateParams {
     DecapsulateParams
-}
-
-#[derive(Default)]
-pub struct DecapsulateParamsCorruptions;
-
-pub fn invalidate_decapsulate_params(_corruptions: DecapsulateParamsCorruptions) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]
@@ -1835,15 +1786,6 @@ pub fn build_credential_components_params(
 }
 
 #[derive(Default)]
-pub struct CredentialComponentsParamsCorruptions;
-
-pub fn invalidate_credential_components_params(
-    _corruptions: CredentialComponentsParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
-}
-
-#[derive(Default)]
 pub struct CredentialComponentsPayloadOverrides;
 
 pub fn build_credential_components_payload<'a, C>(
@@ -1902,15 +1844,6 @@ pub fn build_credential_from_components_params(
     _overrides: CredentialFromComponentsParamsOverrides,
 ) -> CredentialFromComponentsParams {
     CredentialFromComponentsParams
-}
-
-#[derive(Default)]
-pub struct CredentialFromComponentsParamsCorruptions;
-
-pub fn invalidate_credential_from_components_params(
-    _corruptions: CredentialFromComponentsParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
 }
 
 pub struct CredentialFromComponentsPayloadOverrides<G1, G2> {
@@ -1975,15 +1908,6 @@ pub fn build_parameter_set_components_params(
 }
 
 #[derive(Default)]
-pub struct ParameterSetComponentsParamsCorruptions;
-
-pub fn invalidate_parameter_set_components_params(
-    _corruptions: ParameterSetComponentsParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
-}
-
-#[derive(Default)]
 pub struct ParameterSetComponentsPayloadOverrides;
 
 pub fn build_parameter_set_components_payload<'a, PS>(
@@ -2042,15 +1966,6 @@ pub fn build_parameter_set_from_components_params(
     _overrides: ParameterSetFromComponentsParamsOverrides,
 ) -> ParameterSetFromComponentsParams {
     ParameterSetFromComponentsParams
-}
-
-#[derive(Default)]
-pub struct ParameterSetFromComponentsParamsCorruptions;
-
-pub fn invalidate_parameter_set_from_components_params(
-    _corruptions: ParameterSetFromComponentsParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
 }
 
 pub struct ParameterSetFromComponentsPayloadOverrides<G1, G2> {
@@ -2115,15 +2030,6 @@ pub fn build_identity_element_components_params(
 }
 
 #[derive(Default)]
-pub struct IdentityElementComponentsParamsCorruptions;
-
-pub fn invalidate_identity_element_components_params(
-    _corruptions: IdentityElementComponentsParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
-}
-
-#[derive(Default)]
 pub struct IdentityElementComponentsPayloadOverrides;
 
 pub fn build_identity_element_components_payload<'a, IE>(
@@ -2182,15 +2088,6 @@ pub fn build_capsule_components_params(
     _overrides: CapsuleComponentsParamsOverrides,
 ) -> CapsuleComponentsParams {
     CapsuleComponentsParams
-}
-
-#[derive(Default)]
-pub struct CapsuleComponentsParamsCorruptions;
-
-pub fn invalidate_capsule_components_params(
-    _corruptions: CapsuleComponentsParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]
@@ -2262,15 +2159,6 @@ pub fn build_capsule_from_components_params(
     CapsuleFromComponentsParams
 }
 
-#[derive(Default)]
-pub struct CapsuleFromComponentsParamsCorruptions;
-
-pub fn invalidate_capsule_from_components_params(
-    _corruptions: CapsuleFromComponentsParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
-}
-
 pub struct CapsuleFromComponentsPayloadOverrides<G1, G2> {
     pub components: Option<CapsuleComponents<G1, G2>>,
 }
@@ -2333,15 +2221,6 @@ pub fn build_master_scalar_components_params(
 }
 
 #[derive(Default)]
-pub struct MasterScalarComponentsParamsCorruptions;
-
-pub fn invalidate_master_scalar_components_params(
-    _corruptions: MasterScalarComponentsParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
-}
-
-#[derive(Default)]
 pub struct MasterScalarComponentsPayloadOverrides;
 
 pub fn build_master_scalar_components_payload<'a, M>(
@@ -2399,15 +2278,6 @@ pub fn build_master_scalar_from_components_params(
     _overrides: MasterScalarFromComponentsParamsOverrides,
 ) -> MasterScalarFromComponentsParams {
     MasterScalarFromComponentsParams
-}
-
-#[derive(Default)]
-pub struct MasterScalarFromComponentsParamsCorruptions;
-
-pub fn invalidate_master_scalar_from_components_params(
-    _corruptions: MasterScalarFromComponentsParamsCorruptions,
-) -> Value {
-    Value::Object(Map::new())
 }
 
 pub struct MasterScalarFromComponentsPayloadOverrides<S: Zeroize> {
@@ -2480,13 +2350,6 @@ pub struct ConsumeKemParamsOverrides;
 
 pub fn build_consume_kem_params(_overrides: ConsumeKemParamsOverrides) -> ConsumeKemParams {
     ConsumeKemParams
-}
-
-#[derive(Default)]
-pub struct ConsumeKemParamsCorruptions;
-
-pub fn invalidate_consume_kem_params(_corruptions: ConsumeKemParamsCorruptions) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]
@@ -2585,13 +2448,6 @@ pub struct CreateKemPayloadOverrides;
 
 pub fn build_create_kem_payload(_overrides: CreateKemPayloadOverrides) -> CreateKemPayload {
     CreateKemPayload
-}
-
-#[derive(Default)]
-pub struct CreateKemPayloadCorruptions;
-
-pub fn invalidate_create_kem_payload(_corruptions: CreateKemPayloadCorruptions) -> Value {
-    Value::Object(Map::new())
 }
 
 #[derive(Default)]

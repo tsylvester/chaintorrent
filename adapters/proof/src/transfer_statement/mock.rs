@@ -1,4 +1,4 @@
-#![allow(clippy::expect_used)]
+#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
     TransferFirstMessages, TransferStatement, TransferStatementDescription,
@@ -14,8 +14,8 @@ use domain::{
 };
 use encoding::{
     CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, CanonicalFieldsOverrides,
-    FromFieldParamsOverrides, ICanonicalField, ToFieldParamsOverrides, build_canonical_fields,
-    build_from_field_params, build_to_field_params,
+    ICanonicalField, ToFieldParamsOverrides, build_canonical_fields, build_from_field_params,
+    build_to_field_params,
 };
 use envelope::{
     EnvelopeComponents, EnvelopeComponentsOverrides, PublicKeysComponents,
@@ -359,7 +359,7 @@ pub fn build_transfer_statement_description<'a, P: IPairingAdapter, F: IChainFor
 
 fn form_from_seed<T: ICanonicalField>(seed: u8) -> T {
     T::from_field(
-        build_from_field_params(FromFieldParamsOverrides::default()),
+        build_from_field_params(Default::default()),
         seeded_field(T::KIND, seed),
     )
     .expect("a constant of the declared kind is admitted")
