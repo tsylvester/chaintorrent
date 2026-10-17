@@ -23,7 +23,7 @@ Never silence a valid RED error. Do not add `@ts-*` or `@es*` suppressions, crea
 
 The workspace lint table denies constructs in production code that test code legitimately uses, such as `expect` in a builder. Test modules and mock files are outside that scope, and the Rust form declares it: each test module and `mock.rs` carries one module-level `allow` naming only the lint-table entries it is exempt from. That attribute is part of the file's scope, written when the file is created. An `allow` anywhere else, or one naming a lint outside the lint table, is a suppression and is forbidden like any other.
 
-`dead_code` is a workspace lint-table entry. A mock file that complies with [mocks](mocks.md) names it in its module-level `allow`, because its surface is complete whether or not a consumer uses it today. No other file names it: dead code in production code, `interface.rs`, `provides.rs`, or a test module is a defect, and it is removed or given a consumer. No file names `clippy::as_conversions`.
+`dead_code` is a workspace lint-table entry. A mock file that complies with [mocks](mocks.md) names it in its module-level `allow`, because its surface is complete whether or not a consumer uses it today. No other file names it: dead code in production code, `interface.rs`, `provides.rs`, or a test module is a defect, and it is removed or given a consumer. `clippy::too_many_arguments` is a workspace lint-table entry, and a mock file names it, because [mocks](mocks.md) sets a builder's arity by its handed fields; no other file names it. No file names `clippy::as_conversions`.
 
 Lint-clean is judged on the workspace checks over all targets and all features.
 
