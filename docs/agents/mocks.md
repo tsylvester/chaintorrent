@@ -19,6 +19,8 @@ Provide mocks only for symbols owned by the interface being mocked:
 - a builder for every owned **object type**, and an invalidator for every owned object type that has an untrusted form (see [Invalidators](#invalidators--corruption-typed-unknown));
 - a mock for every owned **function**.
 
+Every symbol this ownership rule requires is provided whether or not a consumer uses it today. A mock is legitimately dead only when it breaks a construction rule, and then it is removed.
+
 An owned symbol that is neither an object type nor a function needs no mock — an enum, a union or primitive/string-literal type alias, or a constant is used directly by its production value or type, and the object-type *members* of a union each get their own builder. Guards are not mocked here (see [guards](guards.md)).
 
 Do **not** mock:
@@ -231,7 +233,7 @@ const { foo: _omit, ...missingFoo } = buildMyObject();
 
 One invalidator per owned object type that has an untrusted form, a rendering of its values as data, composing its builder for the valid baseline. Keys are checked (`keyof T`); values are unrestricted; the return is `unknown`, so **no cast is ever needed** at the call site.
 
-In Rust a type with no untrusted form takes no invalidator and no corruptions struct: deps, which are never serialized (see [composition](composition.md#parameter-jurisdiction--what-is-trusted-vs-proven)), and a type holding a handed value, which has no rendering as data (see [Fields with no default](#fields-with-no-default-rust)). An invalidator whose rendering passes through a collaborator, such as a point encoded by the pairing, takes that collaborator's instance as a leading parameter ahead of `corruptions`.
+In Rust a type with no untrusted form takes no invalidator and no corruptions struct: deps, which are never serialized (see [composition](composition.md#parameter-jurisdiction--what-is-trusted-vs-proven)), and a type holding a handed value, which has no rendering as data (see [Fields with no default](#fields-with-no-default-rust)). A fieldless type takes a builder and fieldless overrides, and no corruptions or invalidator, because it has no rendering to corrupt. An invalidator whose rendering passes through a collaborator, such as a point encoded by the pairing, takes that collaborator's instance as a leading parameter ahead of `corruptions`.
 
 ```ts
 export type MyObjectCorruptions = { [K in keyof MyObject]?: unknown };

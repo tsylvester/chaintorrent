@@ -6,7 +6,7 @@ Cited by: construction view (workplan node `interface` element) and implementati
 
 ## Strict typing
 
-- Explicit types everywhere for any object the repo owns. No `any`, `as`, `as const`, inline ad-hoc types, or casts. In Rust: no numeric `as` on a repo-owned value (`TryFrom` instead), no `unwrap`, `expect`, or `panic!` in production code, no `Box<dyn Any>`, no `unsafe`. A mock file, which exists only for tests, carries `expect` on a conversion or construction whose success the built values guarantee, the message naming the invariant (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
+- Explicit types everywhere for any object the repo owns. No `any`, `as`, `as const`, inline ad-hoc types, or casts. In Rust: no numeric `as` in any file, mock and test files included; the conversion is explicit through `TryFrom`. No `unwrap`, `expect`, or `panic!` in production code, no `Box<dyn Any>`, no `unsafe`. A mock or test file carries `expect` on a conversion or construction whose success the built values guarantee, the message naming the invariant (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
 - Every object and variable is typed. If you find an untyped var or object while working, stop, report the discovery, propose the node to type it, and halt (see [discovery-halt](discovery-halt.md)).
 - Construct full objects that satisfy their interface. Compose complex objects from smaller typed components. Never rely on defaults, fallbacks, or backfilling to "heal" missing data.
 
