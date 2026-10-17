@@ -1,9 +1,4 @@
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::as_conversions
-)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use super::interface::{
     BB1_DEPTH_ONE_IDENTITY_TAG, Bb1DepthOneCapsule, Bb1DepthOneKem, Bb1DepthOneParameterSetScope,

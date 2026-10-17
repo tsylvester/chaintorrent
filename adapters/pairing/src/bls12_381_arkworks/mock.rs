@@ -1,9 +1,4 @@
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::as_conversions
-)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use super::interface::{
     Bls12381ArkworksEncodedGt, Bls12381ArkworksEncodedScalar, Bls12381ArkworksG1,

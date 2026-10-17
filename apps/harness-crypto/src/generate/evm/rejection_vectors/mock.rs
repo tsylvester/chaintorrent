@@ -1,9 +1,4 @@
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::as_conversions
-)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use encoding::{
     CanonicalFieldValue, CanonicalFields, CanonicalFieldsOverrides, build_canonical_fields,

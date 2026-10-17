@@ -1,9 +1,4 @@
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::as_conversions
-)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use super::interface::{DerivationContext, DerivationContextConstructorParams};
 use crate::asset_identity::provides::{AssetIdentity, build_asset_identity};

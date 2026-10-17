@@ -1,14 +1,14 @@
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    clippy::panic,
-    clippy::as_conversions
-)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
+use envelope::IKeyAgreementAdapter;
+use pairing::IPairingArithmetic;
+use random::IRandomSourceAdapter;
 
 use super::super::group_vectors::provides::{VectorCount, build_vector_count};
 use super::interface::{
     PossessionVector, PossessionVectorDescription, PossessionVectorDescriptionConstructorParams,
-    PossessionVectorsParams,
+    PossessionVectorsDeps, PossessionVectorsFn, PossessionVectorsParams, PossessionVectorsPayload,
+    PossessionVectorsReturn, PossessionVectorsSuccessReturn,
 };
 
 #[derive(Default)]
@@ -51,8 +51,73 @@ pub fn build_possession_vectors_params(
     }
 }
 
-pub fn build_possession_vector_description() -> PossessionVectorDescription {
-    let Ok(description) =
-        PossessionVectorDescription::try_new(PossessionVectorDescriptionConstructorParams);
-    description
+#[derive(Default)]
+pub struct PossessionVectorDescriptionConstructorParamsOverrides;
+
+pub fn build_possession_vector_description_constructor_params(
+    _overrides: PossessionVectorDescriptionConstructorParamsOverrides,
+) -> PossessionVectorDescriptionConstructorParams {
+    PossessionVectorDescriptionConstructorParams
+}
+
+pub fn build_possession_vector_description(
+    overrides: PossessionVectorDescriptionConstructorParamsOverrides,
+) -> PossessionVectorDescription {
+    PossessionVectorDescription::try_new(build_possession_vector_description_constructor_params(
+        overrides,
+    ))
+    .expect("built params are valid")
+}
+
+#[derive(Default)]
+pub struct PossessionVectorsPayloadOverrides;
+
+pub fn build_possession_vectors_payload(
+    _overrides: PossessionVectorsPayloadOverrides,
+) -> PossessionVectorsPayload {
+    PossessionVectorsPayload
+}
+
+#[derive(Default)]
+pub struct PossessionVectorsDepsOverrides;
+
+pub fn build_possession_vectors_deps<
+    'a,
+    P: IPairingArithmetic,
+    K: IKeyAgreementAdapter<Pairing = P>,
+>(
+    pairing: &'a P,
+    key_agreement: &'a K,
+    random: &'a dyn IRandomSourceAdapter,
+    _overrides: PossessionVectorsDepsOverrides,
+) -> PossessionVectorsDeps<'a, P, K> {
+    PossessionVectorsDeps {
+        pairing,
+        key_agreement,
+        random,
+    }
+}
+
+#[derive(Default)]
+pub struct PossessionVectorsSuccessReturnOverrides {
+    pub records: Option<Vec<PossessionVector>>,
+}
+
+pub fn build_possession_vectors_success_return(
+    overrides: PossessionVectorsSuccessReturnOverrides,
+) -> PossessionVectorsSuccessReturn {
+    PossessionVectorsSuccessReturn {
+        records: overrides
+            .records
+            .unwrap_or_else(|| vec![build_possession_vector(Default::default())]),
+    }
+}
+
+pub fn mock_possession_vectors<'a, P: IPairingArithmetic, K: IKeyAgreementAdapter<Pairing = P>>(
+    _deps: &PossessionVectorsDeps<'a, P, K>,
+    _params: PossessionVectorsParams,
+    _payload: PossessionVectorsPayload,
+) -> PossessionVectorsReturn {
+    let _: PossessionVectorsFn<'a, P, K> = mock_possession_vectors;
+    Ok(build_possession_vectors_success_return(Default::default()))
 }

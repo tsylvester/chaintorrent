@@ -245,43 +245,14 @@ warning: type alias `ChallengeFn` is never used
    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
 warning: `proof` (lib) generated 2 warnings (run `cargo fix --lib -p proof` to apply 1 suggestion)
-warning: unused import: `super::constants`
- --> apps\harness-crypto\src\generate\evm\constants\provides.rs:1:9
-  |
-1 | pub use super::constants;
-  |         ^^^^^^^^^^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
-
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\evm\constants\provides.rs:2:9
-  |
-2 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
+   Compiling harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
 warning: unused import: `super::mock::*`
  --> apps\harness-crypto\src\generate\evm\constants\provides.rs:4:9
   |
 4 | pub use super::mock::*;
   |         ^^^^^^^^^^^^^^
-
-warning: unused import: `super::group_vectors`
- --> apps\harness-crypto\src\generate\evm\group_vectors\provides.rs:1:9
   |
-1 | pub use super::group_vectors;
-  |         ^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\evm\mapping_vectors\provides.rs:1:9
-  |
-1 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mapping_vectors`
- --> apps\harness-crypto\src\generate\evm\mapping_vectors\provides.rs:2:9
-  |
-2 | pub use super::mapping_vectors;
-  |         ^^^^^^^^^^^^^^^^^^^^^^
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 warning: unused import: `super::mock::*`
  --> apps\harness-crypto\src\generate\evm\mapping_vectors\provides.rs:4:9
@@ -289,29 +260,29 @@ warning: unused import: `super::mock::*`
 4 | pub use super::mock::*;
   |         ^^^^^^^^^^^^^^
 
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\evm\possession_vectors\provides.rs:1:9
-  |
-1 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
 warning: unused import: `super::mock::*`
  --> apps\harness-crypto\src\generate\evm\possession_vectors\provides.rs:3:9
   |
 3 | pub use super::mock::*;
   |         ^^^^^^^^^^^^^^
 
-warning: unused import: `super::possession_vectors`
- --> apps\harness-crypto\src\generate\evm\possession_vectors\provides.rs:4:9
+warning: unused import: `super::mock::*`
+ --> apps\harness-crypto\src\generate\evm\proof_vectors\provides.rs:3:9
   |
-4 | pub use super::possession_vectors;
-  |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+3 | pub use super::mock::*;
+  |         ^^^^^^^^^^^^^^
 
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\evm\rejection_vectors\provides.rs:1:9
-  |
-1 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
+warning: unused import: `EvmGenerateTryNewReturn`
+  --> apps\harness-crypto\src\generate\evm\provides.rs:24:48
+   |
+24 |     EvmGenerate, EvmGenerateConstructorParams, EvmGenerateTryNewReturn,
+   |                                                ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `build_evm_generate_constructor_params` and `build_evm_generate`
+  --> apps\harness-crypto\src\generate\evm\provides.rs:29:30
+   |
+29 | pub(crate) use super::mock::{build_evm_generate, build_evm_generate_constructor_params};
+   |                              ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: unused import: `super::mock::*`
  --> apps\harness-crypto\src\generate\evm\rejection_vectors\provides.rs:3:9
@@ -319,67 +290,187 @@ warning: unused import: `super::mock::*`
 3 | pub use super::mock::*;
   |         ^^^^^^^^^^^^^^
 
-warning: unused import: `super::rejection_vectors`
- --> apps\harness-crypto\src\generate\evm\rejection_vectors\provides.rs:4:9
-  |
-4 | pub use super::rejection_vectors;
-  |         ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::render`
- --> apps\harness-crypto\src\generate\evm\render\provides.rs:4:9
-  |
-4 | pub use super::render;
-  |         ^^^^^^^^^^^^^
-
 warning: unused import: `IPairingAdapter`
   --> apps\harness-crypto\src\generate\evm\constants\mod.rs:14:64
    |
 14 |     G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingReference,
    |                                                                ^^^^^^^^^^^^^^^
 
-warning: function `constants` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\mod.rs:33:8
-   |
-33 | pub fn constants<'a, P: IPairingReference, F: IChainForms>(
-   |        ^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+warning: type alias `ChallengeVectorsFn` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\interface.rs:155:10
+    |
+155 | pub type ChallengeVectorsFn<'a, P, E> = fn(
+    |          ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
-warning: struct `ConstantsDeps` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:11:12
+warning: struct `ChallengeVectorOverrides` is never constructed
+  --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:81:12
    |
-11 | pub struct ConstantsDeps<'a, P: IPairingReference> {
-   |            ^^^^^^^^^^^^^
+81 | pub struct ChallengeVectorOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `ConstantsParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:16:12
+warning: function `build_challenge_vector` is never used
+  --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:88:8
    |
-16 | pub struct ConstantsParams {
-   |            ^^^^^^^^^^^^^^^
+88 | pub fn build_challenge_vector(overrides: ChallengeVectorOverrides) -> ChallengeVector {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `ConstantsPayload` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:20:12
+warning: struct `ChallengeVectorsParamsOverrides` is never constructed
+  --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:98:12
    |
-20 | pub struct ConstantsPayload<'a> {
-   |            ^^^^^^^^^^^^^^^^
+98 | pub struct ChallengeVectorsParamsOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `ConstantsSuccessReturn` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:27:12
-   |
-27 | pub struct ConstantsSuccessReturn {
-   |            ^^^^^^^^^^^^^^^^^^^^^^
+warning: function `build_challenge_vectors_params` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:103:8
+    |
+103 | pub fn build_challenge_vectors_params(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: enum `ConstantsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:32:10
-   |
-32 | pub enum ConstantsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^
+warning: struct `ChallengeVectorsSuccessReturnOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:117:12
+    |
+117 | pub struct ChallengeVectorsSuccessReturnOverrides {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: type alias `ConstantsReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:39:10
-   |
-39 | pub type ConstantsReturn = Result<ConstantsSuccessReturn, ConstantsErrorReturn>;
-   |          ^^^^^^^^^^^^^^^
+warning: function `build_challenge_vectors_success_return` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:121:8
+    |
+121 | pub fn build_challenge_vectors_success_return(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ChallengeVectorsDepsOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:132:12
+    |
+132 | pub struct ChallengeVectorsDepsOverrides;
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_challenge_vectors_deps` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:134:8
+    |
+134 | pub fn build_challenge_vectors_deps<'a, P: IPairingAdapter, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ChallengeVectorsPayloadOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:150:12
+    |
+150 | pub struct ChallengeVectorsPayloadOverrides {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_challenge_vectors_payload` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:155:8
+    |
+155 | pub fn build_challenge_vectors_payload<'a>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ChallengeVectorDescriptionConstructorParamsOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:173:12
+    |
+173 | pub struct ChallengeVectorDescriptionConstructorParamsOverrides;
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_challenge_vector_description_constructor_params` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:175:8
+    |
+175 | pub fn build_challenge_vector_description_constructor_params(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_challenge_vector_description` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:181:8
+    |
+181 | pub fn build_challenge_vector_description(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `byte_array` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:190:4
+    |
+190 | fn byte_array(bytes: &[u8]) -> Value {
+    |    ^^^^^^^^^^
+
+warning: function `canonical_field_value` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:194:4
+    |
+194 | fn canonical_field_value(value: &CanonicalFieldValue) -> Value {
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `canonical_delivery_context_fields` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:225:4
+    |
+225 | fn canonical_delivery_context_fields(context: &CanonicalDeliveryContext) -> Map<String, Value> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `challenge_vector_fields` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:275:4
+    |
+275 | fn challenge_vector_fields(vector: &ChallengeVector) -> Map<String, Value> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `challenge_vectors_params_fields` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:284:4
+    |
+284 | fn challenge_vectors_params_fields(params: &ChallengeVectorsParams) -> Map<String, Value> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `challenge_vectors_success_return_fields` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:294:4
+    |
+294 | fn challenge_vectors_success_return_fields(
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `CanonicalDeliveryContextCorruptions` is never constructed
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:312:12
+    |
+312 | pub struct CanonicalDeliveryContextCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_canonical_delivery_context` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:327:8
+    |
+327 | pub fn invalidate_canonical_delivery_context(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ChallengeVectorCorruptions` is never constructed
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:375:12
+    |
+375 | pub struct ChallengeVectorCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_challenge_vector` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:382:8
+    |
+382 | pub fn invalidate_challenge_vector(corruptions: ChallengeVectorCorruptions) -> Value {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ChallengeVectorsParamsCorruptions` is never constructed
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:400:12
+    |
+400 | pub struct ChallengeVectorsParamsCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_challenge_vectors_params` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:405:8
+    |
+405 | pub fn invalidate_challenge_vectors_params(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ChallengeVectorsSuccessReturnCorruptions` is never constructed
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:420:12
+    |
+420 | pub struct ChallengeVectorsSuccessReturnCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_challenge_vectors_success_return` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:424:8
+    |
+424 | pub fn invalidate_challenge_vectors_success_return(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `mock_challenge_vectors` is never used
+   --> apps\harness-crypto\src\generate\evm\challenge_vectors\mock.rs:436:8
+    |
+436 | pub fn mock_challenge_vectors<'a, P: IPairingAdapter, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^
 
 warning: type alias `ConstantsFn` is never used
   --> apps\harness-crypto\src\generate\evm\constants\interface.rs:41:10
@@ -388,318 +479,58 @@ warning: type alias `ConstantsFn` is never used
    |          ^^^^^^^^^^^
 
 warning: struct `ConstantsDepsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:19:12
+  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:14:12
    |
-19 | pub struct ConstantsDepsOverrides;
+14 | pub struct ConstantsDepsOverrides;
    |            ^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_constants_deps` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:21:8
+  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:16:8
    |
-21 | pub fn build_constants_deps<'a, P: IPairingReference>(
+16 | pub fn build_constants_deps<'a, P: IPairingReference>(
    |        ^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `ConstantsParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:29:12
+  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:24:12
    |
-29 | pub struct ConstantsParamsOverrides {
+24 | pub struct ConstantsParamsOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_constants_params` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:33:8
+  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:28:8
    |
-33 | pub fn build_constants_params(overrides: ConstantsParamsOverrides) -> ConstantsParams {
+28 | pub fn build_constants_params(overrides: ConstantsParamsOverrides) -> ConstantsParams {
    |        ^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `ConstantsPayloadOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:42:12
+  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:37:12
    |
-42 | pub struct ConstantsPayloadOverrides;
+37 | pub struct ConstantsPayloadOverrides;
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_constants_payload` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:44:8
+  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:39:8
    |
-44 | pub fn build_constants_payload<'a>(
+39 | pub fn build_constants_payload<'a>(
    |        ^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `ConstantsSuccessReturnOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:58:12
+  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:53:12
    |
-58 | pub struct ConstantsSuccessReturnOverrides {
+53 | pub struct ConstantsSuccessReturnOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_constants_success_return` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:62:8
+  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:57:8
    |
-62 | pub fn build_constants_success_return(
+57 | pub fn build_constants_success_return(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `mock_constants` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:72:8
+  --> apps\harness-crypto\src\generate\evm\constants\mock.rs:67:8
    |
-72 | pub fn mock_constants<'a, P: IPairingReference>(
+67 | pub fn mock_constants<'a, P: IPairingReference>(
    |        ^^^^^^^^^^^^^^
-
-warning: associated items `try_new` and `get` are never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:48:12
-   |
-47 | impl VectorCount {
-   | ---------------- associated items in this implementation
-48 |     pub fn try_new(params: VectorCountConstructorParams) -> VectorCountTryNewReturn {
-   |            ^^^^^^^
-...
-55 |     pub fn get(&self) -> u32 {
-   |            ^^^
-
-warning: associated items `try_new` and `get` are never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:61:12
-   |
-60 | impl MsmTermCount {
-   | ----------------- associated items in this implementation
-61 |     pub fn try_new(params: MsmTermCountConstructorParams) -> MsmTermCountTryNewReturn {
-   |            ^^^^^^^
-...
-68 |     pub fn get(&self) -> u32 {
-   |            ^^^
-
-warning: associated items `try_new` and `members` are never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:74:12
-   |
-73 | impl GroupOperationVectorDescription {
-   | ------------------------------------ associated items in this implementation
-74 |     pub fn try_new(
-   |            ^^^^^^^
-...
-80 |     pub fn members(&self) -> VectorRecordMembersReturn {
-   |            ^^^^^^^
-
-warning: associated items `try_new` and `members` are never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:158:12
-    |
-157 | impl PairingCheckVectorDescription {
-    | ---------------------------------- associated items in this implementation
-158 |     pub fn try_new(
-    |            ^^^^^^^
-...
-164 |     pub fn members(&self) -> VectorRecordMembersReturn {
-    |            ^^^^^^^
-
-warning: function `group_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mod.rs:241:8
-    |
-241 | pub fn group_vectors<'a, P: IPairingArithmetic>(
-    |        ^^^^^^^^^^^^^
-
-warning: struct `VectorCount` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:13:12
-   |
-13 | pub struct VectorCount {
-   |            ^^^^^^^^^^^
-
-warning: struct `VectorCountConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:17:12
-   |
-17 | pub struct VectorCountConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `VectorCountTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:22:10
-   |
-22 | pub enum VectorCountTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `VectorCountTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:26:10
-   |
-26 | pub type VectorCountTryNewReturn = Result<VectorCount, VectorCountTryNewErrorReturn>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MsmTermCount` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:29:12
-   |
-29 | pub struct MsmTermCount {
-   |            ^^^^^^^^^^^^
-
-warning: struct `MsmTermCountConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:33:12
-   |
-33 | pub struct MsmTermCountConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `MsmTermCountTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:38:10
-   |
-38 | pub enum MsmTermCountTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `MsmTermCountTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:42:10
-   |
-42 | pub type MsmTermCountTryNewReturn = Result<MsmTermCount, MsmTermCountTryNewErrorReturn>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `FirstGroupVectorCounts` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:45:12
-   |
-45 | pub struct FirstGroupVectorCounts {
-   |            ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MsmVectorSettings` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:52:12
-   |
-52 | pub struct MsmVectorSettings {
-   |            ^^^^^^^^^^^^^^^^^
-
-warning: struct `SecondGroupVectorCounts` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:58:12
-   |
-58 | pub struct SecondGroupVectorCounts {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupOperationVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:65:12
-   |
-65 | pub struct GroupOperationVector {
-   |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PairingCheckVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:72:12
-   |
-72 | pub struct PairingCheckVector {
-   |            ^^^^^^^^^^^^^^^^^^
-
-warning: constant `VECTOR_RECORD_FIELD_COUNT` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:78:11
-   |
-78 | pub const VECTOR_RECORD_FIELD_COUNT: usize = 3;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `VECTOR_RECORD_MEMBER_NAMES` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:80:11
-   |
-80 | pub const VECTOR_RECORD_MEMBER_NAMES: [&str; VECTOR_RECORD_FIELD_COUNT] =
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `GROUP_OPERATION_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:83:11
-   |
-83 | pub const GROUP_OPERATION_VECTOR_FIELD_KINDS: [CanonicalFieldKind; VECTOR_RECORD_FIELD_COUNT] = [
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `PAIRING_CHECK_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:89:11
-   |
-89 | pub const PAIRING_CHECK_VECTOR_FIELD_KINDS: [CanonicalFieldKind; VECTOR_RECORD_FIELD_COUNT] = [
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupOperationVectorDescription` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:95:12
-   |
-95 | pub struct GroupOperationVectorDescription;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupOperationVectorDescriptionConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:97:12
-   |
-97 | pub struct GroupOperationVectorDescriptionConstructorParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `GroupOperationVectorDescriptionTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:99:10
-   |
-99 | pub type GroupOperationVectorDescriptionTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `GroupOperationVectorFromFieldsErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:103:10
-    |
-103 | pub enum GroupOperationVectorFromFieldsErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PairingCheckVectorDescription` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:114:12
-    |
-114 | pub struct PairingCheckVectorDescription;
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PairingCheckVectorDescriptionConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:116:12
-    |
-116 | pub struct PairingCheckVectorDescriptionConstructorParams;
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `PairingCheckVectorDescriptionTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:118:10
-    |
-118 | pub type PairingCheckVectorDescriptionTryNewReturn =
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `PairingCheckVectorFromFieldsErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:122:10
-    |
-122 | pub enum PairingCheckVectorFromFieldsErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `VectorRecordMembersErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:134:10
-    |
-134 | pub enum VectorRecordMembersErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `VectorRecordMembersReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:139:10
-    |
-139 | pub type VectorRecordMembersReturn = Result<SolidityRecordMembers, VectorRecordMembersErrorReturn>;
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupVectorsDeps` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:141:12
-    |
-141 | pub struct GroupVectorsDeps<'a, P: IPairingArithmetic> {
-    |            ^^^^^^^^^^^^^^^^
-
-warning: struct `GroupVectorsParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:147:12
-    |
-147 | pub struct GroupVectorsParams {
-    |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupVectorsPayload` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:152:12
-    |
-152 | pub struct GroupVectorsPayload;
-    |            ^^^^^^^^^^^^^^^^^^^
-
-warning: struct `FirstGroupVectors` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:155:12
-    |
-155 | pub struct FirstGroupVectors {
-    |            ^^^^^^^^^^^^^^^^^
-
-warning: struct `SecondGroupVectors` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:162:12
-    |
-162 | pub struct SecondGroupVectors {
-    |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `GroupVectorsSuccessReturn` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:169:12
-    |
-169 | pub struct GroupVectorsSuccessReturn {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `GroupVectorsErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:175:10
-    |
-175 | pub enum GroupVectorsErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `GroupVectorsReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:182:10
-    |
-182 | pub type GroupVectorsReturn = Result<GroupVectorsSuccessReturn, GroupVectorsErrorReturn>;
-    |          ^^^^^^^^^^^^^^^^^^
 
 warning: type alias `GroupVectorsFn` is never used
    --> apps\harness-crypto\src\generate\evm\group_vectors\interface.rs:184:10
@@ -707,591 +538,383 @@ warning: type alias `GroupVectorsFn` is never used
 184 | pub type GroupVectorsFn<'a, P> =
     |          ^^^^^^^^^^^^^^
 
-warning: struct `VectorCountConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:23:12
-   |
-23 | pub struct VectorCountConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_vector_count_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:27:8
-   |
-27 | pub fn build_vector_count_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_vector_count` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:35:8
-   |
-35 | pub fn build_vector_count(overrides: VectorCountConstructorParamsOverrides) -> VectorCount {
-   |        ^^^^^^^^^^^^^^^^^^
-
-warning: struct `MsmTermCountConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:41:12
-   |
-41 | pub struct MsmTermCountConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_msm_term_count_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:45:8
-   |
-45 | pub fn build_msm_term_count_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_msm_term_count` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:53:8
-   |
-53 | pub fn build_msm_term_count(overrides: MsmTermCountConstructorParamsOverrides) -> MsmTermCount {
-   |        ^^^^^^^^^^^^^^^^^^^^
-
 warning: struct `FirstGroupVectorCountsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:59:12
+  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:54:12
    |
-59 | pub struct FirstGroupVectorCountsOverrides {
+54 | pub struct FirstGroupVectorCountsOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_first_group_vector_counts` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:65:8
+  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:60:8
    |
-65 | pub fn build_first_group_vector_counts(
+60 | pub fn build_first_group_vector_counts(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `MsmVectorSettingsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:82:12
+  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:77:12
    |
-82 | pub struct MsmVectorSettingsOverrides {
+77 | pub struct MsmVectorSettingsOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_msm_vector_settings` is never used
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:87:8
+  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:82:8
    |
-87 | pub fn build_msm_vector_settings(overrides: MsmVectorSettingsOverrides) -> MsmVectorSettings {
+82 | pub fn build_msm_vector_settings(overrides: MsmVectorSettingsOverrides) -> MsmVectorSettings {
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SecondGroupVectorCountsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:99:12
+  --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:94:12
    |
-99 | pub struct SecondGroupVectorCountsOverrides {
+94 | pub struct SecondGroupVectorCountsOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_second_group_vector_counts` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:105:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:100:8
     |
-105 | pub fn build_second_group_vector_counts(
+100 | pub fn build_second_group_vector_counts(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `GroupVectorsParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:122:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:117:12
     |
-122 | pub struct GroupVectorsParamsOverrides {
+117 | pub struct GroupVectorsParamsOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_group_vectors_params` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:127:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:122:8
     |
-127 | pub fn build_group_vectors_params(overrides: GroupVectorsParamsOverrides) -> GroupVectorsParams {
+122 | pub fn build_group_vectors_params(overrides: GroupVectorsParamsOverrides) -> GroupVectorsParams {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `GroupOperationVectorOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:137:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:132:12
     |
-137 | pub struct GroupOperationVectorOverrides {
+132 | pub struct GroupOperationVectorOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_group_operation_vector` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:143:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:138:8
     |
-143 | pub fn build_group_operation_vector(
+138 | pub fn build_group_operation_vector(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `PairingCheckVectorOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:154:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:149:12
     |
-154 | pub struct PairingCheckVectorOverrides {
+149 | pub struct PairingCheckVectorOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_pairing_check_vector` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:160:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:155:8
     |
-160 | pub fn build_pairing_check_vector(overrides: PairingCheckVectorOverrides) -> PairingCheckVector {
+155 | pub fn build_pairing_check_vector(overrides: PairingCheckVectorOverrides) -> PairingCheckVector {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `GroupOperationVectorDescriptionConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:173:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:168:12
     |
-173 | pub struct GroupOperationVectorDescriptionConstructorParamsOverrides;
+168 | pub struct GroupOperationVectorDescriptionConstructorParamsOverrides;
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_group_operation_vector_description_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:175:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:170:8
     |
-175 | pub fn build_group_operation_vector_description_constructor_params(
+170 | pub fn build_group_operation_vector_description_constructor_params(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `PairingCheckVectorDescriptionConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:182:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:177:12
     |
-182 | pub struct PairingCheckVectorDescriptionConstructorParamsOverrides;
+177 | pub struct PairingCheckVectorDescriptionConstructorParamsOverrides;
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_pairing_check_vector_description_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:184:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:179:8
     |
-184 | pub fn build_pairing_check_vector_description_constructor_params(
+179 | pub fn build_pairing_check_vector_description_constructor_params(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_group_operation_vector_description` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:190:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:185:8
     |
-190 | pub fn build_group_operation_vector_description(
+185 | pub fn build_group_operation_vector_description(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_pairing_check_vector_description` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:199:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:194:8
     |
-199 | pub fn build_pairing_check_vector_description(
+194 | pub fn build_pairing_check_vector_description(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `GroupVectorsPayloadOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:209:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:204:12
     |
-209 | pub struct GroupVectorsPayloadOverrides;
+204 | pub struct GroupVectorsPayloadOverrides;
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_group_vectors_payload` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:211:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:206:8
     |
-211 | pub fn build_group_vectors_payload(
+206 | pub fn build_group_vectors_payload(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `FirstGroupVectorsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:218:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:213:12
     |
-218 | pub struct FirstGroupVectorsOverrides {
+213 | pub struct FirstGroupVectorsOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_first_group_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:224:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:219:8
     |
-224 | pub fn build_first_group_vectors(overrides: FirstGroupVectorsOverrides) -> FirstGroupVectors {
+219 | pub fn build_first_group_vectors(overrides: FirstGroupVectorsOverrides) -> FirstGroupVectors {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SecondGroupVectorsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:239:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:234:12
     |
-239 | pub struct SecondGroupVectorsOverrides {
+234 | pub struct SecondGroupVectorsOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_second_group_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:245:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:240:8
     |
-245 | pub fn build_second_group_vectors(overrides: SecondGroupVectorsOverrides) -> SecondGroupVectors {
+240 | pub fn build_second_group_vectors(overrides: SecondGroupVectorsOverrides) -> SecondGroupVectors {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `GroupVectorsSuccessReturnOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:260:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:255:12
     |
-260 | pub struct GroupVectorsSuccessReturnOverrides {
+255 | pub struct GroupVectorsSuccessReturnOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_group_vectors_success_return` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:265:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:260:8
     |
-265 | pub fn build_group_vectors_success_return(
+260 | pub fn build_group_vectors_success_return(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `byte_array` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:276:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:271:4
     |
-276 | fn byte_array(bytes: &[u8]) -> Value {
+271 | fn byte_array(bytes: &[u8]) -> Value {
     |    ^^^^^^^^^^
 
 warning: function `first_group_vector_counts_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:280:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:275:4
     |
-280 | fn first_group_vector_counts_fields(counts: &FirstGroupVectorCounts) -> Map<String, Value> {
+275 | fn first_group_vector_counts_fields(counts: &FirstGroupVectorCounts) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `msm_vector_settings_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:291:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:286:4
     |
-291 | fn msm_vector_settings_fields(settings: &MsmVectorSettings) -> Map<String, Value> {
+286 | fn msm_vector_settings_fields(settings: &MsmVectorSettings) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `second_group_vector_counts_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:298:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:293:4
     |
-298 | fn second_group_vector_counts_fields(counts: &SecondGroupVectorCounts) -> Map<String, Value> {
+293 | fn second_group_vector_counts_fields(counts: &SecondGroupVectorCounts) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `group_vectors_params_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:312:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:307:4
     |
-312 | fn group_vectors_params_fields(params: &GroupVectorsParams) -> Map<String, Value> {
+307 | fn group_vectors_params_fields(params: &GroupVectorsParams) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `group_operation_vector_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:327:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:322:4
     |
-327 | fn group_operation_vector_fields(vector: &GroupOperationVector) -> Map<String, Value> {
+322 | fn group_operation_vector_fields(vector: &GroupOperationVector) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `pairing_check_vector_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:335:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:330:4
     |
-335 | fn pairing_check_vector_fields(vector: &PairingCheckVector) -> Map<String, Value> {
+330 | fn pairing_check_vector_fields(vector: &PairingCheckVector) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `group_operation_vector_array` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:343:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:338:4
     |
-343 | fn group_operation_vector_array(vectors: &[GroupOperationVector]) -> Value {
+338 | fn group_operation_vector_array(vectors: &[GroupOperationVector]) -> Value {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `pairing_check_vector_array` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:352:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:347:4
     |
-352 | fn pairing_check_vector_array(vectors: &[PairingCheckVector]) -> Value {
+347 | fn pairing_check_vector_array(vectors: &[PairingCheckVector]) -> Value {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `first_group_vectors_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:361:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:356:4
     |
-361 | fn first_group_vectors_fields(vectors: &FirstGroupVectors) -> Map<String, Value> {
+356 | fn first_group_vectors_fields(vectors: &FirstGroupVectors) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `second_group_vectors_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:378:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:373:4
     |
-378 | fn second_group_vectors_fields(vectors: &SecondGroupVectors) -> Map<String, Value> {
+373 | fn second_group_vectors_fields(vectors: &SecondGroupVectors) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `group_vectors_success_return_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:395:4
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:390:4
     |
-395 | fn group_vectors_success_return_fields(value: &GroupVectorsSuccessReturn) -> Map<String, Value> {
+390 | fn group_vectors_success_return_fields(value: &GroupVectorsSuccessReturn) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `VectorCountConstructorParamsCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:411:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:406:12
     |
-411 | pub struct VectorCountConstructorParamsCorruptions {
+406 | pub struct VectorCountConstructorParamsCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_vector_count_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:415:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:410:8
     |
-415 | pub fn invalidate_vector_count_constructor_params(
+410 | pub fn invalidate_vector_count_constructor_params(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `MsmTermCountConstructorParamsCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:428:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:423:12
     |
-428 | pub struct MsmTermCountConstructorParamsCorruptions {
+423 | pub struct MsmTermCountConstructorParamsCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_msm_term_count_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:432:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:427:8
     |
-432 | pub fn invalidate_msm_term_count_constructor_params(
+427 | pub fn invalidate_msm_term_count_constructor_params(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `FirstGroupVectorCountsCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:445:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:440:12
     |
-445 | pub struct FirstGroupVectorCountsCorruptions {
+440 | pub struct FirstGroupVectorCountsCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_first_group_vector_counts` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:451:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:446:8
     |
-451 | pub fn invalidate_first_group_vector_counts(
+446 | pub fn invalidate_first_group_vector_counts(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `MsmVectorSettingsCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:469:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:464:12
     |
-469 | pub struct MsmVectorSettingsCorruptions {
+464 | pub struct MsmVectorSettingsCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_msm_vector_settings` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:474:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:469:8
     |
-474 | pub fn invalidate_msm_vector_settings(corruptions: MsmVectorSettingsCorruptions) -> Value {
+469 | pub fn invalidate_msm_vector_settings(corruptions: MsmVectorSettingsCorruptions) -> Value {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SecondGroupVectorCountsCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:486:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:481:12
     |
-486 | pub struct SecondGroupVectorCountsCorruptions {
+481 | pub struct SecondGroupVectorCountsCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_second_group_vector_counts` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:492:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:487:8
     |
-492 | pub fn invalidate_second_group_vector_counts(
+487 | pub fn invalidate_second_group_vector_counts(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `GroupVectorsParamsCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:510:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:505:12
     |
-510 | pub struct GroupVectorsParamsCorruptions {
+505 | pub struct GroupVectorsParamsCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_group_vectors_params` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:515:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:510:8
     |
-515 | pub fn invalidate_group_vectors_params(corruptions: GroupVectorsParamsCorruptions) -> Value {
+510 | pub fn invalidate_group_vectors_params(corruptions: GroupVectorsParamsCorruptions) -> Value {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `GroupOperationVectorCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:527:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:522:12
     |
-527 | pub struct GroupOperationVectorCorruptions {
+522 | pub struct GroupOperationVectorCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_group_operation_vector` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:533:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:528:8
     |
-533 | pub fn invalidate_group_operation_vector(corruptions: GroupOperationVectorCorruptions) -> Value {
+528 | pub fn invalidate_group_operation_vector(corruptions: GroupOperationVectorCorruptions) -> Value {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `PairingCheckVectorCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:549:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:544:12
     |
-549 | pub struct PairingCheckVectorCorruptions {
+544 | pub struct PairingCheckVectorCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_pairing_check_vector` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:555:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:550:8
     |
-555 | pub fn invalidate_pairing_check_vector(corruptions: PairingCheckVectorCorruptions) -> Value {
+550 | pub fn invalidate_pairing_check_vector(corruptions: PairingCheckVectorCorruptions) -> Value {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `FirstGroupVectorsCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:570:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:565:12
     |
-570 | pub struct FirstGroupVectorsCorruptions {
+565 | pub struct FirstGroupVectorsCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_first_group_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:576:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:571:8
     |
-576 | pub fn invalidate_first_group_vectors(corruptions: FirstGroupVectorsCorruptions) -> Value {
+571 | pub fn invalidate_first_group_vectors(corruptions: FirstGroupVectorsCorruptions) -> Value {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SecondGroupVectorsCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:591:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:586:12
     |
-591 | pub struct SecondGroupVectorsCorruptions {
+586 | pub struct SecondGroupVectorsCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_second_group_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:597:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:592:8
     |
-597 | pub fn invalidate_second_group_vectors(corruptions: SecondGroupVectorsCorruptions) -> Value {
+592 | pub fn invalidate_second_group_vectors(corruptions: SecondGroupVectorsCorruptions) -> Value {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `GroupVectorsSuccessReturnCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:612:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:607:12
     |
-612 | pub struct GroupVectorsSuccessReturnCorruptions {
+607 | pub struct GroupVectorsSuccessReturnCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_group_vectors_success_return` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:617:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:612:8
     |
-617 | pub fn invalidate_group_vectors_success_return(
+612 | pub fn invalidate_group_vectors_success_return(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `mock_group_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:632:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:627:8
     |
-632 | pub fn mock_group_vectors<'a, P: IPairingArithmetic>(
+627 | pub fn mock_group_vectors<'a, P: IPairingArithmetic>(
     |        ^^^^^^^^^^^^^^^^^^
 
 warning: struct `GroupVectorsDepsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:642:12
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:637:12
     |
-642 | pub struct GroupVectorsDepsOverrides;
+637 | pub struct GroupVectorsDepsOverrides;
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_group_vectors_deps` is never used
-   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:644:8
+   --> apps\harness-crypto\src\generate\evm\group_vectors\mock.rs:639:8
     |
-644 | pub fn build_group_vectors_deps<'a, P: IPairingArithmetic>(
+639 | pub fn build_group_vectors_deps<'a, P: IPairingArithmetic>(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: associated items `try_new` and `members` are never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mod.rs:46:12
-   |
-45 | impl HashToScalarVectorDescription {
-   | ---------------------------------- associated items in this implementation
-46 |     pub fn try_new(
-   |            ^^^^^^^
-...
-52 |     pub fn members(&self) -> MappingVectorMembersReturn {
-   |            ^^^^^^^
-
-warning: associated items `try_new` and `members` are never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mod.rs:130:12
-    |
-129 | impl IdentityMappingVectorDescription {
-    | ------------------------------------- associated items in this implementation
-130 |     pub fn try_new(
-    |            ^^^^^^^
-...
-136 |     pub fn members(&self) -> MappingVectorMembersReturn {
-    |            ^^^^^^^
-
-warning: function `mapping_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mod.rs:202:8
-    |
-202 | pub fn mapping_vectors<'a, P: IPairingArithmetic, K: ICredentialKemAdapter<Pairing = P>>(
-    |        ^^^^^^^^^^^^^^^
-
-warning: struct `HashToScalarVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:18:12
-   |
-18 | pub struct HashToScalarVector {
-   |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `IdentityMappingVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:25:12
-   |
-25 | pub struct IdentityMappingVector {
-   |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `HASH_TO_SCALAR_VECTOR_FIELD_COUNT` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:30:11
-   |
-30 | pub const HASH_TO_SCALAR_VECTOR_FIELD_COUNT: usize = 3;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `HASH_TO_SCALAR_VECTOR_MEMBER_NAMES` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:32:11
-   |
-32 | pub const HASH_TO_SCALAR_VECTOR_MEMBER_NAMES: [&str; HASH_TO_SCALAR_VECTOR_FIELD_COUNT] =
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `HASH_TO_SCALAR_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:35:11
-   |
-35 | pub const HASH_TO_SCALAR_VECTOR_FIELD_KINDS: [CanonicalFieldKind;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `IDENTITY_MAPPING_VECTOR_FIELD_COUNT` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:42:11
-   |
-42 | pub const IDENTITY_MAPPING_VECTOR_FIELD_COUNT: usize = 2;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `IDENTITY_MAPPING_VECTOR_MEMBER_NAMES` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:44:11
-   |
-44 | pub const IDENTITY_MAPPING_VECTOR_MEMBER_NAMES: [&str; IDENTITY_MAPPING_VECTOR_FIELD_COUNT] =
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `IDENTITY_MAPPING_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:47:11
-   |
-47 | pub const IDENTITY_MAPPING_VECTOR_FIELD_KINDS: [CanonicalFieldKind;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `HashToScalarVectorDescription` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:51:12
-   |
-51 | pub struct HashToScalarVectorDescription;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `HashToScalarVectorDescriptionConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:53:12
-   |
-53 | pub struct HashToScalarVectorDescriptionConstructorParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `HashToScalarVectorDescriptionTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:55:10
-   |
-55 | pub type HashToScalarVectorDescriptionTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `HashToScalarVectorFromFieldsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:59:10
-   |
-59 | pub enum HashToScalarVectorFromFieldsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `IdentityMappingVectorDescription` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:70:12
-   |
-70 | pub struct IdentityMappingVectorDescription;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `IdentityMappingVectorDescriptionConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:72:12
-   |
-72 | pub struct IdentityMappingVectorDescriptionConstructorParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `IdentityMappingVectorDescriptionTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:74:10
-   |
-74 | pub type IdentityMappingVectorDescriptionTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `IdentityMappingVectorFromFieldsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:78:10
-   |
-78 | pub enum IdentityMappingVectorFromFieldsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `MappingVectorMembersErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:90:10
-   |
-90 | pub enum MappingVectorMembersErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `MappingVectorMembersReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:95:10
-   |
-95 | pub type MappingVectorMembersReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MappingVectorsDeps` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:98:12
-   |
-98 | pub struct MappingVectorsDeps<'a, P: IPairingArithmetic, K: ICredentialKemAdapter<Pairing = P>> {
-   |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `MappingVectorsParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:106:12
-    |
-106 | pub struct MappingVectorsParams {
-    |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MappingVectorsPayload` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:112:12
-    |
-112 | pub struct MappingVectorsPayload<'a> {
-    |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `MappingVectorsSuccessReturn` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:119:12
-    |
-119 | pub struct MappingVectorsSuccessReturn {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `MappingVectorsErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:125:10
-    |
-125 | pub enum MappingVectorsErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `MappingVectorsReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:136:10
-    |
-136 | pub type MappingVectorsReturn = Result<MappingVectorsSuccessReturn, MappingVectorsErrorReturn>;
-    |          ^^^^^^^^^^^^^^^^^^^^
 
 warning: type alias `MappingVectorsFn` is never used
    --> apps\harness-crypto\src\generate\evm\mapping_vectors\interface.rs:138:10
@@ -1300,309 +923,208 @@ warning: type alias `MappingVectorsFn` is never used
     |          ^^^^^^^^^^^^^^^^
 
 warning: struct `HashToScalarVectorOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:26:12
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:21:12
    |
-26 | pub struct HashToScalarVectorOverrides {
+21 | pub struct HashToScalarVectorOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_hash_to_scalar_vector` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:32:8
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:27:8
    |
-32 | pub fn build_hash_to_scalar_vector(overrides: HashToScalarVectorOverrides) -> HashToScalarVector {
+27 | pub fn build_hash_to_scalar_vector(overrides: HashToScalarVectorOverrides) -> HashToScalarVector {
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `IdentityMappingVectorOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:41:12
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:36:12
    |
-41 | pub struct IdentityMappingVectorOverrides {
+36 | pub struct IdentityMappingVectorOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_identity_mapping_vector` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:46:8
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:41:8
    |
-46 | pub fn build_identity_mapping_vector(
+41 | pub fn build_identity_mapping_vector(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `MappingVectorsParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:56:12
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:51:12
    |
-56 | pub struct MappingVectorsParamsOverrides {
+51 | pub struct MappingVectorsParamsOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_mapping_vectors_params` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:62:8
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:57:8
    |
-62 | pub fn build_mapping_vectors_params(
+57 | pub fn build_mapping_vectors_params(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `HashToScalarVectorDescriptionConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:75:12
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:70:12
    |
-75 | pub struct HashToScalarVectorDescriptionConstructorParamsOverrides;
+70 | pub struct HashToScalarVectorDescriptionConstructorParamsOverrides;
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_hash_to_scalar_vector_description_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:77:8
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:72:8
    |
-77 | pub fn build_hash_to_scalar_vector_description_constructor_params(
+72 | pub fn build_hash_to_scalar_vector_description_constructor_params(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_hash_to_scalar_vector_description` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:83:8
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:78:8
    |
-83 | pub fn build_hash_to_scalar_vector_description(
+78 | pub fn build_hash_to_scalar_vector_description(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `IdentityMappingVectorDescriptionConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:93:12
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:88:12
    |
-93 | pub struct IdentityMappingVectorDescriptionConstructorParamsOverrides;
+88 | pub struct IdentityMappingVectorDescriptionConstructorParamsOverrides;
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_identity_mapping_vector_description_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:95:8
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:90:8
    |
-95 | pub fn build_identity_mapping_vector_description_constructor_params(
+90 | pub fn build_identity_mapping_vector_description_constructor_params(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_identity_mapping_vector_description` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:101:8
-    |
-101 | pub fn build_identity_mapping_vector_description(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:96:8
+   |
+96 | pub fn build_identity_mapping_vector_description(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `MappingVectorsDepsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:111:12
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:106:12
     |
-111 | pub struct MappingVectorsDepsOverrides;
+106 | pub struct MappingVectorsDepsOverrides;
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_mapping_vectors_deps` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:113:8
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:108:8
     |
-113 | pub fn build_mapping_vectors_deps<
+108 | pub fn build_mapping_vectors_deps<
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `MappingVectorsPayloadOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:133:12
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:128:12
     |
-133 | pub struct MappingVectorsPayloadOverrides;
+128 | pub struct MappingVectorsPayloadOverrides;
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_mapping_vectors_payload` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:135:8
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:130:8
     |
-135 | pub fn build_mapping_vectors_payload<'a>(
+130 | pub fn build_mapping_vectors_payload<'a>(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `MappingVectorsSuccessReturnOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:149:12
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:144:12
     |
-149 | pub struct MappingVectorsSuccessReturnOverrides {
+144 | pub struct MappingVectorsSuccessReturnOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_mapping_vectors_success_return` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:154:8
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:149:8
     |
-154 | pub fn build_mapping_vectors_success_return(
+149 | pub fn build_mapping_vectors_success_return(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `byte_array` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:167:4
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:162:4
     |
-167 | fn byte_array(bytes: &[u8]) -> Value {
+162 | fn byte_array(bytes: &[u8]) -> Value {
     |    ^^^^^^^^^^
 
 warning: function `hash_to_scalar_vector_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:171:4
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:166:4
     |
-171 | fn hash_to_scalar_vector_fields(vector: &HashToScalarVector) -> Map<String, Value> {
+166 | fn hash_to_scalar_vector_fields(vector: &HashToScalarVector) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `identity_mapping_vector_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:179:4
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:174:4
     |
-179 | fn identity_mapping_vector_fields(vector: &IdentityMappingVector) -> Map<String, Value> {
+174 | fn identity_mapping_vector_fields(vector: &IdentityMappingVector) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `mapping_vectors_params_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:186:4
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:181:4
     |
-186 | fn mapping_vectors_params_fields(params: &MappingVectorsParams) -> Map<String, Value> {
+181 | fn mapping_vectors_params_fields(params: &MappingVectorsParams) -> Map<String, Value> {
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `mapping_vectors_success_return_fields` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:206:4
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:201:4
     |
-206 | fn mapping_vectors_success_return_fields(
+201 | fn mapping_vectors_success_return_fields(
     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `HashToScalarVectorCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:234:12
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:229:12
     |
-234 | pub struct HashToScalarVectorCorruptions {
+229 | pub struct HashToScalarVectorCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_hash_to_scalar_vector` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:240:8
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:235:8
     |
-240 | pub fn invalidate_hash_to_scalar_vector(corruptions: HashToScalarVectorCorruptions) -> Value {
+235 | pub fn invalidate_hash_to_scalar_vector(corruptions: HashToScalarVectorCorruptions) -> Value {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `IdentityMappingVectorCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:255:12
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:250:12
     |
-255 | pub struct IdentityMappingVectorCorruptions {
+250 | pub struct IdentityMappingVectorCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_identity_mapping_vector` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:260:8
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:255:8
     |
-260 | pub fn invalidate_identity_mapping_vector(corruptions: IdentityMappingVectorCorruptions) -> Value {
+255 | pub fn invalidate_identity_mapping_vector(corruptions: IdentityMappingVectorCorruptions) -> Value {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `MappingVectorsParamsCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:273:12
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:268:12
     |
-273 | pub struct MappingVectorsParamsCorruptions {
+268 | pub struct MappingVectorsParamsCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_mapping_vectors_params` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:279:8
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:274:8
     |
-279 | pub fn invalidate_mapping_vectors_params(corruptions: MappingVectorsParamsCorruptions) -> Value {
+274 | pub fn invalidate_mapping_vectors_params(corruptions: MappingVectorsParamsCorruptions) -> Value {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `MappingVectorsSuccessReturnCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:295:12
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:290:12
     |
-295 | pub struct MappingVectorsSuccessReturnCorruptions {
+290 | pub struct MappingVectorsSuccessReturnCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_mapping_vectors_success_return` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:300:8
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:295:8
     |
-300 | pub fn invalidate_mapping_vectors_success_return(
+295 | pub fn invalidate_mapping_vectors_success_return(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `mock_mapping_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:315:8
+   --> apps\harness-crypto\src\generate\evm\mapping_vectors\mock.rs:310:8
     |
-315 | pub fn mock_mapping_vectors<'a, P: IPairingArithmetic, K: ICredentialKemAdapter<Pairing = P>>(
+310 | pub fn mock_mapping_vectors<'a, P: IPairingArithmetic, K: ICredentialKemAdapter<Pairing = P>>(
     |        ^^^^^^^^^^^^^^^^^^^^
 
-warning: associated items `try_new` and `members` are never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\mod.rs:38:12
-   |
-37 | impl PossessionVectorDescription {
-   | -------------------------------- associated items in this implementation
-38 |     pub fn try_new(
-   |            ^^^^^^^
-...
-44 |     pub fn members(&self) -> PossessionVectorMembersReturn {
-   |            ^^^^^^^
-
-warning: function `possession_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\possession_vectors\mod.rs:161:8
+warning: function `build_evm_generate_constructor_params` is never used
+   --> apps\harness-crypto\src\generate\evm\mock.rs:583:15
     |
-161 | pub fn possession_vectors<'a, P: IPairingArithmetic, K: IKeyAgreementAdapter<Pairing = P>>(
-    |        ^^^^^^^^^^^^^^^^^^
+583 | pub(crate) fn build_evm_generate_constructor_params<'a, P, E, K, A, D>(
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `PossessionVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:14:12
-   |
-14 | pub struct PossessionVector {
-   |            ^^^^^^^^^^^^^^^^
-
-warning: constant `POSSESSION_VECTOR_FIELD_COUNT` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:25:11
-   |
-25 | pub const POSSESSION_VECTOR_FIELD_COUNT: usize = 8;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `POSSESSION_VECTOR_MEMBER_NAMES` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:27:11
-   |
-27 | pub const POSSESSION_VECTOR_MEMBER_NAMES: [&str; POSSESSION_VECTOR_FIELD_COUNT] =
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: constant `POSSESSION_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:30:11
-   |
-30 | pub const POSSESSION_VECTOR_FIELD_KINDS: [CanonicalFieldKind; POSSESSION_VECTOR_FIELD_COUNT] = [
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorDescription` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:41:12
-   |
-41 | pub struct PossessionVectorDescription;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorDescriptionConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:43:12
-   |
-43 | pub struct PossessionVectorDescriptionConstructorParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `PossessionVectorDescriptionTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:45:10
-   |
-45 | pub type PossessionVectorDescriptionTryNewReturn = Result<PossessionVectorDescription, Infallible>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `PossessionVectorFromFieldsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:48:10
-   |
-48 | pub enum PossessionVectorFromFieldsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `PossessionVectorMembersErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:60:10
-   |
-60 | pub enum PossessionVectorMembersErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `PossessionVectorMembersReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:65:10
-   |
-65 | pub type PossessionVectorMembersReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorsDeps` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:68:12
-   |
-68 | pub struct PossessionVectorsDeps<'a, P: IPairingArithmetic, K: IKeyAgreementAdapter<Pairing = P>> {
-   |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorsParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:75:12
-   |
-75 | pub struct PossessionVectorsParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorsPayload` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:79:12
-   |
-79 | pub struct PossessionVectorsPayload;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `PossessionVectorsSuccessReturn` is never constructed
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:82:12
-   |
-82 | pub struct PossessionVectorsSuccessReturn {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `PossessionVectorsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:87:10
-   |
-87 | pub enum PossessionVectorsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `PossessionVectorsReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:93:10
-   |
-93 | pub type PossessionVectorsReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^
+warning: function `build_evm_generate` is never used
+   --> apps\harness-crypto\src\generate\evm\mock.rs:652:15
+    |
+652 | pub(crate) fn build_evm_generate<'a, P, E, K, A, D>(
+    |               ^^^^^^^^^^^^^^^^^^
 
 warning: type alias `PossessionVectorsFn` is never used
   --> apps\harness-crypto\src\generate\evm\possession_vectors\interface.rs:96:10
@@ -1634,159 +1156,329 @@ warning: function `build_possession_vectors_params` is never used
 44 | pub fn build_possession_vectors_params(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: function `build_possession_vector_description` is never used
-  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:54:8
+warning: struct `PossessionVectorDescriptionConstructorParamsOverrides` is never constructed
+  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:55:12
    |
-54 | pub fn build_possession_vector_description() -> PossessionVectorDescription {
+55 | pub struct PossessionVectorDescriptionConstructorParamsOverrides;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_possession_vector_description_constructor_params` is never used
+  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:57:8
+   |
+57 | pub fn build_possession_vector_description_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_possession_vector_description` is never used
+  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:63:8
+   |
+63 | pub fn build_possession_vector_description(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: associated items `try_new` and `as_str` are never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mod.rs:35:12
+warning: struct `PossessionVectorsPayloadOverrides` is never constructed
+  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:73:12
    |
-34 | impl DecodeTarget {
-   | ----------------- associated items in this implementation
-35 |     pub fn try_new(params: DecodeTargetConstructorParams) -> DecodeTargetTryNewReturn {
-   |            ^^^^^^^
-...
-44 |     pub fn as_str(&self) -> &'static str {
-   |            ^^^^^^
+73 | pub struct PossessionVectorsPayloadOverrides;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: associated items `try_new` and `members` are never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mod.rs:54:12
+warning: function `build_possession_vectors_payload` is never used
+  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:75:8
    |
-53 | impl RejectionVectorDescription {
-   | ------------------------------- associated items in this implementation
-54 |     pub fn try_new(
-   |            ^^^^^^^
-...
-60 |     pub fn members(&self) -> RejectionVectorMembersReturn {
-   |            ^^^^^^^
+75 | pub fn build_possession_vectors_payload(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: function `rejection_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mod.rs:128:8
+warning: struct `PossessionVectorsDepsOverrides` is never constructed
+  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:82:12
+   |
+82 | pub struct PossessionVectorsDepsOverrides;
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_possession_vectors_deps` is never used
+  --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:84:8
+   |
+84 | pub fn build_possession_vectors_deps<
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PossessionVectorsSuccessReturnOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:102:12
     |
-128 | pub fn rejection_vectors<'a, P: IPairingReference>(
-    |        ^^^^^^^^^^^^^^^^^
+102 | pub struct PossessionVectorsSuccessReturnOverrides {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: enum `DecodeTarget` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:13:10
-   |
-13 | pub enum DecodeTarget {
-   |          ^^^^^^^^^^^^
+warning: function `build_possession_vectors_success_return` is never used
+   --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:106:8
+    |
+106 | pub fn build_possession_vectors_success_return(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `DecodeTargetConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:19:12
-   |
-19 | pub struct DecodeTargetConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: function `mock_possession_vectors` is never used
+   --> apps\harness-crypto\src\generate\evm\possession_vectors\mock.rs:116:8
+    |
+116 | pub fn mock_possession_vectors<'a, P: IPairingArithmetic, K: IKeyAgreementAdapter<Pairing = P>>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: enum `DecodeTargetTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:24:10
-   |
-24 | pub enum DecodeTargetTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: type alias `ProofVectorsFn` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\interface.rs:296:10
+    |
+296 | pub type ProofVectorsFn<'a, P, K, A, D> = fn(
+    |          ^^^^^^^^^^^^^^
 
-warning: type alias `DecodeTargetTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:28:10
+warning: struct `ProofVectorContextOverrides` is never constructed
+  --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:25:12
    |
-28 | pub type DecodeTargetTryNewReturn = Result<DecodeTarget, DecodeTargetTryNewErrorReturn>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^
+25 | pub struct ProofVectorContextOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `RejectionVector` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:31:12
+warning: function `build_proof_vector_context` is never used
+  --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:42:8
    |
-31 | pub struct RejectionVector {
-   |            ^^^^^^^^^^^^^^^
+42 | pub fn build_proof_vector_context(overrides: ProofVectorContextOverrides) -> ProofVectorContext {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: constant `REJECTION_VECTOR_FIELD_COUNT` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:36:11
+warning: struct `MintProofVectorOverrides` is never constructed
+  --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:83:12
    |
-36 | pub const REJECTION_VECTOR_FIELD_COUNT: usize = 2;
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+83 | pub struct MintProofVectorOverrides {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: constant `REJECTION_VECTOR_MEMBER_NAMES` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:38:11
-   |
-38 | pub const REJECTION_VECTOR_MEMBER_NAMES: [&str; REJECTION_VECTOR_FIELD_COUNT] = ["target", "input"];
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: function `build_mint_proof_vector` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:102:8
+    |
+102 | pub fn build_mint_proof_vector(overrides: MintProofVectorOverrides) -> MintProofVector {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: constant `REJECTION_VECTOR_FIELD_KINDS` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:40:11
-   |
-40 | pub const REJECTION_VECTOR_FIELD_KINDS: [CanonicalFieldKind; REJECTION_VECTOR_FIELD_COUNT] =
-   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: struct `TransferProofVectorOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:126:12
+    |
+126 | pub struct TransferProofVectorOverrides {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `RejectionVectorDescription` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:43:12
-   |
-43 | pub struct RejectionVectorDescription;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: function `build_transfer_proof_vector` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:151:8
+    |
+151 | pub fn build_transfer_proof_vector(overrides: TransferProofVectorOverrides) -> TransferProofVector {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `RejectionVectorDescriptionConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:45:12
-   |
-45 | pub struct RejectionVectorDescriptionConstructorParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: struct `ProofVectorsParamsOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:181:12
+    |
+181 | pub struct ProofVectorsParamsOverrides {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: type alias `RejectionVectorDescriptionTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:47:10
-   |
-47 | pub type RejectionVectorDescriptionTryNewReturn = Result<RejectionVectorDescription, Infallible>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: function `build_proof_vectors_params` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:187:8
+    |
+187 | pub fn build_proof_vectors_params(overrides: ProofVectorsParamsOverrides) -> ProofVectorsParams {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: enum `RejectionVectorFromFieldsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:50:10
-   |
-50 | pub enum RejectionVectorFromFieldsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: struct `ProofVectorsPayloadOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:200:12
+    |
+200 | pub struct ProofVectorsPayloadOverrides {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: enum `RejectionVectorMembersErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:63:10
-   |
-63 | pub enum RejectionVectorMembersErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: function `build_proof_vectors_payload` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:205:8
+    |
+205 | pub fn build_proof_vectors_payload<'a>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: type alias `RejectionVectorMembersReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:68:10
+warning: unused imports: `FromFieldsParamsOverrides` and `ToFieldsParamsOverrides`
+  --> apps\harness-crypto\src\generate\evm\group_vectors\integration_test.rs:12:46
    |
-68 | pub type RejectionVectorMembersReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 |     CanonicalFieldKind, CanonicalFieldValue, FromFieldsParamsOverrides, IEncodingContract,
+   |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^
+13 |     ToFieldsParamsOverrides, build_from_fields_params, build_to_fields_params,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
-warning: struct `RejectionVectorsDeps` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:71:12
-   |
-71 | pub struct RejectionVectorsDeps<'a, P: IPairingReference> {
-   |            ^^^^^^^^^^^^^^^^^^^^
+warning: struct `ProofVectorsDepsOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:223:12
+    |
+223 | pub struct ProofVectorsDepsOverrides;
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `RejectionVectorsParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:75:12
-   |
-75 | pub struct RejectionVectorsParams;
-   |            ^^^^^^^^^^^^^^^^^^^^^^
+warning: function `build_proof_vectors_deps` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:225:8
+    |
+225 | pub fn build_proof_vectors_deps<
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `RejectionVectorsPayload` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:77:12
-   |
-77 | pub struct RejectionVectorsPayload;
-   |            ^^^^^^^^^^^^^^^^^^^^^^^
+warning: struct `ProofVectorsSuccessReturnOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:249:12
+    |
+249 | pub struct ProofVectorsSuccessReturnOverrides {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `RejectionVectorsSuccessReturn` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:80:12
-   |
-80 | pub struct RejectionVectorsSuccessReturn {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: function `build_proof_vectors_success_return` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:254:8
+    |
+254 | pub fn build_proof_vectors_success_return(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: enum `RejectionVectorsErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:85:10
-   |
-85 | pub enum RejectionVectorsErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+warning: struct `MintProofVectorDescriptionConstructorParamsOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:268:12
+    |
+268 | pub struct MintProofVectorDescriptionConstructorParamsOverrides;
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: type alias `RejectionVectorsReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:90:10
+warning: function `build_mint_proof_vector_description_constructor_params` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:270:8
+    |
+270 | pub fn build_mint_proof_vector_description_constructor_params(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_mint_proof_vector_description` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:276:8
+    |
+276 | pub fn build_mint_proof_vector_description<F: IChainForms>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `TransferProofVectorDescriptionConstructorParamsOverrides` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:286:12
+    |
+286 | pub struct TransferProofVectorDescriptionConstructorParamsOverrides;
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `CreatePairingDepsOverrides`
+  --> apps\harness-crypto\src\generate\evm\group_vectors\integration_test.rs:17:5
    |
-90 | pub type RejectionVectorsReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^
+17 |     CreatePairingDepsOverrides, CreatePairingParamsOverrides, CreatePairingPayload,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_transfer_proof_vector_description_constructor_params` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:288:8
+    |
+288 | pub fn build_transfer_proof_vector_description_constructor_params(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `build_transfer_proof_vector_description` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:294:8
+    |
+294 | pub fn build_transfer_proof_vector_description<F: IChainForms>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `byte_array` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:303:4
+    |
+303 | fn byte_array(bytes: &[u8]) -> Value {
+    |    ^^^^^^^^^^
+
+warning: function `canonical_field_value` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:307:4
+    |
+307 | fn canonical_field_value(value: &CanonicalFieldValue) -> Value {
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `proof_vector_context_fields` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:338:4
+    |
+338 | fn proof_vector_context_fields(context: &ProofVectorContext) -> Map<String, Value> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `mint_proof_vector_fields` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:384:4
+    |
+384 | fn mint_proof_vector_fields(vector: &MintProofVector) -> Map<String, Value> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `transfer_proof_vector_fields` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:414:4
+    |
+414 | fn transfer_proof_vector_fields(vector: &TransferProofVector) -> Map<String, Value> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `proof_vectors_params_fields` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:474:4
+    |
+474 | fn proof_vectors_params_fields(params: &ProofVectorsParams) -> Map<String, Value> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `proof_vectors_success_return_fields` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:494:4
+    |
+494 | fn proof_vectors_success_return_fields(value: &ProofVectorsSuccessReturn) -> Map<String, Value> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ProofVectorContextCorruptions` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:520:12
+    |
+520 | pub struct ProofVectorContextCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_proof_vector_context` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:537:8
+    |
+537 | pub fn invalidate_proof_vector_context(corruptions: ProofVectorContextCorruptions) -> Value {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `MintProofVectorCorruptions` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:585:12
+    |
+585 | pub struct MintProofVectorCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_mint_proof_vector` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:604:8
+    |
+604 | pub fn invalidate_mint_proof_vector(corruptions: MintProofVectorCorruptions) -> Value {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `TransferProofVectorCorruptions` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:661:12
+    |
+661 | pub struct TransferProofVectorCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_transfer_proof_vector` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:686:8
+    |
+686 | pub fn invalidate_transfer_proof_vector(corruptions: TransferProofVectorCorruptions) -> Value {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `FromFieldsParamsOverrides` and `ToFieldsParamsOverrides`
+  --> apps\harness-crypto\src\generate\evm\group_vectors\test.rs:12:72
+   |
+12 |     CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, FromFieldsParamsOverrides,
+   |                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+13 |     IEncodingContract, ToFieldsParamsOverrides, build_canonical_fields, build_from_fields_params,
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ProofVectorsParamsCorruptions` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:761:12
+    |
+761 | pub struct ProofVectorsParamsCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `CreatePairingDepsOverrides`
+  --> apps\harness-crypto\src\generate\evm\group_vectors\test.rs:17:50
+   |
+17 |     ConsumePairingParams, ConsumePairingPayload, CreatePairingDepsOverrides,
+   |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_proof_vectors_params` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:767:8
+    |
+767 | pub fn invalidate_proof_vectors_params(corruptions: ProofVectorsParamsCorruptions) -> Value {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `ProofVectorsSuccessReturnCorruptions` is never constructed
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:782:12
+    |
+782 | pub struct ProofVectorsSuccessReturnCorruptions {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `invalidate_proof_vectors_success_return` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:787:8
+    |
+787 | pub fn invalidate_proof_vectors_success_return(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `mock_proof_vectors` is never used
+   --> apps\harness-crypto\src\generate\evm\proof_vectors\mock.rs:802:8
+    |
+802 | pub fn mock_proof_vectors<
+    |        ^^^^^^^^^^^^^^^^^^
 
 warning: type alias `RejectionVectorsFn` is never used
   --> apps\harness-crypto\src\generate\evm\rejection_vectors\interface.rs:93:10
@@ -1795,568 +1487,153 @@ warning: type alias `RejectionVectorsFn` is never used
    |          ^^^^^^^^^^^^^^^^^^
 
 warning: struct `DecodeTargetConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:22:12
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:17:12
    |
-22 | pub struct DecodeTargetConstructorParamsOverrides {
+17 | pub struct DecodeTargetConstructorParamsOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_decode_target_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:26:8
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:21:8
    |
-26 | pub fn build_decode_target_constructor_params(
+21 | pub fn build_decode_target_constructor_params(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RejectionVectorOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:35:12
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:30:12
    |
-35 | pub struct RejectionVectorOverrides {
+30 | pub struct RejectionVectorOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_rejection_vector` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:40:8
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:35:8
    |
-40 | pub fn build_rejection_vector(overrides: RejectionVectorOverrides) -> RejectionVector {
+35 | pub fn build_rejection_vector(overrides: RejectionVectorOverrides) -> RejectionVector {
    |        ^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RejectionVectorDescriptionConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:48:12
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:43:12
    |
-48 | pub struct RejectionVectorDescriptionConstructorParamsOverrides;
+43 | pub struct RejectionVectorDescriptionConstructorParamsOverrides;
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_rejection_vector_description_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:50:8
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:45:8
    |
-50 | pub fn build_rejection_vector_description_constructor_params(
+45 | pub fn build_rejection_vector_description_constructor_params(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_rejection_vector_description` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:56:8
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:51:8
    |
-56 | pub fn build_rejection_vector_description(
+51 | pub fn build_rejection_vector_description(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RejectionVectorsParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:66:12
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:61:12
    |
-66 | pub struct RejectionVectorsParamsOverrides;
+61 | pub struct RejectionVectorsParamsOverrides;
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+warning: unused import: `PathBuf`
+ --> apps\harness-crypto\src\generate\evm\integration_test.rs:4:23
+  |
+4 | use std::path::{Path, PathBuf};
+  |                       ^^^^^^^
+
 warning: function `build_rejection_vectors_params` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:68:8
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:63:8
    |
-68 | pub fn build_rejection_vectors_params(
+63 | pub fn build_rejection_vectors_params(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RejectionVectorsPayloadOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:75:12
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:70:12
    |
-75 | pub struct RejectionVectorsPayloadOverrides;
+70 | pub struct RejectionVectorsPayloadOverrides;
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_rejection_vectors_payload` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:77:8
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:72:8
    |
-77 | pub fn build_rejection_vectors_payload(
+72 | pub fn build_rejection_vectors_payload(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RejectionVectorsSuccessReturnOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:84:12
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:79:12
    |
-84 | pub struct RejectionVectorsSuccessReturnOverrides {
+79 | pub struct RejectionVectorsSuccessReturnOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_rejection_vectors_success_return` is never used
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:88:8
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:83:8
    |
-88 | pub fn build_rejection_vectors_success_return(
+83 | pub fn build_rejection_vectors_success_return(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `DecodeTargetConstructorParamsCorruptions` is never constructed
-  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:99:12
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:94:12
    |
-99 | pub struct DecodeTargetConstructorParamsCorruptions {
+94 | pub struct DecodeTargetConstructorParamsCorruptions {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_decode_target_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:103:8
-    |
-103 | pub fn invalidate_decode_target_constructor_params(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:98:8
+   |
+98 | pub fn invalidate_decode_target_constructor_params(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RejectionVectorCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:115:12
+   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:110:12
     |
-115 | pub struct RejectionVectorCorruptions {
+110 | pub struct RejectionVectorCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_rejection_vector` is never used
-   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:120:8
+   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:115:8
     |
-120 | pub fn invalidate_rejection_vector(corruptions: RejectionVectorCorruptions) -> CanonicalFields {
+115 | pub fn invalidate_rejection_vector(corruptions: RejectionVectorCorruptions) -> CanonicalFields {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RejectionVectorsSuccessReturnCorruptions` is never constructed
-   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:135:12
+   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:130:12
     |
-135 | pub struct RejectionVectorsSuccessReturnCorruptions {
+130 | pub struct RejectionVectorsSuccessReturnCorruptions {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `invalidate_rejection_vectors_success_return` is never used
-   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:139:8
+   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:134:8
     |
-139 | pub fn invalidate_rejection_vectors_success_return(
+134 | pub fn invalidate_rejection_vectors_success_return(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `mock_rejection_vectors` is never used
-   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:156:8
+   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:151:8
     |
-156 | pub fn mock_rejection_vectors<'a, P: IPairingReference>(
+151 | pub fn mock_rejection_vectors<'a, P: IPairingReference>(
     |        ^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RejectionVectorsDepsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:166:12
+   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:161:12
     |
-166 | pub struct RejectionVectorsDepsOverrides;
+161 | pub struct RejectionVectorsDepsOverrides;
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_rejection_vectors_deps` is never used
-   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:168:8
+   --> apps\harness-crypto\src\generate\evm\rejection_vectors\mock.rs:163:8
     |
-168 | pub fn build_rejection_vectors_deps<'a, P: IPairingReference>(
+163 | pub fn build_rejection_vectors_deps<'a, P: IPairingReference>(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: associated function `try_new` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mod.rs:36:12
-   |
-35 | impl SolidityLibraryName {
-   | ------------------------ associated function in this implementation
-36 |     pub fn try_new(
-   |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mod.rs:62:12
-   |
-61 | impl SolidityConstantName {
-   | ------------------------- associated function in this implementation
-62 |     pub fn try_new(
-   |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mod.rs:86:12
-   |
-85 | impl SolidityTypeName {
-   | --------------------- associated function in this implementation
-86 |     pub fn try_new(params: SolidityTypeNameConstructorParams) -> SolidityTypeNameTryNewReturn {
-   |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:110:12
-    |
-109 | impl SolidityMemberName {
-    | ----------------------- associated function in this implementation
-110 |     pub fn try_new(params: SolidityMemberNameConstructorParams) -> SolidityMemberNameTryNewReturn {
-    |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:134:12
-    |
-133 | impl SpdxLicenseIdentifier {
-    | -------------------------- associated function in this implementation
-134 |     pub fn try_new(
-    |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:158:12
-    |
-157 | impl SolidityStringLiteral {
-    | -------------------------- associated function in this implementation
-158 |     pub fn try_new(
-    |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:175:12
-    |
-174 | impl SolidityUint256 {
-    | -------------------- associated function in this implementation
-175 |     pub fn try_new(params: SolidityUint256ConstructorParams) -> SolidityUint256TryNewReturn {
-    |            ^^^^^^^
-
-warning: associated items `try_new`, `as_str`, and `decodes_into_memory` are never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:183:12
-    |
-182 | impl SolidityAbiType {
-    | -------------------- associated items in this implementation
-183 |     pub fn try_new(params: SolidityAbiTypeConstructorParams) -> SolidityAbiTypeTryNewReturn {
-    |            ^^^^^^^
-...
-187 |     pub fn as_str(&self) -> &'static str {
-    |            ^^^^^^
-...
-200 |     pub fn decodes_into_memory(&self) -> bool {
-    |            ^^^^^^^^^^^^^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:214:12
-    |
-213 | impl SolidityLibraryEntries {
-    | --------------------------- associated function in this implementation
-214 |     pub fn try_new(
-    |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:238:12
-    |
-237 | impl SolidityRecordMembers {
-    | -------------------------- associated function in this implementation
-238 |     pub fn try_new(
-    |            ^^^^^^^
-
-warning: associated function `try_new` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:271:12
-    |
-270 | impl SolidityRecordDeclarations {
-    | ------------------------------- associated function in this implementation
-271 |     pub fn try_new(
-    |            ^^^^^^^
-
-warning: method `as_str` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:326:12
-    |
-325 | impl SoliditySourceText {
-    | ----------------------- method in this implementation
-326 |     pub fn as_str(&self) -> &str {
-    |            ^^^^^^
-
-warning: function `render` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mod.rs:331:8
-    |
-331 | pub fn render(_deps: &RenderDeps, params: RenderParams, payload: RenderPayload) -> RenderReturn {
-    |        ^^^^^^
-
-warning: struct `SolidityLibraryName` is never constructed
- --> apps\harness-crypto\src\generate\evm\render\interface.rs:5:12
-  |
-5 | pub struct SolidityLibraryName {
-  |            ^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryNameConstructorParams` is never constructed
- --> apps\harness-crypto\src\generate\evm\render\interface.rs:9:12
-  |
-9 | pub struct SolidityLibraryNameConstructorParams {
-  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityLibraryNameTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:14:10
-   |
-14 | pub enum SolidityLibraryNameTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityLibraryNameTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:20:10
-   |
-20 | pub type SolidityLibraryNameTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityConstantName` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:24:12
-   |
-24 | pub struct SolidityConstantName {
-   |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityConstantNameConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:28:12
-   |
-28 | pub struct SolidityConstantNameConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityConstantNameTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:33:10
-   |
-33 | pub enum SolidityConstantNameTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityConstantNameTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:39:10
-   |
-39 | pub type SolidityConstantNameTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SpdxLicenseIdentifier` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:43:12
-   |
-43 | pub struct SpdxLicenseIdentifier {
-   |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SpdxLicenseIdentifierConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:47:12
-   |
-47 | pub struct SpdxLicenseIdentifierConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SpdxLicenseIdentifierTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:52:10
-   |
-52 | pub enum SpdxLicenseIdentifierTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SpdxLicenseIdentifierTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:57:10
-   |
-57 | pub type SpdxLicenseIdentifierTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityCompilerVersion` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:61:12
-   |
-61 | pub struct SolidityCompilerVersion {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityStringLiteral` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:68:12
-   |
-68 | pub struct SolidityStringLiteral {
-   |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityStringLiteralConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:72:12
-   |
-72 | pub struct SolidityStringLiteralConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityStringLiteralTryNewErrorReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:77:10
-   |
-77 | pub enum SolidityStringLiteralTryNewErrorReturn {
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityStringLiteralTryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:81:10
-   |
-81 | pub type SolidityStringLiteralTryNewReturn =
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityUint256` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:85:12
-   |
-85 | pub struct SolidityUint256 {
-   |            ^^^^^^^^^^^^^^^
-
-warning: struct `SolidityUint256ConstructorParams` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:89:12
-   |
-89 | pub struct SolidityUint256ConstructorParams {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityUint256TryNewReturn` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:93:10
-   |
-93 | pub type SolidityUint256TryNewReturn = Result<SolidityUint256, Infallible>;
-   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityConstantValue` is never used
-  --> apps\harness-crypto\src\generate\evm\render\interface.rs:96:10
+warning: variant `Uint64` is never constructed
+  --> apps\harness-crypto\src\generate\evm\render\interface.rs:99:5
    |
 96 | pub enum SolidityConstantValue {
-   |          ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryEntry` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:106:12
-    |
-106 | pub struct SolidityLibraryEntry {
-    |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryEntries` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:112:12
-    |
-112 | pub struct SolidityLibraryEntries {
-    |            ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityLibraryEntriesConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:116:12
-    |
-116 | pub struct SolidityLibraryEntriesConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityLibraryEntriesTryNewErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:121:10
-    |
-121 | pub enum SolidityLibraryEntriesTryNewErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityLibraryEntriesTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:129:10
-    |
-129 | pub type SolidityLibraryEntriesTryNewReturn =
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityTypeName` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:133:12
-    |
-133 | pub struct SolidityTypeName {
-    |            ^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityTypeNameConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:137:12
-    |
-137 | pub struct SolidityTypeNameConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityTypeNameTryNewErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:142:10
-    |
-142 | pub enum SolidityTypeNameTryNewErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityTypeNameTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:148:10
-    |
-148 | pub type SolidityTypeNameTryNewReturn = Result<SolidityTypeName, SolidityTypeNameTryNewErrorReturn>;
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityMemberName` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:151:12
-    |
-151 | pub struct SolidityMemberName {
-    |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityMemberNameConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:155:12
-    |
-155 | pub struct SolidityMemberNameConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityMemberNameTryNewErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:160:10
-    |
-160 | pub enum SolidityMemberNameTryNewErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityMemberNameTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:166:10
-    |
-166 | pub type SolidityMemberNameTryNewReturn =
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityAbiType` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:170:12
-    |
-170 | pub struct SolidityAbiType {
-    |            ^^^^^^^^^^^^^^^
-
-warning: struct `SolidityAbiTypeConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:174:12
-    |
-174 | pub struct SolidityAbiTypeConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityAbiTypeTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:178:10
-    |
-178 | pub type SolidityAbiTypeTryNewReturn = Result<SolidityAbiType, Infallible>;
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordMember` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:181:12
-    |
-181 | pub struct SolidityRecordMember {
-    |            ^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordMembers` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:187:12
-    |
-187 | pub struct SolidityRecordMembers {
-    |            ^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordMembersConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:191:12
-    |
-191 | pub struct SolidityRecordMembersConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityRecordMembersTryNewErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:196:10
-    |
-196 | pub enum SolidityRecordMembersTryNewErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityRecordMembersTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:209:10
-    |
-209 | pub type SolidityRecordMembersTryNewReturn =
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordDeclaration` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:213:12
-    |
-213 | pub struct SolidityRecordDeclaration {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordDeclarations` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:222:12
-    |
-222 | pub struct SolidityRecordDeclarations {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityRecordDeclarationsConstructorParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:226:12
-    |
-226 | pub struct SolidityRecordDeclarationsConstructorParams {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityRecordDeclarationsTryNewErrorReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:231:10
-    |
-231 | pub enum SolidityRecordDeclarationsTryNewErrorReturn {
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `SolidityRecordDeclarationsTryNewReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:247:10
-    |
-247 | pub type SolidityRecordDeclarationsTryNewReturn =
-    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: enum `SolidityLibraryBody` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:251:10
-    |
-251 | pub enum SolidityLibraryBody {
-    |          ^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SoliditySourceText` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:257:12
-    |
-257 | pub struct SoliditySourceText {
-    |            ^^^^^^^^^^^^^^^^^^
-
-warning: struct `RenderDeps` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:261:12
-    |
-261 | pub struct RenderDeps;
-    |            ^^^^^^^^^^
-
-warning: struct `RenderParams` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:264:12
-    |
-264 | pub struct RenderParams {
-    |            ^^^^^^^^^^^^
-
-warning: struct `RenderPayload` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:270:12
-    |
-270 | pub struct RenderPayload {
-    |            ^^^^^^^^^^^^^
-
-warning: struct `RenderSuccessReturn` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:276:12
-    |
-276 | pub struct RenderSuccessReturn {
-    |            ^^^^^^^^^^^^^^^^^^^
-
-warning: type alias `RenderReturn` is never used
-   --> apps\harness-crypto\src\generate\evm\render\interface.rs:280:10
-    |
-280 | pub type RenderReturn = Result<RenderSuccessReturn, Infallible>;
-    |          ^^^^^^^^^^^^
+   |          --------------------- variant in this enum
+...
+99 |     Uint64(u64),
+   |     ^^^^^^
+   |
+   = note: `SolidityConstantValue` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
 
 warning: type alias `RenderFn` is never used
    --> apps\harness-crypto\src\generate\evm\render\interface.rs:282:10
@@ -2364,355 +1641,223 @@ warning: type alias `RenderFn` is never used
 282 | pub type RenderFn = fn(&RenderDeps, RenderParams, RenderPayload) -> RenderReturn;
     |          ^^^^^^^^
 
-warning: struct `SolidityLibraryNameConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:24:12
-   |
-24 | pub struct SolidityLibraryNameConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_library_name_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:28:8
-   |
-28 | pub fn build_solidity_library_name_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_library_name` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:38:8
-   |
-38 | pub fn build_solidity_library_name(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityConstantNameConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:46:12
-   |
-46 | pub struct SolidityConstantNameConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_constant_name_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:50:8
-   |
-50 | pub fn build_solidity_constant_name_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_constant_name` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:60:8
-   |
-60 | pub fn build_solidity_constant_name(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SpdxLicenseIdentifierConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:68:12
-   |
-68 | pub struct SpdxLicenseIdentifierConstructorParamsOverrides {
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_spdx_license_identifier_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:72:8
-   |
-72 | pub fn build_spdx_license_identifier_constructor_params(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_spdx_license_identifier` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:80:8
-   |
-80 | pub fn build_spdx_license_identifier(
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 warning: struct `SolidityStringLiteralConstructorParamsOverrides` is never constructed
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:88:12
+  --> apps\harness-crypto\src\generate\evm\render\mock.rs:83:12
    |
-88 | pub struct SolidityStringLiteralConstructorParamsOverrides {
+83 | pub struct SolidityStringLiteralConstructorParamsOverrides {
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_string_literal_constructor_params` is never used
-  --> apps\harness-crypto\src\generate\evm\render\mock.rs:92:8
+  --> apps\harness-crypto\src\generate\evm\render\mock.rs:87:8
    |
-92 | pub fn build_solidity_string_literal_constructor_params(
+87 | pub fn build_solidity_string_literal_constructor_params(
    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_string_literal` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:100:8
-    |
-100 | pub fn build_solidity_string_literal(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  --> apps\harness-crypto\src\generate\evm\render\mock.rs:95:8
+   |
+95 | pub fn build_solidity_string_literal(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SolidityUint256ConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:108:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:103:12
     |
-108 | pub struct SolidityUint256ConstructorParamsOverrides {
+103 | pub struct SolidityUint256ConstructorParamsOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_uint256_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:112:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:107:8
     |
-112 | pub fn build_solidity_uint256_constructor_params(
+107 | pub fn build_solidity_uint256_constructor_params(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_uint256` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:123:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:118:8
     |
-123 | pub fn build_solidity_uint256(
+118 | pub fn build_solidity_uint256(
     |        ^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `SolidityCompilerVersionOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:131:12
-    |
-131 | pub struct SolidityCompilerVersionOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_compiler_version` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:137:8
-    |
-137 | pub fn build_solidity_compiler_version(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 warning: struct `SolidityLibraryEntryOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:148:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:143:12
     |
-148 | pub struct SolidityLibraryEntryOverrides {
+143 | pub struct SolidityLibraryEntryOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_library_entry` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:153:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:148:8
     |
-153 | pub fn build_solidity_library_entry(
+148 | pub fn build_solidity_library_entry(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SolidityLibraryEntriesConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:165:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:160:12
     |
-165 | pub struct SolidityLibraryEntriesConstructorParamsOverrides {
+160 | pub struct SolidityLibraryEntriesConstructorParamsOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_library_entries_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:169:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:164:8
     |
-169 | pub fn build_solidity_library_entries_constructor_params(
+164 | pub fn build_solidity_library_entries_constructor_params(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_library_entries` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:179:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:174:8
     |
-179 | pub fn build_solidity_library_entries(
+174 | pub fn build_solidity_library_entries(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: struct `SolidityTypeNameConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:187:12
-    |
-187 | pub struct SolidityTypeNameConstructorParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_type_name_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:191:8
-    |
-191 | pub fn build_solidity_type_name_constructor_params(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_type_name` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:199:8
-    |
-199 | pub fn build_solidity_type_name(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `SolidityMemberNameConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:207:12
-    |
-207 | pub struct SolidityMemberNameConstructorParamsOverrides {
-    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_member_name_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:211:8
-    |
-211 | pub fn build_solidity_member_name_constructor_params(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `build_solidity_member_name` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:219:8
-    |
-219 | pub fn build_solidity_member_name(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 warning: struct `SolidityAbiTypeConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:227:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:222:12
     |
-227 | pub struct SolidityAbiTypeConstructorParamsOverrides {
+222 | pub struct SolidityAbiTypeConstructorParamsOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_abi_type_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:231:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:226:8
     |
-231 | pub fn build_solidity_abi_type_constructor_params(
+226 | pub fn build_solidity_abi_type_constructor_params(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_abi_type` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:239:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:234:8
     |
-239 | pub fn build_solidity_abi_type(
+234 | pub fn build_solidity_abi_type(
     |        ^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SolidityRecordMemberOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:247:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:242:12
     |
-247 | pub struct SolidityRecordMemberOverrides {
+242 | pub struct SolidityRecordMemberOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_record_member` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:252:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:247:8
     |
-252 | pub fn build_solidity_record_member(
+247 | pub fn build_solidity_record_member(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SolidityRecordMembersConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:264:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:259:12
     |
-264 | pub struct SolidityRecordMembersConstructorParamsOverrides {
+259 | pub struct SolidityRecordMembersConstructorParamsOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_record_members_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:268:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:263:8
     |
-268 | pub fn build_solidity_record_members_constructor_params(
+263 | pub fn build_solidity_record_members_constructor_params(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_record_members` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:295:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:290:8
     |
-295 | pub fn build_solidity_record_members(
+290 | pub fn build_solidity_record_members(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SolidityRecordDeclarationOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:303:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:298:12
     |
-303 | pub struct SolidityRecordDeclarationOverrides {
+298 | pub struct SolidityRecordDeclarationOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_record_declaration` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:311:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:306:8
     |
-311 | pub fn build_solidity_record_declaration(
+306 | pub fn build_solidity_record_declaration(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SolidityRecordDeclarationsConstructorParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:334:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:329:12
     |
-334 | pub struct SolidityRecordDeclarationsConstructorParamsOverrides {
+329 | pub struct SolidityRecordDeclarationsConstructorParamsOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_record_declarations_constructor_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:338:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:333:8
     |
-338 | pub fn build_solidity_record_declarations_constructor_params(
+333 | pub fn build_solidity_record_declarations_constructor_params(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_record_declarations` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:348:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:343:8
     |
-348 | pub fn build_solidity_record_declarations(
+343 | pub fn build_solidity_record_declarations(
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `SoliditySourceTextOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:358:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:353:12
     |
-358 | pub struct SoliditySourceTextOverrides {
+353 | pub struct SoliditySourceTextOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_solidity_source_text` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:362:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:357:8
     |
-362 | pub fn build_solidity_source_text(overrides: SoliditySourceTextOverrides) -> SoliditySourceText {
+357 | pub fn build_solidity_source_text(overrides: SoliditySourceTextOverrides) -> SoliditySourceText {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RenderDepsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:369:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:364:12
     |
-369 | pub struct RenderDepsOverrides;
+364 | pub struct RenderDepsOverrides;
     |            ^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_render_deps` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:371:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:366:8
     |
-371 | pub fn build_render_deps(_overrides: RenderDepsOverrides) -> RenderDeps {
+366 | pub fn build_render_deps(_overrides: RenderDepsOverrides) -> RenderDeps {
     |        ^^^^^^^^^^^^^^^^^
 
 warning: struct `RenderParamsOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:376:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:371:12
     |
-376 | pub struct RenderParamsOverrides {
+371 | pub struct RenderParamsOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_render_params` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:381:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:376:8
     |
-381 | pub fn build_render_params(overrides: RenderParamsOverrides) -> RenderParams {
+376 | pub fn build_render_params(overrides: RenderParamsOverrides) -> RenderParams {
     |        ^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RenderPayloadOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:393:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:388:12
     |
-393 | pub struct RenderPayloadOverrides {
+388 | pub struct RenderPayloadOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_render_payload` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:398:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:393:8
     |
-398 | pub fn build_render_payload(overrides: RenderPayloadOverrides) -> RenderPayload {
+393 | pub fn build_render_payload(overrides: RenderPayloadOverrides) -> RenderPayload {
     |        ^^^^^^^^^^^^^^^^^^^^
 
 warning: struct `RenderSuccessReturnOverrides` is never constructed
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:410:12
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:405:12
     |
-410 | pub struct RenderSuccessReturnOverrides {
+405 | pub struct RenderSuccessReturnOverrides {
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: function `build_render_success_return` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:414:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:409:8
     |
-414 | pub fn build_render_success_return(overrides: RenderSuccessReturnOverrides) -> RenderSuccessReturn {
+409 | pub fn build_render_success_return(overrides: RenderSuccessReturnOverrides) -> RenderSuccessReturn {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+warning: unused imports: `FromFieldsParamsOverrides` and `ToFieldsParamsOverrides`
+ --> apps\harness-crypto\src\generate\evm\mapping_vectors\test.rs:5:72
+  |
+5 |     CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, FromFieldsParamsOverrides,
+  |                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+6 |     IEncodingContract, ToFieldsParamsOverrides, build_canonical_fields, build_from_fields_params,
+  |                        ^^^^^^^^^^^^^^^^^^^^^^^
+
 warning: function `mock_render` is never used
-   --> apps\harness-crypto\src\generate\evm\render\mock.rs:422:8
+   --> apps\harness-crypto\src\generate\evm\render\mock.rs:417:8
     |
-422 | pub fn mock_render(
+417 | pub fn mock_render(
     |        ^^^^^^^^^^^
-
-   Compiling harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
-warning: `harness-crypto` (lib) generated 392 warnings (run `cargo fix --lib -p harness-crypto` to apply 14 suggestions)
-warning: unused imports: `FromFieldsParamsOverrides` and `ToFieldsParamsOverrides`
-  --> apps\harness-crypto\src\generate\evm\group_vectors\integration_test.rs:17:46
-   |
-17 |     CanonicalFieldKind, CanonicalFieldValue, FromFieldsParamsOverrides, IEncodingContract,
-   |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^
-18 |     ToFieldsParamsOverrides, build_from_fields_params, build_to_fields_params,
-   |     ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `CreatePairingDepsOverrides`
-  --> apps\harness-crypto\src\generate\evm\group_vectors\integration_test.rs:22:5
-   |
-22 |     CreatePairingDepsOverrides, CreatePairingParamsOverrides, CreatePairingPayload,
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused imports: `FromFieldsParamsOverrides` and `ToFieldsParamsOverrides`
-  --> apps\harness-crypto\src\generate\evm\group_vectors\test.rs:17:72
-   |
-17 |     CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, FromFieldsParamsOverrides,
-   |                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
-18 |     IEncodingContract, ToFieldsParamsOverrides, build_canonical_fields, build_from_fields_params,
-   |                        ^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `CreatePairingDepsOverrides`
-  --> apps\harness-crypto\src\generate\evm\group_vectors\test.rs:22:50
-   |
-22 |     ConsumePairingParams, ConsumePairingPayload, CreatePairingDepsOverrides,
-   |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused imports: `FromFieldsParamsOverrides` and `ToFieldsParamsOverrides`
-  --> apps\harness-crypto\src\generate\evm\mapping_vectors\test.rs:10:72
-   |
-10 |     CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, FromFieldsParamsOverrides,
-   |                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
-11 |     IEncodingContract, ToFieldsParamsOverrides, build_canonical_fields, build_from_fields_params,
-   |                        ^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: unused imports: `FromFieldsParamsOverrides` and `ToFieldsParamsOverrides`
   --> apps\harness-crypto\src\generate\evm\rejection_vectors\test.rs:12:72
@@ -2730,52 +1875,92 @@ warning: unused imports: `CreatePairingDepsOverrides` and `CreatePairingPayloadO
 18 |     CreatePairingParamsOverrides, CreatePairingPayloadOverrides,
    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: type alias `ConstantsFn` is never used
-  --> apps\harness-crypto\src\generate\evm\constants\interface.rs:41:10
-   |
-41 | pub type ConstantsFn<'a, P> =
-   |          ^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+warning: `harness-crypto` (lib) generated 260 warnings (run `cargo fix --lib -p harness-crypto` to apply 7 suggestions)
+warning: fields `pairing`, `hashing`, `encoder`, `random`, `kem`, and `key_agreement` are never read
+   --> apps\harness-crypto\src\generate\evm\test.rs:453:9
+    |
+452 |     struct DeliveryProofConsumer<'a, P: IPairingArithmetic, E, K, A, F> {
+    |            --------------------- fields in this struct
+453 |         pairing: &'a P,
+    |         ^^^^^^^
+454 |         hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    |         ^^^^^^^
+455 |         encoder: &'a E,
+    |         ^^^^^^^
+456 |         random: &'a dyn IRandomSourceAdapter,
+    |         ^^^^^^
+457 |         kem: &'a K,
+    |         ^^^
+458 |         key_agreement: &'a A,
+    |         ^^^^^^^^^^^^^
 
-warning: `harness-crypto` (lib test) generated 116 warnings (108 duplicates) (run `cargo fix --lib -p harness-crypto --tests` to apply 7 suggestions)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.30s
+warning: `harness-crypto` (lib test) generated 128 warnings (119 duplicates) (run `cargo fix --lib -p harness-crypto --tests` to apply 8 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 38.12s
      Running unittests src\lib.rs (target\debug\deps\harness_crypto-9bbdb97a0b6516dc.exe)
 
-running 189 tests
+running 345 tests
 test benchmark::test::consume_pairing_returns_the_draw_error_unchanged ... ok
 test benchmark::test::consume_pairing_returns_the_sampling_error_unchanged ... ok
+test generate::evm::challenge_vectors::test_description::challenge_vector_description_is_constructed_from_its_params ... ok
+test generate::evm::challenge_vectors::test_description::challenge_vector_description_refuses_a_wrong_field_count ... ok
+test generate::evm::challenge_vectors::test_description::challenge_vector_description_refuses_a_field_of_the_wrong_kind ... ok
+test generate::evm::challenge_vectors::test_description::challenge_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::evm::challenge_vectors::test_description::challenge_vector_description_maps_purpose_draws_encoding_and_challenge_in_member_order ... ok
 test benchmark::test::consume_pairing_draws_the_length_the_sampling_bound_requires ... ok
-test generate::evm::constants::test::constants_refuse_a_statement_version_no_description_serves ... ok
+test generate::evm::challenge_vectors::test_description::challenge_vector_description_declares_its_members ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_buyer_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_chain_identifier_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_seller_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_new_interval_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_entitlement_contract_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_source_entitlement_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_old_interval_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_target_entitlement_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_chain_identifier_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_buyer_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_entitlement_contract_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_new_interval_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_old_interval_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_seller_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_source_entitlement_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_target_entitlement_refusal ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_rebuild_every_form_before_any_draw ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_rebuild_the_mint_contexts_forms_before_the_transfer_contexts ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_refuse_a_statement_version_no_description_serves ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_return_the_domain_tag_refusal_whole ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_return_the_draw_refusal_whole ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_return_the_first_refused_form_in_transcript_order ... ok
+test generate::evm::challenge_vectors::test_error::challenge_vectors_return_the_sampling_refusal_whole ... ok
 test generate::evm::constants::test::constants_carry_each_declarations_domain_tag_under_its_own_name ... ok
+test generate::evm::constants::test::constants_carry_the_generators_encodings ... ok
 test generate::evm::constants::test::constants_carry_the_mint_and_transfer_field_sequences ... ok
 test generate::evm::constants::test::constants_carry_the_scalar_field_order_as_32_big_endian_bytes ... ok
 test generate::evm::constants::test::constants_carry_the_statement_version_and_each_purpose_code ... ok
-test generate::evm::group_vectors::integration_test::a_record_survives_its_description_round_trip ... ok
-test generate::evm::constants::test::constants_carry_the_generators_encodings ... ok
+test generate::evm::constants::test::constants_refuse_a_statement_version_no_description_serves ... ok
 test generate::evm::constants::test::constants_return_the_entries_in_declared_order ... ok
-test generate::evm::group_vectors::test::group_operation_vector_description_declares_draws_input_and_output_members ... ok
+test generate::evm::group_vectors::integration_test::a_record_survives_its_description_round_trip ... ok
 test generate::evm::group_vectors::integration_test::members_declare_the_kinds_to_fields_emits ... ok
+test generate::evm::group_vectors::test::group_operation_vector_description_declares_draws_input_and_output_members ... ok
 test generate::evm::group_vectors::test::group_operation_vector_description_maps_draws_input_and_output_to_byte_strings_in_order ... ok
 test generate::evm::group_vectors::test::group_operation_vector_description_rebuilds_the_record_from_its_fields ... ok
-test generate::evm::group_vectors::test::group_vectors_emit_each_first_group_kind_at_its_configured_count ... ok
-test generate::evm::group_vectors::test::group_operation_vector_description_refuses_the_lowest_index_of_the_wrong_kind ... ok
 test generate::evm::group_vectors::test::group_operation_vector_description_refuses_a_wrong_field_count ... ok
-test generate::evm::group_vectors::test::group_vectors_g1_multiplication_ends_its_input_with_its_multiplier ... ok
-test generate::evm::constants::integration_test::the_entries_carry_the_verifier_form_the_pairing_declares ... ok
-test generate::evm::constants::integration_test::the_entries_carry_the_statement_version_and_each_purpose_code_in_declared_order ... ok
+test generate::evm::group_vectors::test::group_operation_vector_description_refuses_the_lowest_index_of_the_wrong_kind ... ok
 test generate::evm::group_vectors::test::group_vectors_draw_a_third_scalar_for_each_odd_pairing_check ... ok
-test generate::evm::constants::integration_test::libraries_sharing_an_identifier_carry_the_same_scalar_field_order ... ok
-test generate::evm::group_vectors::test::group_vectors_pairing_checks_alternate_passing_and_failing_verdicts ... ok
+test generate::evm::group_vectors::test::group_vectors_emit_each_first_group_kind_at_its_configured_count ... ok
+test generate::evm::group_vectors::test::group_vectors_g1_multiplication_ends_its_input_with_its_multiplier ... ok
 test generate::evm::group_vectors::test::group_vectors_refuse_second_group_settings_on_a_first_group_only_pairing ... ok
 test generate::evm::group_vectors::test::group_vectors_return_the_fill_refusal_unchanged ... ok
+test generate::evm::group_vectors::test::group_vectors_pairing_checks_alternate_passing_and_failing_verdicts ... ok
 test generate::evm::group_vectors::test::group_vectors_return_the_sampling_refusal_unchanged ... ok
-test generate::evm::constants::integration_test::the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms ... ok
 test generate::evm::group_vectors::test::msm_term_count_admits_a_positive_count ... ok
 test generate::evm::group_vectors::test::msm_term_count_refuses_zero ... ok
 test generate::evm::group_vectors::test::pairing_check_vector_description_declares_draws_input_and_output_members ... ok
-test generate::evm::constants::integration_test::the_entries_carry_each_declarations_domain_tag_under_its_own_name ... ok
 test generate::evm::group_vectors::test::pairing_check_vector_description_maps_its_output_to_a_fixed_32_byte_field ... ok
+test generate::evm::constants::integration_test::the_entries_carry_the_verifier_form_the_pairing_declares ... ok
+test generate::evm::constants::integration_test::the_entries_carry_the_statement_version_and_each_purpose_code_in_declared_order ... ok
+test generate::evm::constants::integration_test::the_entries_carry_each_declarations_domain_tag_under_its_own_name ... ok
+test generate::evm::constants::integration_test::the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms ... ok
+test generate::evm::constants::integration_test::libraries_sharing_an_identifier_carry_the_same_scalar_field_order ... ok
 test generate::evm::constants::integration_test::the_entries_are_listed_in_declared_order ... ok
 test generate::evm::constants::integration_test::the_entries_carry_the_scalar_field_order_as_32_big_endian_bytes ... ok
 test generate::evm::group_vectors::test::pairing_check_vector_description_rebuilds_the_record_from_its_fields ... ok
@@ -2785,13 +1970,13 @@ test generate::evm::group_vectors::test::pairing_check_vector_description_refuse
 test generate::evm::group_vectors::test::vector_count_admits_a_positive_count ... ok
 test generate::evm::group_vectors::test::vector_count_refuses_zero ... ok
 test generate::evm::mapping_vectors::integration_test::a_record_survives_its_description_round_trip ... ok
+test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_rebuilds_the_record_from_its_fields ... ok
 test generate::evm::mapping_vectors::integration_test::members_declare_the_kinds_to_fields_emits ... ok
 test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_declares_tag_message_and_scalar_members ... ok
 test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_maps_tag_message_and_scalar_in_order ... ok
-test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_rebuilds_the_record_from_its_fields ... ok
 test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_refuses_a_byte_string_scalar ... ok
-test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_refuses_a_wrong_field_count ... ok
 test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_refuses_the_lowest_index_of_the_wrong_kind ... ok
+test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_refuses_a_wrong_field_count ... ok
 test generate::evm::mapping_vectors::test::identity_mapping_vector_description_declares_identity_and_scalar_members ... ok
 test generate::evm::mapping_vectors::test::identity_mapping_vector_description_maps_identity_and_scalar_in_order ... ok
 test generate::evm::mapping_vectors::test::identity_mapping_vector_description_rebuilds_the_record_from_its_fields ... ok
@@ -2801,23 +1986,94 @@ test generate::evm::mapping_vectors::test::identity_mapping_vector_description_r
 test generate::evm::mapping_vectors::test::mapping_vectors_draw_each_message_at_the_configured_length ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_emit_one_identity_record_per_identity_in_payload_order_under_the_asset_scope ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_emit_one_identity_record_per_identity_in_payload_order_under_the_entitlement_scope ... ok
+test generate::evm::integration_test::a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing ... ok
+test generate::evm::mapping_vectors::test::mapping_vectors_record_scalars_that_follow_their_tag_and_their_message ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_emit_one_record_per_declared_tag_for_each_message_in_tag_order ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_record_one_scalar_per_identity_bytes_whatever_the_setup_draws ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_record_scalars_that_follow_their_tag_and_their_message ... ok
+test generate::evm::mapping_vectors::test::mapping_vectors_return_the_fill_refusal_unchanged ... ok
+test generate::evm::mapping_vectors::test::mapping_vectors_return_the_derivation_refusal_unchanged_under_the_entitlement_scope ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_refuse_a_declared_tag_before_any_draw ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_refuse_an_asset_identity_that_is_not_32_bytes ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_return_the_derivation_refusal_unchanged_under_the_entitlement_scope ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_return_the_fill_refusal_unchanged ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_return_the_hash_refusal_before_mapping_any_identity ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_return_the_hash_refusal_unchanged ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_return_the_refusal_of_a_declared_tag_unchanged ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_return_the_refusal_of_an_all_zero_asset_identity ... ok
+test generate::evm::mapping_vectors::test::mapping_vectors_return_the_hash_refusal_unchanged ... ok
+test generate::evm::mapping_vectors::test::mapping_vectors_return_the_hash_refusal_before_mapping_any_identity ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_return_the_setup_refusal_unchanged_under_the_asset_scope ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_share_one_message_across_the_tags_of_a_draw_and_draw_a_new_one_for_the_next ... ok
+test generate::evm::possession_vectors::test::possession_vector_description_admits_its_fieldless_constructor_params ... ok
+test generate::evm::possession_vectors::integration_test::every_record_survives_the_canonical_encoding_under_the_description ... ok
+test generate::evm::possession_vectors::test::possession_vector_description_declares_its_members ... ok
+test generate::evm::possession_vectors::test::possession_vector_description_maps_secrets_keys_and_proof_components_in_member_order ... ok
+test generate::evm::possession_vectors::test::possession_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::evm::constants::integration_test::the_entries_carry_the_generators_precompile_encodings ... ok
+test generate::evm::possession_vectors::test::possession_vector_description_refuses_a_list_one_field_long ... ok
+test generate::evm::possession_vectors::test::possession_vector_description_refuses_a_list_one_field_short ... ok
+test generate::evm::possession_vectors::test::possession_vector_description_refuses_the_lowest_field_of_the_wrong_kind ... ok
+test generate::evm::possession_vectors::test::possession_vectors_carry_each_commitment_in_its_groups_encoding ... ok
+test generate::evm::possession_vectors::test::possession_vectors_carry_the_first_group_public_key_the_secret_forms ... ok
+test generate::evm::possession_vectors::test::possession_vectors_carry_the_second_group_public_key_the_secret_forms ... ok
+test generate::evm::possession_vectors::test::possession_vectors_carry_their_scalar_fields_as_32_byte_encodings ... ok
+test generate::evm::possession_vectors::test::possession_vectors_emit_the_configured_count_of_records ... ok
+test generate::evm::possession_vectors::test::possession_vectors_give_each_record_its_own_secrets ... ok
+test generate::evm::possession_vectors::test::possession_vectors_return_the_draw_refusal_unchanged ... ok
+test generate::evm::possession_vectors::test::possession_vectors_return_the_generation_refusal_unchanged ... ok
+test generate::evm::mapping_vectors::integration_test::each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its_tag ... ok
+test generate::evm::group_vectors::integration_test::a_both_groups_pairing_requires_its_second_group_settings ... ok
+test generate::evm::challenge_vectors::integration_test::challenge_vectors_return_the_hash_to_scalar_refusal_whole ... ok
+test generate::evm::mapping_vectors::integration_test::each_identity_record_is_the_references_mapping_of_its_identity_under_the_identity_tag ... ok
+test generate::evm::group_vectors::integration_test::a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts ... ok
+test generate::evm::possession_vectors::integration_test::every_record_encodes_its_scalars_in_32_bytes_and_its_points_in_the_pairings_widths ... ok
+test generate::evm::group_vectors::integration_test::each_msm_term_carries_its_multiplier_in_its_input ... ok
+test generate::evm::possession_vectors::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_secrets ... ok
+test generate::evm::possession_vectors::integration_test::every_record_carries_public_keys_that_are_the_generators_times_their_secrets ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_carry_no_second_group_first_messages_in_the_both_groups_form_for_a_mint ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_carry_no_second_group_first_messages_in_the_both_groups_form_for_a_transfer ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_carry_second_group_first_messages_in_the_first_group_only_form_for_a_mint ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_carry_second_group_first_messages_in_the_first_group_only_form_for_a_transfer ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_carry_the_identity_element_of_an_asset_identity ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_carry_the_identity_element_of_an_entitlement_identity ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_draw_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_emit_the_configured_counts_of_mint_and_transfer_records ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_place_each_contexts_configured_values_in_its_records ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_record_the_draws_in_the_sequence_the_source_yields ... ok
+test generate::evm::proof_vectors::test_description::mint_proof_vector_description_declares_its_members ... ok
+test generate::evm::proof_vectors::test_description::mint_proof_vector_description_maps_the_record_in_member_order ... ok
+test generate::evm::proof_vectors::test_description::mint_proof_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::evm::proof_vectors::test_description::mint_proof_vector_description_refuses_a_field_list_longer_than_its_field_count ... ok
+test generate::evm::proof_vectors::test_description::mint_proof_vector_description_refuses_a_field_list_shorter_than_its_field_count ... ok
+test generate::evm::proof_vectors::test_description::mint_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind ... ok
+test generate::evm::proof_vectors::test_description::mint_proof_vector_description_reports_the_count_before_a_wrong_kind ... ok
+test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_declares_its_members ... ok
+test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_maps_the_record_in_member_order ... ok
+test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_refuses_a_field_list_longer_than_its_field_count ... ok
+test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_refuses_a_field_list_shorter_than_its_field_count ... ok
+test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind ... ok
+test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_reports_the_count_before_a_wrong_kind ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_first_refused_form_in_transcript_order ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_buyer_with_its_relation_and_field ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_chain_identifier_with_its_relation ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_entitlement_contract_with_its_relation_and_field ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_new_interval_with_its_relation_and_field ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_old_interval_with_its_relation_and_field ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_seller_with_its_relation_and_field ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_source_entitlement_with_its_relation_and_field ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_target_entitlement_with_its_relation_and_field ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_transfer_context_with_the_transfer_relation ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_refuse_an_asset_identity_longer_than_32_bytes ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_refuse_an_asset_identity_shorter_than_32_bytes ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_refuse_the_asset_identity_before_any_context ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_coin_draw_refusal_of_wrapping_whole ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_draw_refusal_whole ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_hash_to_scalar_refusal_of_identity_derivation_whole ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_nonce_draw_refusal_of_key_generation_whole ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_nonce_draw_refusal_of_the_mint_prover_whole ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_refusal_of_an_all_zero_asset_identity ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_sampling_refusal_of_setup_whole ... ok
 test generate::evm::rejection_vectors::test::decode_target_admits_the_name_g1 ... ok
 test generate::evm::rejection_vectors::test::decode_target_admits_the_name_g2 ... ok
-test generate::evm::rejection_vectors::test::decode_target_admits_the_name_scalar ... ok
 test generate::evm::rejection_vectors::test::decode_target_g1_is_named_g1 ... ok
+test generate::evm::rejection_vectors::test::decode_target_admits_the_name_scalar ... ok
 test generate::evm::rejection_vectors::test::decode_target_g2_is_named_g2 ... ok
 test generate::evm::rejection_vectors::test::decode_target_refuses_an_unknown_name ... ok
 test generate::evm::rejection_vectors::test::decode_target_scalar_is_named_scalar ... ok
@@ -2826,13 +2082,14 @@ test generate::evm::rejection_vectors::test::rejection_vector_description_is_adm
 test generate::evm::rejection_vectors::test::rejection_vector_description_maps_target_and_input_in_order ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_rebuilds_the_record_from_its_fields ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_a_field_of_the_wrong_kind ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_an_unknown_target ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_too_few_fields ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_too_many_fields ... ok
+test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_an_unknown_target ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_reports_the_count_before_the_kind ... ok
+test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_too_many_fields ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_reports_the_lowest_index_of_a_wrong_kind ... ok
 test generate::evm::rejection_vectors::test::rejection_vectors_enumerate_the_second_group_and_the_scalar_where_the_pairing_has_no_first_group_encoding ... ok
 test generate::evm::rejection_vectors::test::rejection_vectors_hold_the_scalar_field_order_as_the_scalar_record_input ... ok
+test generate::evm::group_vectors::integration_test::each_second_group_output_is_the_references_result_for_its_drawn_operands ... ok
 test generate::evm::rejection_vectors::test::rejection_vectors_hold_the_second_group_candidate_as_the_g2_record_input ... ok
 test generate::evm::rejection_vectors::test::rejection_vectors_return_the_first_group_refusal_unchanged ... ok
 test generate::evm::rejection_vectors::test::rejection_vectors_return_the_second_group_refusal_unchanged ... ok
@@ -2846,9 +2103,9 @@ test generate::evm::render::integration_test::render_separates_record_declaratio
 test generate::evm::render::integration_test::render_writes_record_declarations_in_payload_order ... ok
 test generate::evm::render::integration_test::render_writes_the_first_record_block_without_a_leading_separator ... ok
 test generate::evm::render::integration_test::render_writes_the_path_constant_as_a_string_internal_constant ... ok
+test generate::evm::render::test::render_opens_with_the_license_line_the_exact_pragma_and_an_empty_line ... ok
 test generate::evm::render::test::render_closes_the_library_with_one_final_newline ... ok
 test generate::evm::render::test::render_declares_the_library_by_name ... ok
-test generate::evm::render::test::render_opens_with_the_license_line_the_exact_pragma_and_an_empty_line ... ok
 test generate::evm::render::test::render_produces_the_exact_source_of_a_reference_library ... ok
 test generate::evm::render::test::render_writes_a_16_bit_value_in_decimal ... ok
 test generate::evm::render::test::render_writes_a_256_bit_value_as_big_endian_hex_digits ... ok
@@ -2863,16 +2120,16 @@ test generate::evm::render::test::solidity_abi_type_decodes_text_into_memory ...
 test generate::evm::render::test::solidity_abi_type_does_not_decode_fixed_bytes_20_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_does_not_decode_fixed_bytes_32_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_does_not_decode_unsigned_16_into_memory ... ok
-test generate::evm::render::test::solidity_abi_type_does_not_decode_unsigned_256_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_does_not_decode_unsigned_32_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_does_not_decode_unsigned_64_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_holds_the_kind_moved_from_the_params ... ok
+test generate::evm::render::test::solidity_abi_type_does_not_decode_unsigned_256_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_names_bytes_as_bytes ... ok
 test generate::evm::render::test::solidity_abi_type_names_fixed_bytes_20_as_bytes20_never_address ... ok
 test generate::evm::render::test::solidity_abi_type_names_fixed_bytes_32_as_bytes32 ... ok
+test generate::evm::render::test::solidity_abi_type_names_unsigned_256_as_uint256 ... ok
 test generate::evm::render::test::solidity_abi_type_names_text_as_string ... ok
 test generate::evm::render::test::solidity_abi_type_names_unsigned_16_as_uint16 ... ok
-test generate::evm::render::test::solidity_abi_type_names_unsigned_256_as_uint256 ... ok
 test generate::evm::render::test::solidity_abi_type_names_unsigned_32_as_uint32 ... ok
 test generate::evm::render::test::solidity_abi_type_names_unsigned_64_as_uint64 ... ok
 test generate::evm::render::test::solidity_constant_name_admits_every_boundary_byte_of_its_sets ... ok
@@ -2887,9 +2144,9 @@ test generate::evm::render::test::solidity_library_name_refuses_a_leading_byte_o
 test generate::evm::render::test::solidity_library_name_refuses_empty_text ... ok
 test generate::evm::render::test::solidity_library_name_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
 test generate::evm::render::test::solidity_member_name_admits_every_boundary_byte_of_its_sets ... ok
-test generate::evm::render::test::solidity_member_name_refuses_a_leading_byte_outside_lowercase_letters ... ok
 test generate::evm::render::test::solidity_member_name_refuses_empty_text ... ok
 test generate::evm::render::test::solidity_member_name_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
+test generate::evm::render::test::solidity_member_name_refuses_a_leading_byte_outside_lowercase_letters ... ok
 test generate::evm::render::test::solidity_record_declarations_admit_unique_names_and_keep_their_order ... ok
 test generate::evm::render::test::solidity_record_declarations_refuse_a_repeated_decode_function_name_before_a_repeated_path_constant_name ... ok
 test generate::evm::render::test::solidity_record_declarations_refuse_a_repeated_struct_name_before_a_repeated_decode_function_name ... ok
@@ -2902,10 +2159,9 @@ test generate::evm::render::test::solidity_record_members_refuse_a_reserved_name
 test generate::evm::render::test::solidity_record_members_refuse_a_single_member_as_too_few ... ok
 test generate::evm::render::test::solidity_record_members_refuse_a_single_reserved_name_as_too_few ... ok
 test generate::evm::render::test::solidity_record_members_refuse_an_empty_list_as_too_few ... ok
-test generate::evm::constants::integration_test::the_entries_carry_the_generators_precompile_encodings ... ok
 test generate::evm::render::test::solidity_record_members_refuse_the_lowest_index_named_line ... ok
-test generate::evm::render::test::solidity_record_members_refuse_the_lowest_index_whose_name_repeats_an_earlier_name ... ok
 test generate::evm::render::test::solidity_source_text_returns_its_text ... ok
+test generate::evm::render::test::solidity_record_members_refuse_the_lowest_index_whose_name_repeats_an_earlier_name ... ok
 test generate::evm::render::test::solidity_string_literal_admits_every_printable_byte_beside_the_excluded_ones ... ok
 test generate::evm::render::test::solidity_string_literal_admits_the_empty_string ... ok
 test generate::evm::render::test::solidity_string_literal_refuses_a_backslash ... ok
@@ -2914,36 +2170,100 @@ test generate::evm::render::test::solidity_string_literal_refuses_a_byte_below_s
 test generate::evm::render::test::solidity_string_literal_refuses_a_double_quote ... ok
 test generate::evm::render::test::solidity_string_literal_refuses_the_first_byte_of_a_non_ascii_character ... ok
 test generate::evm::render::test::solidity_string_literal_refuses_the_lowest_index_when_several_bytes_are_refused ... ok
-test generate::evm::mapping_vectors::integration_test::each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its_tag ... ok
 test generate::evm::render::test::solidity_type_name_admits_every_boundary_byte_of_its_sets ... ok
 test generate::evm::render::test::solidity_type_name_refuses_a_leading_byte_outside_uppercase_letters ... ok
 test generate::evm::render::test::solidity_type_name_refuses_empty_text ... ok
 test generate::evm::render::test::solidity_type_name_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
 test generate::evm::render::test::solidity_uint256_holds_the_array_moved_from_the_params ... ok
-test generate::evm::render::test::spdx_license_identifier_admits_a_final_plus_and_keeps_it ... ok
-test generate::evm::render::test::spdx_license_identifier_admits_every_boundary_byte_of_its_set ... ok
 test generate::evm::render::test::spdx_license_identifier_refuses_a_lone_plus_as_empty ... ok
 test generate::evm::render::test::spdx_license_identifier_refuses_a_plus_that_is_not_the_only_final_byte ... ok
 test generate::evm::render::test::spdx_license_identifier_refuses_empty_text ... ok
 test generate::evm::render::test::spdx_license_identifier_refuses_the_lowest_byte_outside_its_set ... ok
-test generate::evm::group_vectors::integration_test::a_both_groups_pairing_requires_its_second_group_settings ... ok
-test generate::evm::mapping_vectors::integration_test::each_identity_record_is_the_references_mapping_of_its_identity_under_the_identity_tag ... ok
-test generate::evm::group_vectors::integration_test::each_msm_term_carries_its_multiplier_in_its_input ... ok
-test generate::evm::group_vectors::integration_test::a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts ... ok
-test generate::evm::group_vectors::integration_test::each_second_group_output_is_the_references_result_for_its_drawn_operands ... ok
+test generate::evm::test::emit_refuses_settings_missing_an_emitted_kind ... ok
+test generate::evm::test::emit_refuses_sizes_missing_an_emitted_kind ... ok
+test generate::evm::render::test::spdx_license_identifier_admits_a_final_plus_and_keeps_it ... ok
+test generate::evm::render::test::spdx_license_identifier_admits_every_boundary_byte_of_its_set ... ok
+test generate::evm::test::evm_generate_declares_its_kinds_with_their_sizing_and_second_group_gates ... ok
+test generate::evm::test::generated_directory_admits_its_segments_in_order ... ok
+test generate::evm::test::generated_directory_refuses_no_segments ... ok
+test generate::evm::test::generated_file_name_admits_every_character_class_it_allows ... ok
+test generate::evm::test::generated_file_name_as_str_returns_its_text ... ok
+test generate::evm::test::generated_file_name_refuses_empty_text ... ok
+test generate::evm::test::generated_file_name_refuses_the_byte_after_the_digits ... ok
+test generate::evm::test::generated_file_name_refuses_the_byte_after_the_lowercase_letters ... ok
+test generate::evm::test::generated_file_name_refuses_the_byte_after_the_uppercase_letters ... ok
+test generate::evm::test::generated_file_name_refuses_the_byte_before_the_digits ... ok
+test generate::evm::test::generated_file_name_refuses_the_byte_before_the_lowercase_letters ... ok
+test generate::evm::test::generated_file_name_refuses_the_byte_before_the_uppercase_letters ... ok
+test generate::evm::test::generated_file_name_refuses_the_double_dot_text ... ok
+test generate::evm::test::generated_file_name_refuses_the_lowest_invalid_byte_index ... ok
+test generate::evm::test::generated_file_name_refuses_the_single_dot_text ... ok
+test generate::factory::integration_test::a_refused_write_returns_the_mock_concretes_own_error ... ok
+test generate::factory::test::create_generate_checks_a_kinds_count_before_its_terms ... ok
+test generate::factory::test::create_generate_checks_a_kinds_terms_before_its_message_length ... ok
+test generate::factory::test::create_generate_refuses_a_count_on_an_enumerated_kind ... ok
+test generate::factory::test::create_generate_refuses_a_drawn_kind_missing_its_count ... ok
+test generate::factory::test::create_generate_refuses_a_kind_drawn_with_messages_missing_its_message_length ... ok
+test generate::factory::test::create_generate_refuses_a_kind_drawn_with_terms_missing_its_terms ... ok
+test generate::factory::test::create_generate_refuses_a_kind_named_twice ... ok
+test generate::factory::test::create_generate_refuses_a_kind_the_declaration_does_not_name ... ok
+test generate::factory::test::create_generate_refuses_a_message_length_on_a_drawn_kind ... ok
+test generate::factory::test::create_generate_refuses_an_entrys_quantity_before_a_missing_kind ... ok
+test generate::factory::test::create_generate_refuses_an_undeclared_kind_before_its_repeat ... ok
+test generate::factory::test::create_generate_refuses_terms_on_a_kind_over_configured_inputs ... ok
+test generate::factory::test::create_generate_refuses_the_first_declared_kind_no_entry_names ... ok
+test generate::factory::test::create_generate_refuses_the_first_failing_entry_before_a_later_one ... ok
+test generate::factory::test::create_generate_returns_the_consumers_output_for_settings_naming_every_declared_kind_in_reverse_order ... ok
 test generate::evm::group_vectors::integration_test::each_first_group_output_is_the_references_result_for_its_drawn_operands ... ok
+test generate::evm::challenge_vectors::integration_test::challenge_vectors_place_each_contexts_configured_values_in_its_transcript ... ok
+test generate::evm::possession_vectors::integration_test::every_record_carries_proofs_the_key_agreement_admits ... ok
+test generate::evm::challenge_vectors::integration_test::challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order ... ok
+test generate::evm::challenge_vectors::integration_test::challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to ... ok
+test generate::evm::challenge_vectors::integration_test::challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar ... ok
+test generate::evm::integration_test::a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing ... ok
+test generate::evm::proof_vectors::integration_test::an_asset_identity_is_proved_under_the_asset_scope ... ok
+test generate::evm::proof_vectors::integration_test::every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies ... ok
+test generate::evm::proof_vectors::integration_test::a_mint_record_survives_its_description_round_trip ... ok
+test generate::evm::proof_vectors::integration_test::a_transfer_record_survives_its_description_round_trip ... ok
+test generate::evm::proof_vectors::integration_test::every_record_carries_second_group_first_messages_exactly_in_the_first_group_only_form ... ok
+test generate::evm::proof_vectors::integration_test::each_record_kind_declares_the_kinds_its_fields_emit ... ok
+test generate::evm::proof_vectors::integration_test::every_record_context_is_the_canonical_context_its_forms_rebuilt ... ok
+test generate::evm::proof_vectors::integration_test::every_record_encodes_its_elements_in_the_selected_pairings_encodings ... ok
+test generate::evm::proof_vectors::integration_test::every_transfer_record_is_a_statement_and_proof_the_delivery_proof_verifies ... ok
+test generate::evm::proof_vectors::integration_test::every_record_draw_replays_to_the_statement_elements_it_produced ... ok
+test generate::evm::proof_vectors::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test generate::evm::integration_test::a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing ... ok
+test generate::evm::integration_test::a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothing ... ok
+test generate::evm::integration_test::a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name ... ok
+test generate::evm::integration_test::a_root_that_is_a_file_refuses_directory_creation_with_its_path ... ok
+test generate::evm::integration_test::a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path ... ok
+test generate::evm::integration_test::a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing ... ok
+test generate::evm::integration_test::the_constants_library_opens_with_the_configured_license_version_and_name_and_holds_the_tag_entries ... ok
+test generate::evm::integration_test::emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_curve_directory ... ok
+test generate::evm::integration_test::the_records_library_declares_each_written_kinds_struct_decode_function_and_path ... ok
+test generate::evm::integration_test::every_written_line_decodes_under_its_kinds_description ... ok
+test generate::factory::integration_test::emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate ... ok
+test generate::evm::integration_test::each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size has been running for over 60 seconds
+test generate::evm::integration_test::each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size ... ok
 
-test result: ok. 189 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.90s
+test result: ok. 345 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 99.14s
 
      Running tests\benchmark_integration_test.rs (target\debug\deps\benchmark_integration_test-49873c2aa89a7352.exe)
 
 running 4 tests
 test a_sampling_refusal_reaches_the_caller_unchanged ... ok
 test a_sampled_scalar_encodes_through_secret ... ok
-test every_operation_is_timed_on_every_concrete ... ok
 test the_consumer_receives_the_concrete_the_params_name ... ok
+test every_operation_is_timed_on_every_concrete ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+     Running tests\generate_integration_test.rs (target\debug\deps\generate_integration_test-a16fef29c9ec87ab.exe)
+
+running 1 test
+test a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.92s
 
    Doc-tests harness_crypto
 
