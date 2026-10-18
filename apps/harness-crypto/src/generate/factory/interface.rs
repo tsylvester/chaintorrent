@@ -152,7 +152,7 @@ pub const GENERATE_CONCRETES: &[GenerateConcreteKind] = &[GenerateConcreteKind::
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GenerateConcrete {
     Evm {
-        settings: EvmGenerateSettings,
+        settings: Box<EvmGenerateSettings>,
     },
     #[cfg(any(test, feature = "mocks"))]
     Mock(MockIGenerateAdapterFailureMode),

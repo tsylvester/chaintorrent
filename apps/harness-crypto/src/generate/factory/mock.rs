@@ -565,7 +565,7 @@ pub fn build_generate_concrete(
 ) -> GenerateConcrete {
     match kind {
         GenerateConcreteKind::Evm => GenerateConcrete::Evm {
-            settings: build_evm_generate_settings(Default::default()),
+            settings: Box::new(build_evm_generate_settings(Default::default())),
         },
     }
 }

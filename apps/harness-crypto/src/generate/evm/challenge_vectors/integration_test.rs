@@ -732,14 +732,16 @@ fn challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar() {
                 assert_eq!(record.draws.len(), group_fields.len() * 32);
                 for (chunk, field_index) in record
                     .draws
-                    .chunks_exact(32)
+                    .as_chunks::<32>()
+                    .0
+                    .iter()
                     .zip(group_fields.iter().copied())
                 {
                     let CanonicalFieldValue::Bytes(point_bytes) = &values[field_index] else {
                         panic!("the group field is a byte encoding")
                     };
                     let decoded = pairing
-                        .decode_scalar(DecodeScalarParams, chunk)
+                        .decode_scalar(DecodeScalarParams, chunk.as_slice())
                         .expect("the recorded draw decodes as a scalar");
                     if point_bytes.len() == reference_g1.bytes.as_ref().len() {
                         let Ok(product) = pairing.mul_g1(

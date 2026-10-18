@@ -178,7 +178,7 @@ where
                 delivery_proof: deps.delivery_proof,
                 scope: params.scope,
                 statement_version: params.statement_version,
-                settings,
+                settings: *settings,
                 sizes,
             });
             let output = deps
