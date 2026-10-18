@@ -6,6 +6,7 @@ publish.workspace = true
 
 [dependencies]
 encoding = { path = "../encoding" }
+serde = { version = "1.0.229", features = ["derive"] }
 
 [dev-dependencies]
 encoding = { path = "../encoding", features = ["mocks"] }

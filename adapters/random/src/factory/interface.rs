@@ -1,16 +1,18 @@
 use crate::os::provides::OsRandomSourceFillBytesErrorReturn;
 use core::convert::Infallible;
 use domain::Secret;
+use serde::Serialize;
 
 pub const RANDOM_SOURCE_INTERFACE_VERSION: u32 = 1;
 
 #[cfg(any(test, feature = "mocks"))]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum MockIRandomSourceAdapterFailureMode {
     Succeeds,
     FillBytesRefused,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum RandomSourceKind {
     OperatingSystem,
     #[cfg(any(test, feature = "mocks"))]

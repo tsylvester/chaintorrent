@@ -10,6 +10,7 @@ zeroize = "1.9.0"
 pairing = { path = "../pairing" }
 hash-to-scalar = { path = "../hash-to-scalar" }
 serde_json = { version = "1.0.151", optional = true }
+serde = { version = "1.0.229", features = ["derive"] }
 
 [dev-dependencies]
 domain = { path = "../../crates/domain", features = ["mocks"] }

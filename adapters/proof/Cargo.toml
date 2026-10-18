@@ -15,6 +15,7 @@ kem = { path = "../kem" }
 random = { path = "../random" }
 serde_json = { version = "1.0.151", optional = true }
 zeroize = "1.9.0"
+serde = { version = "1.0.229", features = ["derive"] }
 
 [dev-dependencies]
 encoding = { path = "../encoding", features = ["mocks"] }

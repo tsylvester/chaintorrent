@@ -5,6 +5,7 @@ use hash_to_scalar::IHashToScalarAdapter;
 use kem::CredentialComponents;
 use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorReturn};
 use random::IRandomSourceAdapter;
+use serde::Serialize;
 use zeroize::Zeroize;
 
 use crate::pairing_elgamal::provides::{
@@ -14,14 +15,14 @@ use crate::pairing_elgamal::provides::{
 
 pub const KEY_AGREEMENT_INTERFACE_VERSION: u32 = 1;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum KeyAgreementIdentifier {
     PairingElGamalV1,
     #[cfg(any(test, feature = "mocks"))]
     Mock,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum EnvelopeAlgebra {
     PairingElGamal,
 }
@@ -373,7 +374,7 @@ pub trait IKeyAgreementAdapter {
     ) -> EnvelopeFromComponentsReturn<Self::Envelope>;
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum KeyAgreementConcrete {
     PairingElGamal,
     #[cfg(any(test, feature = "mocks"))]
@@ -442,7 +443,7 @@ pub const DECLARED_KEY_AGREEMENT_SELECTIONS: &[CreateKeyAgreementParams] =
     }];
 
 #[cfg(any(test, feature = "mocks"))]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum MockIKeyAgreementAdapterFailureMode {
     NoFailure,
     NonceDrawRefused,

@@ -1,5 +1,6 @@
 use crate::abi::provides::AbiDecoderErrorReturn;
 use core::convert::Infallible;
+use serde::Serialize;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CanonicalFieldKind {
@@ -91,7 +92,7 @@ pub trait ICanonicalField: Sized {
 
 pub const ENCODING_INTERFACE_VERSION: u32 = 1;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum EncodingIdentifier {
     EthereumAbiV1,
     #[cfg(any(test, feature = "mocks"))]
@@ -164,7 +165,7 @@ pub trait IDecoderAdapter {
     ) -> DecodeReturn<D::Described, D::FromFieldsErrorReturn>;
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum EncodingConcrete {
     Abi,
     #[cfg(any(test, feature = "mocks"))]

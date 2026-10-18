@@ -1,8 +1,9 @@
 use encoding::ICanonicalField;
+use serde::Serialize;
 
 pub const CHAIN_FORMS_INTERFACE_VERSION: u32 = 1;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum ChainFormsIdentifier {
     EvmV1,
 }

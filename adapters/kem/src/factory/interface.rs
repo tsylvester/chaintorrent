@@ -4,20 +4,21 @@ use domain::{AssetIdentityHash, Secret};
 use hash_to_scalar::DomainTagTryNewErrorReturn;
 use hash_to_scalar::{HashToScalarErrorReturn, IHashToScalarAdapter};
 use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorReturn};
+use serde::Serialize;
 use zeroize::Zeroize;
 
 use crate::bb1_depth_one::provides::Bb1DepthOneKemTryNewErrorReturn;
 
 pub const KEM_INTERFACE_VERSION: u32 = 1;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum KemIdentifier {
     Bb1DepthOneV1,
     #[cfg(any(test, feature = "mocks"))]
     Mock,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum IdentityScope {
     Entitlement,
     Asset,
@@ -490,7 +491,7 @@ pub trait ICredentialKemAdapter {
     ) -> MasterScalarFromComponentsReturn<Self::MasterScalar>;
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum KemConcrete {
     Bb1DepthOne,
     #[cfg(any(test, feature = "mocks"))]

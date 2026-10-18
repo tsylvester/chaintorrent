@@ -1,7 +1,8 @@
 use crate::factory::provides::{ChainFormsIdentifier, IChainForms};
 use core::convert::Infallible;
+use serde::Serialize;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum ChainFormsConcrete {
     Evm,
     #[cfg(any(test, feature = "mocks"))]

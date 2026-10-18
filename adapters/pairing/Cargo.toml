@@ -12,6 +12,7 @@ ark-bls12-381 = "0.6.0"
 ark-ec = "0.6.0"
 ark-ff = "0.6.0"
 halo2curves = "0.10.0"
+serde = { version = "1.0.229", features = ["derive"] }
 
 [dev-dependencies]
 domain = { path = "../../crates/domain", features = ["mocks"] }

@@ -1,5 +1,6 @@
 use core::convert::Infallible;
 use domain::Secret;
+use serde::Serialize;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 pub const PAIRING_INTERFACE_VERSION: u32 = 1;
@@ -17,7 +18,7 @@ pub enum VerifierGroupArithmetic {
     BothGroups,
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum PrecompileEncoding {
     Eip196Eip197,
     Eip2537,
@@ -25,7 +26,7 @@ pub enum PrecompileEncoding {
     Mock,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum TargetGroupEncodingIdentifier {
     /// The optimal ate pairing as EIP-197 fixes it, over the EIP-197
     /// generators, on the tower `Fp2 = Fp[u] / (u^2 + 1)`,
@@ -543,7 +544,7 @@ pub trait IPairingArithmetic: IPairingAdapter<G1: Zeroize, G2: Zeroize> {
     ) -> EncodeGtReturn<Self::EncodedGt>;
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum PairingConcrete {
     Bn254Arkworks,
     Bn254Halo2curves,
@@ -554,7 +555,7 @@ pub enum PairingConcrete {
 }
 
 #[cfg(any(test, feature = "mocks"))]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum MockIPairingAdapterFailureMode {
     Succeeds,
     DecodeG1NotOnCurve,

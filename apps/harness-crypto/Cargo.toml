@@ -6,6 +6,7 @@ publish.workspace = true
 
 [dependencies]
 chain = { path = "../../adapters/chain" }
+clap = { version = "4.6.7", features = ["derive"] }
 domain = { path = "../../crates/domain" }
 encoding = { path = "../../adapters/encoding" }
 envelope = { path = "../../adapters/envelope" }
@@ -14,7 +15,9 @@ kem = { path = "../../adapters/kem" }
 pairing = { path = "../../adapters/pairing" }
 proof = { path = "../../adapters/proof" }
 random = { path = "../../adapters/random" }
+serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.151", optional = true }
+toml = "1.1.6"
 
 [dev-dependencies]
 chain = { path = "../../adapters/chain", features = ["mocks"] }

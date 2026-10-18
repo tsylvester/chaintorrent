@@ -2,10 +2,11 @@ use crate::domain_tag::provides::DomainTag;
 use crate::keccak256::provides::Keccak256HashToScalarErrorReturn;
 use core::convert::Infallible;
 use pairing::{ISampleUniformScalar, SampleUniformScalarErrorReturn};
+use serde::Serialize;
 
 pub const HASH_TO_SCALAR_INTERFACE_VERSION: u32 = 1;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum HashToScalarIdentifier {
     Keccak256V1,
     #[cfg(any(test, feature = "mocks"))]
@@ -37,7 +38,7 @@ pub enum HashToScalarErrorReturn {
 }
 
 #[cfg(any(test, feature = "mocks"))]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum MockIHashToScalarAdapterFailureMode {
     Succeeds,
     SamplingRefused,
@@ -55,7 +56,7 @@ pub trait IHashToScalarAdapter<S: ISampleUniformScalar + Clone> {
     ) -> HashToScalarReturn<S>;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum HashToScalarConcrete {
     Keccak256,
     #[cfg(any(test, feature = "mocks"))]

@@ -9,6 +9,7 @@ use hash_to_scalar::IHashToScalarAdapter;
 use kem::MasterScalarComponents;
 use pairing::{IPairingAdapter, IPairingArithmetic, VerifierGroupArithmetic};
 use random::IRandomSourceAdapter;
+use serde::Serialize;
 use zeroize::Zeroize;
 
 use crate::mint_statement::provides::{DeliveryRelation, MintPurpose, TransferPurpose};
@@ -426,7 +427,7 @@ pub trait IDeliveryProofAdapter {
 }
 
 #[cfg(any(test, feature = "mocks"))]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum MockIDeliveryProofAdapterFailureMode {
     NoFailure,
     NonceDrawRefused,
@@ -444,7 +445,7 @@ pub enum MockIDeliveryProofAdapterProveTransferErrorReturn {
     NonceDrawRefused,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum DeliveryProofConcrete {
     SchnorrFs,
     #[cfg(any(test, feature = "mocks"))]
