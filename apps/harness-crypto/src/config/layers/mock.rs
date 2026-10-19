@@ -6,6 +6,8 @@
     clippy::too_many_arguments
 )]
 
+use domain::{build_asset_identity_hash, build_parameter_set_identifier, build_suite_identifier};
+use proof::DeliveryPurpose;
 use std::ffi::OsString;
 use std::path::PathBuf;
 use toml::{Table, Value};
@@ -384,19 +386,28 @@ pub struct DeliveryContextDocumentOverrides {
     pub expiry: Option<u64>,
 }
 
+fn hex_prefixed(bytes: &[u8]) -> String {
+    let mut text = String::from("0x");
+    for byte in bytes {
+        text.push_str(&format!("{byte:02x}"));
+    }
+    text
+}
+
 pub fn build_delivery_context_document(
     overrides: DeliveryContextDocumentOverrides,
 ) -> DeliveryContextDocument {
+    let suite = build_suite_identifier(Default::default());
     DeliveryContextDocument {
-        suite_identifier: overrides.suite_identifier.unwrap_or_else(|| {
-            "0x0000000000000000000000000000000000000000000000000000000000000001".to_string()
-        }),
-        suite_version: overrides.suite_version.unwrap_or(1),
+        suite_identifier: overrides
+            .suite_identifier
+            .unwrap_or_else(|| hex_prefixed(suite.identifier())),
+        suite_version: overrides.suite_version.unwrap_or_else(|| suite.version()),
         asset_identity_hash: overrides.asset_identity_hash.unwrap_or_else(|| {
-            "0x0000000000000000000000000000000000000000000000000000000000000001".to_string()
+            hex_prefixed(build_asset_identity_hash(Default::default()).as_bytes())
         }),
         parameter_set_identifier: overrides.parameter_set_identifier.unwrap_or_else(|| {
-            "0x0000000000000000000000000000000000000000000000000000000000000001".to_string()
+            hex_prefixed(build_parameter_set_identifier(Default::default()).as_bytes())
         }),
         source_entitlement: overrides.source_entitlement.unwrap_or_else(|| {
             build_canonical_field_document(CanonicalFieldDocumentOverrides {
@@ -519,14 +530,20 @@ pub fn build_statements_document(overrides: StatementsDocumentOverrides) -> Stat
         transfer: overrides
             .transfer
             .unwrap_or_else(|| build_delivery_context_document(Default::default())),
-        mint_purpose: overrides.mint_purpose.unwrap_or(1),
-        transfer_purpose: overrides.transfer_purpose.unwrap_or(2),
-        identities: overrides
-            .identities
-            .unwrap_or_else(|| vec!["0x01".to_string()]),
-        proof_identity: overrides
-            .proof_identity
-            .unwrap_or_else(|| "0x01".to_string()),
+        mint_purpose: overrides
+            .mint_purpose
+            .unwrap_or_else(|| DeliveryPurpose::Mint.code()),
+        transfer_purpose: overrides
+            .transfer_purpose
+            .unwrap_or_else(|| DeliveryPurpose::Transfer.code()),
+        identities: overrides.identities.unwrap_or_else(|| {
+            vec![hex_prefixed(
+                build_asset_identity_hash(Default::default()).as_bytes(),
+            )]
+        }),
+        proof_identity: overrides.proof_identity.unwrap_or_else(|| {
+            hex_prefixed(build_asset_identity_hash(Default::default()).as_bytes())
+        }),
     }
 }
 

@@ -313,7 +313,7 @@ fn configure_refuses_zero_benchmark_iterations() {
 ///   selection` over `PairingConcrete::Bls12381Arkworks` and
 ///   `TargetGroupEncodingIdentifier::Bls12381V1`]; `admit_statements` returns
 ///   `build_network_profile` with `chain` `CanonicalFieldValue::Unsigned64(11)`
-///   and `build_harness_statements` with `identities` `vec![vec![0x02]]`;
+///   and `build_harness_statements` with `identities` `vec![vec![0x02; 32]]`;
 ///   `admit_generate` returns `GenerateConcrete::Evm { settings }` over
 ///   `build_evm_generate_settings` with `foundry_root`
 ///   `PathBuf::from("contracts/other")` and `kinds`
@@ -372,7 +372,7 @@ fn configure_composes_each_admitted_value_into_its_own_field() {
                     ..Default::default()
                 })),
                 statements: Some(build_harness_statements(HarnessStatementsOverrides {
-                    identities: Some(vec![vec![0x02]]),
+                    identities: Some(vec![vec![0x02; 32]]),
                     ..Default::default()
                 })),
             },
@@ -442,7 +442,7 @@ fn configure_composes_each_admitted_value_into_its_own_field() {
         configuration.network.chain,
         CanonicalFieldValue::Unsigned64(11)
     );
-    assert_eq!(configuration.statements.identities, vec![vec![0x02]]);
+    assert_eq!(configuration.statements.identities, vec![vec![0x02; 32]]);
     let GenerateConcrete::Evm { settings } = &configuration.generate else {
         panic!("expected the EVM generate concrete");
     };

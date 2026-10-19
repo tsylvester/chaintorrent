@@ -6,6 +6,7 @@
     clippy::too_many_arguments
 )]
 
+use domain::build_asset_identity_hash;
 use encoding::CanonicalFieldValue;
 use proof::{MintPurpose, TransferPurpose};
 use serde_json::{Map, Value};
@@ -155,8 +156,18 @@ pub fn build_harness_statements(overrides: HarnessStatementsOverrides) -> Harnes
         transfer_purpose: overrides
             .transfer_purpose
             .unwrap_or(TransferPurpose::Transfer),
-        identities: overrides.identities.unwrap_or_else(|| vec![vec![0x01]]),
-        proof_identity: overrides.proof_identity.unwrap_or_else(|| vec![0x01]),
+        identities: overrides.identities.unwrap_or_else(|| {
+            vec![
+                build_asset_identity_hash(Default::default())
+                    .as_bytes()
+                    .to_vec(),
+            ]
+        }),
+        proof_identity: overrides.proof_identity.unwrap_or_else(|| {
+            build_asset_identity_hash(Default::default())
+                .as_bytes()
+                .to_vec()
+        }),
     }
 }
 

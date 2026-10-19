@@ -122,8 +122,9 @@ fn the_shipped_defaults_admit_the_selections() {
 /// Assert:  `configuration.network` equals
 ///   `build_network_profile(Default::default())` and
 ///   `configuration.statements` equals `build_harness_statements` with both
-///   contexts the shipped context and `identities` `vec![vec![0x01],
-///   vec![0x02]]`, by `assert_eq!`.
+///   contexts the shipped context, `identities` the shipped pair of
+///   thirty-two-byte vectors, and `proof_identity` the first identity, by
+///   `assert_eq!`.
 /// Boundary: the public call `harness_crypto::configure` over the real chain
 ///   `layers`, `admit_selections`, `admit_statements`, `admit_generate`, and
 ///   `admit_output`.
@@ -157,6 +158,8 @@ fn the_shipped_defaults_admit_the_network_profile_and_statements() {
     let network = build_network_profile(Default::default());
     let mut identifier = [0x00; 32];
     identifier[31] = 0x01;
+    let mut other_identity = [0x00; 32];
+    other_identity[31] = 0x02;
     let mut one = [0x00; 32];
     one[24..].copy_from_slice(&1u64.to_be_bytes());
     let mut seller = [0x00; 20];
@@ -196,7 +199,8 @@ fn the_shipped_defaults_admit_the_network_profile_and_statements() {
         build_harness_statements(HarnessStatementsOverrides {
             mint: Some(context.clone()),
             transfer: Some(context),
-            identities: Some(vec![vec![0x01], vec![0x02]]),
+            identities: Some(vec![identifier.to_vec(), other_identity.to_vec()]),
+            proof_identity: Some(identifier.to_vec()),
             ..Default::default()
         })
     );
