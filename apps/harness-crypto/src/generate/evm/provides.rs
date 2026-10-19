@@ -16,3 +16,11 @@ pub use super::possession_vectors::provides::*;
 pub use super::proof_vectors::provides::*;
 pub use super::rejection_vectors::provides::*;
 pub use super::render::provides::*;
+#[cfg(any(test, feature = "mocks"))]
+pub use super::render::provides::{
+    SolidityCompilerVersionOverrides, SolidityConstantNameConstructorParamsOverrides,
+    SolidityLibraryNameConstructorParamsOverrides, SolidityMemberNameConstructorParamsOverrides,
+    SolidityTypeNameConstructorParamsOverrides, SpdxLicenseIdentifierConstructorParamsOverrides,
+    build_solidity_compiler_version, build_solidity_constant_name, build_solidity_library_name,
+    build_solidity_member_name, build_solidity_type_name, build_spdx_license_identifier,
+};

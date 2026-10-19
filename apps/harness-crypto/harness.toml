@@ -1,0 +1,223 @@
+[random]
+source = "operating_system"
+
+[encoding]
+concrete = "abi"
+identifier = "ethereum_abi_v1"
+
+[hash_to_scalar]
+concrete = "keccak256"
+identifier = "keccak256_v1"
+
+[chain_forms]
+concrete = "evm"
+identifier = "evm_v1"
+
+[kem]
+concrete = "bb1_depth_one"
+identifier = "bb1_depth_one_v1"
+scope = "entitlement"
+
+[key_agreement]
+concrete = "pairing_elgamal"
+identifier = "pairing_elgamal_v1"
+algebra = "pairing_elgamal"
+
+[delivery_proof]
+concrete = "schnorr_fs"
+statement_version = 1
+
+[[curves]]
+pairing = "bn254_arkworks"
+target_group_encoding = "bn254_v1"
+
+[[curves]]
+pairing = "bls12_381_arkworks"
+target_group_encoding = "bls12_381_v1"
+
+[network]
+precompile_encodings = ["eip196_eip197", "eip2537"]
+chain = { kind = "unsigned256", value = 84532 }
+entitlement_contract = { kind = "fixed_bytes20", value = "0x0000000000000000000000000000000000000000" }
+
+[benchmark]
+iterations = 100
+
+[[benchmark.concretes]]
+pairing = "bn254_arkworks"
+target_group_encoding = "bn254_v1"
+
+[[benchmark.concretes]]
+pairing = "bn254_halo2curves"
+target_group_encoding = "bn254_v1"
+
+[[benchmark.concretes]]
+pairing = "bls12_381_arkworks"
+target_group_encoding = "bls12_381_v1"
+
+[[benchmark.concretes]]
+pairing = "bls12_381_halo2curves"
+target_group_encoding = "bls12_381_v1"
+
+[statements]
+mint_purpose = 1
+transfer_purpose = 2
+identities = ["0x01", "0x02"]
+proof_identity = "0x01"
+
+[statements.mint]
+suite_identifier = "0x0000000000000000000000000000000000000000000000000000000000000001"
+asset_identity_hash = "0x0000000000000000000000000000000000000000000000000000000000000001"
+parameter_set_identifier = "0x0000000000000000000000000000000000000000000000000000000000000001"
+suite_version = 1
+source_entitlement = { kind = "unsigned256", value = 1 }
+target_entitlement = { kind = "unsigned256", value = 1 }
+old_interval = { kind = "unsigned64", value = 0 }
+new_interval = { kind = "unsigned64", value = 1 }
+seller = { kind = "fixed_bytes20", value = "0x0000000000000000000000000000000000000001" }
+buyer = { kind = "fixed_bytes20", value = "0x0000000000000000000000000000000000000002" }
+expiry = 4102444800
+
+[statements.transfer]
+suite_identifier = "0x0000000000000000000000000000000000000000000000000000000000000001"
+asset_identity_hash = "0x0000000000000000000000000000000000000000000000000000000000000001"
+parameter_set_identifier = "0x0000000000000000000000000000000000000000000000000000000000000001"
+suite_version = 1
+source_entitlement = { kind = "unsigned256", value = 1 }
+target_entitlement = { kind = "unsigned256", value = 1 }
+old_interval = { kind = "unsigned64", value = 0 }
+new_interval = { kind = "unsigned64", value = 1 }
+seller = { kind = "fixed_bytes20", value = "0x0000000000000000000000000000000000000001" }
+buyer = { kind = "fixed_bytes20", value = "0x0000000000000000000000000000000000000002" }
+expiry = 4102444800
+
+[generate]
+concrete = "evm"
+foundry_root = "contracts/evm"
+generated_directory = ["generated"]
+license = "UNLICENSED"
+
+[generate.constants_library]
+file_name = "Constants.sol"
+library_name = "Constants"
+
+[generate.records_library]
+file_name = "VectorRecords.sol"
+library_name = "VectorRecords"
+
+[generate.curve_directories]
+bn254 = "bn254"
+bls12_381 = "bls12_381"
+
+[generate.compiler_version]
+major = 0
+minor = 8
+patch = 37
+
+[[generate.kinds]]
+kind = "g1_addition"
+count = 8
+file_name = "g1_add.vectors"
+struct_name = "G1AddVector"
+decode_function_name = "decodeG1Add"
+path_constant_name = "G1_ADD_PATH"
+
+[[generate.kinds]]
+kind = "g1_multiplication"
+count = 8
+file_name = "g1_mul.vectors"
+struct_name = "G1MulVector"
+decode_function_name = "decodeG1Mul"
+path_constant_name = "G1_MUL_PATH"
+
+[[generate.kinds]]
+kind = "pairing_check"
+count = 8
+file_name = "pairing_check.vectors"
+struct_name = "PairingCheckVector"
+decode_function_name = "decodePairingCheck"
+path_constant_name = "PAIRING_CHECK_PATH"
+
+[[generate.kinds]]
+kind = "g2_addition"
+count = 8
+file_name = "g2_add.vectors"
+struct_name = "G2AddVector"
+decode_function_name = "decodeG2Add"
+path_constant_name = "G2_ADD_PATH"
+
+[[generate.kinds]]
+kind = "g1_multi_scalar_multiplication"
+count = 8
+terms = 4
+file_name = "g1_msm.vectors"
+struct_name = "G1MsmVector"
+decode_function_name = "decodeG1Msm"
+path_constant_name = "G1_MSM_PATH"
+
+[[generate.kinds]]
+kind = "g2_multi_scalar_multiplication"
+count = 8
+terms = 4
+file_name = "g2_msm.vectors"
+struct_name = "G2MsmVector"
+decode_function_name = "decodeG2Msm"
+path_constant_name = "G2_MSM_PATH"
+
+[[generate.kinds]]
+kind = "decode_rejection"
+file_name = "decode_rejection.vectors"
+struct_name = "DecodeRejectionVector"
+decode_function_name = "decodeDecodeRejection"
+path_constant_name = "DECODE_REJECTION_PATH"
+
+[[generate.kinds]]
+kind = "hash_to_scalar"
+count = 8
+message_length = 32
+file_name = "hash_to_scalar.vectors"
+struct_name = "HashToScalarVector"
+decode_function_name = "decodeHashToScalar"
+path_constant_name = "HASH_TO_SCALAR_PATH"
+
+[[generate.kinds]]
+kind = "identity_mapping"
+file_name = "identity_mapping.vectors"
+struct_name = "IdentityMappingVector"
+decode_function_name = "decodeIdentityMapping"
+path_constant_name = "IDENTITY_MAPPING_PATH"
+
+[[generate.kinds]]
+kind = "possession"
+count = 8
+file_name = "possession.vectors"
+struct_name = "PossessionVector"
+decode_function_name = "decodePossession"
+path_constant_name = "POSSESSION_PATH"
+
+[[generate.kinds]]
+kind = "challenge"
+count = 8
+file_name = "challenge.vectors"
+struct_name = "ChallengeVector"
+decode_function_name = "decodeChallenge"
+path_constant_name = "CHALLENGE_PATH"
+
+[[generate.kinds]]
+kind = "mint_proof"
+count = 8
+file_name = "mint_proof.vectors"
+struct_name = "MintProofVector"
+decode_function_name = "decodeMintProof"
+path_constant_name = "MINT_PROOF_PATH"
+
+[[generate.kinds]]
+kind = "transfer_proof"
+count = 8
+file_name = "transfer_proof.vectors"
+struct_name = "TransferProofVector"
+decode_function_name = "decodeTransferProof"
+path_constant_name = "TRANSFER_PROOF_PATH"
+
+[[output.destinations]]
+kind = "standard_output"
