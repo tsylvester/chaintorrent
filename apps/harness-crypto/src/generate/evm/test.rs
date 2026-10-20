@@ -8,6 +8,10 @@ use chain::{
     build_create_chain_forms_deps, build_create_chain_forms_params,
     build_create_chain_forms_payload, create_chain_forms,
 };
+use domain::{
+    ASSET_IDENTITY_HASH_LENGTH, AssetIdentityHashConstructorParamsOverrides,
+    AssetIdentityHashTryNewErrorReturn, build_asset_identity_hash,
+};
 use encoding::{
     ConsumeEncodingParams, ConsumeEncodingPayload, IDecoderAdapter, IEncoderAdapter,
     IEncodingConsumer, build_create_encoding_deps, build_create_encoding_params,
@@ -23,7 +27,7 @@ use hash_to_scalar::{
     build_create_hash_to_scalar_payload, create_hash_to_scalar,
 };
 use kem::{
-    ConsumeKemParams, ConsumeKemPayload, ICredentialKemAdapter, IKemConsumer,
+    ConsumeKemParams, ConsumeKemPayload, ICredentialKemAdapter, IKemConsumer, IdentityScope,
     build_create_kem_deps, build_create_kem_params, build_create_kem_payload, create_kem,
 };
 use pairing::{
@@ -1225,4 +1229,2462 @@ fn emit_refuses_sizes_missing_an_emitted_kind() {
     ));
     assert!(!Path::exists(&root));
     // emit_refuses_sizes_missing_an_emitted_kind
+}
+
+/// Contract: under `IdentityScope::Asset`, the lowest index `i` whose
+///   identity's length is not `ASSET_IDENTITY_HASH_LENGTH` →
+///   `Err(EmitErrorReturn::AssetIdentityLength { index: i, actual })`,
+///   before any setting is read.
+/// Arrange: `scope` overridden to `IdentityScope::Asset`; `identities`
+///   `vec![hash.clone(), vec![0x22; ASSET_IDENTITY_HASH_LENGTH - 1],
+///   vec![0x33; ASSET_IDENTITY_HASH_LENGTH + 1]]`, two refused lengths at
+///   different indexes after an admitted identity; `proof_identity` `hash`;
+///   `settings.kinds` missing the possession and challenge kinds as
+///   `emit_refuses_settings_missing_an_emitted_kind` arranges, so the
+///   refusal's precedence over every setting read shows; the settings' root
+///   removed before the act.
+/// Act:     `emit` in the delivery-proof consumer.
+/// Assert:  `matches!(result, Err(EmitErrorReturn::AssetIdentityLength
+///   { index: 1, actual }) if actual == ASSET_IDENTITY_HASH_LENGTH - 1)`
+///   and the root does not exist.
+/// Collaborators: the pairing's, hash-to-scalar's, encoding's, chain-forms',
+///   kem's, key-agreement's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
+#[test]
+fn emit_refuses_an_asset_scope_identity_of_another_length_with_its_index() {
+    // Arrange
+    let default = build_evm_generate_settings(Default::default());
+    let kinds: Vec<_> = default
+        .kinds
+        .into_iter()
+        .filter(|entry| entry.kind != VectorKind::Possession && entry.kind != VectorKind::Challenge)
+        .map(|entry| {
+            build_evm_vector_kind_settings(EvmVectorKindSettingsOverrides {
+                kind: Some(entry.kind),
+                names: Some(entry.names),
+            })
+        })
+        .collect();
+    let settings = build_evm_generate_settings(EvmGenerateSettingsOverrides {
+        kinds: Some(kinds),
+        ..Default::default()
+    });
+    let root = settings.foundry_root.clone();
+    let overrides = EvmGenerateConstructorParamsOverrides {
+        scope: Some(IdentityScope::Asset),
+        settings: Some(settings),
+        ..Default::default()
+    };
+    let _ = std::fs::remove_dir_all(&root);
+
+    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, E, K, A, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        key_agreement: &'a A,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, A, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, E, K, A, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        A: IKeyAgreementAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+            &self,
+            _params: ConsumeDeliveryProofParams,
+            payload: ConsumeDeliveryProofPayload<D>,
+        ) -> Self::Output {
+            // Arrange
+            let hash = build_asset_identity_hash(Default::default())
+                .as_bytes()
+                .to_vec();
+            let mint = build_canonical_delivery_context(Default::default());
+            let transfer = build_canonical_delivery_context(Default::default());
+            let identities = vec![
+                hash.clone(),
+                vec![0x22; ASSET_IDENTITY_HASH_LENGTH - 1],
+                vec![0x33; ASSET_IDENTITY_HASH_LENGTH + 1],
+            ];
+            let subject = build_evm_generate(
+                self.pairing,
+                self.hashing,
+                self.encoder,
+                self.random,
+                self.kem,
+                self.key_agreement,
+                &payload.adapter,
+                EvmGenerateConstructorParamsOverrides {
+                    scope: self.overrides.scope,
+                    settings: self.overrides.settings.clone(),
+                    ..Default::default()
+                },
+            );
+            let emit_payload =
+                build_emit_payload(&mint, &transfer, &identities, &hash, Default::default());
+
+            // Act
+            subject.emit(build_emit_params(Default::default()), emit_payload)
+        }
+    }
+
+    struct KeyAgreementConsumer<'a, P: IPairingArithmetic, E, K, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, F> IKeyAgreementConsumer<P> for KeyAgreementConsumer<'a, P, E, K, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_key_agreement<A: IKeyAgreementAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKeyAgreementParams,
+            payload: ConsumeKeyAgreementPayload<A>,
+        ) -> Self::Output {
+            let created = create_delivery_proof(
+                &build_create_delivery_proof_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    DeliveryProofConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: self.kem,
+                        key_agreement: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the delivery-proof factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct KemConsumer<'a, P: IPairingArithmetic, E, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, F> IKemConsumer<P> for KemConsumer<'a, P, E, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKemParams,
+            payload: ConsumeKemPayload<K>,
+        ) -> Self::Output {
+            let created = create_key_agreement(
+                &build_create_key_agreement_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    KeyAgreementConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_key_agreement_params(Default::default()),
+                build_create_key_agreement_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the key-agreement factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+    {
+        type Output = EmitReturn;
+
+        fn consume_chain_forms<F: IChainForms>(
+            &self,
+            _params: ConsumeChainFormsParams,
+            _payload: ConsumeChainFormsPayload<F>,
+        ) -> Self::Output {
+            let created = create_kem(
+                &build_create_kem_deps(
+                    self.pairing,
+                    self.hashing,
+                    KemConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_kem_params(Default::default()),
+                build_create_kem_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the kem factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct EncodingConsumer<'a, P: IPairingArithmetic> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
+    where
+        P: IPairingArithmetic + IPairingReference,
+    {
+        type Output = EmitReturn;
+
+        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+            &self,
+            _params: ConsumeEncodingParams,
+            payload: ConsumeEncodingPayload<E>,
+        ) -> Self::Output {
+            let created = create_chain_forms(
+                &build_create_chain_forms_deps(
+                    ChainFormsConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: &payload.adapter,
+                        random: self.random,
+                        overrides: self.overrides,
+                    },
+                    Default::default(),
+                ),
+                build_create_chain_forms_params(Default::default()),
+                build_create_chain_forms_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the chain-forms factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct PairingConsumer<'a> {
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a> IPairingConsumer for PairingConsumer<'a> {
+        type Output = EmitReturn;
+
+        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+            &self,
+            _params: ConsumePairingParams,
+            payload: ConsumePairingPayload<P>,
+        ) -> Self::Output {
+            let hashing = create_hash_to_scalar::<P::Scalar>(
+                &build_create_hash_to_scalar_deps(Default::default()),
+                build_create_hash_to_scalar_params(Default::default()),
+                build_create_hash_to_scalar_payload(Default::default()),
+            );
+            let Ok(hashing) = hashing else {
+                panic!("the hash-to-scalar factory admits the selection")
+            };
+            let Ok(source) = create_random_source(
+                &CreateRandomSourceDeps,
+                build_create_random_source_params(Default::default()),
+                CreateRandomSourcePayload,
+            );
+            let created = create_encoding(
+                &build_create_encoding_deps(EncodingConsumer {
+                    pairing: &payload.adapter,
+                    hashing: &*hashing.adapter,
+                    random: &*source.adapter,
+                    overrides: self.overrides,
+                }),
+                build_create_encoding_params(Default::default()),
+                build_create_encoding_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the encoding factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    let consumer = PairingConsumer {
+        overrides: &overrides,
+    };
+    let created = create_pairing(
+        &build_create_pairing_deps(consumer, Default::default()),
+        build_create_pairing_params(Default::default()),
+        build_create_pairing_payload(Default::default()),
+    );
+    let Ok(success) = created else {
+        panic!("the pairing factory ran the consumer")
+    };
+    let result = success.output;
+
+    // Assert
+    assert!(matches!(
+        result,
+        Err(EmitErrorReturn::AssetIdentityLength { index: 1, actual })
+            if actual == ASSET_IDENTITY_HASH_LENGTH - 1
+    ));
+    assert!(!Path::exists(&root));
+    // emit_refuses_an_asset_scope_identity_of_another_length_with_its_index
+}
+
+/// Contract: under `IdentityScope::Asset`, an identity `AssetIdentityHash::
+///   try_new` refuses → `Err(EmitErrorReturn::AssetIdentityHash { index,
+///   error })`, `error` unchanged, before any setting is read.
+/// Arrange: `scope` overridden to `IdentityScope::Asset`; `identities`
+///   `vec![hash.clone(), vec![0x00; ASSET_IDENTITY_HASH_LENGTH]]`, an
+///   all-zero value of the admitted length after an admitted identity;
+///   `proof_identity` `hash`; `settings.kinds` missing the possession and
+///   challenge kinds as `emit_refuses_settings_missing_an_emitted_kind`
+///   arranges, so the refusal's precedence over every setting read shows;
+///   the settings' root removed before the act.
+/// Act:     `emit` in the delivery-proof consumer.
+/// Assert:  `matches!(result, Err(EmitErrorReturn::AssetIdentityHash
+///   { index: 1, error: AssetIdentityHashTryNewErrorReturn::AllZero }))`
+///   and the root does not exist.
+/// Collaborators: the pairing's, hash-to-scalar's, encoding's, chain-forms',
+///   kem's, key-agreement's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
+#[test]
+fn emit_returns_an_asset_scope_identitys_hash_refusal_with_its_index() {
+    // Arrange
+    let default = build_evm_generate_settings(Default::default());
+    let kinds: Vec<_> = default
+        .kinds
+        .into_iter()
+        .filter(|entry| entry.kind != VectorKind::Possession && entry.kind != VectorKind::Challenge)
+        .map(|entry| {
+            build_evm_vector_kind_settings(EvmVectorKindSettingsOverrides {
+                kind: Some(entry.kind),
+                names: Some(entry.names),
+            })
+        })
+        .collect();
+    let settings = build_evm_generate_settings(EvmGenerateSettingsOverrides {
+        kinds: Some(kinds),
+        ..Default::default()
+    });
+    let root = settings.foundry_root.clone();
+    let overrides = EvmGenerateConstructorParamsOverrides {
+        scope: Some(IdentityScope::Asset),
+        settings: Some(settings),
+        ..Default::default()
+    };
+    let _ = std::fs::remove_dir_all(&root);
+
+    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, E, K, A, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        key_agreement: &'a A,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, A, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, E, K, A, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        A: IKeyAgreementAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+            &self,
+            _params: ConsumeDeliveryProofParams,
+            payload: ConsumeDeliveryProofPayload<D>,
+        ) -> Self::Output {
+            // Arrange
+            let hash = build_asset_identity_hash(Default::default())
+                .as_bytes()
+                .to_vec();
+            let mint = build_canonical_delivery_context(Default::default());
+            let transfer = build_canonical_delivery_context(Default::default());
+            let identities = vec![hash.clone(), vec![0x00; ASSET_IDENTITY_HASH_LENGTH]];
+            let subject = build_evm_generate(
+                self.pairing,
+                self.hashing,
+                self.encoder,
+                self.random,
+                self.kem,
+                self.key_agreement,
+                &payload.adapter,
+                EvmGenerateConstructorParamsOverrides {
+                    scope: self.overrides.scope,
+                    settings: self.overrides.settings.clone(),
+                    ..Default::default()
+                },
+            );
+            let emit_payload =
+                build_emit_payload(&mint, &transfer, &identities, &hash, Default::default());
+
+            // Act
+            subject.emit(build_emit_params(Default::default()), emit_payload)
+        }
+    }
+
+    struct KeyAgreementConsumer<'a, P: IPairingArithmetic, E, K, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, F> IKeyAgreementConsumer<P> for KeyAgreementConsumer<'a, P, E, K, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_key_agreement<A: IKeyAgreementAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKeyAgreementParams,
+            payload: ConsumeKeyAgreementPayload<A>,
+        ) -> Self::Output {
+            let created = create_delivery_proof(
+                &build_create_delivery_proof_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    DeliveryProofConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: self.kem,
+                        key_agreement: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the delivery-proof factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct KemConsumer<'a, P: IPairingArithmetic, E, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, F> IKemConsumer<P> for KemConsumer<'a, P, E, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKemParams,
+            payload: ConsumeKemPayload<K>,
+        ) -> Self::Output {
+            let created = create_key_agreement(
+                &build_create_key_agreement_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    KeyAgreementConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_key_agreement_params(Default::default()),
+                build_create_key_agreement_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the key-agreement factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+    {
+        type Output = EmitReturn;
+
+        fn consume_chain_forms<F: IChainForms>(
+            &self,
+            _params: ConsumeChainFormsParams,
+            _payload: ConsumeChainFormsPayload<F>,
+        ) -> Self::Output {
+            let created = create_kem(
+                &build_create_kem_deps(
+                    self.pairing,
+                    self.hashing,
+                    KemConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_kem_params(Default::default()),
+                build_create_kem_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the kem factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct EncodingConsumer<'a, P: IPairingArithmetic> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
+    where
+        P: IPairingArithmetic + IPairingReference,
+    {
+        type Output = EmitReturn;
+
+        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+            &self,
+            _params: ConsumeEncodingParams,
+            payload: ConsumeEncodingPayload<E>,
+        ) -> Self::Output {
+            let created = create_chain_forms(
+                &build_create_chain_forms_deps(
+                    ChainFormsConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: &payload.adapter,
+                        random: self.random,
+                        overrides: self.overrides,
+                    },
+                    Default::default(),
+                ),
+                build_create_chain_forms_params(Default::default()),
+                build_create_chain_forms_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the chain-forms factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct PairingConsumer<'a> {
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a> IPairingConsumer for PairingConsumer<'a> {
+        type Output = EmitReturn;
+
+        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+            &self,
+            _params: ConsumePairingParams,
+            payload: ConsumePairingPayload<P>,
+        ) -> Self::Output {
+            let hashing = create_hash_to_scalar::<P::Scalar>(
+                &build_create_hash_to_scalar_deps(Default::default()),
+                build_create_hash_to_scalar_params(Default::default()),
+                build_create_hash_to_scalar_payload(Default::default()),
+            );
+            let Ok(hashing) = hashing else {
+                panic!("the hash-to-scalar factory admits the selection")
+            };
+            let Ok(source) = create_random_source(
+                &CreateRandomSourceDeps,
+                build_create_random_source_params(Default::default()),
+                CreateRandomSourcePayload,
+            );
+            let created = create_encoding(
+                &build_create_encoding_deps(EncodingConsumer {
+                    pairing: &payload.adapter,
+                    hashing: &*hashing.adapter,
+                    random: &*source.adapter,
+                    overrides: self.overrides,
+                }),
+                build_create_encoding_params(Default::default()),
+                build_create_encoding_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the encoding factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    let consumer = PairingConsumer {
+        overrides: &overrides,
+    };
+    let created = create_pairing(
+        &build_create_pairing_deps(consumer, Default::default()),
+        build_create_pairing_params(Default::default()),
+        build_create_pairing_payload(Default::default()),
+    );
+    let Ok(success) = created else {
+        panic!("the pairing factory ran the consumer")
+    };
+    let result = success.output;
+
+    // Assert
+    assert!(matches!(
+        result,
+        Err(EmitErrorReturn::AssetIdentityHash {
+            index: 1,
+            error: AssetIdentityHashTryNewErrorReturn::AllZero
+        })
+    ));
+    assert!(!Path::exists(&root));
+    // emit_returns_an_asset_scope_identitys_hash_refusal_with_its_index
+}
+
+/// Contract: under `IdentityScope::Asset`, a proof identity whose length is
+///   not `ASSET_IDENTITY_HASH_LENGTH` → `Err(EmitErrorReturn::
+///   AssetProofIdentityLength { actual })`, before any setting is read.
+/// Arrange: `scope` overridden to `IdentityScope::Asset`; `identities`
+///   `vec![hash.clone()]`; `proof_identity` `vec![0x22;
+///   ASSET_IDENTITY_HASH_LENGTH + 1]`; `settings.kinds` missing the
+///   possession and challenge kinds as
+///   `emit_refuses_settings_missing_an_emitted_kind` arranges, so the
+///   refusal's precedence over every setting read shows; the settings' root
+///   removed before the act.
+/// Act:     `emit` in the delivery-proof consumer.
+/// Assert:  `matches!(result, Err(EmitErrorReturn::AssetProofIdentityLength
+///   { actual }) if actual == ASSET_IDENTITY_HASH_LENGTH + 1)` and the root
+///   does not exist.
+/// Collaborators: the pairing's, hash-to-scalar's, encoding's, chain-forms',
+///   kem's, key-agreement's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
+#[test]
+fn emit_refuses_an_asset_scope_proof_identity_of_another_length() {
+    // Arrange
+    let default = build_evm_generate_settings(Default::default());
+    let kinds: Vec<_> = default
+        .kinds
+        .into_iter()
+        .filter(|entry| entry.kind != VectorKind::Possession && entry.kind != VectorKind::Challenge)
+        .map(|entry| {
+            build_evm_vector_kind_settings(EvmVectorKindSettingsOverrides {
+                kind: Some(entry.kind),
+                names: Some(entry.names),
+            })
+        })
+        .collect();
+    let settings = build_evm_generate_settings(EvmGenerateSettingsOverrides {
+        kinds: Some(kinds),
+        ..Default::default()
+    });
+    let root = settings.foundry_root.clone();
+    let overrides = EvmGenerateConstructorParamsOverrides {
+        scope: Some(IdentityScope::Asset),
+        settings: Some(settings),
+        ..Default::default()
+    };
+    let _ = std::fs::remove_dir_all(&root);
+
+    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, E, K, A, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        key_agreement: &'a A,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, A, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, E, K, A, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        A: IKeyAgreementAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+            &self,
+            _params: ConsumeDeliveryProofParams,
+            payload: ConsumeDeliveryProofPayload<D>,
+        ) -> Self::Output {
+            // Arrange
+            let hash = build_asset_identity_hash(Default::default())
+                .as_bytes()
+                .to_vec();
+            let mint = build_canonical_delivery_context(Default::default());
+            let transfer = build_canonical_delivery_context(Default::default());
+            let identities = vec![hash.clone()];
+            let proof_identity = vec![0x22; ASSET_IDENTITY_HASH_LENGTH + 1];
+            let subject = build_evm_generate(
+                self.pairing,
+                self.hashing,
+                self.encoder,
+                self.random,
+                self.kem,
+                self.key_agreement,
+                &payload.adapter,
+                EvmGenerateConstructorParamsOverrides {
+                    scope: self.overrides.scope,
+                    settings: self.overrides.settings.clone(),
+                    ..Default::default()
+                },
+            );
+            let emit_payload = build_emit_payload(
+                &mint,
+                &transfer,
+                &identities,
+                &proof_identity,
+                Default::default(),
+            );
+
+            // Act
+            subject.emit(build_emit_params(Default::default()), emit_payload)
+        }
+    }
+
+    struct KeyAgreementConsumer<'a, P: IPairingArithmetic, E, K, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, F> IKeyAgreementConsumer<P> for KeyAgreementConsumer<'a, P, E, K, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_key_agreement<A: IKeyAgreementAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKeyAgreementParams,
+            payload: ConsumeKeyAgreementPayload<A>,
+        ) -> Self::Output {
+            let created = create_delivery_proof(
+                &build_create_delivery_proof_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    DeliveryProofConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: self.kem,
+                        key_agreement: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the delivery-proof factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct KemConsumer<'a, P: IPairingArithmetic, E, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, F> IKemConsumer<P> for KemConsumer<'a, P, E, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKemParams,
+            payload: ConsumeKemPayload<K>,
+        ) -> Self::Output {
+            let created = create_key_agreement(
+                &build_create_key_agreement_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    KeyAgreementConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_key_agreement_params(Default::default()),
+                build_create_key_agreement_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the key-agreement factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+    {
+        type Output = EmitReturn;
+
+        fn consume_chain_forms<F: IChainForms>(
+            &self,
+            _params: ConsumeChainFormsParams,
+            _payload: ConsumeChainFormsPayload<F>,
+        ) -> Self::Output {
+            let created = create_kem(
+                &build_create_kem_deps(
+                    self.pairing,
+                    self.hashing,
+                    KemConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_kem_params(Default::default()),
+                build_create_kem_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the kem factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct EncodingConsumer<'a, P: IPairingArithmetic> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
+    where
+        P: IPairingArithmetic + IPairingReference,
+    {
+        type Output = EmitReturn;
+
+        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+            &self,
+            _params: ConsumeEncodingParams,
+            payload: ConsumeEncodingPayload<E>,
+        ) -> Self::Output {
+            let created = create_chain_forms(
+                &build_create_chain_forms_deps(
+                    ChainFormsConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: &payload.adapter,
+                        random: self.random,
+                        overrides: self.overrides,
+                    },
+                    Default::default(),
+                ),
+                build_create_chain_forms_params(Default::default()),
+                build_create_chain_forms_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the chain-forms factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct PairingConsumer<'a> {
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a> IPairingConsumer for PairingConsumer<'a> {
+        type Output = EmitReturn;
+
+        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+            &self,
+            _params: ConsumePairingParams,
+            payload: ConsumePairingPayload<P>,
+        ) -> Self::Output {
+            let hashing = create_hash_to_scalar::<P::Scalar>(
+                &build_create_hash_to_scalar_deps(Default::default()),
+                build_create_hash_to_scalar_params(Default::default()),
+                build_create_hash_to_scalar_payload(Default::default()),
+            );
+            let Ok(hashing) = hashing else {
+                panic!("the hash-to-scalar factory admits the selection")
+            };
+            let Ok(source) = create_random_source(
+                &CreateRandomSourceDeps,
+                build_create_random_source_params(Default::default()),
+                CreateRandomSourcePayload,
+            );
+            let created = create_encoding(
+                &build_create_encoding_deps(EncodingConsumer {
+                    pairing: &payload.adapter,
+                    hashing: &*hashing.adapter,
+                    random: &*source.adapter,
+                    overrides: self.overrides,
+                }),
+                build_create_encoding_params(Default::default()),
+                build_create_encoding_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the encoding factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    let consumer = PairingConsumer {
+        overrides: &overrides,
+    };
+    let created = create_pairing(
+        &build_create_pairing_deps(consumer, Default::default()),
+        build_create_pairing_params(Default::default()),
+        build_create_pairing_payload(Default::default()),
+    );
+    let Ok(success) = created else {
+        panic!("the pairing factory ran the consumer")
+    };
+    let result = success.output;
+
+    // Assert
+    assert!(matches!(
+        result,
+        Err(EmitErrorReturn::AssetProofIdentityLength { actual })
+            if actual == ASSET_IDENTITY_HASH_LENGTH + 1
+    ));
+    assert!(!Path::exists(&root));
+    // emit_refuses_an_asset_scope_proof_identity_of_another_length
+}
+
+/// Contract: under `IdentityScope::Asset`, a proof identity
+///   `AssetIdentityHash::try_new` refuses → `Err(EmitErrorReturn::
+///   AssetProofIdentityHash(error))`, `error` unchanged, before any setting
+///   is read.
+/// Arrange: `scope` overridden to `IdentityScope::Asset`; `identities`
+///   `vec![hash.clone()]`; `proof_identity` `vec![0x00;
+///   ASSET_IDENTITY_HASH_LENGTH]`; `settings.kinds` missing the possession
+///   and challenge kinds as `emit_refuses_settings_missing_an_emitted_kind`
+///   arranges, so the refusal's precedence over every setting read shows;
+///   the settings' root removed before the act.
+/// Act:     `emit` in the delivery-proof consumer.
+/// Assert:  `matches!(result, Err(EmitErrorReturn::AssetProofIdentityHash(
+///   AssetIdentityHashTryNewErrorReturn::AllZero)))` and the root does not
+///   exist.
+/// Collaborators: the pairing's, hash-to-scalar's, encoding's, chain-forms',
+///   kem's, key-agreement's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
+#[test]
+fn emit_returns_an_asset_scope_proof_identitys_hash_refusal() {
+    // Arrange
+    let default = build_evm_generate_settings(Default::default());
+    let kinds: Vec<_> = default
+        .kinds
+        .into_iter()
+        .filter(|entry| entry.kind != VectorKind::Possession && entry.kind != VectorKind::Challenge)
+        .map(|entry| {
+            build_evm_vector_kind_settings(EvmVectorKindSettingsOverrides {
+                kind: Some(entry.kind),
+                names: Some(entry.names),
+            })
+        })
+        .collect();
+    let settings = build_evm_generate_settings(EvmGenerateSettingsOverrides {
+        kinds: Some(kinds),
+        ..Default::default()
+    });
+    let root = settings.foundry_root.clone();
+    let overrides = EvmGenerateConstructorParamsOverrides {
+        scope: Some(IdentityScope::Asset),
+        settings: Some(settings),
+        ..Default::default()
+    };
+    let _ = std::fs::remove_dir_all(&root);
+
+    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, E, K, A, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        key_agreement: &'a A,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, A, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, E, K, A, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        A: IKeyAgreementAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+            &self,
+            _params: ConsumeDeliveryProofParams,
+            payload: ConsumeDeliveryProofPayload<D>,
+        ) -> Self::Output {
+            // Arrange
+            let hash = build_asset_identity_hash(Default::default())
+                .as_bytes()
+                .to_vec();
+            let mint = build_canonical_delivery_context(Default::default());
+            let transfer = build_canonical_delivery_context(Default::default());
+            let identities = vec![hash.clone()];
+            let proof_identity = vec![0x00; ASSET_IDENTITY_HASH_LENGTH];
+            let subject = build_evm_generate(
+                self.pairing,
+                self.hashing,
+                self.encoder,
+                self.random,
+                self.kem,
+                self.key_agreement,
+                &payload.adapter,
+                EvmGenerateConstructorParamsOverrides {
+                    scope: self.overrides.scope,
+                    settings: self.overrides.settings.clone(),
+                    ..Default::default()
+                },
+            );
+            let emit_payload = build_emit_payload(
+                &mint,
+                &transfer,
+                &identities,
+                &proof_identity,
+                Default::default(),
+            );
+
+            // Act
+            subject.emit(build_emit_params(Default::default()), emit_payload)
+        }
+    }
+
+    struct KeyAgreementConsumer<'a, P: IPairingArithmetic, E, K, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, F> IKeyAgreementConsumer<P> for KeyAgreementConsumer<'a, P, E, K, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_key_agreement<A: IKeyAgreementAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKeyAgreementParams,
+            payload: ConsumeKeyAgreementPayload<A>,
+        ) -> Self::Output {
+            let created = create_delivery_proof(
+                &build_create_delivery_proof_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    DeliveryProofConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: self.kem,
+                        key_agreement: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the delivery-proof factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct KemConsumer<'a, P: IPairingArithmetic, E, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, F> IKemConsumer<P> for KemConsumer<'a, P, E, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKemParams,
+            payload: ConsumeKemPayload<K>,
+        ) -> Self::Output {
+            let created = create_key_agreement(
+                &build_create_key_agreement_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    KeyAgreementConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_key_agreement_params(Default::default()),
+                build_create_key_agreement_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the key-agreement factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+    {
+        type Output = EmitReturn;
+
+        fn consume_chain_forms<F: IChainForms>(
+            &self,
+            _params: ConsumeChainFormsParams,
+            _payload: ConsumeChainFormsPayload<F>,
+        ) -> Self::Output {
+            let created = create_kem(
+                &build_create_kem_deps(
+                    self.pairing,
+                    self.hashing,
+                    KemConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_kem_params(Default::default()),
+                build_create_kem_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the kem factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct EncodingConsumer<'a, P: IPairingArithmetic> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
+    where
+        P: IPairingArithmetic + IPairingReference,
+    {
+        type Output = EmitReturn;
+
+        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+            &self,
+            _params: ConsumeEncodingParams,
+            payload: ConsumeEncodingPayload<E>,
+        ) -> Self::Output {
+            let created = create_chain_forms(
+                &build_create_chain_forms_deps(
+                    ChainFormsConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: &payload.adapter,
+                        random: self.random,
+                        overrides: self.overrides,
+                    },
+                    Default::default(),
+                ),
+                build_create_chain_forms_params(Default::default()),
+                build_create_chain_forms_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the chain-forms factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct PairingConsumer<'a> {
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a> IPairingConsumer for PairingConsumer<'a> {
+        type Output = EmitReturn;
+
+        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+            &self,
+            _params: ConsumePairingParams,
+            payload: ConsumePairingPayload<P>,
+        ) -> Self::Output {
+            let hashing = create_hash_to_scalar::<P::Scalar>(
+                &build_create_hash_to_scalar_deps(Default::default()),
+                build_create_hash_to_scalar_params(Default::default()),
+                build_create_hash_to_scalar_payload(Default::default()),
+            );
+            let Ok(hashing) = hashing else {
+                panic!("the hash-to-scalar factory admits the selection")
+            };
+            let Ok(source) = create_random_source(
+                &CreateRandomSourceDeps,
+                build_create_random_source_params(Default::default()),
+                CreateRandomSourcePayload,
+            );
+            let created = create_encoding(
+                &build_create_encoding_deps(EncodingConsumer {
+                    pairing: &payload.adapter,
+                    hashing: &*hashing.adapter,
+                    random: &*source.adapter,
+                    overrides: self.overrides,
+                }),
+                build_create_encoding_params(Default::default()),
+                build_create_encoding_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the encoding factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    let consumer = PairingConsumer {
+        overrides: &overrides,
+    };
+    let created = create_pairing(
+        &build_create_pairing_deps(consumer, Default::default()),
+        build_create_pairing_params(Default::default()),
+        build_create_pairing_payload(Default::default()),
+    );
+    let Ok(success) = created else {
+        panic!("the pairing factory ran the consumer")
+    };
+    let result = success.output;
+
+    // Assert
+    assert!(matches!(
+        result,
+        Err(EmitErrorReturn::AssetProofIdentityHash(
+            AssetIdentityHashTryNewErrorReturn::AllZero
+        ))
+    ));
+    assert!(!Path::exists(&root));
+    // emit_returns_an_asset_scope_proof_identitys_hash_refusal
+}
+
+/// Contract: under `IdentityScope::Asset`, the configured identities are
+///   admitted before the proof identity → the identity's refusal.
+/// Arrange: `scope` overridden to `IdentityScope::Asset`; `identities`
+///   `vec![vec![0x22; ASSET_IDENTITY_HASH_LENGTH - 1]]` and
+///   `proof_identity` `vec![0x00; ASSET_IDENTITY_HASH_LENGTH]`, each
+///   refused; the settings' root removed before the act.
+/// Act:     `emit` in the delivery-proof consumer.
+/// Assert:  `matches!(result, Err(EmitErrorReturn::AssetIdentityLength
+///   { index: 0, actual }) if actual == ASSET_IDENTITY_HASH_LENGTH - 1)`
+///   and the root does not exist.
+/// Collaborators: the pairing's, hash-to-scalar's, encoding's, chain-forms',
+///   kem's, key-agreement's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
+#[test]
+fn emit_refuses_an_asset_scope_identity_before_the_proof_identity() {
+    // Arrange
+    let settings = build_evm_generate_settings(Default::default());
+    let root = settings.foundry_root.clone();
+    let overrides = EvmGenerateConstructorParamsOverrides {
+        scope: Some(IdentityScope::Asset),
+        settings: Some(settings),
+        ..Default::default()
+    };
+    let _ = std::fs::remove_dir_all(&root);
+
+    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, E, K, A, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        key_agreement: &'a A,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, A, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, E, K, A, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        A: IKeyAgreementAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+            &self,
+            _params: ConsumeDeliveryProofParams,
+            payload: ConsumeDeliveryProofPayload<D>,
+        ) -> Self::Output {
+            // Arrange
+            let mint = build_canonical_delivery_context(Default::default());
+            let transfer = build_canonical_delivery_context(Default::default());
+            let identities = vec![vec![0x22; ASSET_IDENTITY_HASH_LENGTH - 1]];
+            let proof_identity = vec![0x00; ASSET_IDENTITY_HASH_LENGTH];
+            let subject = build_evm_generate(
+                self.pairing,
+                self.hashing,
+                self.encoder,
+                self.random,
+                self.kem,
+                self.key_agreement,
+                &payload.adapter,
+                EvmGenerateConstructorParamsOverrides {
+                    scope: self.overrides.scope,
+                    settings: self.overrides.settings.clone(),
+                    ..Default::default()
+                },
+            );
+            let emit_payload = build_emit_payload(
+                &mint,
+                &transfer,
+                &identities,
+                &proof_identity,
+                Default::default(),
+            );
+
+            // Act
+            subject.emit(build_emit_params(Default::default()), emit_payload)
+        }
+    }
+
+    struct KeyAgreementConsumer<'a, P: IPairingArithmetic, E, K, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, F> IKeyAgreementConsumer<P> for KeyAgreementConsumer<'a, P, E, K, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_key_agreement<A: IKeyAgreementAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKeyAgreementParams,
+            payload: ConsumeKeyAgreementPayload<A>,
+        ) -> Self::Output {
+            let created = create_delivery_proof(
+                &build_create_delivery_proof_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    DeliveryProofConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: self.kem,
+                        key_agreement: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the delivery-proof factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct KemConsumer<'a, P: IPairingArithmetic, E, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, F> IKemConsumer<P> for KemConsumer<'a, P, E, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKemParams,
+            payload: ConsumeKemPayload<K>,
+        ) -> Self::Output {
+            let created = create_key_agreement(
+                &build_create_key_agreement_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    KeyAgreementConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_key_agreement_params(Default::default()),
+                build_create_key_agreement_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the key-agreement factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+    {
+        type Output = EmitReturn;
+
+        fn consume_chain_forms<F: IChainForms>(
+            &self,
+            _params: ConsumeChainFormsParams,
+            _payload: ConsumeChainFormsPayload<F>,
+        ) -> Self::Output {
+            let created = create_kem(
+                &build_create_kem_deps(
+                    self.pairing,
+                    self.hashing,
+                    KemConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_kem_params(Default::default()),
+                build_create_kem_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the kem factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct EncodingConsumer<'a, P: IPairingArithmetic> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
+    where
+        P: IPairingArithmetic + IPairingReference,
+    {
+        type Output = EmitReturn;
+
+        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+            &self,
+            _params: ConsumeEncodingParams,
+            payload: ConsumeEncodingPayload<E>,
+        ) -> Self::Output {
+            let created = create_chain_forms(
+                &build_create_chain_forms_deps(
+                    ChainFormsConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: &payload.adapter,
+                        random: self.random,
+                        overrides: self.overrides,
+                    },
+                    Default::default(),
+                ),
+                build_create_chain_forms_params(Default::default()),
+                build_create_chain_forms_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the chain-forms factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct PairingConsumer<'a> {
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a> IPairingConsumer for PairingConsumer<'a> {
+        type Output = EmitReturn;
+
+        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+            &self,
+            _params: ConsumePairingParams,
+            payload: ConsumePairingPayload<P>,
+        ) -> Self::Output {
+            let hashing = create_hash_to_scalar::<P::Scalar>(
+                &build_create_hash_to_scalar_deps(Default::default()),
+                build_create_hash_to_scalar_params(Default::default()),
+                build_create_hash_to_scalar_payload(Default::default()),
+            );
+            let Ok(hashing) = hashing else {
+                panic!("the hash-to-scalar factory admits the selection")
+            };
+            let Ok(source) = create_random_source(
+                &CreateRandomSourceDeps,
+                build_create_random_source_params(Default::default()),
+                CreateRandomSourcePayload,
+            );
+            let created = create_encoding(
+                &build_create_encoding_deps(EncodingConsumer {
+                    pairing: &payload.adapter,
+                    hashing: &*hashing.adapter,
+                    random: &*source.adapter,
+                    overrides: self.overrides,
+                }),
+                build_create_encoding_params(Default::default()),
+                build_create_encoding_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the encoding factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    let consumer = PairingConsumer {
+        overrides: &overrides,
+    };
+    let created = create_pairing(
+        &build_create_pairing_deps(consumer, Default::default()),
+        build_create_pairing_params(Default::default()),
+        build_create_pairing_payload(Default::default()),
+    );
+    let Ok(success) = created else {
+        panic!("the pairing factory ran the consumer")
+    };
+    let result = success.output;
+
+    // Assert
+    assert!(matches!(
+        result,
+        Err(EmitErrorReturn::AssetIdentityLength { index: 0, actual })
+            if actual == ASSET_IDENTITY_HASH_LENGTH - 1
+    ));
+    assert!(!Path::exists(&root));
+    // emit_refuses_an_asset_scope_identity_before_the_proof_identity
+}
+
+/// Contract: under `IdentityScope::Asset`, identities and a proof identity
+///   `AssetIdentityHash::try_new` admits → no refusal, the settings read
+///   next.
+/// Arrange: `scope` overridden to `IdentityScope::Asset`; `identities`
+///   `vec![hash.clone(), other_hash]`; `proof_identity` `hash`;
+///   `settings.kinds` missing the possession and challenge kinds as
+///   `emit_refuses_settings_missing_an_emitted_kind` arranges, so the
+///   settings read shows admission passed; the settings' root removed
+///   before the act.
+/// Act:     `emit` in the delivery-proof consumer.
+/// Assert:  `matches!(result, Err(EmitErrorReturn::Evm(EvmGenerateErrorReturn
+///   ::MissingKindSettings { kind: VectorKind::Possession })))` and the
+///   root does not exist.
+/// Collaborators: the pairing's, hash-to-scalar's, encoding's, chain-forms',
+///   kem's, key-agreement's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
+#[test]
+fn emit_admits_every_asset_identity_hash_under_the_asset_scope() {
+    // Arrange
+    let default = build_evm_generate_settings(Default::default());
+    let kinds: Vec<_> = default
+        .kinds
+        .into_iter()
+        .filter(|entry| entry.kind != VectorKind::Possession && entry.kind != VectorKind::Challenge)
+        .map(|entry| {
+            build_evm_vector_kind_settings(EvmVectorKindSettingsOverrides {
+                kind: Some(entry.kind),
+                names: Some(entry.names),
+            })
+        })
+        .collect();
+    let settings = build_evm_generate_settings(EvmGenerateSettingsOverrides {
+        kinds: Some(kinds),
+        ..Default::default()
+    });
+    let root = settings.foundry_root.clone();
+    let overrides = EvmGenerateConstructorParamsOverrides {
+        scope: Some(IdentityScope::Asset),
+        settings: Some(settings),
+        ..Default::default()
+    };
+    let _ = std::fs::remove_dir_all(&root);
+
+    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, E, K, A, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        key_agreement: &'a A,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, A, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, E, K, A, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        A: IKeyAgreementAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+            &self,
+            _params: ConsumeDeliveryProofParams,
+            payload: ConsumeDeliveryProofPayload<D>,
+        ) -> Self::Output {
+            // Arrange
+            let hash = build_asset_identity_hash(Default::default())
+                .as_bytes()
+                .to_vec();
+            let other_hash =
+                build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
+                    bytes: Some([0x11; ASSET_IDENTITY_HASH_LENGTH]),
+                })
+                .as_bytes()
+                .to_vec();
+            let mint = build_canonical_delivery_context(Default::default());
+            let transfer = build_canonical_delivery_context(Default::default());
+            let identities = vec![hash.clone(), other_hash];
+            let subject = build_evm_generate(
+                self.pairing,
+                self.hashing,
+                self.encoder,
+                self.random,
+                self.kem,
+                self.key_agreement,
+                &payload.adapter,
+                EvmGenerateConstructorParamsOverrides {
+                    scope: self.overrides.scope,
+                    settings: self.overrides.settings.clone(),
+                    ..Default::default()
+                },
+            );
+            let emit_payload =
+                build_emit_payload(&mint, &transfer, &identities, &hash, Default::default());
+
+            // Act
+            subject.emit(build_emit_params(Default::default()), emit_payload)
+        }
+    }
+
+    struct KeyAgreementConsumer<'a, P: IPairingArithmetic, E, K, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, F> IKeyAgreementConsumer<P> for KeyAgreementConsumer<'a, P, E, K, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_key_agreement<A: IKeyAgreementAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKeyAgreementParams,
+            payload: ConsumeKeyAgreementPayload<A>,
+        ) -> Self::Output {
+            let created = create_delivery_proof(
+                &build_create_delivery_proof_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    DeliveryProofConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: self.kem,
+                        key_agreement: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the delivery-proof factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct KemConsumer<'a, P: IPairingArithmetic, E, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, F> IKemConsumer<P> for KemConsumer<'a, P, E, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKemParams,
+            payload: ConsumeKemPayload<K>,
+        ) -> Self::Output {
+            let created = create_key_agreement(
+                &build_create_key_agreement_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    KeyAgreementConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_key_agreement_params(Default::default()),
+                build_create_key_agreement_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the key-agreement factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+    {
+        type Output = EmitReturn;
+
+        fn consume_chain_forms<F: IChainForms>(
+            &self,
+            _params: ConsumeChainFormsParams,
+            _payload: ConsumeChainFormsPayload<F>,
+        ) -> Self::Output {
+            let created = create_kem(
+                &build_create_kem_deps(
+                    self.pairing,
+                    self.hashing,
+                    KemConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_kem_params(Default::default()),
+                build_create_kem_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the kem factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct EncodingConsumer<'a, P: IPairingArithmetic> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
+    where
+        P: IPairingArithmetic + IPairingReference,
+    {
+        type Output = EmitReturn;
+
+        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+            &self,
+            _params: ConsumeEncodingParams,
+            payload: ConsumeEncodingPayload<E>,
+        ) -> Self::Output {
+            let created = create_chain_forms(
+                &build_create_chain_forms_deps(
+                    ChainFormsConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: &payload.adapter,
+                        random: self.random,
+                        overrides: self.overrides,
+                    },
+                    Default::default(),
+                ),
+                build_create_chain_forms_params(Default::default()),
+                build_create_chain_forms_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the chain-forms factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct PairingConsumer<'a> {
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a> IPairingConsumer for PairingConsumer<'a> {
+        type Output = EmitReturn;
+
+        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+            &self,
+            _params: ConsumePairingParams,
+            payload: ConsumePairingPayload<P>,
+        ) -> Self::Output {
+            let hashing = create_hash_to_scalar::<P::Scalar>(
+                &build_create_hash_to_scalar_deps(Default::default()),
+                build_create_hash_to_scalar_params(Default::default()),
+                build_create_hash_to_scalar_payload(Default::default()),
+            );
+            let Ok(hashing) = hashing else {
+                panic!("the hash-to-scalar factory admits the selection")
+            };
+            let Ok(source) = create_random_source(
+                &CreateRandomSourceDeps,
+                build_create_random_source_params(Default::default()),
+                CreateRandomSourcePayload,
+            );
+            let created = create_encoding(
+                &build_create_encoding_deps(EncodingConsumer {
+                    pairing: &payload.adapter,
+                    hashing: &*hashing.adapter,
+                    random: &*source.adapter,
+                    overrides: self.overrides,
+                }),
+                build_create_encoding_params(Default::default()),
+                build_create_encoding_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the encoding factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    let consumer = PairingConsumer {
+        overrides: &overrides,
+    };
+    let created = create_pairing(
+        &build_create_pairing_deps(consumer, Default::default()),
+        build_create_pairing_params(Default::default()),
+        build_create_pairing_payload(Default::default()),
+    );
+    let Ok(success) = created else {
+        panic!("the pairing factory ran the consumer")
+    };
+    let result = success.output;
+
+    // Assert
+    assert!(matches!(
+        result,
+        Err(EmitErrorReturn::Evm(
+            EvmGenerateErrorReturn::MissingKindSettings {
+                kind: VectorKind::Possession
+            }
+        ))
+    ));
+    assert!(!Path::exists(&root));
+    // emit_admits_every_asset_identity_hash_under_the_asset_scope
+}
+
+/// Contract: under `IdentityScope::Entitlement`, every identity and the
+///   proof identity is the canonical identity → no refusal, the settings
+///   read next.
+/// Arrange: `scope` the builder's default `IdentityScope::Entitlement`;
+///   `identities` `vec![vec![0x22; ASSET_IDENTITY_HASH_LENGTH - 1],
+///   vec![0x00; ASSET_IDENTITY_HASH_LENGTH]]` and `proof_identity`
+///   `vec![0x00; ASSET_IDENTITY_HASH_LENGTH]`, values the asset scope
+///   refuses; `settings.kinds` missing the possession and challenge kinds
+///   as `emit_refuses_settings_missing_an_emitted_kind` arranges, so the
+///   settings read shows admission passed; the settings' root removed
+///   before the act.
+/// Act:     `emit` in the delivery-proof consumer.
+/// Assert:  `matches!(result, Err(EmitErrorReturn::Evm(EvmGenerateErrorReturn
+///   ::MissingKindSettings { kind: VectorKind::Possession })))` and the
+///   root does not exist.
+/// Collaborators: the pairing's, hash-to-scalar's, encoding's, chain-forms',
+///   kem's, key-agreement's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
+#[test]
+fn emit_admits_identities_as_given_under_the_entitlement_scope() {
+    // Arrange
+    let default = build_evm_generate_settings(Default::default());
+    let kinds: Vec<_> = default
+        .kinds
+        .into_iter()
+        .filter(|entry| entry.kind != VectorKind::Possession && entry.kind != VectorKind::Challenge)
+        .map(|entry| {
+            build_evm_vector_kind_settings(EvmVectorKindSettingsOverrides {
+                kind: Some(entry.kind),
+                names: Some(entry.names),
+            })
+        })
+        .collect();
+    let settings = build_evm_generate_settings(EvmGenerateSettingsOverrides {
+        kinds: Some(kinds),
+        ..Default::default()
+    });
+    let root = settings.foundry_root.clone();
+    let overrides = EvmGenerateConstructorParamsOverrides {
+        settings: Some(settings),
+        ..Default::default()
+    };
+    let _ = std::fs::remove_dir_all(&root);
+
+    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, E, K, A, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        key_agreement: &'a A,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, A, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, E, K, A, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        A: IKeyAgreementAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+            &self,
+            _params: ConsumeDeliveryProofParams,
+            payload: ConsumeDeliveryProofPayload<D>,
+        ) -> Self::Output {
+            // Arrange
+            let mint = build_canonical_delivery_context(Default::default());
+            let transfer = build_canonical_delivery_context(Default::default());
+            let identities = vec![
+                vec![0x22; ASSET_IDENTITY_HASH_LENGTH - 1],
+                vec![0x00; ASSET_IDENTITY_HASH_LENGTH],
+            ];
+            let proof_identity = vec![0x00; ASSET_IDENTITY_HASH_LENGTH];
+            let subject = build_evm_generate(
+                self.pairing,
+                self.hashing,
+                self.encoder,
+                self.random,
+                self.kem,
+                self.key_agreement,
+                &payload.adapter,
+                EvmGenerateConstructorParamsOverrides {
+                    scope: self.overrides.scope,
+                    settings: self.overrides.settings.clone(),
+                    ..Default::default()
+                },
+            );
+            let emit_payload = build_emit_payload(
+                &mint,
+                &transfer,
+                &identities,
+                &proof_identity,
+                Default::default(),
+            );
+
+            // Act
+            subject.emit(build_emit_params(Default::default()), emit_payload)
+        }
+    }
+
+    struct KeyAgreementConsumer<'a, P: IPairingArithmetic, E, K, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        kem: &'a K,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, K, F> IKeyAgreementConsumer<P> for KeyAgreementConsumer<'a, P, E, K, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_key_agreement<A: IKeyAgreementAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKeyAgreementParams,
+            payload: ConsumeKeyAgreementPayload<A>,
+        ) -> Self::Output {
+            let created = create_delivery_proof(
+                &build_create_delivery_proof_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    DeliveryProofConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: self.kem,
+                        key_agreement: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the delivery-proof factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct KemConsumer<'a, P: IPairingArithmetic, E, F> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+        forms: PhantomData<F>,
+    }
+
+    impl<'a, P, E, F> IKemConsumer<P> for KemConsumer<'a, P, E, F>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+        F: IChainForms,
+    {
+        type Output = EmitReturn;
+
+        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKemParams,
+            payload: ConsumeKemPayload<K>,
+        ) -> Self::Output {
+            let created = create_key_agreement(
+                &build_create_key_agreement_deps(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.random,
+                    KeyAgreementConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        kem: &payload.adapter,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_key_agreement_params(Default::default()),
+                build_create_key_agreement_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the key-agreement factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &'a E,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
+    where
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter,
+    {
+        type Output = EmitReturn;
+
+        fn consume_chain_forms<F: IChainForms>(
+            &self,
+            _params: ConsumeChainFormsParams,
+            _payload: ConsumeChainFormsPayload<F>,
+        ) -> Self::Output {
+            let created = create_kem(
+                &build_create_kem_deps(
+                    self.pairing,
+                    self.hashing,
+                    KemConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: self.encoder,
+                        random: self.random,
+                        overrides: self.overrides,
+                        forms: PhantomData::<F>,
+                    },
+                    Default::default(),
+                ),
+                build_create_kem_params(Default::default()),
+                build_create_kem_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the kem factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct EncodingConsumer<'a, P: IPairingArithmetic> {
+        pairing: &'a P,
+        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+        random: &'a dyn IRandomSourceAdapter,
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
+    where
+        P: IPairingArithmetic + IPairingReference,
+    {
+        type Output = EmitReturn;
+
+        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+            &self,
+            _params: ConsumeEncodingParams,
+            payload: ConsumeEncodingPayload<E>,
+        ) -> Self::Output {
+            let created = create_chain_forms(
+                &build_create_chain_forms_deps(
+                    ChainFormsConsumer {
+                        pairing: self.pairing,
+                        hashing: self.hashing,
+                        encoder: &payload.adapter,
+                        random: self.random,
+                        overrides: self.overrides,
+                    },
+                    Default::default(),
+                ),
+                build_create_chain_forms_params(Default::default()),
+                build_create_chain_forms_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the chain-forms factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    struct PairingConsumer<'a> {
+        overrides: &'a EvmGenerateConstructorParamsOverrides,
+    }
+
+    impl<'a> IPairingConsumer for PairingConsumer<'a> {
+        type Output = EmitReturn;
+
+        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+            &self,
+            _params: ConsumePairingParams,
+            payload: ConsumePairingPayload<P>,
+        ) -> Self::Output {
+            let hashing = create_hash_to_scalar::<P::Scalar>(
+                &build_create_hash_to_scalar_deps(Default::default()),
+                build_create_hash_to_scalar_params(Default::default()),
+                build_create_hash_to_scalar_payload(Default::default()),
+            );
+            let Ok(hashing) = hashing else {
+                panic!("the hash-to-scalar factory admits the selection")
+            };
+            let Ok(source) = create_random_source(
+                &CreateRandomSourceDeps,
+                build_create_random_source_params(Default::default()),
+                CreateRandomSourcePayload,
+            );
+            let created = create_encoding(
+                &build_create_encoding_deps(EncodingConsumer {
+                    pairing: &payload.adapter,
+                    hashing: &*hashing.adapter,
+                    random: &*source.adapter,
+                    overrides: self.overrides,
+                }),
+                build_create_encoding_params(Default::default()),
+                build_create_encoding_payload(Default::default()),
+            );
+            let Ok(success) = created else {
+                panic!("the encoding factory admits the selection")
+            };
+            success.output
+        }
+    }
+
+    let consumer = PairingConsumer {
+        overrides: &overrides,
+    };
+    let created = create_pairing(
+        &build_create_pairing_deps(consumer, Default::default()),
+        build_create_pairing_params(Default::default()),
+        build_create_pairing_payload(Default::default()),
+    );
+    let Ok(success) = created else {
+        panic!("the pairing factory ran the consumer")
+    };
+    let result = success.output;
+
+    // Assert
+    assert!(matches!(
+        result,
+        Err(EmitErrorReturn::Evm(
+            EvmGenerateErrorReturn::MissingKindSettings {
+                kind: VectorKind::Possession
+            }
+        ))
+    ));
+    assert!(!Path::exists(&root));
+    // emit_admits_identities_as_given_under_the_entitlement_scope
 }

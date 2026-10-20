@@ -15,9 +15,10 @@ mod render;
 #[cfg(test)]
 mod test;
 
+use domain::{ASSET_IDENTITY_HASH_LENGTH, AssetIdentityHash, AssetIdentityHashConstructorParams};
 use encoding::{EncodeParams, IEncoderAdapter, IEncodingContract};
 use envelope::IKeyAgreementAdapter;
-use kem::ICredentialKemAdapter;
+use kem::{ICredentialKemAdapter, IdentityScope};
 use pairing::{IPairingArithmetic, IPairingReference, PairingCurve, VerifierGroupArithmetic};
 use proof::IDeliveryProofAdapter;
 use std::fs;
@@ -212,6 +213,36 @@ where
                 contents.push('\n');
             }
             Ok(contents)
+        }
+
+        match self.scope {
+            IdentityScope::Entitlement => {}
+            IdentityScope::Asset => {
+                for (index, identity) in payload.identities.iter().enumerate() {
+                    let actual = identity.len();
+                    let Ok(bytes) =
+                        <[u8; ASSET_IDENTITY_HASH_LENGTH]>::try_from(identity.as_slice())
+                    else {
+                        return Err(EmitErrorReturn::AssetIdentityLength { index, actual });
+                    };
+                    if let Err(error) =
+                        AssetIdentityHash::try_new(AssetIdentityHashConstructorParams { bytes })
+                    {
+                        return Err(EmitErrorReturn::AssetIdentityHash { index, error });
+                    }
+                }
+                let actual = payload.proof_identity.len();
+                let Ok(bytes) =
+                    <[u8; ASSET_IDENTITY_HASH_LENGTH]>::try_from(payload.proof_identity)
+                else {
+                    return Err(EmitErrorReturn::AssetProofIdentityLength { actual });
+                };
+                if let Err(error) =
+                    AssetIdentityHash::try_new(AssetIdentityHashConstructorParams { bytes })
+                {
+                    return Err(EmitErrorReturn::AssetProofIdentityHash(error));
+                }
+            }
         }
 
         let emitted: Vec<VectorKind> = match P::DECLARATION.verifier_group_arithmetic {

@@ -1,9 +1,9 @@
 #![allow(clippy::expect_used)]
 
 use super::provides::{
-    CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
-    MockIRandomSourceAdapterFailureMode, RANDOM_SOURCE_INTERFACE_VERSION, RandomSourceKind,
-    build_create_random_source_params, create_random_source,
+    CreateRandomSourceParamsOverrides, MockIRandomSourceAdapterFailureMode,
+    RANDOM_SOURCE_INTERFACE_VERSION, RandomSourceKind, build_create_random_source_deps,
+    build_create_random_source_params, build_create_random_source_payload, create_random_source,
 };
 
 /// Contract: `params.kind` is `RandomSourceKind::OperatingSystem` →
@@ -12,8 +12,9 @@ use super::provides::{
 ///   through `declaration()`.
 /// Arrange: `build_create_random_source_params` with the kind override set to
 ///   `RandomSourceKind::OperatingSystem`.
-/// Act:     `create_random_source(&CreateRandomSourceDeps, params,
-///   CreateRandomSourcePayload)`.
+/// Act:     `create_random_source(&build_create_random_source_deps(
+///   Default::default()), params,
+///   build_create_random_source_payload(Default::default()))`.
 /// Assert:  the success arm is extracted with `expect`; `adapter.declaration()`
 ///   has `source` matching `RandomSourceKind::OperatingSystem` under `matches!`,
 ///   `adapter_version` equal to the literal 1 written in the assertion, and
@@ -26,7 +27,11 @@ fn create_random_source_returns_the_operating_system_source_for_its_kind() {
     });
 
     // Act
-    let result = create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload);
+    let result = create_random_source(
+        &build_create_random_source_deps(Default::default()),
+        params,
+        build_create_random_source_payload(Default::default()),
+    );
 
     // Assert
     let success = result.expect("the operating-system kind constructs its source");
@@ -49,8 +54,9 @@ fn create_random_source_returns_the_operating_system_source_for_its_kind() {
 ///   `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused)`,
 ///   a mode that differs from the builder's default `Succeeds`, so an arm that
 ///   drops the mode fails.
-/// Act:     `create_random_source(&CreateRandomSourceDeps, params,
-///   CreateRandomSourcePayload)`.
+/// Act:     `create_random_source(&build_create_random_source_deps(
+///   Default::default()), params,
+///   build_create_random_source_payload(Default::default()))`.
 /// Assert:  the success arm is extracted with `expect`;
 ///   `adapter.declaration().source` matches
 ///   `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused)`
@@ -65,7 +71,11 @@ fn create_random_source_returns_the_mock_source_carrying_the_failure_mode_its_ki
     });
 
     // Act
-    let result = create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload);
+    let result = create_random_source(
+        &build_create_random_source_deps(Default::default()),
+        params,
+        build_create_random_source_payload(Default::default()),
+    );
 
     // Assert
     let success = result.expect("the mock kind constructs its source");

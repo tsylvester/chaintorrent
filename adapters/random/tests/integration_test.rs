@@ -2,9 +2,10 @@
 #![allow(clippy::expect_used)]
 
 use random::{
-    CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
-    FillBytesParams, FillBytesPayloadOverrides, RANDOM_SOURCE_INTERFACE_VERSION, RandomSourceKind,
-    build_create_random_source_params, build_fill_bytes_payload, create_random_source,
+    CreateRandomSourceParamsOverrides, FillBytesParams, FillBytesPayloadOverrides,
+    RANDOM_SOURCE_INTERFACE_VERSION, RandomSourceKind, build_create_random_source_deps,
+    build_create_random_source_params, build_create_random_source_payload,
+    build_fill_bytes_payload, create_random_source,
 };
 use std::collections::HashSet;
 
@@ -20,8 +21,10 @@ use std::collections::HashSet;
 ///   and does not prove the generator's quality.
 /// Arrange:  the adapter returned by `create_random_source` with
 ///   `build_create_random_source_params` carrying the kind override
-///   `RandomSourceKind::OperatingSystem`, `CreateRandomSourceDeps` and
-///   `CreateRandomSourcePayload` by their production values;
+///   `RandomSourceKind::OperatingSystem`, and
+///   `build_create_random_source_deps(Default::default())` and
+///   `build_create_random_source_payload(Default::default())` as its deps and
+///   payload;
 ///   `build_fill_bytes_payload` with the length override set to 1024, which
 ///   splits into segments of 32 bytes and differs from the builder's default of
 ///   32.
@@ -36,9 +39,13 @@ fn a_source_from_the_factory_draws_random_bytes_through_the_family_trait() {
     let params = build_create_random_source_params(CreateRandomSourceParamsOverrides {
         kind: Some(RandomSourceKind::OperatingSystem),
     });
-    let adapter = create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)
-        .expect("the operating-system kind constructs its source")
-        .adapter;
+    let adapter = create_random_source(
+        &build_create_random_source_deps(Default::default()),
+        params,
+        build_create_random_source_payload(Default::default()),
+    )
+    .expect("the operating-system kind constructs its source")
+    .adapter;
     let payload = build_fill_bytes_payload(FillBytesPayloadOverrides { length: Some(1024) });
 
     // Act
@@ -61,8 +68,10 @@ fn a_source_from_the_factory_draws_random_bytes_through_the_family_trait() {
 ///   runs real.
 /// Arrange:  the adapter returned by `create_random_source` with
 ///   `build_create_random_source_params` carrying the kind override
-///   `RandomSourceKind::OperatingSystem`, `CreateRandomSourceDeps` and
-///   `CreateRandomSourcePayload` by their production values;
+///   `RandomSourceKind::OperatingSystem`, and
+///   `build_create_random_source_deps(Default::default())` and
+///   `build_create_random_source_payload(Default::default())` as its deps and
+///   payload;
 ///   `build_fill_bytes_payload` with the length override set to 0, which differs
 ///   from the builder's default of 32.
 /// Act:      `fill_bytes(FillBytesParams, payload)` on the returned adapter.
@@ -74,9 +83,13 @@ fn a_source_from_the_factory_draws_an_empty_buffer_for_a_zero_length() {
     let params = build_create_random_source_params(CreateRandomSourceParamsOverrides {
         kind: Some(RandomSourceKind::OperatingSystem),
     });
-    let adapter = create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)
-        .expect("the operating-system kind constructs its source")
-        .adapter;
+    let adapter = create_random_source(
+        &build_create_random_source_deps(Default::default()),
+        params,
+        build_create_random_source_payload(Default::default()),
+    )
+    .expect("the operating-system kind constructs its source")
+    .adapter;
     let payload = build_fill_bytes_payload(FillBytesPayloadOverrides { length: Some(0) });
 
     // Act
@@ -95,8 +108,10 @@ fn a_source_from_the_factory_draws_an_empty_buffer_for_a_zero_length() {
 /// Mocked:   nothing; the chain has no outer edge beyond the standard library.
 /// Arrange:  the adapter returned by `create_random_source` with
 ///   `build_create_random_source_params` carrying the kind override
-///   `RandomSourceKind::OperatingSystem`, `CreateRandomSourceDeps` and
-///   `CreateRandomSourcePayload` by their production values.
+///   `RandomSourceKind::OperatingSystem`, and
+///   `build_create_random_source_deps(Default::default())` and
+///   `build_create_random_source_payload(Default::default())` as its deps and
+///   payload.
 /// Act:      `declaration()` on the returned adapter.
 /// Assert:   `source` matches `RandomSourceKind::OperatingSystem` under
 ///   `matches!`; `adapter_version` equals the literal 1 written in the
@@ -107,9 +122,13 @@ fn a_source_from_the_factory_reports_the_operating_system_declaration() {
     let params = build_create_random_source_params(CreateRandomSourceParamsOverrides {
         kind: Some(RandomSourceKind::OperatingSystem),
     });
-    let adapter = create_random_source(&CreateRandomSourceDeps, params, CreateRandomSourcePayload)
-        .expect("the operating-system kind constructs its source")
-        .adapter;
+    let adapter = create_random_source(
+        &build_create_random_source_deps(Default::default()),
+        params,
+        build_create_random_source_payload(Default::default()),
+    )
+    .expect("the operating-system kind constructs its source")
+    .adapter;
 
     // Act
     let declaration = adapter.declaration();

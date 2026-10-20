@@ -1,4 +1,5 @@
 use core::convert::Infallible;
+use domain::AssetIdentityHashTryNewErrorReturn;
 use encoding::IEncoderAdapter;
 use envelope::IKeyAgreementAdapter;
 use hash_to_scalar::IHashToScalarAdapter;
@@ -116,6 +117,18 @@ pub struct EmittedFile {
 
 #[derive(Debug)]
 pub enum EmitErrorReturn {
+    AssetIdentityLength {
+        index: usize,
+        actual: usize,
+    },
+    AssetIdentityHash {
+        index: usize,
+        error: AssetIdentityHashTryNewErrorReturn,
+    },
+    AssetProofIdentityLength {
+        actual: usize,
+    },
+    AssetProofIdentityHash(AssetIdentityHashTryNewErrorReturn),
     Evm(EvmGenerateErrorReturn),
     #[cfg(any(test, feature = "mocks"))]
     Mock(MockIGenerateAdapterEmitErrorReturn),

@@ -7,6 +7,7 @@
 )]
 
 use core::convert::Infallible;
+use domain::{ASSET_IDENTITY_HASH_LENGTH, AssetIdentityHash, AssetIdentityHashConstructorParams};
 use encoding::IEncoderAdapter;
 use envelope::IKeyAgreementAdapter;
 use hash_to_scalar::IHashToScalarAdapter;
@@ -458,11 +459,13 @@ pub(crate) const MOCK_I_GENERATE_ADAPTER_DECLARATION: GenerateDeclaration = Gene
 
 pub(crate) struct MockIGenerateAdapterConstructorParams {
     pub failure_mode: MockIGenerateAdapterFailureMode,
+    pub scope: IdentityScope,
 }
 
 #[derive(Default)]
 pub struct MockIGenerateAdapterConstructorParamsOverrides {
     pub failure_mode: Option<MockIGenerateAdapterFailureMode>,
+    pub scope: Option<IdentityScope>,
 }
 
 pub(crate) fn build_mock_i_generate_adapter_constructor_params(
@@ -472,11 +475,13 @@ pub(crate) fn build_mock_i_generate_adapter_constructor_params(
         failure_mode: overrides
             .failure_mode
             .unwrap_or(MockIGenerateAdapterFailureMode::NoFailure),
+        scope: overrides.scope.unwrap_or(IdentityScope::Entitlement),
     }
 }
 
 pub(crate) struct MockIGenerateAdapter {
     pub(super) failure_mode: MockIGenerateAdapterFailureMode,
+    pub(super) scope: IdentityScope,
 }
 
 pub(crate) type MockIGenerateAdapterTryNewReturn = Result<MockIGenerateAdapter, Infallible>;
@@ -487,6 +492,7 @@ impl MockIGenerateAdapter {
     ) -> MockIGenerateAdapterTryNewReturn {
         Ok(MockIGenerateAdapter {
             failure_mode: params.failure_mode,
+            scope: params.scope,
         })
     }
 }
@@ -502,7 +508,36 @@ pub(crate) fn build_mock_i_generate_adapter(
 impl IGenerateAdapter for MockIGenerateAdapter {
     const DECLARATION: GenerateDeclaration = MOCK_I_GENERATE_ADAPTER_DECLARATION;
 
-    fn emit(&self, _params: EmitParams, _payload: EmitPayload<'_>) -> EmitReturn {
+    fn emit(&self, _params: EmitParams, payload: EmitPayload<'_>) -> EmitReturn {
+        match self.scope {
+            IdentityScope::Entitlement => {}
+            IdentityScope::Asset => {
+                for (index, identity) in payload.identities.iter().enumerate() {
+                    let actual = identity.len();
+                    let Ok(bytes) =
+                        <[u8; ASSET_IDENTITY_HASH_LENGTH]>::try_from(identity.as_slice())
+                    else {
+                        return Err(EmitErrorReturn::AssetIdentityLength { index, actual });
+                    };
+                    if let Err(error) =
+                        AssetIdentityHash::try_new(AssetIdentityHashConstructorParams { bytes })
+                    {
+                        return Err(EmitErrorReturn::AssetIdentityHash { index, error });
+                    }
+                }
+                let actual = payload.proof_identity.len();
+                let Ok(bytes) =
+                    <[u8; ASSET_IDENTITY_HASH_LENGTH]>::try_from(payload.proof_identity)
+                else {
+                    return Err(EmitErrorReturn::AssetProofIdentityLength { actual });
+                };
+                if let Err(error) =
+                    AssetIdentityHash::try_new(AssetIdentityHashConstructorParams { bytes })
+                {
+                    return Err(EmitErrorReturn::AssetProofIdentityHash(error));
+                }
+            }
+        }
         match self.failure_mode {
             MockIGenerateAdapterFailureMode::WriteRefused => Err(EmitErrorReturn::Mock(
                 MockIGenerateAdapterEmitErrorReturn::WriteRefused,

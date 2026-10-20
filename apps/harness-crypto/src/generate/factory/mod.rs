@@ -191,6 +191,7 @@ where
             let Ok(adapter) =
                 MockIGenerateAdapter::try_new(MockIGenerateAdapterConstructorParams {
                     failure_mode,
+                    scope: params.scope,
                 });
             let output = deps
                 .consumer

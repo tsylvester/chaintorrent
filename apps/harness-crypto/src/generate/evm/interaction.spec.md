@@ -52,10 +52,14 @@ with `adapter_version` `1` and `interface_version` `GENERATE_INTERFACE_VERSION`.
 
 ## `emit`
 
-`emit(&self, params: EmitParams, payload: EmitPayload<'_>) -> EmitReturn`, the trusted form; every error below is returned as `Err(EmitErrorReturn::Evm(error))`; `F` below is `D::Forms`, which the return does not name.
+`emit(&self, params: EmitParams, payload: EmitPayload<'_>) -> EmitReturn`, the trusted form; every error below but the identities' is returned as `Err(EmitErrorReturn::Evm(error))`; `F` below is `D::Forms`, which the return does not name.
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
+| asset identity wrong length | under `IdentityScope::Asset`, the bytes of an identity at index `i` do not convert into `[u8; ASSET_IDENTITY_HASH_LENGTH]` | the conversion | none | `Err(EmitErrorReturn::AssetIdentityLength { index: i, actual })`, `actual` the bytes' length |
+| asset identity refused | under `IdentityScope::Asset`, `AssetIdentityHash::try_new` refuses the converted bytes at index `i` | the try result | `AssetIdentityHash::try_new`, once per asset identity | `Err(EmitErrorReturn::AssetIdentityHash { index: i, error })`, the error unchanged |
+| proof identity wrong length | under `IdentityScope::Asset`, `payload.proof_identity` does not convert into `[u8; ASSET_IDENTITY_HASH_LENGTH]` | the conversion | none | `Err(EmitErrorReturn::AssetProofIdentityLength { actual })`, `actual` the bytes' length |
+| proof identity refused | under `IdentityScope::Asset`, `AssetIdentityHash::try_new` refuses the converted proof identity | the try result | `AssetIdentityHash::try_new`, once | `Err(EmitErrorReturn::AssetProofIdentityHash(error))`, the error unchanged |
 | missing settings | an emitted kind has no settings entry or no size entry | the per-kind lookups | none | `Err(EvmGenerateErrorReturn::MissingKindSettings { kind })` |
 | constants refused | `constants` returns `Err(error)` | the function's return | `constants::<P, F>` | `Err(EvmGenerateErrorReturn::Constants(error))`, unchanged |
 | entries refused | `SolidityLibraryEntries::try_new` returns `Err(error)` | the constructor's refusal | `SolidityLibraryEntries::try_new` | `Err(EvmGenerateErrorReturn::Entries(error))`, unchanged |
@@ -72,6 +76,10 @@ with `adapter_version` `1` and `interface_version` `GENERATE_INTERFACE_VERSION`.
 | create refused | `std::fs::create_dir_all` fails | the create result | `std::fs::create_dir_all`, once | `Err(EvmGenerateErrorReturn::CreateDirectory { path, error })`, the path and the error unchanged |
 | write refused | `std::fs::write` fails | the write result | `std::fs::write`, once per file | `Err(EvmGenerateErrorReturn::WriteFile { path, error })`, the path and the error unchanged |
 | computed | every file written | `files` in write order | the calls stated | `Ok(EmitSuccessReturn { files })`, one `EmittedFile` per file written in write order, a kind's vector file carrying `kind` `Some` of that kind and `path` the path written, each library's carrying `kind` `None` and its path |
+
+### Identities
+
+Decision an exhaustive `match` on `self.scope`: under `IdentityScope::Entitlement` each identity and the proof identity is the canonical identity, admitted as given; under `IdentityScope::Asset`, each index `i` and bytes of `payload.identities` in order takes the conversion, a failure taking the asset-identity-wrong-length branch, then dependency call `AssetIdentityHash::try_new(AssetIdentityHashConstructorParams { bytes })`, a refusal taking the asset-identity-refused branch; then `payload.proof_identity` takes the same conversion, a failure taking the proof-identity-wrong-length branch, and the same dependency call, a refusal taking the proof-identity-refused branch. Each refusal is the family's flavor, which every concrete, the family's mock concrete included, decides from its scope and the payload's identities before its vendor runs, so it precedes every setting read and every function called.
 
 ### Emitted kinds
 
@@ -95,7 +103,7 @@ Dependency call `rejection_vectors::<P>(&RejectionVectorsDeps { pairing: self.pa
 
 ### Mapping vectors
 
-Dependency call `mapping_vectors::<P, K>(&MappingVectorsDeps { pairing: self.pairing, hash_to_scalar: self.hash_to_scalar, kem: self.kem, random: self.random }, MappingVectorsParams { hash_to_scalar_count, message_length, scope: self.scope }, MappingVectorsPayload { key_agreement: &A::DECLARATION, delivery_proof: &D::DECLARATION, identities: payload.identities })`, the count and length the hash-to-scalar kind's `DrawnMessages`; a refusal takes the mapping-refused branch.
+Dependency call `mapping_vectors::<P, K>(&MappingVectorsDeps { pairing: self.pairing, hash_to_scalar: self.hash_to_scalar, kem: self.kem, random: self.random }, MappingVectorsParams { hash_to_scalar_count, message_length, scope: self.scope }, MappingVectorsPayload { key_agreement: &A::DECLARATION, delivery_proof: &D::DECLARATION, identities: payload.identities })`, the count and length the hash-to-scalar kind's `DrawnMessages`; a refusal takes the mapping-refused branch — its `AssetIdentityLength` and `AssetIdentityHash` arms are reached by no input, the identities having been admitted above under the scope it receives.
 
 ### Possession vectors
 
@@ -107,7 +115,7 @@ Dependency call `challenge_vectors::<P, E, F>(&ChallengeVectorsDeps { pairing: s
 
 ### Proof vectors
 
-Dependency call `proof_vectors::<P, K, A, D>(&ProofVectorsDeps { pairing: self.pairing, kem: self.kem, key_agreement: self.key_agreement, delivery_proof: self.delivery_proof, random: self.random }, ProofVectorsParams { mint_count, transfer_count, scope: self.scope }, ProofVectorsPayload { mint: payload.mint, mint_purpose: payload.mint_purpose, transfer: payload.transfer, transfer_purpose: payload.transfer_purpose, identity: payload.proof_identity })`, the counts the mint-proof and transfer-proof kinds' `Drawn` counts; a refusal takes the proof-refused branch.
+Dependency call `proof_vectors::<P, K, A, D>(&ProofVectorsDeps { pairing: self.pairing, kem: self.kem, key_agreement: self.key_agreement, delivery_proof: self.delivery_proof, random: self.random }, ProofVectorsParams { mint_count, transfer_count, scope: self.scope }, ProofVectorsPayload { mint: payload.mint, mint_purpose: payload.mint_purpose, transfer: payload.transfer, transfer_purpose: payload.transfer_purpose, identity: payload.proof_identity })`, the counts the mint-proof and transfer-proof kinds' `Drawn` counts; a refusal takes the proof-refused branch — its `AssetIdentityLength` and `AssetIdentityHash` arms are reached by no input, the proof identity having been admitted above under the scope it receives.
 
 ### Lines
 
@@ -131,7 +139,7 @@ Dependency call `std::fs::create_dir_all` over the curve directory's filesystem 
 
 ### Ordering
 
-The emitted kinds and their settings, the constants, the group, rejection, mapping, possession, challenge, and proof vectors, the lines, paths, and declarations, the libraries, then the directory and the writes; the first refusal returns, and a refusal before the writes leaves the filesystem untouched; `params` carries nothing and is not read.
+The identities, then the emitted kinds and their settings, the constants, the group, rejection, mapping, possession, challenge, and proof vectors, the lines, paths, and declarations, the libraries, then the directory and the writes; the first refusal returns, and a refusal before the writes leaves the filesystem untouched; `params` carries nothing and is not read.
 
 ## Integration: callee dispositions
 

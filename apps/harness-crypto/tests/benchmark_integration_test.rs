@@ -4,13 +4,13 @@
 use core::time::Duration;
 use harness_crypto::{PairingBenchmarkErrorReturn, build_pairing_benchmark};
 use pairing::{
-    CreatePairingParamsOverrides, CreatePairingPayload, MockIPairingAdapterFailureMode,
-    PAIRING_CONCRETES, PairingConcrete, SampleUniformScalarErrorReturn, build_create_pairing_deps,
-    build_create_pairing_params, create_pairing,
+    CreatePairingParamsOverrides, MockIPairingAdapterFailureMode, PAIRING_CONCRETES,
+    PairingConcrete, SampleUniformScalarErrorReturn, build_create_pairing_deps,
+    build_create_pairing_params, build_create_pairing_payload, create_pairing,
 };
 use random::{
-    CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
-    RandomSourceKind, build_create_random_source_params, create_random_source,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_deps,
+    build_create_random_source_params, build_create_random_source_payload, create_random_source,
 };
 
 /// Contract: entry `the_consumer_receives_the_concrete_the_params_name`; given
@@ -25,7 +25,8 @@ use random::{
 ///   libraries of one curve, so a benchmark that returns a fixed concrete, or
 ///   the factory constructing a sibling library, fails; the source
 ///   `create_random_source` constructs for `RandomSourceKind::OperatingSystem`.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+/// Act:      `create_pairing(&deps, params,
+///   build_create_pairing_payload(Default::default()))` per concrete.
 /// Assert:   per concrete, the measured `concrete` equals the variant from the
 ///   declared set, not the value the call happened to construct.
 #[test]
@@ -33,11 +34,11 @@ fn the_consumer_receives_the_concrete_the_params_name() {
     for concrete in PAIRING_CONCRETES {
         // Arrange
         let Ok(created) = create_random_source(
-            &CreateRandomSourceDeps,
+            &build_create_random_source_deps(Default::default()),
             build_create_random_source_params(CreateRandomSourceParamsOverrides {
                 kind: Some(RandomSourceKind::OperatingSystem),
             }),
-            CreateRandomSourcePayload,
+            build_create_random_source_payload(Default::default()),
         );
         let benchmark = build_pairing_benchmark(created.adapter, Default::default());
         let deps = build_create_pairing_deps(benchmark, Default::default());
@@ -47,7 +48,11 @@ fn the_consumer_receives_the_concrete_the_params_name() {
         });
 
         // Act
-        let result = create_pairing(&deps, params, CreatePairingPayload);
+        let result = create_pairing(
+            &deps,
+            params,
+            build_create_pairing_payload(Default::default()),
+        );
 
         // Assert
         assert!(
@@ -73,7 +78,8 @@ fn the_consumer_receives_the_concrete_the_params_name() {
 ///   its own, so a benchmark that draws a length the bound does not name fails
 ///   for the concrete whose bound differs; the source `create_random_source`
 ///   constructs for `RandomSourceKind::OperatingSystem`.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+/// Act:      `create_pairing(&deps, params,
+///   build_create_pairing_payload(Default::default()))` per concrete.
 /// Assert:   per concrete, the factory's success arm is present and the
 ///   output's error arm is empty, the whole error shown on failure.
 #[test]
@@ -81,11 +87,11 @@ fn a_sampled_scalar_encodes_through_secret() {
     for concrete in PAIRING_CONCRETES {
         // Arrange
         let Ok(created) = create_random_source(
-            &CreateRandomSourceDeps,
+            &build_create_random_source_deps(Default::default()),
             build_create_random_source_params(CreateRandomSourceParamsOverrides {
                 kind: Some(RandomSourceKind::OperatingSystem),
             }),
-            CreateRandomSourcePayload,
+            build_create_random_source_payload(Default::default()),
         );
         let benchmark = build_pairing_benchmark(created.adapter, Default::default());
         let deps = build_create_pairing_deps(benchmark, Default::default());
@@ -95,7 +101,11 @@ fn a_sampled_scalar_encodes_through_secret() {
         });
 
         // Act
-        let result = create_pairing(&deps, params, CreatePairingPayload);
+        let result = create_pairing(
+            &deps,
+            params,
+            build_create_pairing_payload(Default::default()),
+        );
 
         // Assert
         assert_eq!(result.ok().map(|success| success.output.err()), Some(None));
@@ -116,7 +126,8 @@ fn a_sampled_scalar_encodes_through_secret() {
 ///   `Ok` outputs of the entries above, so a benchmark that ignores a refused
 ///   sampling fails; the source `create_random_source` constructs for
 ///   `RandomSourceKind::OperatingSystem`.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)`.
+/// Act:      `create_pairing(&deps, params,
+///   build_create_pairing_payload(Default::default()))`.
 /// Assert:   the observed output error equals
 ///   `PairingBenchmarkErrorReturn::SampleScalar(
 ///   SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })`,
@@ -126,11 +137,11 @@ fn a_sampled_scalar_encodes_through_secret() {
 fn a_sampling_refusal_reaches_the_caller_unchanged() {
     // Arrange
     let Ok(created) = create_random_source(
-        &CreateRandomSourceDeps,
+        &build_create_random_source_deps(Default::default()),
         build_create_random_source_params(CreateRandomSourceParamsOverrides {
             kind: Some(RandomSourceKind::OperatingSystem),
         }),
-        CreateRandomSourcePayload,
+        build_create_random_source_payload(Default::default()),
     );
     let benchmark = build_pairing_benchmark(created.adapter, Default::default());
     let deps = build_create_pairing_deps(benchmark, Default::default());
@@ -142,7 +153,11 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
     });
 
     // Act
-    let result = create_pairing(&deps, params, CreatePairingPayload);
+    let result = create_pairing(
+        &deps,
+        params,
+        build_create_pairing_payload(Default::default()),
+    );
 
     // Assert
     assert_eq!(
@@ -167,7 +182,8 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
 /// Arrange:  every concrete of the declared set in turn, whose operations are
 ///   real, so a timing left at its zero default fails; the source
 ///   `create_random_source` constructs for `RandomSourceKind::OperatingSystem`.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+/// Act:      `create_pairing(&deps, params,
+///   build_create_pairing_payload(Default::default()))` per concrete.
 /// Assert:   per concrete, each of the five timings is greater than
 ///   `Duration::ZERO`; the exact means are not asserted.
 #[test]
@@ -175,11 +191,11 @@ fn every_operation_is_timed_on_every_concrete() {
     for concrete in PAIRING_CONCRETES {
         // Arrange
         let Ok(created) = create_random_source(
-            &CreateRandomSourceDeps,
+            &build_create_random_source_deps(Default::default()),
             build_create_random_source_params(CreateRandomSourceParamsOverrides {
                 kind: Some(RandomSourceKind::OperatingSystem),
             }),
-            CreateRandomSourcePayload,
+            build_create_random_source_payload(Default::default()),
         );
         let benchmark = build_pairing_benchmark(created.adapter, Default::default());
         let deps = build_create_pairing_deps(benchmark, Default::default());
@@ -189,7 +205,11 @@ fn every_operation_is_timed_on_every_concrete() {
         });
 
         // Act
-        let result = create_pairing(&deps, params, CreatePairingPayload);
+        let result = create_pairing(
+            &deps,
+            params,
+            build_create_pairing_payload(Default::default()),
+        );
 
         // Assert
         let measurement = result

@@ -39,6 +39,13 @@ pub fn build_random_source_declaration(
 }
 
 #[derive(Default)]
+pub struct FillBytesParamsOverrides;
+
+pub fn build_fill_bytes_params(_overrides: FillBytesParamsOverrides) -> FillBytesParams {
+    FillBytesParams
+}
+
+#[derive(Default)]
 pub struct FillBytesPayloadOverrides {
     pub length: Option<usize>,
 }
@@ -146,6 +153,15 @@ pub(crate) fn build_mock_i_random_source_adapter(
 }
 
 #[derive(Default)]
+pub struct CreateRandomSourceDepsOverrides;
+
+pub fn build_create_random_source_deps(
+    _overrides: CreateRandomSourceDepsOverrides,
+) -> CreateRandomSourceDeps {
+    CreateRandomSourceDeps
+}
+
+#[derive(Default)]
 pub struct CreateRandomSourceParamsOverrides {
     pub kind: Option<RandomSourceKind>,
 }
@@ -158,6 +174,15 @@ pub fn build_create_random_source_params(
             MockIRandomSourceAdapterFailureMode::Succeeds,
         )),
     }
+}
+
+#[derive(Default)]
+pub struct CreateRandomSourcePayloadOverrides;
+
+pub fn build_create_random_source_payload(
+    _overrides: CreateRandomSourcePayloadOverrides,
+) -> CreateRandomSourcePayload {
+    CreateRandomSourcePayload
 }
 
 #[derive(Default)]
