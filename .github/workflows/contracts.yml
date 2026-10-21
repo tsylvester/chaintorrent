@@ -1,0 +1,36 @@
+name: Contracts
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        working-directory: contracts/evm
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: recursive
+    - uses: foundry-rs/foundry-toolchain@v1
+    - run: forge build
+    - run: forge fmt --check
+    - run: forge test

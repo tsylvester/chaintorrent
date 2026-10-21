@@ -5,6 +5,7 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
+alloy = { version = "2.5.0", default-features = false, features = ["std", "sol-types", "json-rpc", "provider-http", "reqwest-native-tls", "rpc-types-eth"] }
 chain = { path = "../../adapters/chain" }
 clap = { version = "4.6.7", features = ["derive"] }
 domain = { path = "../../crates/domain" }
@@ -17,7 +18,9 @@ proof = { path = "../../adapters/proof" }
 random = { path = "../../adapters/random" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.151", optional = true }
+tokio = { version = "~1.53.0", default-features = false, features = ["rt"] }
 toml = "1.1.6"
+url = "2.5.8"
 
 [dev-dependencies]
 chain = { path = "../../adapters/chain", features = ["mocks"] }
@@ -29,7 +32,7 @@ kem = { path = "../../adapters/kem", features = ["mocks"] }
 pairing = { path = "../../adapters/pairing", features = ["mocks"] }
 proof = { path = "../../adapters/proof", features = ["mocks"] }
 random = { path = "../../adapters/random", features = ["mocks"] }
-serde_json = "1.0.151"
+serde_json = { version = "1.0.151", features = ["raw_value"] }
 
 [features]
 mocks = ["chain/mocks", "domain/mocks", "encoding/mocks", "envelope/mocks", "hash-to-scalar/mocks", "kem/mocks", "pairing/mocks", "proof/mocks", "random/mocks", "dep:serde_json"]

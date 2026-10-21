@@ -457,11 +457,11 @@ where
         .map_err(EvmGenerateErrorReturn::ProofVectors)
         .map_err(EmitErrorReturn::Evm)?;
 
+        #[allow(unreachable_patterns)]
         let curve_directory = match P::DECLARATION.curve {
             PairingCurve::Bn254 => &self.settings.curve_directories.bn254,
             PairingCurve::Bls12381 => &self.settings.curve_directories.bls12_381,
-            #[cfg(any(test, feature = "mocks"))]
-            PairingCurve::Mock => &self.settings.curve_directories.bn254,
+            _ => &self.settings.curve_directories.bn254,
         };
         let mut directory = self.settings.foundry_root.clone();
         for segment in &self.settings.generated_directory.segments {

@@ -1,0 +1,11 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["lib"]
+remappings = ["forge-std/=lib/forge-std/src/"]
+solc_version = "0.8.37"
+evm_version = "prague"
+via_ir = true
+ffi = false
+fs_permissions = [{ access = "read", path = "generated" }]
