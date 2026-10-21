@@ -44,6 +44,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
 * `[ ]`   `harness-crypto/run/generate_consumer` 
 
+* `[ ]`   `harness-crypto/run/verifier_consumer`
+
 * `[ ]`   `harness-crypto/run/delivery_proof_consumer` 
 
 * `[ ]`   `harness-crypto/run/key_agreement_consumer` 
