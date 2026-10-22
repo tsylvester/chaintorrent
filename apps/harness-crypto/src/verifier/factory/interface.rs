@@ -1,7 +1,9 @@
-use pairing::VerifierGroupArithmetic;
+use pairing::{IPairingAdapter, VerifierGroupArithmetic};
 use proof::{DeliveryRelation, IDeliveryProofAdapter, VerifyAdapterPayload};
 
-use super::super::evm::provides::EvmVerifierErrorReturn;
+use super::super::evm::provides::{
+    EvmVerifierErrorReturn, EvmVerifierSettings, EvmVerifierTryNewErrorReturn,
+};
 
 pub const VERIFIER_INTERFACE_VERSION: u32 = 1;
 
@@ -71,3 +73,70 @@ pub trait IVerifierAdapter {
         payload: VerifyAdapterPayload<'_, Self::DeliveryProof>,
     ) -> VerifyOnChainReturn;
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VerifierConcreteKind {
+    Evm,
+}
+
+pub const VERIFIER_CONCRETES: &[VerifierConcreteKind] = &[VerifierConcreteKind::Evm];
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum VerifierConcrete {
+    Evm {
+        settings: Box<EvmVerifierSettings>,
+    },
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIVerifierAdapterFailureMode),
+}
+
+pub trait IVerifierConsumer<D: IDeliveryProofAdapter> {
+    type Output;
+
+    fn consume_verifier<V: IVerifierAdapter<DeliveryProof = D>>(
+        &self,
+        params: ConsumeVerifierParams,
+        payload: ConsumeVerifierPayload<V>,
+    ) -> Self::Output;
+}
+
+pub struct ConsumeVerifierParams;
+
+pub struct ConsumeVerifierPayload<V: IVerifierAdapter> {
+    pub adapter: V,
+}
+
+pub struct CreateVerifierDeps<'a, P: IPairingAdapter, D: IDeliveryProofAdapter<Pairing = P>, C> {
+    pub pairing: &'a P,
+    pub delivery_proof: &'a D,
+    pub consumer: C,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateVerifierParams {
+    pub concrete: VerifierConcrete,
+    pub statement_version: u16,
+}
+
+pub struct CreateVerifierPayload;
+
+pub struct CreateVerifierSuccessReturn<O> {
+    pub output: O,
+}
+
+#[derive(Debug)]
+pub enum CreateVerifierErrorReturn {
+    UnsupportedVerifierForm { form: VerifierGroupArithmetic },
+    UnsupportedStatementVersion { version: u16 },
+    Evm(EvmVerifierTryNewErrorReturn),
+}
+
+pub type CreateVerifierReturn<O> =
+    Result<CreateVerifierSuccessReturn<O>, CreateVerifierErrorReturn>;
+
+pub type CreateVerifierFn<'a, P, D, C> =
+    fn(
+        &CreateVerifierDeps<'a, P, D, C>,
+        CreateVerifierParams,
+        CreateVerifierPayload,
+    ) -> CreateVerifierReturn<<C as IVerifierConsumer<D>>::Output>;

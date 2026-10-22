@@ -7,7 +7,7 @@
 )]
 
 use core::convert::Infallible;
-use pairing::VerifierGroupArithmetic;
+use pairing::{IPairingAdapter, VerifierGroupArithmetic};
 use proof::{
     AlgebraicStatement, DELIVERY_STATEMENT_VERSION_ONE, DeliveryProofComponents, DeliveryRelation,
     IDeliveryProofAdapter, ProofComponentsParams, ProofComponentsPayload, VerifyAdapterPayload,
@@ -15,11 +15,15 @@ use proof::{
 use serde_json::{Map, Value};
 
 use super::interface::{
-    IVerifierAdapter, L1DataFee, MockIVerifierAdapterFailureMode,
-    MockIVerifierAdapterVerifyOnChainErrorReturn, VERIFIER_INTERFACE_VERSION, VerifierDeclaration,
-    VerifyCost, VerifyOnChainErrorReturn, VerifyOnChainParams, VerifyOnChainReturn,
-    VerifyOnChainSuccessReturn,
+    ConsumeVerifierParams, ConsumeVerifierPayload, CreateVerifierDeps, CreateVerifierFn,
+    CreateVerifierParams, CreateVerifierPayload, CreateVerifierReturn, CreateVerifierSuccessReturn,
+    IVerifierAdapter, IVerifierConsumer, L1DataFee, MockIVerifierAdapterFailureMode,
+    MockIVerifierAdapterVerifyOnChainErrorReturn, VERIFIER_INTERFACE_VERSION, VerifierConcrete,
+    VerifierConcreteKind, VerifierDeclaration, VerifyCost, VerifyOnChainErrorReturn,
+    VerifyOnChainParams, VerifyOnChainReturn, VerifyOnChainSuccessReturn,
 };
+
+use super::super::evm::provides::{build_evm_verifier_settings, invalidate_evm_verifier_settings};
 
 #[derive(Default)]
 pub struct VerifierDeclarationOverrides {
@@ -263,4 +267,179 @@ impl<'a, D: IDeliveryProofAdapter> IVerifierAdapter for MockIVerifierAdapter<'a,
             }
         }
     }
+}
+
+#[derive(Default)]
+pub struct CreateVerifierParamsOverrides {
+    pub concrete: Option<VerifierConcrete>,
+    pub statement_version: Option<u16>,
+}
+
+pub fn build_create_verifier_params(
+    overrides: CreateVerifierParamsOverrides,
+) -> CreateVerifierParams {
+    CreateVerifierParams {
+        concrete: overrides.concrete.unwrap_or(VerifierConcrete::Mock(
+            MockIVerifierAdapterFailureMode::NoFailure,
+        )),
+        statement_version: overrides
+            .statement_version
+            .unwrap_or(DELIVERY_STATEMENT_VERSION_ONE),
+    }
+}
+
+#[derive(Default)]
+pub struct CreateVerifierParamsCorruptions {
+    pub concrete: Option<Value>,
+    pub statement_version: Option<Value>,
+}
+
+pub fn invalidate_create_verifier_params(corruptions: CreateVerifierParamsCorruptions) -> Value {
+    let params = build_create_verifier_params(Default::default());
+    let mut fields = Map::new();
+    fields.insert(
+        "concrete".to_string(),
+        match &params.concrete {
+            VerifierConcrete::Evm { .. } => {
+                let mut variant = Map::new();
+                variant.insert(
+                    "settings".to_string(),
+                    invalidate_evm_verifier_settings(Default::default()),
+                );
+                let mut concrete = Map::new();
+                concrete.insert("Evm".to_string(), Value::Object(variant));
+                Value::Object(concrete)
+            }
+            VerifierConcrete::Mock(failure_mode) => {
+                let mut concrete = Map::new();
+                concrete.insert(
+                    "Mock".to_string(),
+                    Value::from(match failure_mode {
+                        MockIVerifierAdapterFailureMode::NoFailure => "NoFailure",
+                        MockIVerifierAdapterFailureMode::RpcRefused => "RpcRefused",
+                    }),
+                );
+                Value::Object(concrete)
+            }
+        },
+    );
+    fields.insert(
+        "statement_version".to_string(),
+        Value::from(params.statement_version),
+    );
+    if let Some(concrete) = corruptions.concrete {
+        fields.insert("concrete".to_string(), concrete);
+    }
+    if let Some(statement_version) = corruptions.statement_version {
+        fields.insert("statement_version".to_string(), statement_version);
+    }
+    Value::Object(fields)
+}
+
+#[derive(Default)]
+pub struct VerifierConcreteOverrides;
+
+pub fn build_verifier_concrete(
+    kind: VerifierConcreteKind,
+    _overrides: VerifierConcreteOverrides,
+) -> VerifierConcrete {
+    match kind {
+        VerifierConcreteKind::Evm => VerifierConcrete::Evm {
+            settings: Box::new(build_evm_verifier_settings(Default::default())),
+        },
+    }
+}
+
+#[derive(Default)]
+pub struct CreateVerifierSuccessReturnOverrides;
+
+pub fn build_create_verifier_success_return<O>(
+    output: O,
+    _overrides: CreateVerifierSuccessReturnOverrides,
+) -> CreateVerifierSuccessReturn<O> {
+    CreateVerifierSuccessReturn { output }
+}
+
+#[derive(Default)]
+pub struct ConsumeVerifierParamsOverrides;
+
+pub fn build_consume_verifier_params(
+    _overrides: ConsumeVerifierParamsOverrides,
+) -> ConsumeVerifierParams {
+    ConsumeVerifierParams
+}
+
+#[derive(Default)]
+pub struct ConsumeVerifierPayloadOverrides;
+
+pub fn build_consume_verifier_payload<V: IVerifierAdapter>(
+    adapter: V,
+    _overrides: ConsumeVerifierPayloadOverrides,
+) -> ConsumeVerifierPayload<V> {
+    ConsumeVerifierPayload { adapter }
+}
+
+#[derive(Default)]
+pub struct CreateVerifierPayloadOverrides;
+
+pub fn build_create_verifier_payload(
+    _overrides: CreateVerifierPayloadOverrides,
+) -> CreateVerifierPayload {
+    CreateVerifierPayload
+}
+
+#[derive(Default)]
+pub struct CreateVerifierDepsOverrides;
+
+pub fn build_create_verifier_deps<
+    'a,
+    P: IPairingAdapter,
+    D: IDeliveryProofAdapter<Pairing = P>,
+    C,
+>(
+    pairing: &'a P,
+    delivery_proof: &'a D,
+    consumer: C,
+    _overrides: CreateVerifierDepsOverrides,
+) -> CreateVerifierDeps<'a, P, D, C> {
+    CreateVerifierDeps {
+        pairing,
+        delivery_proof,
+        consumer,
+    }
+}
+
+pub struct MockIVerifierConsumer;
+
+impl<D: IDeliveryProofAdapter> IVerifierConsumer<D> for MockIVerifierConsumer {
+    type Output = ();
+
+    fn consume_verifier<V: IVerifierAdapter<DeliveryProof = D>>(
+        &self,
+        _params: ConsumeVerifierParams,
+        _payload: ConsumeVerifierPayload<V>,
+    ) -> Self::Output {
+    }
+}
+
+pub fn mock_create_verifier<
+    'a,
+    P: IPairingAdapter,
+    D: IDeliveryProofAdapter<Pairing = P>,
+    C: IVerifierConsumer<D>,
+>(
+    deps: &CreateVerifierDeps<'a, P, D, C>,
+    _params: CreateVerifierParams,
+    _payload: CreateVerifierPayload,
+) -> CreateVerifierReturn<C::Output> {
+    let _: CreateVerifierFn<'a, P, D, C> = mock_create_verifier;
+    let adapter = build_mock_i_verifier_adapter(deps.delivery_proof, Default::default());
+    let output = deps.consumer.consume_verifier(
+        build_consume_verifier_params(Default::default()),
+        build_consume_verifier_payload(adapter, Default::default()),
+    );
+    Ok(build_create_verifier_success_return(
+        output,
+        Default::default(),
+    ))
 }

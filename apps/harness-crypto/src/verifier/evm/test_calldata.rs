@@ -108,10 +108,7 @@ fn calldata_selects_verify_mint_for_a_mint_statement() {
             let Ok(calldata) = result else {
                 panic!("the default statement and components encode")
             };
-            assert_eq!(
-                calldata[..4],
-                IDeliveryVerifier::verifyMintCall::SELECTOR
-            );
+            assert_eq!(calldata[..4], IDeliveryVerifier::verifyMintCall::SELECTOR);
         }
     }
 

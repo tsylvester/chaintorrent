@@ -28,8 +28,8 @@ use pairing::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides, EncodeG2Params,
     EncodeG2Payload, EncodeScalarParams, EncodeScalarPayload, IPairingArithmetic, IPairingConsumer,
     IPairingReference, PAIRING_CONCRETES, PairingCurve, VerifierGroupArithmetic,
-    build_create_pairing_deps,
-    build_create_pairing_params, build_create_pairing_payload, create_pairing,
+    build_create_pairing_deps, build_create_pairing_params, build_create_pairing_payload,
+    create_pairing,
 };
 use proof::{
     AlgebraicStatement, ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload,
@@ -54,8 +54,8 @@ use super::super::factory::provides::{
     IVerifierAdapter, L1DataFee, VerifyCostOverrides, VerifyOnChainErrorReturn,
     VerifyOnChainSuccessReturn, build_verify_cost, build_verify_on_chain_params,
 };
-use super::{IDeliveryVerifier, IGasPriceOracle};
 use super::mock::*;
+use super::{IDeliveryVerifier, IGasPriceOracle};
 
 /// Contract: entry
 ///   `a_real_proofs_calldata_decodes_to_its_statement_and_proof_at_the_pairings_encoding_lengths`;
@@ -1687,8 +1687,7 @@ fn chain_forms_identity_survives_its_field_round_trip() {
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
-                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic
-                    {
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
                         VerifierGroupArithmetic::BothGroups => None,
                         VerifierGroupArithmetic::FirstGroupOnly => {
                             let messages = build_mint_second_group_first_messages(
@@ -1753,8 +1752,7 @@ fn chain_forms_identity_survives_its_field_round_trip() {
                     relation: Some(DeliveryRelation::Transfer),
                     verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
                     responses: {
-                        let responses =
-                            build_transfer_responses(self.pairing, Default::default());
+                        let responses = build_transfer_responses(self.pairing, Default::default());
                         Some(vec![
                             responses.x,
                             responses.y,
@@ -1763,8 +1761,7 @@ fn chain_forms_identity_survives_its_field_round_trip() {
                             responses.sigma,
                         ])
                     },
-                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic
-                    {
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
                         VerifierGroupArithmetic::BothGroups => None,
                         VerifierGroupArithmetic::FirstGroupOnly => {
                             let messages = build_transfer_second_group_first_messages(
@@ -2020,8 +2017,7 @@ fn chain_forms_entitlement_survives_its_field_round_trip() {
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
-                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic
-                    {
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
                         VerifierGroupArithmetic::BothGroups => None,
                         VerifierGroupArithmetic::FirstGroupOnly => {
                             let messages = build_mint_second_group_first_messages(
@@ -2078,8 +2074,7 @@ fn chain_forms_entitlement_survives_its_field_round_trip() {
                     relation: Some(DeliveryRelation::Transfer),
                     verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
                     responses: {
-                        let responses =
-                            build_transfer_responses(self.pairing, Default::default());
+                        let responses = build_transfer_responses(self.pairing, Default::default());
                         Some(vec![
                             responses.x,
                             responses.y,
@@ -2088,8 +2083,7 @@ fn chain_forms_entitlement_survives_its_field_round_trip() {
                             responses.sigma,
                         ])
                     },
-                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic
-                    {
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
                         VerifierGroupArithmetic::BothGroups => None,
                         VerifierGroupArithmetic::FirstGroupOnly => {
                             let messages = build_transfer_second_group_first_messages(
@@ -2337,8 +2331,7 @@ fn chain_forms_interval_survives_its_field_round_trip() {
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
-                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic
-                    {
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
                         VerifierGroupArithmetic::BothGroups => None,
                         VerifierGroupArithmetic::FirstGroupOnly => {
                             let messages = build_mint_second_group_first_messages(
@@ -2389,8 +2382,7 @@ fn chain_forms_interval_survives_its_field_round_trip() {
                     relation: Some(DeliveryRelation::Transfer),
                     verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
                     responses: {
-                        let responses =
-                            build_transfer_responses(self.pairing, Default::default());
+                        let responses = build_transfer_responses(self.pairing, Default::default());
                         Some(vec![
                             responses.x,
                             responses.y,
@@ -2399,8 +2391,7 @@ fn chain_forms_interval_survives_its_field_round_trip() {
                             responses.sigma,
                         ])
                     },
-                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic
-                    {
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
                         VerifierGroupArithmetic::BothGroups => None,
                         VerifierGroupArithmetic::FirstGroupOnly => {
                             let messages = build_transfer_second_group_first_messages(
@@ -2642,8 +2633,7 @@ fn chain_forms_chain_identifier_survives_its_field_round_trip() {
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
-                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic
-                    {
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
                         VerifierGroupArithmetic::BothGroups => None,
                         VerifierGroupArithmetic::FirstGroupOnly => {
                             let messages = build_mint_second_group_first_messages(
@@ -2686,8 +2676,7 @@ fn chain_forms_chain_identifier_survives_its_field_round_trip() {
                     relation: Some(DeliveryRelation::Transfer),
                     verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
                     responses: {
-                        let responses =
-                            build_transfer_responses(self.pairing, Default::default());
+                        let responses = build_transfer_responses(self.pairing, Default::default());
                         Some(vec![
                             responses.x,
                             responses.y,
@@ -2696,8 +2685,7 @@ fn chain_forms_chain_identifier_survives_its_field_round_trip() {
                             responses.sigma,
                         ])
                     },
-                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic
-                    {
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
                         VerifierGroupArithmetic::BothGroups => None,
                         VerifierGroupArithmetic::FirstGroupOnly => {
                             let messages = build_transfer_second_group_first_messages(

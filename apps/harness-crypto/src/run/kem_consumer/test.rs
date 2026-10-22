@@ -798,8 +798,7 @@ fn consume_kem_returns_the_generate_factorys_refusal_unchanged() {
 
     // Assert
     let Ok(CreateKeyAgreementSuccessReturn {
-        output:
-            Ok(CreateDeliveryProofSuccessReturn { output: Err(error) }),
+        output: Ok(CreateDeliveryProofSuccessReturn { output: Err(error) }),
     }) = output
     else {
         panic!("the key-agreement factory returns the generate refusal")
