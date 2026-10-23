@@ -11,48 +11,48 @@ warning: unused import: `super::interface::*`
   |
   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
+   Compiling harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
 warning: `harness-crypto` (lib) generated 1 warning (run `cargo fix --lib -p harness-crypto` to apply 1 suggestion)
 warning: `harness-crypto` (lib test) generated 1 warning (1 duplicate)
-   Compiling harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.83s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 32.00s
      Running unittests src\lib.rs (target\debug\deps\harness_crypto-9200abc5c3477c0b.exe)
 
-running 709 tests
+running 741 tests
 test benchmark::test::consume_pairing_returns_the_draw_error_unchanged ... ok
-test benchmark::test::consume_pairing_draws_the_length_the_sampling_bound_requires ... ok
 test benchmark::test::consume_pairing_returns_the_sampling_error_unchanged ... ok
-test config::admit_generate::test::admit_generate_admits_a_present_term_count ... ok
-test config::admit_generate::test::admit_generate_admits_the_generated_directory_segments_in_order ... ok
-test config::admit_generate::test::admit_generate_admits_the_kind_file_name ... ok
-test config::admit_generate::test::admit_generate_admits_a_quantity_its_kind_does_not_take ... ok
-test config::admit_generate::test::admit_generate_admits_a_present_count ... ok
-test config::admit_generate::test::admit_generate_admits_the_bls12_381_directory ... ok
-test config::admit_generate::test::admit_generate_admits_the_constants_library_file_name ... ok
-test config::admit_generate::test::admit_generate_admits_the_license ... ok
-test config::admit_generate::test::admit_generate_admits_the_constants_library_name ... ok
-test config::admit_generate::test::admit_generate_admits_an_empty_kind_list ... ok
-test config::admit_generate::test::admit_generate_admits_a_kind_named_twice ... ok
-test config::admit_generate::test::admit_generate_admits_the_kind_path_constant_name ... ok
-test config::admit_generate::test::admit_generate_admits_the_kind_struct_name ... ok
+test benchmark::test::consume_pairing_draws_the_length_the_sampling_bound_requires ... ok
 test config::admit_generate::test::admit_generate_admits_the_kinds_in_document_order ... ok
-test config::admit_generate::test::admit_generate_admits_the_bn254_directory ... ok
-test config::admit_generate::test::admit_generate_carries_the_foundry_root ... ok
-test config::admit_generate::test::admit_generate_admits_the_records_library_file_name ... ok
-test config::admit_generate::test::admit_generate_maps_every_vector_kind_text ... ok
-test config::admit_generate::test::admit_generate_refuses_a_constants_library_name_holding_an_invalid_character ... ok
 test config::admit_generate::test::admit_generate_admits_the_records_library_name ... ok
-test config::admit_generate::test::admit_generate_admits_the_kind_decode_function_name ... ok
-test config::admit_generate::test::admit_generate_carries_a_present_message_length ... ok
-test config::admit_generate::test::admit_generate_carries_an_absent_count_as_absent ... ok
-test config::admit_generate::test::admit_generate_carries_an_absent_term_count_as_absent ... ok
-test config::admit_generate::test::admit_generate_carries_the_compiler_version ... ok
 test config::admit_generate::test::admit_generate_refuses_a_bn254_directory_holding_a_separator ... ok
-test config::admit_generate::test::admit_generate_refuses_a_kinds_count_before_its_term_count ... ok
-test config::admit_generate::test::admit_generate_carries_an_absent_message_length ... ok
-test config::admit_generate::test::admit_generate_refuses_a_decode_function_name_with_an_uppercase_lead_with_its_index ... ok
-test config::admit_generate::test::admit_generate_refuses_a_kind_file_name_holding_a_separator_with_its_index ... ok
+test config::admit_generate::test::admit_generate_admits_the_kind_path_constant_name ... ok
+test config::admit_generate::test::admit_generate_admits_the_kind_decode_function_name ... ok
+test config::admit_generate::test::admit_generate_admits_the_constants_library_name ... ok
+test config::admit_generate::test::admit_generate_carries_the_compiler_version ... ok
+test config::admit_generate::test::admit_generate_admits_the_bls12_381_directory ... ok
+test config::admit_generate::test::admit_generate_admits_a_kind_named_twice ... ok
+test config::admit_generate::test::admit_generate_admits_the_kind_struct_name ... ok
+test config::admit_generate::test::admit_generate_admits_the_license ... ok
+test config::admit_generate::test::admit_generate_admits_the_constants_library_file_name ... ok
+test config::admit_generate::test::admit_generate_carries_an_absent_count_as_absent ... ok
+test config::admit_generate::test::admit_generate_admits_the_bn254_directory ... ok
+test config::admit_generate::test::admit_generate_admits_the_kind_file_name ... ok
+test config::admit_generate::test::admit_generate_admits_an_empty_kind_list ... ok
 test config::admit_generate::test::admit_generate_refuses_a_bls12_381_directory_holding_a_separator ... ok
+test config::admit_generate::test::admit_generate_admits_the_records_library_file_name ... ok
+test config::admit_generate::test::admit_generate_admits_the_generated_directory_segments_in_order ... ok
+test config::admit_generate::test::admit_generate_carries_the_foundry_root ... ok
+test config::admit_generate::test::admit_generate_admits_a_present_term_count ... ok
+test config::admit_generate::test::admit_generate_carries_an_absent_message_length ... ok
+test config::admit_generate::test::admit_generate_carries_a_present_message_length ... ok
+test config::admit_generate::test::admit_generate_carries_an_absent_term_count_as_absent ... ok
+test config::admit_generate::test::admit_generate_admits_a_quantity_its_kind_does_not_take ... ok
+test config::admit_generate::test::admit_generate_refuses_a_constants_library_name_holding_an_invalid_character ... ok
+test config::admit_generate::test::admit_generate_refuses_a_decode_function_name_with_an_uppercase_lead_with_its_index ... ok
+test config::admit_generate::test::admit_generate_admits_a_present_count ... ok
+test config::admit_generate::test::admit_generate_maps_every_vector_kind_text ... ok
 test config::admit_generate::test::admit_generate_refuses_a_kind_before_the_constants_library ... ok
+test config::admit_generate::test::admit_generate_refuses_a_kind_file_name_holding_a_separator_with_its_index ... ok
+test config::admit_generate::test::admit_generate_refuses_a_kinds_count_before_its_term_count ... ok
 test config::admit_generate::test::admit_generate_refuses_a_kinds_decode_function_name_before_its_path_constant_name ... ok
 test config::admit_generate::test::admit_generate_refuses_a_kinds_file_name_before_its_struct_name ... ok
 test config::admit_generate::test::admit_generate_refuses_a_kinds_struct_name_before_its_decode_function_name ... ok
@@ -90,11 +90,11 @@ test config::admit_output::test::admit_output_returns_the_first_refusal_in_docum
 test config::admit_selections::test_mapping::admit_selections_admits_an_empty_benchmark_list ... ok
 test config::admit_selections::test_mapping::admit_selections_carries_the_delivery_statement_version_unchanged ... ok
 test config::admit_selections::test_mapping::admit_selections_maps_every_benchmarked_pairing_text_to_its_concrete ... ok
-test config::admit_selections::test_mapping::admit_selections_computes_the_selections_from_every_document_part ... ok
 test config::admit_selections::test_mapping::admit_selections_maps_every_benchmarked_target_group_encoding_text_to_its_identifier ... ok
+test config::admit_selections::test_mapping::admit_selections_computes_the_selections_from_every_document_part ... ok
 test config::admit_selections::test_mapping::admit_selections_maps_every_curve_pairing_text_to_its_concrete ... ok
-test config::admit_selections::test_mapping::admit_selections_maps_the_asset_scope ... ok
 test config::admit_selections::test_mapping::admit_selections_maps_every_curve_target_group_encoding_text_to_its_identifier ... ok
+test config::admit_selections::test_mapping::admit_selections_maps_the_asset_scope ... ok
 test config::admit_selections::test_mapping::admit_selections_maps_the_precompile_encodings_in_order ... ok
 test config::admit_selections::test_order_families::admit_selections_refuses_the_chain_forms_concrete_before_the_chain_forms_identifier ... ok
 test config::admit_selections::test_order_families::admit_selections_refuses_the_chain_forms_identifier_before_the_kem_concrete ... ok
@@ -138,12 +138,12 @@ test config::admit_selections::test_refusal_lists::admit_selections_refuses_a_cu
 test config::admit_selections::test_refusal_lists::admit_selections_refuses_a_curve_target_group_encoding_text_with_its_index ... ok
 test config::admit_selections::test_refusal_lists::admit_selections_refuses_a_precompile_encoding_with_its_index ... ok
 test config::admit_selections::test_refusal_lists::admit_selections_refuses_an_empty_curve_list ... ok
-test config::admit_statements::test_basic::admit_statements_decodes_a_hex_digit_pair_high_digit_first ... ok
-test config::admit_statements::test_basic::admit_statements_decodes_a_prefix_alone_to_no_bytes ... ok
 test config::admit_statements::test_basic::admit_statements_decodes_each_identity_in_order ... ok
+test config::admit_statements::test_basic::admit_statements_fills_each_context_with_the_network_profiles_chain_and_contract ... ok
+test config::admit_statements::test_basic::admit_statements_decodes_a_prefix_alone_to_no_bytes ... ok
+test config::admit_statements::test_basic::admit_statements_decodes_a_hex_digit_pair_high_digit_first ... ok
 test config::admit_statements::test_basic::admit_statements_decodes_the_proof_identity_from_its_own_field ... ok
 test config::admit_statements::test_basic::admit_statements_decodes_uppercase_and_lowercase_digits ... ok
-test config::admit_statements::test_basic::admit_statements_fills_each_context_with_the_network_profiles_chain_and_contract ... ok
 test config::admit_statements::test_basic::admit_statements_maps_a_bytes_field ... ok
 test config::admit_statements::test_basic::admit_statements_maps_a_fixed_bytes20_field ... ok
 test config::admit_statements::test_basic::admit_statements_maps_a_fixed_bytes32_field ... ok
@@ -190,95 +190,94 @@ test config::admit_statements::test_error::admit_statements_refuses_an_unknown_k
 test config::admit_statements::test_error::admit_statements_refuses_an_unknown_kind_in_the_seller ... ok
 test config::admit_statements::test_error::admit_statements_refuses_an_unknown_kind_in_the_source_entitlement ... ok
 test config::admit_statements::test_error::admit_statements_refuses_an_unknown_kind_in_the_target_entitlement ... ok
-test config::admit_statements::test_error::admit_statements_refuses_an_unknown_kind_in_the_transfer_context ... ok
 test config::admit_statements::test_error::admit_statements_refuses_an_unsigned256_field_of_the_wrong_width ... ok
 test config::admit_statements::test_error::admit_statements_refuses_text_for_an_unsigned16_kind ... ok
+test config::admit_statements::test_error::admit_statements_refuses_an_unknown_kind_in_the_transfer_context ... ok
 test config::admit_statements::test_error::admit_statements_refuses_text_for_an_unsigned32_kind ... ok
 test config::admit_statements::test_error::admit_statements_refuses_text_for_an_unsigned64_kind ... ok
 test config::admit_statements::test_order::admit_statements_refuses_an_identity_before_the_next_identity ... ok
-test config::admit_statements::test_order::admit_statements_refuses_an_invalid_digit_before_an_odd_digit_count ... ok
 test config::admit_statements::test_order::admit_statements_refuses_an_odd_digit_count_before_a_wrong_width ... ok
+test config::admit_statements::test_order::admit_statements_refuses_an_invalid_digit_before_an_odd_digit_count ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_asset_identity_hash_before_the_parameter_set_identifier ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_identities_before_the_proof_identity ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_lowest_invalid_digit ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_mint_context_before_the_transfer_context ... ok
-test config::admit_statements::test_order::admit_statements_refuses_the_mint_purpose_before_the_transfer_purpose ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_network_before_the_mint_context ... ok
+test config::admit_statements::test_order::admit_statements_refuses_the_mint_purpose_before_the_transfer_purpose ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_network_chain_before_the_network_entitlement_contract ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_new_interval_before_the_seller ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_old_interval_before_the_new_interval ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_parameter_set_identifier_before_the_canonical_fields ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_purposes_before_the_identities ... ok
-test config::admit_statements::test_order::admit_statements_refuses_the_seller_before_the_buyer ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_source_entitlement_before_the_target_entitlement ... ok
+test config::admit_statements::test_order::admit_statements_refuses_the_seller_before_the_buyer ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_suite_identifier_before_the_asset_identity_hash ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_target_entitlement_before_the_old_interval ... ok
 test config::admit_statements::test_order::admit_statements_refuses_the_transfer_context_before_the_purposes ... ok
 test config::layers::test::layers_refuses_defaults_that_are_not_toml ... ok
 test config::layers::test::layers_refuses_the_arguments_before_reading_the_defaults ... ok
-test config::layers::test::layers_refuses_an_unknown_argument ... ok
-test config::integration_test::an_unreadable_configuration_file_reaches_the_caller_unchanged ... ok
-test config::layers::test::layers_refuses_the_defaults_before_reading_a_file ... ok
-test config::test::configure_hands_its_defaults_and_arguments_to_layers ... ok
 test config::test::configure_composes_each_admitted_value_into_its_own_field ... ok
-test config::layers::test::layers_refuses_an_assignment_holding_more_than_one_key ... ok
-test config::layers::test::layers_refuses_an_assignment_holding_no_key ... ok
-test config::test::configure_hands_the_curves_and_the_benchmarked_concretes_to_their_own_slots ... ok
+test config::layers::test::layers_refuses_an_unknown_argument ... ok
+test config::test::configure_hands_its_defaults_and_arguments_to_layers ... ok
 test config::layers::test::layers_returns_a_help_request_as_the_arguments_error ... ok
-test config::integration_test::a_refused_generate_setting_reaches_the_caller_unchanged ... ok
-test config::layers::test::layers_deserializes_the_defaults_into_the_document ... ok
 test config::test::configure_hands_each_selection_table_to_the_slot_of_its_name ... ok
-test config::test::configure_refuses_zero_benchmark_iterations ... ok
-test config::integration_test::a_refused_statement_purpose_reaches_the_caller_unchanged ... ok
-test config::layers::test::layers_refuses_a_document_with_an_undeclared_key ... ok
-test config::layers::test::layers_creates_the_tables_along_an_assigned_path_the_defaults_lack ... ok
-test config::integration_test::the_first_refusal_in_composition_order_is_returned ... ok
-test config::integration_test::a_refused_selection_reaches_the_caller_unchanged ... ok
-test config::integration_test::zero_benchmark_iterations_are_refused ... ok
-test config::layers::test::layers_refuses_an_assignment_that_is_not_toml ... ok
-test config::test::configure_returns_the_generate_refusal_unchanged ... ok
-test config::test::configure_returns_the_layers_refusal_unchanged ... ok
-test config::integration_test::a_refused_output_destination_reaches_the_caller_unchanged ... ok
 test config::test::configure_returns_the_generate_refusal_before_the_output_refusal ... ok
-test config::test::configure_returns_the_output_refusal_unchanged ... ok
-test config::layers::test::layers_refuses_an_assignment_before_deserializing_the_document ... ok
-test config::layers::test::layers_merges_a_nested_table_key_by_key ... ok
+test config::test::configure_hands_the_curves_and_the_benchmarked_concretes_to_their_own_slots ... ok
+test config::test::configure_returns_the_layers_refusal_unchanged ... ok
+test config::test::configure_refuses_zero_benchmark_iterations ... ok
+test config::layers::test::layers_refuses_the_defaults_before_reading_a_file ... ok
 test config::test::configure_returns_the_output_refusal_before_the_zero_iteration_refusal ... ok
-test config::layers::test::layers_refuses_a_value_outside_its_declared_type ... ok
-test config::test::configure_returns_the_selections_refusal_before_the_statements_refusal ... ok
+test config::test::configure_returns_the_generate_refusal_unchanged ... ok
+test config::layers::test::layers_refuses_an_assignment_holding_no_key ... ok
 test config::layers::test::layers_refuses_the_first_malformed_assignment_in_command_line_order ... ok
+test config::test::configure_returns_the_selections_refusal_before_the_statements_refusal ... ok
+test config::layers::test::layers_refuses_a_value_outside_its_declared_type ... ok
 test config::test::configure_returns_the_selections_refusal_unchanged ... ok
 test config::test::configure_returns_the_statements_refusal_before_the_generate_refusal ... ok
-test config::test::configure_returns_the_statements_refusal_unchanged ... ok
 test config::layers::test::layers_replaces_a_table_with_a_value_that_is_not_a_table ... ok
-test config::layers::test::layers_refuses_a_file_that_is_not_toml ... ok
-test config::layers::test::layers_refuses_defaults_missing_a_declared_table ... ok
-test config::layers::test::layers_replaces_a_value_that_is_not_a_table_along_an_assigned_path ... ok
-test generate::evm::challenge_vectors::test_description::challenge_vector_description_declares_its_members ... ok
-test generate::evm::challenge_vectors::test_description::challenge_vector_description_is_constructed_from_its_params ... ok
+test config::test::configure_returns_the_statements_refusal_unchanged ... ok
+test config::test::configure_returns_the_output_refusal_unchanged ... ok
+test config::integration_test::a_refused_generate_setting_reaches_the_caller_unchanged ... ok
+test config::layers::test::layers_refuses_an_assignment_that_is_not_toml ... ok
+test config::layers::test::layers_creates_the_tables_along_an_assigned_path_the_defaults_lack ... ok
+test config::integration_test::the_first_refusal_in_composition_order_is_returned ... ok
 test config::layers::test::layers_replaces_an_array_whole ... ok
-test config::layers::test::layers_refuses_a_file_before_parsing_an_assignment ... ok
-test generate::evm::challenge_vectors::test_description::challenge_vector_description_maps_purpose_draws_encoding_and_challenge_in_member_order ... ok
-test config::layers::test::layers_refuses_the_first_unreadable_file_in_command_line_order ... ok
-test generate::evm::challenge_vectors::test_description::challenge_vector_description_rebuilds_the_record_from_its_fields ... ok
-test config::layers::test::layers_refuses_a_file_it_cannot_read ... ok
+test config::layers::test::layers_merges_a_nested_table_key_by_key ... ok
+test config::layers::test::layers_refuses_a_file_that_is_not_toml ... ok
+test config::layers::test::layers_refuses_an_assignment_holding_more_than_one_key ... ok
+test config::integration_test::a_refused_output_destination_reaches_the_caller_unchanged ... ok
+test generate::evm::challenge_vectors::test_description::challenge_vector_description_declares_its_members ... ok
+test config::layers::test::layers_refuses_a_document_with_an_undeclared_key ... ok
 test generate::evm::challenge_vectors::test_description::challenge_vector_description_refuses_a_field_of_the_wrong_kind ... ok
+test generate::evm::challenge_vectors::test_description::challenge_vector_description_maps_purpose_draws_encoding_and_challenge_in_member_order ... ok
+test generate::evm::challenge_vectors::test_description::challenge_vector_description_is_constructed_from_its_params ... ok
+test generate::evm::challenge_vectors::test_description::challenge_vector_description_rebuilds_the_record_from_its_fields ... ok
 test generate::evm::challenge_vectors::test_description::challenge_vector_description_refuses_a_wrong_field_count ... ok
+test config::layers::test::layers_deserializes_the_defaults_into_the_document ... ok
+test config::layers::test::layers_refuses_an_assignment_before_deserializing_the_document ... ok
+test config::layers::test::layers_replaces_a_value_that_is_not_a_table_along_an_assigned_path ... ok
+test config::integration_test::an_unreadable_configuration_file_reaches_the_caller_unchanged ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_buyer_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_chain_identifier_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_entitlement_contract_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_new_interval_refusal ... ok
+test config::layers::test::layers_refuses_a_file_before_parsing_an_assignment ... ok
+test config::layers::test::layers_refuses_a_file_it_cannot_read ... ok
+test config::layers::test::layers_refuses_the_first_unreadable_file_in_command_line_order ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_old_interval_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_seller_refusal ... ok
+test config::integration_test::zero_benchmark_iterations_are_refused ... ok
+test config::integration_test::a_refused_selection_reaches_the_caller_unchanged ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_source_entitlement_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_mint_target_entitlement_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_buyer_refusal ... ok
+test config::layers::test::layers_refuses_defaults_missing_a_declared_table ... ok
+test config::integration_test::a_refused_statement_purpose_reaches_the_caller_unchanged ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_chain_identifier_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_entitlement_contract_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_new_interval_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_old_interval_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_seller_refusal ... ok
-test config::layers::test::layers_applies_assignments_over_files_in_command_line_order ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_source_entitlement_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_carry_the_transfer_target_entitlement_refusal ... ok
 test generate::evm::challenge_vectors::test_error::challenge_vectors_rebuild_every_form_before_any_draw ... ok
@@ -290,23 +289,15 @@ test generate::evm::challenge_vectors::test_error::challenge_vectors_return_the_
 test generate::evm::challenge_vectors::test_error::challenge_vectors_return_the_sampling_refusal_whole ... ok
 test generate::evm::constants::test::constants_carry_each_declarations_domain_tag_under_its_own_name ... ok
 test generate::evm::constants::test::constants_carry_the_generators_encodings ... ok
-test generate::evm::constants::test::constants_carry_the_mint_and_transfer_field_sequences ... ok
 test generate::evm::constants::test::constants_carry_the_scalar_field_order_as_32_big_endian_bytes ... ok
+test generate::evm::constants::test::constants_carry_the_mint_and_transfer_field_sequences ... ok
 test generate::evm::constants::test::constants_carry_the_statement_version_and_each_purpose_code ... ok
 test generate::evm::constants::test::constants_refuse_a_statement_version_no_description_serves ... ok
-test generate::evm::constants::integration_test::libraries_sharing_an_identifier_carry_the_same_scalar_field_order ... ok
-test generate::evm::constants::integration_test::the_entries_are_listed_in_declared_order ... ok
 test generate::evm::constants::test::constants_return_the_entries_in_declared_order ... ok
-test config::layers::test::layers_applies_configuration_files_in_command_line_order ... ok
 test generate::evm::group_vectors::integration_test::a_record_survives_its_description_round_trip ... ok
-test generate::evm::constants::integration_test::the_entries_carry_each_declarations_domain_tag_under_its_own_name ... ok
-test generate::evm::constants::integration_test::the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms ... ok
-test generate::evm::constants::integration_test::the_entries_carry_the_statement_version_and_each_purpose_code_in_declared_order ... ok
-test generate::evm::constants::integration_test::the_entries_carry_the_verifier_form_the_pairing_declares ... ok
-test generate::evm::group_vectors::integration_test::members_declare_the_kinds_to_fields_emits ... ok
-test generate::evm::constants::integration_test::the_entries_carry_the_scalar_field_order_as_32_big_endian_bytes ... ok
 test generate::evm::group_vectors::test::group_operation_vector_description_declares_draws_input_and_output_members ... ok
 test generate::evm::group_vectors::test::group_operation_vector_description_maps_draws_input_and_output_to_byte_strings_in_order ... ok
+test generate::evm::group_vectors::integration_test::members_declare_the_kinds_to_fields_emits ... ok
 test generate::evm::group_vectors::test::group_operation_vector_description_rebuilds_the_record_from_its_fields ... ok
 test generate::evm::group_vectors::test::group_operation_vector_description_refuses_a_wrong_field_count ... ok
 test generate::evm::group_vectors::test::group_operation_vector_description_refuses_the_lowest_index_of_the_wrong_kind ... ok
@@ -315,6 +306,13 @@ test generate::evm::group_vectors::test::group_vectors_emit_each_first_group_kin
 test generate::evm::group_vectors::test::group_vectors_g1_multiplication_ends_its_input_with_its_multiplier ... ok
 test generate::evm::group_vectors::test::group_vectors_refuse_second_group_settings_on_a_first_group_only_pairing ... ok
 test generate::evm::group_vectors::test::group_vectors_pairing_checks_alternate_passing_and_failing_verdicts ... ok
+test generate::evm::constants::integration_test::the_entries_carry_the_verifier_form_the_pairing_declares ... ok
+test generate::evm::constants::integration_test::the_entries_carry_each_declarations_domain_tag_under_its_own_name ... ok
+test generate::evm::constants::integration_test::the_entries_carry_the_statement_version_and_each_purpose_code_in_declared_order ... ok
+test generate::evm::constants::integration_test::the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms ... ok
+test generate::evm::constants::integration_test::the_entries_are_listed_in_declared_order ... ok
+test generate::evm::constants::integration_test::the_entries_carry_the_scalar_field_order_as_32_big_endian_bytes ... ok
+test generate::evm::constants::integration_test::libraries_sharing_an_identifier_carry_the_same_scalar_field_order ... ok
 test generate::evm::group_vectors::test::group_vectors_return_the_fill_refusal_unchanged ... ok
 test generate::evm::group_vectors::test::group_vectors_return_the_sampling_refusal_unchanged ... ok
 test generate::evm::group_vectors::test::msm_term_count_admits_a_positive_count ... ok
@@ -327,6 +325,7 @@ test generate::evm::group_vectors::test::pairing_check_vector_description_refuse
 test generate::evm::group_vectors::test::pairing_check_vector_description_refuses_the_lowest_index_of_the_wrong_kind ... ok
 test generate::evm::group_vectors::test::vector_count_admits_a_positive_count ... ok
 test generate::evm::group_vectors::test::vector_count_refuses_zero ... ok
+test config::layers::test::layers_applies_assignments_over_files_in_command_line_order ... ok
 test generate::evm::mapping_vectors::integration_test::a_record_survives_its_description_round_trip ... ok
 test generate::evm::mapping_vectors::integration_test::members_declare_the_kinds_to_fields_emits ... ok
 test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_declares_tag_message_and_scalar_members ... ok
@@ -334,94 +333,93 @@ test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_map
 test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_rebuilds_the_record_from_its_fields ... ok
 test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_refuses_a_byte_string_scalar ... ok
 test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_refuses_a_wrong_field_count ... ok
+test config::layers::test::layers_applies_configuration_files_in_command_line_order ... ok
 test generate::evm::mapping_vectors::test::hash_to_scalar_vector_description_refuses_the_lowest_index_of_the_wrong_kind ... ok
 test generate::evm::mapping_vectors::test::identity_mapping_vector_description_declares_identity_and_scalar_members ... ok
-test generate::evm::integration_test::a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing ... ok
 test generate::evm::mapping_vectors::test::identity_mapping_vector_description_maps_identity_and_scalar_in_order ... ok
 test generate::evm::mapping_vectors::test::identity_mapping_vector_description_rebuilds_the_record_from_its_fields ... ok
-test generate::evm::mapping_vectors::test::identity_mapping_vector_description_refuses_a_byte_string_scalar ... ok
 test generate::evm::mapping_vectors::test::identity_mapping_vector_description_refuses_a_wrong_field_count ... ok
+test generate::evm::integration_test::a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing ... ok
+test generate::evm::mapping_vectors::test::identity_mapping_vector_description_refuses_a_byte_string_scalar ... ok
 test generate::evm::mapping_vectors::test::identity_mapping_vector_description_refuses_the_lowest_index_of_the_wrong_kind ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_draw_each_message_at_the_configured_length ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_emit_one_identity_record_per_identity_in_payload_order_under_the_asset_scope ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_emit_one_identity_record_per_identity_in_payload_order_under_the_entitlement_scope ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_emit_one_record_per_declared_tag_for_each_message_in_tag_order ... ok
+test generate::evm::mapping_vectors::test::mapping_vectors_emit_one_identity_record_per_identity_in_payload_order_under_the_entitlement_scope ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_record_one_scalar_per_identity_bytes_whatever_the_setup_draws ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_record_scalars_that_follow_their_tag_and_their_message ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_refuse_a_declared_tag_before_any_draw ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_refuse_an_asset_identity_that_is_not_32_bytes ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_return_the_fill_refusal_unchanged ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_return_the_derivation_refusal_unchanged_under_the_entitlement_scope ... ok
+test generate::evm::mapping_vectors::test::mapping_vectors_return_the_fill_refusal_unchanged ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_return_the_hash_refusal_before_mapping_any_identity ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_return_the_hash_refusal_unchanged ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_return_the_refusal_of_a_declared_tag_unchanged ... ok
-test generate::evm::mapping_vectors::test::mapping_vectors_return_the_setup_refusal_unchanged_under_the_asset_scope ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_return_the_refusal_of_an_all_zero_asset_identity ... ok
+test generate::evm::mapping_vectors::test::mapping_vectors_return_the_setup_refusal_unchanged_under_the_asset_scope ... ok
 test generate::evm::mapping_vectors::test::mapping_vectors_share_one_message_across_the_tags_of_a_draw_and_draw_a_new_one_for_the_next ... ok
 test generate::evm::possession_vectors::test::possession_vector_description_declares_its_members ... ok
-test generate::evm::possession_vectors::integration_test::every_record_survives_the_canonical_encoding_under_the_description ... ok
 test generate::evm::possession_vectors::test::possession_vector_description_maps_secrets_keys_and_proof_components_in_member_order ... ok
-test generate::evm::possession_vectors::test::possession_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::evm::possession_vectors::integration_test::every_record_survives_the_canonical_encoding_under_the_description ... ok
 test generate::evm::possession_vectors::test::possession_vector_description_admits_its_fieldless_constructor_params ... ok
+test generate::evm::possession_vectors::test::possession_vector_description_rebuilds_the_record_from_its_fields ... ok
 test generate::evm::possession_vectors::test::possession_vector_description_refuses_a_list_one_field_long ... ok
 test generate::evm::possession_vectors::test::possession_vector_description_refuses_a_list_one_field_short ... ok
 test generate::evm::possession_vectors::test::possession_vector_description_refuses_the_lowest_field_of_the_wrong_kind ... ok
-test generate::evm::constants::integration_test::the_entries_carry_the_generators_precompile_encodings ... ok
 test generate::evm::possession_vectors::test::possession_vectors_carry_the_second_group_public_key_the_secret_forms ... ok
 test generate::evm::possession_vectors::test::possession_vectors_carry_each_commitment_in_its_groups_encoding ... ok
 test generate::evm::possession_vectors::test::possession_vectors_carry_the_first_group_public_key_the_secret_forms ... ok
 test generate::evm::possession_vectors::test::possession_vectors_carry_their_scalar_fields_as_32_byte_encodings ... ok
 test generate::evm::possession_vectors::test::possession_vectors_emit_the_configured_count_of_records ... ok
-test generate::evm::possession_vectors::test::possession_vectors_give_each_record_its_own_secrets ... ok
 test generate::evm::possession_vectors::test::possession_vectors_return_the_draw_refusal_unchanged ... ok
+test generate::evm::possession_vectors::test::possession_vectors_give_each_record_its_own_secrets ... ok
 test generate::evm::possession_vectors::test::possession_vectors_return_the_generation_refusal_unchanged ... ok
+test generate::evm::constants::integration_test::the_entries_carry_the_generators_precompile_encodings ... ok
 test generate::evm::mapping_vectors::integration_test::each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its_tag ... ok
 test generate::evm::group_vectors::integration_test::a_both_groups_pairing_requires_its_second_group_settings ... ok
 test generate::evm::challenge_vectors::integration_test::challenge_vectors_return_the_hash_to_scalar_refusal_whole ... ok
 test generate::evm::mapping_vectors::integration_test::each_identity_record_is_the_references_mapping_of_its_identity_under_the_identity_tag ... ok
 test generate::evm::possession_vectors::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_secrets ... ok
-test generate::evm::possession_vectors::integration_test::every_record_encodes_its_scalars_in_32_bytes_and_its_points_in_the_pairings_widths ... ok
-test generate::evm::group_vectors::integration_test::a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts ... ok
 test generate::evm::group_vectors::integration_test::each_msm_term_carries_its_multiplier_in_its_input ... ok
+test generate::evm::group_vectors::integration_test::a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts ... ok
+test generate::evm::possession_vectors::integration_test::every_record_encodes_its_scalars_in_32_bytes_and_its_points_in_the_pairings_widths ... ok
+test generate::evm::possession_vectors::integration_test::every_record_carries_public_keys_that_are_the_generators_times_their_secrets ... ok
 test generate::evm::proof_vectors::test_basic::proof_vectors_carry_no_second_group_first_messages_in_the_both_groups_form_for_a_mint ... ok
-test generate::evm::group_vectors::integration_test::each_second_group_output_is_the_references_result_for_its_drawn_operands ... ok
 test generate::evm::proof_vectors::test_basic::proof_vectors_carry_no_second_group_first_messages_in_the_both_groups_form_for_a_transfer ... ok
 test generate::evm::proof_vectors::test_basic::proof_vectors_carry_second_group_first_messages_in_the_first_group_only_form_for_a_mint ... ok
 test generate::evm::proof_vectors::test_basic::proof_vectors_carry_second_group_first_messages_in_the_first_group_only_form_for_a_transfer ... ok
-test generate::evm::possession_vectors::integration_test::every_record_carries_public_keys_that_are_the_generators_times_their_secrets ... ok
 test generate::evm::proof_vectors::test_basic::proof_vectors_carry_the_identity_element_of_an_asset_identity ... ok
-test generate::evm::proof_vectors::test_basic::proof_vectors_draw_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
 test generate::evm::proof_vectors::test_basic::proof_vectors_carry_the_identity_element_of_an_entitlement_identity ... ok
 test generate::evm::proof_vectors::test_basic::proof_vectors_emit_the_configured_counts_of_mint_and_transfer_records ... ok
+test generate::evm::proof_vectors::test_basic::proof_vectors_draw_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
 test generate::evm::proof_vectors::test_basic::proof_vectors_place_each_contexts_configured_values_in_its_records ... ok
 test generate::evm::proof_vectors::test_basic::proof_vectors_record_the_draws_in_the_sequence_the_source_yields ... ok
 test generate::evm::proof_vectors::test_description::mint_proof_vector_description_declares_its_members ... ok
 test generate::evm::proof_vectors::test_description::mint_proof_vector_description_maps_the_record_in_member_order ... ok
 test generate::evm::proof_vectors::test_description::mint_proof_vector_description_rebuilds_the_record_from_its_fields ... ok
-test generate::evm::proof_vectors::test_description::mint_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind ... ok
 test generate::evm::proof_vectors::test_description::mint_proof_vector_description_refuses_a_field_list_longer_than_its_field_count ... ok
+test generate::evm::proof_vectors::test_description::mint_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind ... ok
 test generate::evm::proof_vectors::test_description::mint_proof_vector_description_refuses_a_field_list_shorter_than_its_field_count ... ok
+test generate::evm::proof_vectors::test_description::mint_proof_vector_description_reports_the_count_before_a_wrong_kind ... ok
 test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_declares_its_members ... ok
 test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_maps_the_record_in_member_order ... ok
-test generate::evm::proof_vectors::test_description::mint_proof_vector_description_reports_the_count_before_a_wrong_kind ... ok
 test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_rebuilds_the_record_from_its_fields ... ok
 test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_refuses_a_field_list_longer_than_its_field_count ... ok
 test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_refuses_a_field_list_shorter_than_its_field_count ... ok
 test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind ... ok
 test generate::evm::proof_vectors::test_description::transfer_proof_vector_description_reports_the_count_before_a_wrong_kind ... ok
-test generate::evm::group_vectors::integration_test::each_first_group_output_is_the_references_result_for_its_drawn_operands ... ok
-test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_buyer_with_its_relation_and_field ... ok
 test generate::evm::proof_vectors::test_error::proof_vectors_return_the_first_refused_form_in_transcript_order ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_buyer_with_its_relation_and_field ... ok
 test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_chain_identifier_with_its_relation ... ok
 test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_entitlement_contract_with_its_relation_and_field ... ok
 test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_new_interval_with_its_relation_and_field ... ok
 test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_old_interval_with_its_relation_and_field ... ok
+test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_seller_with_its_relation_and_field ... ok
 test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_source_entitlement_with_its_relation_and_field ... ok
 test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_target_entitlement_with_its_relation_and_field ... ok
 test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_transfer_context_with_the_transfer_relation ... ok
-test generate::evm::proof_vectors::test_error::proof_vectors_return_the_refusal_of_the_seller_with_its_relation_and_field ... ok
-test generate::evm::proof_vectors::test_error_2::proof_vectors_refuse_an_asset_identity_longer_than_32_bytes ... ok
 test generate::evm::proof_vectors::test_error_2::proof_vectors_refuse_an_asset_identity_shorter_than_32_bytes ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_refuse_an_asset_identity_longer_than_32_bytes ... ok
 test generate::evm::proof_vectors::test_error_2::proof_vectors_refuse_the_asset_identity_before_any_context ... ok
 test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_coin_draw_refusal_of_wrapping_whole ... ok
 test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_draw_refusal_whole ... ok
@@ -429,33 +427,32 @@ test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_hash_t
 test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_nonce_draw_refusal_of_key_generation_whole ... ok
 test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_nonce_draw_refusal_of_the_mint_prover_whole ... ok
 test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_refusal_of_an_all_zero_asset_identity ... ok
-test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_sampling_refusal_of_setup_whole ... ok
 test generate::evm::rejection_vectors::test::decode_target_admits_the_name_g1 ... ok
-test generate::evm::rejection_vectors::test::decode_target_g1_is_named_g1 ... ok
-test generate::evm::rejection_vectors::test::decode_target_g2_is_named_g2 ... ok
+test generate::evm::proof_vectors::test_error_2::proof_vectors_return_the_sampling_refusal_of_setup_whole ... ok
 test generate::evm::rejection_vectors::test::decode_target_admits_the_name_g2 ... ok
 test generate::evm::rejection_vectors::test::decode_target_admits_the_name_scalar ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_declares_target_and_input_members ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_is_admitted_from_its_fieldless_params ... ok
-test generate::evm::challenge_vectors::integration_test::challenge_vectors_place_each_contexts_configured_values_in_its_transcript ... ok
+test generate::evm::rejection_vectors::test::decode_target_g1_is_named_g1 ... ok
+test generate::evm::rejection_vectors::test::decode_target_g2_is_named_g2 ... ok
 test generate::evm::rejection_vectors::test::decode_target_refuses_an_unknown_name ... ok
 test generate::evm::rejection_vectors::test::decode_target_scalar_is_named_scalar ... ok
+test generate::evm::rejection_vectors::test::rejection_vector_description_declares_target_and_input_members ... ok
+test generate::evm::rejection_vectors::test::rejection_vector_description_is_admitted_from_its_fieldless_params ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_maps_target_and_input_in_order ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_rebuilds_the_record_from_its_fields ... ok
-test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_an_unknown_target ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_a_field_of_the_wrong_kind ... ok
+test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_an_unknown_target ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_too_few_fields ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_refuses_too_many_fields ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_reports_the_count_before_the_kind ... ok
 test generate::evm::rejection_vectors::test::rejection_vector_description_reports_the_lowest_index_of_a_wrong_kind ... ok
 test generate::evm::rejection_vectors::test::rejection_vectors_enumerate_the_second_group_and_the_scalar_where_the_pairing_has_no_first_group_encoding ... ok
+test generate::evm::rejection_vectors::test::rejection_vectors_hold_the_scalar_field_order_as_the_scalar_record_input ... ok
 test generate::evm::rejection_vectors::test::rejection_vectors_hold_the_second_group_candidate_as_the_g2_record_input ... ok
 test generate::evm::rejection_vectors::test::rejection_vectors_return_the_first_group_refusal_unchanged ... ok
 test generate::evm::rejection_vectors::test::rejection_vectors_return_the_second_group_refusal_unchanged ... ok
 test generate::evm::render::integration_test::render_declares_the_decode_function_over_a_bytes_memory_line ... ok
-test generate::evm::render::integration_test::render_declares_the_struct_with_one_member_line_per_member_in_order ... ok
 test generate::evm::render::integration_test::render_decodes_the_line_over_the_members_abi_types_in_member_order ... ok
-test generate::evm::rejection_vectors::test::rejection_vectors_hold_the_scalar_field_order_as_the_scalar_record_input ... ok
+test generate::evm::render::integration_test::render_declares_the_struct_with_one_member_line_per_member_in_order ... ok
 test generate::evm::render::integration_test::render_marks_only_bytes_and_string_locals_as_memory ... ok
 test generate::evm::render::integration_test::render_produces_the_exact_source_of_a_reference_record_library ... ok
 test generate::evm::render::integration_test::render_returns_the_struct_built_with_named_arguments ... ok
@@ -463,11 +460,11 @@ test generate::evm::render::integration_test::render_separates_record_declaratio
 test generate::evm::render::integration_test::render_writes_record_declarations_in_payload_order ... ok
 test generate::evm::render::integration_test::render_writes_the_first_record_block_without_a_leading_separator ... ok
 test generate::evm::render::integration_test::render_writes_the_path_constant_as_a_string_internal_constant ... ok
-test generate::evm::render::test::render_produces_the_exact_source_of_a_reference_library ... ok
-test generate::evm::render::test::render_writes_a_16_bit_value_in_decimal ... ok
 test generate::evm::render::test::render_closes_the_library_with_one_final_newline ... ok
 test generate::evm::render::test::render_declares_the_library_by_name ... ok
 test generate::evm::render::test::render_opens_with_the_license_line_the_exact_pragma_and_an_empty_line ... ok
+test generate::evm::render::test::render_produces_the_exact_source_of_a_reference_library ... ok
+test generate::evm::render::test::render_writes_a_16_bit_value_in_decimal ... ok
 test generate::evm::render::test::render_writes_a_256_bit_value_as_big_endian_hex_digits ... ok
 test generate::evm::render::test::render_writes_a_64_bit_value_in_decimal ... ok
 test generate::evm::render::test::render_writes_a_byte_string_as_a_lowercase_hex_literal ... ok
@@ -478,11 +475,11 @@ test generate::evm::render::test::render_writes_entries_in_payload_order ... ok
 test generate::evm::render::test::solidity_abi_type_decodes_bytes_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_decodes_text_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_does_not_decode_fixed_bytes_20_into_memory ... ok
-test generate::evm::render::test::solidity_abi_type_does_not_decode_fixed_bytes_32_into_memory ... ok
-test generate::evm::render::test::solidity_abi_type_does_not_decode_unsigned_64_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_does_not_decode_unsigned_16_into_memory ... ok
+test generate::evm::render::test::solidity_abi_type_does_not_decode_fixed_bytes_32_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_does_not_decode_unsigned_256_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_does_not_decode_unsigned_32_into_memory ... ok
+test generate::evm::render::test::solidity_abi_type_does_not_decode_unsigned_64_into_memory ... ok
 test generate::evm::render::test::solidity_abi_type_holds_the_kind_moved_from_the_params ... ok
 test generate::evm::render::test::solidity_abi_type_names_bytes_as_bytes ... ok
 test generate::evm::render::test::solidity_abi_type_names_fixed_bytes_20_as_bytes20_never_address ... ok
@@ -496,42 +493,43 @@ test generate::evm::render::test::solidity_constant_name_admits_every_boundary_b
 test generate::evm::render::test::solidity_constant_name_refuses_a_leading_byte_outside_uppercase_letters ... ok
 test generate::evm::render::test::solidity_constant_name_refuses_empty_text ... ok
 test generate::evm::render::test::solidity_constant_name_refuses_the_lowest_later_byte_outside_uppercase_digits_and_underscore ... ok
-test generate::evm::render::test::solidity_library_entries_refuses_the_lowest_index_whose_name_repeats_an_earlier_name ... ok
+test generate::evm::render::test::solidity_library_entries_admits_distinct_names_and_keeps_their_order ... ok
 test generate::evm::render::test::solidity_library_entries_refuses_an_empty_list ... ok
+test generate::evm::render::test::solidity_library_entries_refuses_the_lowest_index_whose_name_repeats_an_earlier_name ... ok
 test generate::evm::render::test::solidity_library_name_admits_every_boundary_byte_of_its_sets ... ok
 test generate::evm::render::test::solidity_library_name_refuses_a_leading_byte_outside_uppercase_letters ... ok
-test generate::evm::render::test::solidity_library_entries_admits_distinct_names_and_keeps_their_order ... ok
 test generate::evm::render::test::solidity_library_name_refuses_empty_text ... ok
 test generate::evm::render::test::solidity_library_name_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
+test generate::evm::group_vectors::integration_test::each_second_group_output_is_the_references_result_for_its_drawn_operands ... ok
 test generate::evm::render::test::solidity_member_name_admits_every_boundary_byte_of_its_sets ... ok
+test generate::evm::render::test::solidity_member_name_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
 test generate::evm::render::test::solidity_member_name_refuses_a_leading_byte_outside_lowercase_letters ... ok
 test generate::evm::render::test::solidity_member_name_refuses_empty_text ... ok
-test generate::evm::render::test::solidity_member_name_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
 test generate::evm::render::test::solidity_record_declarations_admit_unique_names_and_keep_their_order ... ok
 test generate::evm::render::test::solidity_record_declarations_refuse_a_repeated_decode_function_name_before_a_repeated_path_constant_name ... ok
-test generate::evm::render::test::solidity_record_declarations_refuse_a_repeated_struct_name_before_a_repeated_decode_function_name ... ok
 test generate::evm::render::test::solidity_record_declarations_refuse_an_empty_list ... ok
-test generate::evm::render::test::solidity_record_declarations_refuse_the_lowest_index_whose_path_constant_name_repeats ... ok
+test generate::evm::render::test::solidity_record_declarations_refuse_a_repeated_struct_name_before_a_repeated_decode_function_name ... ok
 test generate::evm::render::test::solidity_record_declarations_refuse_the_lowest_index_whose_decode_function_name_repeats ... ok
+test generate::evm::render::test::solidity_record_declarations_refuse_the_lowest_index_whose_path_constant_name_repeats ... ok
 test generate::evm::render::test::solidity_record_declarations_refuse_the_lowest_index_whose_struct_name_repeats ... ok
 test generate::evm::render::test::solidity_record_members_admit_unique_names_that_contain_line_and_keep_their_order ... ok
 test generate::evm::render::test::solidity_record_members_refuse_a_reserved_name_before_a_duplicate ... ok
 test generate::evm::render::test::solidity_record_members_refuse_a_single_member_as_too_few ... ok
 test generate::evm::render::test::solidity_record_members_refuse_a_single_reserved_name_as_too_few ... ok
 test generate::evm::render::test::solidity_record_members_refuse_an_empty_list_as_too_few ... ok
-test generate::evm::render::test::solidity_string_literal_admits_every_printable_byte_beside_the_excluded_ones ... ok
-test generate::evm::render::test::solidity_string_literal_admits_the_empty_string ... ok
 test generate::evm::render::test::solidity_record_members_refuse_the_lowest_index_named_line ... ok
+test generate::evm::render::test::solidity_record_members_refuse_the_lowest_index_whose_name_repeats_an_earlier_name ... ok
+test generate::evm::render::test::solidity_string_literal_admits_the_empty_string ... ok
+test generate::evm::render::test::solidity_string_literal_admits_every_printable_byte_beside_the_excluded_ones ... ok
+test generate::evm::render::test::solidity_source_text_returns_its_text ... ok
 test generate::evm::render::test::solidity_string_literal_refuses_a_backslash ... ok
 test generate::evm::render::test::solidity_string_literal_refuses_a_byte_above_tilde ... ok
 test generate::evm::render::test::solidity_string_literal_refuses_a_byte_below_space ... ok
-test generate::evm::render::test::solidity_record_members_refuse_the_lowest_index_whose_name_repeats_an_earlier_name ... ok
-test generate::evm::render::test::solidity_source_text_returns_its_text ... ok
 test generate::evm::render::test::solidity_string_literal_refuses_a_double_quote ... ok
 test generate::evm::render::test::solidity_string_literal_refuses_the_first_byte_of_a_non_ascii_character ... ok
-test generate::evm::render::test::solidity_string_literal_refuses_the_lowest_index_when_several_bytes_are_refused ... ok
 test generate::evm::render::test::solidity_type_name_admits_every_boundary_byte_of_its_sets ... ok
 test generate::evm::render::test::solidity_type_name_refuses_a_leading_byte_outside_uppercase_letters ... ok
+test generate::evm::render::test::solidity_string_literal_refuses_the_lowest_index_when_several_bytes_are_refused ... ok
 test generate::evm::render::test::solidity_type_name_refuses_empty_text ... ok
 test generate::evm::render::test::solidity_type_name_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
 test generate::evm::render::test::solidity_uint256_holds_the_array_moved_from_the_params ... ok
@@ -539,38 +537,38 @@ test generate::evm::render::test::spdx_license_identifier_admits_a_final_plus_an
 test generate::evm::render::test::spdx_license_identifier_admits_every_boundary_byte_of_its_set ... ok
 test generate::evm::render::test::spdx_license_identifier_refuses_a_lone_plus_as_empty ... ok
 test generate::evm::render::test::spdx_license_identifier_refuses_a_plus_that_is_not_the_only_final_byte ... ok
-test generate::evm::render::test::spdx_license_identifier_refuses_the_lowest_byte_outside_its_set ... ok
 test generate::evm::render::test::spdx_license_identifier_refuses_empty_text ... ok
+test generate::evm::render::test::spdx_license_identifier_refuses_the_lowest_byte_outside_its_set ... ok
 test generate::evm::test::emit_admits_every_asset_identity_hash_under_the_asset_scope ... ok
 test generate::evm::test::emit_admits_identities_as_given_under_the_entitlement_scope ... ok
-test generate::evm::test::emit_refuses_settings_missing_an_emitted_kind ... ok
 test generate::evm::test::emit_refuses_an_asset_scope_identity_before_the_proof_identity ... ok
 test generate::evm::test::emit_refuses_an_asset_scope_identity_of_another_length_with_its_index ... ok
 test generate::evm::test::emit_refuses_an_asset_scope_proof_identity_of_another_length ... ok
-test generate::evm::test::emit_returns_an_asset_scope_identitys_hash_refusal_with_its_index ... ok
+test generate::evm::test::emit_refuses_settings_missing_an_emitted_kind ... ok
 test generate::evm::test::emit_refuses_sizes_missing_an_emitted_kind ... ok
+test generate::evm::test::emit_returns_an_asset_scope_identitys_hash_refusal_with_its_index ... ok
 test generate::evm::test::emit_returns_an_asset_scope_proof_identitys_hash_refusal ... ok
 test generate::evm::test::evm_generate_declares_its_kinds_with_their_sizing_and_second_group_gates ... ok
 test generate::evm::test::generated_directory_admits_its_segments_in_order ... ok
+test generate::evm::test::generated_directory_refuses_no_segments ... ok
 test generate::evm::test::generated_file_name_as_str_returns_its_text ... ok
 test generate::evm::test::generated_file_name_refuses_empty_text ... ok
-test generate::evm::test::generated_file_name_refuses_the_byte_after_the_digits ... ok
-test generate::evm::test::generated_directory_refuses_no_segments ... ok
 test generate::evm::test::generated_file_name_admits_every_character_class_it_allows ... ok
+test generate::evm::test::generated_file_name_refuses_the_byte_after_the_digits ... ok
 test generate::evm::test::generated_file_name_refuses_the_byte_after_the_lowercase_letters ... ok
-test generate::evm::test::generated_file_name_refuses_the_double_dot_text ... ok
-test generate::evm::test::generated_file_name_refuses_the_byte_before_the_digits ... ok
 test generate::evm::test::generated_file_name_refuses_the_byte_after_the_uppercase_letters ... ok
-test generate::evm::test::generated_file_name_refuses_the_lowest_invalid_byte_index ... ok
+test generate::evm::test::generated_file_name_refuses_the_byte_before_the_digits ... ok
 test generate::evm::test::generated_file_name_refuses_the_byte_before_the_lowercase_letters ... ok
 test generate::evm::test::generated_file_name_refuses_the_byte_before_the_uppercase_letters ... ok
+test generate::evm::test::generated_file_name_refuses_the_double_dot_text ... ok
+test generate::evm::test::generated_file_name_refuses_the_lowest_invalid_byte_index ... ok
 test generate::evm::test::generated_file_name_refuses_the_single_dot_text ... ok
-test generate::factory::integration_test::every_concrete_refuses_under_the_asset_scope_an_identity_no_asset_identity_hash_admits ... ok
-test generate::factory::test::create_generate_checks_a_kinds_count_before_its_terms ... ok
 test generate::factory::integration_test::a_refused_write_returns_the_mock_concretes_own_error ... ok
 test generate::factory::integration_test::every_concrete_refuses_under_the_asset_scope_a_proof_identity_no_asset_identity_hash_admits ... ok
+test generate::factory::test::create_generate_checks_a_kinds_count_before_its_terms ... ok
 test generate::factory::test::create_generate_checks_a_kinds_terms_before_its_message_length ... ok
 test generate::factory::test::create_generate_refuses_a_count_on_an_enumerated_kind ... ok
+test generate::factory::integration_test::every_concrete_refuses_under_the_asset_scope_an_identity_no_asset_identity_hash_admits ... ok
 test generate::factory::test::create_generate_refuses_a_drawn_kind_missing_its_count ... ok
 test generate::factory::test::create_generate_refuses_a_kind_drawn_with_messages_missing_its_message_length ... ok
 test generate::factory::test::create_generate_refuses_a_kind_drawn_with_terms_missing_its_terms ... ok
@@ -587,6 +585,7 @@ test run::delivery_proof_consumer::integration_test::a_refused_write_returns_the
 test run::delivery_proof_consumer::test::consume_delivery_proof_returns_the_emit_refusal_unchanged ... ok
 test run::delivery_proof_consumer::test::consume_delivery_proof_returns_the_files_the_generate_factory_returns ... ok
 test run::delivery_proof_consumer::test::consume_delivery_proof_returns_the_generate_factorys_refusal_unchanged ... ok
+test generate::evm::group_vectors::integration_test::each_first_group_output_is_the_references_result_for_its_drawn_operands ... ok
 test run::generate_consumer::integration_test::a_refused_write_returns_the_mock_concretes_own_error ... ok
 test run::generate_consumer::test::consume_generate_returns_the_files_emit_returns ... ok
 test run::generate_consumer::test::consume_generate_returns_the_refusal_emit_returns_unchanged ... ok
@@ -596,6 +595,7 @@ test run::kem_consumer::test::consume_kem_returns_the_delivery_proof_factorys_re
 test run::kem_consumer::test::consume_kem_returns_the_emit_refusal_unchanged ... ok
 test run::kem_consumer::test::consume_kem_returns_the_files_the_key_agreement_factory_returns ... ok
 test run::kem_consumer::test::consume_kem_returns_the_generate_factorys_refusal_unchanged ... ok
+test generate::evm::challenge_vectors::integration_test::challenge_vectors_place_each_contexts_configured_values_in_its_transcript ... ok
 test run::kem_consumer::test::consume_kem_returns_the_key_agreement_factorys_refusal_unchanged ... ok
 test run::key_agreement_consumer::test::consume_key_agreement_returns_the_delivery_proof_factorys_refusal_unchanged ... ok
 test run::key_agreement_consumer::test::consume_key_agreement_returns_the_emit_refusal_unchanged ... ok
@@ -603,26 +603,58 @@ test run::key_agreement_consumer::test::consume_key_agreement_returns_the_files_
 test run::key_agreement_consumer::test::consume_key_agreement_returns_the_generate_factorys_refusal_unchanged ... ok
 test vectors::cross_holder::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
 test generate::evm::possession_vectors::integration_test::every_record_carries_proofs_the_key_agreement_admits ... ok
+test generate::evm::challenge_vectors::integration_test::challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to ... ok
 test generate::evm::challenge_vectors::integration_test::challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order ... ok
 test generate::evm::integration_test::a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing ... ok
-test generate::evm::challenge_vectors::integration_test::challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to ... ok
 test vectors::cross_holder::test_basic::cross_holder_draws_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
 test vectors::cross_holder::test_basic::cross_holder_emits_the_configured_count_of_records ... ok
 test vectors::cross_holder::test_basic::cross_holder_records_the_draws_in_the_sequence_the_source_yields ... ok
 test vectors::cross_holder::test_basic::cross_holder_records_the_values_its_draws_produce_under_the_asset_scope ... ok
 test vectors::cross_holder::test_basic::cross_holder_records_the_values_its_draws_produce_under_the_entitlement_scope ... ok
 test vectors::cross_holder::test_error::cross_holder_refuses_an_asset_identity_longer_than_32_bytes ... ok
+test generate::evm::challenge_vectors::integration_test::challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar ... ok
 test vectors::cross_holder::test_error::cross_holder_refuses_an_asset_identity_shorter_than_32_bytes ... ok
-test vectors::cross_holder::test_error::cross_holder_refuses_the_asset_identity_before_any_draw ... ok
 test vectors::cross_holder::test_error::cross_holder_returns_the_draw_refusal_whole ... ok
+test vectors::cross_holder::test_error::cross_holder_refuses_the_asset_identity_before_any_draw ... ok
 test vectors::cross_holder::test_error::cross_holder_returns_the_hash_to_scalar_refusal_of_asset_setup_whole ... ok
 test vectors::cross_holder::test_error::cross_holder_returns_the_hash_to_scalar_refusal_of_identity_derivation_whole ... ok
-test generate::evm::challenge_vectors::integration_test::challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar ... ok
 test vectors::cross_holder::test_error::cross_holder_returns_the_refusal_of_an_all_zero_asset_identity ... ok
 test vectors::cross_holder::test_error::cross_holder_returns_the_sampling_refusal_of_setup_whole ... ok
-test vectors::rerandomization::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
+test vectors::malformed_capsules::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
 test vectors::cross_holder::integration_test::records_under_pairings_sharing_a_target_group_encoding_hold_the_same_encapsulated_bytes ... ok
 test generate::evm::proof_vectors::integration_test::an_asset_identity_is_proved_under_the_asset_scope ... ok
+test generate::evm::proof_vectors::integration_test::every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies ... ok
+test vectors::malformed_capsules::test_basic::malformed_capsules_does_not_read_the_identity_under_the_entitlement_scope ... ok
+test vectors::malformed_capsules::test_basic::malformed_capsules_draws_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
+test vectors::malformed_capsules::test_basic::malformed_capsules_emits_the_configured_count_of_records ... ok
+test vectors::malformed_capsules::test_basic::malformed_capsules_records_the_draws_in_the_sequence_the_source_yields ... ok
+test vectors::malformed_capsules::test_basic::malformed_capsules_records_the_values_its_draws_produce_under_the_asset_scope ... ok
+test vectors::malformed_capsules::test_basic::malformed_capsules_records_the_values_its_draws_produce_under_the_entitlement_scope ... ok
+test vectors::malformed_capsules::test_error::malformed_capsules_refuses_an_asset_identity_longer_than_32_bytes ... ok
+test vectors::malformed_capsules::test_error::malformed_capsules_refuses_an_asset_identity_shorter_than_32_bytes ... ok
+test vectors::malformed_capsules::test_error::malformed_capsules_refuses_the_asset_identity_before_any_draw ... ok
+test vectors::malformed_capsules::test_error::malformed_capsules_returns_the_draw_refusal_whole ... ok
+test vectors::malformed_capsules::test_error::malformed_capsules_returns_the_hash_to_scalar_refusal_of_asset_setup_whole ... ok
+test vectors::malformed_capsules::test_error::malformed_capsules_returns_the_refusal_of_an_all_zero_asset_identity ... ok
+test vectors::malformed_capsules::test_error::malformed_capsules_returns_the_sampling_refusal_of_setup_whole ... ok
+test vectors::non_convertibility::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
+test generate::evm::proof_vectors::integration_test::a_mint_record_survives_its_description_round_trip ... ok
+test generate::evm::proof_vectors::integration_test::each_record_kind_declares_the_kinds_its_fields_emit ... ok
+test generate::evm::proof_vectors::integration_test::every_record_carries_second_group_first_messages_exactly_in_the_first_group_only_form ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_draws_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_emits_the_configured_count_of_records ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_records_a_true_verdict_against_the_other_identity_when_it_is_the_configured_one ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_records_the_credential_and_verdicts_its_draws_produce ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_records_the_draws_in_the_sequence_the_source_yields ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_returns_an_empty_set_under_the_asset_scope ... ok
+test vectors::non_convertibility::test_error::non_convertibility_makes_no_draw_under_the_asset_scope ... ok
+test vectors::non_convertibility::test_error::non_convertibility_returns_the_draw_refusal_whole ... ok
+test vectors::non_convertibility::test_error::non_convertibility_returns_the_hash_to_scalar_refusal_of_identity_derivation_whole ... ok
+test vectors::non_convertibility::test_error::non_convertibility_returns_the_sampling_refusal_of_setup_whole ... ok
+test vectors::malformed_capsules::integration_test::a_capsule_rebuilt_from_its_components_without_displacement_is_well_formed ... ok
+test vectors::rerandomization::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
+test generate::evm::proof_vectors::integration_test::a_transfer_record_survives_its_description_round_trip ... ok
+test generate::evm::proof_vectors::integration_test::every_record_encodes_its_elements_in_the_selected_pairings_encodings ... ok
 test vectors::rerandomization::test_basic::rerandomization_draws_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
 test vectors::rerandomization::test_basic::rerandomization_emits_the_configured_count_of_records ... ok
 test vectors::rerandomization::test_basic::rerandomization_records_the_draws_in_the_sequence_the_source_yields ... ok
@@ -636,28 +668,29 @@ test vectors::rerandomization::test_error::rerandomization_returns_the_hash_to_s
 test vectors::rerandomization::test_error::rerandomization_returns_the_hash_to_scalar_refusal_of_identity_derivation_whole ... ok
 test vectors::rerandomization::test_error::rerandomization_returns_the_refusal_of_an_all_zero_asset_identity ... ok
 test vectors::rerandomization::test_error::rerandomization_returns_the_sampling_refusal_of_setup_whole ... ok
-test generate::evm::proof_vectors::integration_test::every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies ... ok
-test verifier::evm::integration_test::a_mint_proof_the_adapter_returns_verifies ... ok
-test vectors::rerandomization::integration_test::every_record_holds_true_verdicts_for_its_issued_and_rerandomized_credentials ... ok
-test generate::evm::proof_vectors::integration_test::a_mint_record_survives_its_description_round_trip ... ok
-test vectors::rerandomization::integration_test::every_record_draw_replays_to_the_values_it_holds ... ok
-test generate::evm::proof_vectors::integration_test::each_record_kind_declares_the_kinds_its_fields_emit ... ok
-test generate::evm::proof_vectors::integration_test::every_record_carries_second_group_first_messages_exactly_in_the_first_group_only_form ... ok
-test generate::evm::proof_vectors::integration_test::a_transfer_record_survives_its_description_round_trip ... ok
+test vectors::malformed_capsules::integration_test::every_record_draw_replays_to_the_values_it_holds ... ok
+test generate::evm::proof_vectors::integration_test::every_transfer_record_is_a_statement_and_proof_the_delivery_proof_verifies ... ok
 test generate::evm::proof_vectors::integration_test::every_record_context_is_the_canonical_context_its_forms_rebuilt ... ok
+test vectors::non_convertibility::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test vectors::non_convertibility::integration_test::every_record_draw_replays_to_the_credential_and_verdicts_it_holds ... ok
+test vectors::cross_holder::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test vectors::cross_holder::integration_test::every_record_recovers_the_encapsulated_value_from_its_issued_and_successor_credentials ... ok
+test vectors::non_convertibility::integration_test::every_record_holds_a_true_verdict_for_its_own_identity_and_a_false_one_for_another ... ok
+test verifier::evm::integration_test::a_mint_proof_the_adapter_returns_verifies ... ok
 test verifier::evm::integration_test::a_proof_the_adapter_rebuilds_from_its_components_verifies ... ok
 test verifier::evm::integration_test::a_real_proof_of_the_other_relation_is_refused_before_any_chain_read ... ok
-test generate::evm::proof_vectors::integration_test::every_transfer_record_is_a_statement_and_proof_the_delivery_proof_verifies ... ok
+test verifier::evm::integration_test::a_real_proofs_calldata_decodes_to_its_statement_and_proof_at_the_pairings_encoding_lengths ... ok
 test verifier::evm::test_basic::evm_verifier_declares_both_verifier_forms_and_statement_version_one ... ok
+test vectors::malformed_capsules::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
 test verifier::evm::test_basic::evm_verifier_endpoint_admits_a_url_text ... ok
-test generate::evm::proof_vectors::integration_test::every_record_encodes_its_elements_in_the_selected_pairings_encodings ... ok
 test verifier::evm::test_basic::evm_verifier_endpoint_refuses_text_that_is_not_a_url ... ok
 test verifier::evm::test_basic::evm_verifier_try_new_builds_the_http_provider_and_runtime_without_reading_the_chain ... ok
 test verifier::evm::test_basic::evm_verifier_try_new_checks_the_verifier_address_before_the_oracle_address ... ok
 test verifier::evm::test_basic::evm_verifier_try_new_holds_the_configured_addresses ... ok
 test verifier::evm::test_basic::evm_verifier_try_new_refuses_a_verifier_address_of_another_kind ... ok
-test verifier::evm::test_basic::evm_verifier_try_new_refuses_an_address_of_another_kind_as_try_new_mocked_does ... ok
+test vectors::malformed_capsules::integration_test::every_record_holds_a_well_formed_capsule_and_an_ill_formed_displacement ... ok
 test verifier::evm::test_basic::evm_verifier_try_new_refuses_an_oracle_address_of_another_kind ... ok
+test verifier::evm::test_basic::evm_verifier_try_new_refuses_an_address_of_another_kind_as_try_new_mocked_does ... ok
 test verifier::evm::test_calldata::calldata_carries_no_second_group_first_messages_for_a_mint_under_the_both_groups_form ... ok
 test verifier::evm::test_calldata::calldata_carries_no_second_group_first_messages_for_a_transfer_under_the_both_groups_form ... ok
 test verifier::evm::test_calldata::calldata_concatenates_a_mints_second_group_first_messages_as_hpub_d1_d2 ... ok
@@ -669,7 +702,6 @@ test verifier::evm::test_calldata::calldata_encodes_a_transfer_statements_contex
 test verifier::evm::test_calldata::calldata_encodes_each_group_element_of_a_mint_statement_into_its_member ... ok
 test verifier::evm::test_calldata::calldata_encodes_each_group_element_of_a_transfer_statement_into_its_member ... ok
 test verifier::evm::test_calldata::calldata_encodes_the_purpose_code_of_a_mint_replacement ... ok
-test verifier::evm::integration_test::chain_forms_chain_identifier_survives_its_field_round_trip ... ok
 test verifier::evm::test_calldata::calldata_encodes_the_purpose_code_of_a_transfer_grant ... ok
 test verifier::evm::test_calldata::calldata_selects_verify_mint_for_a_mint_statement ... ok
 test verifier::evm::test_calldata::calldata_selects_verify_transfer_for_a_transfer_statement ... ok
@@ -678,82 +710,82 @@ test verifier::evm::test_calldata::unsigned_transaction_encodes_an_eip1559_trans
 test verifier::evm::test_calldata::verifier_request_targets_the_verifier_with_the_calldata ... ok
 test verifier::evm::test_error::verify_on_chain_refuses_a_mint_statement_with_a_transfer_proof ... ok
 test verifier::evm::test_error::verify_on_chain_refuses_a_fee_beyond_u128 ... ok
-test verifier::evm::test_error::verify_on_chain_returns_a_json_rpc_refusal_without_revert_data_as_an_rpc_error ... ok
-test verifier::evm::test_error::verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error ... ok
 test verifier::evm::test_error::verify_on_chain_refuses_a_transfer_statement_with_a_mint_proof ... ok
 test verifier::evm::test_error::verify_on_chain_refuses_when_nothing_is_deployed_at_the_verifier_address ... ok
+test verifier::evm::test_error::verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error ... ok
+test verifier::evm::test_error::verify_on_chain_returns_a_json_rpc_refusal_without_revert_data_as_an_rpc_error ... ok
+test verifier::evm::integration_test::chain_forms_chain_identifier_survives_its_field_round_trip ... ok
+test verifier::evm::integration_test::chain_forms_entitlement_survives_its_field_round_trip ... ok
 test verifier::evm::test_error::verify_on_chain_returns_the_refusal_of_a_fee_that_does_not_decode ... ok
 test verifier::evm::test_error::verify_on_chain_returns_the_refusal_of_a_result_that_does_not_decode ... ok
-test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier ... ok
 test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_code_read ... ok
+test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier ... ok
 test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_gas_estimate ... ok
 test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_oracle_code_read ... ok
-test verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_fee_the_oracle_reads ... ok
 test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_verifying_call ... ok
 test verifier::evm::test_verdict::verify_on_chain_returns_a_fee_at_the_u128_limit ... ok
 test verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_gas_estimate_and_no_fee_where_the_oracle_has_no_code ... ok
+test verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_fee_the_oracle_reads ... ok
 test verifier::evm::test_verdict::verify_on_chain_returns_rejected_when_the_contract_returns_false ... ok
 test verifier::evm::test_verdict::verify_on_chain_returns_the_revert_data_when_the_call_reverts ... ok
-test verifier::evm::integration_test::a_real_proofs_calldata_decodes_to_its_statement_and_proof_at_the_pairings_encoding_lengths ... ok
 test verifier::factory::test::create_verifier_hands_the_consumer_the_concrete_the_selection_names ... ok
 test verifier::factory::test::create_verifier_refuses_a_statement_version_the_declaration_does_not_list ... ok
 test verifier::evm::integration_test::a_rejecting_chain_returns_rejected_for_a_real_proof ... ok
 test verifier::evm::integration_test::a_reverting_chain_returns_the_revert_data_for_a_real_proof ... ok
-test verifier::evm::integration_test::a_transfer_proof_the_adapter_returns_verifies ... ok
-test verifier::evm::integration_test::an_accepted_verdict_and_its_costs_reach_the_caller_for_a_real_proof ... ok
-test verifier::evm::integration_test::chain_forms_entitlement_survives_its_field_round_trip ... ok
-test verifier::evm::integration_test::chain_forms_identity_survives_its_field_round_trip ... ok
-test vectors::rerandomization::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
-test verifier::evm::integration_test::chain_forms_interval_survives_its_field_round_trip ... ok
-test vectors::cross_holder::integration_test::every_record_recovers_the_encapsulated_value_from_its_issued_and_successor_credentials ... ok
-test verifier::factory::integration_test::a_refused_read_returns_the_mock_concretes_own_error ... ok
-test vectors::cross_holder::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
-test verifier::factory::integration_test::every_concrete_refuses_a_proof_of_the_other_relation_before_any_chain_read ... ok
 test generate::evm::proof_vectors::integration_test::every_record_draw_replays_to_the_statement_elements_it_produced ... ok
+test verifier::evm::integration_test::a_transfer_proof_the_adapter_returns_verifies ... ok
+test verifier::evm::integration_test::chain_forms_identity_survives_its_field_round_trip ... ok
+test verifier::evm::integration_test::an_accepted_verdict_and_its_costs_reach_the_caller_for_a_real_proof ... ok
+test verifier::evm::integration_test::chain_forms_interval_survives_its_field_round_trip ... ok
+test verifier::factory::integration_test::a_refused_read_returns_the_mock_concretes_own_error ... ok
 test vectors::cross_holder::integration_test::every_record_draw_replays_to_the_values_it_holds ... ok
+test vectors::rerandomization::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test verifier::factory::integration_test::every_concrete_refuses_a_proof_of_the_other_relation_before_any_chain_read ... ok
+test vectors::rerandomization::integration_test::every_record_holds_true_verdicts_for_its_issued_and_rerandomized_credentials ... ok
+test vectors::rerandomization::integration_test::every_record_draw_replays_to_the_values_it_holds ... ok
 test generate::evm::proof_vectors::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test generate::evm::integration_test::a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing ... ok
+test generate::evm::integration_test::a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing ... ok
 test generate::evm::integration_test::a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name ... ok
 test generate::evm::integration_test::a_root_that_is_a_file_refuses_directory_creation_with_its_path ... ok
-test generate::evm::integration_test::a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing ... ok
-test generate::evm::integration_test::a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing ... ok
-test generate::evm::integration_test::emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_curve_directory ... ok
-test generate::evm::integration_test::the_records_library_declares_each_written_kinds_struct_decode_function_and_path ... ok
+test generate::evm::integration_test::a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothing ... ok
 test generate::evm::integration_test::a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path ... ok
 test generate::evm::integration_test::the_constants_library_opens_with_the_configured_license_version_and_name_and_holds_the_tag_entries ... ok
-test generate::evm::integration_test::a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothing ... ok
+test generate::evm::integration_test::emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_curve_directory ... ok
 test generate::evm::integration_test::every_written_line_decodes_under_its_kinds_description ... ok
+test generate::evm::integration_test::the_records_library_declares_each_written_kinds_struct_decode_function_and_path ... ok
 test generate::factory::integration_test::emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate ... ok
-test run::key_agreement_consumer::integration_test::every_declared_delivery_proof_concrete_admits_the_configured_version_and_the_files_reach_the_output ... ok
 test run::delivery_proof_consumer::integration_test::the_configured_identities_reach_the_identity_mapping_file ... ok
+test run::key_agreement_consumer::integration_test::every_declared_delivery_proof_concrete_admits_the_configured_version_and_the_files_reach_the_output ... ok
 test run::generate_consumer::integration_test::a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds ... ok
 test generate::evm::integration_test::each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size has been running for over 60 seconds
 test generate::evm::integration_test::each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size ... ok
 
-test result: ok. 709 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 103.01s
+test result: ok. 741 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 104.73s
 
      Running tests\benchmark_integration_test.rs (target\debug\deps\benchmark_integration_test-456f04d2d36066d4.exe)
 
 running 4 tests
 test a_sampling_refusal_reaches_the_caller_unchanged ... ok
+test the_consumer_receives_the_concrete_the_params_name ... ok
 test a_sampled_scalar_encodes_through_secret ... ok
 test every_operation_is_timed_on_every_concrete ... ok
-test the_consumer_receives_the_concrete_the_params_name ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
 
      Running tests\config_integration_test.rs (target\debug\deps\config_integration_test-4162826e75f0b9e0.exe)
 
 running 8 tests
-test a_command_line_assignment_replaces_a_shipped_default ... ok
-test a_command_line_assignment_replaces_the_output_destinations ... ok
-test the_shipped_defaults_admit_standard_output ... ok
-test the_shipped_defaults_admit_the_selections ... ok
-test the_shipped_defaults_admit_the_benchmark_iterations ... ok
 test the_shipped_defaults_admit_the_network_profile_and_statements ... ok
+test the_shipped_defaults_admit_standard_output ... ok
+test a_command_line_assignment_replaces_the_output_destinations ... ok
+test the_shipped_defaults_admit_the_benchmark_iterations ... ok
+test a_command_line_assignment_replaces_a_shipped_default ... ok
 test the_shipped_defaults_admit_every_declared_generate_kind ... ok
+test the_shipped_defaults_admit_the_selections ... ok
 test a_configuration_file_replaces_a_shipped_default ... ok
 
-test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
      Running tests\cross_holder_integration_test.rs (target\debug\deps\cross_holder_integration_test-9efa8d0f19e5a450.exe)
 
@@ -763,35 +795,61 @@ test every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_en
 test every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
 test every_record_recovers_the_encapsulated_value_from_its_issued_and_successor_credentials ... ok
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.03s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.19s
 
      Running tests\delivery_proof_consumer_integration_test.rs (target\debug\deps\delivery_proof_consumer_integration_test-b9d3a56825e6f08e.exe)
 
 running 1 test
 test a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.84s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.75s
 
      Running tests\generate_consumer_integration_test.rs (target\debug\deps\generate_consumer_integration_test-9cb492dad5325c23.exe)
 
 running 1 test
 test the_configured_identities_reach_the_identity_mapping_file ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.02s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.01s
 
      Running tests\generate_integration_test.rs (target\debug\deps\generate_integration_test-464d0a139b7b9a31.exe)
 
 running 1 test
 test a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.19s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 17.41s
 
      Running tests\key_agreement_consumer_integration_test.rs (target\debug\deps\key_agreement_consumer_integration_test-4a2e20bdfb8a2dc3.exe)
 
 running 1 test
 test a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.59s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.77s
+
+     Running tests\malformed_capsules_integration_test.rs (target\debug\deps\malformed_capsules_integration_test-18e01939d43c2adf.exe)
+
+running 6 tests
+test a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
+test a_draw_refusal_reaches_the_caller_whole ... ok
+test an_identity_that_is_not_an_asset_identity_hash_is_refused_whole_under_the_asset_scope ... ok
+test a_setup_sampling_refusal_reaches_the_caller_whole ... ok
+test every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test every_record_holds_a_well_formed_capsule_and_an_ill_formed_displacement ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.24s
+
+     Running tests\non_convertibility_integration_test.rs (target\debug\deps\non_convertibility_integration_test-b10e6b1a3d9e9d18.exe)
+
+running 8 tests
+test a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
+test a_setup_sampling_refusal_reaches_the_caller_whole ... ok
+test a_draw_refusal_reaches_the_caller_whole ... ok
+test every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_encoding_factory_encodes_to_the_oracle ... ok
+test every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test the_set_is_empty_under_the_asset_scope ... ok
+test every_record_holds_a_true_verdict_for_its_own_identity_and_a_false_one_for_another ... ok
+test every_record_draw_replays_to_the_credential_and_verdicts_it_holds ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.58s
 
      Running tests\rerandomization_integration_test.rs (target\debug\deps\rerandomization_integration_test-30ce78448a0b2f71.exe)
 
@@ -805,7 +863,7 @@ test every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
 test every_record_holds_true_verdicts_for_its_issued_and_rerandomized_credentials ... ok
 test every_record_draw_replays_to_the_values_it_holds ... ok
 
-test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.74s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.81s
 
      Running tests\verifier_integration_test.rs (target\debug\deps\verifier_integration_test-c82768172a6283d8.exe)
 
