@@ -955,12 +955,24 @@ Write each element in the fixed dependency order below — do not reorder or mer
 * `[ ]`   `harness-crypto/config/admit_selections` 
 
 * `[ ]`   `harness-crypto/config/admit_statements`
+    - Admits the mint, transfer and next-settlement contexts as `CanonicalDeliveryContext`s, with their domain values through the domain constructors and their form-typed values as canonical field values.
+    - Admits the purposes through their declared codes.
+    - Admits the proof identity, each mapping identity, and the other identity under the scope `admit_selections` admitted:
+    - under the asset scope, as an `AssetIdentityHash`, refusing a length other than 32 bytes with that length and an all-zero hash with the domain's refusal;
+    - under the entitlement scope, as canonical bytes.
+    - Owns the admitted network-profile, statement and identity types.
+    - Moves `CanonicalDeliveryContext`, with `build_canonical_delivery_context` and `CanonicalDeliveryContextOverrides`, out of `challenge_vectors`' interface and mock into its own module. This is the type edit of the first file that consumes it.
 
 * `[ ]`   `harness-crypto/config/admit_generate` 
 
 * `[ ]`   `harness-crypto/config/admit_output` 
 
 * `[ ]`   `harness-crypto/config` 
+
+* `[ ]`   `harness-crypto/run/admit_contexts`** 
+    - Admits a `CanonicalDeliveryContext` and its purpose into a `DeliveryContext<F, Purpose>`, generic over the forms.
+    - A form's refusal is returned with its `DeliveryContextField` and the shared `FromFieldErrorReturn`, carried unchanged.
+    - Moves `DeliveryContextField` out of `challenge_vectors`' interface into its own module, as the type edit of the first file that consumes it.
 
 * `[ ]`   `harness-crypto/run/generate_consumer` 
 
