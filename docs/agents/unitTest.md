@@ -9,7 +9,7 @@ Written **before** the implementation (TDD). Validates behavior.
 - Only imports, contract headers, test blocks, and assertions; a test's consumer is part of its block. Import the function from its implementation file.
 - **RED is the implementation not yet existing.** Import from its path; the compiler error is the deliverable; never create or edit the implementation file. Missing producer owned by another interface → halt (same rule as the interface test).
 - Factories and helpers go in the **mock file**, never in the test (see [mocks](mocks.md)). Do not build mocks for imported functions — use theirs.
-- A family collaborator is the family's mock concrete, reached through the family's factory by configuration and named as [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust) states.
+- A family collaborator is the family's mock concrete, reached through the family's factory by configuration and named as [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust) states. Where the subject's types come from more than one family, every collaborator is reached through the subject's case runner, and the block's consumer is the case consumer (see [mocks](mocks.md#the-case-runner--composing-families-for-a-subject-rust)).
 - A subject whose deps hold a function mock whose return carries the consumer's type is given that mock typed at the test's consumer, and the test asserts what the subject did to the output, never the output (see [mocks](mocks.md#a-return-that-carries-the-consumers-type-rust)).
 - **When updating an existing suite for new requirements, update the existing tests in the same pass.** Do not leave stale tests for a second pass after the implementation changes — add the new tests and correct the existing ones together.
 - Focus on correct transformations and branching logic. Do **not** re-test type shape (interface test) or guard correctness (guard test).
@@ -21,7 +21,7 @@ This scope takes the **full four-field header and the inline markers** — the b
 
 - **Contract** — the one branch from the node's `interaction.spec`, condition → outcome.
 - **Arrange** — the fixture and the variation the branch discriminates over. A fixture containing nothing the branch would treat differently is an incidental test (see [tests](tests.md#audit)).
-- **Act** — the single call to the function under test. Where the subject receives its types from a family's factory, the single call to the subject is made inside the test's consumer, which the factory call runs with configuration selecting the mock concrete (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)); the subject is the only function of its module that runs.
+- **Act** — the single call to the function under test. Where the subject receives its types from a family's factory, the single call to the subject is made inside the test's consumer, which the factory call runs with configuration selecting the mock concrete (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)), or, where the subject composes more than one family, which the subject's case runner runs (see [mocks](mocks.md#the-case-runner--composing-families-for-a-subject-rust)); the subject is the only function of its module that runs.
 - **Assert** — each transformation or branch outcome checked, stated independently of the arrangement. An expected value read back out of the arrangement is a tautological test.
 
 

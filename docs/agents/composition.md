@@ -130,6 +130,22 @@ The test is the one the type-parameter rule above applies: declare a value on th
 
 How a test varies each kind is owned by [integrationTest](integrationTest.md#configuration-over-the-declared-set-rust); how a test obtains a concrete's default configuration is owned by [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust).
 
+## Nested calls build their inputs from what they receive (Rust)
+
+The type-parameter rule above, applied along a call chain. A function that composes nested calls — a factory's consumer calling the next factory, a case runner's levels — builds each call's deps, params, and payload from what the calling level received, through the owners' builders in a mock and the owners' constructors and operations in production code. Each input is one of three things, and its kind decides where it comes from:
+
+- **A selection** — a choice no received type or adapter fixes, such as which concrete or which scope. It is configuration, carried from the caller in params.
+- **A determined value** — a value whose correct value a received type or adapter fixes, such as the form a received type declares. It is read at the level that receives the type or adapter and handed inward. It is never carried in as configuration, and never supplied by a caller that already knows, or guesses, the answer.
+- **Handed data** — a value the caller owns that no level determines. It is carried in the payload.
+
+A function generic in a type parameter that takes, as a param, a value that type parameter declares has taken a determined value as a selection: the wrong value constructs, and the error surfaces nowhere. The function reads the value from the type parameter, and an admission it performs compares what the type declares with what the selected concrete declares, returning its own error where they disagree.
+
+Forbidden as substitutes:
+
+- a determined value carried in params, defaulted by a builder, or left for the caller to supply;
+- a caller that reproduces a determined value from its own knowledge of the concretes — a `match` on a selection that restates each concrete's declaration;
+- a level whose inputs are assembled by hand where its owner's builder or constructor exists.
+
 ## Classes — two admitted roles, and how the signature maps
 
 "One function per file" governs **exported standalone functions**. A class holding several methods is not an exception to that rule and not a way around it; it is a different kind of symbol, admitted in exactly two roles:
@@ -216,6 +232,6 @@ Deps and params never take this form. A params field that originates outside the
 
 ## Precedence
 
-This topic outranks the workplan. A node step that puts deps inside params, blobs params and payload, returns only the success type, hosts two functions in one file, types an untrusted payload strong instead of `unknown` + guard, or throws on an invalid payload instead of returning the error arm is defective — comply with this topic and report the discrepancy.
+This topic outranks the workplan. A node step that puts deps inside params, blobs params and payload, returns only the success type, hosts two functions in one file, types an untrusted payload strong instead of `unknown` + guard, throws on an invalid payload instead of returning the error arm, or takes as a param a value a received type or adapter determines is defective — comply with this topic and report the discrepancy.
 
 

@@ -170,6 +170,8 @@ The author does the thinking so the implementer does not. Every node must be gro
 | A mock concrete's own error variant for an arm an input reaches | The family's flavor, decided from inputs by every concrete (see [errors-and-returns](errors-and-returns.md#what-reaches-the-failure-decides-where-it-is-declared)) |
 | A dead error branch in a mock's no-failure path | The conversion uses `expect` naming its invariant, and the mock carries no variant for it |
 | A mock step that reaches a mock concrete's constant by choosing a type for its type parameter, or that adds the parameter to a builder not generic in it | The constant is declared once on an item with no type parameter, which the impl's associated item names and the builder reads (see [composition](composition.md#type-parameters-follow-dependency-rust), [mocks](mocks.md#fields-with-no-default-rust)) |
+| A test element that has each block declare the nested consumers of several families, or a mock element that omits the case runner the subject's deps require | The interface element declares the case runner's types, the mock element provides its builders, levels, and runner, and each block declares one case consumer (see [mocks](mocks.md#the-case-runner--composing-families-for-a-subject-rust)) |
+| A params field, case-params field, or test value supplying a value a received type or adapter determines | The level that receives the type or adapter reads the value and hands it inward (see [composition](composition.md#nested-calls-build-their-inputs-from-what-they-receive-rust)) |
 | Revising a line of a completed node and leaving it, or any line above it, `[✅]` | The revised line and every line above it, up to the node's top-level line, are `[ ]`, so the implementer diffs the node against the files on disk and does what is unmet |
 
 ## Precedence
@@ -210,6 +212,7 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
   * Conforms to: composition, types, errors-and-returns, dependency-injection
   * `[ ]`   `[function].interface.ts`
     * `[ ]`   Declare this function's signature: deps, params, payload, and the Success | Error return union
+    * `[ ]`   In Rust, where the function's deps hold the types of more than one family, declare its case runner's types
 
   ## 5. Interaction Semantics (Behavioral Structure)
   * Conforms to: composition, errors-and-returns, guards, tests#integration
@@ -221,6 +224,7 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
   * Conforms to: mocks
   * `[ ]`   `[function].mock.ts`
     * `[ ]`   Provide the builders, invalidators, and function mocks this interface owns (before the guard test consumes them)
+    * `[ ]`   In Rust, where the function's deps hold the types of more than one family, provide its case runner: the builders of its types, one level per family, and the runner
 
   ## 7. Enforcement (Runtime Boundary)
   * Conforms to: tests#guard, guards
