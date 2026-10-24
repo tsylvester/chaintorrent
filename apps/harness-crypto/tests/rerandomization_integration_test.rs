@@ -1559,19 +1559,16 @@ fn a_setup_sampling_refusal_reaches_the_caller_whole() {
             // Assert
             assert_eq!(
                 returned.err(),
-                match self.expected {
-                    Some(SampleUniformScalarErrorReturn::WrongLength { expected, actual }) => {
-                        Some(RerandomizationErrorReturn::Setup(
-                            SetupErrorReturn::MasterScalarSampling(
-                                SampleUniformScalarErrorReturn::WrongLength {
-                                    expected: *expected,
-                                    actual: *actual,
-                                },
-                            ),
+                self.expected.as_ref().map(
+                    |SampleUniformScalarErrorReturn::WrongLength { expected, actual }| {
+                        RerandomizationErrorReturn::Setup(SetupErrorReturn::MasterScalarSampling(
+                            SampleUniformScalarErrorReturn::WrongLength {
+                                expected: *expected,
+                                actual: *actual,
+                            },
                         ))
-                    }
-                    None => None,
-                }
+                    },
+                )
             );
         }
     }

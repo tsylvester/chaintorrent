@@ -155,7 +155,7 @@ fn every_record_holds_a_true_verdict_for_its_own_identity_and_a_false_one_for_an
                 {
                     let identity: &[u8] = b"pkg@1.0.0#1";
                     for (other_identity, expected_other_is_valid) in
-                        [(b"pkg@2.0.0#7" as &[u8], false), (identity, true)]
+                        [(b"pkg@2.0.0#7".as_slice(), false), (identity, true)]
                     {
                         let created = create_kem(
                             &build_create_kem_deps(
@@ -1128,8 +1128,8 @@ fn every_record_draw_replays_to_the_credential_and_verdicts_it_holds() {
                     .filter(|selection| selection.scope == IdentityScope::Entitlement)
                 {
                     for (identity, other_identity) in [
-                        (b"pkg@1.0.0#1" as &[u8], b"pkg@2.0.0#7" as &[u8]),
-                        (b"pkg@3.0.0#2" as &[u8], b"pkg@4.0.0#9" as &[u8]),
+                        (b"pkg@1.0.0#1".as_slice(), b"pkg@2.0.0#7".as_slice()),
+                        (b"pkg@3.0.0#2".as_slice(), b"pkg@4.0.0#9".as_slice()),
                     ] {
                         let created = create_kem(
                             &build_create_kem_deps(
@@ -1535,19 +1535,16 @@ fn a_setup_sampling_refusal_reaches_the_caller_whole() {
             // Assert
             assert_eq!(
                 returned.err(),
-                match self.expected {
-                    Some(SampleUniformScalarErrorReturn::WrongLength { expected, actual }) => {
-                        Some(NonConvertibilityErrorReturn::Setup(
-                            SetupErrorReturn::MasterScalarSampling(
-                                SampleUniformScalarErrorReturn::WrongLength {
-                                    expected: *expected,
-                                    actual: *actual,
-                                },
-                            ),
+                self.expected.as_ref().map(
+                    |SampleUniformScalarErrorReturn::WrongLength { expected, actual }| {
+                        NonConvertibilityErrorReturn::Setup(SetupErrorReturn::MasterScalarSampling(
+                            SampleUniformScalarErrorReturn::WrongLength {
+                                expected: *expected,
+                                actual: *actual,
+                            },
                         ))
-                    }
-                    None => None,
-                }
+                    },
+                )
             );
         }
     }

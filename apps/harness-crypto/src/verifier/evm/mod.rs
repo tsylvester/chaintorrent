@@ -649,12 +649,12 @@ where
             let returned = match self.provider.call(self.verifier_request(&calldata)).await {
                 Ok(returned) => returned,
                 Err(error) => {
-                    if let Some(payload) = error.as_error_resp() {
-                        if let Some(data) = payload.as_revert_data() {
-                            return Ok(VerifyOnChainSuccessReturn::Reverted {
-                                data: data.to_vec(),
-                            });
-                        }
+                    if let Some(payload) = error.as_error_resp()
+                        && let Some(data) = payload.as_revert_data()
+                    {
+                        return Ok(VerifyOnChainSuccessReturn::Reverted {
+                            data: data.to_vec(),
+                        });
                     }
                     return Err(VerifyOnChainErrorReturn::Evm(EvmVerifierErrorReturn::Rpc(
                         error,
@@ -763,10 +763,7 @@ where
                 proof: payload.proof,
             },
         );
-        let calldata = match self.calldata(&payload.statement, components.components) {
-            Ok(calldata) => calldata,
-            Err(error) => return Err(error),
-        };
+        let calldata = self.calldata(&payload.statement, components.components)?;
         self.read_chain(calldata)
     }
 }

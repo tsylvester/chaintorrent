@@ -36,6 +36,7 @@ pub struct EncapsulatedValue {
     pub(crate) bytes: Secret<Vec<u8>>,
 }
 
+#[derive(Clone, Copy)]
 pub enum SetupScope<'a> {
     Entitlement,
     Asset {
@@ -69,6 +70,7 @@ pub enum SetupErrorReturn {
 
 pub type SetupReturn<PS, M> = Result<SetupSuccessReturn<PS, M>, SetupErrorReturn>;
 
+#[derive(Clone, Copy)]
 pub enum KemIdentity<'a> {
     Entitlement {
         canonical: &'a [u8],

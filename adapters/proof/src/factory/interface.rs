@@ -46,6 +46,26 @@ pub struct DeliveryContext<F: IChainForms, Purpose> {
     pub expiry: u64,
 }
 
+impl<F: IChainForms, Purpose: Clone> Clone for DeliveryContext<F, Purpose> {
+    fn clone(&self) -> Self {
+        DeliveryContext {
+            suite_identifier: self.suite_identifier.clone(),
+            chain: self.chain.clone(),
+            entitlement_contract: self.entitlement_contract.clone(),
+            asset_identity_hash: self.asset_identity_hash.clone(),
+            parameter_set_identifier: self.parameter_set_identifier.clone(),
+            source_entitlement: self.source_entitlement.clone(),
+            target_entitlement: self.target_entitlement.clone(),
+            old_interval: self.old_interval.clone(),
+            new_interval: self.new_interval.clone(),
+            purpose: self.purpose.clone(),
+            seller: self.seller.clone(),
+            buyer: self.buyer.clone(),
+            expiry: self.expiry,
+        }
+    }
+}
+
 pub struct AlgebraicMintStatement<F: IChainForms, G1, G2> {
     pub context: DeliveryContext<F, MintPurpose>,
     pub hpub: G2,
