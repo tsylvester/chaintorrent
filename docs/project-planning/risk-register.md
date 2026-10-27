@@ -295,7 +295,7 @@ Treat the license as a release prerequisite; decide recovery UX at the identity 
 ---
 
 ## Risk
-**R-10. Legal framings overreach and regulatory questions are unexamined.** The planning documents invoke digital first sale and the fair-use line for machine-learning corpora; neither transfers to verbatim redistribution. Tradeable priced entitlements, even in the dogfood proof, and a paymaster subsidizing transactions may attract securities, consumer-protection, or money-transmission scrutiny that no document considers.
+**R-10. Legal framings overreach and regulatory questions are unexamined.** The planning documents invoke digital first sale and the fair-use line for machine-learning corpora; neither transfers to verbatim redistribution. Tradeable priced entitlements settling in a named payment asset, even in the dogfood proof where that asset is Base's native asset, and a paymaster subsidizing transactions may attract securities, consumer-protection, or money-transmission scrutiny that no document considers.
 
 ## Impact
 Medium for the MVP, whose corpus was distributed to the public at no charge by its publishers and whose priced proof is nominal; High for the path to priced content.
@@ -415,7 +415,7 @@ PC-02 and PC-04 carry the rule; the claim-set state layout has no commitment fie
 ---
 
 ## Risk
-**R-14. Governance of the adapter registry and centralization scaffolding.** Adapters are resolved from a governance-controlled on-chain registry, immutable once bound, governed in the MVP by a single project-held key recorded as scaffolding; the same key updates the source-key table the on-chain attestation check reads. The relayer, project seed host, and claim verifier are centralized conveniences the project operates.
+**R-14. Governance of the adapter registry and centralization scaffolding.** Adapters are resolved from a governance-controlled on-chain registry, immutable once bound, governed in the MVP by a single project-held key recorded as scaffolding; the registry binds the identity adapters, the signature adapter per scheme, the attestation verifier per source, the entitlement token form, the delivery verifier per delivery-statement version and verifier form, and the payment-asset adapter per payment asset, so a further proof scheme or verifier form is a further bound verifier, a further payment asset is a further bound payment-asset adapter, and neither is a change to the registry, lock, or entitlement contracts; the same key updates the source-key table the on-chain attestation check reads. The relayer, project seed host, and claim verifier are centralized conveniences the project operates.
 
 ## Impact
 Medium. For a decentralization thesis, a single governing key over adapter resolution and source keys is scaffolding that must be replaced; captured scaffolding could become authoritative in practice if clients default to it.
@@ -475,7 +475,7 @@ Reads at the declared tier, destruction at `HARD`, the tier declared per deploym
 ---
 
 ## Risk
-**R-16. Claim verifier attestation key compromise.** The MVP claim verifier is an attestor signing vouchers under an on-chain key; its compromise would hand publisher authority over escrowed assets to an attacker.
+**R-16. Claim verifier attestation key compromise.** The MVP claim verifier is an attestor signing vouchers under a custody-held key of a declared scheme, registered on chain as a scheme identifier and a key commitment and verified through the signature adapter the registry binds for that scheme; its compromise would hand publisher authority over escrowed assets to an attacker.
 
 ## Impact
 High if realized; the attacker gains issuance and pricing authority over every escrowed asset it claims.
@@ -492,7 +492,7 @@ Key rotation and revocation; voucher binding; front-running protection by bindin
 ## Mitigation Plan
 - Key custody for the verifier under the same custody discipline as issuance material.
 - Revocation drill in the acceptance run.
-- Consider a ZK-Email or DNSSEC verifier as a peer implementation post-MVP, which removes the attestor key.
+- Consider a ZK-Email or DNSSEC verifier as a further claim-verifier concrete post-MVP, which removes the attestor key and changes no contract storage.
 
 ## Notes
 - **Affected components:** claim verifier, escrow contract, verifier key registry.

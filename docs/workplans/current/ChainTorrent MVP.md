@@ -115,7 +115,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
   * `[✅]`   `role`
     * `[✅]`   Infrastructure: one configuration file with no types and no tests, exempt from the support-file structure
-    * `[✅]`   Does not create the Solidity, TypeScript, fuzz, or end-to-end workflow definitions, each a separate file created once by the ticket that first needs it, `contracts/evm/PairingLib` for `forge build`, `forge fmt --check`, and `forge test`, the first shell or webview ticket for the TypeScript linter, the first fuzz target for `cargo-fuzz`, and the first end-to-end scenario for the clean-runner job; no later ticket edits `rust.yml`
+    * `[✅]`   Does not create the Solidity, TypeScript, fuzz, or end-to-end workflow definitions, each a separate file created once by the ticket that first needs it, `contracts/evm/IDeliveryVerifier` for `forge build`, `forge fmt --check`, and `forge test`, the first shell or webview ticket for the TypeScript linter, the first fuzz target for `cargo-fuzz`, and the first end-to-end scenario for the clean-runner job; no later ticket edits `rust.yml`
     * `[✅]`   Does not edit `.github/workflows/npm-publish.yml`
     * `[✅]`   Does not package, sign, release, or publish, and reads no secret
     * `[✅]`   Does not carry a commit; the grouping's integration test and commit are carried by `random/factory`
@@ -587,7 +587,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Problem: the credential KEM, the envelope, and the delivery proof compute in a Type-3 pairing group whose curve the launch chain's precompiles dictate, so every group operation, subgroup check, pairing-product check, and precompile encoding passes through one repo-owned interface and no module outside a concrete names a curve library (CR-10)
     * `[✅]`   Problem: the credential KEM encapsulates and decapsulates a target-group value `K` the key-derivation family consumes as bytes, checks validity and well-formedness as pairing equations whose sides are divided, and refuses a trivial identity element; the envelope decrypts by removing a masked source-group element and rejects identity-element keys; the delivery proof computes Schnorr responses in the scalar field; and the decrypted credential is a pair of source-group elements that must be zeroized; so each of these operations passes through the family (CR-04; CR-07; CR-08; CR-09; `docs/research/cryptography.md`'s Credential KEM, Key Agreement, and Delivery Proof statements)
     * `[✅]`   Problem: the bytes the KEM hands the KDF are a target-group element's encoding, and a library's reduced pairing is a convention: `ark-ec`'s BN254 final exponentiation returns the Miller loop's value raised to `2x(6x^2 + 3x + 1)` times the exact exponent `(p^12 - 1) / r` for the curve seed `x`, and `halo2curves`' returns it raised to the exact exponent, so two holders on different libraries derive different wrapping keys from one capsule; the protocol fixes the value by one identifier per curve naming the pairing map, the generators, the tower, the exact exponent, and the serialization, every concrete declares it, the factory admits by it, and the hash-card pins it (CR-10; `docs/research/cryptography.md`'s pairing adapter capability declaration; the product requirements' canonical target-group value position)
-    * `[✅]`   Problem: a contract recomputes every hash-to-scalar mapping as the digest reduced modulo the group order, and proves its own subgroup checks only against an on-curve point outside the subgroup; the group order is a constant of each curve library and such a point is found only with a library's curve internals, so neither is reachable by a consumer of the family, and a consumer that mirrors the Rust reference to a target suite names no curve library and holds no literal; so the family exposes both, each concrete reading them from the library it wraps (CR-10 on chain; CR-11; the dependency map's `pairing/bn254_arkworks`, `harness-crypto/generate/evm/constants`, and `harness-crypto/generate/evm/rejection_vectors` rows; the Pairing adapters and key derivation milestone's scope and exit; the technical requirements' generated-directory contents)
+    * `[✅]`   Problem: a contract recomputes every hash-to-scalar mapping as the digest reduced modulo the group order, and proves its own subgroup checks only against an on-curve point outside the subgroup; the group order is a constant of each curve library and such a point is found only with a library's curve internals, so neither is reachable by a consumer of the family, and a consumer that mirrors the Rust reference to a target suite names no curve library and holds no literal; so the family exposes both, each concrete reading them from the library it wraps (CR-10 on chain; CR-11; the dependency map's `pairing/bn254_arkworks`, `harness-crypto/generate/solidity/constants`, and `harness-crypto/generate/solidity/rejection_vectors` rows; the Pairing adapters and key derivation milestone's scope and exit; the technical requirements' generated-directory contents)
     * `[✅]`   Functional: the family's generic interface exposes the generators of both source groups, addition, scalar multiplication, and multi-scalar multiplication in either source group, the pairing-product check, and decoding and encoding of group elements and scalars in the target chain's precompile format
     * `[✅]`   Functional: the group-element, scalar, and encoded first-group, second-group, and scalar types are associated types of the generic interface, so a consumer names them through the family without knowing which concrete produced them; each encoder returns a distinct owned encoded type for each group and concrete, which preserves its group and curve, and a consumer reaches its wire bytes only by borrowing `as_ref()`
     * `[✅]`   Functional: every group element and scalar a concrete accepts from bytes is decoded by a fallible constructor that rejects a wrong length, a non-canonical field element, a point off the curve, and a point outside the prime-order subgroup, so no element that fails a check exists as a value
@@ -616,7 +616,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Does not compute in the target group beyond the pairing product, its correction to the identifier's value, and its encoding: no target-group multiplication, exponentiation, or inversion is exposed
     * `[✅]`   Does not map a target-group value to a key; the key-derivation family derives from the encoding
     * `[✅]`   Does not read the correction from configuration; it is a property of this library under this identifier and is computed in `try_new`
-    * `[✅]`   Does not decode, classify, or emit a rejection vector; `harness-crypto/generate/evm/rejection_vectors` emits the reference encodings it reads from the reference trait, and each decoder's refusal of them is proven by `pairing/factory`'s public integration test
+    * `[✅]`   Does not decode, classify, or emit a rejection vector; `harness-crypto/generate/solidity/rejection_vectors` emits the reference encodings it reads from the reference trait, and each decoder's refusal of them is proven by `pairing/factory`'s public integration test
     * `[✅]`   Does not carry a commit
 
   * `[✅]`   `module`
@@ -3389,7 +3389,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
   * `[✅]`   `directionality`
     * `[✅]`   The `factory` module depends on each concrete through its `provides` and on its own interface; each concrete depends on the `factory` module's surface, the family form's recorded cycle and the crate's one cycle; `IPairingConsumer` names `IPairingArithmetic` and `IPairingReference` within the `factory` module; the crate's public surface is the `factory` module's `provides`; no edge between crates beyond `domain`, `zeroize`, and the curve libraries
-    * `[✅]`   `kem/bb1_depth_one` consumes the family through `create_pairing` and an `IPairingConsumer`; `harness-crypto/main` calls `create_pairing` with an `IPairingConsumer` bounded by `IPairingArithmetic + IPairingReference` and hands the concrete to the generate concrete, whose `harness-crypto/generate/evm/constants` and `harness-crypto/generate/evm/rejection_vectors` read the order and the encodings from it
+    * `[✅]`   `kem/bb1_depth_one` consumes the family through `create_pairing` and an `IPairingConsumer`; `harness-crypto/main` calls `create_pairing` with an `IPairingConsumer` bounded by `IPairingArithmetic + IPairingReference` and hands the concrete to the generate concrete, whose `harness-crypto/generate/solidity/constants` and `harness-crypto/generate/solidity/rejection_vectors` read the order and the encodings from it
 
   * `[✅]`   `requirements`
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning in every target, the pairing concretes' unused-item warnings having no cause once the factory constructs them
@@ -3402,172 +3402,172 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Each `the_…_concrete_from_the_factory_samples_and_encodes_through_secret` integration test passes, each proving its `Secret → <Concrete> → create_pairing` chain with every link real (CR-07, secret material crosses the family inside `Secret`; CR-10, every concrete reached through the factory)
     * `[✅]`   No `ark-` crate or `halo2curves` is named outside its concretes, and no code outside `adapters/pairing` can name a concrete
 
-* `[ ]`   `harness-crypto/benchmark` **Pairing benchmark timing scalar multiplication, multi-scalar multiplication, and the pairing-product check on whichever concrete the pairing factory hands it; creates the `apps/harness-crypto` crate**
+* `[✅]`   `harness-crypto/benchmark` **Pairing benchmark timing scalar multiplication, multi-scalar multiplication, and the pairing-product check on whichever concrete the pairing factory hands it; creates the `apps/harness-crypto` crate**
 
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: the default pairing concrete per curve is a configured value set from measurement, so each concrete's cost for the operations the KEM, envelope, and proof perform is measured through the factory, with no module naming a library
-    * `[ ]`   Functional: handed any concrete by `create_pairing`, the benchmark draws two scalars from the randomness family, samples them through the concrete's sampling bound, and times first-group and second-group scalar multiplication, first-group and second-group multi-scalar multiplication over two terms, and the pairing-product check over two terms
-    * `[ ]`   Functional: each timing is the mean over a configured number of iterations, returned per operation with the exact `PairingConcrete` measured and the nonzero iteration count used to compute it
-    * `[ ]`   Functional: a failed draw or a failed sampling is returned unchanged in the error arm, before anything is timed
-    * `[ ]`   Non-functional: the benchmark names no curve library and no concrete; it reaches every concrete only through `create_pairing` and `IPairingAdapter`
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: the default pairing concrete per curve is a configured value set from measurement, so each concrete's cost for the operations the KEM, envelope, and proof perform is measured through the factory, with no module naming a library
+    * `[✅]`   Functional: handed any concrete by `create_pairing`, the benchmark draws two scalars from the randomness family, samples them through the concrete's sampling bound, and times first-group and second-group scalar multiplication, first-group and second-group multi-scalar multiplication over two terms, and the pairing-product check over two terms
+    * `[✅]`   Functional: each timing is the mean over a configured number of iterations, returned per operation with the exact `PairingConcrete` measured and the nonzero iteration count used to compute it
+    * `[✅]`   Functional: a failed draw or a failed sampling is returned unchanged in the error arm, before anything is timed
+    * `[✅]`   Non-functional: the benchmark names no curve library and no concrete; it reaches every concrete only through `create_pairing` and `IPairingAdapter`
 
-  * `[ ]`   `role`
-    * `[ ]`   App module: an `IPairingConsumer` the harness passes to `create_pairing` once per `PairingConcrete`; it is a class in the adapter role, implementing a repo-owned trait and wrapping the operating system's monotonic clock
-    * `[ ]`   Creates the `apps/harness-crypto` crate as a library crate and adds `"apps/*"` to the root manifest's `members`, the member glob `workspace/cargo` specifies, so the crate is admitted
-    * `[ ]`   Returns the timings, concrete identity, and iteration count of the concrete it is handed and selects nothing; the harness run constructs it for each concrete and records the measurements, and the configured default per curve is set from them
-    * `[ ]`   Does not author `main.rs`; `harness-crypto/main` authors the binary entry, reading `harness-crypto/config` and composing every family through its factory
-    * `[ ]`   Does not time decoding, encoding, or sampling
-    * `[ ]`   Does not carry a commit
+  * `[✅]`   `role`
+    * `[✅]`   App module: an `IPairingConsumer` the harness passes to `create_pairing` once per `PairingConcrete`; it is a class in the adapter role, implementing a repo-owned trait and wrapping the operating system's monotonic clock
+    * `[✅]`   Creates the `apps/harness-crypto` crate as a library crate and adds `"apps/*"` to the root manifest's `members`, the member glob `workspace/cargo` specifies, so the crate is admitted
+    * `[✅]`   Returns the timings, concrete identity, and iteration count of the concrete it is handed and selects nothing; the harness run constructs it for each concrete and records the measurements, and the configured default per curve is set from them
+    * `[✅]`   Does not author `main.rs`; `harness-crypto/main` authors the binary entry, reading `harness-crypto/config` and composing every family through its factory
+    * `[✅]`   Does not time decoding, encoding, or sampling
+    * `[✅]`   Does not carry a commit
 
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `benchmark` module of `apps/harness-crypto`, holding `PairingBenchmark`, its constructor params, its timings and return types, its implementation of `IPairingConsumer`, its case runner, and its builders
-    * `[ ]`   Creates the crate at `apps/harness-crypto`, admitted by the `apps/*` glob this node adds
-    * `[ ]`   Outside: the choice of which concretes to run, the iteration count's configured value, the recording of timings, and every other harness module
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `benchmark` module of `apps/harness-crypto`, holding `PairingBenchmark`, its constructor params, its timings and return types, its implementation of `IPairingConsumer`, its case runner, and its builders
+    * `[✅]`   Creates the crate at `apps/harness-crypto`, admitted by the `apps/*` glob this node adds
+    * `[✅]`   Outside: the choice of which concretes to run, the iteration count's configured value, the recording of timings, and every other harness module
 
-  * `[ ]`   `deps`
-    * `[ ]`   `pairing`, `adapters/pairing`, adapter ring, path dependency; supplies `IPairingConsumer`, `ConsumePairingParams`, `ConsumePairingPayload`, `IPairingAdapter`, `ISampleUniformScalar`, `SampleUniformScalarParams`, `SampleUniformScalarPayload`, `SampleUniformScalarErrorReturn`, and every method's params and payload types used below; in `interface.rs`'s case types `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `CreatePairingParams`, and `CreatePairingErrorReturn`; in the case runner `create_pairing`, `IPairingConsumer`, `build_create_pairing_deps`, `build_create_pairing_params`, and `build_create_pairing_payload`; in the unit test and the integration test `IPairingConsumer`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `build_create_pairing_params`, and `CreatePairingParamsOverrides`; `PairingConcrete` and `MockIPairingAdapterFailureMode` in the mock, the unit test, and the integration test, and `PAIRING_CONCRETES` in the integration test; direction inward, app on adapter
-    * `[ ]`   `random`, `adapters/random`, adapter ring, path dependency; supplies `IRandomSourceAdapter`, `FillBytesParams`, `FillBytesPayload`, and `FillBytesErrorReturn`; the source `create_random_source` returns for the `random_source` selection of the case params, the family's mock concrete by default, is the source the case runner's pairing level hands the block's consumer, which hands it the benchmark builder; in `interface.rs`'s case types `CreateRandomSourceParams` and `CreateRandomSourceErrorReturn`; in the case runner `create_random_source`, `build_create_random_source_deps`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_payload`; in the unit test and the integration test `IRandomSourceAdapter`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `RandomSourceKind`, and in the unit test `MockIRandomSourceAdapterFailureMode` and `FillBytesErrorReturn`
-    * `[ ]`   `pairing` and `random` with their `mocks` features, as dev-dependencies and through this crate's `mocks` feature
-    * `[ ]`   `std::time::Instant` and `core::time::Duration`, standard library, the monotonic clock and its measure; `core::num::NonZeroU32`, standard library, the iteration count, so the mean never divides by zero; `core::convert::Infallible`, standard library, the constructor's error arm
-    * `[ ]`   No external crate at runtime; no reverse dependency
+  * `[✅]`   `deps`
+    * `[✅]`   `pairing`, `adapters/pairing`, adapter ring, path dependency; supplies `IPairingConsumer`, `ConsumePairingParams`, `ConsumePairingPayload`, `IPairingAdapter`, `ISampleUniformScalar`, `SampleUniformScalarParams`, `SampleUniformScalarPayload`, `SampleUniformScalarErrorReturn`, and every method's params and payload types used below; in `interface.rs`'s case types `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `CreatePairingParams`, and `CreatePairingErrorReturn`; in the case runner `create_pairing`, `IPairingConsumer`, `build_create_pairing_deps`, `build_create_pairing_params`, and `build_create_pairing_payload`; in the unit test and the integration test `IPairingConsumer`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `build_create_pairing_params`, and `CreatePairingParamsOverrides`; `PairingConcrete` and `MockIPairingAdapterFailureMode` in the mock, the unit test, and the integration test, and `PAIRING_CONCRETES` in the integration test; direction inward, app on adapter
+    * `[✅]`   `random`, `adapters/random`, adapter ring, path dependency; supplies `IRandomSourceAdapter`, `FillBytesParams`, `FillBytesPayload`, and `FillBytesErrorReturn`; the source `create_random_source` returns for the `random_source` selection of the case params, the family's mock concrete by default, is the source the case runner's pairing level hands the block's consumer, which hands it the benchmark builder; in `interface.rs`'s case types `CreateRandomSourceParams` and `CreateRandomSourceErrorReturn`; in the case runner `create_random_source`, `build_create_random_source_deps`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_payload`; in the unit test and the integration test `IRandomSourceAdapter`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `RandomSourceKind`, and in the unit test `MockIRandomSourceAdapterFailureMode` and `FillBytesErrorReturn`
+    * `[✅]`   `pairing` and `random` with their `mocks` features, as dev-dependencies and through this crate's `mocks` feature
+    * `[✅]`   `std::time::Instant` and `core::time::Duration`, standard library, the monotonic clock and its measure; `core::num::NonZeroU32`, standard library, the iteration count, so the mean never divides by zero; `core::convert::Infallible`, standard library, the constructor's error arm
+    * `[✅]`   No external crate at runtime; no reverse dependency
 
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `pairing`: `IPairingConsumer` with `type Output` and `consume_pairing<P: IPairingArithmetic + IPairingReference>(&self, ConsumePairingParams, ConsumePairingPayload<P>) -> Self::Output`; `ConsumePairingPayload<P>` with only `adapter`, held by value, and `P::DECLARATION` and `P::CONCRETE` read from the trait; the adapter methods `g1_generator`, `g2_generator`, `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one`, each returning `Result<_, Infallible>`; `ISampleUniformScalar` with `UNIFORM_BYTES_LENGTH` and `sample_from_uniform_bytes`
-    * `[ ]`   From `pairing`'s mocks: `build_create_pairing_deps<C: IPairingConsumer>(consumer: C, CreatePairingDepsOverrides) -> CreatePairingDeps<C>` and `build_create_pairing_payload(CreatePairingPayloadOverrides) -> CreatePairingPayload`, the deps and payload of the runner's `create_pairing` call, and `build_create_pairing_params(CreatePairingParamsOverrides) -> CreatePairingParams`, whose default selects the family's mock concrete, the `pairing` field's default in the case params and the selection a block overrides
-    * `[ ]`   From `random`: `create_random_source(&CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload) -> CreateRandomSourceReturn` with `CreateRandomSourceSuccessReturn { adapter }`, the leaf call the case runner's pairing level makes, `build_create_random_source_deps(CreateRandomSourceDepsOverrides) -> CreateRandomSourceDeps` and `build_create_random_source_payload(CreateRandomSourcePayloadOverrides) -> CreateRandomSourcePayload`, each returning its production value, `build_create_random_source_params(CreateRandomSourceParamsOverrides)` whose default selects the family's mock concrete and which the level rebuilds from the `Copy` `kind` of the selection it carries, and `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode)`, the mode `FillBytesRefused` refusing every draw with `FillBytesErrorReturn::MockIRandomSourceAdapter`
-    * `[ ]`   From `pairing`: `PAIRING_CONCRETES`, the declared set of real concretes the integration test runs over, and `PairingConcrete::Mock(MockIPairingAdapterFailureMode)`, whose default `Succeeds` is the selection `build_create_pairing_params` makes and whose mode `SampleScalarWrongLength` makes the mock concrete's sampling return `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })`
-    * `[ ]`   From `random`: `IRandomSourceAdapter::fill_bytes(&self, FillBytesParams, FillBytesPayload) -> Result<FillBytesSuccessReturn, FillBytesErrorReturn>`, the draw inside a `Secret`
-    * `[ ]`   From the standard library: `Instant::now()` and `Instant::elapsed()`, `Duration`'s division by `u32`, and `NonZeroU32::get()`
+  * `[✅]`   `context_slice`
+    * `[✅]`   From `pairing`: `IPairingConsumer` with `type Output` and `consume_pairing<P: IPairingArithmetic + IPairingReference>(&self, ConsumePairingParams, ConsumePairingPayload<P>) -> Self::Output`; `ConsumePairingPayload<P>` with only `adapter`, held by value, and `P::DECLARATION` and `P::CONCRETE` read from the trait; the adapter methods `g1_generator`, `g2_generator`, `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one`, each returning `Result<_, Infallible>`; `ISampleUniformScalar` with `UNIFORM_BYTES_LENGTH` and `sample_from_uniform_bytes`
+    * `[✅]`   From `pairing`'s mocks: `build_create_pairing_deps<C: IPairingConsumer>(consumer: C, CreatePairingDepsOverrides) -> CreatePairingDeps<C>` and `build_create_pairing_payload(CreatePairingPayloadOverrides) -> CreatePairingPayload`, the deps and payload of the runner's `create_pairing` call, and `build_create_pairing_params(CreatePairingParamsOverrides) -> CreatePairingParams`, whose default selects the family's mock concrete, the `pairing` field's default in the case params and the selection a block overrides
+    * `[✅]`   From `random`: `create_random_source(&CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload) -> CreateRandomSourceReturn` with `CreateRandomSourceSuccessReturn { adapter }`, the leaf call the case runner's pairing level makes, `build_create_random_source_deps(CreateRandomSourceDepsOverrides) -> CreateRandomSourceDeps` and `build_create_random_source_payload(CreateRandomSourcePayloadOverrides) -> CreateRandomSourcePayload`, each returning its production value, `build_create_random_source_params(CreateRandomSourceParamsOverrides)` whose default selects the family's mock concrete and which the level rebuilds from the `Copy` `kind` of the selection it carries, and `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode)`, the mode `FillBytesRefused` refusing every draw with `FillBytesErrorReturn::MockIRandomSourceAdapter`
+    * `[✅]`   From `pairing`: `PAIRING_CONCRETES`, the declared set of real concretes the integration test runs over, and `PairingConcrete::Mock(MockIPairingAdapterFailureMode)`, whose default `Succeeds` is the selection `build_create_pairing_params` makes and whose mode `SampleScalarWrongLength` makes the mock concrete's sampling return `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })`
+    * `[✅]`   From `random`: `IRandomSourceAdapter::fill_bytes(&self, FillBytesParams, FillBytesPayload) -> Result<FillBytesSuccessReturn, FillBytesErrorReturn>`, the draw inside a `Secret`
+    * `[✅]`   From the standard library: `Instant::now()` and `Instant::elapsed()`, `Duration`'s division by `u32`, and `NonZeroU32::get()`
 
-  * `[ ]`   `Cargo.toml`
-    * `[ ]`   Adds `"apps/*"` to `[workspace] members`, which reads `["crates/*", "adapters/*", "apps/*"]`; every other table and key is unchanged
+  * `[✅]`   `Cargo.toml`
+    * `[✅]`   Adds `"apps/*"` to `[workspace] members`, which reads `["crates/*", "adapters/*", "apps/*"]`; every other table and key is unchanged
 
-  * `[ ]`   `apps/harness-crypto/Cargo.toml`
-    * `[ ]`   `[package]` with `name = "harness-crypto"`, `edition.workspace = true`, `rust-version.workspace = true`, and `publish.workspace = true`; no `version` key
-    * `[ ]`   `[dependencies]` with `pairing = { path = "../../adapters/pairing" }` and `random = { path = "../../adapters/random" }`
-    * `[ ]`   `[dev-dependencies]` with `pairing = { path = "../../adapters/pairing", features = ["mocks"] }` and `random = { path = "../../adapters/random", features = ["mocks"] }`
-    * `[ ]`   `[features]` with `mocks = ["pairing/mocks", "random/mocks"]`
-    * `[ ]`   `[lints]` with `workspace = true`
-    * `[ ]`   No other table
+  * `[✅]`   `apps/harness-crypto/Cargo.toml`
+    * `[✅]`   `[package]` with `name = "harness-crypto"`, `edition.workspace = true`, `rust-version.workspace = true`, and `publish.workspace = true`; no `version` key
+    * `[✅]`   `[dependencies]` with `pairing = { path = "../../adapters/pairing" }` and `random = { path = "../../adapters/random" }`
+    * `[✅]`   `[dev-dependencies]` with `pairing = { path = "../../adapters/pairing", features = ["mocks"] }` and `random = { path = "../../adapters/random", features = ["mocks"] }`
+    * `[✅]`   `[features]` with `mocks = ["pairing/mocks", "random/mocks"]`
+    * `[✅]`   `[lints]` with `workspace = true`
+    * `[✅]`   No other table
 
-  * `[ ]`   `apps/harness-crypto/src/lib.rs`
-    * `[ ]`   The crate barrel: `mod benchmark;` and `pub use benchmark::provides::*;`, nothing else
-    * `[ ]`   Until `benchmark/mod.rs` exists, `cargo check` reports the unresolved module, which is the RED state for every element below that precedes it
+  * `[✅]`   `apps/harness-crypto/src/lib.rs`
+    * `[✅]`   The crate barrel: `mod benchmark;` and `pub use benchmark::provides::*;`, nothing else
+    * `[✅]`   Until `benchmark/mod.rs` exists, `cargo check` reports the unresolved module, which is the RED state for every element below that precedes it
 
-  * `[ ]`   `apps/harness-crypto/src/benchmark/interface.rs`
-    * `[ ]`   `PairingBenchmark`, a struct with `pub(super) random: Box<dyn IRandomSourceAdapter>` and `pub(super) iterations: NonZeroU32`
-    * `[ ]`   `PairingBenchmarkConstructorParams`, a struct with `pub random: Box<dyn IRandomSourceAdapter>` and `pub iterations: NonZeroU32`, the constructor's deps slot
-    * `[ ]`   `PairingBenchmarkTryNewReturn`, the alias `Result<PairingBenchmark, Infallible>`; the error arm is uninhabited because `NonZeroU32` already excludes the one invalid count
-    * `[ ]`   `PairingOperationTimings`, a struct with `pub mul_g1: Duration`, `pub mul_g2: Duration`, `pub msm_g1: Duration`, `pub msm_g2: Duration`, and `pub pairing_product: Duration`, each the mean time of one call
-    * `[ ]`   `PairingBenchmarkSuccessReturn`, a struct with `pub concrete: PairingConcrete`, `pub iterations: NonZeroU32`, and `pub timings: PairingOperationTimings`; a measurement carries the selected library and the count used to compute each mean
-    * `[ ]`   `PairingBenchmarkErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `FillBytes(FillBytesErrorReturn)` and `SampleScalar(SampleUniformScalarErrorReturn)`, each carrying its callee's error unchanged with the callee's derives
-    * `[ ]`   `PairingBenchmarkReturn`, the alias `Result<PairingBenchmarkSuccessReturn, PairingBenchmarkErrorReturn>`, the consumer's `Output`
-    * `[ ]`   `IPairingBenchmarkCaseConsumer`, under `#[cfg(any(test, feature = "mocks"))]`, a trait with `type Output;` and `fn consume_pairing_benchmark_case<P: IPairingArithmetic + IPairingReference>(&self, random: Box<dyn IRandomSourceAdapter>, params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> Self::Output`, the source, the consume params, and the consume payload holding the adapter each arriving by value because the subject's call consumes them; the trait carries no type parameters, so the case runner is generic in the consumer alone and the case's pairing generic arrives with the method
-    * `[ ]`   `PairingBenchmarkCaseDeps<C: IPairingBenchmarkCaseConsumer>`, under the same gate, a struct with the field `pub consumer: C`
-    * `[ ]`   `PairingBenchmarkCaseParams`, under the same gate, a struct with the fields `pub pairing: CreatePairingParams` and `pub random_source: CreateRandomSourceParams`, each family's full selection
-    * `[ ]`   `PairingBenchmarkCasePayload`, under the same gate, the fieldless struct
-    * `[ ]`   `PairingBenchmarkCaseSuccessReturn<O>`, under the same gate, a struct with the field `pub output: O`
-    * `[ ]`   `PairingBenchmarkCaseErrorReturn`, under the same gate, an enum with `#[derive(Debug, PartialEq, Eq)]` and a variant per factory the chain calls — `CreatePairing(CreatePairingErrorReturn)` and `CreateRandomSource(CreateRandomSourceErrorReturn)` — each factory's create error carried intact
-    * `[ ]`   `PairingBenchmarkCaseReturn<O>`, under the same gate, the alias `Result<PairingBenchmarkCaseSuccessReturn<O>, PairingBenchmarkCaseErrorReturn>`
-    * `[ ]`   `RunPairingBenchmarkCaseFn<C: IPairingBenchmarkCaseConsumer>`, under the same gate, the alias `fn(&PairingBenchmarkCaseDeps<C>, PairingBenchmarkCaseParams, PairingBenchmarkCasePayload) -> PairingBenchmarkCaseReturn<<C as IPairingBenchmarkCaseConsumer>::Output>`
-    * `[ ]`   Imports `IRandomSourceAdapter` and `FillBytesErrorReturn` from `random`, `SampleUniformScalarErrorReturn` and `PairingConcrete` from `pairing`, `core::num::NonZeroU32`, `core::time::Duration`, and `core::convert::Infallible`; and, under `#[cfg(any(test, feature = "mocks"))]`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `CreatePairingParams`, and `CreatePairingErrorReturn` from `pairing` and `CreateRandomSourceParams` and `CreateRandomSourceErrorReturn` from `random`; no derives beyond those stated
+  * `[✅]`   `apps/harness-crypto/src/benchmark/interface.rs`
+    * `[✅]`   `PairingBenchmark`, a struct with `pub(super) random: Box<dyn IRandomSourceAdapter>` and `pub(super) iterations: NonZeroU32`
+    * `[✅]`   `PairingBenchmarkConstructorParams`, a struct with `pub random: Box<dyn IRandomSourceAdapter>` and `pub iterations: NonZeroU32`, the constructor's deps slot
+    * `[✅]`   `PairingBenchmarkTryNewReturn`, the alias `Result<PairingBenchmark, Infallible>`; the error arm is uninhabited because `NonZeroU32` already excludes the one invalid count
+    * `[✅]`   `PairingOperationTimings`, a struct with `pub mul_g1: Duration`, `pub mul_g2: Duration`, `pub msm_g1: Duration`, `pub msm_g2: Duration`, and `pub pairing_product: Duration`, each the mean time of one call
+    * `[✅]`   `PairingBenchmarkSuccessReturn`, a struct with `pub concrete: PairingConcrete`, `pub iterations: NonZeroU32`, and `pub timings: PairingOperationTimings`; a measurement carries the selected library and the count used to compute each mean
+    * `[✅]`   `PairingBenchmarkErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `FillBytes(FillBytesErrorReturn)` and `SampleScalar(SampleUniformScalarErrorReturn)`, each carrying its callee's error unchanged with the callee's derives
+    * `[✅]`   `PairingBenchmarkReturn`, the alias `Result<PairingBenchmarkSuccessReturn, PairingBenchmarkErrorReturn>`, the consumer's `Output`
+    * `[✅]`   `IPairingBenchmarkCaseConsumer`, under `#[cfg(any(test, feature = "mocks"))]`, a trait with `type Output;` and `fn consume_pairing_benchmark_case<P: IPairingArithmetic + IPairingReference>(&self, random: Box<dyn IRandomSourceAdapter>, params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> Self::Output`, the source, the consume params, and the consume payload holding the adapter each arriving by value because the subject's call consumes them; the trait carries no type parameters, so the case runner is generic in the consumer alone and the case's pairing generic arrives with the method
+    * `[✅]`   `PairingBenchmarkCaseDeps<C: IPairingBenchmarkCaseConsumer>`, under the same gate, a struct with the field `pub consumer: C`
+    * `[✅]`   `PairingBenchmarkCaseParams`, under the same gate, a struct with the fields `pub pairing: CreatePairingParams` and `pub random_source: CreateRandomSourceParams`, each family's full selection
+    * `[✅]`   `PairingBenchmarkCasePayload`, under the same gate, the fieldless struct
+    * `[✅]`   `PairingBenchmarkCaseSuccessReturn<O>`, under the same gate, a struct with the field `pub output: O`
+    * `[✅]`   `PairingBenchmarkCaseErrorReturn`, under the same gate, an enum with `#[derive(Debug, PartialEq, Eq)]` and a variant per factory the chain calls — `CreatePairing(CreatePairingErrorReturn)` and `CreateRandomSource(CreateRandomSourceErrorReturn)` — each factory's create error carried intact
+    * `[✅]`   `PairingBenchmarkCaseReturn<O>`, under the same gate, the alias `Result<PairingBenchmarkCaseSuccessReturn<O>, PairingBenchmarkCaseErrorReturn>`
+    * `[✅]`   `RunPairingBenchmarkCaseFn<C: IPairingBenchmarkCaseConsumer>`, under the same gate, the alias `fn(&PairingBenchmarkCaseDeps<C>, PairingBenchmarkCaseParams, PairingBenchmarkCasePayload) -> PairingBenchmarkCaseReturn<<C as IPairingBenchmarkCaseConsumer>::Output>`
+    * `[✅]`   Imports `IRandomSourceAdapter` and `FillBytesErrorReturn` from `random`, `SampleUniformScalarErrorReturn` and `PairingConcrete` from `pairing`, `core::num::NonZeroU32`, `core::time::Duration`, and `core::convert::Infallible`; and, under `#[cfg(any(test, feature = "mocks"))]`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `CreatePairingParams`, and `CreatePairingErrorReturn` from `pairing` and `CreateRandomSourceParams` and `CreateRandomSourceErrorReturn` from `random`; no derives beyond those stated
 
-  * `[ ]`   `apps/harness-crypto/src/benchmark/interaction.spec.md`
-    * `[ ]`   `PairingBenchmark::try_new(params: PairingBenchmarkConstructorParams) -> PairingBenchmarkTryNewReturn`: one branch; outcome `Ok(PairingBenchmark)` holding the random source and the iteration count; the error arm has no branch
-    * `[ ]`   `consume_pairing<P: IPairingAdapter>(&self, _params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> PairingBenchmarkReturn`, draw failed: condition `self.random.fill_bytes(FillBytesParams, FillBytesPayload { length: P::Scalar::UNIFORM_BYTES_LENGTH })` returns `Err(error)` for either scalar; outcome `Err(PairingBenchmarkErrorReturn::FillBytes(error))`; nothing is timed
-    * `[ ]`   Sampling failed: condition `P::Scalar::sample_from_uniform_bytes(SampleUniformScalarParams, SampleUniformScalarPayload { uniform: draw.bytes })` returns `Err(error)` for either scalar; outcome `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`; nothing is timed
-    * `[ ]`   Measured: both scalars `a` and `b` sampled; the setup takes the generators `g1` and `g2` and computes `p1 = g1 · a` and `p2 = g2 · b` through `mul_g1` and `mul_g2`, untimed; then, for each operation in turn, `Instant::now()` is read, the operation runs `self.iterations.get()` times, and `elapsed()` divided by `self.iterations.get()` is its mean: `mul_g1` of a clone of `p1` by a clone of `a`; `mul_g2` of a clone of `p2` by a clone of `b`; `msm_g1` over the terms `MsmG1Term { base: p1, scalar: a }` and `MsmG1Term { base: g1, scalar: b }`; `msm_g2` over the corresponding `MsmG2Term` values; `pairing_product_is_one` over the terms `(p1, g2)` and `(g1, p2)`, each term's elements cloned per call; outcome `Ok(PairingBenchmarkSuccessReturn { concrete: P::CONCRETE, iterations: self.iterations, timings })`
-    * `[ ]`   Every adapter call returns `Result<_, Infallible>` and is unpacked irrefutably; the scalars are cloned from their `Secret`s by `expose().clone()`, and each clone is cleared when the payload holding it drops
-    * `[ ]`   Ordering: both draws and both samplings precede any timing, so a failure returns before the clock is read; `P::CONCRETE` is carried into the result; no independently supplied metadata is read
-    * `[ ]`   `Integration: callee dispositions`, the `pairing/factory` entries this node's route reaches, each proven by the public integration block of the same name; the route of each is `create_pairing`, the arm's concrete through its `try_new`, `PairingBenchmark::consume_pairing`, and the calls it makes on that concrete and on the source `create_random_source` constructs; the outer-edge collaborators on that route are the operating system's generator and monotonic clock, both run real, except where an entry names the pairing family's mock concrete
-      * `[ ]`   `the_consumer_receives_the_concrete_the_params_name`: carried; restated where this node transforms it: the `concrete` of the `Ok` measurement the benchmark returns equals `params.concrete`, read from the benchmark's output instead of a consumer's own reading of `P::CONCRETE`
-      * `[ ]`   `a_sampled_scalar_encodes_through_secret`: carried; restated where this node transforms it: the benchmark draws `P::Scalar::UNIFORM_BYTES_LENGTH` bytes into a `Secret`, samples both scalars with `sample_from_uniform_bytes`, and consumes them in the group operations instead of `encode_scalar`, so the output is `Ok` for every concrete
-      * `[ ]`   `a_sampling_refusal_reaches_the_caller_unchanged`: carried; restated where this node transforms it: a sampling refusal is the output's `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, the error whole; its concrete is the pairing family's mock concrete selected by `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`
-    * `[ ]`   `Integration: own entries`, a bulleted section, each entry named and proven by the public integration block of the same name
-      * `[ ]`   `every_operation_is_timed_on_every_concrete`: condition the benchmark runs through `create_pairing` on a concrete of `PAIRING_CONCRETES` with the source `create_random_source` constructs for `RandomSourceKind::OperatingSystem`; outcome `Ok` whose timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`; variation every concrete of the declared set, whose operations are real, so a timing left at its zero default fails; edge each operation runs on scalars sampled from the draw and on the concrete's own points, so none is skipped
-    * `[ ]`   `Integration: public surface`: an outside caller constructs `PairingBenchmark` with `PairingBenchmark::try_new` from `PairingBenchmarkConstructorParams` holding the source `create_random_source` returns and an iteration count, passes it as `CreatePairingDeps { consumer }` to `create_pairing` from `pairing`'s public surface with `CreatePairingParams` naming a concrete and `CreatePairingPayload`, and observes the benchmark's `PairingBenchmarkReturn` in `CreatePairingSuccessReturn`; the test drives that composition through the case runner — a block declares one consumer implementing `IPairingBenchmarkCaseConsumer` and calls `run_pairing_benchmark_case` once per case, the runner's pairing level running `create_random_source` inward and handing the source, the consume params, and the consume payload to the consumer, whose method builds the benchmark and makes the single `consume_pairing` call; the entries proven are every carried entry and the own entry above; the route of each is as the callee dispositions state; the outer-edge collaborators are the operating system's generator and monotonic clock, run real, and, for `a_sampling_refusal_reaches_the_caller_unchanged`, the pairing family's mock concrete; the fixtures are `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, `run_pairing_benchmark_case`, `build_create_pairing_params`, and `build_create_random_source_params`
+  * `[✅]`   `apps/harness-crypto/src/benchmark/interaction.spec.md`
+    * `[✅]`   `PairingBenchmark::try_new(params: PairingBenchmarkConstructorParams) -> PairingBenchmarkTryNewReturn`: one branch; outcome `Ok(PairingBenchmark)` holding the random source and the iteration count; the error arm has no branch
+    * `[✅]`   `consume_pairing<P: IPairingAdapter>(&self, _params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> PairingBenchmarkReturn`, draw failed: condition `self.random.fill_bytes(FillBytesParams, FillBytesPayload { length: P::Scalar::UNIFORM_BYTES_LENGTH })` returns `Err(error)` for either scalar; outcome `Err(PairingBenchmarkErrorReturn::FillBytes(error))`; nothing is timed
+    * `[✅]`   Sampling failed: condition `P::Scalar::sample_from_uniform_bytes(SampleUniformScalarParams, SampleUniformScalarPayload { uniform: draw.bytes })` returns `Err(error)` for either scalar; outcome `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`; nothing is timed
+    * `[✅]`   Measured: both scalars `a` and `b` sampled; the setup takes the generators `g1` and `g2` and computes `p1 = g1 · a` and `p2 = g2 · b` through `mul_g1` and `mul_g2`, untimed; then, for each operation in turn, `Instant::now()` is read, the operation runs `self.iterations.get()` times, and `elapsed()` divided by `self.iterations.get()` is its mean: `mul_g1` of a clone of `p1` by a clone of `a`; `mul_g2` of a clone of `p2` by a clone of `b`; `msm_g1` over the terms `MsmG1Term { base: p1, scalar: a }` and `MsmG1Term { base: g1, scalar: b }`; `msm_g2` over the corresponding `MsmG2Term` values; `pairing_product_is_one` over the terms `(p1, g2)` and `(g1, p2)`, each term's elements cloned per call; outcome `Ok(PairingBenchmarkSuccessReturn { concrete: P::CONCRETE, iterations: self.iterations, timings })`
+    * `[✅]`   Every adapter call returns `Result<_, Infallible>` and is unpacked irrefutably; the scalars are cloned from their `Secret`s by `expose().clone()`, and each clone is cleared when the payload holding it drops
+    * `[✅]`   Ordering: both draws and both samplings precede any timing, so a failure returns before the clock is read; `P::CONCRETE` is carried into the result; no independently supplied metadata is read
+    * `[✅]`   `Integration: callee dispositions`, the `pairing/factory` entries this node's route reaches, each proven by the public integration block of the same name; the route of each is `create_pairing`, the arm's concrete through its `try_new`, `PairingBenchmark::consume_pairing`, and the calls it makes on that concrete and on the source `create_random_source` constructs; the outer-edge collaborators on that route are the operating system's generator and monotonic clock, both run real, except where an entry names the pairing family's mock concrete
+      * `[✅]`   `the_consumer_receives_the_concrete_the_params_name`: carried; restated where this node transforms it: the `concrete` of the `Ok` measurement the benchmark returns equals `params.concrete`, read from the benchmark's output instead of a consumer's own reading of `P::CONCRETE`
+      * `[✅]`   `a_sampled_scalar_encodes_through_secret`: carried; restated where this node transforms it: the benchmark draws `P::Scalar::UNIFORM_BYTES_LENGTH` bytes into a `Secret`, samples both scalars with `sample_from_uniform_bytes`, and consumes them in the group operations instead of `encode_scalar`, so the output is `Ok` for every concrete
+      * `[✅]`   `a_sampling_refusal_reaches_the_caller_unchanged`: carried; restated where this node transforms it: a sampling refusal is the output's `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, the error whole; its concrete is the pairing family's mock concrete selected by `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`
+    * `[✅]`   `Integration: own entries`, a bulleted section, each entry named and proven by the public integration block of the same name
+      * `[✅]`   `every_operation_is_timed_on_every_concrete`: condition the benchmark runs through `create_pairing` on a concrete of `PAIRING_CONCRETES` with the source `create_random_source` constructs for `RandomSourceKind::OperatingSystem`; outcome `Ok` whose timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`; variation every concrete of the declared set, whose operations are real, so a timing left at its zero default fails; edge each operation runs on scalars sampled from the draw and on the concrete's own points, so none is skipped
+    * `[✅]`   `Integration: public surface`: an outside caller constructs `PairingBenchmark` with `PairingBenchmark::try_new` from `PairingBenchmarkConstructorParams` holding the source `create_random_source` returns and an iteration count, passes it as `CreatePairingDeps { consumer }` to `create_pairing` from `pairing`'s public surface with `CreatePairingParams` naming a concrete and `CreatePairingPayload`, and observes the benchmark's `PairingBenchmarkReturn` in `CreatePairingSuccessReturn`; the test drives that composition through the case runner — a block declares one consumer implementing `IPairingBenchmarkCaseConsumer` and calls `run_pairing_benchmark_case` once per case, the runner's pairing level running `create_random_source` inward and handing the source, the consume params, and the consume payload to the consumer, whose method builds the benchmark and makes the single `consume_pairing` call; the entries proven are every carried entry and the own entry above; the route of each is as the callee dispositions state; the outer-edge collaborators are the operating system's generator and monotonic clock, run real, and, for `a_sampling_refusal_reaches_the_caller_unchanged`, the pairing family's mock concrete; the fixtures are `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, `run_pairing_benchmark_case`, `build_create_pairing_params`, and `build_create_random_source_params`
 
-  * `[ ]`   `apps/harness-crypto/src/benchmark/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::too_many_arguments)]`
-    * `[ ]`   `PairingBenchmarkConstructorParamsOverrides`, `#[derive(Default)]`, the one field `pub iterations: Option<NonZeroU32>`, since the random source is handed; `build_pairing_benchmark_constructor_params(random: Box<dyn IRandomSourceAdapter>, overrides: PairingBenchmarkConstructorParamsOverrides) -> PairingBenchmarkConstructorParams`, the source its leading parameter, and `iterations` defaulting to `NonZeroU32::MIN`
-    * `[ ]`   `build_pairing_benchmark(random: Box<dyn IRandomSourceAdapter>, overrides: PairingBenchmarkConstructorParamsOverrides) -> PairingBenchmark`, returning the real instance from `PairingBenchmark::try_new(build_pairing_benchmark_constructor_params(random, overrides))` through the irrefutable pattern `let Ok(benchmark) = …;`
-    * `[ ]`   `PairingOperationTimingsOverrides`, `#[derive(Default)]`, one `Option<Duration>` per field; `build_pairing_operation_timings(overrides: PairingOperationTimingsOverrides) -> PairingOperationTimings`, each field defaulting to `Duration::ZERO`
-    * `[ ]`   `PairingBenchmarkSuccessReturnOverrides`, `#[derive(Default)]`, fields `pub concrete: Option<PairingConcrete>`, `pub iterations: Option<NonZeroU32>`, and `pub timings: Option<PairingOperationTimings>`; `build_pairing_benchmark_success_return(overrides: PairingBenchmarkSuccessReturnOverrides) -> PairingBenchmarkSuccessReturn`, defaulting to `PairingConcrete::Mock(MockIPairingAdapterFailureMode::Succeeds)`, `NonZeroU32::MIN`, and `build_pairing_operation_timings(Default::default())`
-    * `[ ]`   `PairingBenchmarkCaseParamsOverrides`, `#[derive(Default)]`, the same fields as `PairingBenchmarkCaseParams`'s as `Option`s; `build_pairing_benchmark_case_params(overrides: PairingBenchmarkCaseParamsOverrides) -> PairingBenchmarkCaseParams`, each field defaulting to its family's `build_create_*_params(Default::default())`; no corruptions type and no invalidator, the selections arriving admitted
-    * `[ ]`   `PairingBenchmarkCaseDepsOverrides`, the fieldless unit struct with `#[derive(Default)]`, the consumer handed; `build_pairing_benchmark_case_deps<C: IPairingBenchmarkCaseConsumer>(consumer: C, _overrides: PairingBenchmarkCaseDepsOverrides) -> PairingBenchmarkCaseDeps<C>`, the consumer its leading parameter; no corruptions type and no invalidator
-    * `[ ]`   `PairingBenchmarkCasePayloadOverrides`, the fieldless unit struct with `#[derive(Default)]`; `build_pairing_benchmark_case_payload(_overrides: PairingBenchmarkCasePayloadOverrides) -> PairingBenchmarkCasePayload`; no corruptions type and no invalidator
-    * `[ ]`   `PairingBenchmarkCaseSuccessReturnOverrides`, the fieldless unit struct with `#[derive(Default)]`, the output handed; `build_pairing_benchmark_case_success_return<O>(output: O, _overrides: PairingBenchmarkCaseSuccessReturnOverrides) -> PairingBenchmarkCaseSuccessReturn<O>`, the output its leading parameter; no corruptions type and no invalidator
-    * `[ ]`   Private `CaseAtPairing`, a struct implementing `IPairingConsumer` with `type Output = PairingBenchmarkCaseReturn<C::Output>`, carrying `&'a C` the case consumer and `CreateRandomSourceParams` the case's randomness selection; its `consume_pairing` builds the inner call through the randomness family's builders — `build_create_random_source_params` from the `Copy` `kind` of the selection it carries, `build_create_random_source_deps`, and `build_create_random_source_payload` — runs `create_random_source`, a refusal mapped to `PairingBenchmarkCaseErrorReturn::CreateRandomSource`, then calls `consumer.consume_pairing_benchmark_case(created.adapter, params, payload)`, its output wrapped `Ok(PairingBenchmarkCaseSuccessReturn { output })`; no factory result unpacked by `unwrap`, `expect`, or `let … else { panic!(…) }`
-    * `[ ]`   `run_pairing_benchmark_case<C: IPairingBenchmarkCaseConsumer>(deps: &PairingBenchmarkCaseDeps<C>, params: PairingBenchmarkCaseParams, _payload: PairingBenchmarkCasePayload) -> PairingBenchmarkCaseReturn<C::Output>`, the production type `RunPairingBenchmarkCaseFn<C>` and nothing else, running `create_pairing` through the family's builders — `build_create_pairing_deps` handing `CaseAtPairing` carrying `&deps.consumer` and `params.random_source`, `build_create_pairing_payload` for the payload — over `params.pairing`, a success's `.output` relayed and a `CreatePairingErrorReturn` mapped to `PairingBenchmarkCaseErrorReturn::CreatePairing`
-    * `[ ]`   Dispositions: `PairingBenchmarkConstructorParams`, `PairingOperationTimings`, and `PairingBenchmarkSuccessReturn` take an Overrides type and a builder, and no corruptions type and no invalidator; `PairingBenchmark` takes `build_pairing_benchmark` and no mock of the class; `PairingBenchmarkErrorReturn`, `PairingBenchmarkTryNewReturn`, and `PairingBenchmarkReturn` take no mock; `PairingBenchmarkCaseDeps`, `PairingBenchmarkCaseParams`, `PairingBenchmarkCasePayload`, and `PairingBenchmarkCaseSuccessReturn`, object types `interface.rs` declares, each with its builder above; `PairingBenchmarkCaseErrorReturn`, an enum, produced by the case level and the runner; `PairingBenchmarkCaseReturn`, an alias of `Result`, and `RunPairingBenchmarkCaseFn`, a function type whose function is `run_pairing_benchmark_case`; `IPairingBenchmarkCaseConsumer`, a trait `interface.rs` declares whose consumer `run_pairing_benchmark_case` drives; no function mock, `consume_pairing` being the method of the injected `IPairingConsumer`, whose mock `pairing` owns
-    * `[ ]`   Imports `IRandomSourceAdapter` from `random`, `PairingConcrete` and `MockIPairingAdapterFailureMode` from `pairing`, the standard-library names above, and this module's types from `super::interface`; additionally, for the case level, the builders, and the runner: `IPairingConsumer`, `ConsumePairingParams`, `ConsumePairingPayload`, `IPairingArithmetic`, `IPairingReference`, `create_pairing`, `build_create_pairing_deps`, `build_create_pairing_params`, and `build_create_pairing_payload` from `pairing` and `create_random_source`, `build_create_random_source_deps`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_payload` from `random`
+  * `[✅]`   `apps/harness-crypto/src/benchmark/mock.rs`
+    * `[✅]`   Module-level `#![allow(dead_code, clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::too_many_arguments)]`
+    * `[✅]`   `PairingBenchmarkConstructorParamsOverrides`, `#[derive(Default)]`, the one field `pub iterations: Option<NonZeroU32>`, since the random source is handed; `build_pairing_benchmark_constructor_params(random: Box<dyn IRandomSourceAdapter>, overrides: PairingBenchmarkConstructorParamsOverrides) -> PairingBenchmarkConstructorParams`, the source its leading parameter, and `iterations` defaulting to `NonZeroU32::MIN`
+    * `[✅]`   `build_pairing_benchmark(random: Box<dyn IRandomSourceAdapter>, overrides: PairingBenchmarkConstructorParamsOverrides) -> PairingBenchmark`, returning the real instance from `PairingBenchmark::try_new(build_pairing_benchmark_constructor_params(random, overrides))` through the irrefutable pattern `let Ok(benchmark) = …;`
+    * `[✅]`   `PairingOperationTimingsOverrides`, `#[derive(Default)]`, one `Option<Duration>` per field; `build_pairing_operation_timings(overrides: PairingOperationTimingsOverrides) -> PairingOperationTimings`, each field defaulting to `Duration::ZERO`
+    * `[✅]`   `PairingBenchmarkSuccessReturnOverrides`, `#[derive(Default)]`, fields `pub concrete: Option<PairingConcrete>`, `pub iterations: Option<NonZeroU32>`, and `pub timings: Option<PairingOperationTimings>`; `build_pairing_benchmark_success_return(overrides: PairingBenchmarkSuccessReturnOverrides) -> PairingBenchmarkSuccessReturn`, defaulting to `PairingConcrete::Mock(MockIPairingAdapterFailureMode::Succeeds)`, `NonZeroU32::MIN`, and `build_pairing_operation_timings(Default::default())`
+    * `[✅]`   `PairingBenchmarkCaseParamsOverrides`, `#[derive(Default)]`, the same fields as `PairingBenchmarkCaseParams`'s as `Option`s; `build_pairing_benchmark_case_params(overrides: PairingBenchmarkCaseParamsOverrides) -> PairingBenchmarkCaseParams`, each field defaulting to its family's `build_create_*_params(Default::default())`; no corruptions type and no invalidator, the selections arriving admitted
+    * `[✅]`   `PairingBenchmarkCaseDepsOverrides`, the fieldless unit struct with `#[derive(Default)]`, the consumer handed; `build_pairing_benchmark_case_deps<C: IPairingBenchmarkCaseConsumer>(consumer: C, _overrides: PairingBenchmarkCaseDepsOverrides) -> PairingBenchmarkCaseDeps<C>`, the consumer its leading parameter; no corruptions type and no invalidator
+    * `[✅]`   `PairingBenchmarkCasePayloadOverrides`, the fieldless unit struct with `#[derive(Default)]`; `build_pairing_benchmark_case_payload(_overrides: PairingBenchmarkCasePayloadOverrides) -> PairingBenchmarkCasePayload`; no corruptions type and no invalidator
+    * `[✅]`   `PairingBenchmarkCaseSuccessReturnOverrides`, the fieldless unit struct with `#[derive(Default)]`, the output handed; `build_pairing_benchmark_case_success_return<O>(output: O, _overrides: PairingBenchmarkCaseSuccessReturnOverrides) -> PairingBenchmarkCaseSuccessReturn<O>`, the output its leading parameter; no corruptions type and no invalidator
+    * `[✅]`   Private `CaseAtPairing`, a struct implementing `IPairingConsumer` with `type Output = PairingBenchmarkCaseReturn<C::Output>`, carrying `&'a C` the case consumer and `CreateRandomSourceParams` the case's randomness selection; its `consume_pairing` builds the inner call through the randomness family's builders — `build_create_random_source_params` from the `Copy` `kind` of the selection it carries, `build_create_random_source_deps`, and `build_create_random_source_payload` — runs `create_random_source`, a refusal mapped to `PairingBenchmarkCaseErrorReturn::CreateRandomSource`, then calls `consumer.consume_pairing_benchmark_case(created.adapter, params, payload)`, its output wrapped `Ok(PairingBenchmarkCaseSuccessReturn { output })`; no factory result unpacked by `unwrap`, `expect`, or `let … else { panic!(…) }`
+    * `[✅]`   `run_pairing_benchmark_case<C: IPairingBenchmarkCaseConsumer>(deps: &PairingBenchmarkCaseDeps<C>, params: PairingBenchmarkCaseParams, _payload: PairingBenchmarkCasePayload) -> PairingBenchmarkCaseReturn<C::Output>`, the production type `RunPairingBenchmarkCaseFn<C>` and nothing else, running `create_pairing` through the family's builders — `build_create_pairing_deps` handing `CaseAtPairing` carrying `&deps.consumer` and `params.random_source`, `build_create_pairing_payload` for the payload — over `params.pairing`, a success's `.output` relayed and a `CreatePairingErrorReturn` mapped to `PairingBenchmarkCaseErrorReturn::CreatePairing`
+    * `[✅]`   Dispositions: `PairingBenchmarkConstructorParams`, `PairingOperationTimings`, and `PairingBenchmarkSuccessReturn` take an Overrides type and a builder, and no corruptions type and no invalidator; `PairingBenchmark` takes `build_pairing_benchmark` and no mock of the class; `PairingBenchmarkErrorReturn`, `PairingBenchmarkTryNewReturn`, and `PairingBenchmarkReturn` take no mock; `PairingBenchmarkCaseDeps`, `PairingBenchmarkCaseParams`, `PairingBenchmarkCasePayload`, and `PairingBenchmarkCaseSuccessReturn`, object types `interface.rs` declares, each with its builder above; `PairingBenchmarkCaseErrorReturn`, an enum, produced by the case level and the runner; `PairingBenchmarkCaseReturn`, an alias of `Result`, and `RunPairingBenchmarkCaseFn`, a function type whose function is `run_pairing_benchmark_case`; `IPairingBenchmarkCaseConsumer`, a trait `interface.rs` declares whose consumer `run_pairing_benchmark_case` drives; no function mock, `consume_pairing` being the method of the injected `IPairingConsumer`, whose mock `pairing` owns
+    * `[✅]`   Imports `IRandomSourceAdapter` from `random`, `PairingConcrete` and `MockIPairingAdapterFailureMode` from `pairing`, the standard-library names above, and this module's types from `super::interface`; additionally, for the case level, the builders, and the runner: `IPairingConsumer`, `ConsumePairingParams`, `ConsumePairingPayload`, `IPairingArithmetic`, `IPairingReference`, `create_pairing`, `build_create_pairing_deps`, `build_create_pairing_params`, and `build_create_pairing_payload` from `pairing` and `create_random_source`, `build_create_random_source_deps`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_payload` from `random`
 
-  * `[ ]`   `apps/harness-crypto/src/benchmark/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `IPairingBenchmarkCaseConsumer`, `PairingBenchmarkErrorReturn`, `PairingBenchmarkReturn`, `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, and `run_pairing_benchmark_case` from `super::provides`; `IPairingConsumer`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `PairingConcrete`, `MockIPairingAdapterFailureMode`, `SampleUniformScalarErrorReturn`, `CreatePairingParamsOverrides`, and `build_create_pairing_params` from `pairing`; `IRandomSourceAdapter`, `RandomSourceKind`, `MockIRandomSourceAdapterFailureMode`, `FillBytesErrorReturn`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_params` from `random`
-    * `[ ]`   Every block declares inside the block a unit struct `Consumer` implementing `IPairingBenchmarkCaseConsumer` with `type Output = PairingBenchmarkReturn` and `consume_pairing_benchmark_case<P: IPairingArithmetic + IPairingReference>(&self, random: Box<dyn IRandomSourceAdapter>, params: ConsumePairingParams, payload: ConsumePairingPayload<P>)`, whose body builds the benchmark `build_pairing_benchmark(random, Default::default())` over the received source and makes the block's single call `benchmark.consume_pairing(params, payload)`, returning its `PairingBenchmarkReturn` whole; the block calls `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` with `deps` from `build_pairing_benchmark_case_deps(Consumer, Default::default())`, observed as `result`, whose default `pairing` selection is the pairing family's mock concrete and whose default `random_source` selection is the randomness family's mock concrete, a `CreatePairingErrorReturn` reaching the block whole through `PairingBenchmarkCaseErrorReturn::CreatePairing` and a `CreateRandomSourceErrorReturn` through `PairingBenchmarkCaseErrorReturn::CreateRandomSource` had a factory refused; each block asserts `result.is_ok()` outside the consumer, proving the runner's level ran; the subject is `PairingBenchmark::consume_pairing`, the only function of its module that runs; no block names a concrete
-    * `[ ]`   `consume_pairing_returns_the_draw_error_unchanged`
-      * `[ ]`   Contract: `self.random.fill_bytes` returns `Err(error)` → `Err(PairingBenchmarkErrorReturn::FillBytes(error))`, with nothing timed
-      * `[ ]`   Collaborators: the randomness family's mock concrete, selected through the case params' `random_source` selection naming the mode that refuses every draw; the pairing family's mock concrete through the case params' `pairing` selection at its default; fixtures `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, `run_pairing_benchmark_case`, `build_create_pairing_params`, and `build_create_random_source_params`
-      * `[ ]`   Arrange: `params` from `build_pairing_benchmark_case_params` with the `random_source` override set to `build_create_random_source_params` carrying the kind override `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused)`, a mode that differs from the builder's default `Succeeds`, so a benchmark that ignores a refused draw fails, and the `pairing` selection at its default
-      * `[ ]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`
-      * `[ ]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::FillBytes(FillBytesErrorReturn::MockIRandomSourceAdapter)))`, the whole error, the `FillBytes` variant being the subject's wrapping and the carried error the mock concrete's own variant written as a literal
-    * `[ ]`   `consume_pairing_draws_the_length_the_sampling_bound_requires`
-      * `[ ]`   Contract: both scalars drawn with `P::Scalar::UNIFORM_BYTES_LENGTH` bytes and sampled → `Ok(PairingBenchmarkSuccessReturn { concrete: P::CONCRETE, iterations: self.iterations, timings })`
-      * `[ ]`   Collaborators: the randomness family's mock concrete through the case params' `random_source` selection at its default, drawing exactly the requested length; the pairing family's mock concrete through the case params' `pairing` selection at its default; fixtures `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, `run_pairing_benchmark_case`, `build_create_pairing_params`, and `build_create_random_source_params`
-      * `[ ]`   Arrange: `params` from `build_pairing_benchmark_case_params` with no override; the pairing mock concrete's sampling refuses an input whose length differs from its bound, so a benchmark that requests another length fails
-      * `[ ]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`
-      * `[ ]`   Assert: `assert_eq!(result.ok().map(|success| success.output.err()), Some(None))`, the runner's success arm present and the output's error arm empty, the whole error shown on failure; the expectation is the success arm itself, and the measurement's `concrete`, `iterations`, and timings are not asserted
-    * `[ ]`   `consume_pairing_returns_the_sampling_error_unchanged`
-      * `[ ]`   Contract: `P::Scalar::sample_from_uniform_bytes` returns `Err(error)` → `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, with nothing timed
-      * `[ ]`   Collaborators: the randomness family's mock concrete through the case params' `random_source` selection at its default; the pairing family's mock concrete through the case params' `pairing` selection naming the mode that refuses its sampling; fixtures `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, `run_pairing_benchmark_case`, `build_create_pairing_params`, and `build_create_random_source_params`
-      * `[ ]`   Arrange: `params` from `build_pairing_benchmark_case_params` with the `pairing` override set to `build_create_pairing_params` carrying the `concrete` override `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`, a mode that differs from the builder's default `Succeeds`, so a benchmark that ignores a refused sampling fails, and the `random_source` selection at its default
-      * `[ ]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`
-      * `[ ]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })))`, the whole error, the `SampleScalar` variant being the subject's wrapping and the carried error the mock concrete's own value for that mode written as a literal
+  * `[✅]`   `apps/harness-crypto/src/benchmark/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; imports `IPairingBenchmarkCaseConsumer`, `PairingBenchmarkErrorReturn`, `PairingBenchmarkReturn`, `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, and `run_pairing_benchmark_case` from `super::provides`; `IPairingConsumer`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `PairingConcrete`, `MockIPairingAdapterFailureMode`, `SampleUniformScalarErrorReturn`, `CreatePairingParamsOverrides`, and `build_create_pairing_params` from `pairing`; `IRandomSourceAdapter`, `RandomSourceKind`, `MockIRandomSourceAdapterFailureMode`, `FillBytesErrorReturn`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_params` from `random`
+    * `[✅]`   Every block declares inside the block a unit struct `Consumer` implementing `IPairingBenchmarkCaseConsumer` with `type Output = PairingBenchmarkReturn` and `consume_pairing_benchmark_case<P: IPairingArithmetic + IPairingReference>(&self, random: Box<dyn IRandomSourceAdapter>, params: ConsumePairingParams, payload: ConsumePairingPayload<P>)`, whose body builds the benchmark `build_pairing_benchmark(random, Default::default())` over the received source and makes the block's single call `benchmark.consume_pairing(params, payload)`, returning its `PairingBenchmarkReturn` whole; the block calls `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` with `deps` from `build_pairing_benchmark_case_deps(Consumer, Default::default())`, observed as `result`, whose default `pairing` selection is the pairing family's mock concrete and whose default `random_source` selection is the randomness family's mock concrete, a `CreatePairingErrorReturn` reaching the block whole through `PairingBenchmarkCaseErrorReturn::CreatePairing` and a `CreateRandomSourceErrorReturn` through `PairingBenchmarkCaseErrorReturn::CreateRandomSource` had a factory refused; each block asserts `result.is_ok()` outside the consumer, proving the runner's level ran; the subject is `PairingBenchmark::consume_pairing`, the only function of its module that runs; no block names a concrete
+    * `[✅]`   `consume_pairing_returns_the_draw_error_unchanged`
+      * `[✅]`   Contract: `self.random.fill_bytes` returns `Err(error)` → `Err(PairingBenchmarkErrorReturn::FillBytes(error))`, with nothing timed
+      * `[✅]`   Collaborators: the randomness family's mock concrete, selected through the case params' `random_source` selection naming the mode that refuses every draw; the pairing family's mock concrete through the case params' `pairing` selection at its default; fixtures `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, `run_pairing_benchmark_case`, `build_create_pairing_params`, and `build_create_random_source_params`
+      * `[✅]`   Arrange: `params` from `build_pairing_benchmark_case_params` with the `random_source` override set to `build_create_random_source_params` carrying the kind override `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused)`, a mode that differs from the builder's default `Succeeds`, so a benchmark that ignores a refused draw fails, and the `pairing` selection at its default
+      * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`
+      * `[✅]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::FillBytes(FillBytesErrorReturn::MockIRandomSourceAdapter)))`, the whole error, the `FillBytes` variant being the subject's wrapping and the carried error the mock concrete's own variant written as a literal
+    * `[✅]`   `consume_pairing_draws_the_length_the_sampling_bound_requires`
+      * `[✅]`   Contract: both scalars drawn with `P::Scalar::UNIFORM_BYTES_LENGTH` bytes and sampled → `Ok(PairingBenchmarkSuccessReturn { concrete: P::CONCRETE, iterations: self.iterations, timings })`
+      * `[✅]`   Collaborators: the randomness family's mock concrete through the case params' `random_source` selection at its default, drawing exactly the requested length; the pairing family's mock concrete through the case params' `pairing` selection at its default; fixtures `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, `run_pairing_benchmark_case`, `build_create_pairing_params`, and `build_create_random_source_params`
+      * `[✅]`   Arrange: `params` from `build_pairing_benchmark_case_params` with no override; the pairing mock concrete's sampling refuses an input whose length differs from its bound, so a benchmark that requests another length fails
+      * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`
+      * `[✅]`   Assert: `assert_eq!(result.ok().map(|success| success.output.err()), Some(None))`, the runner's success arm present and the output's error arm empty, the whole error shown on failure; the expectation is the success arm itself, and the measurement's `concrete`, `iterations`, and timings are not asserted
+    * `[✅]`   `consume_pairing_returns_the_sampling_error_unchanged`
+      * `[✅]`   Contract: `P::Scalar::sample_from_uniform_bytes` returns `Err(error)` → `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, with nothing timed
+      * `[✅]`   Collaborators: the randomness family's mock concrete through the case params' `random_source` selection at its default; the pairing family's mock concrete through the case params' `pairing` selection naming the mode that refuses its sampling; fixtures `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, `run_pairing_benchmark_case`, `build_create_pairing_params`, and `build_create_random_source_params`
+      * `[✅]`   Arrange: `params` from `build_pairing_benchmark_case_params` with the `pairing` override set to `build_create_pairing_params` carrying the `concrete` override `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`, a mode that differs from the builder's default `Succeeds`, so a benchmark that ignores a refused sampling fails, and the `random_source` selection at its default
+      * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`
+      * `[✅]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })))`, the whole error, the `SampleScalar` variant being the subject's wrapping and the carried error the mock concrete's own value for that mode written as a literal
 
-  * `[ ]`   `construction`
-    * `[ ]`   `PairingBenchmark::try_new` is the only producer; the harness run constructs one per concrete from the random source `create_random_source` returns and the configured iteration count, and passes it as `CreatePairingDeps { consumer }`
+  * `[✅]`   `construction`
+    * `[✅]`   `PairingBenchmark::try_new` is the only producer; the harness run constructs one per concrete from the random source `create_random_source` returns and the configured iteration count, and passes it as `CreatePairingDeps { consumer }`
 
-  * `[ ]`   `apps/harness-crypto/src/benchmark/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl PairingBenchmark` with `pub fn try_new(params: PairingBenchmarkConstructorParams) -> PairingBenchmarkTryNewReturn` returning `Ok(PairingBenchmark { random: params.random, iterations: params.iterations })`
-    * `[ ]`   `impl IPairingConsumer for PairingBenchmark` with `type Output = PairingBenchmarkReturn;` and `consume_pairing` realizing the branches and ordering of the interaction spec
-    * `[ ]`   Imports the `pairing` and `random` names the context slice lists, `std::time::Instant`, and this module's types from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+  * `[✅]`   `apps/harness-crypto/src/benchmark/mod.rs`
+    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[✅]`   `impl PairingBenchmark` with `pub fn try_new(params: PairingBenchmarkConstructorParams) -> PairingBenchmarkTryNewReturn` returning `Ok(PairingBenchmark { random: params.random, iterations: params.iterations })`
+    * `[✅]`   `impl IPairingConsumer for PairingBenchmark` with `type Output = PairingBenchmarkReturn;` and `consume_pairing` realizing the branches and ordering of the interaction spec
+    * `[✅]`   Imports the `pairing` and `random` names the context slice lists, `std::time::Instant`, and this module's types from `interface`
+    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
-  * `[ ]`   `apps/harness-crypto/src/benchmark/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
+  * `[✅]`   `apps/harness-crypto/src/benchmark/provides.rs`
+    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
 
-  * `[ ]`   `apps/harness-crypto/tests/benchmark_integration_test.rs`
-    * `[ ]`   Outside the crate, so it reaches only the crate's public surface and the official mocks under the `mocks` feature: module-level `#![allow(clippy::expect_used)]`; imports from `harness_crypto` `IPairingBenchmarkCaseConsumer`, `PairingBenchmarkErrorReturn`, `PairingBenchmarkReturn`, `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, and `run_pairing_benchmark_case`; from `pairing` `IPairingConsumer`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `PAIRING_CONCRETES`, `PairingConcrete`, `MockIPairingAdapterFailureMode`, `SampleUniformScalarErrorReturn`, `CreatePairingParamsOverrides`, and `build_create_pairing_params`; from `random` `IRandomSourceAdapter`, `RandomSourceKind`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_params`; and `Duration` from `core::time`
-    * `[ ]`   Every block declares inside itself one consumer implementing `IPairingBenchmarkCaseConsumer` with `type Output = PairingBenchmarkReturn`, whose method builds the benchmark `build_pairing_benchmark(random, Default::default())` over the received source and makes the block's single call `benchmark.consume_pairing(params, payload)`; its body is written once and runs over `PAIRING_CONCRETES`, naming no concrete, except `a_sampling_refusal_reaches_the_caller_unchanged`, whose concrete is the configuration's mock selection; per concrete `params` is `build_pairing_benchmark_case_params` with the `pairing` override set to `build_create_pairing_params` carrying `concrete` and the `random_source` override set to `build_create_random_source_params` carrying `RandomSourceKind::OperatingSystem`, `deps` is `build_pairing_benchmark_case_deps(Consumer, Default::default())`, and the call is `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`, whose result is observed as `result`, its `output` the `PairingBenchmarkReturn`; each block asserts `result.is_ok()`, proving the runner's level ran; the operating system's generator and monotonic clock run real
-    * `[ ]`   `the_consumer_receives_the_concrete_the_params_name`
-      * `[ ]`   Contract: entry `the_consumer_receives_the_concrete_the_params_name`; given `params.pairing`'s `concrete` is a variant of `PAIRING_CONCRETES` and the admissions pass, the `concrete` of the `Ok` measurement equals that variant
-      * `[ ]`   Arrange: every variant of the declared set in turn, including both libraries of one curve, so a benchmark that returns a fixed concrete, or the factory constructing a sibling library, fails
-      * `[ ]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` per concrete
-      * `[ ]`   Assert: per concrete, `assert!(result.ok().and_then(|success| success.output.ok()).map(|measurement| measurement.concrete) == Some(*concrete))`, the variant coming from the declared set and not from the call
-      * `[ ]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations
-      * `[ ]`   Mocked: none
-    * `[ ]`   `a_sampled_scalar_encodes_through_secret`
-      * `[ ]`   Contract: entry `a_sampled_scalar_encodes_through_secret`; the draw of `P::Scalar::UNIFORM_BYTES_LENGTH` bytes crosses inside a `Secret` into `sample_from_uniform_bytes`, and the sampled scalars are consumed by the concrete's group operations, so the output is `Ok`
-      * `[ ]`   Arrange: every concrete of the declared set in turn, each sampling bound its own, so a benchmark that draws a length the bound does not name fails for the concrete whose bound differs
-      * `[ ]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` per concrete
-      * `[ ]`   Assert: per concrete, `assert_eq!(result.ok().map(|success| success.output.err()), Some(None))`, the runner's success arm present and the output's error arm empty, the whole error shown on failure
-      * `[ ]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations
-      * `[ ]`   Mocked: none
-    * `[ ]`   `a_sampling_refusal_reaches_the_caller_unchanged`
-      * `[ ]`   Contract: entry `a_sampling_refusal_reaches_the_caller_unchanged`; a sampling refusal is the output's `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, the error whole
-      * `[ ]`   Arrange: `params` from `build_pairing_benchmark_case_params` with the `pairing` override set to `build_create_pairing_params` carrying the `concrete` override `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`, against the `Ok` outputs of the entries above, so a benchmark that ignores a refused sampling fails
-      * `[ ]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`
-      * `[ ]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })))`, the whole error, the carried error the mock concrete's own value for that mode written as a literal
-      * `[ ]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the mock arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, and `sample_from_uniform_bytes`
-      * `[ ]`   Mocked: the pairing family's mock concrete, selected by configuration; this block does not prove a real concrete's sampling
-    * `[ ]`   `every_operation_is_timed_on_every_concrete`
-      * `[ ]`   Contract: entry `every_operation_is_timed_on_every_concrete`; the `Ok` measurement's timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`
-      * `[ ]`   Arrange: every concrete of the declared set in turn, whose operations are real, so a timing left at its zero default fails
-      * `[ ]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` per concrete
-      * `[ ]`   Assert: per concrete, the measurement is extracted with `expect` from `result.ok().and_then(|success| success.output.ok())`; each of the five timings is greater than `Duration::ZERO` under `assert!`; the exact means are not asserted
-      * `[ ]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations and clock reads
-      * `[ ]`   Mocked: none
+  * `[✅]`   `apps/harness-crypto/tests/benchmark_integration_test.rs`
+    * `[✅]`   Outside the crate, so it reaches only the crate's public surface and the official mocks under the `mocks` feature: module-level `#![allow(clippy::expect_used)]`; imports from `harness_crypto` `IPairingBenchmarkCaseConsumer`, `PairingBenchmarkErrorReturn`, `PairingBenchmarkReturn`, `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, and `run_pairing_benchmark_case`; from `pairing` `IPairingConsumer`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `PAIRING_CONCRETES`, `PairingConcrete`, `MockIPairingAdapterFailureMode`, `SampleUniformScalarErrorReturn`, `CreatePairingParamsOverrides`, and `build_create_pairing_params`; from `random` `IRandomSourceAdapter`, `RandomSourceKind`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_params`; and `Duration` from `core::time`
+    * `[✅]`   Every block declares inside itself one consumer implementing `IPairingBenchmarkCaseConsumer` with `type Output = PairingBenchmarkReturn`, whose method builds the benchmark `build_pairing_benchmark(random, Default::default())` over the received source and makes the block's single call `benchmark.consume_pairing(params, payload)`; its body is written once and runs over `PAIRING_CONCRETES`, naming no concrete, except `a_sampling_refusal_reaches_the_caller_unchanged`, whose concrete is the configuration's mock selection; per concrete `params` is `build_pairing_benchmark_case_params` with the `pairing` override set to `build_create_pairing_params` carrying `concrete` and the `random_source` override set to `build_create_random_source_params` carrying `RandomSourceKind::OperatingSystem`, `deps` is `build_pairing_benchmark_case_deps(Consumer, Default::default())`, and the call is `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`, whose result is observed as `result`, its `output` the `PairingBenchmarkReturn`; each block asserts `result.is_ok()`, proving the runner's level ran; the operating system's generator and monotonic clock run real
+    * `[✅]`   `the_consumer_receives_the_concrete_the_params_name`
+      * `[✅]`   Contract: entry `the_consumer_receives_the_concrete_the_params_name`; given `params.pairing`'s `concrete` is a variant of `PAIRING_CONCRETES` and the admissions pass, the `concrete` of the `Ok` measurement equals that variant
+      * `[✅]`   Arrange: every variant of the declared set in turn, including both libraries of one curve, so a benchmark that returns a fixed concrete, or the factory constructing a sibling library, fails
+      * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` per concrete
+      * `[✅]`   Assert: per concrete, `assert!(result.ok().and_then(|success| success.output.ok()).map(|measurement| measurement.concrete) == Some(*concrete))`, the variant coming from the declared set and not from the call
+      * `[✅]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations
+      * `[✅]`   Mocked: none
+    * `[✅]`   `a_sampled_scalar_encodes_through_secret`
+      * `[✅]`   Contract: entry `a_sampled_scalar_encodes_through_secret`; the draw of `P::Scalar::UNIFORM_BYTES_LENGTH` bytes crosses inside a `Secret` into `sample_from_uniform_bytes`, and the sampled scalars are consumed by the concrete's group operations, so the output is `Ok`
+      * `[✅]`   Arrange: every concrete of the declared set in turn, each sampling bound its own, so a benchmark that draws a length the bound does not name fails for the concrete whose bound differs
+      * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` per concrete
+      * `[✅]`   Assert: per concrete, `assert_eq!(result.ok().map(|success| success.output.err()), Some(None))`, the runner's success arm present and the output's error arm empty, the whole error shown on failure
+      * `[✅]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations
+      * `[✅]`   Mocked: none
+    * `[✅]`   `a_sampling_refusal_reaches_the_caller_unchanged`
+      * `[✅]`   Contract: entry `a_sampling_refusal_reaches_the_caller_unchanged`; a sampling refusal is the output's `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, the error whole
+      * `[✅]`   Arrange: `params` from `build_pairing_benchmark_case_params` with the `pairing` override set to `build_create_pairing_params` carrying the `concrete` override `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`, against the `Ok` outputs of the entries above, so a benchmark that ignores a refused sampling fails
+      * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`
+      * `[✅]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })))`, the whole error, the carried error the mock concrete's own value for that mode written as a literal
+      * `[✅]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the mock arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, and `sample_from_uniform_bytes`
+      * `[✅]`   Mocked: the pairing family's mock concrete, selected by configuration; this block does not prove a real concrete's sampling
+    * `[✅]`   `every_operation_is_timed_on_every_concrete`
+      * `[✅]`   Contract: entry `every_operation_is_timed_on_every_concrete`; the `Ok` measurement's timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`
+      * `[✅]`   Arrange: every concrete of the declared set in turn, whose operations are real, so a timing left at its zero default fails
+      * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` per concrete
+      * `[✅]`   Assert: per concrete, the measurement is extracted with `expect` from `result.ok().and_then(|success| success.output.ok())`; each of the five timings is greater than `Duration::ZERO` under `assert!`; the exact means are not asserted
+      * `[✅]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations and clock reads
+      * `[✅]`   Mocked: none
 
   * `[✅]`   `directionality`
     * `[✅]`   `benchmark` depends on `pairing`'s and `random`'s public surfaces and on the standard library; it names no concrete and no curve library; nothing depends on the crate yet; no cycle
@@ -3586,190 +3586,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `MockIPairingAdapterFailureMode` carries `SampleScalarWrongLength`, and the pairing mock concrete's sampling answers it
     * `[✅]`   No module of `apps/harness-crypto` names `ark-`, `halo2curves`, or a pairing concrete
 
-* `[✅]`   `domain/asset_identity` **Canonical asset identity, the package name and version whose `name@version` join is the input to the Registry's identity hash, admitted only when that join names exactly one coordinate in exactly one byte form**
-
-  * `[✅]`   `objective`
-    * `[✅]`   Problem: every record, hash-card, and derivation names an asset, and the Registry keys the asset by `BLAKE3(name@version)`, so equivalent coordinates must yield one identity and a malformed coordinate must be refused deterministically, in every process, before anything is derived from it (PR-02)
-    * `[✅]`   Functional: one type holds an asset's name and version, reachable only through read accessors, and its only producer is a fallible constructor
-    * `[✅]`   Functional: the constructor refuses an empty name and an empty version
-    * `[✅]`   Functional: the constructor refuses any byte of the name or the version outside visible ASCII, `0x21` through `0x7E`, so no coordinate has a second byte form through whitespace, control characters, or Unicode normalization
-    * `[✅]`   Functional: the constructor refuses a version containing the separator `@`, so the join `name@version` splits at its last `@` into exactly one name and one version; a name may contain `@`, as a scoped npm name does
-    * `[✅]`   Functional: a refusal names the failed check and the index and byte where it failed, and the same input always yields the same refusal: the name is checked before the version, and within each string the lowest offending index decides
-    * `[✅]`   Functional: `AssetIdentity` is the sole producer of the canonical `name@version` hash preimage, returned as an owned `AssetCoordinate`; a consumer borrows its bytes when hashing and never repeats the join
-    * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
-
-  * `[✅]`   `role`
-    * `[✅]`   Domain: an owned value type in the protocol and domain ring, the asset identity every later record, hash-card, and derivation context names
-    * `[✅]`   Does not compute the identity hash; the domain crate names no hash library, and `BLAKE3(name@version)` is computed through the hashing family
-    * `[✅]`   Does not apply any ecosystem's naming rules, case folding, trimming, or normalization; it refuses a coordinate outside its invariants and never repairs one, and an ecosystem's own naming rules belong to that ecosystem's adapters
-    * `[✅]`   Takes the name and the version as separate fields and never splits a joined coordinate
-    * `[✅]`   Does not create any other module of the `domain` crate
-    * `[✅]`   Does not carry a commit
-
-  * `[✅]`   `module`
-    * `[✅]`   Bounded context: the `asset_identity` module of the `domain` crate, holding `AssetIdentity`, its constructor params, its constructor's error and return types, its derived `AssetCoordinate`, the coordinate separator, and the invariants a coordinate satisfies in every ecosystem
-    * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
-    * `[✅]`   Outside: the identity hash, the Registry record the hash keys, the resolution of a package-manager request into a name and a version, and every ecosystem's own naming rules
-
-  * `[✅]`   `deps`
-    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`
-    * `[✅]`   The standard library: `String`, `str`, and `u8`, through the prelude
-    * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
-
-  * `[✅]`   `context_slice`
-    * `[✅]`   From the standard library: `str::is_empty`, `str::bytes`, `Iterator::enumerate`, `Iterator::find`, and `u8::is_ascii_graphic`, which is true exactly for `0x21` through `0x7E`
-
-  * `[✅]`   `crates/domain/src/lib.rs`
-    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod secret;`, `pub use asset_identity::provides::*;`, and `pub use secret::provides::*;`, nothing else
-    * `[✅]`   Until `asset_identity/mod.rs` exists, `cargo check` reports the unresolved `mod asset_identity`, which is the RED state for every element below that precedes the implementation
-
-  * `[✅]`   `crates/domain/src/asset_identity/interface.rs`
-    * `[✅]`   `ASSET_COORDINATE_SEPARATOR`, a `pub const` of type `u8` with value `b'@'`, the byte that joins name and version in the identity hash's input
-    * `[✅]`   `AssetIdentity`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub(super) name: String` and `pub(super) version: String`, so only the `asset_identity` module and its children reach the fields; raw strings are admitted only by its constructor, and display accessors remain borrowed `&str`
-    * `[✅]`   `AssetCoordinate`, a struct with `pub(super) bytes: Vec<u8>` and no public constructor or mutable byte access, deriving `Clone`, `Debug`, `PartialEq`, and `Eq` and implementing `AsRef<[u8]>`; the field is visible only to the owning module and its children, and the type denotes the canonical Registry identity-hash preimage
-    * `[✅]`   `AssetIdentityConstructorParams`, a struct with the fields `pub name: String` and `pub version: String`; no derives
-    * `[✅]`   `AssetIdentityTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `EmptyName`, `NameByteOutsideVisibleAscii { index: usize, byte: u8 }`, `EmptyVersion`, `VersionByteOutsideVisibleAscii { index: usize, byte: u8 }`, and `VersionContainsSeparator { index: usize }`
-    * `[✅]`   `AssetIdentityTryNewReturn`, the type alias `Result<AssetIdentity, AssetIdentityTryNewErrorReturn>`
-    * `[✅]`   Imports nothing; declares nothing else
-
-  * `[✅]`   `crates/domain/src/asset_identity/interaction.spec.md`
-    * `[✅]`   `AssetIdentity::try_new(params: AssetIdentityConstructorParams) -> AssetIdentityTryNewReturn`, empty name: condition `params.name.is_empty()`; decision the emptiness check; dependency call none; outcome `Err(AssetIdentityTryNewErrorReturn::EmptyName)`
-    * `[✅]`   Name byte outside visible ASCII: condition the name is non-empty and some byte of `params.name.bytes()` fails `is_ascii_graphic`; decision the first such byte by index; dependency call none; outcome `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })` for the lowest such index
-    * `[✅]`   Empty version: condition the name passes and `params.version.is_empty()`; decision the emptiness check; dependency call none; outcome `Err(AssetIdentityTryNewErrorReturn::EmptyVersion)`
-    * `[✅]`   Version byte outside visible ASCII or equal to the separator: condition the name passes, the version is non-empty, and some byte of `params.version.bytes()` fails `is_ascii_graphic` or equals `ASSET_COORDINATE_SEPARATOR`; decision the first such byte by index, scanned once left to right; dependency call none; outcome `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })` when that byte fails `is_ascii_graphic`, and `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index })` when it is the separator
-    * `[✅]`   Admitted: condition every check passes; decision none further; dependency call none; outcome `Ok(AssetIdentity { name, version })`, both strings moved from the params without copy
-    * `[✅]`   `AssetIdentity::name(&self) -> &str` and `AssetIdentity::version(&self) -> &str`: one branch each; outcome a shared reference to the held string, no copy, no side effect; `AssetIdentity::coordinate(&self) -> AssetCoordinate` allocates exactly `name.len() + 1 + version.len()` bytes and appends the name's ASCII bytes, `ASSET_COORDINATE_SEPARATOR`, and the version's ASCII bytes in that order, with no alternate join or normalization
-    * `[✅]`   Ordering: the name's checks precede the version's; within each string the lowest offending index decides; the same params always yield the same outcome
-    * `[✅]`   Invariants: every `AssetIdentity` holds a non-empty name and a non-empty version of visible ASCII, the version free of `@`; its only producer is `try_new`; every `AssetCoordinate` comes from an admitted `AssetIdentity` and has exactly one `name@version` byte form
-
-  * `[✅]`   `crates/domain/src/asset_identity/mock.rs`
-    * `[✅]`   Module-level `#![allow(dead_code, clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::too_many_arguments)]`
-    * `[✅]`   `AssetIdentityConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub name: Option<String>` and `pub version: Option<String>`
-    * `[✅]`   `build_asset_identity_constructor_params(overrides: AssetIdentityConstructorParamsOverrides) -> AssetIdentityConstructorParams`, the name defaulting to `"example-package"` and the version to `"1.0.0"`
-    * `[✅]`   `build_asset_identity(overrides: AssetIdentityConstructorParamsOverrides) -> AssetIdentity`, returning the real instance from `AssetIdentity::try_new(build_asset_identity_constructor_params(overrides))` through `.expect("built asset identity constructor params are admitted")`
-    * `[✅]`   `build_asset_coordinate(overrides: AssetIdentityConstructorParamsOverrides) -> AssetCoordinate`, returning the real instance `build_asset_identity(overrides).coordinate()`, the coordinate of the identity those overrides build
-    * `[✅]`   No corruptions type and no invalidator: the constructor params are typed strings, every coordinate the constructor refuses is a string value the params builder's overrides carry, and the crate has no serialization dependency; no `AssetIdentity` or `AssetCoordinate` overrides type, invalidator, or mock function, since each type is built as a real instance and owns no free function
-    * `[✅]`   Imports `AssetCoordinate`, `AssetIdentity`, and `AssetIdentityConstructorParams` from `super::interface`
-
-  * `[✅]`   `crates/domain/src/asset_identity/test.rs`
-    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`
-    * `[✅]`   Assertions on the held strings and the held coordinate bytes read the `name`, `version`, and `bytes` fields, which the `pub(super)` visibility admits to this child module
-    * `[✅]`   `try_new_admits_a_scoped_name_and_a_prerelease_version`
-      * `[✅]`   Contract: every check passes → `Ok(AssetIdentity { name, version })`; a name may contain `@`
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with the scoped name `@scope/pkg` and the version with the prerelease version `1.0.0-beta.1`; the name carries `@` and `/` and the version carries `-` and `.`, so a constructor that refuses `@` in a name, or admits only alphanumerics, fails
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result is `Ok`; the identity's `name` field equals the literal `"@scope/pkg"` and its `version` field equals the literal `"1.0.0-beta.1"`
-    * `[✅]`   `try_new_admits_the_lowest_and_highest_visible_ascii_bytes`
-      * `[✅]`   Contract: every check passes → `Ok(AssetIdentity { name, version })`; visible ASCII is `0x21` through `0x7E`, ends included
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `!~` and the version with `!~`, the bytes `0x21` and `0x7E` in each string, so a range that excludes either end fails
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result is `Ok`; the identity's `name` field equals the literal `"!~"` and its `version` field equals the literal `"!~"`
-    * `[✅]`   `try_new_rejects_an_empty_name`
-      * `[✅]`   Contract: `params.name.is_empty()` → `Err(AssetIdentityTryNewErrorReturn::EmptyName)`
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with the empty string; the version keeps its valid default, so the emptiness check is the only refusal the params can meet
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::EmptyName)` by `assert_eq!`
-    * `[✅]`   `try_new_rejects_the_lowest_name_byte_outside_visible_ascii`
-      * `[✅]`   Contract: the name is non-empty and some byte of `params.name.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })` for the lowest such index
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `ab cd` followed by a tab byte and `e`, which places a space byte at offset 2 and a tab byte at offset 5, offending bytes of different values at different offsets, so a scan that reports the last offender, or none, fails; the version keeps its valid default
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 2, byte: 0x20 })` by `assert_eq!`, the offset and value of the lowest offending byte the arrangement places
-    * `[✅]`   `try_new_rejects_a_non_ascii_name`
-      * `[✅]`   Contract: the name is non-empty and some byte of `params.name.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })`, the error carrying the byte and never the character
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `aé`, an ASCII byte followed by the character U+00E9, whose UTF-8 bytes `0xC3 0xA9` sit at offsets 1 and 2; the version keeps its valid default
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 1, byte: 0xC3 })` by `assert_eq!`, the offset and value of the first byte of the encoded character
-    * `[✅]`   `try_new_rejects_an_empty_version`
-      * `[✅]`   Contract: the name passes and `params.version.is_empty()` → `Err(AssetIdentityTryNewErrorReturn::EmptyVersion)`
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with the empty string; the name keeps its valid default, so the emptiness check is the only refusal the params can meet
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::EmptyVersion)` by `assert_eq!`
-    * `[✅]`   `try_new_rejects_a_version_byte_outside_visible_ascii`
-      * `[✅]`   Contract: the name passes, the version is non-empty, and some byte of `params.version.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })`
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1.0` followed by the DEL byte `0x7F`, the byte just above the range, at offset 3; the name keeps its valid default
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index: 3, byte: 0x7F })` by `assert_eq!`, the offset and value of the offending byte the arrangement places
-    * `[✅]`   `try_new_rejects_a_non_ascii_version`
-      * `[✅]`   Contract: the name passes, the version is non-empty, and some byte of `params.version.bytes()` fails `is_ascii_graphic` → `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })`, the error carrying the byte and never the character
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1é`, an ASCII byte followed by the character U+00E9, whose UTF-8 bytes `0xC3 0xA9` sit at offsets 1 and 2; the name keeps its valid default
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index: 1, byte: 0xC3 })` by `assert_eq!`, the offset and value of the first byte of the encoded character
-    * `[✅]`   `try_new_rejects_a_version_containing_the_separator`
-      * `[✅]`   Contract: the name passes, the version is non-empty, and some byte of `params.version.bytes()` equals `ASSET_COORDINATE_SEPARATOR` → `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index })`
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1.0@0`, the separator at offset 3; the name keeps its valid default
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index: 3 })` by `assert_eq!`, the offset of the separator the arrangement places
-    * `[✅]`   `try_new_reports_a_version_separator_before_a_later_byte_outside_visible_ascii`
-      * `[✅]`   Contract: the version is scanned once left to right and the first byte that fails `is_ascii_graphic` or equals `ASSET_COORDINATE_SEPARATOR` decides → `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index })` when that byte is the separator
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1@0` followed by the DEL byte `0x7F`, the separator at offset 1 and the DEL byte at offset 3, so a check of bytes outside visible ASCII that runs ahead of the separator check fails; the name keeps its valid default
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionContainsSeparator { index: 1 })` by `assert_eq!`, the offset of the lowest offending byte the arrangement places
-    * `[✅]`   `try_new_reports_a_version_byte_outside_visible_ascii_before_a_later_separator`
-      * `[✅]`   Contract: the version is scanned once left to right and the first byte that fails `is_ascii_graphic` or equals `ASSET_COORDINATE_SEPARATOR` decides → `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index, byte })` when that byte fails `is_ascii_graphic`
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the version with `1`, the DEL byte `0x7F`, `0`, and `@`, the DEL byte at offset 1 and the separator at offset 3, so a separator check that runs ahead of the check of bytes outside visible ASCII fails; the name keeps its valid default
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::VersionByteOutsideVisibleAscii { index: 1, byte: 0x7F })` by `assert_eq!`, the offset and value of the lowest offending byte the arrangement places
-    * `[✅]`   `try_new_reports_the_name_before_an_empty_version`
-      * `[✅]`   Contract: the name's checks precede the version's → a name byte outside visible ASCII with an empty version yields `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })`
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `a b`, a space byte at offset 1, and the version with the empty string, so every check of the version that runs ahead of the name's byte check fails
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 1, byte: 0x20 })` by `assert_eq!`, the offset and value of the offending byte the arrangement places in the name
-    * `[✅]`   `try_new_reports_the_name_before_the_version_bytes`
-      * `[✅]`   Contract: the name's checks precede the version's → a name byte outside visible ASCII with a version containing the separator yields `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index, byte })`
-      * `[✅]`   Arrange: `build_asset_identity_constructor_params` overriding the name with `a b`, a space byte at offset 1, and the version with `1@0`, the separator at offset 1, so a scan of the version that runs ahead of the scan of the name fails
-      * `[✅]`   Act: `AssetIdentity::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 1, byte: 0x20 })` by `assert_eq!`, the offset and value of the offending byte the arrangement places in the name
-    * `[✅]`   `name_returns_the_held_name`
-      * `[✅]`   Contract: `AssetIdentity::name(&self) -> &str` → a shared reference to the held name
-      * `[✅]`   Arrange: `build_asset_identity` overriding the name with `example-name` and the version with `9.9.9`, distinct strings, so an accessor that returns the version fails
-      * `[✅]`   Act: `identity.name()`
-      * `[✅]`   Assert: the returned `&str` equals the literal `"example-name"` by `assert_eq!`
-    * `[✅]`   `version_returns_the_held_version`
-      * `[✅]`   Contract: `AssetIdentity::version(&self) -> &str` → a shared reference to the held version
-      * `[✅]`   Arrange: `build_asset_identity` overriding the name with `example-name` and the version with `9.9.9`, distinct strings, so an accessor that returns the name fails
-      * `[✅]`   Act: `identity.version()`
-      * `[✅]`   Assert: the returned `&str` equals the literal `"9.9.9"` by `assert_eq!`
-    * `[✅]`   `coordinate_writes_the_only_registry_hash_preimage`
-      * `[✅]`   Contract: `AssetIdentity::coordinate(&self) -> AssetCoordinate` appends the name's ASCII bytes, `ASSET_COORDINATE_SEPARATOR`, and the version's ASCII bytes in that order, with no alternate join or normalization
-      * `[✅]`   Arrange: `build_asset_identity` overriding the name with `@scope/pkg` and the version with `1.0.0-beta.1`; the name carries the separator byte, so a join that splits, drops, or repeats the separator at the name's `@` fails
-      * `[✅]`   Act: `identity.coordinate()`
-      * `[✅]`   Assert: the coordinate's `bytes` field equals the bytes of the literal `@scope/pkg@1.0.0-beta.1` by `assert_eq!`
-    * `[✅]`   `as_ref_returns_the_registry_hash_preimage`
-      * `[✅]`   Contract: `AssetCoordinate` implements `AsRef<[u8]>` → `as_ref` returns the held coordinate bytes as a shared byte slice
-      * `[✅]`   Arrange: `build_asset_coordinate` overriding the name with `left-pad` and the version with `1.3.0`
-      * `[✅]`   Act: `coordinate.as_ref()`
-      * `[✅]`   Assert: the returned slice equals the bytes of the literal `left-pad@1.3.0` by `assert_eq!`
-
-  * `[✅]`   `construction`
-    * `[✅]`   `AssetIdentity::try_new` is the only producer of `AssetIdentity`; no `Default`, `From`, `FromStr`, or other constructor exists; a caller holding a name and a version from any source passes them as `AssetIdentityConstructorParams` and handles the refusal arm; `AssetIdentity::coordinate` is the only producer of `AssetCoordinate`
-
-  * `[✅]`   `crates/domain/src/asset_identity/mod.rs`
-    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[✅]`   `impl AssetIdentity` with `pub fn try_new(params: AssetIdentityConstructorParams) -> AssetIdentityTryNewReturn` realizing the branches and ordering of the interaction spec, each scan by `bytes().enumerate().find(…)`, `pub fn name(&self) -> &str` returning `&self.name`, `pub fn version(&self) -> &str` returning `&self.version`, and `pub fn coordinate(&self) -> AssetCoordinate` realizing the one canonical join; `impl AsRef<[u8]> for AssetCoordinate` borrows its private bytes
-    * `[✅]`   Imports `AssetIdentity`, `AssetCoordinate`, `AssetIdentityConstructorParams`, `AssetIdentityTryNewErrorReturn`, `AssetIdentityTryNewReturn`, and `ASSET_COORDINATE_SEPARATOR` from `interface`
-    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[✅]`   `crates/domain/src/asset_identity/provides.rs`
-    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
-
-  * `[✅]`   `directionality`
-    * `[✅]`   `asset_identity` depends on the standard library alone and on no other module of the crate; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `asset_identity::provides`; no cycle
-
-  * `[✅]`   `requirements`
-    * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
-    * `[✅]`   `coordinate_writes_the_only_registry_hash_preimage` passes, and downstream Registry hashing consumes `AssetCoordinate::as_ref()` instead of joining the two strings again
-    * `[✅]`   `as_ref_returns_the_registry_hash_preimage` passes
-    * `[✅]`   `name_returns_the_held_name` and `version_returns_the_held_version` pass
-    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[✅]`   `try_new_admits_a_scoped_name_and_a_prerelease_version` passes
-    * `[✅]`   `try_new_admits_the_lowest_and_highest_visible_ascii_bytes` passes
-    * `[✅]`   `try_new_rejects_an_empty_name`, `try_new_rejects_the_lowest_name_byte_outside_visible_ascii`, `try_new_rejects_a_non_ascii_name`, `try_new_rejects_an_empty_version`, `try_new_rejects_a_version_byte_outside_visible_ascii`, and `try_new_rejects_a_version_containing_the_separator` pass (PR-02, a malformed coordinate is refused)
-    * `[✅]`   `try_new_rejects_a_non_ascii_version` passes (PR-02, a malformed coordinate is refused)
-    * `[✅]`   `try_new_reports_a_version_separator_before_a_later_byte_outside_visible_ascii`, `try_new_reports_a_version_byte_outside_visible_ascii_before_a_later_separator`, `try_new_reports_the_name_before_an_empty_version`, and `try_new_reports_the_name_before_the_version_bytes` pass (PR-02, the refusal is deterministic)
-    * `[✅]`   Code outside `crates/domain/src/asset_identity` reading the `name` or `version` field fails to compile
-
-* `[✅]`   `domain/deployment_identity` **Registry-assigned deployment identity, the 32 bytes of the Registry's `bytes32` deployment key, admitted only when it can name an assigned deployment**
+* `[ ]`   `domain/deployment_identity` **Registry-assigned deployment identity, the 32 bytes of the Registry's `bytes32` deployment key, admitted only when it can name an assigned deployment**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: every derivation, capsule, sidecar, and escrow record is bound to one deployment by the Registry's globally unique, non-reusable `deployment_id`, the `bytes32` key its deployment and escrow records carry, so a value naming no deployment must be refused before anything is derived from it (CR-05; the nonce invariant of Deployment Cryptographic Setup)
@@ -3791,17 +3608,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: the Registry's assignment of identities, the deployment record and hash-card the identity keys, and the encoding of the identity on the wire
 
-  * `[✅]`   `deps`
-    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret` or from `asset_identity`
+  * `[ ]`   `deps`
+    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`
     * `[✅]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
     * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
+    * `[ ]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
 
-  * `[✅]`   `crates/domain/src/lib.rs`
-    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod secret;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, and `pub use secret::provides::*;`, nothing else
+  * `[ ]`   `crates/domain/src/lib.rs`
+    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod secret;`, `pub use deployment_identity::provides::*;`, and `pub use secret::provides::*;`, nothing else
     * `[✅]`   Until `deployment_identity/mod.rs` exists, `cargo check` reports the unresolved `mod deployment_identity`, which is the RED state for every element below that precedes the implementation
 
   * `[✅]`   `crates/domain/src/deployment_identity/interface.rs`
@@ -3879,7 +3696,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `as_bytes_returns_the_held_bytes` passes
     * `[✅]`   Code outside `crates/domain/src/deployment_identity` reading the `bytes` field fails to compile
 
-* `[✅]`   `domain/suite_identifier` **Cryptographic suite identifier and version, the hash-card field that fixes a deployment's whole cryptographic composition, admitted only when both can name a registered suite**
+* `[ ]`   `domain/suite_identifier` **Cryptographic suite identifier and version, the hash-card field that fixes a deployment's whole cryptographic composition, admitted only when both can name a registered suite**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a deployment's hash-card names one immutable suite by its identifier and version, and that pair fixes the pairing, credential KEM, envelope, delivery proof, payload cipher, commitment scheme, KDF and hash-to-scalar mappings, delivery-statement version, and attempt-rule parameters every derivation and attempt resolves against, so a pair naming no suite must be refused before anything resolves from it (Adapter Composition; IC-09)
@@ -3903,17 +3720,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: the suite's composition, its registration, the compatibility statement, and the encoding of the pair on the wire
 
-  * `[✅]`   `deps`
-    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, or `deployment_identity`
+  * `[ ]`   `deps`
+    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret` or `deployment_identity`
     * `[✅]`   The standard library: `u8`, `u16`, arrays, and `Iterator::all`, through the prelude
     * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
+    * `[ ]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
 
-  * `[✅]`   `crates/domain/src/lib.rs`
-    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+  * `[ ]`   `crates/domain/src/lib.rs`
+    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
     * `[✅]`   Until `suite_identifier/mod.rs` exists, `cargo check` reports the unresolved `mod suite_identifier`, which is the RED state for every element below that precedes the implementation
 
   * `[✅]`   `crates/domain/src/suite_identifier/interface.rs`
@@ -4009,7 +3826,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `identifier_returns_the_held_identifier` and `version_returns_the_held_version` pass
     * `[✅]`   Code outside `crates/domain/src/suite_identifier` reading the `identifier` or `version` field fails to compile
 
-* `[✅]`   `domain/parameter_set_identifier` **Parameter-set identifier, the 32 bytes of the Registry's `bytes32` parameter-set key, admitted only when it can name a registered set**
+* `[ ]`   `domain/parameter_set_identifier` **Parameter-set identifier, the 32 bytes of the Registry's `bytes32` parameter-set key, admitted only when it can name a registered set**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: every capsule, sidecar, wrapping key, and entitlement is bound to one parameter set by the identifier the Registry keys it under, the `bytes32` that the parameter-set, entitlement, and escrow records and the sidecar list of a hash-card carry, so a value naming no set must be refused before anything is derived from it (CR-11; LC-09)
@@ -4032,17 +3849,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: the parameter set itself, its registration and liveness, and the encoding of the identifier on the wire
 
-  * `[✅]`   `deps`
-    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, `deployment_identity`, or `suite_identifier`
+  * `[ ]`   `deps`
+    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `deployment_identity`, or `suite_identifier`
     * `[✅]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
     * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
+    * `[ ]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
 
-  * `[✅]`   `crates/domain/src/lib.rs`
-    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+  * `[ ]`   `crates/domain/src/lib.rs`
+    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
     * `[✅]`   Until `parameter_set_identifier/mod.rs` exists, `cargo check` reports the unresolved `mod parameter_set_identifier`, which is the RED state for every element below that precedes the implementation
 
   * `[✅]`   `crates/domain/src/parameter_set_identifier/interface.rs`
@@ -4120,18 +3937,18 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `as_bytes_returns_the_held_bytes` passes
     * `[✅]`   Code outside `crates/domain/src/parameter_set_identifier` reading the `bytes` field fails to compile
 
-* `[✅]`   `domain/group_index` **Piece-group index, the position of one piece group within a deployment's continuous stream, held as a distinct type so no other integer stands in for it**
+* `[ ]`   `domain/group_index` **Piece-group index, the position of one piece group within a deployment's continuous stream, held as a distinct type so no other integer stands in for it**
 
-  * `[✅]`   `objective`
+  * `[ ]`   `objective`
     * `[✅]`   Problem: every capsule's randomness, every piece-group key, and every wrapping key is domain-separated by the group it belongs to, so the group index enters each derivation context as its own type and cannot be confused with a piece index, an interval, a version, or a count (CR-05; CR-11; the nonce invariant of Deployment Cryptographic Setup)
     * `[✅]`   Functional: one type holds a piece-group index as a `u64`, reachable only through a read accessor, and its only producer is a constructor
-    * `[✅]`   Functional: every `u64` is admitted; a piece group spans at least one cipher block and the MVP cipher addresses at most two to the sixty-four blocks, so every index a deployment can carry fits the type, and the index's bound against one deployment's group count is enforced where that deployment's geometry is held, by `domain/derivation_context`
+    * `[ ]`   Functional: every `u64` is admitted; a piece group spans at least one cipher block and the MVP cipher addresses at most two to the sixty-four blocks, so every index a deployment can carry fits the type, and the index's bound against one deployment's group count is enforced where that deployment's geometry is held, by `workflows/sidecar/derivation_context`
     * `[✅]`   Functional: the admitted index is read back unchanged
     * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
 
-  * `[✅]`   `role`
+  * `[ ]`   `role`
     * `[✅]`   Domain: an owned value type in the protocol and domain ring, the group every later derivation context, sidecar entry, and decryption attempt names
-    * `[✅]`   Does not know a deployment's piece size, piece-group size, extent, or group count, and does not bound the index against them; `domain/piece_geometry` holds the geometry and `domain/derivation_context` refuses an index outside its group count
+    * `[ ]`   Does not know a deployment's piece size, piece-group size, extent, or group count, and does not bound the index against them; `domain/piece_geometry` holds the geometry and `workflows/sidecar/derivation_context` refuses an index outside its group count
     * `[✅]`   Does not compute an index from a byte offset or a piece index
     * `[✅]`   Does not create any other module of the `domain` crate
     * `[✅]`   Does not carry a commit
@@ -4141,17 +3958,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: the deployment's geometry and group count, the mapping from offsets and pieces to groups, and the encoding of the index on the wire
 
-  * `[✅]`   `deps`
-    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `asset_identity`, `deployment_identity`, `suite_identifier`, or `parameter_set_identifier`
+  * `[ ]`   `deps`
+    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `deployment_identity`, `suite_identifier`, or `parameter_set_identifier`
     * `[✅]`   `core::convert::Infallible`, standard library, the constructor's error arm
     * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
+    * `[ ]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `core::convert::Infallible` and `u64`; nothing else
 
-  * `[✅]`   `crates/domain/src/lib.rs`
-    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+  * `[ ]`   `crates/domain/src/lib.rs`
+    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
     * `[✅]`   Until `group_index/mod.rs` exists, `cargo check` reports the unresolved `mod group_index`, which is the RED state for every element below that precedes the implementation
 
   * `[✅]`   `crates/domain/src/group_index/interface.rs`
@@ -4160,10 +3977,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `GroupIndexTryNewReturn`, the type alias `Result<GroupIndex, Infallible>`; the error arm is uninhabited because every `u64` is an index a deployment can carry
     * `[✅]`   Imports `core::convert::Infallible`; declares nothing else
 
-  * `[✅]`   `crates/domain/src/group_index/interaction.spec.md`
+  * `[ ]`   `crates/domain/src/group_index/interaction.spec.md`
     * `[✅]`   `GroupIndex::try_new(params: GroupIndexConstructorParams) -> GroupIndexTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(GroupIndex { value })` holding `params.value`; the error arm has no branch
     * `[✅]`   `GroupIndex::value(&self) -> u64`: one branch; outcome the held index, no side effect
-    * `[✅]`   Invariants: every `GroupIndex` holds one `u64`; its only producer is `try_new`; its bound against a deployment's group count is `domain/derivation_context`'s
+    * `[ ]`   Invariants: every `GroupIndex` holds one `u64`; its only producer is `try_new`; its bound against a deployment's group count is `workflows/sidecar/derivation_context`'s
 
   * `[✅]`   `crates/domain/src/group_index/mock.rs`
     * `[✅]`   Module-level `#![allow(dead_code, clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::too_many_arguments)]`
@@ -4214,7 +4031,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `value_returns_the_held_index` passes
     * `[✅]`   Code outside `crates/domain/src/group_index` reading the `value` field fails to compile
 
-* `[✅]`   `domain/piece_geometry` **Piece geometry, the piece size, piece-group size, and total extent a hash-card declares, admitted only when pieces align and groups are whole multiples of pieces, with the piece and group counts they imply**
+* `[ ]`   `domain/piece_geometry` **Piece geometry, the piece size, piece-group size, and total extent a hash-card declares, admitted only when pieces align and groups are whole multiples of pieces, with the piece and group counts they imply**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a hash-card's declared geometry drives every offset, counter, and key boundary, so it is untrusted until its sizes are mutually consistent, and a geometry that fails is refused before any piece-group key is derived (EC-01; CR-06; Manifest Bounds Validation)
@@ -4226,10 +4043,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Functional: a refusal names the failed check and the values it failed on, and the same input always yields the same refusal: piece size, then piece-group size, then total extent
     * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
 
-  * `[✅]`   `role`
+  * `[ ]`   `role`
     * `[✅]`   Domain: an owned value type in the protocol and domain ring, the geometry every later derivation context, cipher call, and manifest gate reads
     * `[✅]`   Does not check the extent against a cipher's declared `maxAddressableBytes` or the piece size against a cipher's block size; both are declared by the resolved cipher, so the manifest gate checks them against that declaration; a power of two of at least 16 KiB is already a multiple of every power-of-two block size up to 16 KiB
-    * `[✅]`   Does not bound a piece index or a group index; `domain/derivation_context` bounds the group index against this geometry's group count, and the transport bounds a piece index against its piece count
+    * `[ ]`   Does not bound a piece index or a group index; `workflows/sidecar/derivation_context` bounds the group index against this geometry's group count, and the transport bounds a piece index against its piece count
     * `[✅]`   Does not hold the IV, the counter layout, or the cipher identifier
     * `[✅]`   Does not choose the piece-group size; the hash-card declares it and the code reads it from the record
     * `[✅]`   Does not create any other module of the `domain` crate
@@ -4240,17 +4057,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: every cipher's declared extent and block size, the offset and counter arithmetic, index ranges, and the encoding of the geometry on the wire
 
-  * `[✅]`   `deps`
+  * `[ ]`   `deps`
     * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from any other module of the crate
     * `[✅]`   The standard library: `u32::is_power_of_two`, `u64::from` over `u32`, and `u64::div_ceil`, through the prelude
     * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[✅]`   No reverse dependency; `domain/derivation_context` is this module's first consumer
+    * `[ ]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `u32::is_power_of_two`, which is false for `0`; the `%` remainder over `u32`; `u64::from(u32)`, the lossless widening; and `u64::div_ceil`, rounding the quotient up
 
-  * `[✅]`   `crates/domain/src/lib.rs`
-    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+  * `[ ]`   `crates/domain/src/lib.rs`
+    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
     * `[✅]`   Until `piece_geometry/mod.rs` exists, `cargo check` reports the unresolved `mod piece_geometry`, which is the RED state for every element below that precedes the implementation
 
   * `[✅]`   `crates/domain/src/piece_geometry/interface.rs`
@@ -4416,144 +4233,6 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `piece_size_returns_the_held_piece_size`, `piece_group_size_returns_the_held_piece_group_size`, and `total_extent_returns_the_held_total_extent` pass
     * `[✅]`   Code outside `crates/domain/src/piece_geometry` reading the `piece_size`, `piece_group_size`, or `total_extent` field fails to compile
 
-* `[✅]`   `domain/derivation_context` **Derivation context, the asset, deployment, suite, parameter set, group index, and geometry every wrapping key and lineage derivation is domain-separated by, admitted only when the group index falls within the geometry's group count; the first encodable domain type**
-
-  * `[✅]`   `objective`
-    * `[✅]`   Problem: each parameter set's wrapping key is a domain-separated KDF of the encapsulated value and the context, asset, deployment, suite, parameter set, group index, and geometry, so those six values travel together as one type, and a context naming a group the deployment does not have is refused before any key is derived from it (CR-11; Credential KEM; Manifest Bounds Validation)
-    * `[✅]`   Functional: one type holds an `AssetIdentity`, a `DeploymentIdentity`, a `SuiteIdentifier`, a `ParameterSetIdentifier`, a `GroupIndex`, and a `PieceGeometry`, each reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[✅]`   Functional: the constructor refuses a group index at or beyond the geometry's group count, naming both values
-    * `[✅]`   Functional: every other combination of admitted components is admitted and read back unchanged
-    * `[✅]`   Non-functional: the module depends on the `domain` crate's own identifier and geometry modules and the standard library alone; the `domain` crate's dependencies are unchanged
-
-  * `[✅]`   `role`
-    * `[✅]`   Domain: an owned value type in the protocol and domain ring composing the domain's identifier and geometry types, the first encodable domain type, whose canonical description the encoding family authors next
-    * `[✅]`   Does not re-check any component's own invariants; each arrives as an admitted instance of its type
-    * `[✅]`   Does not encode itself, derive a key, or hash; `encoding/derivation_context` describes its canonical field sequence and `kdf/blake3_keyed` derives from the encoding
-    * `[✅]`   Does not check that the parameter set is live for the asset, that the deployment belongs to the asset, or that the suite admits the geometry; those are Registry state and suite declarations the manifest gate reads
-    * `[✅]`   Does not create any other module of the `domain` crate
-    * `[✅]`   Does not carry a commit
-
-  * `[✅]`   `module`
-    * `[✅]`   Bounded context: the `derivation_context` module of the `domain` crate, holding `DerivationContext`, its constructor params, its constructor's error and return types, and the one cross-field rule between the group index and the geometry
-    * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
-    * `[✅]`   Outside: each component's own invariants, the context's encoding, every derivation computed from it, and every Registry and suite rule
-
-  * `[✅]`   `deps`
-    * `[✅]`   `domain/asset_identity`, same crate, protocol and domain ring, through `crate::asset_identity::provides`; supplies `AssetIdentity`, and in the crate's test build and under the `mocks` feature `build_asset_identity` and `AssetIdentityConstructorParamsOverrides`
-    * `[✅]`   `domain/deployment_identity`, through `crate::deployment_identity::provides`; supplies `DeploymentIdentity`, and in the crate's test build and under the `mocks` feature `build_deployment_identity` and `DeploymentIdentityConstructorParamsOverrides`
-    * `[✅]`   `domain/suite_identifier`, through `crate::suite_identifier::provides`; supplies `SuiteIdentifier`, and in the crate's test build and under the `mocks` feature `build_suite_identifier` and `SuiteIdentifierConstructorParamsOverrides`
-    * `[✅]`   `domain/parameter_set_identifier`, through `crate::parameter_set_identifier::provides`; supplies `ParameterSetIdentifier`, and in the crate's test build and under the `mocks` feature `build_parameter_set_identifier` and `ParameterSetIdentifierConstructorParamsOverrides`
-    * `[✅]`   `domain/group_index`, through `crate::group_index::provides`; supplies `GroupIndex` with `value()`, and in the crate's test build and under the `mocks` feature `build_group_index` and `GroupIndexConstructorParamsOverrides`
-    * `[✅]`   `domain/piece_geometry`, through `crate::piece_geometry::provides`; supplies `PieceGeometry` with `group_count()`, and in the crate's test build and under the `mocks` feature `build_piece_geometry` and `PieceGeometryConstructorParamsOverrides`
-    * `[✅]`   Each is a module of the same ring that this type composes; none depends on `derivation_context`, so no cycle forms; no external crate and no other repository crate; `crates/domain/Cargo.toml` is unchanged
-    * `[✅]`   No reverse dependency; `encoding/derivation_context` is this module's first consumer
-
-  * `[✅]`   `context_slice`
-    * `[✅]`   From `group_index`: `GroupIndex::value(&self) -> u64`
-    * `[✅]`   From `piece_geometry`: `PieceGeometry::group_count(&self) -> u64`
-    * `[✅]`   From the other components: their types, moved into the context and returned by reference; no method is called on them
-    * `[✅]`   From each component's mocks: its builder, taking its constructor-params overrides and returning a real instance
-
-  * `[✅]`   `crates/domain/src/lib.rs`
-    * `[✅]`   The crate barrel reads `mod asset_identity;`, `mod deployment_identity;`, `mod derivation_context;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use asset_identity::provides::*;`, `pub use deployment_identity::provides::*;`, `pub use derivation_context::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
-    * `[✅]`   Until `derivation_context/mod.rs` exists, `cargo check` reports the unresolved `mod derivation_context`, which is the RED state for every element below that precedes the implementation
-
-  * `[✅]`   `crates/domain/src/derivation_context/interface.rs`
-    * `[✅]`   `DerivationContext`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields, in this order, `pub(super) asset: AssetIdentity`, `pub(super) deployment: DeploymentIdentity`, `pub(super) suite: SuiteIdentifier`, `pub(super) parameter_set: ParameterSetIdentifier`, `pub(super) group_index: GroupIndex`, and `pub(super) geometry: PieceGeometry`, so only the `derivation_context` module and its children reach the fields
-    * `[✅]`   `DerivationContextConstructorParams`, a struct with the same fields in the same order, each `pub`; no derives
-    * `[✅]`   `DerivationContextTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `GroupIndexOutOfRange { group_index: u64, group_count: u64 }`
-    * `[✅]`   `DerivationContextTryNewReturn`, the type alias `Result<DerivationContext, DerivationContextTryNewErrorReturn>`
-    * `[✅]`   Imports `AssetIdentity`, `DeploymentIdentity`, `SuiteIdentifier`, `ParameterSetIdentifier`, `GroupIndex`, and `PieceGeometry` from their modules' `provides`; declares nothing else
-
-  * `[✅]`   `crates/domain/src/derivation_context/interaction.spec.md`
-    * `[✅]`   `DerivationContext::try_new(params: DerivationContextConstructorParams) -> DerivationContextTryNewReturn`, group index out of range: condition `params.group_index.value() >= params.geometry.group_count()`; decision the comparison; dependency call `GroupIndex::value` and `PieceGeometry::group_count`, once each; outcome `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index, group_count })` holding the two values compared
-    * `[✅]`   Admitted: condition the group index is below the group count; decision the same comparison; dependency call the same two reads; outcome `Ok(DerivationContext { asset, deployment, suite, parameter_set, group_index, geometry })`, every component moved from the params
-    * `[✅]`   `DerivationContext::asset(&self) -> &AssetIdentity`, `deployment(&self) -> &DeploymentIdentity`, `suite(&self) -> &SuiteIdentifier`, `parameter_set(&self) -> &ParameterSetIdentifier`, `group_index(&self) -> &GroupIndex`, and `geometry(&self) -> &PieceGeometry`: one branch each; outcome a shared reference to the held component, no copy, no side effect
-    * `[✅]`   Invariants: every `DerivationContext` holds six admitted components and a group index below its geometry's group count; its only producer is `try_new`
-
-  * `[✅]`   `crates/domain/src/derivation_context/mock.rs`
-    * `[✅]`   Module-level `#![allow(dead_code, clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::too_many_arguments)]`
-    * `[✅]`   `DerivationContextConstructorParamsOverrides`, `#[derive(Default)]`, fields `pub asset: Option<AssetIdentity>`, `pub deployment: Option<DeploymentIdentity>`, `pub suite: Option<SuiteIdentifier>`, `pub parameter_set: Option<ParameterSetIdentifier>`, `pub group_index: Option<GroupIndex>`, and `pub geometry: Option<PieceGeometry>`
-    * `[✅]`   `build_derivation_context_constructor_params(overrides: DerivationContextConstructorParamsOverrides) -> DerivationContextConstructorParams`, each omitted field defaulting to its component's builder called with `Default::default()`: `build_asset_identity`, `build_deployment_identity`, `build_suite_identifier`, `build_parameter_set_identifier`, `build_group_index`, and `build_piece_geometry`; the default group index `7` falls within the default geometry's `64` groups
-    * `[✅]`   `build_derivation_context(overrides: DerivationContextConstructorParamsOverrides) -> DerivationContext`, returning the real instance from `DerivationContext::try_new(build_derivation_context_constructor_params(overrides))` through `.expect("built derivation context constructor params are admitted")`
-    * `[✅]`   No corruptions type and no invalidator: every component arrives as an admitted instance, the one context the constructor refuses is a combination the params builder's overrides carry, and the crate has no serialization dependency; no `DerivationContext` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
-    * `[✅]`   Imports `DerivationContext` and `DerivationContextConstructorParams` from `super::interface`, and each component's type, builder, and constructor-params overrides from its module's `provides`, which re-exports its mocks in the crate's test build and under the `mocks` feature
-
-  * `[✅]`   `crates/domain/src/derivation_context/test.rs`
-    * `[✅]`   `try_new_rejects_a_group_index_equal_to_the_group_count`
-      * `[✅]`   Contract: `params.group_index.value() >= params.geometry.group_count()` → `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index, group_count })` holding the two values compared
-      * `[✅]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `4` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `65536`, a geometry of four groups, so a comparison of `>` instead of `>=` fails; the other four components keep their builder defaults
-      * `[✅]`   Act: `DerivationContext::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: 4, group_count: 4 })` by `assert_eq!`, the group count being the four groups the arrangement's extent holds at its piece-group size
-    * `[✅]`   `try_new_rejects_the_largest_group_index`
-      * `[✅]`   Contract: `params.group_index.value() >= params.geometry.group_count()` → `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index, group_count })` holding the two values compared
-      * `[✅]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `u64::MAX` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `65536`, a geometry of four groups, so the two values compared differ and an error that swaps them, or a comparison that narrows the index, fails; the other four components keep their builder defaults
-      * `[✅]`   Act: `DerivationContext::try_new(params)`
-      * `[✅]`   Assert: the result equals `Err(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: u64::MAX, group_count: 4 })` by `assert_eq!`, the group count being the four groups the arrangement's extent holds at its piece-group size
-    * `[✅]`   `try_new_admits_the_last_group_of_the_geometry`
-      * `[✅]`   Contract: the group index is below the group count → `Ok(DerivationContext { asset, deployment, suite, parameter_set, group_index, geometry })`
-      * `[✅]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `3` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `65536`, a geometry of four groups, so index `3` is its last group and a comparison that refuses the last group fails; the other four components keep their builder defaults
-      * `[✅]`   Act: `DerivationContext::try_new(params)`
-      * `[✅]`   Assert: the result is `Ok`
-    * `[✅]`   `try_new_admits_index_zero_of_a_one_group_geometry`
-      * `[✅]`   Contract: the group index is below the group count → `Ok(DerivationContext { asset, deployment, suite, parameter_set, group_index, geometry })`
-      * `[✅]`   Arrange: `build_derivation_context_constructor_params` overriding the group index with `build_group_index` at value `0` and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `16384`, and extent `16384`, a geometry of one group, so a comparison that refuses the only group fails; the other four components keep their builder defaults
-      * `[✅]`   Act: `DerivationContext::try_new(params)`
-      * `[✅]`   Assert: the result is `Ok`
-    * `[✅]`   `asset_returns_the_held_asset`
-      * `[✅]`   Contract: `DerivationContext::asset(&self) -> &AssetIdentity` → a shared reference to the held asset
-      * `[✅]`   Arrange: `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, values that differ from the builder's defaults, so an accessor that returns any other asset fails
-      * `[✅]`   Act: `context.asset()`
-      * `[✅]`   Assert: the returned asset's `name()` equals the literal `"left-pad"` and its `version()` equals the literal `"1.3.0"` by `assert_eq!`
-    * `[✅]`   `deployment_returns_the_held_deployment`
-      * `[✅]`   Contract: `DerivationContext::deployment(&self) -> &DeploymentIdentity` → a shared reference to the held deployment
-      * `[✅]`   Arrange: `build_derivation_context` overriding the deployment with `build_deployment_identity` at bytes of `DEPLOYMENT_IDENTITY_LENGTH` bytes each `0x44`, a value that differs from the builder's default, so an accessor that returns any other deployment fails
-      * `[✅]`   Act: `context.deployment()`
-      * `[✅]`   Assert: the returned deployment's `as_bytes()` equals the array literal of `DEPLOYMENT_IDENTITY_LENGTH` bytes each `0x44` by `assert_eq!`
-    * `[✅]`   `suite_returns_the_held_suite`
-      * `[✅]`   Contract: `DerivationContext::suite(&self) -> &SuiteIdentifier` → a shared reference to the held suite
-      * `[✅]`   Arrange: `build_derivation_context` overriding the suite with `build_suite_identifier` at identifier of `SUITE_IDENTIFIER_LENGTH` bytes each `0x55` and version `0x0102`, values that differ from the builder's defaults, so an accessor that returns any other suite fails
-      * `[✅]`   Act: `context.suite()`
-      * `[✅]`   Assert: the returned suite's `identifier()` equals the array literal of `SUITE_IDENTIFIER_LENGTH` bytes each `0x55` and its `version()` equals the literal `0x0102` by `assert_eq!`
-    * `[✅]`   `parameter_set_returns_the_held_parameter_set`
-      * `[✅]`   Contract: `DerivationContext::parameter_set(&self) -> &ParameterSetIdentifier` → a shared reference to the held parameter set
-      * `[✅]`   Arrange: `build_derivation_context` overriding the parameter set with `build_parameter_set_identifier` at bytes of `PARAMETER_SET_IDENTIFIER_LENGTH` bytes each `0x66`, a value that differs from the builder's default, so an accessor that returns any other parameter set fails
-      * `[✅]`   Act: `context.parameter_set()`
-      * `[✅]`   Assert: the returned parameter set's `as_bytes()` equals the array literal of `PARAMETER_SET_IDENTIFIER_LENGTH` bytes each `0x66` by `assert_eq!`
-    * `[✅]`   `group_index_returns_the_held_group_index`
-      * `[✅]`   Contract: `DerivationContext::group_index(&self) -> &GroupIndex` → a shared reference to the held group index
-      * `[✅]`   Arrange: `build_derivation_context` overriding the group index with `build_group_index` at value `2`, a value that differs from the builder's default and falls within the default geometry's groups, so an accessor that returns any other group index fails
-      * `[✅]`   Act: `context.group_index()`
-      * `[✅]`   Assert: the returned group index's `value()` equals the literal `2` by `assert_eq!`
-    * `[✅]`   `geometry_returns_the_held_geometry`
-      * `[✅]`   Contract: `DerivationContext::geometry(&self) -> &PieceGeometry` → a shared reference to the held geometry
-      * `[✅]`   Arrange: `build_derivation_context` overriding the geometry with `build_piece_geometry` at piece size `32768` and piece-group size `65536`, values that differ from the builder's defaults, with the extent keeping its builder default so the default group index falls within the geometry's groups, so an accessor that returns any other geometry fails
-      * `[✅]`   Act: `context.geometry()`
-      * `[✅]`   Assert: the returned geometry's `piece_size()` equals the literal `32768` and its `piece_group_size()` equals the literal `65536` by `assert_eq!`
-
-  * `[✅]`   `construction`
-    * `[✅]`   `DerivationContext::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding admitted components passes them as `DerivationContextConstructorParams` and handles the refusal arm
-
-  * `[✅]`   `crates/domain/src/derivation_context/mod.rs`
-    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[✅]`   `impl DerivationContext` with `pub fn try_new(params: DerivationContextConstructorParams) -> DerivationContextTryNewReturn` realizing the branches of the interaction spec, and the six accessors the interaction spec states, each returning `&self.` its field
-    * `[✅]`   Imports `DerivationContext`, `DerivationContextConstructorParams`, `DerivationContextTryNewErrorReturn`, and `DerivationContextTryNewReturn` from `interface`, and the component types from their modules' `provides`
-    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[✅]`   `crates/domain/src/derivation_context/provides.rs`
-    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
-
-  * `[✅]`   `directionality`
-    * `[✅]`   `derivation_context` depends on `asset_identity`, `deployment_identity`, `suite_identifier`, `parameter_set_identifier`, `group_index`, and `piece_geometry` through their `provides`, and on the standard library; none of them depends on it; `domain` depends on no repository crate; `encoding/derivation_context` reaches it through `lib.rs`'s re-export of `derivation_context::provides`; no cycle
-
-  * `[✅]`   `requirements`
-    * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries exactly the barrel stated above
-    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[✅]`   `try_new_admits_the_last_group_of_the_geometry` and `try_new_admits_index_zero_of_a_one_group_geometry` pass
-    * `[✅]`   `try_new_rejects_a_group_index_equal_to_the_group_count` and `try_new_rejects_the_largest_group_index` pass (CR-11, a context names only a group its deployment has)
-    * `[✅]`   `asset_returns_the_held_asset`, `deployment_returns_the_held_deployment`, `suite_returns_the_held_suite`, `parameter_set_returns_the_held_parameter_set`, `group_index_returns_the_held_group_index`, and `geometry_returns_the_held_geometry` pass
-    * `[✅]`   Code outside `crates/domain/src/derivation_context` reading any field of `DerivationContext` fails to compile
-
 # To-Do List
 
 Every held item, grouped by **what releases it** rather than by topic.
@@ -4588,9 +4267,9 @@ The coupled values below are undetermined and none can be chosen independently o
 
 ### Boundary decisions under this gate
 
-* **Paid monetization** — general pricing above nominal, and the fiat and token rails it requires. Deferred in [`docs/research/MVP Scope.md`, Paid Monetization](../../research/MVP%20Scope.md#paid-monetization). Note that [Transaction Flow Proof](../../research/MVP%20Scope.md#transaction-flow-proof) does not release this: that path is a test instrument on assets the project publishes itself, touching no third-party publisher's revenue.
+* **Paid monetization** — general pricing above nominal, the payment assets other than the chain's native asset, and the fiat and token rails it requires; a price is an amount of a named payment asset behind the payment-asset adapter, and the nominal proof settles in Base's native asset. Deferred in [`docs/research/MVP Scope.md`, Paid Monetization](../../research/MVP%20Scope.md#paid-monetization). Note that [Transaction Flow Proof](../../research/MVP%20Scope.md#transaction-flow-proof) does not release this: that path is a test instrument on assets the project publishes itself, touching no third-party publisher's revenue.
 * **Enforcement of retention assignment and obligation** — the shape ships in the MVP and nothing is enforced. Specified in [`docs/research/MVP Scope.md`, Retention Obligation](../../research/MVP%20Scope.md#retention-obligation).
-* **The first-party component class** — own chain, tokens, wallet, keystore, and seeder client, each behind the adapter whose MVP implementation is third-party. Specified in [`docs/research/MVP Scope.md`, Adapter Composition and Capability Declaration](../../research/MVP%20Scope.md#adapter-composition-and-capability-declaration).
+* **The first-party component class** — own chain, tokens and payment assets, wallet, keystore, and seeder client, each behind the adapter whose MVP implementation is third-party. Specified in [`docs/research/MVP Scope.md`, Adapter Composition and Capability Declaration](../../research/MVP%20Scope.md#adapter-composition-and-capability-declaration).
 
 ## Releases when a content class needs it
 
@@ -4662,7 +4341,7 @@ That scope is stated under Modified Clients as a security consideration rather t
 
 ### Adapter registry governance
 
-**What was found.** Adapters are resolved from a governance-controlled on-chain registry, immutable once bound: the identity adapters, the signature adapters, the attestation verifier per ingest source, and the entitlement token form; the source-key table the npm attestation verifier reads is updated under the same governance. The MVP governs both with a single project-held key, held under the same custody discipline as issuance material and recorded as scaffolding, so the registry's binding authority and the attestation check are only as strong as that key's custody.
+**What was found.** Adapters are resolved from a governance-controlled on-chain registry, immutable once bound: the identity adapters, the signature adapter per scheme, the attestation verifier per ingest source, the entitlement token form, the delivery verifier per delivery-statement version and verifier form, and the payment-asset adapter per payment asset; the source-key table the npm attestation verifier reads is updated under the same governance. The MVP governs both with a single project-held key, held under the same custody discipline as issuance material and recorded as scaffolding, so the registry's binding authority and the attestation check are only as strong as that key's custody.
 
 **Where.** [`docs/research/cryptography.md`, Population Strategy](../../research/cryptography.md#population-strategy-breakdown) and [Ingest and Deterministic Normalization](../../research/cryptography.md#phase-1-encryption-minting-and-seeding); [`docs/research/MVP Scope.md`, Entitlement Ledger and Escrow Contract](../../research/MVP%20Scope.md#entitlement-ledger-and-escrow-contract); the product requirements' Resolved Positions.
 

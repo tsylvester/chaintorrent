@@ -44,285 +44,850 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
 ## Pairing adapters and key derivation
 
-* `[✅]`   `encoding/derivation_context` **Canonical description of the derivation context, its field sequence stated once and format-free; creates the `adapters/encoding` crate and authors the encoding family's contract**
+* `[ ]`   `hashing/root` **Root type, the object's BLAKE3/Bao root and the asset's identity, the plaintext root for a public asset and the ciphertext root for a private one, 32 bytes admitted only when not all zero; creates the `adapters/hashing` crate**
 
-  * `[✅]`   `objective`
-    * `[✅]`   Problem: every value hashed, signed, stored, or framed over IPC passes through one canonical encoding, each wrapping key is a KDF of the encapsulated value and the encoded derivation context, and the contracts recompute values from the same encoding, so a domain type's canonical field sequence is stated once, independent of any wire format, and every encoding concrete encodes and decodes that one sequence (CR-11, serialization frozen; the product requirements' canonical encoding position)
-    * `[✅]`   Functional: the family's encoding contract states, for one described domain type, the kinds of its canonical fields in order, maps an admitted instance to its canonical field values, and maps canonical field values back to an admitted instance or to the refusal that names what failed
-    * `[✅]`   Functional: the contract names value kinds only, a 32-byte fixed string, unsigned integers of 16, 32, and 64 bits, and text, and names no wire format, no byte layout, and no vendor
-    * `[✅]`   Functional: the derivation context's canonical fields are, in order, the asset name, the asset version, the deployment identity, the suite identifier, the suite version, the parameter-set identifier, the group index, the piece size, the piece-group size, and the total extent, the context's component order in `docs/research/cryptography.md`'s Credential KEM statement with each component's fields in its own declared order
-    * `[✅]`   Functional: mapping fields back refuses a field list of the wrong length and a field of the wrong kind, the lowest such index deciding, before any component is constructed; it then constructs each component in field order through that component's own constructor and returns the first refusal unchanged, and finally constructs the context and returns its refusal unchanged
-    * `[✅]`   Functional: the reference context maps to the reference fields and the reference fields map back to the reference context
-    * `[✅]`   Non-functional: the crate depends on `crates/domain` alone and on no external crate; nothing in the crate names a format or a vendor
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: an asset's identity is the object's BLAKE3/Bao root, the plaintext root for a public asset and the ciphertext root for a private one, and every consumer of an asset's identity, the Registry's asset key, the entitlement binding, the derivation context's asset component, the credential KEM's asset-scope identity bytes, the delivery transcript's asset field, and the harness's configured identities, names one type for it, so the root is a value with one owner, one byte form, and one producer (`docs/research/cryptography.md`, Content Identity and The asset's identity; `docs/research/MVP Scope.md`, Canonical Identity and As-Is Ingestion)
+    * `[ ]`   Functional: one type holds a root's 32 bytes, reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[ ]`   Functional: the constructor refuses the all-zero value, which no object's root is and which an unassigned `bytes32` slot reads as, and admits every other 32-byte value
+    * `[ ]`   Functional: a refusal names the failed check, and the same input always yields the same outcome
+    * `[ ]`   Functional: two roots compare equal exactly when their bytes are equal, and a root is printable, copyable, and usable as a key, since every index the daemon keeps by content is keyed by a root (`docs/project-planning/technical-requirements.md`, Database Schemas)
+    * `[ ]`   Non-functional: the module depends on the standard library alone, and its `mock.rs` additionally uses `serde_json` under the `mocks` feature; the crate names no hash library and no encoding, and carries no operation that derives an identity from a name and no identity-hash identifier (PR-02)
 
-  * `[✅]`   `role`
-    * `[✅]`   Adapter family: the encoding family's family-owned description of `DerivationContext`, the first encodable domain type, and the first source file that requires the family's encoding contract, which it authors in the family's `factory` module as its producer
-    * `[✅]`   Creates `factory/mod.rs` with the module wiring alone and `factory/provides.rs` with the contract and mock surface alone; `IEncoderAdapter`, `IDecoderAdapter`, the versioned encoding identifier, the capability declaration, and the ABI concrete are `encoding/abi`'s; the factory function, its types, its unit test, and the family's integration test are `encoding/factory`'s
-    * `[✅]`   Does not produce or read bytes; a canonical field value is a typed value, and every byte layout belongs to an encoding concrete
-    * `[✅]`   Does not check any component's own invariants; each component's constructor checks them and its refusal is carried unchanged
-    * `[✅]`   Does not describe any other domain type; each further encoded type receives its own description module beside the factory, authored after its type and before the first ticket that encodes it, and adds to the value kinds only the kinds it needs
-    * `[✅]`   Does not derive a key or hash; `kdf/blake3_keyed` derives from the encoding of this description's fields
-    * `[✅]`   Does not carry a commit
+  * `[ ]`   `role`
+    * `[ ]`   Adapter family: the hashing family's family-owned value type, and the family's first source file, so it creates the crate; the root is a family-owned module beside the factory because a type lives in the module that implements it, and the root's constructor is its implementation
+    * `[ ]`   Does not hash, encode, or decode; `hashing/blake3_bao` computes roots over bytes and constructs them through this type, and the encoding family's description of the root type is its one canonical form
+    * `[ ]`   Does not resolve a name to a root; the package host's alias lookup does that
+    * `[ ]`   Does not create the `factory` module or any other module of the crate; `hashing/outboard`, `hashing/authentication_path`, and `hashing/chunk` each create their own module, and `hashing/blake3_bao` authors the family's generic interface, identifier, declaration, and mock in the `factory` module
+    * `[ ]`   Does not carry a commit
 
-  * `[✅]`   `module`
-    * `[✅]`   Bounded context: the `adapters/encoding` crate's `factory` module, holding the encoding contract trait, the canonical value kinds, the canonical field values, the canonical field list, the contract methods' params, success, and return types, and the family's mock; and the family-owned `derivation_context` module, holding `DerivationContextDescription`, its field kinds and field count, its constructor params and return, its from-fields error, and its mock
-    * `[✅]`   Creates the crate at `adapters/encoding`, admitted by the workspace's `adapters/*` glob with no edit to the root manifest
-    * `[✅]`   The crate's public surface is the `factory` module's `provides` and the `derivation_context` module's `provides`, since a consumer names the description it hands an encoder
-    * `[✅]`   Outside: every wire format and byte layout, the versioned encoding identifier, the encoder and decoder interfaces, the factory function, every derivation, and every component's invariants
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the family-owned `root` module of the `adapters/hashing` crate, holding `Root`, its length, its constructor params, and its constructor's error and return types
+    * `[ ]`   Creates the crate at `adapters/hashing`, admitted by the workspace's `adapters/*` glob with no edit to the root manifest
+    * `[ ]`   The crate's public surface is the `root` module's `provides`, which every consumer of the root type imports; each further module's `provides` joins it when its node creates that module
+    * `[ ]`   Outside: computing a root, comparing one with an object, encoding it, and mapping a name to it
 
-  * `[✅]`   `deps`
-    * `[✅]`   `domain`, `crates/domain`, protocol and domain ring, path dependency; supplies `DerivationContext` and its six components, their constructors, constructor params, accessors, and constructor error types; direction inward, adapter ring on domain ring, and the domain crate names nothing in this crate
-    * `[✅]`   `domain` with its `mocks` feature, as a dev-dependency only; supplies the component builders and their constructor-params overrides for `derivation_context/test.rs` and `tests/derivation_context_integration_test.rs`; no mock of this crate reads a domain mock, so this crate's `mocks` feature enables nothing in `domain`
-    * `[✅]`   This crate's own `mocks` feature, in `tests/derivation_context_integration_test.rs` only: `build_derivation_context_description`, `build_to_fields_params`, and `build_from_fields_params`, each with its overrides, through the crate's public surface, enabled by `--all-features`
-    * `[✅]`   `domain/derivation_context` is this node's producer: `DerivationContext`, `DerivationContextConstructorParams`, `DerivationContextTryNewErrorReturn`, `DerivationContext::try_new`, the six accessors, `build_derivation_context`, and `DerivationContextConstructorParamsOverrides`, as that node states them and as `crates/domain/src/derivation_context/interface.rs` declares the types
-    * `[✅]`   `core::convert::Infallible`, standard library, the error arm of every operation with no failure; `TryFrom<Vec<T>> for [T; N]`, standard library, the field-count check
-    * `[✅]`   No external crate; no reverse dependency; nothing depends on this crate yet
+  * `[ ]`   `deps`
+    * `[ ]`   `workspace/cargo`, repository-root configuration: the `adapters/*` glob that admits the crate, the inheritable `edition`, `rust-version`, and `publish` keys, and the lint table through `[lints] workspace = true`
+    * `[ ]`   The standard library: `[u8; 32]`, `<[u8]>::iter`, and `Iterator::all`, through the prelude
+    * `[ ]`   `serde_json` `1.0.151`, external crate, MIT OR Apache-2.0, optional runtime dependency enabled by this crate's `mocks` feature and a dev-dependency; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type the invalidator returns, in `mock.rs` only
+    * `[ ]`   No repository crate; no reverse dependency; nothing depends on the crate yet
 
-  * `[✅]`   `context_slice`
-    * `[✅]`   From `domain`: `DerivationContext::asset`, `deployment`, `suite`, `parameter_set`, `group_index`, and `geometry`, each returning a shared reference; `AssetIdentity::name` and `version` returning `&str`; `DeploymentIdentity::as_bytes` and `ParameterSetIdentifier::as_bytes` returning `&[u8; 32]`; `SuiteIdentifier::identifier` returning `&[u8; 32]` and `version` returning `u16`; `GroupIndex::value` returning `u64`; `PieceGeometry::piece_size` and `piece_group_size` returning `u32` and `total_extent` returning `u64`
-    * `[✅]`   From `domain`: `AssetIdentity::try_new(AssetIdentityConstructorParams { name, version })`, `DeploymentIdentity::try_new(DeploymentIdentityConstructorParams { bytes })`, `SuiteIdentifier::try_new(SuiteIdentifierConstructorParams { identifier, version })`, `ParameterSetIdentifier::try_new(ParameterSetIdentifierConstructorParams { bytes })`, `GroupIndex::try_new(GroupIndexConstructorParams { value })` returning `Result<GroupIndex, Infallible>`, `PieceGeometry::try_new(PieceGeometryConstructorParams { piece_size, piece_group_size, total_extent })`, and `DerivationContext::try_new(DerivationContextConstructorParams { asset, deployment, suite, parameter_set, group_index, geometry })`, with the error types `AssetIdentityTryNewErrorReturn`, `DeploymentIdentityTryNewErrorReturn`, `SuiteIdentifierTryNewErrorReturn`, `ParameterSetIdentifierTryNewErrorReturn`, `PieceGeometryTryNewErrorReturn`, and `DerivationContextTryNewErrorReturn`
-    * `[✅]`   From this crate's `factory` mocks, through `crate::factory::provides`, in `derivation_context/test.rs` only: `build_canonical_fields` with `CanonicalFieldsOverrides`, `build_to_fields_params` with `ToFieldsParamsOverrides`, and `build_from_fields_params` with `FromFieldsParamsOverrides`
-    * `[✅]`   From `domain`'s mocks, in `derivation_context/test.rs` and `tests/derivation_context_integration_test.rs` only: `build_derivation_context` with `DerivationContextConstructorParamsOverrides`, `build_asset_identity` with `AssetIdentityConstructorParamsOverrides`, `build_deployment_identity` with `DeploymentIdentityConstructorParamsOverrides`, `build_suite_identifier` with `SuiteIdentifierConstructorParamsOverrides`, `build_parameter_set_identifier` with `ParameterSetIdentifierConstructorParamsOverrides`, `build_group_index` with `GroupIndexConstructorParamsOverrides`, and `build_piece_geometry` with `PieceGeometryConstructorParamsOverrides`
+  * `[ ]`   `context_slice`
+    * `[ ]`   From the standard library: `<[u8]>::iter` and `Iterator::all`, so the constructor reads every byte of the array
+    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers and arrays, in `mock.rs` only
 
-  * `[✅]`   `adapters/encoding/Cargo.toml`
-    * `[✅]`   `[package]` with `name = "encoding"`, `edition.workspace = true`, `rust-version.workspace = true`, and `publish.workspace = true`; no `version` key
-    * `[✅]`   `[dependencies]` with `domain = { path = "../../crates/domain" }`
-    * `[✅]`   `[dev-dependencies]` with `domain = { path = "../../crates/domain", features = ["mocks"] }`
-    * `[✅]`   `[features]` with `mocks = []`
-    * `[✅]`   `[lints]` with `workspace = true`
-    * `[✅]`   No other table
+  * `[ ]`   `adapters/hashing/Cargo.toml`
+    * `[ ]`   `[package]` with `name = "hashing"`, `edition.workspace = true`, `rust-version.workspace = true`, and `publish.workspace = true`; no `version` key
+    * `[ ]`   `[dependencies]` with `serde_json = { version = "1.0.151", optional = true }`
+    * `[ ]`   `[dev-dependencies]` with `serde_json = "1.0.151"`
+    * `[ ]`   `[features]` with `mocks = ["dep:serde_json"]`
+    * `[ ]`   `[lints]` with `workspace = true`
+    * `[ ]`   No other table; each later module's node adds its own entries to the dependency tables
 
-  * `[✅]`   `adapters/encoding/src/lib.rs`
-    * `[✅]`   The crate barrel: `mod derivation_context;`, `mod factory;`, `pub use derivation_context::provides::*;`, and `pub use factory::provides::*;`, nothing else
-    * `[✅]`   Until `factory/mod.rs` and `derivation_context/mod.rs` exist, `cargo check` reports the unresolved modules, which is the RED state for every element below that precedes them
+  * `[ ]`   `adapters/hashing/src/lib.rs`
+    * `[ ]`   The crate barrel: `mod root;` and `pub use root::provides::*;`, nothing else
+    * `[ ]`   Until `root/mod.rs` exists, `cargo check` reports the unresolved `mod root`, which is the RED state for every element below that precedes the implementation
 
-  * `[✅]`   `adapters/encoding/src/factory/interface.rs`
-    * `[✅]`   `CanonicalFieldKind`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variants `FixedBytes32`, `Unsigned16`, `Unsigned32`, `Unsigned64`, and `Text`
-    * `[✅]`   `CanonicalFieldValue`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]` and the variants `FixedBytes32([u8; 32])`, `Unsigned16(u16)`, `Unsigned32(u32)`, `Unsigned64(u64)`, and `Text(String)`, each the value of the like-named kind
-    * `[✅]`   `CanonicalFields`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub values: Vec<CanonicalFieldValue>`, a described instance's field values in canonical order
-    * `[✅]`   `ToFieldsParams`, the fieldless struct `pub struct ToFieldsParams;`; `ToFieldsSuccessReturn`, a struct with `pub fields: CanonicalFields`; `ToFieldsReturn`, the alias `Result<ToFieldsSuccessReturn, Infallible>`, the error arm uninhabited because every admitted instance has its fields
-    * `[✅]`   `FromFieldsParams`, the fieldless struct `pub struct FromFieldsParams;`; `FromFieldsSuccessReturn<T>`, a struct with `pub described: T`; `FromFieldsReturn<T, E>`, the alias `Result<FromFieldsSuccessReturn<T>, E>`
-    * `[✅]`   `IEncodingContract`, the encoding contract, a trait with `type Described;`, `type FromFieldsErrorReturn: core::fmt::Debug + PartialEq + Eq;`, so every description's refusal is printable and comparable and a decoder carries it with its derives, `const FIELDS: &'static [CanonicalFieldKind];`, `fn to_fields(&self, params: ToFieldsParams, payload: &Self::Described) -> ToFieldsReturn;`, and `fn fields_to_value(&self, params: FromFieldsParams, payload: CanonicalFields) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn>;`
-    * `[✅]`   No derives beyond those stated; imports `core::convert::Infallible`; names no format, no vendor, no domain type, and no description
+  * `[ ]`   `adapters/hashing/src/root/interface.rs`
+    * `[ ]`   `ROOT_LENGTH`, a `pub const` of type `usize` with value `32`, the width of a BLAKE3/Bao root and of the Registry's `bytes32` asset key
+    * `[ ]`   `Root`, a struct with `#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]` and the one field `pub(super) bytes: [u8; ROOT_LENGTH]`, so only the `root` module and its children reach the field
+    * `[ ]`   `RootConstructorParams`, a struct with the one field `pub bytes: [u8; ROOT_LENGTH]`; no derives
+    * `[ ]`   `RootTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`
+    * `[ ]`   `RootTryNewReturn`, the alias `Result<Root, RootTryNewErrorReturn>`
+    * `[ ]`   Imports nothing; declares nothing else
 
-  * `[✅]`   `adapters/encoding/src/derivation_context/interface.rs`
-    * `[✅]`   `DERIVATION_CONTEXT_FIELD_COUNT`, a `pub const` of type `usize` with value `10`
-    * `[✅]`   `DERIVATION_CONTEXT_FIELD_KINDS`, a `pub const` of type `[CanonicalFieldKind; DERIVATION_CONTEXT_FIELD_COUNT]` with the value `[CanonicalFieldKind::Text, CanonicalFieldKind::Text, CanonicalFieldKind::FixedBytes32, CanonicalFieldKind::FixedBytes32, CanonicalFieldKind::Unsigned16, CanonicalFieldKind::FixedBytes32, CanonicalFieldKind::Unsigned64, CanonicalFieldKind::Unsigned32, CanonicalFieldKind::Unsigned32, CanonicalFieldKind::Unsigned64]`: asset name, asset version, deployment identity, suite identifier, suite version, parameter-set identifier, group index, piece size, piece-group size, total extent
-    * `[✅]`   `DerivationContextDescription`, the unit struct `pub struct DerivationContextDescription;`, the family's description of `DerivationContext`
-    * `[✅]`   `DerivationContextDescriptionConstructorParams`, the fieldless struct `pub struct DerivationContextDescriptionConstructorParams;`, the constructor's deps slot
-    * `[✅]`   `DerivationContextDescriptionTryNewReturn`, the alias `Result<DerivationContextDescription, Infallible>`; the error arm is uninhabited because the description takes no configuration
-    * `[✅]`   `DerivationContextFromFieldsErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `FieldCount { expected: usize, actual: usize }`, `FieldKind { index: usize, expected: CanonicalFieldKind }`, `AssetIdentity(AssetIdentityTryNewErrorReturn)`, `DeploymentIdentity(DeploymentIdentityTryNewErrorReturn)`, `SuiteIdentifier(SuiteIdentifierTryNewErrorReturn)`, `ParameterSetIdentifier(ParameterSetIdentifierTryNewErrorReturn)`, `PieceGeometry(PieceGeometryTryNewErrorReturn)`, and `DerivationContext(DerivationContextTryNewErrorReturn)`, each component's refusal carried unchanged in its own variant; `GroupIndex` has no variant, since its constructor has no refusal
-    * `[✅]`   Imports `CanonicalFieldKind` from `crate::factory::provides`, the six domain error types from `domain`, and `core::convert::Infallible`; declares nothing else
+  * `[ ]`   `adapters/hashing/src/root/interaction.spec.md`
+    * `[ ]`   `Root::try_new(params: RootConstructorParams) -> RootTryNewReturn`, all zero: condition every byte of `params.bytes` is zero; decision `params.bytes.iter().all(…)` over every byte; dependency call none; outcome `Err(RootTryNewErrorReturn::AllZero)`
+    * `[ ]`   Admitted: condition some byte of `params.bytes` is nonzero; outcome `Ok(Root { bytes })`, the array moved from the params
+    * `[ ]`   `Root::as_bytes(&self) -> &[u8; ROOT_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
+    * `[ ]`   Ordering: the one check reads every byte before deciding; the same params always yield the same outcome
+    * `[ ]`   Invariants: every `Root` holds `ROOT_LENGTH` bytes of which at least one is nonzero; its only producer is `try_new`
+    * `[ ]`   Own entry, an admitted root reads back through the crate root: condition a caller outside the crate names `Root`, `RootConstructorParams`, and `ROOT_LENGTH` through the crate root and passes `try_new` a root whose only nonzero byte is its last; outcome `Ok(root)` whose `as_bytes()` yields exactly the bytes passed; variation the single nonzero byte at the last index, which a check reading only the leading bytes refuses and a read that reorders or truncates fails; edge that must survive: the bytes an outside caller reads are the bytes the root was constructed from, reached through the accessor alone
+    * `[ ]`   Own entry, the all-zero refusal reaches the caller whole and yields no root: condition a caller outside the crate passes `try_new` the all-zero array; outcome `Err(RootTryNewErrorReturn::AllZero)`, matched through the crate-root error type, and no `Root` exists to read; variation the all-zero array, which differs from the read-back entry's input in its last byte alone; edge that must survive: an unassigned slot never becomes an identity
+    * `[ ]`   Route, both own entries: the crate barrel `lib.rs`, then `root::provides`, then `Root::try_new`, and for the read-back entry `Root::as_bytes`; the route reaches no outer-edge collaborator
+    * `[ ]`   Public surface: an outside caller invokes `Root::try_new` and `Root::as_bytes`, building params with `build_root_constructor_params` from the `mocks` feature; it observes the `Ok` root through `as_bytes` and the `Err` through `RootTryNewErrorReturn`; the entries proven are the read-back entry and the refusal entry
 
-  * `[✅]`   `adapters/encoding/src/derivation_context/interaction.spec.md`
-    * `[✅]`   `DerivationContextDescription::try_new(params: DerivationContextDescriptionConstructorParams) -> DerivationContextDescriptionTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(DerivationContextDescription)`; the error arm has no branch
-    * `[✅]`   `IEncodingContract` for `DerivationContextDescription`: `Described` is `DerivationContext`, `FromFieldsErrorReturn` is `DerivationContextFromFieldsErrorReturn`, and `FIELDS` is `&DERIVATION_CONTEXT_FIELD_KINDS`
-    * `[✅]`   `to_fields`: one branch; condition any admitted context; decision none; dependency calls the context's six accessors and each component's accessors, once each; outcome `Ok(ToFieldsSuccessReturn { fields: CanonicalFields { values } })` where `values` is `Text` of the asset name, `Text` of the asset version, each copied into a `String`, `FixedBytes32` of the deployment identity's bytes, `FixedBytes32` of the suite identifier, `Unsigned16` of the suite version, `FixedBytes32` of the parameter-set identifier's bytes, `Unsigned64` of the group index, `Unsigned32` of the piece size, `Unsigned32` of the piece-group size, and `Unsigned64` of the total extent, in that order; `params` carries no control and is not read
-    * `[✅]`   `fields_to_value`, wrong count: condition `payload.values` does not convert into `[CanonicalFieldValue; DERIVATION_CONTEXT_FIELD_COUNT]`; decision `TryFrom<Vec<CanonicalFieldValue>>` for the array, which returns the vector on failure; dependency call none; outcome `Err(DerivationContextFromFieldsErrorReturn::FieldCount { expected: DERIVATION_CONTEXT_FIELD_COUNT, actual })`, `actual` the returned vector's length
-    * `[✅]`   `fields_to_value`, wrong kind: condition the count matches and the value at some index is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names at that index; decision the array is destructured into its fields and each is matched against its expected variant, index `0` through `9` in ascending order, before any constructor is called; dependency call none; outcome `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index, expected })` for the lowest such index, `expected` the kind `DERIVATION_CONTEXT_FIELD_KINDS` names there
-    * `[✅]`   `fields_to_value`, component refused: condition every kind matches and a component's constructor refuses; decision the constructors are called in field order, `AssetIdentity::try_new` over the asset name and version, `DeploymentIdentity::try_new`, `SuiteIdentifier::try_new` over the suite identifier and version, `ParameterSetIdentifier::try_new`, `GroupIndex::try_new` unpacked irrefutably, and `PieceGeometry::try_new` over the piece size, piece-group size, and total extent; dependency call each constructor at most once, none after the first refusal; outcome `Err` holding the first refusal unchanged in its variant, `AssetIdentity`, `DeploymentIdentity`, `SuiteIdentifier`, `ParameterSetIdentifier`, or `PieceGeometry`
-    * `[✅]`   `fields_to_value`, context refused: condition every component is admitted and `DerivationContext::try_new` refuses; decision the context constructor's result; dependency call `DerivationContext::try_new` once over the six components; outcome `Err(DerivationContextFromFieldsErrorReturn::DerivationContext(error))`, the refusal unchanged
-    * `[✅]`   `fields_to_value`, admitted: condition every check and constructor passes; decision the same; dependency call the same constructors; outcome `Ok(FromFieldsSuccessReturn { described })` holding the constructed context
-    * `[✅]`   Ordering: the count precedes every kind, every kind precedes every constructor, the constructors run in field order, and the context constructor runs last; the same payload always yields the same outcome; `params` carries no control and is not read
-    * `[✅]`   Invariant: the kinds of the values `to_fields` returns are `DERIVATION_CONTEXT_FIELD_KINDS` in order, and `fields_to_value` admits exactly that sequence
-    * `[✅]`   Own entry, round trip through the canonical fields: condition an admitted `DerivationContext` is handed to `to_fields` and the fields it returns are handed to `fields_to_value`; outcome `Ok(FromFieldsSuccessReturn { described })` with `described` equal to the original context; variation a context whose same-kind fields hold distinct values, among the text values, among the 32-byte values, among the 32-bit values, and among the 64-bit values, whose 16-bit suite version is at its maximum, whose piece-group size exceeds the `i32` range, and whose group index and total extent exceed the 32-bit range, so a swap of same-kind fields, a dropped field, or a narrowed width yields a refusal or an unequal context; edge that must survive the composition: the context constructor's group-index rule admits the rebuilt context at the full width of the extent, so the fields of an admitted context are never refused on the way back
-    * `[✅]`   Public surface: an outside caller invokes `DerivationContextDescription::try_new` (under the `mocks` feature, the official mock builder), `IEncodingContract::to_fields`, and `IEncodingContract::fields_to_value`, and observes the fields, the context, or the refusal each returns; the entry proven is the round-trip entry
+  * `[ ]`   `adapters/hashing/src/root/mock.rs`
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]`, for the builder's construction of a real instance
+    * `[ ]`   `RootConstructorParamsOverrides`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<[u8; ROOT_LENGTH]>`
+    * `[ ]`   `build_root_constructor_params(overrides: RootConstructorParamsOverrides) -> RootConstructorParams`, taking `bytes` from the override when present; the default is a constant array declared in `mock.rs` whose byte at index `i` is `i + 1`, so every byte is nonzero and no two bytes are equal
+    * `[ ]`   `RootConstructorParamsCorruptions`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<serde_json::Value>`
+    * `[ ]`   `invalidate_root_constructor_params(corruptions: RootConstructorParamsCorruptions) -> serde_json::Value`, a `Map` holding the built params' `bytes` converted with `Value::from` to an array of integers, overwritten by the corrupted key when present; `RootConstructorParams` stays free of derives
+    * `[ ]`   `build_root(overrides: RootConstructorParamsOverrides) -> Root`, the result of `Root::try_new` over `build_root_constructor_params(overrides)` bound by `expect` naming the invariant that the built bytes are not all zero, a real instance with its field private; the all-zero array reaches `try_new` through `build_root_constructor_params`, never through this builder
+    * `[ ]`   Enumeration of the interface's exports: `ROOT_LENGTH` is a constant used by its production value; `RootTryNewErrorReturn` is an enum and `RootTryNewReturn` is an alias, used directly by their production types; `Root` takes `build_root` alone, its corruption living in the params invalidator; `RootConstructorParams` takes the four symbols above; `Root::try_new` and `Root::as_bytes` take no function mock because the interface declares no function type for them
+    * `[ ]`   Imports `Root`, `RootConstructorParams`, and `ROOT_LENGTH` from `super::interface`, and `serde_json::Value` and `serde_json::Map`
 
-  * `[✅]`   `adapters/encoding/src/factory/mock.rs`
-    * `[✅]`   `CanonicalFieldsOverrides`, `#[derive(Default)]`, the one field `pub values: Option<Vec<CanonicalFieldValue>>`
-    * `[✅]`   `build_canonical_fields(overrides: CanonicalFieldsOverrides) -> CanonicalFields`, the omitted `values` defaulting to one value of each kind: `FixedBytes32` of bytes each `0x01`, `Unsigned16(1)`, `Unsigned32(2)`, `Unsigned64(3)`, and `Text("text")`
-    * `[✅]`   `ToFieldsParamsOverrides`, the fieldless `#[derive(Default)]` struct `pub struct ToFieldsParamsOverrides;`, and `build_to_fields_params(overrides: ToFieldsParamsOverrides) -> ToFieldsParams`
-    * `[✅]`   `ToFieldsSuccessReturnOverrides`, `#[derive(Default)]`, the one field `pub fields: Option<CanonicalFields>`, and `build_to_fields_success_return(overrides: ToFieldsSuccessReturnOverrides) -> ToFieldsSuccessReturn`, the omitted `fields` defaulting to `build_canonical_fields` called with `Default::default()`
-    * `[✅]`   `FromFieldsParamsOverrides`, the fieldless `#[derive(Default)]` struct `pub struct FromFieldsParamsOverrides;`, and `build_from_fields_params(overrides: FromFieldsParamsOverrides) -> FromFieldsParams`
-    * `[✅]`   `FromFieldsSuccessReturnOverrides`, `#[derive(Default)]`, the one field `pub described: Option<CanonicalFields>`, and `build_from_fields_success_return(overrides: FromFieldsSuccessReturnOverrides) -> FromFieldsSuccessReturn<CanonicalFields>`, the omitted `described` defaulting to `build_canonical_fields` called with `Default::default()`; the described type is fixed at `CanonicalFields`, the type `MockIEncodingContract` describes
-    * `[✅]`   `MockIEncodingContract`, the unit struct `pub struct MockIEncodingContract;` implementing `IEncodingContract` with `type Described = CanonicalFields;`, `type FromFieldsErrorReturn = Infallible;`, and `const FIELDS: &'static [CanonicalFieldKind]` holding `FixedBytes32`, `Unsigned16`, `Unsigned32`, `Unsigned64`, and `Text`, the kinds of the default `values` of `build_canonical_fields` in order; `to_fields` returns `Ok(build_to_fields_success_return(Default::default()))` and `fields_to_value` returns `Ok(build_from_fields_success_return(Default::default()))`, neither reading its params or its payload
-    * `[✅]`   No corruptions type and no invalidator: every owned object type is a typed value the crate never deserializes, the crate has no serialization dependency, and the field list a decoder refuses is a `values` override; no mock for `CanonicalFieldKind` or `CanonicalFieldValue`, enums used by their production variants, none for `ToFieldsReturn` or `FromFieldsReturn`, aliases of `Result`, and no function mock, since the trait's methods are `MockIEncodingContract`'s
-    * `[✅]`   Imports the contract's names from `super::interface` and `core::convert::Infallible`
+  * `[ ]`   `adapters/hashing/src/root/test.rs`
+    * `[ ]`   Imports `Root` from `super`, `RootTryNewErrorReturn` and `ROOT_LENGTH` from `super::interface`, and `build_root`, `build_root_constructor_params`, and `RootConstructorParamsOverrides` from `super::mock`; the module's only dependency is the standard library, so no collaborator is replaced; every fixture is a direct builder call overriding only the `bytes` the block's variation needs; every refusal is asserted by `assert_eq!` against the whole expected `Err`
+    * `[ ]`   `try_new_rejects_the_all_zero_root`
+      * `[ ]`   Contract: every byte of `params.bytes` zero yields `Err(RootTryNewErrorReturn::AllZero)`
+      * `[ ]`   Arrange: params whose `bytes` is `[0u8; ROOT_LENGTH]`
+      * `[ ]`   Act: `Root::try_new` over those params
+      * `[ ]`   Assert: the result equals `Err(RootTryNewErrorReturn::AllZero)`
+    * `[ ]`   `try_new_admits_a_root_whose_only_nonzero_byte_is_the_last`
+      * `[ ]`   Contract: some byte nonzero yields `Ok(Root { bytes })`, and the check reads the last byte
+      * `[ ]`   Arrange: params whose `bytes` is zero at every index but the last, which is `0x01`, so a check that stops before the last byte refuses it
+      * `[ ]`   Act: `Root::try_new` over those params
+      * `[ ]`   Assert: the result mapped to the held `bytes` equals `Ok` of the same array, stated in the assertion, read from the field the test module's visibility reaches
+    * `[ ]`   `try_new_admits_a_root_whose_only_nonzero_byte_is_the_first`
+      * `[ ]`   Contract: some byte nonzero yields `Ok(Root { bytes })`, and the check reads the first byte
+      * `[ ]`   Arrange: params whose `bytes` is `0x01` at index 0 and zero at every other index, so a check that reads only later bytes refuses it
+      * `[ ]`   Act: `Root::try_new` over those params
+      * `[ ]`   Assert: the result mapped to the held `bytes` equals `Ok` of the same array, stated in the assertion
+    * `[ ]`   `as_bytes_returns_the_held_bytes_without_copy`
+      * `[ ]`   Contract: `as_bytes` returns a shared reference to the held array, no copy
+      * `[ ]`   Arrange: a root from `build_root` with no override, whose default bytes are distinct and nonzero
+      * `[ ]`   Act: `Root::as_bytes` on that root
+      * `[ ]`   Assert: the returned reference is address-identical to the root's held `bytes` under `core::ptr::eq`, and equals the default array stated in the assertion as literals
 
-  * `[✅]`   `adapters/encoding/src/factory/mod.rs`
-    * `[✅]`   Module wiring only: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, and `pub mod provides;`, nothing else
+  * `[ ]`   `construction`
+    * `[ ]`   `Root::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a producer of a root, the commitment concrete over an object's bytes or a decoder over untrusted bytes, constructs it through `try_new` and carries the refusal arm
 
-  * `[✅]`   `adapters/encoding/src/factory/provides.rs`
-    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
+  * `[ ]`   `adapters/hashing/src/root/mod.rs`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `impl Root` with `pub fn try_new(params: RootConstructorParams) -> RootTryNewReturn` realizing the branches of the interaction spec, and `pub fn as_bytes(&self) -> &[u8; ROOT_LENGTH]` returning `&self.bytes`
+    * `[ ]`   Imports `Root`, `RootConstructorParams`, `RootTryNewErrorReturn`, `RootTryNewReturn`, and `ROOT_LENGTH` from `interface`
+    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
-  * `[✅]`   `adapters/encoding/src/derivation_context/mock.rs`
-    * `[✅]`   `DerivationContextDescriptionConstructorParamsOverrides`, the fieldless `#[derive(Default)]` struct `pub struct DerivationContextDescriptionConstructorParamsOverrides;`
-    * `[✅]`   `build_derivation_context_description_constructor_params(overrides: DerivationContextDescriptionConstructorParamsOverrides) -> DerivationContextDescriptionConstructorParams`
-    * `[✅]`   `build_derivation_context_description(overrides: DerivationContextDescriptionConstructorParamsOverrides) -> DerivationContextDescription`, returning the real instance from `DerivationContextDescription::try_new(build_derivation_context_description_constructor_params(overrides))`, whose error arm is uninhabited and is unpacked irrefutably
-    * `[✅]`   No corruptions type and no invalidator: the constructor params carry no field and the crate has no serialization dependency; no `DerivationContextDescription` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function; no mock for `DerivationContextFromFieldsErrorReturn`, an enum used by its production variants, for `DerivationContextDescriptionTryNewReturn`, an alias of `Result`, or for `DERIVATION_CONTEXT_FIELD_COUNT` and `DERIVATION_CONTEXT_FIELD_KINDS`, constants used by their production values
-    * `[✅]`   Imports `DerivationContextDescription` and `DerivationContextDescriptionConstructorParams` from `super::interface`
+  * `[ ]`   `adapters/hashing/src/root/provides.rs`
+    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
 
-  * `[✅]`   `adapters/encoding/src/derivation_context/test.rs`
-    * `[✅]`   Collaborators: the `domain` accessors and constructors are imported functions with no official mock and run as themselves; every context, component, and expected value is built with `domain`'s builders, every subject with `build_derivation_context_description`, and every params value with `build_to_fields_params` or `build_from_fields_params`
-    * `[✅]`   Reference values by index of `DERIVATION_CONTEXT_FIELD_KINDS`: `Text("left-pad")`, `Text("1.3.0")`, `FixedBytes32` of bytes each `0x44`, `FixedBytes32` of bytes each `0x55`, `Unsigned16(0x0102)`, `FixedBytes32` of bytes each `0x66`, `Unsigned64(2)`, `Unsigned32(32768)`, `Unsigned32(65536)`, and `Unsigned64(262144)`
-    * `[✅]`   Reference fields: `build_canonical_fields` overriding `values` with the reference values
-    * `[✅]`   Reference context: `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `0x0102`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `2`, and the geometry with `build_piece_geometry` at piece size `32768`, piece-group size `65536`, and extent `262144`, a geometry of four groups
-    * `[✅]`   `try_new_returns_the_description`
-      * `[✅]`   Contract: `DerivationContextDescription::try_new(params)`, one branch: any params → `Ok(DerivationContextDescription)`; the error arm has no branch
-      * `[✅]`   Arrange: the params from `build_derivation_context_description_constructor_params`
-      * `[✅]`   Act: `DerivationContextDescription::try_new(params)`
-      * `[✅]`   Assert: `result.is_ok()` is true
-    * `[✅]`   `to_fields_lists_the_reference_context_fields_in_canonical_order`
-      * `[✅]`   Contract: `to_fields`, one branch: any admitted context → `Ok(ToFieldsSuccessReturn { fields: CanonicalFields { values } })` with `values` the asset name and version as `Text`, the deployment bytes, suite identifier, and parameter-set bytes as `FixedBytes32`, the suite version as `Unsigned16`, the group index as `Unsigned64`, the piece size and piece-group size as `Unsigned32`, and the total extent as `Unsigned64`, in that order
-      * `[✅]`   Arrange: the reference context, whose same-kind fields hold distinct values, so a swap among the text values, among the 32-byte values, among the 32-bit values, or among the 64-bit values changes the list
-      * `[✅]`   Act: `description.to_fields(params, &context)`
-      * `[✅]`   Assert: the `fields` of the `Ok` arm equal the reference fields by `assert_eq!`, the expectation the reference values in canonical order, stated apart from the context builder's overrides
-    * `[✅]`   `fields_to_value_returns_the_context_the_reference_fields_describe`
-      * `[✅]`   Contract: `fields_to_value`, admitted: every check and constructor passes → `Ok(FromFieldsSuccessReturn { described })` holding the constructed context
-      * `[✅]`   Arrange: the reference fields, whose same-kind values are distinct, so a value taken from the wrong field changes the constructed context or is refused
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: the `described` of the `Ok` arm equals the reference context by `assert_eq!`, the reference context built by `domain`'s builders and not by the subject
-    * `[✅]`   `fields_to_value_rejects_a_field_list_one_short`
-      * `[✅]`   Contract: `fields_to_value`, wrong count: `payload.values` does not convert into `[CanonicalFieldValue; DERIVATION_CONTEXT_FIELD_COUNT]` → `Err(DerivationContextFromFieldsErrorReturn::FieldCount { expected: DERIVATION_CONTEXT_FIELD_COUNT, actual })`, `actual` the vector's length
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values without index `9`, every value present of its declared kind, so only the count refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldCount { expected: DERIVATION_CONTEXT_FIELD_COUNT, actual: 9 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_a_field_list_one_long`
-      * `[✅]`   Contract: `fields_to_value`, wrong count: `payload.values` does not convert into `[CanonicalFieldValue; DERIVATION_CONTEXT_FIELD_COUNT]` → `Err(DerivationContextFromFieldsErrorReturn::FieldCount { expected: DERIVATION_CONTEXT_FIELD_COUNT, actual })`, `actual` the vector's length
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values followed by `Unsigned64(0)`, every value at indexes `0` through `9` of its declared kind, so only the count refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldCount { expected: DERIVATION_CONTEXT_FIELD_COUNT, actual: 11 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_checks_the_count_before_any_kind`
-      * `[✅]`   Contract: `fields_to_value`, ordering: the count precedes every kind
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values without index `9` and with the value at index `0` replaced by `Unsigned16(1)`, a list both short and holding a wrong kind, so a kind check ahead of the count reports the kind
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldCount { expected: DERIVATION_CONTEXT_FIELD_COUNT, actual: 9 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_an_asset_name_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and the value at index `0` is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names there → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index: 0, expected })`
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `0` replaced by `Unsigned16(1)`, every other value of its declared kind, so only the kind at index `0` refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 0, expected: CanonicalFieldKind::Text })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_an_asset_version_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and the value at index `1` is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names there → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index: 1, expected })`
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `1` replaced by `Unsigned16(1)`, every other value of its declared kind, so only the kind at index `1` refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 1, expected: CanonicalFieldKind::Text })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_a_deployment_identity_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and the value at index `2` is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names there → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index: 2, expected })`
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `2` replaced by `Text("left-pad")`, every other value of its declared kind, so only the kind at index `2` refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 2, expected: CanonicalFieldKind::FixedBytes32 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_a_suite_identifier_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and the value at index `3` is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names there → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index: 3, expected })`
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `3` replaced by `Text("left-pad")`, every other value of its declared kind, so only the kind at index `3` refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 3, expected: CanonicalFieldKind::FixedBytes32 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_a_suite_version_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and the value at index `4` is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names there → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index: 4, expected })`
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `4` replaced by `Unsigned32(0x0102)`, the same number at a wider width, every other value of its declared kind, so only the kind at index `4` refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 4, expected: CanonicalFieldKind::Unsigned16 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_a_parameter_set_identifier_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and the value at index `5` is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names there → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index: 5, expected })`
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `5` replaced by `Text("left-pad")`, every other value of its declared kind, so only the kind at index `5` refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 5, expected: CanonicalFieldKind::FixedBytes32 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_a_group_index_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and the value at index `6` is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names there → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index: 6, expected })`
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `6` replaced by `Unsigned32(2)`, the same number at a narrower width, every other value of its declared kind, so only the kind at index `6` refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 6, expected: CanonicalFieldKind::Unsigned64 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_a_piece_size_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and the value at index `7` is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names there → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index: 7, expected })`
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `7` replaced by `Unsigned64(32768)`, the same number at a wider width, every other value of its declared kind, so only the kind at index `7` refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 7, expected: CanonicalFieldKind::Unsigned32 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_a_piece_group_size_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and the value at index `8` is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names there → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index: 8, expected })`
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `8` replaced by `Unsigned64(65536)`, the same number at a wider width, every other value of its declared kind, so only the kind at index `8` refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 8, expected: CanonicalFieldKind::Unsigned32 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_rejects_a_total_extent_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and the value at index `9` is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names there → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index: 9, expected })`
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `9` replaced by `Unsigned32(262144)`, the same number at a narrower width, every other value of its declared kind, so only the kind at index `9` refuses
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 9, expected: CanonicalFieldKind::Unsigned64 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_reports_the_lowest_field_of_the_wrong_kind`
-      * `[✅]`   Contract: `fields_to_value`, wrong kind: the count matches and more than one value is not the variant `DERIVATION_CONTEXT_FIELD_KINDS` names at its index → `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index, expected })` for the lowest such index
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values, the value at index `3` replaced by `Text("left-pad")` and the value at index `8` replaced by `Unsigned64(65536)`, so a check that runs from the highest index reports index `8`
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 3, expected: CanonicalFieldKind::FixedBytes32 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_checks_every_kind_before_constructing_any_component`
-      * `[✅]`   Contract: `fields_to_value`, ordering: every kind precedes every constructor
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values, the value at index `0` replaced by `Text("")`, the empty asset name `AssetIdentity::try_new` refuses, and the value at index `9` replaced by `Unsigned32(262144)`, so a constructor that ran before the kind at index `9` was checked returns the asset-identity refusal
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::FieldKind { index: 9, expected: CanonicalFieldKind::Unsigned64 })` by `assert_eq!`
-    * `[✅]`   `fields_to_value_returns_the_asset_identity_refusal_unchanged`
-      * `[✅]`   Contract: `fields_to_value`, component refused: every kind matches and `AssetIdentity::try_new` refuses → `Err` holding the refusal unchanged in the `AssetIdentity` variant
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `0` replaced by `Text("left pad")`, whose space at index `4` is outside visible ASCII, every other component admitted
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::AssetIdentity(AssetIdentityTryNewErrorReturn::NameByteOutsideVisibleAscii { index: 4, byte: 0x20 }))` by `assert_eq!`, the whole refusal the asset identity's constructor declares for that name
-    * `[✅]`   `fields_to_value_returns_the_deployment_identity_refusal_unchanged`
-      * `[✅]`   Contract: `fields_to_value`, component refused: every kind matches and `DeploymentIdentity::try_new` refuses → `Err` holding the refusal unchanged in the `DeploymentIdentity` variant
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `2` replaced by `FixedBytes32` of bytes each `0x00`, every other component admitted
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::DeploymentIdentity(DeploymentIdentityTryNewErrorReturn::AllZero))` by `assert_eq!`
-    * `[✅]`   `fields_to_value_returns_the_suite_identifier_refusal_unchanged`
-      * `[✅]`   Contract: `fields_to_value`, component refused: every kind matches and `SuiteIdentifier::try_new` refuses → `Err` holding the refusal unchanged in the `SuiteIdentifier` variant
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `3` replaced by `FixedBytes32` of bytes each `0x00`, the suite version at index `4` keeping `Unsigned16(0x0102)`, every other component admitted
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::SuiteIdentifier(SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier))` by `assert_eq!`
-    * `[✅]`   `fields_to_value_returns_the_parameter_set_identifier_refusal_unchanged`
-      * `[✅]`   Contract: `fields_to_value`, component refused: every kind matches and `ParameterSetIdentifier::try_new` refuses → `Err` holding the refusal unchanged in the `ParameterSetIdentifier` variant
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `5` replaced by `FixedBytes32` of bytes each `0x00`, every other component admitted
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::ParameterSetIdentifier(ParameterSetIdentifierTryNewErrorReturn::AllZero))` by `assert_eq!`
-    * `[✅]`   `fields_to_value_returns_the_piece_geometry_refusal_unchanged`
-      * `[✅]`   Contract: `fields_to_value`, component refused: every kind matches and `PieceGeometry::try_new` refuses → `Err` holding the refusal unchanged in the `PieceGeometry` variant
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the value at index `8` replaced by `Unsigned32(20000)`, a piece-group size that is not a multiple of the piece size `32768` at index `7`, every other component admitted
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::PieceGeometry(PieceGeometryTryNewErrorReturn::PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 20000, piece_size: 32768 }))` by `assert_eq!`
-    * `[✅]`   `fields_to_value_constructs_the_components_in_field_order`
-      * `[✅]`   Contract: `fields_to_value`, component refused: the constructors are called in field order and none after the first refusal → `Err` holding the first refusal unchanged
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values, the value at index `0` replaced by `Text("")`, which `AssetIdentity::try_new` refuses, and the value at index `8` replaced by `Unsigned32(20000)`, which `PieceGeometry::try_new` refuses, the first and the last component constructed, so a reverse or interleaved order reports the geometry refusal
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::AssetIdentity(AssetIdentityTryNewErrorReturn::EmptyName))` by `assert_eq!`
-    * `[✅]`   `fields_to_value_returns_the_derivation_context_refusal_unchanged`
-      * `[✅]`   Contract: `fields_to_value`, context refused: every component is admitted and `DerivationContext::try_new` refuses → `Err(DerivationContextFromFieldsErrorReturn::DerivationContext(error))`, the refusal unchanged
-      * `[✅]`   Arrange: `build_canonical_fields` overriding `values` with the reference values and the values at indexes `6` through `9` replaced by `Unsigned64(4)`, `Unsigned32(16384)`, `Unsigned32(16384)`, and `Unsigned64(65536)`, a geometry of four groups and a group index of `4`, one beyond its last group, every component admitted
-      * `[✅]`   Act: `description.fields_to_value(params, fields)`
-      * `[✅]`   Assert: `result.err()` equals `Some(DerivationContextFromFieldsErrorReturn::DerivationContext(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange { group_index: 4, group_count: 4 }))` by `assert_eq!`
+  * `[ ]`   `adapters/hashing/tests/root_integration_test.rs`
+    * `[ ]`   Imports `Root`, `RootTryNewErrorReturn`, and `ROOT_LENGTH` through the crate root `hashing`, and `build_root_constructor_params` and `RootConstructorParamsOverrides` from the crate root under the `mocks` feature; nothing is imported from a module path
+    * `[ ]`   `a_root_whose_only_nonzero_byte_is_the_last_reads_back_through_the_crate_root`
+      * `[ ]`   Contract: the own entry, an admitted root reads back through the crate root; a root whose only nonzero byte is its last yields `Ok(root)` whose `as_bytes()` yields exactly the bytes passed
+      * `[ ]`   Arrange: params from `build_root_constructor_params` whose `bytes` is zero at every index but the last, which is `0x01`, the variation a check reading only the leading bytes refuses
+      * `[ ]`   Act: `Root::try_new` over those params, the `Ok` root read through `as_bytes`
+      * `[ ]`   Assert: the result is `Ok`, and the array `as_bytes` returns equals the expected array stated in the assertion as its own value
+      * `[ ]`   Boundary: the crate-root public call `Root::try_new` and the read `Root::as_bytes`, the route `lib.rs` then `root::provides` then `try_new` then `as_bytes`
+      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
+    * `[ ]`   `the_all_zero_root_is_refused_whole_through_the_crate_root`
+      * `[ ]`   Contract: the own entry, the all-zero refusal reaches the caller whole and yields no root; the all-zero array yields `Err(RootTryNewErrorReturn::AllZero)`
+      * `[ ]`   Arrange: params from `build_root_constructor_params` whose `bytes` is `[0u8; ROOT_LENGTH]`, which differs from the read-back block's input in its last byte alone
+      * `[ ]`   Act: `Root::try_new` over those params
+      * `[ ]`   Assert: the result equals the whole `Err(RootTryNewErrorReturn::AllZero)`, matched through the crate-root error type, so no `Root` is held
+      * `[ ]`   Boundary: the crate-root public call `Root::try_new`, the route `lib.rs` then `root::provides` then `try_new`
+      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
+    * `[ ]`   Enumeration: the read-back entry is proven by `a_root_whose_only_nonzero_byte_is_the_last_reads_back_through_the_crate_root`, and the refusal entry by `the_all_zero_root_is_refused_whole_through_the_crate_root`
 
-  * `[✅]`   `construction`
-    * `[✅]`   `DerivationContextDescription::try_new` is the description's only producer; a consumer that encodes or decodes a derivation context constructs it once and hands it to the encoder or decoder the encoding factory returns; it holds no state, so one instance serves every call
-    * `[✅]`   `build_derivation_context_description` is the description's mock producer: it returns the real instance `try_new` constructs over the fieldless params `build_derivation_context_description_constructor_params` builds, so a test reaches a description through the builder and never by naming the unit struct
+  * `[ ]`   `directionality`
+    * `[ ]`   `root` depends on the standard library alone, and its `mock.rs` additionally depends on `serde_json` under the `mocks` feature; the crate depends on no repository crate; `hashing/outboard`, `hashing/authentication_path`, `hashing/chunk`, and `hashing/blake3_bao` consume the root through `crate::root::provides`; no cycle
 
-  * `[✅]`   `adapters/encoding/src/derivation_context/mod.rs`
-    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[✅]`   `impl DerivationContextDescription` with `pub fn try_new(_params: DerivationContextDescriptionConstructorParams) -> DerivationContextDescriptionTryNewReturn` returning `Ok(DerivationContextDescription)`
-    * `[✅]`   `impl IEncodingContract for DerivationContextDescription` with `type Described = DerivationContext;`, `type FromFieldsErrorReturn = DerivationContextFromFieldsErrorReturn;`, `const FIELDS: &'static [CanonicalFieldKind] = &DERIVATION_CONTEXT_FIELD_KINDS;`, and `to_fields` and `fields_to_value` realizing the branches and ordering of the interaction spec; `fields_to_value` converts the vector into the array, destructures it into its fields, matches each against its expected variant by `let … else` in ascending index order, then calls the constructors, the group index unpacked by `let Ok(group_index) = GroupIndex::try_new(…);` and every other refusal wrapped in its variant and returned
-    * `[✅]`   Imports the contract's names from `crate::factory::provides`, the domain types, constructor params, and error types from `domain`, and this module's names from `interface`
-    * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+  * `[ ]`   `requirements`
+    * `[ ]`   `adapters/hashing/Cargo.toml` carries exactly the tables and keys stated above, and the crate names no hash library and no encoding
+    * `[ ]`   `RootTryNewErrorReturn` derives `Debug`, `PartialEq`, and `Eq`, and `Root` derives `Clone`, `Copy`, `Debug`, `PartialEq`, `Eq`, and `Hash`
+    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, `cargo deny check`, and `cargo clippy --workspace --all-targets --all-features -- -D warnings` complete without error
+    * `[ ]`   `try_new_rejects_the_all_zero_root`, `try_new_admits_a_root_whose_only_nonzero_byte_is_the_last`, `try_new_admits_a_root_whose_only_nonzero_byte_is_the_first`, and `as_bytes_returns_the_held_bytes_without_copy` pass
+    * `[ ]`   `a_root_whose_only_nonzero_byte_is_the_last_reads_back_through_the_crate_root` and `the_all_zero_root_is_refused_whole_through_the_crate_root` pass
+    * `[ ]`   Code outside `adapters/hashing/src/root` reading the `bytes` field fails to compile; the crate's public surface is the `root` module's `provides`
 
-  * `[✅]`   `adapters/encoding/src/derivation_context/provides.rs`
-    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
+* `[ ]`   `hashing/outboard` **Outboard, the bytes a commitment scheme holds an object's verification structure in apart from the content, admitted as held; a family-owned module of the `adapters/hashing` crate**
 
-  * `[✅]`   `adapters/encoding/tests/derivation_context_integration_test.rs`
-    * `[✅]`   `a_context_survives_the_round_trip_through_its_canonical_fields`
-      * `[✅]`   Contract: the own entry, round trip through the canonical fields: an admitted `DerivationContext` handed to `to_fields`, and the fields it returns handed to `fields_to_value`, yields `Ok(FromFieldsSuccessReturn { described })` with `described` equal to the original context
-      * `[✅]`   Arrange: `build_derivation_context_description`, `build_to_fields_params`, and `build_from_fields_params` from the crate's public surface under the `mocks` feature; `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `u16::MAX`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `4294967296`, and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `2147483648`, and extent `u64::MAX`; the same-kind fields hold distinct values, the suite version is at its maximum, the piece-group size exceeds the `i32` range, and the group index and extent exceed the 32-bit range, so a swap of same-kind fields, a dropped field, or a narrowed width yields a refusal or an unequal context
-      * `[✅]`   Act: `description.to_fields(to_fields_params, &context)`, then `description.fields_to_value(from_fields_params, fields)` over the fields the first call returned
-      * `[✅]`   Assert: the `described` of the second call's `Ok` arm equals the arranged context by `assert_eq!`
-      * `[✅]`   Boundary: the public calls `IEncodingContract::to_fields` and `IEncodingContract::fields_to_value` on `DerivationContextDescription`, a public entry of the crate; the route `to_fields` then `fields_to_value`, each running `domain`'s accessors and constructors as themselves
-      * `[✅]`   Mocked: nothing; `domain` is a pure value library with no outer-edge collaborator on this route
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: a commitment scheme's verification structure for an object is held apart from the object's bytes, so a seeder serves a piece with its authentication path and a delegated store's custody is checked by challenge against a root, and every concrete of the hashing family produces and reads that structure as one family type whose layout the concrete alone interprets (CR-02 outboard construction and verification; `docs/research/MVP Scope.md`, Seed Hosting and the Ciphertext Store)
+    * `[ ]`   Functional: one type holds an outboard's bytes, reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[ ]`   Functional: the constructor admits any bytes as held, the empty sequence included, since the family declares no layout and the concrete that interprets the scheme's layout refuses a malformed outboard in its own methods
+    * `[ ]`   Functional: two outboards compare equal exactly when their bytes are equal, and an outboard is printable and clonable
+    * `[ ]`   Non-functional: the module depends on the standard library alone, and its `mock.rs` additionally uses `serde_json` under the `mocks` feature; the module names no hash library and no encoding
 
-  * `[✅]`   `directionality`
-    * `[✅]`   `derivation_context` depends on the `factory` module's surface through `crate::factory::provides` and on `domain`; the `factory` module depends on nothing in the crate and names no description; among repository crates the crate depends on `crates/domain` alone, inward; nothing depends on the crate yet; no cycle
-    * `[✅]`   `encoding/abi` consumes the contract and this description; `kdf/blake3_keyed` consumes the encoding of this description's fields through the encoding factory
+  * `[ ]`   `role`
+    * `[ ]`   Adapter family: the hashing family's family-owned outboard type, a module beside the factory because a type lives in the module that implements it, and the outboard's constructor is its implementation
+    * `[ ]`   Does not construct, parse, or validate an outboard's layout; `hashing/blake3_bao` produces outboards in the BLAKE3/Bao layout and refuses a malformed one in its own methods
+    * `[ ]`   Does not create the crate or the `factory` module; `hashing/root` created the crate, and `hashing/blake3_bao` authors the family's generic interface in the `factory` module
+    * `[ ]`   Does not carry a commit
 
-  * `[✅]`   `requirements`
-    * `[✅]`   `IEncodingContract::FromFieldsErrorReturn` is bounded by `Debug`, `PartialEq`, and `Eq`, so a description whose refusal lacks them fails to compile
-    * `[✅]`   `adapters/encoding/Cargo.toml` carries exactly the tables and keys stated above, and no external crate is named in the crate
-    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning
-    * `[✅]`   `try_new_returns_the_description`, `to_fields_lists_the_reference_context_fields_in_canonical_order`, and `fields_to_value_returns_the_context_the_reference_fields_describe` pass (CR-11, the context's serialization frozen as one field sequence)
-    * `[✅]`   `fields_to_value_rejects_a_field_list_one_short`, `fields_to_value_rejects_a_field_list_one_long`, `fields_to_value_checks_the_count_before_any_kind`, `fields_to_value_rejects_an_asset_name_of_the_wrong_kind`, `fields_to_value_rejects_an_asset_version_of_the_wrong_kind`, `fields_to_value_rejects_a_deployment_identity_of_the_wrong_kind`, `fields_to_value_rejects_a_suite_identifier_of_the_wrong_kind`, `fields_to_value_rejects_a_suite_version_of_the_wrong_kind`, `fields_to_value_rejects_a_parameter_set_identifier_of_the_wrong_kind`, `fields_to_value_rejects_a_group_index_of_the_wrong_kind`, `fields_to_value_rejects_a_piece_size_of_the_wrong_kind`, `fields_to_value_rejects_a_piece_group_size_of_the_wrong_kind`, `fields_to_value_rejects_a_total_extent_of_the_wrong_kind`, `fields_to_value_reports_the_lowest_field_of_the_wrong_kind`, and `fields_to_value_checks_every_kind_before_constructing_any_component` pass
-    * `[✅]`   `fields_to_value_returns_the_asset_identity_refusal_unchanged`, `fields_to_value_returns_the_deployment_identity_refusal_unchanged`, `fields_to_value_returns_the_suite_identifier_refusal_unchanged`, `fields_to_value_returns_the_parameter_set_identifier_refusal_unchanged`, `fields_to_value_returns_the_piece_geometry_refusal_unchanged`, `fields_to_value_returns_the_derivation_context_refusal_unchanged`, and `fields_to_value_constructs_the_components_in_field_order` pass
-    * `[✅]`   `a_context_survives_the_round_trip_through_its_canonical_fields` passes
-    * `[✅]`   Nothing in `crates/domain` names `encoding`, and code outside `crates/domain` still cannot read any field of a domain type
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the family-owned `outboard` module of the `adapters/hashing` crate, holding `Outboard`, its constructor params, and its constructor's return type
+    * `[ ]`   The module's `provides` joins the crate's public surface beside `root`'s
+    * `[ ]`   Outside: the layout of the bytes, how they are produced from an object, and how they authenticate a chunk
 
-* `[✅]`   `encoding/abi` **Ethereum ABI concrete encoding and decoding any described domain type as the ABI parameter encoding of its canonical fields, byte strings and width kinds included; authors the encoding family's encoder and decoder interfaces, the versioned encoding identifier, the declaration, and their mocks, and adds the byte-string, fixed twenty-byte, and 256-bit unsigned kinds to the encoding contract**
+  * `[ ]`   `deps`
+    * `[ ]`   `hashing/root`, the same crate: the crate at `adapters/hashing`, its `Cargo.toml` with `serde_json` optional under the `mocks` feature and as a dev-dependency, and its barrel `lib.rs`, to which this node adds its module; no type of `root` is consumed
+    * `[ ]`   The standard library: `Vec<u8>` and `core::convert::Infallible`, the constructor's error arm, through the prelude and `core`
+    * `[ ]`   `serde_json` `1.0.151`, as `hashing/root` pins it in the crate's manifest; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type the invalidator returns, in `mock.rs` only
+    * `[ ]`   No reverse dependency; nothing depends on this module yet
 
-  * `[✅]`   `objective`
+  * `[ ]`   `context_slice`
+    * `[ ]`   From the standard library: `Vec<u8>`, `<[u8]>` through `Vec::as_slice`, and `core::convert::Infallible`
+    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers and arrays, in `mock.rs` only
+
+  * `[ ]`   `adapters/hashing/src/lib.rs`
+    * `[ ]`   The crate barrel gains `mod outboard;` and `pub use outboard::provides::*;` beside the `root` lines `hashing/root` authors, nothing else
+    * `[ ]`   Until `outboard/mod.rs` exists, `cargo check` reports the unresolved `mod outboard`, which is the RED state for every element below that precedes the implementation
+
+  * `[ ]`   `adapters/hashing/src/outboard/interface.rs`
+    * `[ ]`   `Outboard`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: Vec<u8>`, so only the `outboard` module and its children reach the field
+    * `[ ]`   `OutboardConstructorParams`, a struct with the one field `pub bytes: Vec<u8>`; no derives
+    * `[ ]`   `OutboardTryNewReturn`, the alias `Result<Outboard, Infallible>`; the error arm is uninhabited because the family admits any bytes as held
+    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
+
+  * `[ ]`   `adapters/hashing/src/outboard/interaction.spec.md`
+    * `[ ]`   `Outboard::try_new(params: OutboardConstructorParams) -> OutboardTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(Outboard { bytes })`, the vector moved from the params without copy; the error arm has no branch
+    * `[ ]`   `Outboard::as_bytes(&self) -> &[u8]`: one branch; outcome a shared reference to the held bytes, no copy, no side effect
+    * `[ ]`   Invariants: every `Outboard` holds the bytes it was constructed from, unchanged; its only producer is `try_new`
+    * `[ ]`   Own entry, an outboard reads back through the crate root: condition a caller outside the crate names `Outboard` and `OutboardConstructorParams` through the crate root and passes `try_new` a sequence of distinct bytes; outcome `Ok(outboard)` whose `as_bytes()` yields exactly the bytes passed, in order; variation bytes that differ at every index, which a read that reorders, truncates, or pads fails; edge that must survive: the bytes an outside caller reads are the bytes the outboard was constructed from, reached through the accessor alone
+    * `[ ]`   Route: the crate barrel `lib.rs`, then `outboard::provides`, then `Outboard::try_new`, then `Outboard::as_bytes`; the route reaches no outer-edge collaborator
+    * `[ ]`   Public surface: an outside caller invokes `Outboard::try_new` and `Outboard::as_bytes`, building params with `build_outboard_constructor_params` from the `mocks` feature; it observes the `Ok` outboard through `as_bytes`; the entry proven is the read-back entry
+
+  * `[ ]`   `adapters/hashing/src/outboard/mock.rs`
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`
+    * `[ ]`   `OutboardConstructorParamsOverrides`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<Vec<u8>>`
+    * `[ ]`   `build_outboard_constructor_params(overrides: OutboardConstructorParamsOverrides) -> OutboardConstructorParams`, taking `bytes` from the override when present; the default is a byte sequence declared in `mock.rs` of 72 bytes whose byte at index `i` is `i + 1`, so the default is non-empty and no two bytes are equal
+    * `[ ]`   `OutboardConstructorParamsCorruptions`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<serde_json::Value>`
+    * `[ ]`   `invalidate_outboard_constructor_params(corruptions: OutboardConstructorParamsCorruptions) -> serde_json::Value`, a `Map` holding the built params' `bytes` converted with `Value::from` to an array of integers, overwritten by the corrupted key when present; `OutboardConstructorParams` stays free of derives
+    * `[ ]`   `build_outboard(overrides: OutboardConstructorParamsOverrides) -> Outboard`, returning the real instance from `Outboard::try_new(build_outboard_constructor_params(overrides))` through the irrefutable pattern `let Ok(outboard) = …;`, its field private
+    * `[ ]`   Enumeration of the interface's exports: `OutboardTryNewReturn` is an alias used directly by its production type; `Outboard` takes `build_outboard` alone, its corruption living in the params invalidator; `OutboardConstructorParams` takes the four symbols above; `Outboard::try_new` and `Outboard::as_bytes` take no function mock because the interface declares no function type for them
+    * `[ ]`   Imports `Outboard` and `OutboardConstructorParams` from `super::interface`, and `serde_json::Value` and `serde_json::Map`
+
+  * `[ ]`   `adapters/hashing/src/outboard/test.rs`
+    * `[ ]`   Imports `Outboard` from `super`, and `build_outboard`, `build_outboard_constructor_params`, and `OutboardConstructorParamsOverrides` from `super::mock`; the module's only dependency is the standard library, so no collaborator is replaced; every fixture is a direct builder call overriding only the `bytes` the block's variation needs
+    * `[ ]`   `try_new_holds_the_params_bytes`
+      * `[ ]`   Contract: any params yields `Ok(Outboard { bytes })` holding `params.bytes`
+      * `[ ]`   Arrange: params whose `bytes` is a short sequence of distinct bytes differing from the builder's default, so an outboard that holds the default or an empty sequence differs
+      * `[ ]`   Act: `Outboard::try_new` over those params
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(outboard) = …;`; the held `bytes`, read from the field the test module's visibility reaches, equals the same sequence stated in the assertion as literals
+    * `[ ]`   `try_new_admits_the_empty_sequence`
+      * `[ ]`   Contract: any params yields `Ok(Outboard { bytes })`, the empty sequence included, since the family admits any bytes as held
+      * `[ ]`   Arrange: params whose `bytes` is the empty vector
+      * `[ ]`   Act: `Outboard::try_new` over those params
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(outboard) = …;`; the held `bytes` is empty
+    * `[ ]`   `try_new_moves_the_params_bytes_into_the_outboard`
+      * `[ ]`   Contract: the outcome moves the vector from the params without copy
+      * `[ ]`   Arrange: params from the builder with its default bytes, the address and length of `params.bytes` read before the call
+      * `[ ]`   Act: `Outboard::try_new` over those params
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(outboard) = …;`; the held `bytes` has the address and the length read before the call
+    * `[ ]`   `as_bytes_returns_the_held_bytes_without_copy`
+      * `[ ]`   Contract: `as_bytes` returns a shared reference to the held bytes, no copy
+      * `[ ]`   Arrange: an outboard from `build_outboard` with no override, whose default bytes are distinct
+      * `[ ]`   Act: `Outboard::as_bytes` on that outboard
+      * `[ ]`   Assert: the returned slice has the address and the length of the outboard's held `bytes`
+
+  * `[ ]`   `construction`
+    * `[ ]`   `Outboard::try_new` is the only producer; no `Default`, `From`, or other constructor exists; the commitment concrete constructs an outboard where it produces one, and a reader of stored or received bytes constructs one through `try_new` before handing it to the concrete that interprets it
+
+  * `[ ]`   `adapters/hashing/src/outboard/mod.rs`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `impl Outboard` with `pub fn try_new(params: OutboardConstructorParams) -> OutboardTryNewReturn` returning `Ok(Outboard { bytes: params.bytes })`, and `pub fn as_bytes(&self) -> &[u8]` returning `&self.bytes`
+    * `[ ]`   Imports `Outboard`, `OutboardConstructorParams`, and `OutboardTryNewReturn` from `interface`
+    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/hashing/src/outboard/provides.rs`
+    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
+
+  * `[ ]`   `adapters/hashing/tests/outboard_integration_test.rs`
+    * `[ ]`   Imports `Outboard` through the crate root `hashing`, and `build_outboard_constructor_params` and `OutboardConstructorParamsOverrides` from the crate root under the `mocks` feature; nothing is imported from a module path
+    * `[ ]`   `an_outboard_reads_back_through_the_crate_root`
+      * `[ ]`   Contract: the own entry, an outboard reads back through the crate root; a sequence of distinct bytes yields `Ok(outboard)` whose `as_bytes()` yields exactly the bytes passed, in order
+      * `[ ]`   Arrange: params from `build_outboard_constructor_params` whose `bytes` is a sequence that differs at every index, the variation a read that reorders, truncates, or pads fails
+      * `[ ]`   Act: `Outboard::try_new` over those params, the `Ok` outboard read through `as_bytes`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(outboard) = …;`, and the slice `as_bytes` returns equals the expected bytes stated in the assertion as their own value, since the params are moved into the call
+      * `[ ]`   Boundary: the crate-root public call `Outboard::try_new` and the read `Outboard::as_bytes`, the route `lib.rs` then `outboard::provides` then `try_new` then `as_bytes`
+      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
+    * `[ ]`   Enumeration: the read-back entry is proven by `an_outboard_reads_back_through_the_crate_root`
+
+  * `[ ]`   `directionality`
+    * `[ ]`   `outboard` depends on the standard library alone, and its `mock.rs` additionally depends on `serde_json` under the `mocks` feature; it depends on no other module of the crate; `hashing/blake3_bao` consumes the outboard through `crate::outboard::provides`; no cycle
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `adapters/hashing/Cargo.toml` is unchanged by this node, and the crate names no hash library and no encoding
+    * `[ ]`   `Outboard` derives `Clone`, `Debug`, `PartialEq`, and `Eq`
+    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, `cargo deny check`, and `cargo clippy --workspace --all-targets --all-features -- -D warnings` complete without error
+    * `[ ]`   `try_new_holds_the_params_bytes`, `try_new_admits_the_empty_sequence`, `try_new_moves_the_params_bytes_into_the_outboard`, and `as_bytes_returns_the_held_bytes_without_copy` pass
+    * `[ ]`   `an_outboard_reads_back_through_the_crate_root` passes
+    * `[ ]`   Code outside `adapters/hashing/src/outboard` reading the `bytes` field fails to compile
+
+* `[ ]`   `hashing/authentication_path` **Authentication path, the bytes that authenticate one chunk of an object against its root, admitted as held; a family-owned module of the `adapters/hashing` crate**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: a client verifies an individual chunk against the authenticated root using that chunk and its authentication path, without the remainder of the object, and a delegated store's custody is checked by asking for the path of a random chunk, so every concrete of the hashing family produces and reads a path as one family type whose layout the concrete alone interprets (CR-02 random-access verification and challenges; `docs/research/cryptography.md`, Incremental Verification; `docs/research/MVP Scope.md`, Seed Hosting and the Ciphertext Store)
+    * `[ ]`   Functional: one type holds an authentication path's bytes, reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[ ]`   Functional: the constructor admits any bytes as held, the empty sequence included, since the family declares no layout and the concrete that interprets the scheme's layout refuses a malformed path in its own methods
+    * `[ ]`   Functional: two paths compare equal exactly when their bytes are equal, and a path is printable and clonable
+    * `[ ]`   Non-functional: the module depends on the standard library alone, and its `mock.rs` additionally uses `serde_json` under the `mocks` feature; the module names no hash library and no encoding
+
+  * `[ ]`   `role`
+    * `[ ]`   Adapter family: the hashing family's family-owned authentication-path type, a module beside the factory because a type lives in the module that implements it, and the path's constructor is its implementation
+    * `[ ]`   Does not construct, parse, or validate a path's layout, and does not verify a chunk; `hashing/blake3_bao` produces paths in the BLAKE3/Bao layout, verifies chunks against them, and refuses a malformed one in its own methods
+    * `[ ]`   Does not create the crate or the `factory` module; `hashing/root` created the crate, and `hashing/blake3_bao` authors the family's generic interface in the `factory` module
+    * `[ ]`   Does not carry a commit
+
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the family-owned `authentication_path` module of the `adapters/hashing` crate, holding `AuthenticationPath`, its constructor params, and its constructor's return type
+    * `[ ]`   The module's `provides` joins the crate's public surface beside the other modules'
+    * `[ ]`   Outside: the layout of the bytes, how they are produced from an outboard, and how they authenticate a chunk against a root
+
+  * `[ ]`   `deps`
+    * `[ ]`   `hashing/root`, the same crate: the crate at `adapters/hashing`, its `Cargo.toml` with `serde_json` optional under the `mocks` feature and as a dev-dependency, and its barrel `lib.rs`, to which this node adds its module; no type of `root` is consumed
+    * `[ ]`   The standard library: `Vec<u8>` and `core::convert::Infallible`, the constructor's error arm, through the prelude and `core`
+    * `[ ]`   `serde_json` `1.0.151`, as `hashing/root` pins it in the crate's manifest; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type the invalidator returns, in `mock.rs` only
+    * `[ ]`   No reverse dependency; nothing depends on this module yet
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From the standard library: `Vec<u8>`, `<[u8]>` through `Vec::as_slice`, and `core::convert::Infallible`
+    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers and arrays, in `mock.rs` only
+
+  * `[ ]`   `adapters/hashing/src/lib.rs`
+    * `[ ]`   The crate barrel gains `mod authentication_path;` and `pub use authentication_path::provides::*;` beside the lines already in it, nothing else
+    * `[ ]`   Until `authentication_path/mod.rs` exists, `cargo check` reports the unresolved `mod authentication_path`, which is the RED state for every element below that precedes the implementation
+
+  * `[ ]`   `adapters/hashing/src/authentication_path/interface.rs`
+    * `[ ]`   `AuthenticationPath`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: Vec<u8>`, so only the `authentication_path` module and its children reach the field
+    * `[ ]`   `AuthenticationPathConstructorParams`, a struct with the one field `pub bytes: Vec<u8>`; no derives
+    * `[ ]`   `AuthenticationPathTryNewReturn`, the alias `Result<AuthenticationPath, Infallible>`; the error arm is uninhabited because the family admits any bytes as held
+    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
+
+  * `[ ]`   `adapters/hashing/src/authentication_path/interaction.spec.md`
+    * `[ ]`   `AuthenticationPath::try_new(params: AuthenticationPathConstructorParams) -> AuthenticationPathTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(AuthenticationPath { bytes })`, the vector moved from the params without copy; the error arm has no branch
+    * `[ ]`   `AuthenticationPath::as_bytes(&self) -> &[u8]`: one branch; outcome a shared reference to the held bytes, no copy, no side effect
+    * `[ ]`   Invariants: every `AuthenticationPath` holds the bytes it was constructed from, unchanged; its only producer is `try_new`
+    * `[ ]`   Own entry, a path reads back through the crate root: condition a caller outside the crate names `AuthenticationPath` and `AuthenticationPathConstructorParams` through the crate root and passes `try_new` a sequence of distinct bytes; outcome `Ok(path)` whose `as_bytes()` yields exactly the bytes passed, in order; variation bytes that differ at every index, which a read that reorders, truncates, or pads fails; edge that must survive: the bytes an outside caller reads are the bytes the path was constructed from, reached through the accessor alone
+    * `[ ]`   Route: the crate barrel `lib.rs`, then `authentication_path::provides`, then `AuthenticationPath::try_new`, then `AuthenticationPath::as_bytes`; the route reaches no outer-edge collaborator
+    * `[ ]`   Public surface: an outside caller invokes `AuthenticationPath::try_new` and `AuthenticationPath::as_bytes`, building params with `build_authentication_path_constructor_params` from the `mocks` feature; it observes the `Ok` path through `as_bytes`; the entry proven is the read-back entry
+
+  * `[ ]`   `adapters/hashing/src/authentication_path/mock.rs`
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`
+    * `[ ]`   `AuthenticationPathConstructorParamsOverrides`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<Vec<u8>>`
+    * `[ ]`   `build_authentication_path_constructor_params(overrides: AuthenticationPathConstructorParamsOverrides) -> AuthenticationPathConstructorParams`, taking `bytes` from the override when present; the default is a byte sequence declared in `mock.rs` of 64 bytes whose byte at index `i` is `i + 1`, so the default is non-empty and no two bytes are equal
+    * `[ ]`   `AuthenticationPathConstructorParamsCorruptions`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<serde_json::Value>`
+    * `[ ]`   `invalidate_authentication_path_constructor_params(corruptions: AuthenticationPathConstructorParamsCorruptions) -> serde_json::Value`, a `Map` holding the built params' `bytes` converted with `Value::from` to an array of integers, overwritten by the corrupted key when present; `AuthenticationPathConstructorParams` stays free of derives
+    * `[ ]`   `build_authentication_path(overrides: AuthenticationPathConstructorParamsOverrides) -> AuthenticationPath`, returning the real instance from `AuthenticationPath::try_new(build_authentication_path_constructor_params(overrides))` through the irrefutable pattern `let Ok(path) = …;`, its field private
+    * `[ ]`   Enumeration of the interface's exports: `AuthenticationPathTryNewReturn` is an alias used directly by its production type; `AuthenticationPath` takes `build_authentication_path` alone, its corruption living in the params invalidator; `AuthenticationPathConstructorParams` takes the four symbols above; `AuthenticationPath::try_new` and `AuthenticationPath::as_bytes` take no function mock because the interface declares no function type for them
+    * `[ ]`   Imports `AuthenticationPath` and `AuthenticationPathConstructorParams` from `super::interface`, and `serde_json::Value` and `serde_json::Map`
+
+  * `[ ]`   `adapters/hashing/src/authentication_path/test.rs`
+    * `[ ]`   Imports `AuthenticationPath` from `super`, and `build_authentication_path`, `build_authentication_path_constructor_params`, and `AuthenticationPathConstructorParamsOverrides` from `super::mock`; the module's only dependency is the standard library, so no collaborator is replaced; every fixture is a direct builder call overriding only the `bytes` the block's variation needs
+    * `[ ]`   `try_new_holds_the_params_bytes`
+      * `[ ]`   Contract: any params yields `Ok(AuthenticationPath { bytes })` holding `params.bytes`
+      * `[ ]`   Arrange: params whose `bytes` is a short sequence of distinct bytes differing from the builder's default, so a path that holds the default or an empty sequence differs
+      * `[ ]`   Act: `AuthenticationPath::try_new` over those params
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(path) = …;`; the held `bytes`, read from the field the test module's visibility reaches, equals the same sequence stated in the assertion as literals
+    * `[ ]`   `try_new_admits_the_empty_sequence`
+      * `[ ]`   Contract: any params yields `Ok(AuthenticationPath { bytes })`, the empty sequence included, since the family admits any bytes as held
+      * `[ ]`   Arrange: params whose `bytes` is the empty vector
+      * `[ ]`   Act: `AuthenticationPath::try_new` over those params
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(path) = …;`; the held `bytes` is empty
+    * `[ ]`   `try_new_moves_the_params_bytes_into_the_path`
+      * `[ ]`   Contract: the outcome moves the vector from the params without copy
+      * `[ ]`   Arrange: params from the builder with its default bytes, the address and length of `params.bytes` read before the call
+      * `[ ]`   Act: `AuthenticationPath::try_new` over those params
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(path) = …;`; the held `bytes` has the address and the length read before the call
+    * `[ ]`   `as_bytes_returns_the_held_bytes_without_copy`
+      * `[ ]`   Contract: `as_bytes` returns a shared reference to the held bytes, no copy
+      * `[ ]`   Arrange: a path from `build_authentication_path` with no override, whose default bytes are distinct
+      * `[ ]`   Act: `AuthenticationPath::as_bytes` on that path
+      * `[ ]`   Assert: the returned slice has the address and the length of the path's held `bytes`
+
+  * `[ ]`   `construction`
+    * `[ ]`   `AuthenticationPath::try_new` is the only producer; no `Default`, `From`, or other constructor exists; the commitment concrete constructs a path where it produces one, and a receiver of a path from a peer constructs one through `try_new` before handing it to the concrete that verifies it
+
+  * `[ ]`   `adapters/hashing/src/authentication_path/mod.rs`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `impl AuthenticationPath` with `pub fn try_new(params: AuthenticationPathConstructorParams) -> AuthenticationPathTryNewReturn` returning `Ok(AuthenticationPath { bytes: params.bytes })`, and `pub fn as_bytes(&self) -> &[u8]` returning `&self.bytes`
+    * `[ ]`   Imports `AuthenticationPath`, `AuthenticationPathConstructorParams`, and `AuthenticationPathTryNewReturn` from `interface`
+    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/hashing/src/authentication_path/provides.rs`
+    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
+
+  * `[ ]`   `adapters/hashing/tests/authentication_path_integration_test.rs`
+    * `[ ]`   Imports `AuthenticationPath` through the crate root `hashing`, and `build_authentication_path_constructor_params` and `AuthenticationPathConstructorParamsOverrides` from the crate root under the `mocks` feature; nothing is imported from a module path
+    * `[ ]`   `an_authentication_path_reads_back_through_the_crate_root`
+      * `[ ]`   Contract: the own entry, a path reads back through the crate root; a sequence of distinct bytes yields `Ok(path)` whose `as_bytes()` yields exactly the bytes passed, in order
+      * `[ ]`   Arrange: params from `build_authentication_path_constructor_params` whose `bytes` is a sequence that differs at every index, the variation a read that reorders, truncates, or pads fails
+      * `[ ]`   Act: `AuthenticationPath::try_new` over those params, the `Ok` path read through `as_bytes`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(path) = …;`, and the slice `as_bytes` returns equals the expected bytes stated in the assertion as their own value, since the params are moved into the call
+      * `[ ]`   Boundary: the crate-root public call `AuthenticationPath::try_new` and the read `AuthenticationPath::as_bytes`, the route `lib.rs` then `authentication_path::provides` then `try_new` then `as_bytes`
+      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
+    * `[ ]`   Enumeration: the read-back entry is proven by `an_authentication_path_reads_back_through_the_crate_root`
+
+  * `[ ]`   `directionality`
+    * `[ ]`   `authentication_path` depends on the standard library alone, and its `mock.rs` additionally depends on `serde_json` under the `mocks` feature; it depends on no other module of the crate; `hashing/blake3_bao` consumes the path through `crate::authentication_path::provides`; no cycle
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `adapters/hashing/Cargo.toml` is unchanged by this node, and the crate names no hash library and no encoding
+    * `[ ]`   `AuthenticationPath` derives `Clone`, `Debug`, `PartialEq`, and `Eq`
+    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, `cargo deny check`, and `cargo clippy --workspace --all-targets --all-features -- -D warnings` complete without error
+    * `[ ]`   `try_new_holds_the_params_bytes`, `try_new_admits_the_empty_sequence`, `try_new_moves_the_params_bytes_into_the_path`, and `as_bytes_returns_the_held_bytes_without_copy` pass
+    * `[ ]`   `an_authentication_path_reads_back_through_the_crate_root` passes
+    * `[ ]`   Code outside `adapters/hashing/src/authentication_path` reading the `bytes` field fails to compile
+
+* `[ ]`   `hashing/chunk` **Chunk, the bytes of one Bao chunk of an object, the unit a client verifies against a root, admitted as held; a family-owned module of the `adapters/hashing` crate**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: verification granularity is the Bao chunk, so a client verifies pieces chunk by chunk as they arrive and in any order, a seeder serves a chunk with its authentication path, and a delegated store's custody is checked by asking for a random chunk, and every concrete of the hashing family produces and reads a chunk as one family type whose permitted length the concrete alone fixes (CR-02 streaming and random-access verification and challenges; `docs/research/cryptography.md`, Units and Incremental Verification)
+    * `[ ]`   Functional: one type holds a chunk's bytes, reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[ ]`   Functional: the constructor admits any bytes as held, the empty sequence included, since the family declares no length and the concrete that interprets the scheme's layout refuses a chunk of the wrong length in its own methods
+    * `[ ]`   Functional: two chunks compare equal exactly when their bytes are equal, and a chunk is printable and clonable
+    * `[ ]`   Non-functional: the module depends on the standard library alone, and its `mock.rs` additionally uses `serde_json` under the `mocks` feature; the module names no hash library and no encoding
+
+  * `[ ]`   `role`
+    * `[ ]`   Adapter family: the hashing family's family-owned chunk type, a module beside the factory because a type lives in the module that implements it, and the chunk's constructor is its implementation
+    * `[ ]`   Does not slice an object into chunks, fix a chunk's length, or verify a chunk; `hashing/blake3_bao` declares the chunk granularity, slices and verifies chunks, and refuses a chunk of the wrong length in its own methods
+    * `[ ]`   Does not create the crate or the `factory` module; `hashing/root` created the crate, and `hashing/blake3_bao` authors the family's generic interface in the `factory` module
+    * `[ ]`   Does not carry a commit
+
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the family-owned `chunk` module of the `adapters/hashing` crate, holding `Chunk`, its constructor params, and its constructor's return type
+    * `[ ]`   The module's `provides` joins the crate's public surface beside the other modules'
+    * `[ ]`   Outside: the chunk's position and permitted length within an object, how it is sliced from an object, and how it is verified against a root
+
+  * `[ ]`   `deps`
+    * `[ ]`   `hashing/root`, the same crate: the crate at `adapters/hashing`, its `Cargo.toml` with `serde_json` optional under the `mocks` feature and as a dev-dependency, and its barrel `lib.rs`, to which this node adds its module; no type of `root` is consumed
+    * `[ ]`   The standard library: `Vec<u8>` and `core::convert::Infallible`, the constructor's error arm, through the prelude and `core`
+    * `[ ]`   `serde_json` `1.0.151`, as `hashing/root` pins it in the crate's manifest; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type the invalidator returns, in `mock.rs` only
+    * `[ ]`   No reverse dependency; nothing depends on this module yet
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From the standard library: `Vec<u8>`, `<[u8]>` through `Vec::as_slice`, and `core::convert::Infallible`
+    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers and arrays, in `mock.rs` only
+
+  * `[ ]`   `adapters/hashing/src/lib.rs`
+    * `[ ]`   The crate barrel gains `mod chunk;` and `pub use chunk::provides::*;` beside the lines already in it, nothing else
+    * `[ ]`   Until `chunk/mod.rs` exists, `cargo check` reports the unresolved `mod chunk`, which is the RED state for every element below that precedes the implementation
+
+  * `[ ]`   `adapters/hashing/src/chunk/interface.rs`
+    * `[ ]`   `Chunk`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: Vec<u8>`, so only the `chunk` module and its children reach the field
+    * `[ ]`   `ChunkConstructorParams`, a struct with the one field `pub bytes: Vec<u8>`; no derives
+    * `[ ]`   `ChunkTryNewReturn`, the alias `Result<Chunk, Infallible>`; the error arm is uninhabited because the family admits any bytes as held
+    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
+
+  * `[ ]`   `adapters/hashing/src/chunk/interaction.spec.md`
+    * `[ ]`   `Chunk::try_new(params: ChunkConstructorParams) -> ChunkTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(Chunk { bytes })`, the vector moved from the params without copy; the error arm has no branch
+    * `[ ]`   `Chunk::as_bytes(&self) -> &[u8]`: one branch; outcome a shared reference to the held bytes, no copy, no side effect
+    * `[ ]`   Invariants: every `Chunk` holds the bytes it was constructed from, unchanged; its only producer is `try_new`
+    * `[ ]`   Own entry, a chunk reads back through the crate root: condition a caller outside the crate names `Chunk` and `ChunkConstructorParams` through the crate root and passes `try_new` a sequence of distinct bytes; outcome `Ok(chunk)` whose `as_bytes()` yields exactly the bytes passed, in order; variation bytes that differ at every index, which a read that reorders, truncates, or pads fails; edge that must survive: the bytes an outside caller reads are the bytes the chunk was constructed from, reached through the accessor alone
+    * `[ ]`   Route: the crate barrel `lib.rs`, then `chunk::provides`, then `Chunk::try_new`, then `Chunk::as_bytes`; the route reaches no outer-edge collaborator
+    * `[ ]`   Public surface: an outside caller invokes `Chunk::try_new` and `Chunk::as_bytes`, building params with `build_chunk_constructor_params` from the `mocks` feature; it observes the `Ok` chunk through `as_bytes`; the entry proven is the read-back entry
+
+  * `[ ]`   `adapters/hashing/src/chunk/mock.rs`
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`
+    * `[ ]`   `ChunkConstructorParamsOverrides`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<Vec<u8>>`
+    * `[ ]`   `build_chunk_constructor_params(overrides: ChunkConstructorParamsOverrides) -> ChunkConstructorParams`, taking `bytes` from the override when present; the default is a byte sequence declared in `mock.rs` of 1024 bytes, the Bao chunk length `docs/research/cryptography.md`'s Units fixes, whose byte at index `i` is `i % 255 + 1`, so every byte is nonzero and no run of 255 consecutive bytes repeats a value
+    * `[ ]`   `ChunkConstructorParamsCorruptions`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<serde_json::Value>`
+    * `[ ]`   `invalidate_chunk_constructor_params(corruptions: ChunkConstructorParamsCorruptions) -> serde_json::Value`, a `Map` holding the built params' `bytes` converted with `Value::from` to an array of integers, overwritten by the corrupted key when present; `ChunkConstructorParams` stays free of derives
+    * `[ ]`   `build_chunk(overrides: ChunkConstructorParamsOverrides) -> Chunk`, returning the real instance from `Chunk::try_new(build_chunk_constructor_params(overrides))` through the irrefutable pattern `let Ok(chunk) = …;`, its field private
+    * `[ ]`   Enumeration of the interface's exports: `ChunkTryNewReturn` is an alias used directly by its production type; `Chunk` takes `build_chunk` alone, its corruption living in the params invalidator; `ChunkConstructorParams` takes the four symbols above; `Chunk::try_new` and `Chunk::as_bytes` take no function mock because the interface declares no function type for them
+    * `[ ]`   Imports `Chunk` and `ChunkConstructorParams` from `super::interface`, and `serde_json::Value` and `serde_json::Map`
+
+  * `[ ]`   `adapters/hashing/src/chunk/test.rs`
+    * `[ ]`   Imports `Chunk` from `super`, and `build_chunk`, `build_chunk_constructor_params`, and `ChunkConstructorParamsOverrides` from `super::mock`; the module's only dependency is the standard library, so no collaborator is replaced; every fixture is a direct builder call overriding only the `bytes` the block's variation needs
+    * `[ ]`   `try_new_holds_the_params_bytes`
+      * `[ ]`   Contract: any params yields `Ok(Chunk { bytes })` holding `params.bytes`
+      * `[ ]`   Arrange: params whose `bytes` is a short sequence of distinct bytes differing from the builder's default, so a chunk that holds the default or an empty sequence differs
+      * `[ ]`   Act: `Chunk::try_new` over those params
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(chunk) = …;`; the held `bytes`, read from the field the test module's visibility reaches, equals the same sequence stated in the assertion as literals
+    * `[ ]`   `try_new_admits_the_empty_sequence`
+      * `[ ]`   Contract: any params yields `Ok(Chunk { bytes })`, the empty sequence included, since the family admits any bytes as held
+      * `[ ]`   Arrange: params whose `bytes` is the empty vector
+      * `[ ]`   Act: `Chunk::try_new` over those params
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(chunk) = …;`; the held `bytes` is empty
+    * `[ ]`   `try_new_moves_the_params_bytes_into_the_chunk`
+      * `[ ]`   Contract: the outcome moves the vector from the params without copy
+      * `[ ]`   Arrange: params from the builder with its default bytes, the address and length of `params.bytes` read before the call
+      * `[ ]`   Act: `Chunk::try_new` over those params
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(chunk) = …;`; the held `bytes` has the address and the length read before the call
+    * `[ ]`   `as_bytes_returns_the_held_bytes_without_copy`
+      * `[ ]`   Contract: `as_bytes` returns a shared reference to the held bytes, no copy
+      * `[ ]`   Arrange: a chunk from `build_chunk` with no override, whose default bytes are nonzero
+      * `[ ]`   Act: `Chunk::as_bytes` on that chunk
+      * `[ ]`   Assert: the returned slice has the address and the length of the chunk's held `bytes`
+
+  * `[ ]`   `construction`
+    * `[ ]`   `Chunk::try_new` is the only producer; no `Default`, `From`, or other constructor exists; the commitment concrete constructs a chunk where it slices one from an object, and a receiver of a chunk from a peer constructs one through `try_new` before handing it to the concrete that verifies it
+
+  * `[ ]`   `adapters/hashing/src/chunk/mod.rs`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `impl Chunk` with `pub fn try_new(params: ChunkConstructorParams) -> ChunkTryNewReturn` returning `Ok(Chunk { bytes: params.bytes })`, and `pub fn as_bytes(&self) -> &[u8]` returning `&self.bytes`
+    * `[ ]`   Imports `Chunk`, `ChunkConstructorParams`, and `ChunkTryNewReturn` from `interface`
+    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/hashing/src/chunk/provides.rs`
+    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
+
+  * `[ ]`   `adapters/hashing/tests/chunk_integration_test.rs`
+    * `[ ]`   Imports `Chunk` through the crate root `hashing`, and `build_chunk_constructor_params` and `ChunkConstructorParamsOverrides` from the crate root under the `mocks` feature; nothing is imported from a module path
+    * `[ ]`   `a_chunk_reads_back_through_the_crate_root`
+      * `[ ]`   Contract: the own entry, a chunk reads back through the crate root; a sequence of distinct bytes yields `Ok(chunk)` whose `as_bytes()` yields exactly the bytes passed, in order
+      * `[ ]`   Arrange: params from `build_chunk_constructor_params` whose `bytes` is a sequence that differs at every index, the variation a read that reorders, truncates, or pads fails
+      * `[ ]`   Act: `Chunk::try_new` over those params, the `Ok` chunk read through `as_bytes`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(chunk) = …;`, and the slice `as_bytes` returns equals the expected bytes stated in the assertion as their own value, since the params are moved into the call
+      * `[ ]`   Boundary: the crate-root public call `Chunk::try_new` and the read `Chunk::as_bytes`, the route `lib.rs` then `chunk::provides` then `try_new` then `as_bytes`
+      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
+    * `[ ]`   Enumeration: the read-back entry is proven by `a_chunk_reads_back_through_the_crate_root`
+
+  * `[ ]`   `directionality`
+    * `[ ]`   `chunk` depends on the standard library alone, and its `mock.rs` additionally depends on `serde_json` under the `mocks` feature; it depends on no other module of the crate; `hashing/blake3_bao` consumes the chunk through `crate::chunk::provides`; no cycle
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `adapters/hashing/Cargo.toml` is unchanged by this node, and the crate names no hash library and no encoding
+    * `[ ]`   `Chunk` derives `Clone`, `Debug`, `PartialEq`, and `Eq`
+    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, `cargo deny check`, and `cargo clippy --workspace --all-targets --all-features -- -D warnings` complete without error
+    * `[ ]`   `try_new_holds_the_params_bytes`, `try_new_admits_the_empty_sequence`, `try_new_moves_the_params_bytes_into_the_chunk`, and `as_bytes_returns_the_held_bytes_without_copy` pass
+    * `[ ]`   `a_chunk_reads_back_through_the_crate_root` passes
+    * `[ ]`   Code outside `adapters/hashing/src/chunk` reading the `bytes` field fails to compile
+
+* `[ ]`   `hashing/blake3_bao` **BLAKE3/Bao commitment concrete constructing an object's root and outboard, unkeyed or keyed, authenticating a chunk with its path, verifying a chunk against a root, and drawing a random chunk challenge; authors the hashing family's generic interface, commitment-scheme identifier, declaration, and mock**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: every content root, the plaintext, ciphertext, and sidecar roots and the asset's identity among them, is constructed and verified through one repo-owned commitment interface, so a seeder verifies opaque pieces it cannot read, a decrypting client verifies what it produced, a delegated store's custody is checked by random challenge, and no module outside the concrete names the hash library (CR-02; EC-02; SW-04; `docs/research/cryptography.md`, Content Commitments, Incremental Verification, and Plaintext Root Disclosure Modes)
+    * `[ ]`   Functional: the family's generic interface commits to an object's bytes, returning its root and outboard; authenticates one chunk of an object from its bytes and outboard, returning the chunk and its authentication path; verifies a chunk against a root with its path, at any index and in any order; and maps a caller's uniform draw to a chunk index of an object, the random chunk challenge whose response is the authenticated chunk
+    * `[ ]`   Functional: every commitment and verification takes a commitment key that is either unkeyed, the Public disclosure mode, or keyed by a borrowed `Secret` holding the plaintext-root key the key-derivation family derives, the Keyed disclosure mode
+    * `[ ]`   Functional: every concrete declares the commitment-scheme identifier a deployment's hash-card carries, its chunk granularity, its adapter version, and the interface version it implements, readable before any instance exists
+    * `[ ]`   Functional: the BLAKE3/Bao concrete's unkeyed root is the BLAKE3 hash of the content and its keyed root is the BLAKE3 keyed hash under the key; its outboard is the Bao outboard layout, the content length as 8 little-endian bytes followed by the BLAKE3 tree's parent nodes in pre-order, each node the left and right children's 32-byte chaining values; `bao` constructs the unkeyed root and outboard, and `blake3`'s keyed mode and its tree operations construct the keyed ones and verify every chunk
+    * `[ ]`   Functional: corruption of a root, a path, a chunk, a length, or a chunk's order is detected; an outboard that does not match its content is refused; a key of the wrong length is refused before anything is hashed
+    * `[ ]`   Non-functional: `blake3` and `bao` are named only inside `adapters/hashing/src/blake3_bao`; every hasher keyed by the commitment key and every copy of the key is zeroized after use; the family carries no digest operation and no identity-hash identifier, and the crate depends on no encoding (PR-02)
+
+  * `[ ]`   `role`
+    * `[ ]`   Adapter: the hashing family's first concrete, and the first source file that requires the family's generic interface, commitment key, identifier, declaration, and mock, which it authors in the family's `factory` module as its producers
+    * `[ ]`   Creates `factory/mod.rs` with the module wiring alone and `factory/provides.rs` with the interface and mock surface alone; the factory function, its types, its interaction spec, its unit test, its re-export, and the family's integration test are `hashing/factory`'s
+    * `[ ]`   Does not draw randomness; the caller of `challenge` draws the uniform value through the randomness family and hands it in
+    * `[ ]`   Does not derive the plaintext-root key; the key-derivation family derives it under its plaintext-root purpose and the caller borrows it in
+    * `[ ]`   Does not encode a root, resolve a name, or own the root, outboard, path, or chunk types; `hashing/root`, `hashing/outboard`, `hashing/authentication_path`, and `hashing/chunk` own them, and the encoding family describes the root
+    * `[ ]`   Does not carry a commit
+
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `adapters/hashing` crate's `factory` module, holding the family's generic trait, the commitment key, each method's params, payload, success, error, and return types, the commitment-scheme identifier, the declaration, the interface version, the failure modes, and the family's mock; and its private `blake3_bao` concrete, holding the adapter over `blake3` and `bao`, its layout constants, its constructor params and return, and its own errors
+    * `[ ]`   Outside: the root, outboard, path, and chunk types' own constructors, the factory's selection of a concrete, the randomness a challenge draws, the derivation of the plaintext-root key, and what each caller does with a root
+
+  * `[ ]`   `deps`
+    * `[ ]`   `domain/secret`, `crates/domain`, protocol and domain ring, path dependency; supplies `Secret`, whose `expose` the concrete reads the keyed commitment key through; direction inward, adapter ring on domain ring
+    * `[ ]`   `domain` with its `mocks` feature, as a dev-dependency and through this crate's `mocks` feature; supplies `build_secret` and `SecretConstructorParamsOverrides` for the reference key
+    * `[ ]`   `hashing/root`, the same crate: `Root`, `RootConstructorParams`, `RootTryNewErrorReturn`, and `ROOT_LENGTH` through `crate::root::provides`, and `build_root` and `RootConstructorParamsOverrides` in the mock files; the concrete constructs every root it produces through `Root::try_new` and reads a root through `Root::as_bytes`
+    * `[ ]`   `hashing/outboard`, the same crate: `Outboard` and `OutboardConstructorParams` through `crate::outboard::provides`, and `build_outboard` and `OutboardConstructorParamsOverrides` in the mock files; the concrete constructs outboards through `Outboard::try_new` and reads them through `Outboard::as_bytes`
+    * `[ ]`   `hashing/authentication_path`, the same crate: `AuthenticationPath` and `AuthenticationPathConstructorParams` through `crate::authentication_path::provides`, and `build_authentication_path` and `AuthenticationPathConstructorParamsOverrides` in the mock files; constructed through `AuthenticationPath::try_new`, read through `AuthenticationPath::as_bytes`
+    * `[ ]`   `hashing/chunk`, the same crate: `Chunk` and `ChunkConstructorParams` through `crate::chunk::provides`, and `build_chunk` and `ChunkConstructorParamsOverrides` in the mock files; constructed through `Chunk::try_new`, read through `Chunk::as_bytes`
+    * `[ ]`   `zeroize` `1.9.0`, external crate, Apache-2.0 OR MIT, runtime dependency; supplies the `Zeroize` trait the concrete calls on keyed hashers and on its copy of the key
+    * `[ ]`   `blake3` `1.8.7`, external crate, CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception, runtime dependency with the `zeroize` feature, named only in `blake3_bao`; supplies `Hasher`, `Hash`, and the `hazmat` module's `HasherExt`, `Mode`, `merge_subtrees_non_root`, `merge_subtrees_root`, and `left_subtree_len`
+    * `[ ]`   `bao` `0.13.1`, external crate, CC0-1.0 OR Apache-2.0, runtime dependency named only in `blake3_bao`; supplies `bao::encode::outboard`, and in the concrete's mock `bao::encode::SliceExtractor` for the independent path oracle
+    * `[ ]`   `serde_json` `1.0.151`, as `hashing/root` pins it in the crate's manifest; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type every invalidator returns, in the mock files only
+    * `[ ]`   `core::convert::Infallible`, `TryFrom<usize> for u64`, `u64::from_le_bytes`, `u64::to_le_bytes`, `u64::div_ceil`, `<[u8]>::first_chunk`, `TryFrom<&[u8]> for [u8; 32]`, `std::collections::hash_map::DefaultHasher`, `std::hash::Hasher`, `std::io::{Cursor, Read}`, and `std::sync::OnceLock`, standard library
+    * `[ ]`   No reverse dependency beyond the family form's recorded cycle: the `factory` module's errors carry this concrete's errors; nothing outside the crate depends on the `factory` module yet
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From `domain`: `Secret::expose(&self) -> &Vec<u8>` over `Secret<Vec<u8>>`; from `domain`'s mocks: `build_secret(value: Vec<u8>, SecretConstructorParamsOverrides) -> Secret<Vec<u8>>`
+    * `[ ]`   From the crate's own modules: `Root::try_new(RootConstructorParams { bytes }) -> Result<Root, RootTryNewErrorReturn>` and `Root::as_bytes(&self) -> &[u8; ROOT_LENGTH]`; `Outboard::try_new`, `AuthenticationPath::try_new`, and `Chunk::try_new`, each over its params' `bytes: Vec<u8>` returning `Result<_, Infallible>`, and each type's `as_bytes(&self) -> &[u8]`
+    * `[ ]`   From `blake3`: `Hasher::new() -> Hasher`, `Hasher::new_keyed(key: &[u8; 32]) -> Hasher`, `Hasher::update(&mut self, input: &[u8]) -> &mut Hasher`, `Hasher::finalize(&self) -> Hash`, `Hash::as_bytes(&self) -> &[u8; 32]`, constant-time `PartialEq<[u8; 32]> for Hash`, `blake3::hash(input: &[u8]) -> Hash` and `blake3::keyed_hash(key: &[u8; 32], input: &[u8]) -> Hash` in the concrete's mock only, and `Zeroize` for `Hasher` under the `zeroize` feature
+    * `[ ]`   From `blake3::hazmat`: `HasherExt::set_input_offset(&mut self, offset: u64) -> &mut Self` with the offset a multiple of the 1024-byte chunk length, `HasherExt::finalize_non_root(&self) -> ChainingValue`, `merge_subtrees_non_root(left_child: &ChainingValue, right_child: &ChainingValue, mode: Mode<'_>) -> ChainingValue`, `merge_subtrees_root(left_child: &ChainingValue, right_child: &ChainingValue, mode: Mode<'_>) -> Hash`, `left_subtree_len(input_len: u64) -> u64` for an input of more than one chunk, and `Mode::Hash` and `Mode::KeyedHash(&[u8; 32])`; an input of one chunk or fewer bytes has no parent node and its root is `Hasher::finalize`
+    * `[ ]`   From `bao`: `bao::encode::outboard(input: impl AsRef<[u8]>) -> (Vec<u8>, bao::Hash)`, the Bao outboard layout and the BLAKE3 root; in the concrete's mock, `bao::encode::SliceExtractor::new_outboard(input, outboard, slice_start, slice_len)` over `Cursor`s, read to its end, the slice being the 8-byte length header, the parent nodes on the path to the chunk root first, and the chunk
+    * `[ ]`   From `zeroize`: `Zeroize::zeroize(&mut self)` on `Hasher` and on `[u8; 32]`
+    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers, strings, and arrays, in the mock files only
+
+  * `[ ]`   `adapters/hashing/Cargo.toml`
+    * `[ ]`   `[dependencies]` gains `domain = { path = "../../crates/domain" }`, `zeroize = "1.9.0"`, `blake3 = { version = "1.8.7", features = ["zeroize"] }`, and `bao = "0.13.1"` beside the `serde_json` entry `hashing/root` authors
+    * `[ ]`   `[dev-dependencies]` gains `domain = { path = "../../crates/domain", features = ["mocks"] }` beside the `serde_json` entry
+    * `[ ]`   `[features]` reads `mocks = ["domain/mocks", "dep:serde_json"]`
+    * `[ ]`   No other change
+
+  * `[ ]`   `adapters/hashing/src/lib.rs`
+    * `[ ]`   The crate barrel gains `mod blake3_bao;`, `mod factory;`, and `pub use factory::provides::*;` beside the lines already in it, nothing else
+    * `[ ]`   Until `factory/mod.rs` and `blake3_bao/mod.rs` exist, `cargo check` reports the unresolved modules, which is the RED state for every element below that precedes them
+
+  * `[ ]`   `adapters/hashing/src/factory/interface.rs`
+    * `[ ]`   `COMMITMENT_INTERFACE_VERSION`, a `pub const` of type `u32` with value `1`
+    * `[ ]`   `CommitmentSchemeIdentifier`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variant `Blake3BaoV1`, the identifier a deployment's hash-card carries, and, behind `#[cfg(any(test, feature = "mocks"))]`, the variant `MockV1`, the identifier the family's mock concrete declares; equality is what the factory admits a concrete by
+    * `[ ]`   `CommitmentSchemeDeclaration`, a struct with `pub identifier: CommitmentSchemeIdentifier`, `pub chunk_length: usize`, `pub adapter_version: u32`, and `pub interface_version: u32`
+    * `[ ]`   `CommitmentKey<'a>`, an enum with the variants `Unkeyed`, the Public disclosure mode, and `Keyed(&'a Secret<Vec<u8>>)`, the Keyed disclosure mode under the borrowed plaintext-root key
+    * `[ ]`   `CommitParams`, `AuthenticateChunkParams`, `VerifyChunkParams`, and `ChallengeParams`, each the fieldless struct `pub struct …;`, the per-call control slot of its method
+    * `[ ]`   `CommitPayload<'a>`, a struct with `pub key: CommitmentKey<'a>` and `pub content: &'a [u8]`
+    * `[ ]`   `CommitSuccessReturn`, a struct with `pub root: Root` and `pub outboard: Outboard`
+    * `[ ]`   `CommitErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `KeyLengthInvalid { length: usize, expected_length: usize }`, the family's flavor every concrete decides from the key before hashing, `Blake3Bao(Blake3BaoCommitErrorReturn)`, the BLAKE3/Bao concrete's own error carried unchanged, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterCommitErrorReturn)`; `CommitReturn`, the alias `Result<CommitSuccessReturn, CommitErrorReturn>`
+    * `[ ]`   `AuthenticateChunkPayload<'a>`, a struct with `pub content: &'a [u8]`, `pub outboard: &'a Outboard`, and `pub chunk_index: u64`
+    * `[ ]`   `AuthenticateChunkSuccessReturn`, a struct with `pub chunk: Chunk` and `pub path: AuthenticationPath`
+    * `[ ]`   `AuthenticateChunkErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the family's flavors `OutboardMalformed { expected_length: usize, actual_length: usize }`, `OutboardContentLengthMismatch { declared_length: u64, content_length: u64 }`, and `ChunkIndexOutOfRange { chunk_index: u64, chunk_count: u64 }`, the variant `Blake3Bao(Blake3BaoAuthenticateChunkErrorReturn)`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterAuthenticateChunkErrorReturn)`; `AuthenticateChunkReturn`, the alias `Result<AuthenticateChunkSuccessReturn, AuthenticateChunkErrorReturn>`
+    * `[ ]`   `VerifyChunkPayload<'a>`, a struct with `pub key: CommitmentKey<'a>`, `pub root: &'a Root`, `pub content_length: u64`, `pub chunk_index: u64`, `pub chunk: &'a Chunk`, and `pub path: &'a AuthenticationPath`
+    * `[ ]`   `VerifyChunkSuccessReturn`, the fieldless struct `pub struct VerifyChunkSuccessReturn;`, the chunk verified
+    * `[ ]`   `VerifyChunkErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the family's flavors `KeyLengthInvalid { length: usize, expected_length: usize }`, `ChunkIndexOutOfRange { chunk_index: u64, chunk_count: u64 }`, `ChunkLengthInvalid { chunk_index: u64, expected_length: u64, actual_length: usize }`, `PathMalformed { chunk_index: u64, expected_length: usize, actual_length: usize }`, and `Mismatch { chunk_index: u64 }`; no concrete's own variant, since every arm is decided from the inputs; `VerifyChunkReturn`, the alias `Result<VerifyChunkSuccessReturn, VerifyChunkErrorReturn>`
+    * `[ ]`   `ChallengePayload`, a struct with `pub content_length: u64` and `pub draw: u64`, the object's length and the caller's uniform draw
+    * `[ ]`   `ChallengeSuccessReturn`, a struct with `pub chunk_index: u64`; `ChallengeReturn`, the alias `Result<ChallengeSuccessReturn, Infallible>`, the error arm uninhabited because every draw maps to an index
+    * `[ ]`   `MockICommitmentAdapterFailureMode`, behind `#[cfg(any(test, feature = "mocks"))]`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variants `NoFailure` and `ContentLengthUnrepresentable`, the second standing for the arm of `commit` and of `authenticate_chunk` that no input reaches, a content length that does not fit a `u64`
+    * `[ ]`   `ICommitmentAdapter`, an object-safe trait with `fn declaration(&self) -> CommitmentSchemeDeclaration;`, `fn commit(&self, params: CommitParams, payload: CommitPayload<'_>) -> CommitReturn;`, `fn authenticate_chunk(&self, params: AuthenticateChunkParams, payload: AuthenticateChunkPayload<'_>) -> AuthenticateChunkReturn;`, `fn verify_chunk(&self, params: VerifyChunkParams, payload: VerifyChunkPayload<'_>) -> VerifyChunkReturn;`, and `fn challenge(&self, params: ChallengeParams, payload: ChallengePayload) -> ChallengeReturn;`; the declaration remains available through `Box<dyn ICommitmentAdapter>`
+    * `[ ]`   No derives on any type in this file beyond those stated; imports `domain::Secret`, `core::convert::Infallible`, `Root` from `crate::root::provides`, `Outboard` from `crate::outboard::provides`, `AuthenticationPath` from `crate::authentication_path::provides`, `Chunk` from `crate::chunk::provides`, `Blake3BaoCommitErrorReturn` and `Blake3BaoAuthenticateChunkErrorReturn` from `crate::blake3_bao::provides`, and, behind `#[cfg(any(test, feature = "mocks"))]`, the mock concrete's error types from `super::mock`; names no vendor
+
+  * `[ ]`   `adapters/hashing/src/blake3_bao/interface.rs`
+    * `[ ]`   `Blake3Bao`, the unit struct `pub struct Blake3Bao;`, the adapter over `blake3` and `bao`
+    * `[ ]`   `Blake3BaoConstructorParams`, the fieldless struct `pub struct Blake3BaoConstructorParams;`; `Blake3BaoTryNewReturn`, the alias `Result<Blake3Bao, Infallible>`, the error arm uninhabited because the adapter takes no configuration
+    * `[ ]`   The layout constants, each a `pub const` of type `usize`: `BLAKE3_BAO_CHUNK_LENGTH` with value `1024`, the Bao chunk `docs/research/cryptography.md`'s Units fixes; `BLAKE3_BAO_KEY_LENGTH` with value `32`, the BLAKE3 key; `BLAKE3_BAO_OUTBOARD_HEADER_LENGTH` with value `8`, the content length's little-endian bytes; and `BLAKE3_BAO_PARENT_NODE_LENGTH` with value `64`, two 32-byte chaining values
+    * `[ ]`   `Blake3BaoCommitErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `ContentLengthUnrepresentable { length: usize }`, a content length a `u64` cannot hold, and `RootRefused(RootTryNewErrorReturn)`, the root type's refusal of a hash that is all zero, carried unchanged
+    * `[ ]`   `Blake3BaoAuthenticateChunkErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `ContentLengthUnrepresentable { length: usize }`
+    * `[ ]`   Imports `core::convert::Infallible` and `RootTryNewErrorReturn` from `crate::root::provides`; declares nothing else
+
+  * `[ ]`   `adapters/hashing/src/blake3_bao/interaction.spec.md`
+    * `[ ]`   `Blake3Bao::try_new(params: Blake3BaoConstructorParams) -> Blake3BaoTryNewReturn`: one branch; condition any params; outcome `Ok(Blake3Bao)`; the error arm has no branch
+    * `[ ]`   `Blake3Bao::DECLARATION`: the inherent constant `CommitmentSchemeDeclaration { identifier: CommitmentSchemeIdentifier::Blake3BaoV1, chunk_length: BLAKE3_BAO_CHUNK_LENGTH, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`; `declaration(&self)`: one branch; outcome `Blake3Bao::DECLARATION`
+    * `[ ]`   The tree, which every keyed construction and every verification computes: an input of at most `BLAKE3_BAO_CHUNK_LENGTH` bytes is one chunk with no parent node, its root `Hasher::finalize` over the chunk; a larger input splits into a left subtree of `left_subtree_len` bytes and a right subtree of the rest, each subtree's chaining value is its chunk's `finalize_non_root` under `set_input_offset` of the chunk's byte offset, or the `merge_subtrees_non_root` of its children's, and the root is the `merge_subtrees_root` of the top children's; every hasher is `Hasher::new` under `CommitmentKey::Unkeyed` with `Mode::Hash`, and `Hasher::new_keyed` under `CommitmentKey::Keyed` with `Mode::KeyedHash` over the key's 32-byte copy
+    * `[ ]`   The chunk geometry, which every method reads from a content length `n`: the chunk count is `n.div_ceil(BLAKE3_BAO_CHUNK_LENGTH)` and at least one; chunk `i` spans bytes `i × BLAKE3_BAO_CHUNK_LENGTH` up to the lesser of the next multiple and `n`; the outboard length is `BLAKE3_BAO_OUTBOARD_HEADER_LENGTH + BLAKE3_BAO_PARENT_NODE_LENGTH × (chunk count − 1)`; a chunk's path is the parent nodes of the subtrees that contain it, root first, so its length is `BLAKE3_BAO_PARENT_NODE_LENGTH` times their number
+    * `[ ]`   `commit`, key length: condition `payload.key` is `Keyed(key)` and `<[u8; 32]>::try_from(key.expose().as_slice())` fails; decision the conversion, before any hashing; outcome `Err(CommitErrorReturn::KeyLengthInvalid { length, expected_length: BLAKE3_BAO_KEY_LENGTH })`, `length` the key's length
+    * `[ ]`   `commit`, content length unrepresentable: condition `u64::try_from(payload.content.len())` fails; outcome `Err(CommitErrorReturn::Blake3Bao(Blake3BaoCommitErrorReturn::ContentLengthUnrepresentable { length }))`; `usize` is at most 64 bits on every supported target, so no input takes this branch and it has no unit test
+    * `[ ]`   `commit`, unkeyed: condition `payload.key` is `Unkeyed`; dependency call `bao::encode::outboard(payload.content)` once; then `Root::try_new` over the returned hash's bytes and `Outboard::try_new` over the returned outboard; outcome `Ok(CommitSuccessReturn { root, outboard })`; a refusal of the root returns `Err(CommitErrorReturn::Blake3Bao(Blake3BaoCommitErrorReturn::RootRefused(error)))` unchanged, a hash no input is known to produce, so it has no unit test
+    * `[ ]`   `commit`, keyed: condition `payload.key` is `Keyed` with a 32-byte key; dependency calls the tree's keyed hashers and merges over every chunk and subtree; the outboard is the content length's 8 little-endian bytes followed by every parent node, left then right chaining value, in pre-order, the layout the unkeyed branch's `bao` outboard has; then `Root::try_new` over the root's bytes and `Outboard::try_new` over the outboard; outcome `Ok(CommitSuccessReturn { root, outboard })`, a root refusal returned as in the unkeyed branch
+    * `[ ]`   `authenticate_chunk`, content length unrepresentable: condition `u64::try_from(payload.content.len())` fails; outcome `Err(AuthenticateChunkErrorReturn::Blake3Bao(Blake3BaoAuthenticateChunkErrorReturn::ContentLengthUnrepresentable { length }))`; no input takes this branch and it has no unit test
+    * `[ ]`   `authenticate_chunk`, outboard malformed: condition the outboard's length differs from the outboard length the content's length implies, a header that `first_chunk` cannot read included; outcome `Err(AuthenticateChunkErrorReturn::OutboardMalformed { expected_length, actual_length })`
+    * `[ ]`   `authenticate_chunk`, outboard for other content: condition the length matches and the header's `u64::from_le_bytes` differs from the content's length; outcome `Err(AuthenticateChunkErrorReturn::OutboardContentLengthMismatch { declared_length, content_length })`
+    * `[ ]`   `authenticate_chunk`, index out of range: condition the header matches and `payload.chunk_index` is not less than the chunk count; outcome `Err(AuthenticateChunkErrorReturn::ChunkIndexOutOfRange { chunk_index, chunk_count })`
+    * `[ ]`   `authenticate_chunk`, authenticated: condition every check passes; decision the descent from the whole content toward the chunk, each subtree larger than one chunk contributing the parent node at its pre-order position in the outboard; outcome `Ok(AuthenticateChunkSuccessReturn { chunk, path })`, `chunk` the chunk's bytes through `Chunk::try_new` and `path` those parent nodes concatenated root first through `AuthenticationPath::try_new`; the key is not needed, since the outboard holds the chaining values whichever mode built it
+    * `[ ]`   `verify_chunk`, key length: condition `payload.key` is `Keyed(key)` and the 32-byte conversion fails; outcome `Err(VerifyChunkErrorReturn::KeyLengthInvalid { length, expected_length: BLAKE3_BAO_KEY_LENGTH })`
+    * `[ ]`   `verify_chunk`, index out of range: condition the key passes and `payload.chunk_index` is not less than the chunk count of `payload.content_length`; outcome `Err(VerifyChunkErrorReturn::ChunkIndexOutOfRange { chunk_index, chunk_count })`
+    * `[ ]`   `verify_chunk`, chunk length: condition the index is in range and the chunk's length differs from the extent the geometry assigns the index, a length a `u64` cannot hold counting as different; outcome `Err(VerifyChunkErrorReturn::ChunkLengthInvalid { chunk_index, expected_length, actual_length })`
+    * `[ ]`   `verify_chunk`, path malformed: condition the chunk length passes and the path's length differs from the path length the geometry assigns the index; outcome `Err(VerifyChunkErrorReturn::PathMalformed { chunk_index, expected_length, actual_length })`
+    * `[ ]`   `verify_chunk`, mismatch: condition the path length passes and, walking from the chunk's chaining value to the root, a recomputed child differs from its half of the path node above it, or the recomputed root differs from `payload.root.as_bytes()` under `Hash`'s constant-time comparison; outcome `Err(VerifyChunkErrorReturn::Mismatch { chunk_index })`
+    * `[ ]`   `verify_chunk`, verified: condition every recomputed value matches; outcome `Ok(VerifyChunkSuccessReturn)`
+    * `[ ]`   `challenge`: one branch; condition any payload; decision `payload.draw % chunk count` of `payload.content_length`; outcome `Ok(ChallengeSuccessReturn { chunk_index })`; a uniform draw yields each index with a bias below the chunk count over 2^64
+    * `[ ]`   Ordering: in `commit` and `verify_chunk` the key conversion precedes every other check; in `authenticate_chunk` the outboard's length precedes its header, which precedes the index; in `verify_chunk` the index precedes the chunk length, which precedes the path length, which precedes hashing; every keyed hasher and the key's copy are zeroized before the method returns, on every branch that made them; the same params and payload always yield the same outcome
+    * `[ ]`   Own entry `verify_chunk_accepts_every_chunk_authenticated_from_a_commitment`: condition `commit` over content under `CommitmentKey::Unkeyed`, then `authenticate_chunk` for each chunk index from the content and the returned outboard; outcome `verify_chunk` with the returned root, the content's length, each index, and the returned chunk and path yields `Ok(VerifyChunkSuccessReturn)` for every index; variation content of three chunks whose paths have different lengths, so a descent or a walk that assumes one depth fails; the failure that must survive composition is a root, chunk, or path whose bytes change between the type that produced it and the method that reads it
+    * `[ ]`   Own entry `verify_chunk_accepts_every_chunk_authenticated_from_a_keyed_commitment`: condition as the unkeyed entry under `CommitmentKey::Keyed` of the reference key; outcome every index verifies under the same key; variation the keyed mode, whose roots and chaining values no independent implementation computes, so the keyed construction and the keyed verification are proven against each other over every path length; the failure that must survive composition is a keyed construction and a keyed verification that disagree on the tree
+    * `[ ]`   Own entry `a_keyed_commitment_does_not_verify_unkeyed`: condition a keyed commitment's chunk and path verified under `CommitmentKey::Unkeyed` against its keyed root; outcome `Err(VerifyChunkErrorReturn::Mismatch { chunk_index })`; variation the mode alone differs from the keyed entry; the failure that must survive composition is a keyed root that unkeyed verification accepts
+    * `[ ]`   Own entry `commit_leaves_the_borrowed_key_intact`: condition `commit` under `CommitmentKey::Keyed` of a living `Secret<Vec<u8>>`; outcome after the call the secret's `expose()` equals the bytes it held before; variation key bytes that are not all zero, so a zeroized secret reads differently from an intact one; the failure that must survive composition is the zeroization of the key's copy reaching the caller's secret
+    * `[ ]`   Callee dispositions: `hashing/root`'s read-back entry passes through `commit`, which constructs the root, and `verify_chunk`, which reads it, and is absorbed by `verify_chunk_accepts_every_chunk_authenticated_from_a_commitment` and `verify_chunk_accepts_every_chunk_authenticated_from_a_keyed_commitment` in `integration_test.rs`; `hashing/outboard`'s, `hashing/authentication_path`'s, and `hashing/chunk`'s read-back entries pass through `commit` and `authenticate_chunk`, which construct those types, and `authenticate_chunk` and `verify_chunk`, which read them, and are absorbed by the same two blocks
+    * `[ ]`   Private surface: the chain of real functions is `build_blake3_bao` through `Blake3Bao::try_new`, then `Blake3Bao::commit`, `Blake3Bao::authenticate_chunk`, and `Blake3Bao::verify_chunk`, which run `bao`, `blake3`, and `Zeroize::zeroize` for real and construct and read `Root`, `Outboard`, `AuthenticationPath`, and `Chunk` through their own `try_new` and `as_bytes`, with the key a `domain` `Secret` whose `expose` runs for real; no outer-edge collaborator is mocked; the observable results are each `verify_chunk` outcome and the key's bytes after the call
+    * `[ ]`   No public surface: the concrete is private to the crate and reached only through the family's factory
+
+  * `[ ]`   `adapters/hashing/src/factory/mock.rs`
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]`; imports the family's names from `super::interface`, `Secret` from `domain`, `build_secret` and `SecretConstructorParamsOverrides` from `domain`'s mocks, the four types and their builders from the crate's `root`, `outboard`, `authentication_path`, and `chunk` provides, and `serde_json::Value` and `serde_json::Map`
+    * `[ ]`   The reference inputs, defined here and public so the concrete's mock and tests read the same values the builders default to: `reference_content_bytes() -> Vec<u8>`, 2049 bytes whose byte at index `i` is `i % 251`, two full chunks and a third of one byte, so the three chunks' paths have different lengths; `reference_content() -> &'static [u8]`, those bytes held once in a `OnceLock`; `reference_key_bytes() -> Vec<u8>`, 32 bytes whose byte at index `i` is `i + 1`; `reference_key() -> &'static Secret<Vec<u8>>`, built once by `build_secret` in a `OnceLock`; and `reference_root()`, `reference_outboard()`, `reference_chunk()`, and `reference_path()`, each a `&'static` value built once in a `OnceLock` by the type's builder with no override
+    * `[ ]`   Every invalidator in this file returns `serde_json::Value`, a JSON object holding the representation of the built default's fields with each present corruption replacing its key: an enum as its variant name text by an exhaustive `match`, `CommitmentKey::Keyed` as an object with the one key `Keyed` holding the array of its secret's exposed bytes, an integer as a number, a byte slice or a root, outboard, chunk, or path as the array of its bytes through `as_bytes`; no production type is serialized
+    * `[ ]`   `CommitmentSchemeDeclarationOverrides`, `#[derive(Default)]`, one `Option` per field; `build_commitment_scheme_declaration(overrides) -> CommitmentSchemeDeclaration`, the defaults the mock concrete's own declaration: `identifier` `CommitmentSchemeIdentifier::MockV1`, `chunk_length` `1024`, `adapter_version` `1`, and `interface_version` `COMMITMENT_INTERFACE_VERSION`; `CommitmentSchemeDeclarationCorruptions`, one `Option<serde_json::Value>` per field; `invalidate_commitment_scheme_declaration(corruptions) -> serde_json::Value`
+    * `[ ]`   `CommitParamsOverrides`, `AuthenticateChunkParamsOverrides`, `VerifyChunkParamsOverrides`, and `ChallengeParamsOverrides`, each fieldless with `#[derive(Default)]`; `build_commit_params`, `build_authenticate_chunk_params`, `build_verify_chunk_params`, and `build_challenge_params`, each returning its fieldless params; no corruptions or invalidator, since a fieldless type has no rendering
+    * `[ ]`   `CommitPayloadOverrides<'a>`, `#[derive(Default)]`, one `Option` per field; `build_commit_payload<'a>(overrides) -> CommitPayload<'a>`, the defaults `key` `CommitmentKey::Unkeyed` and `content` `reference_content()`; `CommitPayloadCorruptions` and `invalidate_commit_payload(corruptions) -> serde_json::Value`
+    * `[ ]`   `CommitSuccessReturnOverrides`, `#[derive(Default)]`; `build_commit_success_return(overrides) -> CommitSuccessReturn`, the defaults `build_root` and `build_outboard` with no override; `CommitSuccessReturnCorruptions` and `invalidate_commit_success_return(corruptions) -> serde_json::Value`
+    * `[ ]`   `AuthenticateChunkPayloadOverrides<'a>`, `#[derive(Default)]`; `build_authenticate_chunk_payload<'a>(overrides) -> AuthenticateChunkPayload<'a>`, the defaults `content` `reference_content()`, `outboard` `reference_outboard()`, and `chunk_index` `0`; `AuthenticateChunkPayloadCorruptions` and `invalidate_authenticate_chunk_payload(corruptions) -> serde_json::Value`
+    * `[ ]`   `AuthenticateChunkSuccessReturnOverrides`, `#[derive(Default)]`; `build_authenticate_chunk_success_return(overrides) -> AuthenticateChunkSuccessReturn`, the defaults `build_chunk` and `build_authentication_path` with no override; `AuthenticateChunkSuccessReturnCorruptions` and `invalidate_authenticate_chunk_success_return(corruptions) -> serde_json::Value`
+    * `[ ]`   `VerifyChunkPayloadOverrides<'a>`, `#[derive(Default)]`; `build_verify_chunk_payload<'a>(overrides) -> VerifyChunkPayload<'a>`, the defaults `key` `CommitmentKey::Unkeyed`, `root` `reference_root()`, `content_length` `2049`, `chunk_index` `0`, `chunk` `reference_chunk()`, and `path` `reference_path()`; `VerifyChunkPayloadCorruptions` and `invalidate_verify_chunk_payload(corruptions) -> serde_json::Value`
+    * `[ ]`   `VerifyChunkSuccessReturnOverrides`, fieldless with `#[derive(Default)]`; `build_verify_chunk_success_return(overrides) -> VerifyChunkSuccessReturn`; no corruptions or invalidator
+    * `[ ]`   `ChallengePayloadOverrides`, `#[derive(Default)]`; `build_challenge_payload(overrides) -> ChallengePayload`, the defaults `content_length` `2049` and `draw` `0`; `ChallengePayloadCorruptions` and `invalidate_challenge_payload(corruptions) -> serde_json::Value`
+    * `[ ]`   `ChallengeSuccessReturnOverrides`, `#[derive(Default)]`; `build_challenge_success_return(overrides) -> ChallengeSuccessReturn`, the default `chunk_index` `0`; `ChallengeSuccessReturnCorruptions` and `invalidate_challenge_success_return(corruptions) -> serde_json::Value`
+    * `[ ]`   `MockICommitmentAdapterCommitErrorReturn` and `MockICommitmentAdapterAuthenticateChunkErrorReturn`, each a `pub` enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `ContentLengthUnrepresentable { length: usize }`, the mock concrete's own errors
+    * `[ ]`   `MockICommitmentAdapterConstructorParams`, a `pub(crate)` struct with `pub failure_mode: MockICommitmentAdapterFailureMode`; `MockICommitmentAdapterTryNewReturn`, the alias `Result<MockICommitmentAdapter, Infallible>`
+    * `[ ]`   `MockICommitmentAdapter`, a `pub(crate)` struct holding the failure mode in a private field, the family's mock concrete, self-contained and borrowing from no concrete; `MockICommitmentAdapter::DECLARATION`, the inherent constant `CommitmentSchemeDeclaration { identifier: CommitmentSchemeIdentifier::MockV1, chunk_length: 1024, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`; `MockICommitmentAdapter::try_new(params) -> MockICommitmentAdapterTryNewReturn`, returning `Ok` holding the params' failure mode
+    * `[ ]`   `impl ICommitmentAdapter for MockICommitmentAdapter`, a working simplified scheme over the same chunk geometry and checks as the family contract, its digest of a byte sequence the standard library's `DefaultHasher` over a mode tag, the key's bytes under `Keyed`, and the sequence, expanded by a running counter to 32 bytes with the first byte's lowest bit set so no digest is all zero: `declaration()` returns `Self::DECLARATION`; `commit` refuses a keyed key of a length other than 32 with `KeyLengthInvalid`, returns `Mock(ContentLengthUnrepresentable { length })` under that failure mode, and otherwise returns the root as the digest of the outboard's bytes after its header and the outboard as the content length's 8 little-endian bytes followed by each chunk's digest of its index and bytes, both through their types' `try_new` bound by `expect`; `authenticate_chunk` refuses as the contract states with `OutboardMalformed` against that outboard length, `OutboardContentLengthMismatch`, and `ChunkIndexOutOfRange`, returns `Mock(ContentLengthUnrepresentable { length })` under that failure mode, and otherwise returns the chunk's bytes and as its path every chunk digest after the header; `verify_chunk` refuses with `KeyLengthInvalid`, `ChunkIndexOutOfRange`, `ChunkLengthInvalid`, `PathMalformed` against a path of 32 bytes per chunk, and `Mismatch` when the chunk's digest differs from its entry in the path or the digest of the path differs from the root, and otherwise returns `Ok`; `challenge` returns `draw % chunk count`
+    * `[ ]`   `COMMITMENT_INTERFACE_VERSION`, `CommitmentSchemeIdentifier`, `CommitmentKey`, `MockICommitmentAdapterFailureMode`, and every error enum are used by their production value or type with no mock; every `…Return` alias has no mock; `ICommitmentAdapter` is answered by `MockICommitmentAdapter`
+
+  * `[ ]`   `adapters/hashing/src/factory/mod.rs`
+    * `[ ]`   Module wiring only: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, and `pub mod provides;`, nothing else
+
+  * `[ ]`   `adapters/hashing/src/factory/provides.rs`
+    * `[ ]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and `#[cfg(any(test, feature = "mocks"))] pub use crate::blake3_bao::provides::{expected_authentication_path, expected_root};`, the oracles the `blake3_bao` concrete authors, so the crate's public mock surface carries the oracles and no other item of the concrete, nothing else
+
+  * `[ ]`   `adapters/hashing/src/blake3_bao/mock.rs`
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]`; `expected_root`, `expected_authentication_path`, and the imports only they use are available under `#[cfg(any(test, feature = "mocks"))]`, and every other item and import in this file is under `#[cfg(test)]`
+    * `[ ]`   `Blake3BaoConstructorParamsOverrides`, fieldless with `#[derive(Default)]`; `build_blake3_bao_constructor_params(overrides) -> Blake3BaoConstructorParams`; `build_blake3_bao(overrides) -> Blake3Bao`, returning the real instance from `Blake3Bao::try_new(build_blake3_bao_constructor_params(overrides))` through the irrefutable pattern `let Ok(adapter) = …;`
+    * `[ ]`   `expected_root(key: CommitmentKey<'_>, content: &[u8]) -> [u8; 32]`, a `pub` oracle computed independently of `commit` and `verify_chunk`: `blake3::hash(content)` under `Unkeyed`, and under `Keyed` `blake3::keyed_hash` over the key's exposed bytes converted to `[u8; 32]` by `expect`, its `as_bytes` copied
+    * `[ ]`   `expected_authentication_path(content: &[u8], chunk_index: u64) -> Vec<u8>`, a `pub` oracle computed independently of `authenticate_chunk`'s descent: `bao::encode::outboard(content)`, then `bao::encode::SliceExtractor::new_outboard` over `Cursor`s of the content and that outboard, the slice starting at the chunk's byte offset and spanning `1024` bytes, read to its end through `Read::read_to_end`, and the bytes after its 8-byte header and before the chunk's own bytes returned; unkeyed only, since `bao` has no keyed mode
+    * `[ ]`   The layout constants, `Blake3BaoTryNewReturn`, and the error enums are used by their production value or type with no mock; `Blake3Bao` takes no overrides, invalidator, or mock function, and the trait it implements is answered by the family's mock concrete
+
+  * `[ ]`   `adapters/hashing/src/blake3_bao/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `Blake3Bao`, `build_blake3_bao`, and `build_blake3_bao_constructor_params` from `super::provides`, and `ICommitmentAdapter`, `CommitmentSchemeIdentifier`, `COMMITMENT_INTERFACE_VERSION`, `build_challenge_params`, `build_challenge_payload`, and `ChallengePayloadOverrides` from `crate::factory::provides`
+    * `[ ]`   `try_new_returns_the_adapter`
+      * `[ ]`   Contract: any params → `Ok(Blake3Bao)`
+      * `[ ]`   Arrange: `build_blake3_bao_constructor_params` with no override, since the params declare no field
+      * `[ ]`   Act: `Blake3Bao::try_new` on the built params
+      * `[ ]`   Assert: the result matches `Ok(Blake3Bao)`
+    * `[ ]`   `declaration_returns_the_blake3_bao_declaration`
+      * `[ ]`   Contract: any adapter → `Blake3Bao::DECLARATION`
+      * `[ ]`   Arrange: `build_blake3_bao` with no override
+      * `[ ]`   Act: `adapter.declaration()`
+      * `[ ]`   Assert: the identifier equals `CommitmentSchemeIdentifier::Blake3BaoV1`; `chunk_length` equals the literal 1024; `adapter_version` equals the literal 1; `interface_version` equals `COMMITMENT_INTERFACE_VERSION`
+    * `[ ]`   `challenge_maps_the_draw_onto_a_chunk_index`
+      * `[ ]`   Contract: `payload.draw % chunk count` → `Ok(ChallengeSuccessReturn { chunk_index })`
+      * `[ ]`   Arrange: `build_challenge_payload` with the content length 2049, three chunks, and the draw override 7, so the index differs from the draw and from the draw divided by the count
+      * `[ ]`   Act: `adapter.challenge(build_challenge_params(Default::default()), payload)`
+      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `chunk_index` equals the literal 1
+    * `[ ]`   `challenge_over_empty_content_returns_the_one_chunk`
+      * `[ ]`   Contract: the chunk count of an empty object is one → `Ok(ChallengeSuccessReturn { chunk_index: 0 })` for any draw
+      * `[ ]`   Arrange: `build_challenge_payload` with the content length override 0 and the draw override 5, so a count of zero would divide by zero and a count derived without the minimum returns another index
+      * `[ ]`   Act: `adapter.challenge(…)`
+      * `[ ]`   Assert: `chunk_index` equals the literal 0
+
+  * `[ ]`   `adapters/hashing/src/blake3_bao/test_commit.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_bao` and `expected_root` from `super::provides`, and `ICommitmentAdapter`, `CommitmentKey`, `CommitErrorReturn`, `build_commit_params`, `build_commit_payload`, `CommitPayloadOverrides`, `reference_content`, `reference_key`, and `reference_key_bytes` from `crate::factory::provides`, and `build_secret` from `domain`; every refusal is asserted by `assert_eq!` against the whole expected `Err`
+    * `[ ]`   `commit_unkeyed_returns_the_blake3_hash_of_the_content_as_root`
+      * `[ ]`   Contract: `Unkeyed` → `Ok` whose root is the BLAKE3 hash of the content
+      * `[ ]`   Arrange: `build_commit_payload` with no override, the 2049-byte reference content
+      * `[ ]`   Act: `adapter.commit(build_commit_params(Default::default()), payload)`
+      * `[ ]`   Assert: the success arm is bound through `expect`; `root.as_bytes()` equals `expected_root(CommitmentKey::Unkeyed, reference_content())`
+    * `[ ]`   `commit_keyed_returns_the_blake3_keyed_hash_of_the_content_as_root`
+      * `[ ]`   Contract: `Keyed` with a 32-byte key → `Ok` whose root is the BLAKE3 keyed hash of the content under the key
+      * `[ ]`   Arrange: `build_commit_payload` with the key override `CommitmentKey::Keyed(reference_key())`, so an unkeyed root differs
+      * `[ ]`   Act: `adapter.commit(…)`
+      * `[ ]`   Assert: `root.as_bytes()` equals `expected_root(CommitmentKey::Keyed(reference_key()), reference_content())`
+    * `[ ]`   `commit_unkeyed_returns_an_outboard_of_the_bao_layout`
+      * `[ ]`   Contract: `Unkeyed` → an outboard of the 8-byte little-endian length header followed by one 64-byte parent node per chunk after the first
+      * `[ ]`   Arrange: `build_commit_payload` with no override, three chunks, so the outboard holds two parent nodes
+      * `[ ]`   Act: `adapter.commit(…)`
+      * `[ ]`   Assert: `outboard.as_bytes().len()` equals the literal 136; its first 8 bytes equal the literals `[0x01, 0x08, 0, 0, 0, 0, 0, 0]`, 2049 little-endian
+    * `[ ]`   `commit_keyed_returns_an_outboard_of_the_bao_layout`
+      * `[ ]`   Contract: `Keyed` → an outboard of the same layout as the unkeyed branch's
+      * `[ ]`   Arrange: `build_commit_payload` with the key override `CommitmentKey::Keyed(reference_key())`
+      * `[ ]`   Act: `adapter.commit(…)`
+      * `[ ]`   Assert: `outboard.as_bytes().len()` equals the literal 136; its first 8 bytes equal the literals `[0x01, 0x08, 0, 0, 0, 0, 0, 0]`
+    * `[ ]`   `commit_keyed_outboard_differs_from_the_unkeyed_outboard`
+      * `[ ]`   Contract: the keyed branch's parent nodes are chaining values under the key
+      * `[ ]`   Arrange: two commits of the reference content, one `Unkeyed` and one `Keyed(reference_key())`, the mode the only variation
+      * `[ ]`   Act: `adapter.commit(…)` over each
+      * `[ ]`   Assert: the bytes after the 8-byte header of the two outboards differ
+    * `[ ]`   `commit_of_empty_content_returns_the_hash_of_the_empty_input`
+      * `[ ]`   Contract: an input of no bytes is one chunk with no parent node → its root is the BLAKE3 hash of the empty input and its outboard is the header alone
+      * `[ ]`   Arrange: `build_commit_payload` with the content override the empty slice
+      * `[ ]`   Act: `adapter.commit(…)`
+      * `[ ]`   Assert: `root.as_bytes()` equals `expected_root(CommitmentKey::Unkeyed, &[])`; `outboard.as_bytes()` equals the eight literal zero bytes
+    * `[ ]`   `commit_refuses_a_key_of_the_wrong_length`
+      * `[ ]`   Contract: `Keyed(key)` with a key other than 32 bytes → `Err(CommitErrorReturn::KeyLengthInvalid { length, expected_length: 32 })`
+      * `[ ]`   Arrange: a secret from `build_secret` over the first 16 of `reference_key_bytes()`; `build_commit_payload` with the key override `CommitmentKey::Keyed` of that secret
+      * `[ ]`   Act: `adapter.commit(…)`
+      * `[ ]`   Assert: the result equals `Err(CommitErrorReturn::KeyLengthInvalid { length: 16, expected_length: 32 })`
+
+  * `[ ]`   `adapters/hashing/src/blake3_bao/test_authenticate_chunk.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_bao` and `expected_authentication_path` from `super::provides`, and `ICommitmentAdapter`, `AuthenticateChunkErrorReturn`, `build_authenticate_chunk_params`, `build_authenticate_chunk_payload`, `AuthenticateChunkPayloadOverrides`, `build_commit_params`, `build_commit_payload`, `reference_content`, `build_outboard`, and `OutboardConstructorParamsOverrides` from `crate::factory::provides` and the crate's provides; the outboard under test is the adapter's own `commit` over the reference content, since an outboard no independent tool writes is the only valid input, and the expectations come from the independent oracle
+    * `[ ]`   `authenticate_chunk_returns_the_first_chunk_with_its_path`
+      * `[ ]`   Contract: every check passes → `Ok` with the chunk's bytes and the parent nodes above it, root first
+      * `[ ]`   Arrange: the reference content's outboard; `build_authenticate_chunk_payload` with the outboard override that outboard and the index override 0, whose path holds two parent nodes
+      * `[ ]`   Act: `adapter.authenticate_chunk(build_authenticate_chunk_params(Default::default()), payload)`
+      * `[ ]`   Assert: `chunk.as_bytes()` equals the first 1024 bytes of `reference_content()`; `path.as_bytes()` equals `expected_authentication_path(reference_content(), 0)` and has the literal length 128
+    * `[ ]`   `authenticate_chunk_returns_the_last_chunk_with_its_path`
+      * `[ ]`   Contract: the last chunk spans to the content's end → its one byte and the one parent node above it
+      * `[ ]`   Arrange: the reference content's outboard; the index override 2
+      * `[ ]`   Act: `adapter.authenticate_chunk(…)`
+      * `[ ]`   Assert: `chunk.as_bytes()` equals the one-byte literal `[2048 % 251]`, written as its value; `path.as_bytes()` equals `expected_authentication_path(reference_content(), 2)` and has the literal length 64
+    * `[ ]`   `authenticate_chunk_refuses_an_outboard_shorter_than_its_header`
+      * `[ ]`   Contract: an outboard whose length differs from the implied length, too short for a header included → `OutboardMalformed`
+      * `[ ]`   Arrange: `build_outboard` with the bytes override four bytes
+      * `[ ]`   Act: `adapter.authenticate_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(AuthenticateChunkErrorReturn::OutboardMalformed { expected_length: 136, actual_length: 4 })`
+    * `[ ]`   `authenticate_chunk_refuses_an_outboard_of_the_wrong_length`
+      * `[ ]`   Contract: an outboard one byte short of the implied length → `OutboardMalformed`
+      * `[ ]`   Arrange: `build_outboard` over the first 135 bytes of the reference content's outboard
+      * `[ ]`   Act: `adapter.authenticate_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(AuthenticateChunkErrorReturn::OutboardMalformed { expected_length: 136, actual_length: 135 })`
+    * `[ ]`   `authenticate_chunk_refuses_an_outboard_for_other_content`
+      * `[ ]`   Contract: a length-matching outboard whose header differs from the content's length → `OutboardContentLengthMismatch`
+      * `[ ]`   Arrange: the reference content's outboard paired with the reference content and one appended byte, 2050 bytes, whose implied outboard length is the same 136
+      * `[ ]`   Act: `adapter.authenticate_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(AuthenticateChunkErrorReturn::OutboardContentLengthMismatch { declared_length: 2049, content_length: 2050 })`
+    * `[ ]`   `authenticate_chunk_refuses_an_index_out_of_range`
+      * `[ ]`   Contract: an index not less than the chunk count → `ChunkIndexOutOfRange`
+      * `[ ]`   Arrange: the reference content's outboard; the index override 3, the least out-of-range index
+      * `[ ]`   Act: `adapter.authenticate_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(AuthenticateChunkErrorReturn::ChunkIndexOutOfRange { chunk_index: 3, chunk_count: 3 })`
+
+  * `[ ]`   `adapters/hashing/src/blake3_bao/test_verify_chunk.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_bao`, `expected_root`, and `expected_authentication_path` from `super::provides`, and `ICommitmentAdapter`, `CommitmentKey`, `VerifyChunkErrorReturn`, `VerifyChunkSuccessReturn`, `build_verify_chunk_params`, `build_verify_chunk_payload`, `VerifyChunkPayloadOverrides`, `reference_content`, `reference_key`, `reference_key_bytes`, `build_root`, `RootConstructorParamsOverrides`, `build_chunk`, `ChunkConstructorParamsOverrides`, `build_authentication_path`, and `AuthenticationPathConstructorParamsOverrides` from the crate's provides, and `build_secret` from `domain`; every root, chunk, and path is built by its builder over bytes from the reference content and the independent oracles, so no expectation comes from the subject; every refusal is asserted by `assert_eq!` against the whole expected `Err`
+    * `[ ]`   `verify_chunk_accepts_a_chunk_with_its_path`
+      * `[ ]`   Contract: every recomputed value matches → `Ok(VerifyChunkSuccessReturn)`
+      * `[ ]`   Arrange: the root over `expected_root(Unkeyed, reference_content())`, the chunk over the first 1024 reference bytes, the path over `expected_authentication_path(reference_content(), 0)`, the content length 2049, and the index 0
+      * `[ ]`   Act: `adapter.verify_chunk(build_verify_chunk_params(Default::default()), payload)`
+      * `[ ]`   Assert: the result matches `Ok(VerifyChunkSuccessReturn)`
+    * `[ ]`   `verify_chunk_accepts_the_chunk_of_a_one_chunk_object`
+      * `[ ]`   Contract: an object of one chunk has an empty path and its root is the chunk's hash → `Ok`
+      * `[ ]`   Arrange: five bytes of the reference content as the object; the root over `expected_root(Unkeyed, those bytes)`, the chunk over those bytes, the empty path, the content length 5, and the index 0
+      * `[ ]`   Act: `adapter.verify_chunk(…)`
+      * `[ ]`   Assert: the result matches `Ok(VerifyChunkSuccessReturn)`
+    * `[ ]`   `verify_chunk_refuses_a_corrupted_chunk`
+      * `[ ]`   Contract: a chunk whose chaining value differs from its half of the path node → `Mismatch`
+      * `[ ]`   Arrange: as the accepting block, the chunk's first byte incremented by one, so its length and the path are unchanged
+      * `[ ]`   Act: `adapter.verify_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
+    * `[ ]`   `verify_chunk_refuses_a_corrupted_path`
+      * `[ ]`   Contract: a path whose node differs from the recomputed children → `Mismatch`
+      * `[ ]`   Arrange: as the accepting block, the path's last byte incremented by one, so its length is unchanged
+      * `[ ]`   Act: `adapter.verify_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
+    * `[ ]`   `verify_chunk_refuses_another_root`
+      * `[ ]`   Contract: a recomputed root that differs from the given root → `Mismatch`
+      * `[ ]`   Arrange: as the accepting block, the root from `build_root` with no override, whose bytes are not the content's hash
+      * `[ ]`   Act: `adapter.verify_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
+    * `[ ]`   `verify_chunk_refuses_a_chunk_at_another_index`
+      * `[ ]`   Contract: a chunk presented at an index other than its own → `Mismatch`, since its chaining value carries its offset
+      * `[ ]`   Arrange: as the accepting block, the chunk over the second 1024 reference bytes, the same length as the first chunk, at the index 0 with the first chunk's path
+      * `[ ]`   Act: `adapter.verify_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
+    * `[ ]`   `verify_chunk_refuses_a_chunk_of_the_wrong_length`
+      * `[ ]`   Contract: a chunk whose length differs from the extent the content length assigns its index → `ChunkLengthInvalid`
+      * `[ ]`   Arrange: the last chunk, one byte, with its path, under the content length 2050, which assigns the last index two bytes
+      * `[ ]`   Act: `adapter.verify_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::ChunkLengthInvalid { chunk_index: 2, expected_length: 2, actual_length: 1 })`
+    * `[ ]`   `verify_chunk_refuses_a_path_of_the_wrong_length`
+      * `[ ]`   Contract: a path whose length differs from the length the geometry assigns the index → `PathMalformed`
+      * `[ ]`   Arrange: as the accepting block, the path over `expected_authentication_path(reference_content(), 2)`, one node where index 0 needs two
+      * `[ ]`   Act: `adapter.verify_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::PathMalformed { chunk_index: 0, expected_length: 128, actual_length: 64 })`
+    * `[ ]`   `verify_chunk_refuses_an_index_out_of_range`
+      * `[ ]`   Contract: an index not less than the chunk count → `ChunkIndexOutOfRange`
+      * `[ ]`   Arrange: as the accepting block, the index 3
+      * `[ ]`   Act: `adapter.verify_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::ChunkIndexOutOfRange { chunk_index: 3, chunk_count: 3 })`
+    * `[ ]`   `verify_chunk_refuses_a_keyed_verification_of_an_unkeyed_commitment`
+      * `[ ]`   Contract: the recomputed keyed root differs from the unkeyed root → `Mismatch`
+      * `[ ]`   Arrange: as the accepting block, the key `CommitmentKey::Keyed(reference_key())`
+      * `[ ]`   Act: `adapter.verify_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
+    * `[ ]`   `verify_chunk_refuses_a_key_of_the_wrong_length`
+      * `[ ]`   Contract: `Keyed(key)` with a key other than 32 bytes → `KeyLengthInvalid`, before any other check
+      * `[ ]`   Arrange: a secret from `build_secret` over the first 16 of `reference_key_bytes()`, and the index 3, out of range, so a check out of order reports the index
+      * `[ ]`   Act: `adapter.verify_chunk(…)`
+      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::KeyLengthInvalid { length: 16, expected_length: 32 })`
+
+  * `[ ]`   `construction`
+    * `[ ]`   `Blake3Bao::try_new` is the concrete's only producer, and its only caller is the hashing factory, which reads `Blake3Bao::DECLARATION` before constructing; `build_blake3_bao` builds it as a real instance for the concrete's own tests, and no consumer names the concrete
+
+  * `[ ]`   `adapters/hashing/src/blake3_bao/mod.rs`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, `#[cfg(test)] mod test;`, `#[cfg(test)] mod test_commit;`, `#[cfg(test)] mod test_authenticate_chunk;`, `#[cfg(test)] mod test_verify_chunk;`, and `#[cfg(test)] mod integration_test;`
+    * `[ ]`   `impl Blake3Bao` with `pub const DECLARATION: CommitmentSchemeDeclaration` as the interaction spec states and `pub fn try_new(_params: Blake3BaoConstructorParams) -> Blake3BaoTryNewReturn` returning `Ok(Blake3Bao)`
+    * `[ ]`   `impl ICommitmentAdapter for Blake3Bao` realizing every branch, the tree, the geometry, and the ordering of the interaction spec; every root, outboard, chunk, and path is constructed through its type's `try_new`, the irrefutable ones through `let Ok(value) = …;`
+    * `[ ]`   Imports the family's names from `crate::factory::provides`, the four types from the crate's `root`, `outboard`, `authentication_path`, and `chunk` provides, `zeroize::Zeroize`, `blake3::Hasher`, `blake3::hazmat`'s items, `bao::encode::outboard`, and this module's names from `interface`
+    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/hashing/src/blake3_bao/integration_test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_bao` from `super::provides`, `ICommitmentAdapter`, `CommitmentKey`, `VerifyChunkErrorReturn`, `VerifyChunkSuccessReturn`, the four methods' params and payload builders and overrides, `reference_content`, and `reference_key_bytes` from `crate::factory::provides`, and `build_secret` from `domain`
+    * `[ ]`   `verify_chunk_accepts_every_chunk_authenticated_from_a_commitment`
+      * `[ ]`   Contract: the own entry; each chunk `authenticate_chunk` returns from an unkeyed commitment's outboard verifies against its root
+      * `[ ]`   Arrange: `build_blake3_bao`; the reference content, three chunks whose paths hold two, two, and one parent node
+      * `[ ]`   Act: `commit` under `Unkeyed`, then for each index 0, 1, and 2 `authenticate_chunk` and `verify_chunk` with the returned root, the content length, the index, and the returned chunk and path
+      * `[ ]`   Assert: every `verify_chunk` result matches `Ok(VerifyChunkSuccessReturn)`
+      * `[ ]`   Boundary: the crate-internal path `Blake3Bao::commit`, `Blake3Bao::authenticate_chunk`, and `Blake3Bao::verify_chunk`, running `bao`, `blake3`, and the crate's `Root`, `Outboard`, `Chunk`, and `AuthenticationPath` constructors and accessors for real
+      * `[ ]`   Mocked: nothing; the expected outcome is the verification, which the construction does not supply
+    * `[ ]`   `verify_chunk_accepts_every_chunk_authenticated_from_a_keyed_commitment`
+      * `[ ]`   Contract: the own entry; under `Keyed` of a 32-byte key, each authenticated chunk verifies under the same key
+      * `[ ]`   Arrange: a secret from `build_secret` over `reference_key_bytes()`; the reference content
+      * `[ ]`   Act: `commit` under `Keyed` of that secret, then for each index `authenticate_chunk` and `verify_chunk` under the same key
+      * `[ ]`   Assert: every `verify_chunk` result matches `Ok(VerifyChunkSuccessReturn)`
+      * `[ ]`   Boundary: as the unkeyed block, with `blake3`'s keyed mode and tree operations and the key's `Secret` running for real
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `a_keyed_commitment_does_not_verify_unkeyed`
+      * `[ ]`   Contract: the own entry; a keyed commitment's chunk and path verified under `Unkeyed` → `Err(VerifyChunkErrorReturn::Mismatch { chunk_index })`
+      * `[ ]`   Arrange: as the keyed block, index 0
+      * `[ ]`   Act: `verify_chunk` under `CommitmentKey::Unkeyed` with the keyed root, chunk, and path
+      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
+      * `[ ]`   Boundary: as the keyed block
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `commit_leaves_the_borrowed_key_intact`
+      * `[ ]`   Contract: the own entry; `commit` under `Keyed` of a living `Secret<Vec<u8>>` → after the call the secret's `expose()` equals the bytes it held before
+      * `[ ]`   Arrange: a secret from `build_secret` over `reference_key_bytes()`, whose bytes are not all zero
+      * `[ ]`   Act: `commit` under `Keyed` of that secret
+      * `[ ]`   Assert: the success arm is bound through `expect`; the secret's `expose()` equals `reference_key_bytes()`
+      * `[ ]`   Boundary: the crate-internal path `Blake3Bao::commit`, running `blake3`'s keyed hashers and `Zeroize::zeroize` for real, with `Secret::expose` reading the result
+      * `[ ]`   Mocked: nothing; this block does not prove the zeroization of the hashers and the key's copy themselves, which no caller can observe
+    * `[ ]`   Enumeration: the spec's own entries are proven by the four blocks of the same names, and the absorbed read-back entries of `hashing/root`, `hashing/outboard`, `hashing/authentication_path`, and `hashing/chunk` by the two `verify_chunk_accepts_every_chunk_…` blocks
+
+  * `[ ]`   `adapters/hashing/src/blake3_bao/provides.rs`
+    * `[ ]`   `pub(crate) use super::interface::*;`, `#[cfg(test)] pub(crate) use super::mock::*;`, and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::{expected_authentication_path, expected_root};`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate, and the oracles are the items the factory's `provides` can re-export
+
+  * `[ ]`   `directionality`
+    * `[ ]`   `blake3_bao` depends on the `factory` module's surface through `crate::factory::provides`, on the `root`, `outboard`, `authentication_path`, and `chunk` modules' provides, on `domain`, on `zeroize`, on `blake3`, and on `bao`; the `factory` module depends on `domain`, on those four modules, and on `blake3_bao`'s errors through `crate::blake3_bao::provides`, the family form's recorded cycle, which `hashing/factory` completes by constructing the concrete; among repository crates the crate depends on `crates/domain` alone, inward; nothing outside the crate depends on the family's interface yet
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `adapters/hashing/Cargo.toml` carries exactly the entries stated above and in the earlier hashing nodes, and `blake3` and `bao` are named nowhere in the crate outside `adapters/hashing/src/blake3_bao`
+    * `[ ]`   `CommitErrorReturn`, `AuthenticateChunkErrorReturn`, `VerifyChunkErrorReturn`, `Blake3BaoCommitErrorReturn`, `Blake3BaoAuthenticateChunkErrorReturn`, and the mock concrete's error enums derive `Debug`, `PartialEq`, and `Eq`
+    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `blake3_bao` concrete, which `hashing/factory` resolves by constructing the concrete
+    * `[ ]`   Every block in `test.rs`, `test_commit.rs`, `test_authenticate_chunk.rs`, and `test_verify_chunk.rs` passes (CR-02 construction, verification, and challenges, with corruption of roots, paths, chunks, lengths, and order detected; EC-02, unauthenticated bytes refused; SW-04, the challenge and its response)
+    * `[ ]`   Every block in `integration_test.rs` passes
+    * `[ ]`   Code outside `adapters/hashing` naming `Blake3Bao` or anything under `blake3_bao` fails to compile; the crate's public surface is the `provides` of the `root`, `outboard`, `authentication_path`, `chunk`, and `factory` modules
+
+* `[ ]`   `hashing/factory` 
+
+* `[ ]`   `encoding/abi` **Ethereum ABI concrete encoding and decoding any described domain type as the ABI parameter encoding of its canonical fields, byte strings and width kinds included; authors the encoding family's encoder and decoder interfaces, the versioned encoding identifier, the declaration, and their mocks, and adds the byte-string, fixed twenty-byte, and 256-bit unsigned kinds to the encoding contract**
+
+  * `[ ]`   `objective`
     * `[✅]`   Problem: the contracts recompute derivations, identity mappings, and challenges from ABI-encoded values, and the client hashes, signs, stores, and frames the same values, so one encoding serves both sides and turns a description's canonical fields into bytes and untrusted bytes back into an admitted domain value, with exactly one byte form per value (CR-11, serialization frozen with known-answer vectors; CR-09 statement binding)
     * `[✅]`   Functional: the family's encoder interface takes a description and a described value and returns its bytes; the family's decoder interface takes a description and untrusted bytes and returns the admitted described value or the refusal that names what failed
     * `[✅]`   Functional: both interfaces sit under one versioned encoding identifier, and every concrete declares that identifier, its adapter version, and the interface version it implements, readable before any instance exists
@@ -332,15 +897,15 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Functional: the encoding contract carries a fixed twenty-byte string and a 256-bit unsigned integer, each named as a width, so a transcript's parties and entitlements in the forms the entitlement-state adapter declares pass through the one encoding the contract recomputes them from, the verifier contract encoding to match this concrete's mapping (CR-09)
     * `[✅]`   Functional: a described value holding a twenty-byte fixed string before a 256-bit unsigned integer encodes to the known-answer vector authored from the ABI specification, the twenty bytes left-aligned in their word and the integer as its big-endian word, and the vector decodes to that value; nonzero padding after the twenty bytes is refused
     * `[✅]`   Functional: the ABI concrete decodes only the one canonical byte form: truncated input, bytes past the canonical end, nonzero padding, a field list of the wrong length, and an integer word wider than its field are refused, and a value its description refuses is returned with the description's refusal unchanged
-    * `[✅]`   Functional: the reference derivation context encodes to the known-answer vector authored from the ABI specification, and the vector decodes to the reference context
+    * `[ ]`   Functional: the reference derivation context, whose asset carries its ecosystem token first, encodes to the known-answer vector authored from the ABI specification, and the vector decodes to the reference context
     * `[✅]`   Non-functional: `alloy` is named only inside `adapters/encoding/src/abi`; the family's interfaces name no vendor and no format
 
-  * `[✅]`   `role`
+  * `[ ]`   `role`
     * `[✅]`   Adds the byte-string, fixed twenty-byte, and 256-bit unsigned kinds to the encoding contract `encoding/derivation_context` authored, since this concrete is the first that encodes and decodes each; the derivation context's description and its field kinds are unchanged
     * `[✅]`   Adapter: the encoding family's first concrete, and the first source file that requires the family's encoder and decoder interfaces, the versioned encoding identifier, the declaration, and their mocks, which it authors in the family's `factory` module as its producers beside the encoding contract `encoding/derivation_context` authored
     * `[✅]`   Adds to `factory/interface.rs` and `factory/mock.rs`; `factory/mod.rs` and `factory/provides.rs` are unchanged; the factory function, its types, its unit test, and the family's integration test are `encoding/factory`'s
     * `[✅]`   Does not describe any domain type or check any domain invariant; the description supplies the fields and admits the value
-    * `[✅]`   Does not emit the Solidity mirror of the vectors; `harness-crypto/generate/evm` mirrors them
+    * `[ ]`   Does not emit the language mirror of the vectors; `harness-crypto/generate/solidity` mirrors them
     * `[✅]`   Does not map the encoding identifier to the hash-card's `encodingId` byte; the hash-card's own encoding does that
     * `[✅]`   Does not carry a commit
 
@@ -549,10 +1114,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Imports the family's names from `crate::factory::provides`, `DynSolType` and `DynSolValue` from `alloy::dyn_abi`, `B256` and `U256` from `alloy::primitives`, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
-  * `[✅]`   `adapters/encoding/src/abi/integration_test.rs`
-    * `[✅]`   Reference values by index of `DERIVATION_CONTEXT_FIELD_KINDS`: `Text("left-pad")`, `Text("1.3.0")`, `FixedBytes32` of bytes each `0x44`, `FixedBytes32` of bytes each `0x55`, `Unsigned16(0x0102)`, `FixedBytes32` of bytes each `0x66`, `Unsigned64(2)`, `Unsigned32(32768)`, `Unsigned32(65536)`, and `Unsigned64(262144)`
-    * `[✅]`   Reference context: `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `0x0102`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `2`, and the geometry with `build_piece_geometry` at piece size `32768`, piece-group size `65536`, and extent `262144`, a geometry of four groups
-    * `[✅]`   Reference vector: the `abi.encode` parameter encoding of the reference values, authored by hand from the Solidity Contract ABI Specification, one head word per field with the text offsets in their head words and each length and zero-padded bytes in the tail, and written as a hex string for `hex::decode`; it is not produced by running `alloy` or this crate
+  * `[ ]`   `adapters/encoding/src/abi/integration_test.rs`
+    * `[ ]`   Reference values by index of `DERIVATION_CONTEXT_FIELD_KINDS`: `Text("pypi")`, `Text("left-pad")`, `Text("1.3.0")`, `FixedBytes32` of bytes each `0x44`, `FixedBytes32` of bytes each `0x55`, `Unsigned16(0x0102)`, `FixedBytes32` of bytes each `0x66`, `Unsigned64(2)`, `Unsigned32(32768)`, `Unsigned32(65536)`, and `Unsigned64(262144)`
+    * `[ ]`   Reference context: `build_derivation_context` overriding the asset with `build_asset_identity` at ecosystem `pypi`, name `left-pad`, and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `0x0102`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `2`, and the geometry with `build_piece_geometry` at piece size `32768`, piece-group size `65536`, and extent `262144`, a geometry of four groups
+    * `[ ]`   Reference vector: the `abi.encode` parameter encoding of the reference values, three text fields first, authored by hand from the Solidity Contract ABI Specification, one head word per field with the text offsets in their head words and each length and zero-padded bytes in the tail, and written as a hex string for `hex::decode`; it is not produced by running `alloy` or this crate
     * `[✅]`   `reference_context_encodes_to_the_reference_vector`
       * `[✅]`   Contract: the own entry, reference context encodes to the reference vector: the reference derivation context handed to `encode` with `DerivationContextDescription` → `Ok(EncodeSuccessReturn { bytes })` with `bytes` the known-answer vector authored from the ABI specification for the reference fields
       * `[✅]`   Arrange: `build_abi_encoding`, `build_derivation_context_description`, and `build_encode_params` over the description; the reference context, whose text fields are dynamic items between static items and whose same-kind fields differ, so a swapped field, a wrong word width, or a misplaced tail changes the bytes
@@ -567,9 +1132,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[✅]`   Assert: `result.ok().map(|success| success.described)` equals `Some` of the reference context by `assert_eq!`, the reference context built by `domain`'s builders and not by the subject
       * `[✅]`   Boundary: the crate-internal call `AbiEncoding::decode`; the route `decode`, the ABI decode, `DerivationContextDescription::fields_to_value`, `domain`'s constructors, and the canonical re-encoding through `encode`, `DerivationContextDescription::to_fields`, and `domain`'s accessors
       * `[✅]`   Mocked: nothing; `alloy` runs as the concrete's own vendor library and `domain` is a pure value library
-    * `[✅]`   `a_context_survives_the_abi_round_trip`
+    * `[ ]`   `a_context_survives_the_abi_round_trip`
       * `[✅]`   Contract: the own entry, a context survives the ABI round trip, which absorbs the `encoding/derivation_context` entry round trip through the canonical fields: an admitted `DerivationContext` handed to `encode`, and the bytes it returns handed to `decode`, yields `Ok(DecodeSuccessReturn { described })` with `described` equal to the original context
-      * `[✅]`   Arrange: `build_abi_encoding`, `build_derivation_context_description`, `build_encode_params`, and `build_decode_params` over the description; `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `u16::MAX`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `4294967296`, and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `2147483648`, and extent `u64::MAX`; the same-kind fields hold distinct values, the suite version is at its maximum, the piece-group size exceeds the `i32` range, and the group index and extent exceed the 32-bit range, so a swap of same-kind fields, a dropped field, or a narrowed width yields a refusal or an unequal context
+      * `[ ]`   Arrange: `build_abi_encoding`, `build_derivation_context_description`, `build_encode_params`, and `build_decode_params` over the description; `build_derivation_context` overriding the asset with `build_asset_identity` at ecosystem `pypi`, name `left-pad`, and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `u16::MAX`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `4294967296`, and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `2147483648`, and extent `u64::MAX`; the same-kind fields hold distinct values, the suite version is at its maximum, the piece-group size exceeds the `i32` range, and the group index and extent exceed the 32-bit range, so a swap of same-kind fields, a dropped field, or a narrowed width yields a refusal or an unequal context
       * `[✅]`   Act: `adapter.encode(encode_params, &context)`, then `adapter.decode(decode_params, &bytes)` over the bytes the first call returned
       * `[✅]`   Assert: the `described` of the second call's `Ok` arm equals the arranged context by `assert_eq!`
       * `[✅]`   Boundary: the crate-internal calls `AbiEncoding::encode` and `AbiEncoding::decode`; the route `encode`, `DerivationContextDescription::to_fields`, then `decode`, `DerivationContextDescription::fields_to_value`, and the canonical re-encoding, each running `domain`'s accessors and constructors as themselves
@@ -601,7 +1166,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `DecodeErrorReturn` and `AbiDecoderErrorReturn` derive `Debug` and `PartialEq` and omit only `Eq`, which the vendor's error lacks; every refusal the concrete's tests assert is asserted by `assert_eq!` against the whole expected error, the truncated head naming the vendor's `Overrun`
     * `[✅]`   Code outside `adapters/encoding` naming `AbiEncoding` or anything under `abi` fails to compile; the crate's public surface is the `factory` and `derivation_context` modules' `provides`
 
-* `[✅]`   `encoding/factory` **Encoding factory constructing the concrete the configuration names, admitted against the encoding identifier the hash-card or configuration requires, and handing it to a consumer generic over the family's encoder and decoder traits; carries the family's integration test**
+* `[ ]`   `encoding/factory` **Encoding factory constructing the concrete the configuration names, admitted against the encoding identifier the hash-card or configuration requires, and handing it to a consumer generic over the family's encoder and decoder traits; carries the family's integration test**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a consumer obtains an encoder and decoder only through the family's generic surface, never by naming a concrete, and the encoding it uses is the one the deployment's hash-card or the configuration requires, so a concrete that does not declare the required identifier is refused before anything is constructed and every hashed, signed, stored, or framed value is encoded one way for one identifier (CR-11; Composition Boundary)
@@ -776,7 +1341,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `adapters/encoding/src/factory/provides.rs`
     * `[✅]`   Adds `pub use super::create_encoding;` to the re-exports `encoding/derivation_context` authored
 
-  * `[✅]`   `adapters/encoding/tests/factory_integration_test.rs`
+  * `[ ]`   `adapters/encoding/tests/factory_integration_test.rs`
     * `[✅]`   Cases: every entry of `DECLARED_ENCODING_SELECTIONS`, from the crate's public surface; each block's body is written once and runs over every case, so a further concrete adds a case and no edit to the test; a block that asserts the reference vector runs over the cases whose identifier is `EncodingIdentifier::EthereumAbiV1`, the identifier the vector is authored for
     * `[✅]`   `every_concrete_is_handed_to_the_consumer_under_the_identifier_it_declares`
       * `[✅]`   Contract: the own entry, every concrete is handed to the consumer under the identifier it declares: `create_encoding` called with a concrete's selection and the identifier it declares → `Ok(CreateEncodingSuccessReturn { output })` with `output.declaration` the declaration the consumer read through `E::DECLARATION`, whose identifier is the identifier required and whose interface version is `ENCODING_INTERFACE_VERSION`
@@ -834,30 +1399,30 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[✅]`   Assert: the `round_trip` of the `output` of the `Ok` arm, by `.err()`, equals `Some(DecodeErrorReturn::Description(MockIEncodingContractFromFieldsErrorReturn::EmptyText { index: 0 }))` by `assert_eq!`
       * `[✅]`   Boundary: the public call `create_encoding`; the route `create_encoding`, the selected concrete's constructor where it has one, and the concrete's `encode` and `decode` as the consumer calls them
       * `[✅]`   Mocked: the consumer, replaced by the official `MockIEncodingConsumer`, and the description it carries, replaced by the official `MockIEncodingContract`
-    * `[✅]`   `every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_context_to_the_reference_vector`
+    * `[ ]`   `every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_context_to_the_reference_vector`
       * `[✅]`   Contract: the carried entry `encoding/abi` reference context encodes to the reference vector, in this node's terms: `create_encoding` called with the selection of a concrete that declares `EncodingIdentifier::EthereumAbiV1` and that identifier, the consumer encoding the reference context through the concrete under the real description → `Ok(CreateEncodingSuccessReturn { output })` with `output.encoded` an `Ok(EncodeSuccessReturn { bytes })` with `bytes` the reference vector
-      * `[✅]`   Arrange: for each case whose identifier is `EncodingIdentifier::EthereumAbiV1`, `build_derivation_context_description`, `build_create_encoding_deps` over `build_mock_i_encoding_consumer` taking that description, the reference context built as `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `0x0102`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `2`, and the geometry with `build_piece_geometry` at piece size `32768`, piece-group size `65536`, and extent `262144`, and no bytes, `build_create_encoding_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_encoding_payload`, all from the crate's public surface under the `mocks` feature; the reference context's text fields are dynamic items between static items and its same-kind fields differ, so a swapped field, a wrong word width, or a misplaced tail changes the bytes
+      * `[ ]`   Arrange: for each case whose identifier is `EncodingIdentifier::EthereumAbiV1`, `build_derivation_context_description`, `build_create_encoding_deps` over `build_mock_i_encoding_consumer` taking that description, the reference context built as `build_derivation_context` overriding the asset with `build_asset_identity` at ecosystem `pypi`, name `left-pad`, and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `0x0102`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `2`, and the geometry with `build_piece_geometry` at piece size `32768`, piece-group size `65536`, and extent `262144`, and no bytes, `build_create_encoding_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_encoding_payload`, all from the crate's public surface under the `mocks` feature; the reference context's text fields are dynamic items between static items and its same-kind fields differ, so a swapped field, a wrong word width, or a misplaced tail changes the bytes
       * `[✅]`   Act: `create_encoding(&deps, params, payload)` for the case
-      * `[✅]`   Assert: the `encoded` of the `output` of the `Ok` arm, by `.ok().map(|success| success.bytes)`, equals `Some` of the reference vector's bytes by `assert_eq!`, the reference vector being the bytes of the `abi.encode` parameter encoding of `Text("left-pad")`, `Text("1.3.0")`, `FixedBytes32` of bytes each `0x44`, `FixedBytes32` of bytes each `0x55`, `Unsigned16(0x0102)`, `FixedBytes32` of bytes each `0x66`, `Unsigned64(2)`, `Unsigned32(32768)`, `Unsigned32(65536)`, and `Unsigned64(262144)`, a hex string authored by hand from the Solidity Contract ABI Specification with one head word per field, the text offsets in their head words, and each length and zero-padded bytes in the tail, decoded by `hex::decode`, and not produced by running `alloy` or this crate; the expectation is not read back from the arrangement
+      * `[ ]`   Assert: the `encoded` of the `output` of the `Ok` arm, by `.ok().map(|success| success.bytes)`, equals `Some` of the reference vector's bytes by `assert_eq!`, the reference vector being the bytes of the `abi.encode` parameter encoding of `Text("pypi")`, `Text("left-pad")`, `Text("1.3.0")`, `FixedBytes32` of bytes each `0x44`, `FixedBytes32` of bytes each `0x55`, `Unsigned16(0x0102)`, `FixedBytes32` of bytes each `0x66`, `Unsigned64(2)`, `Unsigned32(32768)`, `Unsigned32(65536)`, and `Unsigned64(262144)`, a hex string authored by hand from the Solidity Contract ABI Specification with one head word per field, the text offsets in their head words, and each length and zero-padded bytes in the tail, decoded by `hex::decode`, and not produced by running `alloy` or this crate; the expectation is not read back from the arrangement
       * `[✅]`   Boundary: the public call `create_encoding`; the route `create_encoding`, the selected concrete's constructor, `encode`, `DerivationContextDescription::to_fields`, and `domain`'s accessors
       * `[✅]`   Mocked: the consumer, replaced by the official `MockIEncodingConsumer`, so the test does not prove what a real consumer does with the concrete; the description and `domain` run as themselves
-    * `[✅]`   `every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_context`
+    * `[ ]`   `every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_context`
       * `[✅]`   Contract: the carried entry `encoding/abi` reference vector decodes to the reference context, in this node's terms: `create_encoding` called with the selection of a concrete that declares `EncodingIdentifier::EthereumAbiV1` and that identifier, the consumer decoding the reference vector under the real description → `Ok(CreateEncodingSuccessReturn { output })` with `output.decoded` an `Ok(DecodeSuccessReturn { described })` with `described` equal to the reference context
-      * `[✅]`   Arrange: for each case whose identifier is `EncodingIdentifier::EthereumAbiV1`, `build_derivation_context_description`, `build_create_encoding_deps` over `build_mock_i_encoding_consumer` taking that description, the reference context built as `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `0x0102`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `2`, and the geometry with `build_piece_geometry` at piece size `32768`, piece-group size `65536`, and extent `262144`, and the reference vector's bytes, the `abi.encode` parameter encoding of `Text("left-pad")`, `Text("1.3.0")`, `FixedBytes32` of bytes each `0x44`, `FixedBytes32` of bytes each `0x55`, `Unsigned16(0x0102)`, `FixedBytes32` of bytes each `0x66`, `Unsigned64(2)`, `Unsigned32(32768)`, `Unsigned32(65536)`, and `Unsigned64(262144)`, a hex string authored by hand from the Solidity Contract ABI Specification with one head word per field, the text offsets in their head words, and each length and zero-padded bytes in the tail, decoded by `hex::decode`, and not produced by running `alloy` or this crate, `build_create_encoding_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_encoding_payload`, all from the crate's public surface under the `mocks` feature; the reference context's same-kind fields differ, so a field read from the wrong word or tail yields a refusal or an unequal context
+      * `[ ]`   Arrange: for each case whose identifier is `EncodingIdentifier::EthereumAbiV1`, `build_derivation_context_description`, `build_create_encoding_deps` over `build_mock_i_encoding_consumer` taking that description, the reference context built as `build_derivation_context` overriding the asset with `build_asset_identity` at ecosystem `pypi`, name `left-pad`, and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `0x0102`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `2`, and the geometry with `build_piece_geometry` at piece size `32768`, piece-group size `65536`, and extent `262144`, and the reference vector's bytes, the `abi.encode` parameter encoding of `Text("pypi")`, `Text("left-pad")`, `Text("1.3.0")`, `FixedBytes32` of bytes each `0x44`, `FixedBytes32` of bytes each `0x55`, `Unsigned16(0x0102)`, `FixedBytes32` of bytes each `0x66`, `Unsigned64(2)`, `Unsigned32(32768)`, `Unsigned32(65536)`, and `Unsigned64(262144)`, a hex string authored by hand from the Solidity Contract ABI Specification with one head word per field, the text offsets in their head words, and each length and zero-padded bytes in the tail, decoded by `hex::decode`, and not produced by running `alloy` or this crate, `build_create_encoding_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_encoding_payload`, all from the crate's public surface under the `mocks` feature; the reference context's same-kind fields differ, so a field read from the wrong word or tail yields a refusal or an unequal context
       * `[✅]`   Act: `create_encoding(&deps, params, payload)` for the case
       * `[✅]`   Assert: the `decoded` of the `output` of the `Ok` arm, by `.ok().map(|success| success.described)`, equals `Some` of the reference context built again by `build_derivation_context` with the same overrides, by `assert_eq!`
       * `[✅]`   Boundary: the public call `create_encoding`; the route `create_encoding`, the selected concrete's constructor, `decode`, `DerivationContextDescription::fields_to_value`, `domain`'s constructors, and the canonical re-encoding through `encode`, `DerivationContextDescription::to_fields`, and `domain`'s accessors
       * `[✅]`   Mocked: the consumer, replaced by the official `MockIEncodingConsumer`, so the test does not prove what a real consumer does with the concrete; the description and `domain` run as themselves
-    * `[✅]`   `every_concrete_round_trips_a_context_through_the_real_description`
+    * `[ ]`   `every_concrete_round_trips_a_context_through_the_real_description`
       * `[✅]`   Contract: the carried entry `encoding/abi` a context survives the ABI round trip, in this node's terms: `create_encoding` called with a concrete's selection and the identifier it declares, the consumer encoding the wide context through the concrete under the real description and decoding the bytes → `Ok(CreateEncodingSuccessReturn { output })` with `output.round_trip` an `Ok(DecodeSuccessReturn { described })` with `described` equal to the wide context
-      * `[✅]`   Arrange: for each case, `build_derivation_context_description`, `build_create_encoding_deps` over `build_mock_i_encoding_consumer` taking that description, the wide context built as `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `u16::MAX`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `4294967296`, and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `2147483648`, and extent `u64::MAX`, and no bytes, `build_create_encoding_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_encoding_payload`, all from the crate's public surface under the `mocks` feature; the same-kind fields hold distinct values and the widths are full, so a swap of same-kind fields, a dropped field, or a narrowed width yields a refusal or an unequal context
+      * `[ ]`   Arrange: for each case, `build_derivation_context_description`, `build_create_encoding_deps` over `build_mock_i_encoding_consumer` taking that description, the wide context built as `build_derivation_context` overriding the asset with `build_asset_identity` at ecosystem `pypi`, name `left-pad`, and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `u16::MAX`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `4294967296`, and the geometry with `build_piece_geometry` at piece size `16384`, piece-group size `2147483648`, and extent `u64::MAX`, and no bytes, `build_create_encoding_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_encoding_payload`, all from the crate's public surface under the `mocks` feature; the same-kind fields hold distinct values and the widths are full, so a swap of same-kind fields, a dropped field, or a narrowed width yields a refusal or an unequal context
       * `[✅]`   Act: `create_encoding(&deps, params, payload)` for the case
       * `[✅]`   Assert: the `round_trip` of the `output` of the `Ok` arm, by `.ok().map(|success| success.described)`, equals `Some` of the wide context built again by `build_derivation_context` with the same overrides, by `assert_eq!`
       * `[✅]`   Boundary: the public call `create_encoding`; the route `create_encoding`, the selected concrete's constructor where it has one, `encode`, `decode`, `DerivationContextDescription::to_fields` and `fields_to_value`, and `domain`'s accessors and constructors
       * `[✅]`   Mocked: the consumer, replaced by the official `MockIEncodingConsumer`, so the test does not prove what a real consumer does with the concrete; the description and `domain` run as themselves
-    * `[✅]`   `every_concrete_declaring_the_ethereum_abi_identifier_returns_the_domain_refusal_unchanged`
+    * `[ ]`   `every_concrete_declaring_the_ethereum_abi_identifier_returns_the_domain_refusal_unchanged`
       * `[✅]`   Contract: the carried entry `encoding/abi` a value the description refuses is refused with the description's refusal, in this node's terms: `create_encoding` called with the selection of a concrete that declares `EncodingIdentifier::EthereumAbiV1` and that identifier, the consumer decoding a canonical encoding whose deployment-identity word is all zero under the real description → `Ok(CreateEncodingSuccessReturn { output })` with `output.decoded` equal to `Err(DecodeErrorReturn::Description(DerivationContextFromFieldsErrorReturn::DeploymentIdentity(DeploymentIdentityTryNewErrorReturn::AllZero)))`
-      * `[✅]`   Arrange: for each case whose identifier is `EncodingIdentifier::EthereumAbiV1`, `build_derivation_context_description`, `build_create_encoding_deps` over `build_mock_i_encoding_consumer` taking that description, the reference context built as `build_derivation_context` overriding the asset with `build_asset_identity` at name `left-pad` and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `0x0102`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `2`, and the geometry with `build_piece_geometry` at piece size `32768`, piece-group size `65536`, and extent `262144`, and the bytes of the `abi.encode` parameter encoding of the same ten values with `FixedBytes32` of zero bytes in place of the deployment identity's bytes, a hex string authored by hand from the Solidity Contract ABI Specification and decoded by `hex::decode`, `build_create_encoding_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_encoding_payload`, all from the crate's public surface under the `mocks` feature; the encoding is canonical and well-kinded, so the ABI decode and the canonical comparison admit it and only the domain's constructor refuses
+      * `[ ]`   Arrange: for each case whose identifier is `EncodingIdentifier::EthereumAbiV1`, `build_derivation_context_description`, `build_create_encoding_deps` over `build_mock_i_encoding_consumer` taking that description, the reference context built as `build_derivation_context` overriding the asset with `build_asset_identity` at ecosystem `pypi`, name `left-pad`, and version `1.3.0`, the deployment with `build_deployment_identity` at bytes each `0x44`, the suite with `build_suite_identifier` at identifier bytes each `0x55` and version `0x0102`, the parameter set with `build_parameter_set_identifier` at bytes each `0x66`, the group index with `build_group_index` at value `2`, and the geometry with `build_piece_geometry` at piece size `32768`, piece-group size `65536`, and extent `262144`, and the bytes of the `abi.encode` parameter encoding of the same eleven values with `FixedBytes32` of zero bytes in place of the deployment identity's bytes, a hex string authored by hand from the Solidity Contract ABI Specification and decoded by `hex::decode`, `build_create_encoding_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_encoding_payload`, all from the crate's public surface under the `mocks` feature; the encoding is canonical and well-kinded, so the ABI decode and the canonical comparison admit it and only the domain's constructor refuses
       * `[✅]`   Act: `create_encoding(&deps, params, payload)` for the case
       * `[✅]`   Assert: the `decoded` of the `output` of the `Ok` arm, by `.err()`, equals `Some(DecodeErrorReturn::Description(DerivationContextFromFieldsErrorReturn::DeploymentIdentity(DeploymentIdentityTryNewErrorReturn::AllZero)))` by `assert_eq!`, the whole refusal the deployment identity's constructor declares for all-zero bytes
       * `[✅]`   Boundary: the public call `create_encoding`; the route `create_encoding`, the selected concrete's constructor, `decode`, the item pass, `DerivationContextDescription::fields_to_value`, and `DeploymentIdentity::try_new`
@@ -1448,7 +2013,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `a_tag_of_the_maximum_length_reads_back_through_the_crate_root` and `a_tag_one_byte_over_the_maximum_is_refused_whole_through_the_crate_root` pass
     * `[✅]`   Code outside `adapters/hash-to-scalar/src/domain_tag` reading the `bytes` field fails to compile
 
-* `[✅]`   `hash-to-scalar/keccak256` **Keccak-256 concrete hashing a length-prefixed domain tag and a message and reducing the digest modulo the group order of whichever pairing scalar it is asked for; authors the hash-to-scalar family's generic interface, identifier, declaration, and mock**
+* `[ ]`   `hash-to-scalar/keccak256` **Keccak-256 concrete hashing a length-prefixed domain tag and a message and reducing the digest modulo the group order of whichever pairing scalar it is asked for; authors the hash-to-scalar family's generic interface, identifier, declaration, and mock**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: the identity mapping and the delivery proof's challenge are scalars the contract recomputes, and the EVM has keccak256 and no BLAKE3, so both are keccak256 under a domain tag reduced modulo the group order, computed identically by the client and the contract, through one repo-owned interface, with no module outside a concrete naming the hash library (CR-08; CR-09; CR-11)
@@ -1458,12 +2023,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Functional: the concrete's scalar equals the scalar the received type's own sampling bound reduces from the zero-extended Keccak-256 digest the oracle `expected_uniform_bytes` states, for every member of the pairing family's declared set, on BN254 and BLS12-381 and on both libraries of each
     * `[✅]`   Non-functional: `sha3` is named only inside `adapters/hash-to-scalar/src/keccak256`; no pairing library is named in the crate
 
-  * `[✅]`   `role`
+  * `[ ]`   `role`
     * `[✅]`   Adapter: the hash-to-scalar family's first concrete, and the first source file that requires the family's generic interface, identifier, declaration, and mock, which it authors in the family's `factory` module as its producers
     * `[✅]`   Creates `factory/mod.rs` with the module wiring alone and `factory/provides.rs` with the interface and mock surface alone; the factory function, its types, its interaction spec, its unit test, its re-export, and the family's integration test are `hash-to-scalar/factory`'s
     * `[✅]`   Does not reduce a scalar itself; the pairing concrete's `ISampleUniformScalar` reduces, so no field arithmetic is duplicated and no library is named here
     * `[✅]`   Does not name a use's tag or encode a message; each consumer holds its tag and encodes its message through the encoding factory
-    * `[✅]`   Does not emit the Solidity mirror; `harness-crypto/generate/evm` mirrors the vectors
+    * `[ ]`   Does not emit the Solidity mirror; `harness-crypto/generate/solidity` mirrors the vectors
     * `[✅]`   Does not map the identifier to the hash-card's `hashToScalarId` byte; the hash-card's own encoding does that
     * `[✅]`   Does not carry a commit
 
@@ -1897,19 +2462,19 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
 ## Credential KEM
 
-* `[✅]`   `domain/asset_identity_hash` **Asset identity hash, the 32 bytes of the Registry's `bytes32` asset key, `BLAKE3(packageName@version)`, admitting nonzero candidate keys without asserting Registry membership**
+* `[ ]`   `domain/asset_identity_hash` **Asset identity hash, the 32 bytes of the Registry's `bytes32` asset key, `BLAKE3(ecosystem ":" coordinates)`, admitting nonzero candidate keys without asserting Registry membership**
 
-  * `[✅]`   `objective`
-    * `[✅]`   Problem: the Registry keys every asset record, and the per-name version index, by the identity hash `BLAKE3(packageName@version)`, the `bytes32` `identityHash`; every delivery transcript carries the asset identity hash as a field; and under the asset scope the credential KEM's identity mapping `I` is the hash-to-scalar mapping of the asset's identity hash; so one value names the asset across the record, the transcript, and the identity mapping, and the all-zero unassigned-slot value must be refused before binding (PR-02; CR-09's transcript; `docs/research/MVP Scope.md`'s Canonical Identity and As-Is Ingestion; `docs/research/cryptography.md`'s transcript per delivery-statement version and its `Bb1DepthOneKemAdapter` statement; the technical requirements' `Asset` and `VersionIndex` schemas; the dependency map's `domain/asset_identity_hash` row; the Delivery proof and Solidity verifier milestone)
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: the Registry keys every asset record, and the per-name version index, by the identity hash `BLAKE3(ecosystem ":" coordinates)`, the `bytes32` `identityHash`; every delivery transcript carries the asset identity hash as a field; and under the asset scope the credential KEM's identity mapping `I` is the hash-to-scalar mapping of the asset's identity hash; so one value names the asset across the record, the transcript, and the identity mapping, and the all-zero unassigned-slot value must be refused before binding (PR-02; CR-09's transcript; `docs/research/MVP Scope.md`'s Canonical Identity and As-Is Ingestion; `docs/research/cryptography.md`'s transcript per delivery-statement version and its `Bb1DepthOneKemAdapter` statement; the technical requirements' `Asset` and `VersionIndex` schemas; the dependency map's `domain/asset_identity_hash` row; the Delivery proof and on-chain verifier milestone)
     * `[✅]`   Functional: one type holds the asset identity hash's 32 bytes, reachable only through a read accessor, and its only producer is a fallible constructor
     * `[✅]`   Functional: the constructor takes exactly 32 bytes, so the length is a fact of the params type and never a runtime check
     * `[✅]`   Functional: the constructor refuses the all-zero value, the value read from an unassigned `bytes32` storage slot; admission of any other value does not establish Registry membership
     * `[✅]`   Functional: every other 32-byte value is admitted and read back unchanged
     * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
 
-  * `[✅]`   `role`
+  * `[ ]`   `role`
     * `[✅]`   Domain: an owned value type in the protocol and domain ring, the asset key every asset record, delivery transcript, and asset-scope identity mapping names
-    * `[✅]`   Does not compute the hash; the `domain` crate names no hash library, and `BLAKE3(name@version)` over `domain/asset_identity`'s join is computed through the hashing family, whose result a caller passes to this constructor
+    * `[ ]`   Does not compute the hash; the `domain` crate names no hash library, and `BLAKE3(ecosystem ":" coordinates)` over `domain/asset_identity`'s ecosystem-qualified coordinate is computed through the hashing family, whose result a caller passes to this constructor
     * `[✅]`   Does not map the hash to a scalar; the credential KEM's identity mapping takes its bytes through the hash-to-scalar family
     * `[✅]`   Does not decode a hash from wire bytes of unknown length; the encoding family decodes a `bytes32` into the 32 bytes this constructor takes, and the proof family's transcript descriptions encode the held bytes as their fixed 32-byte field
     * `[✅]`   Does not look up, register, or check the Registry record the hash keys
@@ -2023,11 +2588,11 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Functional: rebuilding a value from components checks nothing beyond its types; `is_valid` checks a rebuilt credential and `is_well_formed` a rebuilt capsule, and the pairing family's decoders have already checked every point's encoding and subgroup
     * `[✅]`   Non-functional: every source-group, scalar, and target-group operation passes through the pairing family's `IPairingArithmetic` and every identity mapping through `IHashToScalarAdapter`; the crate names no curve library, no hash library, and no randomness source; decrypt-capable values, the master scalar, the credential, the issuance and rerandomization scalars, their components, and `K`, are held in types that zeroize on drop
 
-  * `[✅]`   `role`
+  * `[ ]`   `role`
     * `[✅]`   Adapter: the credential KEM family's first concrete, and the first source file that requires the family's generic interface, the identity scope, the KEM identifier, the declaration, the encapsulated-value type, the component types, and the family's mock, which it authors in the family's `factory` module as its producers
     * `[✅]`   Creates `factory/mod.rs` with the module wiring alone and `factory/provides.rs` with the interface and mock surface alone; the factory function, its types, its interaction spec, its unit test, its re-export, the admission by identity scope, and the family's integration test are `kem/factory`'s
     * `[✅]`   Takes every random scalar as caller-supplied uniform bytes, so the First Finder draws them from the randomness family and the explicit publisher derives them through the key-derivation family's `MasterScalar`, `IdentityBases`, and `CapsuleRandomness` purposes, with no change here (CR-05)
-    * `[✅]`   Takes identity bytes only at the KEM's final hash boundary: composition supplies a borrowed `AssetIdentityHash` for asset scope and the canonical encoding of the entitlement identifier for entitlement scope. These representations are distinct; the asset coordinate's `name@version` bytes are not the asset identity hash. The KEM does not assemble either representation
+    * `[ ]`   Takes identity bytes only at the KEM's final hash boundary: composition supplies a borrowed `AssetIdentityHash` for asset scope and the canonical encoding of the entitlement identifier for entitlement scope. These representations are distinct; the asset coordinate's ecosystem-qualified bytes are not the asset identity hash. The KEM does not assemble either representation
     * `[✅]`   Does not choose a scope for a deployment; the suite fixes it, and `kem/factory` admits a concrete by the scope the suite requires
     * `[✅]`   Does not wrap a piece-group key or derive a wrapping key; `workflows/sidecar/wrap` derives from the encapsulated value
     * `[✅]`   Does not encode, decode, subgroup-check, or register a parameter set, credential, or capsule; it exposes each as pairing components and rebuilds each from them, the pairing family's decoders check encodings and subgroups, and the registry, envelope, sidecar, and custody consumers encode what they carry
@@ -2306,11 +2871,11 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `adapters/kem/src/bb1_depth_one/provides.rs`
     * `[✅]`   `pub(crate) use super::interface::*;`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate
 
-  * `[✅]`   `directionality`
+  * `[ ]`   `directionality`
     * `[✅]`   Under the `mocks` feature, `factory/mock.rs` and `bb1_depth_one/mock.rs` depend on `domain`, `pairing`, `hash-to-scalar`, and `serde_json`; the mock concrete names no concrete; this node edits `adapters/pairing/src/factory/mock.rs`, which names nothing in this crate
     * `[✅]`   `bb1_depth_one` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, on `pairing`, and on `hash-to-scalar`; the `factory` module depends on `domain`, on `zeroize`, on `pairing`'s `IPairingAdapter` and `SampleUniformScalarErrorReturn`, and on `hash-to-scalar`'s `HashToScalarErrorReturn`, and names nothing of `bb1_depth_one`; `kem/factory` opens the family form's recorded cycle by constructing the concrete and carrying its constructor refusal
     * `[✅]`   Among repository crates the crate depends on `crates/domain`, `adapters/pairing`, and `adapters/hash-to-scalar`, none of which names it; nothing depends on the crate yet; no other cycle
-    * `[✅]`   `kem/factory` constructs the concrete and admits it by identity scope; `workflows/sidecar/wrap` derives from `EncapsulatedValue`; `workflows/sidecar/build` and `workflows/sidecar/validate` read and rebuild capsules through their components; `envelope/pairing_elgamal` encrypts `CredentialComponents` and the credential engine rebuilds a credential from them; `proof/schnorr_fs` takes the master scalar's components and the issuance `randomness` as the mint proof's witnesses, the rerandomization `offset` as the transfer proof's, and the parameter-set and identity-element components into its statement; the registry encodes the parameter-set components, and custody persists and restores the master scalar's; `harness-crypto/main` obtains the KEM through `kem/factory` and hands the adapter and its declaration to the generate concrete, whose `harness-crypto/generate/evm/constants` reads the identity mapping's tag from that declaration and whose `harness-crypto/generate/evm/mapping_vectors` reads the mapped scalar from the identity element's components
+    * `[ ]`   `kem/factory` constructs the concrete and admits it by identity scope; `workflows/sidecar/wrap` derives from `EncapsulatedValue`; `workflows/sidecar/build` and `workflows/sidecar/validate` read and rebuild capsules through their components; `envelope/pairing_elgamal` encrypts `CredentialComponents` and the credential engine rebuilds a credential from them; `proof/schnorr_fs` takes the master scalar's components and the issuance `randomness` as the mint proof's witnesses, the rerandomization `offset` as the transfer proof's, and the parameter-set and identity-element components into its statement; the registry encodes the parameter-set components, and custody persists and restores the master scalar's; `harness-crypto/main` obtains the KEM through `kem/factory` and hands the adapter and its declaration to the generate concrete, whose `harness-crypto/generate/solidity/constants` reads the identity mapping's tag from that declaration and whose `harness-crypto/generate/solidity/mapping_vectors` reads the mapped scalar from the identity element's components
 
   * `[✅]`   `requirements`
     * `[✅]`   `adapters/kem/Cargo.toml` carries exactly the tables and keys stated above, and no curve, hash, or randomness library is named in the crate
@@ -2731,10 +3296,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[✅]`   Boundary: the public call `create_kem`, with the route the spec states for the entry
       * `[✅]`   Mocked: the encoding family's official consumer mock, which hands the bytes the encoding returned to the block
 
-  * `[✅]`   `directionality`
+  * `[ ]`   `directionality`
     * `[✅]`   The `factory` module depends on the `bb1_depth_one` concrete through `crate::bb1_depth_one::provides`, on its own interface, on `pairing`, and on `hash-to-scalar`; `bb1_depth_one` depends on the `factory` module's surface, the family form's recorded cycle; the crate's public surface is the `factory` module's `provides`
     * `[✅]`   Among repository crates the crate depends on `crates/domain`, `adapters/pairing`, and `adapters/hash-to-scalar` at runtime and on `adapters/random` and `adapters/encoding` for its integration tests only; none of them names this crate; no other cycle
-    * `[✅]`   `workflows/sidecar/wrap` consumes the family's surface; `harness-crypto/main` obtains the KEM through `create_kem` and an `IKemConsumer` and hands the adapter and admitted scope; consumers obtain its declaration through `K::DECLARATION` to the generate concrete and to `harness-crypto/vectors`, neither of which calls the factory, `harness-crypto/generate/evm/constants` reading the identity mapping's tag from that declaration
+    * `[ ]`   `workflows/sidecar/wrap` consumes the family's surface; `harness-crypto/main` obtains the KEM through `create_kem` and an `IKemConsumer` and hands the adapter and admitted scope; consumers obtain its declaration through `K::DECLARATION` to the generate concrete and to `harness-crypto/vectors`, neither of which calls the factory, `harness-crypto/generate/solidity/constants` reading the identity mapping's tag from that declaration
 
   * `[✅]`   `requirements`
     * `[✅]`   `CreateKemErrorReturn` derives `Debug`, `PartialEq`, and `Eq`
