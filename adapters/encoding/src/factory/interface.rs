@@ -1,6 +1,5 @@
 use crate::abi::provides::AbiDecoderErrorReturn;
 use core::convert::Infallible;
-use serde::Serialize;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CanonicalFieldKind {
@@ -50,10 +49,10 @@ pub type FromFieldsReturn<T, E> = Result<FromFieldsSuccessReturn<T>, E>;
 pub trait IEncodingContract {
     type Described;
     type FromFieldsErrorReturn: core::fmt::Debug + PartialEq + Eq;
+
     const FIELDS: &'static [CanonicalFieldKind];
 
     fn to_fields(&self, params: ToFieldsParams, payload: &Self::Described) -> ToFieldsReturn;
-
     fn fields_to_value(
         &self,
         params: FromFieldsParams,
@@ -86,20 +85,18 @@ pub trait ICanonicalField: Sized {
     const KIND: CanonicalFieldKind;
 
     fn to_field(params: ToFieldParams, payload: &Self) -> ToFieldReturn;
-
     fn from_field(params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self>;
 }
 
 pub const ENCODING_INTERFACE_VERSION: u32 = 1;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum EncodingIdentifier {
     EthereumAbiV1,
     #[cfg(any(test, feature = "mocks"))]
     Mock,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct EncodingDeclaration {
     pub identifier: EncodingIdentifier,
     pub adapter_version: u32,
@@ -165,7 +162,7 @@ pub trait IDecoderAdapter {
     ) -> DecodeReturn<D::Described, D::FromFieldsErrorReturn>;
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy)]
 pub enum EncodingConcrete {
     Abi,
     #[cfg(any(test, feature = "mocks"))]

@@ -29,23 +29,25 @@ pub fn create_encoding<C: IEncodingConsumer>(
                 return Err(CreateEncodingErrorReturn::UnsupportedEncodingIdentifier);
             }
             let Ok(adapter) = AbiEncoding::try_new(AbiEncodingConstructorParams);
-            let output = deps
-                .consumer
-                .consume_encoding(ConsumeEncodingParams, ConsumeEncodingPayload { adapter });
-            Ok(CreateEncodingSuccessReturn { output })
+            Ok(CreateEncodingSuccessReturn {
+                output: deps
+                    .consumer
+                    .consume_encoding(ConsumeEncodingParams, ConsumeEncodingPayload { adapter }),
+            })
         }
         #[cfg(any(test, feature = "mocks"))]
         EncodingConcrete::Mock => {
             if MockIEncoderAdapter::DECLARATION.identifier != params.identifier {
                 return Err(CreateEncodingErrorReturn::UnsupportedEncodingIdentifier);
             }
-            let output = deps.consumer.consume_encoding(
-                ConsumeEncodingParams,
-                ConsumeEncodingPayload {
-                    adapter: MockIEncoderAdapter,
-                },
-            );
-            Ok(CreateEncodingSuccessReturn { output })
+            Ok(CreateEncodingSuccessReturn {
+                output: deps.consumer.consume_encoding(
+                    ConsumeEncodingParams,
+                    ConsumeEncodingPayload {
+                        adapter: MockIEncoderAdapter,
+                    },
+                ),
+            })
         }
     }
 }

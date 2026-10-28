@@ -24,5 +24,5 @@ Ordering: a single branch decides the outcome; the same params always yield the 
 
 - Every `GroupIndex` holds exactly one `u64`, read back unchanged by `value`.
 - `try_new` is the only producer; `Clone` copies only an already-admitted value, so no admitted form exists outside the constructor.
-- The index's bound against a deployment's group count is not this type's — `domain/derivation_context` holds the geometry and refuses an index outside it.
+- The index's bound against a deployment's group count is not this type's — `workflows/sidecar/derivation_context` holds the geometry and refuses an index outside it.
 

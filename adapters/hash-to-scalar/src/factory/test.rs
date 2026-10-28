@@ -1,14 +1,13 @@
 use super::create_hash_to_scalar;
 use super::provides::{
-    CreateHashToScalarErrorReturn, CreateHashToScalarParamsOverrides,
-    DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarIdentifier, IHashToScalarAdapter,
+    CreateHashToScalarCasePayload, CreateHashToScalarErrorReturn,
+    CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarIdentifier,
+    ICreateHashToScalarCaseConsumer, IHashToScalarAdapter, build_create_hash_to_scalar_case_deps,
+    build_create_hash_to_scalar_case_params, build_create_hash_to_scalar_case_payload,
     build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
-    build_create_hash_to_scalar_payload,
+    build_create_hash_to_scalar_payload, run_create_hash_to_scalar_case,
 };
-use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingPayload, IPairingAdapter,
-    IPairingConsumer, build_create_pairing_deps, build_create_pairing_params, create_pairing,
-};
+use pairing::IPairingAdapter;
 
 /// Contract: `create_hash_to_scalar`, admitted: the named concrete's declared
 ///   identifier is `params.identifier` →
@@ -19,8 +18,8 @@ use pairing::{
 ///   the mock concrete under the identifier it declares; the adapter reports
 ///   the declaration of the concrete it is, so a factory that constructs
 ///   another concrete reports another identifier.
-/// Act:     `create_pairing` runs the consumer, whose single call is
-///   `create_hash_to_scalar::<P::Scalar>`.
+/// Act:     `run_create_hash_to_scalar_case` runs the case runner, whose case
+///   consumer's single call is `create_hash_to_scalar::<P::Scalar>`.
 /// Assert:  in the consumer, the result is `Ok`, and `adapter.declaration()`
 ///   has an identifier matching `HashToScalarIdentifier::Mock` by
 ///   `assert!(matches!(…))`, an `adapter_version` of `1`, and an
@@ -33,13 +32,13 @@ use pairing::{
 fn create_hash_to_scalar_returns_the_adapter_the_mock_selection_names() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl ICreateHashToScalarCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingAdapter>(
+        fn consume_create_hash_to_scalar_case<P: IPairingAdapter>(
             &self,
-            _params: ConsumePairingParams,
-            _payload: ConsumePairingPayload<P>,
+            _pairing: &P,
+            _payload: &CreateHashToScalarCasePayload,
         ) -> Self::Output {
             let result = create_hash_to_scalar::<P::Scalar>(
                 &build_create_hash_to_scalar_deps(Default::default()),
@@ -62,10 +61,10 @@ fn create_hash_to_scalar_returns_the_adapter_the_mock_selection_names() {
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_create_hash_to_scalar_case(
+        &build_create_hash_to_scalar_case_deps(Consumer, Default::default()),
+        build_create_hash_to_scalar_case_params(Default::default()),
+        build_create_hash_to_scalar_case_payload(Default::default()),
     );
 
     assert!(created.is_ok());
@@ -82,8 +81,8 @@ fn create_hash_to_scalar_returns_the_adapter_the_mock_selection_names() {
 ///   identifier required differs from the identifier declared, and an
 ///   admission that ignores the identifier or compares it with a constant
 ///   fails.
-/// Act:     `create_pairing` runs the consumer, whose single call is
-///   `create_hash_to_scalar::<P::Scalar>`.
+/// Act:     `run_create_hash_to_scalar_case` runs the case runner, whose case
+///   consumer's single call is `create_hash_to_scalar::<P::Scalar>`.
 /// Assert:  in the consumer, `result.err()` equals
 ///   `Some(CreateHashToScalarErrorReturn::UnsupportedHashToScalarIdentifier)`
 ///   by `assert_eq!`; outside the consumer, `created.is_ok()`.
@@ -93,13 +92,13 @@ fn create_hash_to_scalar_returns_the_adapter_the_mock_selection_names() {
 fn create_hash_to_scalar_refuses_the_mock_selection_under_an_identifier_it_does_not_declare() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl ICreateHashToScalarCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingAdapter>(
+        fn consume_create_hash_to_scalar_case<P: IPairingAdapter>(
             &self,
-            _params: ConsumePairingParams,
-            _payload: ConsumePairingPayload<P>,
+            _pairing: &P,
+            _payload: &CreateHashToScalarCasePayload,
         ) -> Self::Output {
             let result = create_hash_to_scalar::<P::Scalar>(
                 &build_create_hash_to_scalar_deps(Default::default()),
@@ -116,10 +115,10 @@ fn create_hash_to_scalar_refuses_the_mock_selection_under_an_identifier_it_does_
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_create_hash_to_scalar_case(
+        &build_create_hash_to_scalar_case_deps(Consumer, Default::default()),
+        build_create_hash_to_scalar_case_params(Default::default()),
+        build_create_hash_to_scalar_case_payload(Default::default()),
     );
 
     assert!(created.is_ok());
@@ -137,8 +136,8 @@ fn create_hash_to_scalar_refuses_the_mock_selection_under_an_identifier_it_does_
 ///   `Mock`, so the identifier required differs from the identifier declared
 ///   for every case, and an arm that constructs without comparing returns an
 ///   adapter it must refuse.
-/// Act:     `create_pairing` runs the consumer, whose single call per case is
-///   `create_hash_to_scalar::<P::Scalar>`.
+/// Act:     `run_create_hash_to_scalar_case` runs the case runner, whose case
+///   consumer's single call per case is `create_hash_to_scalar::<P::Scalar>`.
 /// Assert:  in the consumer, per case, `result.err()` equals
 ///   `Some(CreateHashToScalarErrorReturn::UnsupportedHashToScalarIdentifier)`
 ///   by `assert_eq!`; outside the consumer, `created.is_ok()`.
@@ -150,13 +149,13 @@ fn create_hash_to_scalar_refuses_the_mock_selection_under_an_identifier_it_does_
 fn create_hash_to_scalar_refuses_each_declared_concrete_under_an_identifier_it_does_not_declare() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl ICreateHashToScalarCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingAdapter>(
+        fn consume_create_hash_to_scalar_case<P: IPairingAdapter>(
             &self,
-            _params: ConsumePairingParams,
-            _payload: ConsumePairingPayload<P>,
+            _pairing: &P,
+            _payload: &CreateHashToScalarCasePayload,
         ) -> Self::Output {
             for selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 let result = create_hash_to_scalar::<P::Scalar>(
@@ -175,10 +174,10 @@ fn create_hash_to_scalar_refuses_each_declared_concrete_under_an_identifier_it_d
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_create_hash_to_scalar_case(
+        &build_create_hash_to_scalar_case_deps(Consumer, Default::default()),
+        build_create_hash_to_scalar_case_params(Default::default()),
+        build_create_hash_to_scalar_case_payload(Default::default()),
     );
 
     assert!(created.is_ok());

@@ -1,0 +1,23 @@
+[package]
+name = "hashing"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+domain = { path = "../../crates/domain" }
+zeroize = "1.9.0"
+blake3 = { version = "1.8.7", features = ["zeroize"] }
+bao = "0.13.1"
+serde_json = { version = "1.0.151", optional = true }
+
+[dev-dependencies]
+domain = { path = "../../crates/domain", features = ["mocks"] }
+serde_json = "1.0.151"
+hex = "0.4.3"
+
+[features]
+mocks = ["domain/mocks", "dep:serde_json"]
+
+[lints]
+workspace = true

@@ -1,27 +1,28 @@
 #![cfg(feature = "mocks")]
 #![allow(clippy::expect_used)]
 
-use domain::{build_derivation_context, build_secret};
+use domain::build_secret;
 use encoding::{
-    CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, DerivationContextDescription,
-    EncodingIdentifier, build_create_encoding_deps, build_create_encoding_params,
-    build_create_encoding_payload, build_mock_i_encoding_consumer, create_encoding,
+    CanonicalFieldsOverrides, CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS,
+    EncodingIdentifier, MockIEncodingContract, build_canonical_fields, build_create_encoding_deps,
+    build_create_encoding_params, build_create_encoding_payload, build_mock_i_encoding_consumer,
+    create_encoding,
 };
 use hash_to_scalar::{
+    CreateHashToScalarCaseParamsOverrides, CreateHashToScalarCasePayload,
     DECLARED_HASH_TO_SCALAR_SELECTIONS, DOMAIN_TAG_MAXIMUM_LENGTH, DomainTag,
     DomainTagConstructorParamsOverrides, DomainTagTryNewErrorReturn, HashToScalarIdentifier,
-    HashToScalarParamsOverrides, HashToScalarPayloadOverrides, IHashToScalarAdapter,
-    REFERENCE_MESSAGE, REFERENCE_TAG, build_create_hash_to_scalar_deps,
-    build_create_hash_to_scalar_payload, build_domain_tag_constructor_params,
-    build_hash_to_scalar_params, build_hash_to_scalar_payload, create_hash_to_scalar,
-    expected_uniform_bytes,
+    HashToScalarParamsOverrides, HashToScalarPayloadOverrides, ICreateHashToScalarCaseConsumer,
+    IHashToScalarAdapter, REFERENCE_MESSAGE, REFERENCE_TAG, build_create_hash_to_scalar_case_deps,
+    build_create_hash_to_scalar_case_params, build_create_hash_to_scalar_case_payload,
+    build_create_hash_to_scalar_deps, build_create_hash_to_scalar_payload,
+    build_domain_tag_constructor_params, build_hash_to_scalar_params, build_hash_to_scalar_payload,
+    create_hash_to_scalar, expected_uniform_bytes, run_create_hash_to_scalar_case,
 };
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
-    CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
-    IPairingConsumer, ISampleUniformScalar, PAIRING_CONCRETES, SampleUniformScalarParams,
-    SampleUniformScalarPayload, build_create_pairing_deps, build_create_pairing_params,
-    create_pairing,
+    CreatePairingParamsOverrides, EncodeScalarParams, EncodeScalarPayload, IPairingAdapter,
+    ISampleUniformScalar, PAIRING_CONCRETES, SampleUniformScalarParams, SampleUniformScalarPayload,
+    build_create_pairing_params,
 };
 
 /// Contract: entry
@@ -33,15 +34,16 @@ use pairing::{
 /// Arrange: the consumer's `tag_bytes` as `REFERENCE_TAG.to_vec()` and
 ///   `message` as `REFERENCE_MESSAGE.to_vec()`; every case of `keccak_cases`
 ///   over every member of `PAIRING_CONCRETES`, each with its own scalar type.
-/// Act:     `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+/// Act:     `run_create_hash_to_scalar_case` per concrete.
 /// Assert:  per concrete and case, the actual encoding equals the expected
 ///   encoding, which the oracle states independently of `hash_to_scalar`;
 ///   outside the consumer, `created.is_ok()`.
-/// Boundary: the public calls `DomainTag::try_new`, `create_pairing`,
-///   `create_hash_to_scalar`, `hash_to_scalar` on the returned adapter,
+/// Boundary: the public calls `run_create_hash_to_scalar_case`,
+///   `DomainTag::try_new`, `create_pairing`, `create_hash_to_scalar`,
+///   `hash_to_scalar` on the returned adapter,
 ///   `sample_from_uniform_bytes`, and `encode_scalar`, the route `lib.rs` then
 ///   `domain_tag::provides` then `DomainTag::try_new`, and `lib.rs` then
-///   `factory::provides` then `create_hash_to_scalar`.
+///   `factory::provides` then `run_create_hash_to_scalar_case`.
 /// Mocked:  none; the route reaches no outer-edge collaborator, and the
 ///   fixtures and the oracle come from the official mock under the `mocks`
 ///   feature.
@@ -53,13 +55,13 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_reference_inputs
         message: Vec<u8>,
     }
 
-    impl IPairingConsumer for Consumer {
+    impl ICreateHashToScalarCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingAdapter>(
+        fn consume_create_hash_to_scalar_case<P: IPairingAdapter>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            _payload: &CreateHashToScalarCasePayload,
         ) -> Self::Output {
             let tag = DomainTag::try_new(build_domain_tag_constructor_params(
                 DomainTagConstructorParamsOverrides {
@@ -90,8 +92,7 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_reference_inputs
                         }),
                     )
                     .expect("hash_to_scalar admits the tag and message");
-                let actual = consumed
-                    .adapter
+                let actual = pairing
                     .encode_scalar(
                         EncodeScalarParams,
                         EncodeScalarPayload {
@@ -108,8 +109,7 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_reference_inputs
                     SampleUniformScalarPayload { uniform },
                 )
                 .expect("the uniform input samples a scalar");
-                let expected = consumed
-                    .adapter
+                let expected = pairing
                     .encode_scalar(
                         EncodeScalarParams,
                         EncodeScalarPayload {
@@ -126,11 +126,14 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_reference_inputs
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(
+        let params =
+            build_create_hash_to_scalar_case_params(CreateHashToScalarCaseParamsOverrides {
+                pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                    concrete: Some(*concrete),
+                    ..Default::default()
+                })),
+            });
+        let deps = build_create_hash_to_scalar_case_deps(
             Consumer {
                 tag_bytes: REFERENCE_TAG.to_vec(),
                 message: REFERENCE_MESSAGE.to_vec(),
@@ -139,7 +142,11 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_reference_inputs
         );
 
         // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
+        let created = run_create_hash_to_scalar_case(
+            &deps,
+            params,
+            build_create_hash_to_scalar_case_payload(Default::default()),
+        );
 
         // Assert
         assert!(created.is_ok());
@@ -157,7 +164,7 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_reference_inputs
 ///   the consumer also reading the tag's bytes through `as_bytes`; the
 ///   variation is a read that truncates, trims, or re-encodes the tag, which
 ///   yields a scalar the oracle does not state.
-/// Act:     `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+/// Act:     `run_create_hash_to_scalar_case` per concrete.
 /// Assert:  in the consumer, `tag.as_bytes()` equals `REFERENCE_TAG` by
 ///   `assert_eq!`, and per case the actual encoding equals the expected
 ///   encoding; outside the consumer, `created.is_ok()`.
@@ -173,13 +180,13 @@ fn a_tag_read_back_through_the_crate_root_is_the_tag_the_factory_adapter_hashes(
         message: Vec<u8>,
     }
 
-    impl IPairingConsumer for Consumer {
+    impl ICreateHashToScalarCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingAdapter>(
+        fn consume_create_hash_to_scalar_case<P: IPairingAdapter>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            _payload: &CreateHashToScalarCasePayload,
         ) -> Self::Output {
             let tag = DomainTag::try_new(build_domain_tag_constructor_params(
                 DomainTagConstructorParamsOverrides {
@@ -211,8 +218,7 @@ fn a_tag_read_back_through_the_crate_root_is_the_tag_the_factory_adapter_hashes(
                         }),
                     )
                     .expect("hash_to_scalar admits the tag and message");
-                let actual = consumed
-                    .adapter
+                let actual = pairing
                     .encode_scalar(
                         EncodeScalarParams,
                         EncodeScalarPayload {
@@ -229,8 +235,7 @@ fn a_tag_read_back_through_the_crate_root_is_the_tag_the_factory_adapter_hashes(
                     SampleUniformScalarPayload { uniform },
                 )
                 .expect("the uniform input samples a scalar");
-                let expected = consumed
-                    .adapter
+                let expected = pairing
                     .encode_scalar(
                         EncodeScalarParams,
                         EncodeScalarPayload {
@@ -247,11 +252,14 @@ fn a_tag_read_back_through_the_crate_root_is_the_tag_the_factory_adapter_hashes(
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(
+        let params =
+            build_create_hash_to_scalar_case_params(CreateHashToScalarCaseParamsOverrides {
+                pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                    concrete: Some(*concrete),
+                    ..Default::default()
+                })),
+            });
+        let deps = build_create_hash_to_scalar_case_deps(
             Consumer {
                 tag_bytes: REFERENCE_TAG.to_vec(),
                 message: REFERENCE_MESSAGE.to_vec(),
@@ -260,7 +268,11 @@ fn a_tag_read_back_through_the_crate_root_is_the_tag_the_factory_adapter_hashes(
         );
 
         // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
+        let created = run_create_hash_to_scalar_case(
+            &deps,
+            params,
+            build_create_hash_to_scalar_case_payload(Default::default()),
+        );
 
         // Assert
         assert!(created.is_ok());
@@ -306,8 +318,9 @@ fn a_tag_one_byte_over_the_maximum_is_refused_whole_before_the_factory_is_reache
 
 /// Contract: entry
 ///   `every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_encoding_factory_encodes_to_the_oracle`;
-///   given `REFERENCE_TAG` and the bytes `create_encoding` returns for the
-///   reference derivation context, the encoding of the returned scalar equals
+///   given `REFERENCE_TAG` and the bytes `create_encoding` returns for a value
+///   of the family's mock description, the encoding of the returned scalar
+///   equals
 ///   the encoding of the scalar sampled from `expected_uniform_bytes(&tag,
 ///   bytes, S::UNIFORM_BYTES_LENGTH)`, `bytes` the bytes the encoding
 ///   returned.
@@ -315,8 +328,8 @@ fn a_tag_one_byte_over_the_maximum_is_refused_whole_before_the_factory_is_reache
 ///   `EncodingIdentifier::EthereumAbiV1`, the message bytes are the `bytes` of
 ///   the `Ok(EncodeSuccessReturn { bytes })` in `output.encoded` of
 ///   `create_encoding(&build_create_encoding_deps(
-///   build_mock_i_encoding_consumer(&DerivationContextDescription,
-///   build_derivation_context(Default::default()), Vec::new())),
+///   build_mock_i_encoding_consumer(&MockIEncodingContract,
+///   build_canonical_fields(CanonicalFieldsOverrides::default()), Vec::new())),
 ///   build_create_encoding_params(CreateEncodingParamsOverrides { concrete:
 ///   Some(selection.concrete), identifier: Some(selection.identifier) }),
 ///   build_create_encoding_payload(Default::default()))`; the consumer's
@@ -325,12 +338,13 @@ fn a_tag_one_byte_over_the_maximum_is_refused_whole_before_the_factory_is_reache
 ///   `PAIRING_CONCRETES`, so a hash that frames the message by the reference
 ///   message's shape, or reads other bytes than the encoding returned, yields
 ///   a scalar the oracle does not state.
-/// Act:     `create_pairing(&deps, params, CreatePairingPayload)` per
-///   concrete, over a consumer holding the encoded bytes.
+/// Act:     `run_create_hash_to_scalar_case` per concrete, over a case
+///   consumer holding the encoded bytes.
 /// Assert:  per concrete and case, the actual encoding equals the expected
 ///   encoding; outside the consumer, `created.is_ok()`.
 /// Boundary: the public calls `create_encoding` over the official consumer
-///   mock, `DomainTag::try_new`, `create_pairing`, `create_hash_to_scalar`,
+///   mock, `DomainTag::try_new`, `run_create_hash_to_scalar_case`,
+///   `create_pairing`, `create_hash_to_scalar`,
 ///   `hash_to_scalar`, `sample_from_uniform_bytes`, and `encode_scalar`.
 /// Mocked:  the encoding family's consumer, replaced by the official
 ///   `MockIEncodingConsumer` carrying the real description and the reference
@@ -345,13 +359,13 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
         message: Vec<u8>,
     }
 
-    impl IPairingConsumer for Consumer {
+    impl ICreateHashToScalarCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingAdapter>(
+        fn consume_create_hash_to_scalar_case<P: IPairingAdapter>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            _payload: &CreateHashToScalarCasePayload,
         ) -> Self::Output {
             let tag = DomainTag::try_new(build_domain_tag_constructor_params(
                 DomainTagConstructorParamsOverrides {
@@ -382,8 +396,7 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
                         }),
                     )
                     .expect("hash_to_scalar admits the tag and message");
-                let actual = consumed
-                    .adapter
+                let actual = pairing
                     .encode_scalar(
                         EncodeScalarParams,
                         EncodeScalarPayload {
@@ -400,8 +413,7 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
                     SampleUniformScalarPayload { uniform },
                 )
                 .expect("the uniform input samples a scalar");
-                let expected = consumed
-                    .adapter
+                let expected = pairing
                     .encode_scalar(
                         EncodeScalarParams,
                         EncodeScalarPayload {
@@ -422,8 +434,8 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
         .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
     {
         let consumer = build_mock_i_encoding_consumer(
-            &DerivationContextDescription,
-            build_derivation_context(Default::default()),
+            &MockIEncodingContract,
+            build_canonical_fields(CanonicalFieldsOverrides::default()),
             Vec::new(),
         );
         let message = create_encoding(
@@ -441,11 +453,14 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
         .bytes;
 
         for concrete in PAIRING_CONCRETES {
-            let params = build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*concrete),
-                ..Default::default()
-            });
-            let deps = build_create_pairing_deps(
+            let params =
+                build_create_hash_to_scalar_case_params(CreateHashToScalarCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                });
+            let deps = build_create_hash_to_scalar_case_deps(
                 Consumer {
                     tag_bytes: REFERENCE_TAG.to_vec(),
                     message: message.clone(),
@@ -454,7 +469,11 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
             );
 
             // Act
-            let created = create_pairing(&deps, params, CreatePairingPayload);
+            let created = run_create_hash_to_scalar_case(
+                &deps,
+                params,
+                build_create_hash_to_scalar_case_payload(Default::default()),
+            );
 
             // Assert
             assert!(created.is_ok());

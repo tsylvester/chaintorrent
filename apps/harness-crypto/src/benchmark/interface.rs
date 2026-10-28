@@ -1,7 +1,14 @@
 use core::convert::Infallible;
 use core::num::NonZeroU32;
 use core::time::Duration;
+#[cfg(any(test, feature = "mocks"))]
+use pairing::{
+    ConsumePairingParams, ConsumePairingPayload, CreatePairingErrorReturn, CreatePairingParams,
+    IPairingArithmetic, IPairingReference,
+};
 use pairing::{PairingConcrete, SampleUniformScalarErrorReturn};
+#[cfg(any(test, feature = "mocks"))]
+use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
 pub struct PairingBenchmark {
@@ -38,3 +45,52 @@ pub enum PairingBenchmarkErrorReturn {
 
 pub type PairingBenchmarkReturn =
     Result<PairingBenchmarkSuccessReturn, PairingBenchmarkErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait IPairingBenchmarkCaseConsumer {
+    type Output;
+
+    fn consume_pairing_benchmark_case<P: IPairingArithmetic + IPairingReference>(
+        &self,
+        random: Box<dyn IRandomSourceAdapter>,
+        params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct PairingBenchmarkCaseDeps<C: IPairingBenchmarkCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct PairingBenchmarkCaseParams {
+    pub pairing: CreatePairingParams,
+    pub random_source: CreateRandomSourceParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct PairingBenchmarkCasePayload;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct PairingBenchmarkCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum PairingBenchmarkCaseErrorReturn {
+    CreatePairing(CreatePairingErrorReturn),
+    CreateRandomSource(CreateRandomSourceErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type PairingBenchmarkCaseReturn<O> =
+    Result<PairingBenchmarkCaseSuccessReturn<O>, PairingBenchmarkCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunPairingBenchmarkCaseFn<C: IPairingBenchmarkCaseConsumer> = fn(
+    &PairingBenchmarkCaseDeps<C>,
+    PairingBenchmarkCaseParams,
+    PairingBenchmarkCasePayload,
+) -> PairingBenchmarkCaseReturn<<C as IPairingBenchmarkCaseConsumer>::Output>;

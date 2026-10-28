@@ -1,18 +1,26 @@
 #![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
-    CreateHashToScalarDeps, CreateHashToScalarParams, CreateHashToScalarPayload,
-    CreateHashToScalarReturn, CreateHashToScalarSuccessReturn, HASH_TO_SCALAR_INTERFACE_VERSION,
-    HashToScalarConcrete, HashToScalarDeclaration, HashToScalarErrorReturn, HashToScalarIdentifier,
-    HashToScalarParams, HashToScalarPayload, HashToScalarReturn, HashToScalarSuccessReturn,
-    IHashToScalarAdapter, MockIHashToScalarAdapterFailureMode,
+    CreateHashToScalarCaseDeps, CreateHashToScalarCaseErrorReturn, CreateHashToScalarCaseParams,
+    CreateHashToScalarCasePayload, CreateHashToScalarCaseReturn,
+    CreateHashToScalarCaseSuccessReturn, CreateHashToScalarDeps, CreateHashToScalarParams,
+    CreateHashToScalarPayload, CreateHashToScalarReturn, CreateHashToScalarSuccessReturn,
+    HASH_TO_SCALAR_INTERFACE_VERSION, HashToScalarConcrete, HashToScalarDeclaration,
+    HashToScalarErrorReturn, HashToScalarIdentifier, HashToScalarParams, HashToScalarPayload,
+    HashToScalarReturn, HashToScalarSuccessReturn, ICreateHashToScalarCaseConsumer,
+    IHashToScalarAdapter, MockIHashToScalarAdapterFailureMode, RunCreateHashToScalarCaseFn,
 };
 use crate::domain_tag::provides::{DomainTag, build_domain_tag};
 use core::convert::Infallible;
 use core::iter::once;
 use core::marker::PhantomData;
 use domain::{Secret, SecretConstructorParams, build_secret};
-use pairing::{ISampleUniformScalar, SampleUniformScalarParams, SampleUniformScalarPayload};
+use pairing::{
+    ConsumePairingParams, ConsumePairingPayload, CreatePairingParams, CreatePairingPayload,
+    IPairingAdapter, IPairingConsumer, ISampleUniformScalar, SampleUniformScalarParams,
+    SampleUniformScalarPayload, build_create_pairing_deps, build_create_pairing_params,
+    create_pairing,
+};
 use serde_json::{Map, Value};
 use std::sync::OnceLock;
 
@@ -349,4 +357,90 @@ pub fn mock_create_hash_to_scalar<S: ISampleUniformScalar + Clone>(
         Box::new(adapter),
         Default::default(),
     ))
+}
+
+#[derive(Default)]
+pub struct CreateHashToScalarCaseParamsOverrides {
+    pub pairing: Option<CreatePairingParams>,
+}
+
+pub fn build_create_hash_to_scalar_case_params(
+    overrides: CreateHashToScalarCaseParamsOverrides,
+) -> CreateHashToScalarCaseParams {
+    CreateHashToScalarCaseParams {
+        pairing: overrides
+            .pairing
+            .unwrap_or_else(|| build_create_pairing_params(Default::default())),
+    }
+}
+
+#[derive(Default)]
+pub struct CreateHashToScalarCaseDepsOverrides;
+
+pub fn build_create_hash_to_scalar_case_deps<C: ICreateHashToScalarCaseConsumer>(
+    consumer: C,
+    _overrides: CreateHashToScalarCaseDepsOverrides,
+) -> CreateHashToScalarCaseDeps<C> {
+    CreateHashToScalarCaseDeps { consumer }
+}
+
+#[derive(Default)]
+pub struct CreateHashToScalarCasePayloadOverrides;
+
+pub fn build_create_hash_to_scalar_case_payload(
+    _overrides: CreateHashToScalarCasePayloadOverrides,
+) -> CreateHashToScalarCasePayload {
+    CreateHashToScalarCasePayload
+}
+
+#[derive(Default)]
+pub struct CreateHashToScalarCaseSuccessReturnOverrides;
+
+pub fn build_create_hash_to_scalar_case_success_return<O>(
+    output: O,
+    _overrides: CreateHashToScalarCaseSuccessReturnOverrides,
+) -> CreateHashToScalarCaseSuccessReturn<O> {
+    CreateHashToScalarCaseSuccessReturn { output }
+}
+
+struct CaseAtPairing<'a, C: ICreateHashToScalarCaseConsumer> {
+    consumer: &'a C,
+    case_payload: &'a CreateHashToScalarCasePayload,
+}
+
+impl<C: ICreateHashToScalarCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
+    type Output = CreateHashToScalarCaseReturn<C::Output>;
+
+    fn consume_pairing<P: IPairingAdapter>(
+        &self,
+        _params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output {
+        let output = self
+            .consumer
+            .consume_create_hash_to_scalar_case(&payload.adapter, self.case_payload);
+        Ok(CreateHashToScalarCaseSuccessReturn { output })
+    }
+}
+
+pub fn run_create_hash_to_scalar_case<C: ICreateHashToScalarCaseConsumer>(
+    deps: &CreateHashToScalarCaseDeps<C>,
+    params: CreateHashToScalarCaseParams,
+    payload: CreateHashToScalarCasePayload,
+) -> CreateHashToScalarCaseReturn<C::Output> {
+    let _: RunCreateHashToScalarCaseFn<C> = run_create_hash_to_scalar_case;
+    match create_pairing(
+        &build_create_pairing_deps(
+            CaseAtPairing {
+                consumer: &deps.consumer,
+                case_payload: &payload,
+            },
+            Default::default(),
+        ),
+        params.pairing,
+        CreatePairingPayload,
+    ) {
+        Ok(success) => success.output,
+        Err(error) => Err(CreateHashToScalarCaseErrorReturn::CreatePairing(error)),
+    }
 }

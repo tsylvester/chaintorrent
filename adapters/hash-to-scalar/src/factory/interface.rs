@@ -1,6 +1,8 @@
 use crate::domain_tag::provides::DomainTag;
 use crate::keccak256::provides::Keccak256HashToScalarErrorReturn;
 use core::convert::Infallible;
+#[cfg(any(test, feature = "mocks"))]
+use pairing::{CreatePairingErrorReturn, CreatePairingParams, IPairingAdapter};
 use pairing::{ISampleUniformScalar, SampleUniformScalarErrorReturn};
 use serde::Serialize;
 
@@ -99,3 +101,50 @@ pub const DECLARED_HASH_TO_SCALAR_SELECTIONS: &[CreateHashToScalarParams] =
         concrete: HashToScalarConcrete::Keccak256,
         identifier: HashToScalarIdentifier::Keccak256V1,
     }];
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait ICreateHashToScalarCaseConsumer {
+    type Output;
+
+    fn consume_create_hash_to_scalar_case<P: IPairingAdapter>(
+        &self,
+        pairing: &P,
+        payload: &CreateHashToScalarCasePayload,
+    ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateHashToScalarCaseDeps<C: ICreateHashToScalarCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateHashToScalarCaseParams {
+    pub pairing: CreatePairingParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateHashToScalarCasePayload;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateHashToScalarCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum CreateHashToScalarCaseErrorReturn {
+    CreatePairing(CreatePairingErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type CreateHashToScalarCaseReturn<O> =
+    Result<CreateHashToScalarCaseSuccessReturn<O>, CreateHashToScalarCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunCreateHashToScalarCaseFn<C> =
+    fn(
+        &CreateHashToScalarCaseDeps<C>,
+        CreateHashToScalarCaseParams,
+        CreateHashToScalarCasePayload,
+    ) -> CreateHashToScalarCaseReturn<<C as ICreateHashToScalarCaseConsumer>::Output>;

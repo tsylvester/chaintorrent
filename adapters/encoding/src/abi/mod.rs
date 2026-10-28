@@ -1,7 +1,5 @@
-#[cfg(test)]
-mod integration_test;
 mod interface;
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
@@ -39,15 +37,20 @@ impl IEncoderAdapter for AbiEncoding {
         params: EncodeParams<'_, D>,
         payload: &D::Described,
     ) -> EncodeReturn {
-        let Ok(success) = params.description.to_fields(ToFieldsParams, payload);
-        let values = success.fields.values;
-        if values.len() != D::FIELDS.len() {
+        let Ok(emitted) = params.description.to_fields(ToFieldsParams, payload);
+        if emitted.fields.values.len() != D::FIELDS.len() {
             return Err(EncodeErrorReturn::FieldCount {
                 expected: D::FIELDS.len(),
-                actual: values.len(),
+                actual: emitted.fields.values.len(),
             });
         }
-        for (index, (value, expected)) in values.iter().zip(D::FIELDS.iter()).enumerate() {
+        for (index, (value, expected)) in emitted
+            .fields
+            .values
+            .iter()
+            .zip(D::FIELDS.iter())
+            .enumerate()
+        {
             let actual = match value {
                 CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
                 CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
@@ -66,27 +69,37 @@ impl IEncoderAdapter for AbiEncoding {
                 });
             }
         }
-        let items = values
-            .into_iter()
-            .map(|value| match value {
-                CanonicalFieldValue::FixedBytes32(bytes) => {
-                    DynSolValue::FixedBytes(B256::from(bytes), 32)
-                }
-                CanonicalFieldValue::Unsigned16(value) => DynSolValue::Uint(U256::from(value), 16),
-                CanonicalFieldValue::Unsigned32(value) => DynSolValue::Uint(U256::from(value), 32),
-                CanonicalFieldValue::Unsigned64(value) => DynSolValue::Uint(U256::from(value), 64),
-                CanonicalFieldValue::Text(text) => DynSolValue::String(text),
-                CanonicalFieldValue::Bytes(bytes) => DynSolValue::Bytes(bytes),
-                CanonicalFieldValue::FixedBytes20(bytes) => {
-                    DynSolValue::FixedBytes(B256::right_padding_from(&bytes), 20)
-                }
-                CanonicalFieldValue::Unsigned256(bytes) => {
-                    DynSolValue::Uint(U256::from_be_bytes(bytes), 256)
-                }
-            })
-            .collect();
+        let tuple = DynSolValue::Tuple(
+            emitted
+                .fields
+                .values
+                .into_iter()
+                .map(|value| match value {
+                    CanonicalFieldValue::FixedBytes32(bytes) => {
+                        DynSolValue::FixedBytes(B256::from(bytes), 32)
+                    }
+                    CanonicalFieldValue::Unsigned16(value) => {
+                        DynSolValue::Uint(U256::from(value), 16)
+                    }
+                    CanonicalFieldValue::Unsigned32(value) => {
+                        DynSolValue::Uint(U256::from(value), 32)
+                    }
+                    CanonicalFieldValue::Unsigned64(value) => {
+                        DynSolValue::Uint(U256::from(value), 64)
+                    }
+                    CanonicalFieldValue::Text(text) => DynSolValue::String(text),
+                    CanonicalFieldValue::Bytes(bytes) => DynSolValue::Bytes(bytes),
+                    CanonicalFieldValue::FixedBytes20(bytes) => {
+                        DynSolValue::FixedBytes(B256::right_padding_from(&bytes), 20)
+                    }
+                    CanonicalFieldValue::Unsigned256(bytes) => {
+                        DynSolValue::Uint(U256::from_be_bytes(bytes), 256)
+                    }
+                })
+                .collect(),
+        );
         Ok(EncodeSuccessReturn {
-            bytes: DynSolValue::Tuple(items).abi_encode_params(),
+            bytes: tuple.abi_encode_params(),
         })
     }
 }
@@ -97,7 +110,7 @@ impl IDecoderAdapter for AbiEncoding {
         params: DecodeParams<'_, D>,
         payload: &[u8],
     ) -> DecodeReturn<D::Described, D::FromFieldsErrorReturn> {
-        let sol_type = DynSolType::Tuple(
+        let tuple = DynSolType::Tuple(
             D::FIELDS
                 .iter()
                 .map(|kind| match kind {
@@ -112,96 +125,79 @@ impl IDecoderAdapter for AbiEncoding {
                 })
                 .collect(),
         );
-        let decoded = match sol_type.abi_decode_params(payload) {
-            Ok(decoded) => decoded,
+        let decoded = match tuple.abi_decode_params(payload) {
             Err(error) => {
                 return Err(DecodeErrorReturn::Abi(AbiDecoderErrorReturn::Malformed(
                     error,
                 )));
             }
+            Ok(decoded) => decoded,
         };
-        let Some(items) = decoded.as_tuple() else {
-            return Err(DecodeErrorReturn::Abi(
-                AbiDecoderErrorReturn::DecodedShapeMismatch { index: 0 },
-            ));
-        };
-
         let mut values = Vec::with_capacity(D::FIELDS.len());
         for (index, kind) in D::FIELDS.iter().enumerate() {
-            let Some(item) = items.get(index) else {
+            let Some(item) = decoded.as_tuple().and_then(|items| items.get(index)) else {
                 return Err(DecodeErrorReturn::Abi(
                     AbiDecoderErrorReturn::DecodedShapeMismatch { index },
                 ));
             };
             let value = match kind {
                 CanonicalFieldKind::FixedBytes32 => {
-                    let Some((bytes, size)) = item.as_fixed_bytes() else {
+                    let Some((word, 32)) = item.as_fixed_bytes() else {
                         return Err(DecodeErrorReturn::Abi(
                             AbiDecoderErrorReturn::DecodedShapeMismatch { index },
                         ));
                     };
-                    if size != 32 {
-                        return Err(DecodeErrorReturn::Abi(
-                            AbiDecoderErrorReturn::DecodedShapeMismatch { index },
-                        ));
-                    }
-                    let Ok(fixed) = <[u8; 32]>::try_from(bytes) else {
+                    let Ok(bytes) = <[u8; 32]>::try_from(word) else {
                         return Err(DecodeErrorReturn::Abi(
                             AbiDecoderErrorReturn::DecodedShapeMismatch { index },
                         ));
                     };
-                    CanonicalFieldValue::FixedBytes32(fixed)
+                    CanonicalFieldValue::FixedBytes32(bytes)
                 }
                 CanonicalFieldKind::Unsigned16 => {
-                    let Some((word, width)) = item.as_uint() else {
+                    let Some((word, 16)) = item.as_uint() else {
                         return Err(DecodeErrorReturn::Abi(
                             AbiDecoderErrorReturn::DecodedShapeMismatch { index },
                         ));
                     };
-                    if width != 16 {
-                        return Err(DecodeErrorReturn::Abi(
-                            AbiDecoderErrorReturn::DecodedShapeMismatch { index },
-                        ));
-                    }
                     let Ok(value) = u16::try_from(word) else {
                         return Err(DecodeErrorReturn::Abi(
-                            AbiDecoderErrorReturn::ValueOutOfRange { index, kind: *kind },
+                            AbiDecoderErrorReturn::ValueOutOfRange {
+                                index,
+                                kind: CanonicalFieldKind::Unsigned16,
+                            },
                         ));
                     };
                     CanonicalFieldValue::Unsigned16(value)
                 }
                 CanonicalFieldKind::Unsigned32 => {
-                    let Some((word, width)) = item.as_uint() else {
+                    let Some((word, 32)) = item.as_uint() else {
                         return Err(DecodeErrorReturn::Abi(
                             AbiDecoderErrorReturn::DecodedShapeMismatch { index },
                         ));
                     };
-                    if width != 32 {
-                        return Err(DecodeErrorReturn::Abi(
-                            AbiDecoderErrorReturn::DecodedShapeMismatch { index },
-                        ));
-                    }
                     let Ok(value) = u32::try_from(word) else {
                         return Err(DecodeErrorReturn::Abi(
-                            AbiDecoderErrorReturn::ValueOutOfRange { index, kind: *kind },
+                            AbiDecoderErrorReturn::ValueOutOfRange {
+                                index,
+                                kind: CanonicalFieldKind::Unsigned32,
+                            },
                         ));
                     };
                     CanonicalFieldValue::Unsigned32(value)
                 }
                 CanonicalFieldKind::Unsigned64 => {
-                    let Some((word, width)) = item.as_uint() else {
+                    let Some((word, 64)) = item.as_uint() else {
                         return Err(DecodeErrorReturn::Abi(
                             AbiDecoderErrorReturn::DecodedShapeMismatch { index },
                         ));
                     };
-                    if width != 64 {
-                        return Err(DecodeErrorReturn::Abi(
-                            AbiDecoderErrorReturn::DecodedShapeMismatch { index },
-                        ));
-                    }
                     let Ok(value) = u64::try_from(word) else {
                         return Err(DecodeErrorReturn::Abi(
-                            AbiDecoderErrorReturn::ValueOutOfRange { index, kind: *kind },
+                            AbiDecoderErrorReturn::ValueOutOfRange {
+                                index,
+                                kind: CanonicalFieldKind::Unsigned64,
+                            },
                         ));
                     };
                     CanonicalFieldValue::Unsigned64(value)
@@ -223,63 +219,51 @@ impl IDecoderAdapter for AbiEncoding {
                     CanonicalFieldValue::Bytes(bytes.to_vec())
                 }
                 CanonicalFieldKind::FixedBytes20 => {
-                    let Some((bytes, size)) = item.as_fixed_bytes() else {
+                    let Some((word, 20)) = item.as_fixed_bytes() else {
                         return Err(DecodeErrorReturn::Abi(
                             AbiDecoderErrorReturn::DecodedShapeMismatch { index },
                         ));
                     };
-                    if size != 20 {
-                        return Err(DecodeErrorReturn::Abi(
-                            AbiDecoderErrorReturn::DecodedShapeMismatch { index },
-                        ));
-                    }
-                    let Some(head) = bytes.get(..20) else {
+                    let Some(head) = word.get(..20) else {
                         return Err(DecodeErrorReturn::Abi(
                             AbiDecoderErrorReturn::DecodedShapeMismatch { index },
                         ));
                     };
-                    let Ok(fixed) = <[u8; 20]>::try_from(head) else {
+                    let Ok(bytes) = <[u8; 20]>::try_from(head) else {
                         return Err(DecodeErrorReturn::Abi(
                             AbiDecoderErrorReturn::DecodedShapeMismatch { index },
                         ));
                     };
-                    CanonicalFieldValue::FixedBytes20(fixed)
+                    CanonicalFieldValue::FixedBytes20(bytes)
                 }
                 CanonicalFieldKind::Unsigned256 => {
-                    let Some((word, width)) = item.as_uint() else {
+                    let Some((word, 256)) = item.as_uint() else {
                         return Err(DecodeErrorReturn::Abi(
                             AbiDecoderErrorReturn::DecodedShapeMismatch { index },
                         ));
                     };
-                    if width != 256 {
-                        return Err(DecodeErrorReturn::Abi(
-                            AbiDecoderErrorReturn::DecodedShapeMismatch { index },
-                        ));
-                    }
                     CanonicalFieldValue::Unsigned256(word.to_be_bytes::<32>())
                 }
             };
             values.push(value);
         }
-
         let described = match params
             .description
             .fields_to_value(FromFieldsParams, CanonicalFields { values })
         {
-            Ok(success) => success.described,
             Err(error) => return Err(DecodeErrorReturn::Description(error)),
+            Ok(success) => success.described,
         };
-
         let re_encoded = match self.encode(
             EncodeParams {
                 description: params.description,
             },
             &described,
         ) {
-            Ok(success) => success.bytes,
             Err(error) => return Err(DecodeErrorReturn::EncoderContract(error)),
+            Ok(success) => success.bytes,
         };
-        if re_encoded != payload {
+        if re_encoded.as_slice() != payload {
             return Err(DecodeErrorReturn::NonCanonical);
         }
         Ok(DecodeSuccessReturn { described })

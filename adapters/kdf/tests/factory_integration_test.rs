@@ -1,11 +1,10 @@
 #![cfg(feature = "mocks")]
 #![allow(clippy::expect_used)]
 
-use domain::build_derivation_context;
 use encoding::{
-    CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, build_create_encoding_deps,
-    build_create_encoding_params, build_create_encoding_payload,
-    build_derivation_context_description, build_mock_i_encoding_consumer, create_encoding,
+    CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, MockIEncodingContract,
+    build_canonical_fields, build_create_encoding_deps, build_create_encoding_params,
+    build_create_encoding_payload, build_mock_i_encoding_consumer, create_encoding,
 };
 use kdf::{
     CreateKeyDerivationParamsOverrides, DECLARED_KDF_SELECTIONS, DerivationPurpose,
@@ -87,14 +86,14 @@ fn every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key
 ///   concrete that declares `KdfIdentifier::Blake3KeyedV1` and that
 ///   identifier, and the adapter derives with `DerivationPurpose::
 ///   WrappingKey` and `REFERENCE_LENGTH` over the reference key material
-///   and the bytes `create_encoding` returns for a derivation context →
-///   the key equals `expected_derived_key` over the wrapping-key purpose,
-///   those bytes, and `REFERENCE_LENGTH`.
+///   and the bytes `create_encoding` returns for a value of the family's
+///   mock description → the key equals `expected_derived_key` over the
+///   wrapping-key purpose, those bytes, and `REFERENCE_LENGTH`.
 /// Arrange: for each case and each entry of `DECLARED_ENCODING_SELECTIONS`,
 ///   the context bytes obtained from `create_encoding` over
 ///   `build_create_encoding_deps` taking `build_mock_i_encoding_consumer`
-///   over `build_derivation_context_description`, `build_derivation_context`
-///   with no override, and no bytes, `build_create_encoding_params`
+///   over `&MockIEncodingContract`, `build_canonical_fields` at its
+///   defaults, and no bytes, `build_create_encoding_params`
 ///   overriding `concrete` and `identifier` with the encoding entry's
 ///   selection and identifier, and `build_create_encoding_payload`, the
 ///   `encoded` of the output bound through `expect`; the adapter as in the
@@ -112,14 +111,14 @@ fn every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key
 ///   independent oracle and not read from the arrangement.
 /// Boundary: the public calls `create_encoding`, `create_key_derivation`,
 ///   and the returned adapter's `derive_key`; the route `create_encoding`,
-///   the selected encoding concrete's `encode`,
-///   `DerivationContextDescription::to_fields`, and `domain`'s accessors,
-///   then `create_key_derivation`, the selected concrete's constructor,
-///   and its `derive_key`.
+///   the selected encoding concrete's `encode`, then
+///   `create_key_derivation`, the selected concrete's constructor, and
+///   its `derive_key`.
 /// Mocked:  the encoding consumer, replaced by the official
-///   `MockIEncodingConsumer`, so the test does not prove what a real
-///   consumer does with the concrete; the description, `domain`, `blake3`,
-///   and `zeroize` run for real.
+///   `MockIEncodingConsumer`, and the description it carries, replaced by
+///   the official `MockIEncodingContract`, so the test does not prove
+///   what a real consumer or a real description does with the concrete;
+///   `domain`, `blake3`, and `zeroize` run for real.
 #[test]
 fn every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes()
  {
@@ -129,10 +128,9 @@ fn every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key
         .filter(|selection| selection.identifier == KdfIdentifier::Blake3KeyedV1)
     {
         for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-            let description = build_derivation_context_description(Default::default());
             let consumer = build_mock_i_encoding_consumer(
-                &description,
-                build_derivation_context(Default::default()),
+                &MockIEncodingContract,
+                build_canonical_fields(Default::default()),
                 Vec::new(),
             );
             let encoding_deps = build_create_encoding_deps(consumer);
@@ -145,7 +143,7 @@ fn every_concrete_declaring_the_blake3_keyed_identifier_derives_the_wrapping_key
                 .expect("an admitted encoding selection returns the consumer's output")
                 .output
                 .encoded
-                .expect("the derivation context encodes")
+                .expect("the canonical fields encode under the mock description")
                 .bytes;
             let deps = build_create_key_derivation_deps(Default::default());
             let params = build_create_key_derivation_params(CreateKeyDerivationParamsOverrides {

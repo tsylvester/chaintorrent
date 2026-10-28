@@ -1,3 +1,3 @@
 pub(crate) use super::interface::*;
-#[cfg(any(test, feature = "mocks"))]
-pub use super::mock::*;
+#[cfg(test)]
+pub(crate) use super::mock::*;
