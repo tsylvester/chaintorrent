@@ -3586,7 +3586,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `MockIPairingAdapterFailureMode` carries `SampleScalarWrongLength`, and the pairing mock concrete's sampling answers it
     * `[✅]`   No module of `apps/harness-crypto` names `ark-`, `halo2curves`, or a pairing concrete
 
-* `[ ]`   `domain/deployment_identity` **Registry-assigned deployment identity, the 32 bytes of the Registry's `bytes32` deployment key, admitted only when it can name an assigned deployment**
+* `[✅]`   `domain/deployment_identity` **Registry-assigned deployment identity, the 32 bytes of the Registry's `bytes32` deployment key, admitted only when it can name an assigned deployment**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: every derivation, capsule, sidecar, and escrow record is bound to one deployment by the Registry's globally unique, non-reusable `deployment_id`, the `bytes32` key its deployment and escrow records carry, so a value naming no deployment must be refused before anything is derived from it (CR-05; the nonce invariant of Deployment Cryptographic Setup)
@@ -3608,17 +3608,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: the Registry's assignment of identities, the deployment record and hash-card the identity keys, and the encoding of the identity on the wire
 
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`
     * `[✅]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
     * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
+    * `[✅]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
 
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod secret;`, `pub use deployment_identity::provides::*;`, and `pub use secret::provides::*;`, nothing else
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod deployment_identity;`, `mod secret;`, `pub use deployment_identity::provides::*;`, and `pub use secret::provides::*;`, nothing else
     * `[✅]`   Until `deployment_identity/mod.rs` exists, `cargo check` reports the unresolved `mod deployment_identity`, which is the RED state for every element below that precedes the implementation
 
   * `[✅]`   `crates/domain/src/deployment_identity/interface.rs`
@@ -3696,7 +3696,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `as_bytes_returns_the_held_bytes` passes
     * `[✅]`   Code outside `crates/domain/src/deployment_identity` reading the `bytes` field fails to compile
 
-* `[ ]`   `domain/suite_identifier` **Cryptographic suite identifier and version, the hash-card field that fixes a deployment's whole cryptographic composition, admitted only when both can name a registered suite**
+* `[✅]`   `domain/suite_identifier` **Cryptographic suite identifier and version, the hash-card field that fixes a deployment's whole cryptographic composition, admitted only when both can name a registered suite**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a deployment's hash-card names one immutable suite by its identifier and version, and that pair fixes the pairing, credential KEM, envelope, delivery proof, payload cipher, commitment scheme, KDF and hash-to-scalar mappings, delivery-statement version, and attempt-rule parameters every derivation and attempt resolves against, so a pair naming no suite must be refused before anything resolves from it (Adapter Composition; IC-09)
@@ -3720,17 +3720,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: the suite's composition, its registration, the compatibility statement, and the encoding of the pair on the wire
 
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret` or `deployment_identity`
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret` or `deployment_identity`
     * `[✅]`   The standard library: `u8`, `u16`, arrays, and `Iterator::all`, through the prelude
     * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
+    * `[✅]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
 
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod deployment_identity;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
     * `[✅]`   Until `suite_identifier/mod.rs` exists, `cargo check` reports the unresolved `mod suite_identifier`, which is the RED state for every element below that precedes the implementation
 
   * `[✅]`   `crates/domain/src/suite_identifier/interface.rs`
@@ -3826,7 +3826,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `identifier_returns_the_held_identifier` and `version_returns_the_held_version` pass
     * `[✅]`   Code outside `crates/domain/src/suite_identifier` reading the `identifier` or `version` field fails to compile
 
-* `[ ]`   `domain/parameter_set_identifier` **Parameter-set identifier, the 32 bytes of the Registry's `bytes32` parameter-set key, admitted only when it can name a registered set**
+* `[✅]`   `domain/parameter_set_identifier` **Parameter-set identifier, the 32 bytes of the Registry's `bytes32` parameter-set key, admitted only when it can name a registered set**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: every capsule, sidecar, wrapping key, and entitlement is bound to one parameter set by the identifier the Registry keys it under, the `bytes32` that the parameter-set, entitlement, and escrow records and the sidecar list of a hash-card carry, so a value naming no set must be refused before anything is derived from it (CR-11; LC-09)
@@ -3849,17 +3849,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: the parameter set itself, its registration and liveness, and the encoding of the identifier on the wire
 
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `deployment_identity`, or `suite_identifier`
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `deployment_identity`, or `suite_identifier`
     * `[✅]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
     * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
+    * `[✅]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
 
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod deployment_identity;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
     * `[✅]`   Until `parameter_set_identifier/mod.rs` exists, `cargo check` reports the unresolved `mod parameter_set_identifier`, which is the RED state for every element below that precedes the implementation
 
   * `[✅]`   `crates/domain/src/parameter_set_identifier/interface.rs`
@@ -3937,18 +3937,18 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `as_bytes_returns_the_held_bytes` passes
     * `[✅]`   Code outside `crates/domain/src/parameter_set_identifier` reading the `bytes` field fails to compile
 
-* `[ ]`   `domain/group_index` **Piece-group index, the position of one piece group within a deployment's continuous stream, held as a distinct type so no other integer stands in for it**
+* `[✅]`   `domain/group_index` **Piece-group index, the position of one piece group within a deployment's continuous stream, held as a distinct type so no other integer stands in for it**
 
-  * `[ ]`   `objective`
+  * `[✅]`   `objective`
     * `[✅]`   Problem: every capsule's randomness, every piece-group key, and every wrapping key is domain-separated by the group it belongs to, so the group index enters each derivation context as its own type and cannot be confused with a piece index, an interval, a version, or a count (CR-05; CR-11; the nonce invariant of Deployment Cryptographic Setup)
     * `[✅]`   Functional: one type holds a piece-group index as a `u64`, reachable only through a read accessor, and its only producer is a constructor
-    * `[ ]`   Functional: every `u64` is admitted; a piece group spans at least one cipher block and the MVP cipher addresses at most two to the sixty-four blocks, so every index a deployment can carry fits the type, and the index's bound against one deployment's group count is enforced where that deployment's geometry is held, by `workflows/sidecar/derivation_context`
+    * `[✅]`   Functional: every `u64` is admitted; a piece group spans at least one cipher block and the MVP cipher addresses at most two to the sixty-four blocks, so every index a deployment can carry fits the type, and the index's bound against one deployment's group count is enforced where that deployment's geometry is held, by `workflows/sidecar/derivation_context`
     * `[✅]`   Functional: the admitted index is read back unchanged
     * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
 
-  * `[ ]`   `role`
+  * `[✅]`   `role`
     * `[✅]`   Domain: an owned value type in the protocol and domain ring, the group every later derivation context, sidecar entry, and decryption attempt names
-    * `[ ]`   Does not know a deployment's piece size, piece-group size, extent, or group count, and does not bound the index against them; `domain/piece_geometry` holds the geometry and `workflows/sidecar/derivation_context` refuses an index outside its group count
+    * `[✅]`   Does not know a deployment's piece size, piece-group size, extent, or group count, and does not bound the index against them; `domain/piece_geometry` holds the geometry and `workflows/sidecar/derivation_context` refuses an index outside its group count
     * `[✅]`   Does not compute an index from a byte offset or a piece index
     * `[✅]`   Does not create any other module of the `domain` crate
     * `[✅]`   Does not carry a commit
@@ -3958,17 +3958,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: the deployment's geometry and group count, the mapping from offsets and pieces to groups, and the encoding of the index on the wire
 
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `deployment_identity`, `suite_identifier`, or `parameter_set_identifier`
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `deployment_identity`, `suite_identifier`, or `parameter_set_identifier`
     * `[✅]`   `core::convert::Infallible`, standard library, the constructor's error arm
     * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
+    * `[✅]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `core::convert::Infallible` and `u64`; nothing else
 
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
     * `[✅]`   Until `group_index/mod.rs` exists, `cargo check` reports the unresolved `mod group_index`, which is the RED state for every element below that precedes the implementation
 
   * `[✅]`   `crates/domain/src/group_index/interface.rs`
@@ -3977,10 +3977,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `GroupIndexTryNewReturn`, the type alias `Result<GroupIndex, Infallible>`; the error arm is uninhabited because every `u64` is an index a deployment can carry
     * `[✅]`   Imports `core::convert::Infallible`; declares nothing else
 
-  * `[ ]`   `crates/domain/src/group_index/interaction.spec.md`
+  * `[✅]`   `crates/domain/src/group_index/interaction.spec.md`
     * `[✅]`   `GroupIndex::try_new(params: GroupIndexConstructorParams) -> GroupIndexTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(GroupIndex { value })` holding `params.value`; the error arm has no branch
     * `[✅]`   `GroupIndex::value(&self) -> u64`: one branch; outcome the held index, no side effect
-    * `[ ]`   Invariants: every `GroupIndex` holds one `u64`; its only producer is `try_new`; its bound against a deployment's group count is `workflows/sidecar/derivation_context`'s
+    * `[✅]`   Invariants: every `GroupIndex` holds one `u64`; its only producer is `try_new`; its bound against a deployment's group count is `workflows/sidecar/derivation_context`'s
 
   * `[✅]`   `crates/domain/src/group_index/mock.rs`
     * `[✅]`   Module-level `#![allow(dead_code, clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::too_many_arguments)]`
@@ -4031,7 +4031,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `value_returns_the_held_index` passes
     * `[✅]`   Code outside `crates/domain/src/group_index` reading the `value` field fails to compile
 
-* `[ ]`   `domain/piece_geometry` **Piece geometry, the piece size, piece-group size, and total extent a hash-card declares, admitted only when pieces align and groups are whole multiples of pieces, with the piece and group counts they imply**
+* `[✅]`   `domain/piece_geometry` **Piece geometry, the piece size, piece-group size, and total extent a hash-card declares, admitted only when pieces align and groups are whole multiples of pieces, with the piece and group counts they imply**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a hash-card's declared geometry drives every offset, counter, and key boundary, so it is untrusted until its sizes are mutually consistent, and a geometry that fails is refused before any piece-group key is derived (EC-01; CR-06; Manifest Bounds Validation)
@@ -4043,10 +4043,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Functional: a refusal names the failed check and the values it failed on, and the same input always yields the same refusal: piece size, then piece-group size, then total extent
     * `[✅]`   Non-functional: the module depends on the standard library alone; the `domain` crate's dependencies are unchanged
 
-  * `[ ]`   `role`
+  * `[✅]`   `role`
     * `[✅]`   Domain: an owned value type in the protocol and domain ring, the geometry every later derivation context, cipher call, and manifest gate reads
     * `[✅]`   Does not check the extent against a cipher's declared `maxAddressableBytes` or the piece size against a cipher's block size; both are declared by the resolved cipher, so the manifest gate checks them against that declaration; a power of two of at least 16 KiB is already a multiple of every power-of-two block size up to 16 KiB
-    * `[ ]`   Does not bound a piece index or a group index; `workflows/sidecar/derivation_context` bounds the group index against this geometry's group count, and the transport bounds a piece index against its piece count
+    * `[✅]`   Does not bound a piece index or a group index; `workflows/sidecar/derivation_context` bounds the group index against this geometry's group count, and the transport bounds a piece index against its piece count
     * `[✅]`   Does not hold the IV, the counter layout, or the cipher identifier
     * `[✅]`   Does not choose the piece-group size; the hash-card declares it and the code reads it from the record
     * `[✅]`   Does not create any other module of the `domain` crate
@@ -4057,17 +4057,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's line
     * `[✅]`   Outside: every cipher's declared extent and block size, the offset and counter arithmetic, index ranges, and the encoding of the geometry on the wire
 
-  * `[ ]`   `deps`
+  * `[✅]`   `deps`
     * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from any other module of the crate
     * `[✅]`   The standard library: `u32::is_power_of_two`, `u64::from` over `u32`, and `u64::div_ceil`, through the prelude
     * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
+    * `[✅]`   No reverse dependency; `workflows/sidecar/derivation_context` is this module's first consumer
 
   * `[✅]`   `context_slice`
     * `[✅]`   From the standard library: `u32::is_power_of_two`, which is false for `0`; the `%` remainder over `u32`; `u64::from(u32)`, the lossless widening; and `u64::div_ceil`, rounding the quotient up
 
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod deployment_identity;`, `mod group_index;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, and `pub use suite_identifier::provides::*;`, nothing else
     * `[✅]`   Until `piece_geometry/mod.rs` exists, `cargo check` reports the unresolved `mod piece_geometry`, which is the RED state for every element below that precedes the implementation
 
   * `[✅]`   `crates/domain/src/piece_geometry/interface.rs`

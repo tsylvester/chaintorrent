@@ -22,6 +22,7 @@ Single source of truth for how agents work in this repo. Every rule lives in exa
 - [linting-proof](linting-proof.md) — lint after edit, no silencing, linter error = RED proof
 - [logging](logging.md) — debug by logging, believe failures literally
 - [insanity-loop](insanity-loop.md) — break repetitive failure and recover by starting over
+- [line-length](line-length.md) — do not wrap lines, do not write long lines 
 
 ## Standards topics — govern file content
 

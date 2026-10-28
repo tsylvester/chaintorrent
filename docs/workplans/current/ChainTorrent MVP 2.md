@@ -44,846 +44,518 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
 ## Pairing adapters and key derivation
 
-* `[ ]`   `hashing/root` **Root type, the object's BLAKE3/Bao root and the asset's identity, the plaintext root for a public asset and the ciphertext root for a private one, 32 bytes admitted only when not all zero; creates the `adapters/hashing` crate**
+* `[ ]`   `hashing/blake3_bao` **BLAKE3/Bao commitment concrete computing an object's root and outboard, plain or keyed, verifying content against them whole or one chunk at a time with an authentication path, and answering chunk custody challenges; creates the `adapters/hashing` crate and authors the hashing family's generic interface, root, outboard, path, and chunk types, commitment-scheme identifier, declaration, and mock**
 
   * `[ ]`   `objective`
-    * `[ ]`   Problem: an asset's identity is the object's BLAKE3/Bao root, the plaintext root for a public asset and the ciphertext root for a private one, and every consumer of an asset's identity, the Registry's asset key, the entitlement binding, the derivation context's asset component, the credential KEM's asset-scope identity bytes, the delivery transcript's asset field, and the harness's configured identities, names one type for it, so the root is a value with one owner, one byte form, and one producer (`docs/research/cryptography.md`, Content Identity and The asset's identity; `docs/research/MVP Scope.md`, Canonical Identity and As-Is Ingestion)
-    * `[ ]`   Functional: one type holds a root's 32 bytes, reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the constructor refuses the all-zero value, which no object's root is and which an unassigned `bytes32` slot reads as, and admits every other 32-byte value
-    * `[ ]`   Functional: a refusal names the failed check, and the same input always yields the same outcome
-    * `[ ]`   Functional: two roots compare equal exactly when their bytes are equal, and a root is printable, copyable, and usable as a key, since every index the daemon keeps by content is keyed by a root (`docs/project-planning/technical-requirements.md`, Database Schemas)
-    * `[ ]`   Non-functional: the module depends on the standard library alone, and its `mock.rs` additionally uses `serde_json` under the `mocks` feature; the crate names no hash library and no encoding, and carries no operation that derives an identity from a name and no identity-hash identifier (PR-02)
+    * `[ ]`   Problem: the asset's identity is the object's BLAKE3/Bao root, the plaintext root for a public asset and the ciphertext root for a private one, and every ciphertext, sidecar, and plaintext commitment is checked against a root, chunk by chunk, before any byte is stored or served, so root construction, verification, and custody challenges pass through one repo-owned interface and no module outside a concrete names the hash library (CR-02; EC-02; SW-04; `docs/research/cryptography.md`'s Content Identity, Content Commitments, Plaintext Root Disclosure Modes, Units, and Incremental Verification statements)
+    * `[ ]`   Functional: the family's generic interface computes, over a byte string, a root and an outboard, the tree's parent nodes held apart from the content, either plain or under a borrowed 32-byte key for the keyed plaintext-root disclosure mode
+    * `[ ]`   Functional: the interface verifies a whole byte string against a root and an outboard, naming the first root, parent, or chunk that fails, and verifies one chunk against a root with an authentication path, the ordered sibling chaining values from the root down to that chunk
+    * `[ ]`   Functional: the interface extracts the authentication path of one chunk from an outboard, maps uniform bytes supplied by the caller to a chunk index within an object's chunk count, and answers a challenge with the chunk's bytes and its path
+    * `[ ]`   Functional: the root type holds exactly 32 bytes by its type and refuses the all-zero value at construction; the outboard, path, and chunk types are plain data whose fit to an object the concrete decides when it uses them
+    * `[ ]`   Functional: every hashing operation is over bytes; the family carries no digest operation, no identity-hash identifier, and no operation that derives a root from a name
+    * `[ ]`   Functional: every concrete declares its commitment-scheme identifier, which a deployment's hash-card carries, its chunk length, its key length, its adapter version, and the interface version it implements, readable before any instance exists
+    * `[ ]`   Functional: the BLAKE3/Bao concrete's plain root equals the `bao_hash` of bao's published test vectors and its plain outboard equals bao's outboard encoding for the same inputs; its keyed root equals BLAKE3's `keyed_hash` of the content under the key
+    * `[ ]`   Functional: corruption of a root, a parent node, a chunk, a length, or the order of chunks is refused with the family's error naming where it failed (CR-02)
+    * `[ ]`   Non-functional: `blake3` and `bao` are named only inside `adapters/hashing/src/blake3_bao`; every keyed hasher and every copy of a key is zeroized after use; the crate depends on no repository crate but `domain` at runtime and on no encoding
 
   * `[ ]`   `role`
-    * `[ ]`   Adapter family: the hashing family's family-owned value type, and the family's first source file, so it creates the crate; the root is a family-owned module beside the factory because a type lives in the module that implements it, and the root's constructor is its implementation
-    * `[ ]`   Does not hash, encode, or decode; `hashing/blake3_bao` computes roots over bytes and constructs them through this type, and the encoding family's description of the root type is its one canonical form
-    * `[ ]`   Does not resolve a name to a root; the package host's alias lookup does that
-    * `[ ]`   Does not create the `factory` module or any other module of the crate; `hashing/outboard`, `hashing/authentication_path`, and `hashing/chunk` each create their own module, and `hashing/blake3_bao` authors the family's generic interface, identifier, declaration, and mock in the `factory` module
+    * `[ ]`   Adapter: the hashing family's first concrete, and the first source file that requires the family's generic interface, the root, outboard, authentication path, and chunk types, the commitment-scheme identifier, the declaration, and the family's mock, which it authors in the family's `factory` module as its producers
+    * `[ ]`   Creates `factory/mod.rs` with the module wiring and the root type's constructor and accessor, and `factory/provides.rs` with the interface and mock surface; the factory function, its types, its interaction spec, its unit test, its re-export, and the family's integration test are `hashing/factory`'s
+    * `[ ]`   Does not encode any value
+    * `[ ]`   Does not draw randomness; a challenge maps uniform bytes its caller drew to a chunk index
+    * `[ ]`   Does not derive the plaintext-root key; the key-derivation family derives it and the caller lends it as a `Secret`
+    * `[ ]`   Does not map the commitment-scheme identifier to the hash-card's `commitmentSchemeId` byte; the hash-card's own encoding does that
     * `[ ]`   Does not carry a commit
 
   * `[ ]`   `module`
-    * `[ ]`   Bounded context: the family-owned `root` module of the `adapters/hashing` crate, holding `Root`, its length, its constructor params, and its constructor's error and return types
+    * `[ ]`   Bounded context: the `adapters/hashing` crate's `factory` module, holding the family's generic trait, the root, outboard, authentication path, and chunk types, the commitment key, each method's params, payload, success, error, and return types, the outboard layout constants, the commitment-scheme identifier, the declaration, the interface version, and the family's mock; and its private `blake3_bao` concrete, holding the adapter over `blake3` and `bao`, its constructor params and return, its chunk and key lengths, and its own error
     * `[ ]`   Creates the crate at `adapters/hashing`, admitted by the workspace's `adapters/*` glob with no edit to the root manifest
-    * `[ ]`   The crate's public surface is the `root` module's `provides`, which every consumer of the root type imports; each further module's `provides` joins it when its node creates that module
-    * `[ ]`   Outside: computing a root, comparing one with an object, encoding it, and mapping a name to it
+    * `[ ]`   Outside: the root's encoding, which bytes a caller commits and what it keys, where roots, outboards, and chunks are stored or carried, the random draw behind a challenge, and the factory's selection of a concrete
 
   * `[ ]`   `deps`
-    * `[ ]`   `workspace/cargo`, repository-root configuration: the `adapters/*` glob that admits the crate, the inheritable `edition`, `rust-version`, and `publish` keys, and the lint table through `[lints] workspace = true`
-    * `[ ]`   The standard library: `[u8; 32]`, `<[u8]>::iter`, and `Iterator::all`, through the prelude
-    * `[ ]`   `serde_json` `1.0.151`, external crate, MIT OR Apache-2.0, optional runtime dependency enabled by this crate's `mocks` feature and a dev-dependency; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type the invalidator returns, in `mock.rs` only
-    * `[ ]`   No repository crate; no reverse dependency; nothing depends on the crate yet
+    * `[ ]`   `domain`, `crates/domain`, protocol and domain ring, path dependency; supplies `Secret` and `Secret::expose`, the wrapper of a borrowed key; direction inward, adapter ring on domain ring
+    * `[ ]`   `domain` with its `mocks` feature, as a dev-dependency and through this crate's `mocks` feature; supplies `build_secret` and `SecretConstructorParamsOverrides`
+    * `[ ]`   `zeroize` `1.9.0`, external crate, Apache-2.0 OR MIT, runtime dependency; supplies `Zeroize`, whose `zeroize` the concrete calls on every key copy and keyed hasher
+    * `[ ]`   `blake3` `1.8.7`, external crate, CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception, runtime dependency with the `zeroize` feature, named only in `blake3_bao`; the version `kdf/blake3_keyed` pins, so the workspace resolves one `blake3`; supplies `blake3::Hasher`, `blake3::keyed_hash`, and `blake3::hazmat`'s `HasherExt`, `Mode`, `ChainingValue`, `left_subtree_len`, `merge_subtrees_non_root`, and `merge_subtrees_root`
+    * `[ ]`   `bao` `0.13.1`, external crate, CC0-1.0 OR Apache-2.0, runtime dependency named only in `blake3_bao`; it requires `blake3 = "1.8.0"`, which `1.8.7` satisfies; supplies `bao::encode::outboard`
+    * `[ ]`   `serde_json` `1.0.151`, external crate, MIT OR Apache-2.0, optional runtime dependency enabled by this crate's `mocks` feature and a dev-dependency; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type every invalidator returns
+    * `[ ]`   `hex` `0.4.3`, external crate, MIT OR Apache-2.0, dev-dependency only; supplies `hex::decode`, which turns bao's published hexadecimal test vectors into bytes in `blake3_bao/test.rs`
+    * `[ ]`   The standard library: `core::convert::Infallible`, `TryFrom` between `usize` and `u64`, `<[u8; 32]>::try_from(&[u8])`, `u64::to_le_bytes`, `u64::from_le_bytes`, `u64::div_ceil`, and, in the family mock, `std::collections::hash_map::DefaultHasher` and `std::hash::Hasher`
+    * `[ ]`   The crate does not depend on `adapters/encoding`; every operation takes and returns bytes
+    * `[ ]`   Integration entries of direct dependencies: `domain/secret` and `workspace/cargo` declare none, so the spec dispositions none
+    * `[ ]`   No reverse dependency beyond the family form's recorded cycle: the `factory` module's error enums carry this concrete's error; nothing depends on the crate yet
 
   * `[ ]`   `context_slice`
-    * `[ ]`   From the standard library: `<[u8]>::iter` and `Iterator::all`, so the constructor reads every byte of the array
-    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers and arrays, in `mock.rs` only
+    * `[ ]`   From `domain`: `Secret::expose(&self) -> &T` at `T = Vec<u8>`, the borrowed key's bytes
+    * `[ ]`   From `domain`'s mocks: `build_secret(value: T, SecretConstructorParamsOverrides) -> Secret<T>` at `Vec<u8>`
+    * `[ ]`   From `bao`: `encode::outboard(input: impl AsRef<[u8]>) -> (Vec<u8>, bao::Hash)`, `bao::Hash` being `blake3::Hash`, read through `Hash::as_bytes(&self) -> &[u8; 32]`
+    * `[ ]`   From `blake3`: `Hasher::new()`, `Hasher::new_keyed(key: &[u8; 32])`, `Hasher::update(&mut self, &[u8]) -> &mut Hasher`, `Hasher::finalize(&self) -> Hash`, and `keyed_hash(key: &[u8; 32], input: &[u8]) -> Hash`; from `blake3::hazmat`: `HasherExt::set_input_offset(&mut self, offset: u64) -> &mut Self`, which requires a multiple of the 1024-byte chunk length and a hasher that has accepted no input, `HasherExt::finalize_non_root(&self) -> ChainingValue`, `ChainingValue = [u8; 32]`, `Mode::Hash`, `Mode::KeyedHash(&[u8; 32])`, `left_subtree_len(input_len: u64) -> u64`, `merge_subtrees_non_root(&ChainingValue, &ChainingValue, Mode) -> ChainingValue`, and `merge_subtrees_root(&ChainingValue, &ChainingValue, Mode) -> Hash`
+    * `[ ]`   From `zeroize`: `Zeroize::zeroize(&mut self)` on `[u8; 32]` and on `Hasher`
+    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers, strings, and arrays, in the `mock.rs` files only
 
   * `[ ]`   `adapters/hashing/Cargo.toml`
     * `[ ]`   `[package]` with `name = "hashing"`, `edition.workspace = true`, `rust-version.workspace = true`, and `publish.workspace = true`; no `version` key
-    * `[ ]`   `[dependencies]` with `serde_json = { version = "1.0.151", optional = true }`
-    * `[ ]`   `[dev-dependencies]` with `serde_json = "1.0.151"`
-    * `[ ]`   `[features]` with `mocks = ["dep:serde_json"]`
+    * `[ ]`   `[dependencies]` with `domain = { path = "../../crates/domain" }`, `zeroize = "1.9.0"`, `blake3 = { version = "1.8.7", features = ["zeroize"] }`, `bao = "0.13.1"`, and `serde_json = { version = "1.0.151", optional = true }`
+    * `[ ]`   `[dev-dependencies]` with `domain = { path = "../../crates/domain", features = ["mocks"] }`, `serde_json = "1.0.151"`, and `hex = "0.4.3"`
+    * `[ ]`   `[features]` with `mocks = ["domain/mocks", "dep:serde_json"]`
     * `[ ]`   `[lints]` with `workspace = true`
-    * `[ ]`   No other table; each later module's node adds its own entries to the dependency tables
+    * `[ ]`   No other table
 
   * `[ ]`   `adapters/hashing/src/lib.rs`
-    * `[ ]`   The crate barrel: `mod root;` and `pub use root::provides::*;`, nothing else
-    * `[ ]`   Until `root/mod.rs` exists, `cargo check` reports the unresolved `mod root`, which is the RED state for every element below that precedes the implementation
-
-  * `[ ]`   `adapters/hashing/src/root/interface.rs`
-    * `[ ]`   `ROOT_LENGTH`, a `pub const` of type `usize` with value `32`, the width of a BLAKE3/Bao root and of the Registry's `bytes32` asset key
-    * `[ ]`   `Root`, a struct with `#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]` and the one field `pub(super) bytes: [u8; ROOT_LENGTH]`, so only the `root` module and its children reach the field
-    * `[ ]`   `RootConstructorParams`, a struct with the one field `pub bytes: [u8; ROOT_LENGTH]`; no derives
-    * `[ ]`   `RootTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`
-    * `[ ]`   `RootTryNewReturn`, the alias `Result<Root, RootTryNewErrorReturn>`
-    * `[ ]`   Imports nothing; declares nothing else
-
-  * `[ ]`   `adapters/hashing/src/root/interaction.spec.md`
-    * `[ ]`   `Root::try_new(params: RootConstructorParams) -> RootTryNewReturn`, all zero: condition every byte of `params.bytes` is zero; decision `params.bytes.iter().all(…)` over every byte; dependency call none; outcome `Err(RootTryNewErrorReturn::AllZero)`
-    * `[ ]`   Admitted: condition some byte of `params.bytes` is nonzero; outcome `Ok(Root { bytes })`, the array moved from the params
-    * `[ ]`   `Root::as_bytes(&self) -> &[u8; ROOT_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
-    * `[ ]`   Ordering: the one check reads every byte before deciding; the same params always yield the same outcome
-    * `[ ]`   Invariants: every `Root` holds `ROOT_LENGTH` bytes of which at least one is nonzero; its only producer is `try_new`
-    * `[ ]`   Own entry, an admitted root reads back through the crate root: condition a caller outside the crate names `Root`, `RootConstructorParams`, and `ROOT_LENGTH` through the crate root and passes `try_new` a root whose only nonzero byte is its last; outcome `Ok(root)` whose `as_bytes()` yields exactly the bytes passed; variation the single nonzero byte at the last index, which a check reading only the leading bytes refuses and a read that reorders or truncates fails; edge that must survive: the bytes an outside caller reads are the bytes the root was constructed from, reached through the accessor alone
-    * `[ ]`   Own entry, the all-zero refusal reaches the caller whole and yields no root: condition a caller outside the crate passes `try_new` the all-zero array; outcome `Err(RootTryNewErrorReturn::AllZero)`, matched through the crate-root error type, and no `Root` exists to read; variation the all-zero array, which differs from the read-back entry's input in its last byte alone; edge that must survive: an unassigned slot never becomes an identity
-    * `[ ]`   Route, both own entries: the crate barrel `lib.rs`, then `root::provides`, then `Root::try_new`, and for the read-back entry `Root::as_bytes`; the route reaches no outer-edge collaborator
-    * `[ ]`   Public surface: an outside caller invokes `Root::try_new` and `Root::as_bytes`, building params with `build_root_constructor_params` from the `mocks` feature; it observes the `Ok` root through `as_bytes` and the `Err` through `RootTryNewErrorReturn`; the entries proven are the read-back entry and the refusal entry
-
-  * `[ ]`   `adapters/hashing/src/root/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]`, for the builder's construction of a real instance
-    * `[ ]`   `RootConstructorParamsOverrides`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<[u8; ROOT_LENGTH]>`
-    * `[ ]`   `build_root_constructor_params(overrides: RootConstructorParamsOverrides) -> RootConstructorParams`, taking `bytes` from the override when present; the default is a constant array declared in `mock.rs` whose byte at index `i` is `i + 1`, so every byte is nonzero and no two bytes are equal
-    * `[ ]`   `RootConstructorParamsCorruptions`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<serde_json::Value>`
-    * `[ ]`   `invalidate_root_constructor_params(corruptions: RootConstructorParamsCorruptions) -> serde_json::Value`, a `Map` holding the built params' `bytes` converted with `Value::from` to an array of integers, overwritten by the corrupted key when present; `RootConstructorParams` stays free of derives
-    * `[ ]`   `build_root(overrides: RootConstructorParamsOverrides) -> Root`, the result of `Root::try_new` over `build_root_constructor_params(overrides)` bound by `expect` naming the invariant that the built bytes are not all zero, a real instance with its field private; the all-zero array reaches `try_new` through `build_root_constructor_params`, never through this builder
-    * `[ ]`   Enumeration of the interface's exports: `ROOT_LENGTH` is a constant used by its production value; `RootTryNewErrorReturn` is an enum and `RootTryNewReturn` is an alias, used directly by their production types; `Root` takes `build_root` alone, its corruption living in the params invalidator; `RootConstructorParams` takes the four symbols above; `Root::try_new` and `Root::as_bytes` take no function mock because the interface declares no function type for them
-    * `[ ]`   Imports `Root`, `RootConstructorParams`, and `ROOT_LENGTH` from `super::interface`, and `serde_json::Value` and `serde_json::Map`
-
-  * `[ ]`   `adapters/hashing/src/root/test.rs`
-    * `[ ]`   Imports `Root` from `super`, `RootTryNewErrorReturn` and `ROOT_LENGTH` from `super::interface`, and `build_root`, `build_root_constructor_params`, and `RootConstructorParamsOverrides` from `super::mock`; the module's only dependency is the standard library, so no collaborator is replaced; every fixture is a direct builder call overriding only the `bytes` the block's variation needs; every refusal is asserted by `assert_eq!` against the whole expected `Err`
-    * `[ ]`   `try_new_rejects_the_all_zero_root`
-      * `[ ]`   Contract: every byte of `params.bytes` zero yields `Err(RootTryNewErrorReturn::AllZero)`
-      * `[ ]`   Arrange: params whose `bytes` is `[0u8; ROOT_LENGTH]`
-      * `[ ]`   Act: `Root::try_new` over those params
-      * `[ ]`   Assert: the result equals `Err(RootTryNewErrorReturn::AllZero)`
-    * `[ ]`   `try_new_admits_a_root_whose_only_nonzero_byte_is_the_last`
-      * `[ ]`   Contract: some byte nonzero yields `Ok(Root { bytes })`, and the check reads the last byte
-      * `[ ]`   Arrange: params whose `bytes` is zero at every index but the last, which is `0x01`, so a check that stops before the last byte refuses it
-      * `[ ]`   Act: `Root::try_new` over those params
-      * `[ ]`   Assert: the result mapped to the held `bytes` equals `Ok` of the same array, stated in the assertion, read from the field the test module's visibility reaches
-    * `[ ]`   `try_new_admits_a_root_whose_only_nonzero_byte_is_the_first`
-      * `[ ]`   Contract: some byte nonzero yields `Ok(Root { bytes })`, and the check reads the first byte
-      * `[ ]`   Arrange: params whose `bytes` is `0x01` at index 0 and zero at every other index, so a check that reads only later bytes refuses it
-      * `[ ]`   Act: `Root::try_new` over those params
-      * `[ ]`   Assert: the result mapped to the held `bytes` equals `Ok` of the same array, stated in the assertion
-    * `[ ]`   `as_bytes_returns_the_held_bytes_without_copy`
-      * `[ ]`   Contract: `as_bytes` returns a shared reference to the held array, no copy
-      * `[ ]`   Arrange: a root from `build_root` with no override, whose default bytes are distinct and nonzero
-      * `[ ]`   Act: `Root::as_bytes` on that root
-      * `[ ]`   Assert: the returned reference is address-identical to the root's held `bytes` under `core::ptr::eq`, and equals the default array stated in the assertion as literals
-
-  * `[ ]`   `construction`
-    * `[ ]`   `Root::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a producer of a root, the commitment concrete over an object's bytes or a decoder over untrusted bytes, constructs it through `try_new` and carries the refusal arm
-
-  * `[ ]`   `adapters/hashing/src/root/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl Root` with `pub fn try_new(params: RootConstructorParams) -> RootTryNewReturn` realizing the branches of the interaction spec, and `pub fn as_bytes(&self) -> &[u8; ROOT_LENGTH]` returning `&self.bytes`
-    * `[ ]`   Imports `Root`, `RootConstructorParams`, `RootTryNewErrorReturn`, `RootTryNewReturn`, and `ROOT_LENGTH` from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `adapters/hashing/src/root/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
-
-  * `[ ]`   `adapters/hashing/tests/root_integration_test.rs`
-    * `[ ]`   Imports `Root`, `RootTryNewErrorReturn`, and `ROOT_LENGTH` through the crate root `hashing`, and `build_root_constructor_params` and `RootConstructorParamsOverrides` from the crate root under the `mocks` feature; nothing is imported from a module path
-    * `[ ]`   `a_root_whose_only_nonzero_byte_is_the_last_reads_back_through_the_crate_root`
-      * `[ ]`   Contract: the own entry, an admitted root reads back through the crate root; a root whose only nonzero byte is its last yields `Ok(root)` whose `as_bytes()` yields exactly the bytes passed
-      * `[ ]`   Arrange: params from `build_root_constructor_params` whose `bytes` is zero at every index but the last, which is `0x01`, the variation a check reading only the leading bytes refuses
-      * `[ ]`   Act: `Root::try_new` over those params, the `Ok` root read through `as_bytes`
-      * `[ ]`   Assert: the result is `Ok`, and the array `as_bytes` returns equals the expected array stated in the assertion as its own value
-      * `[ ]`   Boundary: the crate-root public call `Root::try_new` and the read `Root::as_bytes`, the route `lib.rs` then `root::provides` then `try_new` then `as_bytes`
-      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
-    * `[ ]`   `the_all_zero_root_is_refused_whole_through_the_crate_root`
-      * `[ ]`   Contract: the own entry, the all-zero refusal reaches the caller whole and yields no root; the all-zero array yields `Err(RootTryNewErrorReturn::AllZero)`
-      * `[ ]`   Arrange: params from `build_root_constructor_params` whose `bytes` is `[0u8; ROOT_LENGTH]`, which differs from the read-back block's input in its last byte alone
-      * `[ ]`   Act: `Root::try_new` over those params
-      * `[ ]`   Assert: the result equals the whole `Err(RootTryNewErrorReturn::AllZero)`, matched through the crate-root error type, so no `Root` is held
-      * `[ ]`   Boundary: the crate-root public call `Root::try_new`, the route `lib.rs` then `root::provides` then `try_new`
-      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
-    * `[ ]`   Enumeration: the read-back entry is proven by `a_root_whose_only_nonzero_byte_is_the_last_reads_back_through_the_crate_root`, and the refusal entry by `the_all_zero_root_is_refused_whole_through_the_crate_root`
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `root` depends on the standard library alone, and its `mock.rs` additionally depends on `serde_json` under the `mocks` feature; the crate depends on no repository crate; `hashing/outboard`, `hashing/authentication_path`, `hashing/chunk`, and `hashing/blake3_bao` consume the root through `crate::root::provides`; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `adapters/hashing/Cargo.toml` carries exactly the tables and keys stated above, and the crate names no hash library and no encoding
-    * `[ ]`   `RootTryNewErrorReturn` derives `Debug`, `PartialEq`, and `Eq`, and `Root` derives `Clone`, `Copy`, `Debug`, `PartialEq`, `Eq`, and `Hash`
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, `cargo deny check`, and `cargo clippy --workspace --all-targets --all-features -- -D warnings` complete without error
-    * `[ ]`   `try_new_rejects_the_all_zero_root`, `try_new_admits_a_root_whose_only_nonzero_byte_is_the_last`, `try_new_admits_a_root_whose_only_nonzero_byte_is_the_first`, and `as_bytes_returns_the_held_bytes_without_copy` pass
-    * `[ ]`   `a_root_whose_only_nonzero_byte_is_the_last_reads_back_through_the_crate_root` and `the_all_zero_root_is_refused_whole_through_the_crate_root` pass
-    * `[ ]`   Code outside `adapters/hashing/src/root` reading the `bytes` field fails to compile; the crate's public surface is the `root` module's `provides`
-
-* `[ ]`   `hashing/outboard` **Outboard, the bytes a commitment scheme holds an object's verification structure in apart from the content, admitted as held; a family-owned module of the `adapters/hashing` crate**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: a commitment scheme's verification structure for an object is held apart from the object's bytes, so a seeder serves a piece with its authentication path and a delegated store's custody is checked by challenge against a root, and every concrete of the hashing family produces and reads that structure as one family type whose layout the concrete alone interprets (CR-02 outboard construction and verification; `docs/research/MVP Scope.md`, Seed Hosting and the Ciphertext Store)
-    * `[ ]`   Functional: one type holds an outboard's bytes, reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the constructor admits any bytes as held, the empty sequence included, since the family declares no layout and the concrete that interprets the scheme's layout refuses a malformed outboard in its own methods
-    * `[ ]`   Functional: two outboards compare equal exactly when their bytes are equal, and an outboard is printable and clonable
-    * `[ ]`   Non-functional: the module depends on the standard library alone, and its `mock.rs` additionally uses `serde_json` under the `mocks` feature; the module names no hash library and no encoding
-
-  * `[ ]`   `role`
-    * `[ ]`   Adapter family: the hashing family's family-owned outboard type, a module beside the factory because a type lives in the module that implements it, and the outboard's constructor is its implementation
-    * `[ ]`   Does not construct, parse, or validate an outboard's layout; `hashing/blake3_bao` produces outboards in the BLAKE3/Bao layout and refuses a malformed one in its own methods
-    * `[ ]`   Does not create the crate or the `factory` module; `hashing/root` created the crate, and `hashing/blake3_bao` authors the family's generic interface in the `factory` module
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the family-owned `outboard` module of the `adapters/hashing` crate, holding `Outboard`, its constructor params, and its constructor's return type
-    * `[ ]`   The module's `provides` joins the crate's public surface beside `root`'s
-    * `[ ]`   Outside: the layout of the bytes, how they are produced from an object, and how they authenticate a chunk
-
-  * `[ ]`   `deps`
-    * `[ ]`   `hashing/root`, the same crate: the crate at `adapters/hashing`, its `Cargo.toml` with `serde_json` optional under the `mocks` feature and as a dev-dependency, and its barrel `lib.rs`, to which this node adds its module; no type of `root` is consumed
-    * `[ ]`   The standard library: `Vec<u8>` and `core::convert::Infallible`, the constructor's error arm, through the prelude and `core`
-    * `[ ]`   `serde_json` `1.0.151`, as `hashing/root` pins it in the crate's manifest; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type the invalidator returns, in `mock.rs` only
-    * `[ ]`   No reverse dependency; nothing depends on this module yet
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the standard library: `Vec<u8>`, `<[u8]>` through `Vec::as_slice`, and `core::convert::Infallible`
-    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers and arrays, in `mock.rs` only
-
-  * `[ ]`   `adapters/hashing/src/lib.rs`
-    * `[ ]`   The crate barrel gains `mod outboard;` and `pub use outboard::provides::*;` beside the `root` lines `hashing/root` authors, nothing else
-    * `[ ]`   Until `outboard/mod.rs` exists, `cargo check` reports the unresolved `mod outboard`, which is the RED state for every element below that precedes the implementation
-
-  * `[ ]`   `adapters/hashing/src/outboard/interface.rs`
-    * `[ ]`   `Outboard`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: Vec<u8>`, so only the `outboard` module and its children reach the field
-    * `[ ]`   `OutboardConstructorParams`, a struct with the one field `pub bytes: Vec<u8>`; no derives
-    * `[ ]`   `OutboardTryNewReturn`, the alias `Result<Outboard, Infallible>`; the error arm is uninhabited because the family admits any bytes as held
-    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
-
-  * `[ ]`   `adapters/hashing/src/outboard/interaction.spec.md`
-    * `[ ]`   `Outboard::try_new(params: OutboardConstructorParams) -> OutboardTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(Outboard { bytes })`, the vector moved from the params without copy; the error arm has no branch
-    * `[ ]`   `Outboard::as_bytes(&self) -> &[u8]`: one branch; outcome a shared reference to the held bytes, no copy, no side effect
-    * `[ ]`   Invariants: every `Outboard` holds the bytes it was constructed from, unchanged; its only producer is `try_new`
-    * `[ ]`   Own entry, an outboard reads back through the crate root: condition a caller outside the crate names `Outboard` and `OutboardConstructorParams` through the crate root and passes `try_new` a sequence of distinct bytes; outcome `Ok(outboard)` whose `as_bytes()` yields exactly the bytes passed, in order; variation bytes that differ at every index, which a read that reorders, truncates, or pads fails; edge that must survive: the bytes an outside caller reads are the bytes the outboard was constructed from, reached through the accessor alone
-    * `[ ]`   Route: the crate barrel `lib.rs`, then `outboard::provides`, then `Outboard::try_new`, then `Outboard::as_bytes`; the route reaches no outer-edge collaborator
-    * `[ ]`   Public surface: an outside caller invokes `Outboard::try_new` and `Outboard::as_bytes`, building params with `build_outboard_constructor_params` from the `mocks` feature; it observes the `Ok` outboard through `as_bytes`; the entry proven is the read-back entry
-
-  * `[ ]`   `adapters/hashing/src/outboard/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`
-    * `[ ]`   `OutboardConstructorParamsOverrides`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<Vec<u8>>`
-    * `[ ]`   `build_outboard_constructor_params(overrides: OutboardConstructorParamsOverrides) -> OutboardConstructorParams`, taking `bytes` from the override when present; the default is a byte sequence declared in `mock.rs` of 72 bytes whose byte at index `i` is `i + 1`, so the default is non-empty and no two bytes are equal
-    * `[ ]`   `OutboardConstructorParamsCorruptions`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<serde_json::Value>`
-    * `[ ]`   `invalidate_outboard_constructor_params(corruptions: OutboardConstructorParamsCorruptions) -> serde_json::Value`, a `Map` holding the built params' `bytes` converted with `Value::from` to an array of integers, overwritten by the corrupted key when present; `OutboardConstructorParams` stays free of derives
-    * `[ ]`   `build_outboard(overrides: OutboardConstructorParamsOverrides) -> Outboard`, returning the real instance from `Outboard::try_new(build_outboard_constructor_params(overrides))` through the irrefutable pattern `let Ok(outboard) = …;`, its field private
-    * `[ ]`   Enumeration of the interface's exports: `OutboardTryNewReturn` is an alias used directly by its production type; `Outboard` takes `build_outboard` alone, its corruption living in the params invalidator; `OutboardConstructorParams` takes the four symbols above; `Outboard::try_new` and `Outboard::as_bytes` take no function mock because the interface declares no function type for them
-    * `[ ]`   Imports `Outboard` and `OutboardConstructorParams` from `super::interface`, and `serde_json::Value` and `serde_json::Map`
-
-  * `[ ]`   `adapters/hashing/src/outboard/test.rs`
-    * `[ ]`   Imports `Outboard` from `super`, and `build_outboard`, `build_outboard_constructor_params`, and `OutboardConstructorParamsOverrides` from `super::mock`; the module's only dependency is the standard library, so no collaborator is replaced; every fixture is a direct builder call overriding only the `bytes` the block's variation needs
-    * `[ ]`   `try_new_holds_the_params_bytes`
-      * `[ ]`   Contract: any params yields `Ok(Outboard { bytes })` holding `params.bytes`
-      * `[ ]`   Arrange: params whose `bytes` is a short sequence of distinct bytes differing from the builder's default, so an outboard that holds the default or an empty sequence differs
-      * `[ ]`   Act: `Outboard::try_new` over those params
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(outboard) = …;`; the held `bytes`, read from the field the test module's visibility reaches, equals the same sequence stated in the assertion as literals
-    * `[ ]`   `try_new_admits_the_empty_sequence`
-      * `[ ]`   Contract: any params yields `Ok(Outboard { bytes })`, the empty sequence included, since the family admits any bytes as held
-      * `[ ]`   Arrange: params whose `bytes` is the empty vector
-      * `[ ]`   Act: `Outboard::try_new` over those params
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(outboard) = …;`; the held `bytes` is empty
-    * `[ ]`   `try_new_moves_the_params_bytes_into_the_outboard`
-      * `[ ]`   Contract: the outcome moves the vector from the params without copy
-      * `[ ]`   Arrange: params from the builder with its default bytes, the address and length of `params.bytes` read before the call
-      * `[ ]`   Act: `Outboard::try_new` over those params
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(outboard) = …;`; the held `bytes` has the address and the length read before the call
-    * `[ ]`   `as_bytes_returns_the_held_bytes_without_copy`
-      * `[ ]`   Contract: `as_bytes` returns a shared reference to the held bytes, no copy
-      * `[ ]`   Arrange: an outboard from `build_outboard` with no override, whose default bytes are distinct
-      * `[ ]`   Act: `Outboard::as_bytes` on that outboard
-      * `[ ]`   Assert: the returned slice has the address and the length of the outboard's held `bytes`
-
-  * `[ ]`   `construction`
-    * `[ ]`   `Outboard::try_new` is the only producer; no `Default`, `From`, or other constructor exists; the commitment concrete constructs an outboard where it produces one, and a reader of stored or received bytes constructs one through `try_new` before handing it to the concrete that interprets it
-
-  * `[ ]`   `adapters/hashing/src/outboard/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl Outboard` with `pub fn try_new(params: OutboardConstructorParams) -> OutboardTryNewReturn` returning `Ok(Outboard { bytes: params.bytes })`, and `pub fn as_bytes(&self) -> &[u8]` returning `&self.bytes`
-    * `[ ]`   Imports `Outboard`, `OutboardConstructorParams`, and `OutboardTryNewReturn` from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `adapters/hashing/src/outboard/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
-
-  * `[ ]`   `adapters/hashing/tests/outboard_integration_test.rs`
-    * `[ ]`   Imports `Outboard` through the crate root `hashing`, and `build_outboard_constructor_params` and `OutboardConstructorParamsOverrides` from the crate root under the `mocks` feature; nothing is imported from a module path
-    * `[ ]`   `an_outboard_reads_back_through_the_crate_root`
-      * `[ ]`   Contract: the own entry, an outboard reads back through the crate root; a sequence of distinct bytes yields `Ok(outboard)` whose `as_bytes()` yields exactly the bytes passed, in order
-      * `[ ]`   Arrange: params from `build_outboard_constructor_params` whose `bytes` is a sequence that differs at every index, the variation a read that reorders, truncates, or pads fails
-      * `[ ]`   Act: `Outboard::try_new` over those params, the `Ok` outboard read through `as_bytes`
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(outboard) = …;`, and the slice `as_bytes` returns equals the expected bytes stated in the assertion as their own value, since the params are moved into the call
-      * `[ ]`   Boundary: the crate-root public call `Outboard::try_new` and the read `Outboard::as_bytes`, the route `lib.rs` then `outboard::provides` then `try_new` then `as_bytes`
-      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
-    * `[ ]`   Enumeration: the read-back entry is proven by `an_outboard_reads_back_through_the_crate_root`
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `outboard` depends on the standard library alone, and its `mock.rs` additionally depends on `serde_json` under the `mocks` feature; it depends on no other module of the crate; `hashing/blake3_bao` consumes the outboard through `crate::outboard::provides`; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `adapters/hashing/Cargo.toml` is unchanged by this node, and the crate names no hash library and no encoding
-    * `[ ]`   `Outboard` derives `Clone`, `Debug`, `PartialEq`, and `Eq`
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, `cargo deny check`, and `cargo clippy --workspace --all-targets --all-features -- -D warnings` complete without error
-    * `[ ]`   `try_new_holds_the_params_bytes`, `try_new_admits_the_empty_sequence`, `try_new_moves_the_params_bytes_into_the_outboard`, and `as_bytes_returns_the_held_bytes_without_copy` pass
-    * `[ ]`   `an_outboard_reads_back_through_the_crate_root` passes
-    * `[ ]`   Code outside `adapters/hashing/src/outboard` reading the `bytes` field fails to compile
-
-* `[ ]`   `hashing/authentication_path` **Authentication path, the bytes that authenticate one chunk of an object against its root, admitted as held; a family-owned module of the `adapters/hashing` crate**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: a client verifies an individual chunk against the authenticated root using that chunk and its authentication path, without the remainder of the object, and a delegated store's custody is checked by asking for the path of a random chunk, so every concrete of the hashing family produces and reads a path as one family type whose layout the concrete alone interprets (CR-02 random-access verification and challenges; `docs/research/cryptography.md`, Incremental Verification; `docs/research/MVP Scope.md`, Seed Hosting and the Ciphertext Store)
-    * `[ ]`   Functional: one type holds an authentication path's bytes, reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the constructor admits any bytes as held, the empty sequence included, since the family declares no layout and the concrete that interprets the scheme's layout refuses a malformed path in its own methods
-    * `[ ]`   Functional: two paths compare equal exactly when their bytes are equal, and a path is printable and clonable
-    * `[ ]`   Non-functional: the module depends on the standard library alone, and its `mock.rs` additionally uses `serde_json` under the `mocks` feature; the module names no hash library and no encoding
-
-  * `[ ]`   `role`
-    * `[ ]`   Adapter family: the hashing family's family-owned authentication-path type, a module beside the factory because a type lives in the module that implements it, and the path's constructor is its implementation
-    * `[ ]`   Does not construct, parse, or validate a path's layout, and does not verify a chunk; `hashing/blake3_bao` produces paths in the BLAKE3/Bao layout, verifies chunks against them, and refuses a malformed one in its own methods
-    * `[ ]`   Does not create the crate or the `factory` module; `hashing/root` created the crate, and `hashing/blake3_bao` authors the family's generic interface in the `factory` module
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the family-owned `authentication_path` module of the `adapters/hashing` crate, holding `AuthenticationPath`, its constructor params, and its constructor's return type
-    * `[ ]`   The module's `provides` joins the crate's public surface beside the other modules'
-    * `[ ]`   Outside: the layout of the bytes, how they are produced from an outboard, and how they authenticate a chunk against a root
-
-  * `[ ]`   `deps`
-    * `[ ]`   `hashing/root`, the same crate: the crate at `adapters/hashing`, its `Cargo.toml` with `serde_json` optional under the `mocks` feature and as a dev-dependency, and its barrel `lib.rs`, to which this node adds its module; no type of `root` is consumed
-    * `[ ]`   The standard library: `Vec<u8>` and `core::convert::Infallible`, the constructor's error arm, through the prelude and `core`
-    * `[ ]`   `serde_json` `1.0.151`, as `hashing/root` pins it in the crate's manifest; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type the invalidator returns, in `mock.rs` only
-    * `[ ]`   No reverse dependency; nothing depends on this module yet
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the standard library: `Vec<u8>`, `<[u8]>` through `Vec::as_slice`, and `core::convert::Infallible`
-    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers and arrays, in `mock.rs` only
-
-  * `[ ]`   `adapters/hashing/src/lib.rs`
-    * `[ ]`   The crate barrel gains `mod authentication_path;` and `pub use authentication_path::provides::*;` beside the lines already in it, nothing else
-    * `[ ]`   Until `authentication_path/mod.rs` exists, `cargo check` reports the unresolved `mod authentication_path`, which is the RED state for every element below that precedes the implementation
-
-  * `[ ]`   `adapters/hashing/src/authentication_path/interface.rs`
-    * `[ ]`   `AuthenticationPath`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: Vec<u8>`, so only the `authentication_path` module and its children reach the field
-    * `[ ]`   `AuthenticationPathConstructorParams`, a struct with the one field `pub bytes: Vec<u8>`; no derives
-    * `[ ]`   `AuthenticationPathTryNewReturn`, the alias `Result<AuthenticationPath, Infallible>`; the error arm is uninhabited because the family admits any bytes as held
-    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
-
-  * `[ ]`   `adapters/hashing/src/authentication_path/interaction.spec.md`
-    * `[ ]`   `AuthenticationPath::try_new(params: AuthenticationPathConstructorParams) -> AuthenticationPathTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(AuthenticationPath { bytes })`, the vector moved from the params without copy; the error arm has no branch
-    * `[ ]`   `AuthenticationPath::as_bytes(&self) -> &[u8]`: one branch; outcome a shared reference to the held bytes, no copy, no side effect
-    * `[ ]`   Invariants: every `AuthenticationPath` holds the bytes it was constructed from, unchanged; its only producer is `try_new`
-    * `[ ]`   Own entry, a path reads back through the crate root: condition a caller outside the crate names `AuthenticationPath` and `AuthenticationPathConstructorParams` through the crate root and passes `try_new` a sequence of distinct bytes; outcome `Ok(path)` whose `as_bytes()` yields exactly the bytes passed, in order; variation bytes that differ at every index, which a read that reorders, truncates, or pads fails; edge that must survive: the bytes an outside caller reads are the bytes the path was constructed from, reached through the accessor alone
-    * `[ ]`   Route: the crate barrel `lib.rs`, then `authentication_path::provides`, then `AuthenticationPath::try_new`, then `AuthenticationPath::as_bytes`; the route reaches no outer-edge collaborator
-    * `[ ]`   Public surface: an outside caller invokes `AuthenticationPath::try_new` and `AuthenticationPath::as_bytes`, building params with `build_authentication_path_constructor_params` from the `mocks` feature; it observes the `Ok` path through `as_bytes`; the entry proven is the read-back entry
-
-  * `[ ]`   `adapters/hashing/src/authentication_path/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`
-    * `[ ]`   `AuthenticationPathConstructorParamsOverrides`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<Vec<u8>>`
-    * `[ ]`   `build_authentication_path_constructor_params(overrides: AuthenticationPathConstructorParamsOverrides) -> AuthenticationPathConstructorParams`, taking `bytes` from the override when present; the default is a byte sequence declared in `mock.rs` of 64 bytes whose byte at index `i` is `i + 1`, so the default is non-empty and no two bytes are equal
-    * `[ ]`   `AuthenticationPathConstructorParamsCorruptions`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<serde_json::Value>`
-    * `[ ]`   `invalidate_authentication_path_constructor_params(corruptions: AuthenticationPathConstructorParamsCorruptions) -> serde_json::Value`, a `Map` holding the built params' `bytes` converted with `Value::from` to an array of integers, overwritten by the corrupted key when present; `AuthenticationPathConstructorParams` stays free of derives
-    * `[ ]`   `build_authentication_path(overrides: AuthenticationPathConstructorParamsOverrides) -> AuthenticationPath`, returning the real instance from `AuthenticationPath::try_new(build_authentication_path_constructor_params(overrides))` through the irrefutable pattern `let Ok(path) = …;`, its field private
-    * `[ ]`   Enumeration of the interface's exports: `AuthenticationPathTryNewReturn` is an alias used directly by its production type; `AuthenticationPath` takes `build_authentication_path` alone, its corruption living in the params invalidator; `AuthenticationPathConstructorParams` takes the four symbols above; `AuthenticationPath::try_new` and `AuthenticationPath::as_bytes` take no function mock because the interface declares no function type for them
-    * `[ ]`   Imports `AuthenticationPath` and `AuthenticationPathConstructorParams` from `super::interface`, and `serde_json::Value` and `serde_json::Map`
-
-  * `[ ]`   `adapters/hashing/src/authentication_path/test.rs`
-    * `[ ]`   Imports `AuthenticationPath` from `super`, and `build_authentication_path`, `build_authentication_path_constructor_params`, and `AuthenticationPathConstructorParamsOverrides` from `super::mock`; the module's only dependency is the standard library, so no collaborator is replaced; every fixture is a direct builder call overriding only the `bytes` the block's variation needs
-    * `[ ]`   `try_new_holds_the_params_bytes`
-      * `[ ]`   Contract: any params yields `Ok(AuthenticationPath { bytes })` holding `params.bytes`
-      * `[ ]`   Arrange: params whose `bytes` is a short sequence of distinct bytes differing from the builder's default, so a path that holds the default or an empty sequence differs
-      * `[ ]`   Act: `AuthenticationPath::try_new` over those params
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(path) = …;`; the held `bytes`, read from the field the test module's visibility reaches, equals the same sequence stated in the assertion as literals
-    * `[ ]`   `try_new_admits_the_empty_sequence`
-      * `[ ]`   Contract: any params yields `Ok(AuthenticationPath { bytes })`, the empty sequence included, since the family admits any bytes as held
-      * `[ ]`   Arrange: params whose `bytes` is the empty vector
-      * `[ ]`   Act: `AuthenticationPath::try_new` over those params
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(path) = …;`; the held `bytes` is empty
-    * `[ ]`   `try_new_moves_the_params_bytes_into_the_path`
-      * `[ ]`   Contract: the outcome moves the vector from the params without copy
-      * `[ ]`   Arrange: params from the builder with its default bytes, the address and length of `params.bytes` read before the call
-      * `[ ]`   Act: `AuthenticationPath::try_new` over those params
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(path) = …;`; the held `bytes` has the address and the length read before the call
-    * `[ ]`   `as_bytes_returns_the_held_bytes_without_copy`
-      * `[ ]`   Contract: `as_bytes` returns a shared reference to the held bytes, no copy
-      * `[ ]`   Arrange: a path from `build_authentication_path` with no override, whose default bytes are distinct
-      * `[ ]`   Act: `AuthenticationPath::as_bytes` on that path
-      * `[ ]`   Assert: the returned slice has the address and the length of the path's held `bytes`
-
-  * `[ ]`   `construction`
-    * `[ ]`   `AuthenticationPath::try_new` is the only producer; no `Default`, `From`, or other constructor exists; the commitment concrete constructs a path where it produces one, and a receiver of a path from a peer constructs one through `try_new` before handing it to the concrete that verifies it
-
-  * `[ ]`   `adapters/hashing/src/authentication_path/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl AuthenticationPath` with `pub fn try_new(params: AuthenticationPathConstructorParams) -> AuthenticationPathTryNewReturn` returning `Ok(AuthenticationPath { bytes: params.bytes })`, and `pub fn as_bytes(&self) -> &[u8]` returning `&self.bytes`
-    * `[ ]`   Imports `AuthenticationPath`, `AuthenticationPathConstructorParams`, and `AuthenticationPathTryNewReturn` from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `adapters/hashing/src/authentication_path/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
-
-  * `[ ]`   `adapters/hashing/tests/authentication_path_integration_test.rs`
-    * `[ ]`   Imports `AuthenticationPath` through the crate root `hashing`, and `build_authentication_path_constructor_params` and `AuthenticationPathConstructorParamsOverrides` from the crate root under the `mocks` feature; nothing is imported from a module path
-    * `[ ]`   `an_authentication_path_reads_back_through_the_crate_root`
-      * `[ ]`   Contract: the own entry, a path reads back through the crate root; a sequence of distinct bytes yields `Ok(path)` whose `as_bytes()` yields exactly the bytes passed, in order
-      * `[ ]`   Arrange: params from `build_authentication_path_constructor_params` whose `bytes` is a sequence that differs at every index, the variation a read that reorders, truncates, or pads fails
-      * `[ ]`   Act: `AuthenticationPath::try_new` over those params, the `Ok` path read through `as_bytes`
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(path) = …;`, and the slice `as_bytes` returns equals the expected bytes stated in the assertion as their own value, since the params are moved into the call
-      * `[ ]`   Boundary: the crate-root public call `AuthenticationPath::try_new` and the read `AuthenticationPath::as_bytes`, the route `lib.rs` then `authentication_path::provides` then `try_new` then `as_bytes`
-      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
-    * `[ ]`   Enumeration: the read-back entry is proven by `an_authentication_path_reads_back_through_the_crate_root`
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `authentication_path` depends on the standard library alone, and its `mock.rs` additionally depends on `serde_json` under the `mocks` feature; it depends on no other module of the crate; `hashing/blake3_bao` consumes the path through `crate::authentication_path::provides`; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `adapters/hashing/Cargo.toml` is unchanged by this node, and the crate names no hash library and no encoding
-    * `[ ]`   `AuthenticationPath` derives `Clone`, `Debug`, `PartialEq`, and `Eq`
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, `cargo deny check`, and `cargo clippy --workspace --all-targets --all-features -- -D warnings` complete without error
-    * `[ ]`   `try_new_holds_the_params_bytes`, `try_new_admits_the_empty_sequence`, `try_new_moves_the_params_bytes_into_the_path`, and `as_bytes_returns_the_held_bytes_without_copy` pass
-    * `[ ]`   `an_authentication_path_reads_back_through_the_crate_root` passes
-    * `[ ]`   Code outside `adapters/hashing/src/authentication_path` reading the `bytes` field fails to compile
-
-* `[ ]`   `hashing/chunk` **Chunk, the bytes of one Bao chunk of an object, the unit a client verifies against a root, admitted as held; a family-owned module of the `adapters/hashing` crate**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: verification granularity is the Bao chunk, so a client verifies pieces chunk by chunk as they arrive and in any order, a seeder serves a chunk with its authentication path, and a delegated store's custody is checked by asking for a random chunk, and every concrete of the hashing family produces and reads a chunk as one family type whose permitted length the concrete alone fixes (CR-02 streaming and random-access verification and challenges; `docs/research/cryptography.md`, Units and Incremental Verification)
-    * `[ ]`   Functional: one type holds a chunk's bytes, reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the constructor admits any bytes as held, the empty sequence included, since the family declares no length and the concrete that interprets the scheme's layout refuses a chunk of the wrong length in its own methods
-    * `[ ]`   Functional: two chunks compare equal exactly when their bytes are equal, and a chunk is printable and clonable
-    * `[ ]`   Non-functional: the module depends on the standard library alone, and its `mock.rs` additionally uses `serde_json` under the `mocks` feature; the module names no hash library and no encoding
-
-  * `[ ]`   `role`
-    * `[ ]`   Adapter family: the hashing family's family-owned chunk type, a module beside the factory because a type lives in the module that implements it, and the chunk's constructor is its implementation
-    * `[ ]`   Does not slice an object into chunks, fix a chunk's length, or verify a chunk; `hashing/blake3_bao` declares the chunk granularity, slices and verifies chunks, and refuses a chunk of the wrong length in its own methods
-    * `[ ]`   Does not create the crate or the `factory` module; `hashing/root` created the crate, and `hashing/blake3_bao` authors the family's generic interface in the `factory` module
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the family-owned `chunk` module of the `adapters/hashing` crate, holding `Chunk`, its constructor params, and its constructor's return type
-    * `[ ]`   The module's `provides` joins the crate's public surface beside the other modules'
-    * `[ ]`   Outside: the chunk's position and permitted length within an object, how it is sliced from an object, and how it is verified against a root
-
-  * `[ ]`   `deps`
-    * `[ ]`   `hashing/root`, the same crate: the crate at `adapters/hashing`, its `Cargo.toml` with `serde_json` optional under the `mocks` feature and as a dev-dependency, and its barrel `lib.rs`, to which this node adds its module; no type of `root` is consumed
-    * `[ ]`   The standard library: `Vec<u8>` and `core::convert::Infallible`, the constructor's error arm, through the prelude and `core`
-    * `[ ]`   `serde_json` `1.0.151`, as `hashing/root` pins it in the crate's manifest; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type the invalidator returns, in `mock.rs` only
-    * `[ ]`   No reverse dependency; nothing depends on this module yet
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the standard library: `Vec<u8>`, `<[u8]>` through `Vec::as_slice`, and `core::convert::Infallible`
-    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers and arrays, in `mock.rs` only
-
-  * `[ ]`   `adapters/hashing/src/lib.rs`
-    * `[ ]`   The crate barrel gains `mod chunk;` and `pub use chunk::provides::*;` beside the lines already in it, nothing else
-    * `[ ]`   Until `chunk/mod.rs` exists, `cargo check` reports the unresolved `mod chunk`, which is the RED state for every element below that precedes the implementation
-
-  * `[ ]`   `adapters/hashing/src/chunk/interface.rs`
-    * `[ ]`   `Chunk`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: Vec<u8>`, so only the `chunk` module and its children reach the field
-    * `[ ]`   `ChunkConstructorParams`, a struct with the one field `pub bytes: Vec<u8>`; no derives
-    * `[ ]`   `ChunkTryNewReturn`, the alias `Result<Chunk, Infallible>`; the error arm is uninhabited because the family admits any bytes as held
-    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
-
-  * `[ ]`   `adapters/hashing/src/chunk/interaction.spec.md`
-    * `[ ]`   `Chunk::try_new(params: ChunkConstructorParams) -> ChunkTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(Chunk { bytes })`, the vector moved from the params without copy; the error arm has no branch
-    * `[ ]`   `Chunk::as_bytes(&self) -> &[u8]`: one branch; outcome a shared reference to the held bytes, no copy, no side effect
-    * `[ ]`   Invariants: every `Chunk` holds the bytes it was constructed from, unchanged; its only producer is `try_new`
-    * `[ ]`   Own entry, a chunk reads back through the crate root: condition a caller outside the crate names `Chunk` and `ChunkConstructorParams` through the crate root and passes `try_new` a sequence of distinct bytes; outcome `Ok(chunk)` whose `as_bytes()` yields exactly the bytes passed, in order; variation bytes that differ at every index, which a read that reorders, truncates, or pads fails; edge that must survive: the bytes an outside caller reads are the bytes the chunk was constructed from, reached through the accessor alone
-    * `[ ]`   Route: the crate barrel `lib.rs`, then `chunk::provides`, then `Chunk::try_new`, then `Chunk::as_bytes`; the route reaches no outer-edge collaborator
-    * `[ ]`   Public surface: an outside caller invokes `Chunk::try_new` and `Chunk::as_bytes`, building params with `build_chunk_constructor_params` from the `mocks` feature; it observes the `Ok` chunk through `as_bytes`; the entry proven is the read-back entry
-
-  * `[ ]`   `adapters/hashing/src/chunk/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`
-    * `[ ]`   `ChunkConstructorParamsOverrides`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<Vec<u8>>`
-    * `[ ]`   `build_chunk_constructor_params(overrides: ChunkConstructorParamsOverrides) -> ChunkConstructorParams`, taking `bytes` from the override when present; the default is a byte sequence declared in `mock.rs` of 1024 bytes, the Bao chunk length `docs/research/cryptography.md`'s Units fixes, whose byte at index `i` is `i % 255 + 1`, so every byte is nonzero and no run of 255 consecutive bytes repeats a value
-    * `[ ]`   `ChunkConstructorParamsCorruptions`, a struct with `#[derive(Default)]` and the one field `pub bytes: Option<serde_json::Value>`
-    * `[ ]`   `invalidate_chunk_constructor_params(corruptions: ChunkConstructorParamsCorruptions) -> serde_json::Value`, a `Map` holding the built params' `bytes` converted with `Value::from` to an array of integers, overwritten by the corrupted key when present; `ChunkConstructorParams` stays free of derives
-    * `[ ]`   `build_chunk(overrides: ChunkConstructorParamsOverrides) -> Chunk`, returning the real instance from `Chunk::try_new(build_chunk_constructor_params(overrides))` through the irrefutable pattern `let Ok(chunk) = …;`, its field private
-    * `[ ]`   Enumeration of the interface's exports: `ChunkTryNewReturn` is an alias used directly by its production type; `Chunk` takes `build_chunk` alone, its corruption living in the params invalidator; `ChunkConstructorParams` takes the four symbols above; `Chunk::try_new` and `Chunk::as_bytes` take no function mock because the interface declares no function type for them
-    * `[ ]`   Imports `Chunk` and `ChunkConstructorParams` from `super::interface`, and `serde_json::Value` and `serde_json::Map`
-
-  * `[ ]`   `adapters/hashing/src/chunk/test.rs`
-    * `[ ]`   Imports `Chunk` from `super`, and `build_chunk`, `build_chunk_constructor_params`, and `ChunkConstructorParamsOverrides` from `super::mock`; the module's only dependency is the standard library, so no collaborator is replaced; every fixture is a direct builder call overriding only the `bytes` the block's variation needs
-    * `[ ]`   `try_new_holds_the_params_bytes`
-      * `[ ]`   Contract: any params yields `Ok(Chunk { bytes })` holding `params.bytes`
-      * `[ ]`   Arrange: params whose `bytes` is a short sequence of distinct bytes differing from the builder's default, so a chunk that holds the default or an empty sequence differs
-      * `[ ]`   Act: `Chunk::try_new` over those params
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(chunk) = …;`; the held `bytes`, read from the field the test module's visibility reaches, equals the same sequence stated in the assertion as literals
-    * `[ ]`   `try_new_admits_the_empty_sequence`
-      * `[ ]`   Contract: any params yields `Ok(Chunk { bytes })`, the empty sequence included, since the family admits any bytes as held
-      * `[ ]`   Arrange: params whose `bytes` is the empty vector
-      * `[ ]`   Act: `Chunk::try_new` over those params
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(chunk) = …;`; the held `bytes` is empty
-    * `[ ]`   `try_new_moves_the_params_bytes_into_the_chunk`
-      * `[ ]`   Contract: the outcome moves the vector from the params without copy
-      * `[ ]`   Arrange: params from the builder with its default bytes, the address and length of `params.bytes` read before the call
-      * `[ ]`   Act: `Chunk::try_new` over those params
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(chunk) = …;`; the held `bytes` has the address and the length read before the call
-    * `[ ]`   `as_bytes_returns_the_held_bytes_without_copy`
-      * `[ ]`   Contract: `as_bytes` returns a shared reference to the held bytes, no copy
-      * `[ ]`   Arrange: a chunk from `build_chunk` with no override, whose default bytes are nonzero
-      * `[ ]`   Act: `Chunk::as_bytes` on that chunk
-      * `[ ]`   Assert: the returned slice has the address and the length of the chunk's held `bytes`
-
-  * `[ ]`   `construction`
-    * `[ ]`   `Chunk::try_new` is the only producer; no `Default`, `From`, or other constructor exists; the commitment concrete constructs a chunk where it slices one from an object, and a receiver of a chunk from a peer constructs one through `try_new` before handing it to the concrete that verifies it
-
-  * `[ ]`   `adapters/hashing/src/chunk/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl Chunk` with `pub fn try_new(params: ChunkConstructorParams) -> ChunkTryNewReturn` returning `Ok(Chunk { bytes: params.bytes })`, and `pub fn as_bytes(&self) -> &[u8]` returning `&self.bytes`
-    * `[ ]`   Imports `Chunk`, `ChunkConstructorParams`, and `ChunkTryNewReturn` from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
-
-  * `[ ]`   `adapters/hashing/src/chunk/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
-
-  * `[ ]`   `adapters/hashing/tests/chunk_integration_test.rs`
-    * `[ ]`   Imports `Chunk` through the crate root `hashing`, and `build_chunk_constructor_params` and `ChunkConstructorParamsOverrides` from the crate root under the `mocks` feature; nothing is imported from a module path
-    * `[ ]`   `a_chunk_reads_back_through_the_crate_root`
-      * `[ ]`   Contract: the own entry, a chunk reads back through the crate root; a sequence of distinct bytes yields `Ok(chunk)` whose `as_bytes()` yields exactly the bytes passed, in order
-      * `[ ]`   Arrange: params from `build_chunk_constructor_params` whose `bytes` is a sequence that differs at every index, the variation a read that reorders, truncates, or pads fails
-      * `[ ]`   Act: `Chunk::try_new` over those params, the `Ok` chunk read through `as_bytes`
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(chunk) = …;`, and the slice `as_bytes` returns equals the expected bytes stated in the assertion as their own value, since the params are moved into the call
-      * `[ ]`   Boundary: the crate-root public call `Chunk::try_new` and the read `Chunk::as_bytes`, the route `lib.rs` then `chunk::provides` then `try_new` then `as_bytes`
-      * `[ ]`   Mocked: none; the route reaches no outer-edge collaborator, and the params come from the official mock under the `mocks` feature
-    * `[ ]`   Enumeration: the read-back entry is proven by `a_chunk_reads_back_through_the_crate_root`
-
-  * `[ ]`   `directionality`
-    * `[ ]`   `chunk` depends on the standard library alone, and its `mock.rs` additionally depends on `serde_json` under the `mocks` feature; it depends on no other module of the crate; `hashing/blake3_bao` consumes the chunk through `crate::chunk::provides`; no cycle
-
-  * `[ ]`   `requirements`
-    * `[ ]`   `adapters/hashing/Cargo.toml` is unchanged by this node, and the crate names no hash library and no encoding
-    * `[ ]`   `Chunk` derives `Clone`, `Debug`, `PartialEq`, and `Eq`
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, `cargo deny check`, and `cargo clippy --workspace --all-targets --all-features -- -D warnings` complete without error
-    * `[ ]`   `try_new_holds_the_params_bytes`, `try_new_admits_the_empty_sequence`, `try_new_moves_the_params_bytes_into_the_chunk`, and `as_bytes_returns_the_held_bytes_without_copy` pass
-    * `[ ]`   `a_chunk_reads_back_through_the_crate_root` passes
-    * `[ ]`   Code outside `adapters/hashing/src/chunk` reading the `bytes` field fails to compile
-
-* `[ ]`   `hashing/blake3_bao` **BLAKE3/Bao commitment concrete constructing an object's root and outboard, unkeyed or keyed, authenticating a chunk with its path, verifying a chunk against a root, and drawing a random chunk challenge; authors the hashing family's generic interface, commitment-scheme identifier, declaration, and mock**
-
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: every content root, the plaintext, ciphertext, and sidecar roots and the asset's identity among them, is constructed and verified through one repo-owned commitment interface, so a seeder verifies opaque pieces it cannot read, a decrypting client verifies what it produced, a delegated store's custody is checked by random challenge, and no module outside the concrete names the hash library (CR-02; EC-02; SW-04; `docs/research/cryptography.md`, Content Commitments, Incremental Verification, and Plaintext Root Disclosure Modes)
-    * `[ ]`   Functional: the family's generic interface commits to an object's bytes, returning its root and outboard; authenticates one chunk of an object from its bytes and outboard, returning the chunk and its authentication path; verifies a chunk against a root with its path, at any index and in any order; and maps a caller's uniform draw to a chunk index of an object, the random chunk challenge whose response is the authenticated chunk
-    * `[ ]`   Functional: every commitment and verification takes a commitment key that is either unkeyed, the Public disclosure mode, or keyed by a borrowed `Secret` holding the plaintext-root key the key-derivation family derives, the Keyed disclosure mode
-    * `[ ]`   Functional: every concrete declares the commitment-scheme identifier a deployment's hash-card carries, its chunk granularity, its adapter version, and the interface version it implements, readable before any instance exists
-    * `[ ]`   Functional: the BLAKE3/Bao concrete's unkeyed root is the BLAKE3 hash of the content and its keyed root is the BLAKE3 keyed hash under the key; its outboard is the Bao outboard layout, the content length as 8 little-endian bytes followed by the BLAKE3 tree's parent nodes in pre-order, each node the left and right children's 32-byte chaining values; `bao` constructs the unkeyed root and outboard, and `blake3`'s keyed mode and its tree operations construct the keyed ones and verify every chunk
-    * `[ ]`   Functional: corruption of a root, a path, a chunk, a length, or a chunk's order is detected; an outboard that does not match its content is refused; a key of the wrong length is refused before anything is hashed
-    * `[ ]`   Non-functional: `blake3` and `bao` are named only inside `adapters/hashing/src/blake3_bao`; every hasher keyed by the commitment key and every copy of the key is zeroized after use; the family carries no digest operation and no identity-hash identifier, and the crate depends on no encoding (PR-02)
-
-  * `[ ]`   `role`
-    * `[ ]`   Adapter: the hashing family's first concrete, and the first source file that requires the family's generic interface, commitment key, identifier, declaration, and mock, which it authors in the family's `factory` module as its producers
-    * `[ ]`   Creates `factory/mod.rs` with the module wiring alone and `factory/provides.rs` with the interface and mock surface alone; the factory function, its types, its interaction spec, its unit test, its re-export, and the family's integration test are `hashing/factory`'s
-    * `[ ]`   Does not draw randomness; the caller of `challenge` draws the uniform value through the randomness family and hands it in
-    * `[ ]`   Does not derive the plaintext-root key; the key-derivation family derives it under its plaintext-root purpose and the caller borrows it in
-    * `[ ]`   Does not encode a root, resolve a name, or own the root, outboard, path, or chunk types; `hashing/root`, `hashing/outboard`, `hashing/authentication_path`, and `hashing/chunk` own them, and the encoding family describes the root
-    * `[ ]`   Does not carry a commit
-
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `adapters/hashing` crate's `factory` module, holding the family's generic trait, the commitment key, each method's params, payload, success, error, and return types, the commitment-scheme identifier, the declaration, the interface version, the failure modes, and the family's mock; and its private `blake3_bao` concrete, holding the adapter over `blake3` and `bao`, its layout constants, its constructor params and return, and its own errors
-    * `[ ]`   Outside: the root, outboard, path, and chunk types' own constructors, the factory's selection of a concrete, the randomness a challenge draws, the derivation of the plaintext-root key, and what each caller does with a root
-
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/secret`, `crates/domain`, protocol and domain ring, path dependency; supplies `Secret`, whose `expose` the concrete reads the keyed commitment key through; direction inward, adapter ring on domain ring
-    * `[ ]`   `domain` with its `mocks` feature, as a dev-dependency and through this crate's `mocks` feature; supplies `build_secret` and `SecretConstructorParamsOverrides` for the reference key
-    * `[ ]`   `hashing/root`, the same crate: `Root`, `RootConstructorParams`, `RootTryNewErrorReturn`, and `ROOT_LENGTH` through `crate::root::provides`, and `build_root` and `RootConstructorParamsOverrides` in the mock files; the concrete constructs every root it produces through `Root::try_new` and reads a root through `Root::as_bytes`
-    * `[ ]`   `hashing/outboard`, the same crate: `Outboard` and `OutboardConstructorParams` through `crate::outboard::provides`, and `build_outboard` and `OutboardConstructorParamsOverrides` in the mock files; the concrete constructs outboards through `Outboard::try_new` and reads them through `Outboard::as_bytes`
-    * `[ ]`   `hashing/authentication_path`, the same crate: `AuthenticationPath` and `AuthenticationPathConstructorParams` through `crate::authentication_path::provides`, and `build_authentication_path` and `AuthenticationPathConstructorParamsOverrides` in the mock files; constructed through `AuthenticationPath::try_new`, read through `AuthenticationPath::as_bytes`
-    * `[ ]`   `hashing/chunk`, the same crate: `Chunk` and `ChunkConstructorParams` through `crate::chunk::provides`, and `build_chunk` and `ChunkConstructorParamsOverrides` in the mock files; constructed through `Chunk::try_new`, read through `Chunk::as_bytes`
-    * `[ ]`   `zeroize` `1.9.0`, external crate, Apache-2.0 OR MIT, runtime dependency; supplies the `Zeroize` trait the concrete calls on keyed hashers and on its copy of the key
-    * `[ ]`   `blake3` `1.8.7`, external crate, CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception, runtime dependency with the `zeroize` feature, named only in `blake3_bao`; supplies `Hasher`, `Hash`, and the `hazmat` module's `HasherExt`, `Mode`, `merge_subtrees_non_root`, `merge_subtrees_root`, and `left_subtree_len`
-    * `[ ]`   `bao` `0.13.1`, external crate, CC0-1.0 OR Apache-2.0, runtime dependency named only in `blake3_bao`; supplies `bao::encode::outboard`, and in the concrete's mock `bao::encode::SliceExtractor` for the independent path oracle
-    * `[ ]`   `serde_json` `1.0.151`, as `hashing/root` pins it in the crate's manifest; supplies `serde_json::Value` and `serde_json::Map`, the untrusted type every invalidator returns, in the mock files only
-    * `[ ]`   `core::convert::Infallible`, `TryFrom<usize> for u64`, `u64::from_le_bytes`, `u64::to_le_bytes`, `u64::div_ceil`, `<[u8]>::first_chunk`, `TryFrom<&[u8]> for [u8; 32]`, `std::collections::hash_map::DefaultHasher`, `std::hash::Hasher`, `std::io::{Cursor, Read}`, and `std::sync::OnceLock`, standard library
-    * `[ ]`   No reverse dependency beyond the family form's recorded cycle: the `factory` module's errors carry this concrete's errors; nothing outside the crate depends on the `factory` module yet
-
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `domain`: `Secret::expose(&self) -> &Vec<u8>` over `Secret<Vec<u8>>`; from `domain`'s mocks: `build_secret(value: Vec<u8>, SecretConstructorParamsOverrides) -> Secret<Vec<u8>>`
-    * `[ ]`   From the crate's own modules: `Root::try_new(RootConstructorParams { bytes }) -> Result<Root, RootTryNewErrorReturn>` and `Root::as_bytes(&self) -> &[u8; ROOT_LENGTH]`; `Outboard::try_new`, `AuthenticationPath::try_new`, and `Chunk::try_new`, each over its params' `bytes: Vec<u8>` returning `Result<_, Infallible>`, and each type's `as_bytes(&self) -> &[u8]`
-    * `[ ]`   From `blake3`: `Hasher::new() -> Hasher`, `Hasher::new_keyed(key: &[u8; 32]) -> Hasher`, `Hasher::update(&mut self, input: &[u8]) -> &mut Hasher`, `Hasher::finalize(&self) -> Hash`, `Hash::as_bytes(&self) -> &[u8; 32]`, constant-time `PartialEq<[u8; 32]> for Hash`, `blake3::hash(input: &[u8]) -> Hash` and `blake3::keyed_hash(key: &[u8; 32], input: &[u8]) -> Hash` in the concrete's mock only, and `Zeroize` for `Hasher` under the `zeroize` feature
-    * `[ ]`   From `blake3::hazmat`: `HasherExt::set_input_offset(&mut self, offset: u64) -> &mut Self` with the offset a multiple of the 1024-byte chunk length, `HasherExt::finalize_non_root(&self) -> ChainingValue`, `merge_subtrees_non_root(left_child: &ChainingValue, right_child: &ChainingValue, mode: Mode<'_>) -> ChainingValue`, `merge_subtrees_root(left_child: &ChainingValue, right_child: &ChainingValue, mode: Mode<'_>) -> Hash`, `left_subtree_len(input_len: u64) -> u64` for an input of more than one chunk, and `Mode::Hash` and `Mode::KeyedHash(&[u8; 32])`; an input of one chunk or fewer bytes has no parent node and its root is `Hasher::finalize`
-    * `[ ]`   From `bao`: `bao::encode::outboard(input: impl AsRef<[u8]>) -> (Vec<u8>, bao::Hash)`, the Bao outboard layout and the BLAKE3 root; in the concrete's mock, `bao::encode::SliceExtractor::new_outboard(input, outboard, slice_start, slice_len)` over `Cursor`s, read to its end, the slice being the 8-byte length header, the parent nodes on the path to the chunk root first, and the chunk
-    * `[ ]`   From `zeroize`: `Zeroize::zeroize(&mut self)` on `Hasher` and on `[u8; 32]`
-    * `[ ]`   From `serde_json`: `Value`, `Map<String, Value>`, and `Value::from` over integers, strings, and arrays, in the mock files only
-
-  * `[ ]`   `adapters/hashing/Cargo.toml`
-    * `[ ]`   `[dependencies]` gains `domain = { path = "../../crates/domain" }`, `zeroize = "1.9.0"`, `blake3 = { version = "1.8.7", features = ["zeroize"] }`, and `bao = "0.13.1"` beside the `serde_json` entry `hashing/root` authors
-    * `[ ]`   `[dev-dependencies]` gains `domain = { path = "../../crates/domain", features = ["mocks"] }` beside the `serde_json` entry
-    * `[ ]`   `[features]` reads `mocks = ["domain/mocks", "dep:serde_json"]`
-    * `[ ]`   No other change
-
-  * `[ ]`   `adapters/hashing/src/lib.rs`
-    * `[ ]`   The crate barrel gains `mod blake3_bao;`, `mod factory;`, and `pub use factory::provides::*;` beside the lines already in it, nothing else
+    * `[ ]`   The crate barrel: `mod blake3_bao;`, `mod factory;`, and `pub use factory::provides::*;`, nothing else
     * `[ ]`   Until `factory/mod.rs` and `blake3_bao/mod.rs` exist, `cargo check` reports the unresolved modules, which is the RED state for every element below that precedes them
 
   * `[ ]`   `adapters/hashing/src/factory/interface.rs`
     * `[ ]`   `COMMITMENT_INTERFACE_VERSION`, a `pub const` of type `u32` with value `1`
-    * `[ ]`   `CommitmentSchemeIdentifier`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variant `Blake3BaoV1`, the identifier a deployment's hash-card carries, and, behind `#[cfg(any(test, feature = "mocks"))]`, the variant `MockV1`, the identifier the family's mock concrete declares; equality is what the factory admits a concrete by
-    * `[ ]`   `CommitmentSchemeDeclaration`, a struct with `pub identifier: CommitmentSchemeIdentifier`, `pub chunk_length: usize`, `pub adapter_version: u32`, and `pub interface_version: u32`
-    * `[ ]`   `CommitmentKey<'a>`, an enum with the variants `Unkeyed`, the Public disclosure mode, and `Keyed(&'a Secret<Vec<u8>>)`, the Keyed disclosure mode under the borrowed plaintext-root key
-    * `[ ]`   `CommitParams`, `AuthenticateChunkParams`, `VerifyChunkParams`, and `ChallengeParams`, each the fieldless struct `pub struct …;`, the per-call control slot of its method
-    * `[ ]`   `CommitPayload<'a>`, a struct with `pub key: CommitmentKey<'a>` and `pub content: &'a [u8]`
-    * `[ ]`   `CommitSuccessReturn`, a struct with `pub root: Root` and `pub outboard: Outboard`
-    * `[ ]`   `CommitErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `KeyLengthInvalid { length: usize, expected_length: usize }`, the family's flavor every concrete decides from the key before hashing, `Blake3Bao(Blake3BaoCommitErrorReturn)`, the BLAKE3/Bao concrete's own error carried unchanged, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterCommitErrorReturn)`; `CommitReturn`, the alias `Result<CommitSuccessReturn, CommitErrorReturn>`
-    * `[ ]`   `AuthenticateChunkPayload<'a>`, a struct with `pub content: &'a [u8]`, `pub outboard: &'a Outboard`, and `pub chunk_index: u64`
-    * `[ ]`   `AuthenticateChunkSuccessReturn`, a struct with `pub chunk: Chunk` and `pub path: AuthenticationPath`
-    * `[ ]`   `AuthenticateChunkErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the family's flavors `OutboardMalformed { expected_length: usize, actual_length: usize }`, `OutboardContentLengthMismatch { declared_length: u64, content_length: u64 }`, and `ChunkIndexOutOfRange { chunk_index: u64, chunk_count: u64 }`, the variant `Blake3Bao(Blake3BaoAuthenticateChunkErrorReturn)`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterAuthenticateChunkErrorReturn)`; `AuthenticateChunkReturn`, the alias `Result<AuthenticateChunkSuccessReturn, AuthenticateChunkErrorReturn>`
-    * `[ ]`   `VerifyChunkPayload<'a>`, a struct with `pub key: CommitmentKey<'a>`, `pub root: &'a Root`, `pub content_length: u64`, `pub chunk_index: u64`, `pub chunk: &'a Chunk`, and `pub path: &'a AuthenticationPath`
-    * `[ ]`   `VerifyChunkSuccessReturn`, the fieldless struct `pub struct VerifyChunkSuccessReturn;`, the chunk verified
-    * `[ ]`   `VerifyChunkErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the family's flavors `KeyLengthInvalid { length: usize, expected_length: usize }`, `ChunkIndexOutOfRange { chunk_index: u64, chunk_count: u64 }`, `ChunkLengthInvalid { chunk_index: u64, expected_length: u64, actual_length: usize }`, `PathMalformed { chunk_index: u64, expected_length: usize, actual_length: usize }`, and `Mismatch { chunk_index: u64 }`; no concrete's own variant, since every arm is decided from the inputs; `VerifyChunkReturn`, the alias `Result<VerifyChunkSuccessReturn, VerifyChunkErrorReturn>`
-    * `[ ]`   `ChallengePayload`, a struct with `pub content_length: u64` and `pub draw: u64`, the object's length and the caller's uniform draw
-    * `[ ]`   `ChallengeSuccessReturn`, a struct with `pub chunk_index: u64`; `ChallengeReturn`, the alias `Result<ChallengeSuccessReturn, Infallible>`, the error arm uninhabited because every draw maps to an index
-    * `[ ]`   `MockICommitmentAdapterFailureMode`, behind `#[cfg(any(test, feature = "mocks"))]`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variants `NoFailure` and `ContentLengthUnrepresentable`, the second standing for the arm of `commit` and of `authenticate_chunk` that no input reaches, a content length that does not fit a `u64`
-    * `[ ]`   `ICommitmentAdapter`, an object-safe trait with `fn declaration(&self) -> CommitmentSchemeDeclaration;`, `fn commit(&self, params: CommitParams, payload: CommitPayload<'_>) -> CommitReturn;`, `fn authenticate_chunk(&self, params: AuthenticateChunkParams, payload: AuthenticateChunkPayload<'_>) -> AuthenticateChunkReturn;`, `fn verify_chunk(&self, params: VerifyChunkParams, payload: VerifyChunkPayload<'_>) -> VerifyChunkReturn;`, and `fn challenge(&self, params: ChallengeParams, payload: ChallengePayload) -> ChallengeReturn;`; the declaration remains available through `Box<dyn ICommitmentAdapter>`
-    * `[ ]`   No derives on any type in this file beyond those stated; imports `domain::Secret`, `core::convert::Infallible`, `Root` from `crate::root::provides`, `Outboard` from `crate::outboard::provides`, `AuthenticationPath` from `crate::authentication_path::provides`, `Chunk` from `crate::chunk::provides`, `Blake3BaoCommitErrorReturn` and `Blake3BaoAuthenticateChunkErrorReturn` from `crate::blake3_bao::provides`, and, behind `#[cfg(any(test, feature = "mocks"))]`, the mock concrete's error types from `super::mock`; names no vendor
+    * `[ ]`   The outboard layout every concrete writes and reads, each a `pub const`: `CHAINING_VALUE_LENGTH: usize = 32`, `OUTBOARD_HEADER_LENGTH: usize = 8`, the content length as little-endian `u64` bytes at the outboard's head, and `OUTBOARD_PARENT_LENGTH: usize = 64`, one parent node, its left child's chaining value followed by its right child's; after the header the parent nodes follow in pre-order, root first, left subtree before right, one per parent of the tree, so an object of `n` chunks has `n − 1` parent nodes; a subtree longer than one chunk splits so its left child holds the largest power-of-two number of chunks strictly less than the subtree's chunk count, its right child the rest; empty content is one empty chunk
+    * `[ ]`   `CommitmentSchemeIdentifier`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variant `Blake3BaoV1`, the identifier a deployment's hash-card names, and, behind `#[cfg(any(test, feature = "mocks"))]`, the variant `MockV1`, the identifier the family's mock concrete declares
+    * `[ ]`   `CommitmentDeclaration`, a struct with `pub identifier: CommitmentSchemeIdentifier`, `pub chunk_length: u64`, `pub key_length: usize`, `pub adapter_version: u32`, and `pub interface_version: u32`
+    * `[ ]`   `Root`, a struct with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: [u8; 32]`, so only the `factory` module and its children reach the field; `RootConstructorParams`, a struct with `pub bytes: [u8; 32]`; `RootTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`; `RootTryNewReturn`, the alias `Result<Root, RootTryNewErrorReturn>`
+    * `[ ]`   `Outboard`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and `pub bytes: Vec<u8>`; `AuthenticationPath`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and `pub siblings: Vec<[u8; 32]>`, ordered from the root's children down to the chunk's sibling; `Chunk`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and `pub bytes: Vec<u8>`
+    * `[ ]`   `CommitmentKey<'a>`, an enum with the variants `Unkeyed` and `Keyed(&'a Secret<Vec<u8>>)`, the mode the root is computed in and, when keyed, the borrowed key; no derives
+    * `[ ]`   `CommitParams`, `VerifyParams`, `ExtractPathParams`, `VerifyChunkParams`, `ChallengeParams`, and `RespondParams`, each a fieldless struct, the per-call control slot of its method
+    * `[ ]`   `CommitPayload<'a>`, a struct with `pub content: &'a [u8]` and `pub key: CommitmentKey<'a>`; `CommitSuccessReturn`, a struct with `pub root: Root` and `pub outboard: Outboard`
+    * `[ ]`   `VerifyPayload<'a>`, a struct with `pub content: &'a [u8]`, `pub outboard: &'a Outboard`, `pub root: &'a Root`, and `pub key: CommitmentKey<'a>`; `VerifySuccessReturn`, a fieldless struct
+    * `[ ]`   `ExtractPathPayload<'a>`, a struct with `pub outboard: &'a Outboard` and `pub chunk_index: u64`; `ExtractPathSuccessReturn`, a struct with `pub path: AuthenticationPath`
+    * `[ ]`   `VerifyChunkPayload<'a>`, a struct with `pub root: &'a Root`, `pub content_length: u64`, `pub chunk_index: u64`, `pub chunk: &'a Chunk`, `pub path: &'a AuthenticationPath`, and `pub key: CommitmentKey<'a>`; `VerifyChunkSuccessReturn`, a fieldless struct
+    * `[ ]`   `ChallengePayload`, a struct with `pub uniform: [u8; 8]` and `pub content_length: u64`; `ChallengeSuccessReturn`, a struct with `pub chunk_index: u64`
+    * `[ ]`   `RespondPayload<'a>`, a struct with `pub content: &'a [u8]`, `pub outboard: &'a Outboard`, and `pub chunk_index: u64`; `RespondSuccessReturn`, a struct with `pub chunk: Chunk` and `pub path: AuthenticationPath`
+    * `[ ]`   `CommitErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `KeyLengthMismatch { expected: usize, actual: usize }`, `Root(RootTryNewErrorReturn)`, `Blake3Bao(Blake3BaoCommitmentErrorReturn)`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterErrorReturn)`
+    * `[ ]`   `VerifyErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `KeyLengthMismatch { expected: usize, actual: usize }`, `OutboardTruncated { length: usize }`, `ContentLengthMismatch { declared: u64, actual: u64 }`, `OutboardLengthMismatch { expected: u64, actual: u64 }`, `RootMismatch`, `ParentMismatch { offset: u64, length: u64 }`, `ChunkMismatch { chunk_index: u64 }`, `Blake3Bao(Blake3BaoCommitmentErrorReturn)`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterErrorReturn)`
+    * `[ ]`   `ExtractPathErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `OutboardTruncated { length: usize }`, `OutboardLengthMismatch { expected: u64, actual: u64 }`, `ChunkIndexOutOfRange { chunk_index: u64, chunk_count: u64 }`, `Blake3Bao(Blake3BaoCommitmentErrorReturn)`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterErrorReturn)`
+    * `[ ]`   `VerifyChunkErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `KeyLengthMismatch { expected: usize, actual: usize }`, `ChunkIndexOutOfRange { chunk_index: u64, chunk_count: u64 }`, `ChunkLengthMismatch { expected: u64, actual: u64 }`, `PathLengthMismatch { expected: usize, actual: usize }`, `RootMismatch`, `Blake3Bao(Blake3BaoCommitmentErrorReturn)`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterErrorReturn)`
+    * `[ ]`   `ChallengeErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and no variant, the error arm of a method no input fails
+    * `[ ]`   `RespondErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `OutboardTruncated { length: usize }`, `ContentLengthMismatch { declared: u64, actual: u64 }`, `OutboardLengthMismatch { expected: u64, actual: u64 }`, `ChunkIndexOutOfRange { chunk_index: u64, chunk_count: u64 }`, `Blake3Bao(Blake3BaoCommitmentErrorReturn)`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterErrorReturn)`
+    * `[ ]`   `CommitReturn`, `VerifyReturn`, `ExtractPathReturn`, `VerifyChunkReturn`, `ChallengeReturn`, and `RespondReturn`, each the alias `Result<{Method}SuccessReturn, {Method}ErrorReturn>`
+    * `[ ]`   `MockICommitmentAdapterFailureMode`, behind `#[cfg(any(test, feature = "mocks"))]`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variants `NoFailure`, `ContentLengthUnrepresentable`, and `OffsetUnrepresentable`, the failure modes a configuration selects for the family's mock concrete; the second and third stand for a concrete's own error when a byte length does not fit a `u64` or an offset does not fit a `usize`
+    * `[ ]`   `ICommitmentAdapter`, an object-safe trait with `fn declaration(&self) -> CommitmentDeclaration;`, `fn commit(&self, params: CommitParams, payload: CommitPayload<'_>) -> CommitReturn;`, `fn verify(&self, params: VerifyParams, payload: VerifyPayload<'_>) -> VerifyReturn;`, `fn extract_path(&self, params: ExtractPathParams, payload: ExtractPathPayload<'_>) -> ExtractPathReturn;`, `fn verify_chunk(&self, params: VerifyChunkParams, payload: VerifyChunkPayload<'_>) -> VerifyChunkReturn;`, `fn challenge(&self, params: ChallengeParams, payload: ChallengePayload) -> ChallengeReturn;`, and `fn respond(&self, params: RespondParams, payload: RespondPayload<'_>) -> RespondReturn;`
+    * `[ ]`   No derives on any type in this file beyond those stated; imports `domain::Secret`, `Blake3BaoCommitmentErrorReturn` from `crate::blake3_bao::provides`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `MockICommitmentAdapterErrorReturn` from `super::mock`; names no vendor
 
   * `[ ]`   `adapters/hashing/src/blake3_bao/interface.rs`
-    * `[ ]`   `Blake3Bao`, the unit struct `pub struct Blake3Bao;`, the adapter over `blake3` and `bao`
-    * `[ ]`   `Blake3BaoConstructorParams`, the fieldless struct `pub struct Blake3BaoConstructorParams;`; `Blake3BaoTryNewReturn`, the alias `Result<Blake3Bao, Infallible>`, the error arm uninhabited because the adapter takes no configuration
-    * `[ ]`   The layout constants, each a `pub const` of type `usize`: `BLAKE3_BAO_CHUNK_LENGTH` with value `1024`, the Bao chunk `docs/research/cryptography.md`'s Units fixes; `BLAKE3_BAO_KEY_LENGTH` with value `32`, the BLAKE3 key; `BLAKE3_BAO_OUTBOARD_HEADER_LENGTH` with value `8`, the content length's little-endian bytes; and `BLAKE3_BAO_PARENT_NODE_LENGTH` with value `64`, two 32-byte chaining values
-    * `[ ]`   `Blake3BaoCommitErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `ContentLengthUnrepresentable { length: usize }`, a content length a `u64` cannot hold, and `RootRefused(RootTryNewErrorReturn)`, the root type's refusal of a hash that is all zero, carried unchanged
-    * `[ ]`   `Blake3BaoAuthenticateChunkErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `ContentLengthUnrepresentable { length: usize }`
-    * `[ ]`   Imports `core::convert::Infallible` and `RootTryNewErrorReturn` from `crate::root::provides`; declares nothing else
+    * `[ ]`   `Blake3BaoCommitment`, the unit struct `pub struct Blake3BaoCommitment;`, the adapter over `blake3` and `bao`
+    * `[ ]`   `Blake3BaoCommitmentConstructorParams`, the fieldless struct `pub struct Blake3BaoCommitmentConstructorParams;`, the constructor's deps slot
+    * `[ ]`   `Blake3BaoCommitmentTryNewReturn`, the alias `Result<Blake3BaoCommitment, Infallible>`; the error arm is uninhabited because the adapter takes no configuration
+    * `[ ]`   `BLAKE3_BAO_CHUNK_LENGTH`, a `pub const` of type `u64` with value `1024`, the BLAKE3 chunk length; `BLAKE3_BAO_KEY_LENGTH`, a `pub const` of type `usize` with value `32`, the BLAKE3 key length
+    * `[ ]`   `Blake3BaoCommitmentErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `ContentLengthUnrepresentable { length: usize }`, a byte length that does not fit a `u64`, and `OffsetUnrepresentable { offset: u64 }`, an offset that does not fit a `usize`
+    * `[ ]`   Imports `core::convert::Infallible`; declares nothing else
 
   * `[ ]`   `adapters/hashing/src/blake3_bao/interaction.spec.md`
-    * `[ ]`   `Blake3Bao::try_new(params: Blake3BaoConstructorParams) -> Blake3BaoTryNewReturn`: one branch; condition any params; outcome `Ok(Blake3Bao)`; the error arm has no branch
-    * `[ ]`   `Blake3Bao::DECLARATION`: the inherent constant `CommitmentSchemeDeclaration { identifier: CommitmentSchemeIdentifier::Blake3BaoV1, chunk_length: BLAKE3_BAO_CHUNK_LENGTH, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`; `declaration(&self)`: one branch; outcome `Blake3Bao::DECLARATION`
-    * `[ ]`   The tree, which every keyed construction and every verification computes: an input of at most `BLAKE3_BAO_CHUNK_LENGTH` bytes is one chunk with no parent node, its root `Hasher::finalize` over the chunk; a larger input splits into a left subtree of `left_subtree_len` bytes and a right subtree of the rest, each subtree's chaining value is its chunk's `finalize_non_root` under `set_input_offset` of the chunk's byte offset, or the `merge_subtrees_non_root` of its children's, and the root is the `merge_subtrees_root` of the top children's; every hasher is `Hasher::new` under `CommitmentKey::Unkeyed` with `Mode::Hash`, and `Hasher::new_keyed` under `CommitmentKey::Keyed` with `Mode::KeyedHash` over the key's 32-byte copy
-    * `[ ]`   The chunk geometry, which every method reads from a content length `n`: the chunk count is `n.div_ceil(BLAKE3_BAO_CHUNK_LENGTH)` and at least one; chunk `i` spans bytes `i × BLAKE3_BAO_CHUNK_LENGTH` up to the lesser of the next multiple and `n`; the outboard length is `BLAKE3_BAO_OUTBOARD_HEADER_LENGTH + BLAKE3_BAO_PARENT_NODE_LENGTH × (chunk count − 1)`; a chunk's path is the parent nodes of the subtrees that contain it, root first, so its length is `BLAKE3_BAO_PARENT_NODE_LENGTH` times their number
-    * `[ ]`   `commit`, key length: condition `payload.key` is `Keyed(key)` and `<[u8; 32]>::try_from(key.expose().as_slice())` fails; decision the conversion, before any hashing; outcome `Err(CommitErrorReturn::KeyLengthInvalid { length, expected_length: BLAKE3_BAO_KEY_LENGTH })`, `length` the key's length
-    * `[ ]`   `commit`, content length unrepresentable: condition `u64::try_from(payload.content.len())` fails; outcome `Err(CommitErrorReturn::Blake3Bao(Blake3BaoCommitErrorReturn::ContentLengthUnrepresentable { length }))`; `usize` is at most 64 bits on every supported target, so no input takes this branch and it has no unit test
-    * `[ ]`   `commit`, unkeyed: condition `payload.key` is `Unkeyed`; dependency call `bao::encode::outboard(payload.content)` once; then `Root::try_new` over the returned hash's bytes and `Outboard::try_new` over the returned outboard; outcome `Ok(CommitSuccessReturn { root, outboard })`; a refusal of the root returns `Err(CommitErrorReturn::Blake3Bao(Blake3BaoCommitErrorReturn::RootRefused(error)))` unchanged, a hash no input is known to produce, so it has no unit test
-    * `[ ]`   `commit`, keyed: condition `payload.key` is `Keyed` with a 32-byte key; dependency calls the tree's keyed hashers and merges over every chunk and subtree; the outboard is the content length's 8 little-endian bytes followed by every parent node, left then right chaining value, in pre-order, the layout the unkeyed branch's `bao` outboard has; then `Root::try_new` over the root's bytes and `Outboard::try_new` over the outboard; outcome `Ok(CommitSuccessReturn { root, outboard })`, a root refusal returned as in the unkeyed branch
-    * `[ ]`   `authenticate_chunk`, content length unrepresentable: condition `u64::try_from(payload.content.len())` fails; outcome `Err(AuthenticateChunkErrorReturn::Blake3Bao(Blake3BaoAuthenticateChunkErrorReturn::ContentLengthUnrepresentable { length }))`; no input takes this branch and it has no unit test
-    * `[ ]`   `authenticate_chunk`, outboard malformed: condition the outboard's length differs from the outboard length the content's length implies, a header that `first_chunk` cannot read included; outcome `Err(AuthenticateChunkErrorReturn::OutboardMalformed { expected_length, actual_length })`
-    * `[ ]`   `authenticate_chunk`, outboard for other content: condition the length matches and the header's `u64::from_le_bytes` differs from the content's length; outcome `Err(AuthenticateChunkErrorReturn::OutboardContentLengthMismatch { declared_length, content_length })`
-    * `[ ]`   `authenticate_chunk`, index out of range: condition the header matches and `payload.chunk_index` is not less than the chunk count; outcome `Err(AuthenticateChunkErrorReturn::ChunkIndexOutOfRange { chunk_index, chunk_count })`
-    * `[ ]`   `authenticate_chunk`, authenticated: condition every check passes; decision the descent from the whole content toward the chunk, each subtree larger than one chunk contributing the parent node at its pre-order position in the outboard; outcome `Ok(AuthenticateChunkSuccessReturn { chunk, path })`, `chunk` the chunk's bytes through `Chunk::try_new` and `path` those parent nodes concatenated root first through `AuthenticationPath::try_new`; the key is not needed, since the outboard holds the chaining values whichever mode built it
-    * `[ ]`   `verify_chunk`, key length: condition `payload.key` is `Keyed(key)` and the 32-byte conversion fails; outcome `Err(VerifyChunkErrorReturn::KeyLengthInvalid { length, expected_length: BLAKE3_BAO_KEY_LENGTH })`
-    * `[ ]`   `verify_chunk`, index out of range: condition the key passes and `payload.chunk_index` is not less than the chunk count of `payload.content_length`; outcome `Err(VerifyChunkErrorReturn::ChunkIndexOutOfRange { chunk_index, chunk_count })`
-    * `[ ]`   `verify_chunk`, chunk length: condition the index is in range and the chunk's length differs from the extent the geometry assigns the index, a length a `u64` cannot hold counting as different; outcome `Err(VerifyChunkErrorReturn::ChunkLengthInvalid { chunk_index, expected_length, actual_length })`
-    * `[ ]`   `verify_chunk`, path malformed: condition the chunk length passes and the path's length differs from the path length the geometry assigns the index; outcome `Err(VerifyChunkErrorReturn::PathMalformed { chunk_index, expected_length, actual_length })`
-    * `[ ]`   `verify_chunk`, mismatch: condition the path length passes and, walking from the chunk's chaining value to the root, a recomputed child differs from its half of the path node above it, or the recomputed root differs from `payload.root.as_bytes()` under `Hash`'s constant-time comparison; outcome `Err(VerifyChunkErrorReturn::Mismatch { chunk_index })`
-    * `[ ]`   `verify_chunk`, verified: condition every recomputed value matches; outcome `Ok(VerifyChunkSuccessReturn)`
-    * `[ ]`   `challenge`: one branch; condition any payload; decision `payload.draw % chunk count` of `payload.content_length`; outcome `Ok(ChallengeSuccessReturn { chunk_index })`; a uniform draw yields each index with a bias below the chunk count over 2^64
-    * `[ ]`   Ordering: in `commit` and `verify_chunk` the key conversion precedes every other check; in `authenticate_chunk` the outboard's length precedes its header, which precedes the index; in `verify_chunk` the index precedes the chunk length, which precedes the path length, which precedes hashing; every keyed hasher and the key's copy are zeroized before the method returns, on every branch that made them; the same params and payload always yield the same outcome
-    * `[ ]`   Own entry `verify_chunk_accepts_every_chunk_authenticated_from_a_commitment`: condition `commit` over content under `CommitmentKey::Unkeyed`, then `authenticate_chunk` for each chunk index from the content and the returned outboard; outcome `verify_chunk` with the returned root, the content's length, each index, and the returned chunk and path yields `Ok(VerifyChunkSuccessReturn)` for every index; variation content of three chunks whose paths have different lengths, so a descent or a walk that assumes one depth fails; the failure that must survive composition is a root, chunk, or path whose bytes change between the type that produced it and the method that reads it
-    * `[ ]`   Own entry `verify_chunk_accepts_every_chunk_authenticated_from_a_keyed_commitment`: condition as the unkeyed entry under `CommitmentKey::Keyed` of the reference key; outcome every index verifies under the same key; variation the keyed mode, whose roots and chaining values no independent implementation computes, so the keyed construction and the keyed verification are proven against each other over every path length; the failure that must survive composition is a keyed construction and a keyed verification that disagree on the tree
-    * `[ ]`   Own entry `a_keyed_commitment_does_not_verify_unkeyed`: condition a keyed commitment's chunk and path verified under `CommitmentKey::Unkeyed` against its keyed root; outcome `Err(VerifyChunkErrorReturn::Mismatch { chunk_index })`; variation the mode alone differs from the keyed entry; the failure that must survive composition is a keyed root that unkeyed verification accepts
-    * `[ ]`   Own entry `commit_leaves_the_borrowed_key_intact`: condition `commit` under `CommitmentKey::Keyed` of a living `Secret<Vec<u8>>`; outcome after the call the secret's `expose()` equals the bytes it held before; variation key bytes that are not all zero, so a zeroized secret reads differently from an intact one; the failure that must survive composition is the zeroization of the key's copy reaching the caller's secret
-    * `[ ]`   Callee dispositions: `hashing/root`'s read-back entry passes through `commit`, which constructs the root, and `verify_chunk`, which reads it, and is absorbed by `verify_chunk_accepts_every_chunk_authenticated_from_a_commitment` and `verify_chunk_accepts_every_chunk_authenticated_from_a_keyed_commitment` in `integration_test.rs`; `hashing/outboard`'s, `hashing/authentication_path`'s, and `hashing/chunk`'s read-back entries pass through `commit` and `authenticate_chunk`, which construct those types, and `authenticate_chunk` and `verify_chunk`, which read them, and are absorbed by the same two blocks
-    * `[ ]`   Private surface: the chain of real functions is `build_blake3_bao` through `Blake3Bao::try_new`, then `Blake3Bao::commit`, `Blake3Bao::authenticate_chunk`, and `Blake3Bao::verify_chunk`, which run `bao`, `blake3`, and `Zeroize::zeroize` for real and construct and read `Root`, `Outboard`, `AuthenticationPath`, and `Chunk` through their own `try_new` and `as_bytes`, with the key a `domain` `Secret` whose `expose` runs for real; no outer-edge collaborator is mocked; the observable results are each `verify_chunk` outcome and the key's bytes after the call
-    * `[ ]`   No public surface: the concrete is private to the crate and reached only through the family's factory
+    * `[ ]`   `Blake3BaoCommitment::try_new(params: Blake3BaoCommitmentConstructorParams) -> Blake3BaoCommitmentTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(Blake3BaoCommitment)`; the error arm has no branch
+    * `[ ]`   `Blake3BaoCommitment::DECLARATION`: the inherent constant `CommitmentDeclaration { identifier: CommitmentSchemeIdentifier::Blake3BaoV1, chunk_length: BLAKE3_BAO_CHUNK_LENGTH, key_length: BLAKE3_BAO_KEY_LENGTH, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`; `declaration()`: one branch, outcome `Self::DECLARATION`
+    * `[ ]`   Shared terms: the chunk count of a content length `L` is `1` when `L` is zero and `L.div_ceil(BLAKE3_BAO_CHUNK_LENGTH)` otherwise; the expected outboard length is `OUTBOARD_HEADER_LENGTH + OUTBOARD_PARENT_LENGTH × (chunk count − 1)`; the expected length of chunk `i` is `min(BLAKE3_BAO_CHUNK_LENGTH, L − i × BLAKE3_BAO_CHUNK_LENGTH)`; a subtree at offset `o` of length `n` is a leaf when `n ≤ BLAKE3_BAO_CHUNK_LENGTH`, and otherwise splits at `left_subtree_len(n)` into a left child at `o` and a right child at `o + left_subtree_len(n)`; the mode is `Mode::Hash` unkeyed and `Mode::KeyedHash(&key)` keyed
+    * `[ ]`   Leaf and parent values: a leaf's chaining value is a `Hasher`, `Hasher::new()` unkeyed and `Hasher::new_keyed(&key)` keyed, given `set_input_offset(o)`, then `update` with the leaf's bytes, then `finalize_non_root`; a parent's chaining value is `merge_subtrees_non_root(left, right, mode)`; the root of a single-chunk object is that same `Hasher`'s `finalize` over the content with no offset set, and the root of a larger object is `merge_subtrees_root` of the top split's two children; every keyed hasher is zeroized after its last call
+    * `[ ]`   Key admission, shared by `commit`, `verify`, and `verify_chunk` when the key is `CommitmentKey::Keyed(key)`: decision `<[u8; 32]>::try_from(key.expose().as_slice())`, before any hashing; outcome on failure `Err({Method}ErrorReturn::KeyLengthMismatch { expected: BLAKE3_BAO_KEY_LENGTH, actual })`, `actual` the exposed key's length; on success the copied key array is zeroized when the method returns, on every branch
+    * `[ ]`   Outboard admission, shared by `verify`, `extract_path`, and `respond`: condition the outboard holds fewer than `OUTBOARD_HEADER_LENGTH` bytes; outcome `Err({Method}ErrorReturn::OutboardTruncated { length })`, `length` the outboard's byte length; otherwise the declared content length is `u64::from_le_bytes` of the header
+    * `[ ]`   `commit`, unkeyed: condition `payload.key` is `Unkeyed`; dependency call `bao::encode::outboard(payload.content)` once; outcome `Ok(CommitSuccessReturn { root, outboard })`, `root` from `Root::try_new` over the returned hash's bytes and `outboard` the returned bytes moved into `Outboard`; a `Root::try_new` refusal returns `Err(CommitErrorReturn::Root(error))` with the error unchanged, an arm no input reaches since an all-zero BLAKE3 output is computationally unreachable, so it has no unit test
+    * `[ ]`   `commit`, keyed: condition `payload.key` is `Keyed` and the key admits; decision `u64::try_from(payload.content.len())`, failing as `Err(CommitErrorReturn::Blake3Bao(Blake3BaoCommitmentErrorReturn::ContentLengthUnrepresentable { length }))`, an arm no input reaches on a supported target, so it has no unit test; dependency calls the leaf and parent values over the tree in the keyed mode, written as the outboard layout states, header first and parents in pre-order; outcome `Ok(CommitSuccessReturn { root, outboard })`, `root` through `Root::try_new` as above
+    * `[ ]`   `verify`, admissions and lengths, in order, each the first failing check returning: key admission; outboard admission; condition the declared length differs from `payload.content.len()` as a `u64`, outcome `Err(VerifyErrorReturn::ContentLengthMismatch { declared, actual })`; condition the outboard's length differs from the expected outboard length, outcome `Err(VerifyErrorReturn::OutboardLengthMismatch { expected, actual })`
+    * `[ ]`   `verify`, tree, in order after the lengths pass: condition the root computed from the top split's recorded children, or from the content itself for a single-chunk object, differs from `payload.root`, outcome `Err(VerifyErrorReturn::RootMismatch)`; condition, walking the parent nodes in pre-order, a parent's two recorded children merge to a chaining value different from the one its parent recorded, outcome `Err(VerifyErrorReturn::ParentMismatch { offset, length })` naming that subtree; condition, walking leaves left to right, a leaf's computed chaining value differs from the one its parent recorded, outcome `Err(VerifyErrorReturn::ChunkMismatch { chunk_index })`; otherwise `Ok(VerifySuccessReturn)`
+    * `[ ]`   `verify`, conversions: the content length to `u64` and every offset to `usize` through `TryFrom`, failing as the concrete's own `ContentLengthUnrepresentable` or `OffsetUnrepresentable`, arms no input reaches on a supported target, with no unit test
+    * `[ ]`   `extract_path`, in order: outboard admission; condition the outboard's length differs from the expected outboard length for the declared length, outcome `Err(ExtractPathErrorReturn::OutboardLengthMismatch { expected, actual })`; condition `payload.chunk_index` is not less than the chunk count, outcome `Err(ExtractPathErrorReturn::ChunkIndexOutOfRange { chunk_index, chunk_count })`; otherwise descend from the root: at each parent node the sibling of the side holding the chunk is appended and the descent moves to that side, the right child's node lying past every parent node of the left subtree in pre-order; outcome `Ok(ExtractPathSuccessReturn { path })`, a single-chunk object yielding an empty path; offsets convert as `verify`'s do
+    * `[ ]`   `verify_chunk`, in order: key admission; condition `payload.chunk_index` is not less than the chunk count of `payload.content_length`, outcome `Err(VerifyChunkErrorReturn::ChunkIndexOutOfRange { chunk_index, chunk_count })`; condition the chunk's length differs from the expected length of that chunk, outcome `Err(VerifyChunkErrorReturn::ChunkLengthMismatch { expected, actual })`; condition the path's length differs from the number of splits on the route from the root to the chunk, outcome `Err(VerifyChunkErrorReturn::PathLengthMismatch { expected, actual })`; condition the leaf's chaining value folded upward with the path's siblings, deepest first, the top merge by `merge_subtrees_root`, or the content's root for a single-chunk object, differs from `payload.root`, outcome `Err(VerifyChunkErrorReturn::RootMismatch)`; otherwise `Ok(VerifyChunkSuccessReturn)`; the chunk's length converts as `verify`'s content length does
+    * `[ ]`   `challenge`: one branch; outcome `Ok(ChallengeSuccessReturn { chunk_index })`, `chunk_index` equal to `u64::from_le_bytes(payload.uniform)` modulo the chunk count of `payload.content_length`; the error arm has no variant
+    * `[ ]`   `respond`, in order: outboard admission; the content and outboard length checks of `verify`, returning `RespondErrorReturn`'s flavors of the same names; condition `payload.chunk_index` is not less than the chunk count, outcome `Err(RespondErrorReturn::ChunkIndexOutOfRange { chunk_index, chunk_count })`; otherwise `Ok(RespondSuccessReturn { chunk, path })`, `chunk` the content's bytes of that chunk and `path` as `extract_path` descends; conversions as `verify`'s
+    * `[ ]`   Ordering: no method hashes before its admissions pass; the same inputs always yield the same outcome; no method mutates or retains a payload borrow
+    * `[ ]`   Own entry `commit_under_a_key_leaves_the_borrowed_key_intact`: condition `commit` is called with `CommitmentKey::Keyed` borrowing a living `Secret<Vec<u8>>`; outcome after the call the secret's `expose()` equals the bytes it held before the call, so the zeroization of the key copy and the keyed hashers wipes only their own copies; variation the key is the reference key, whose bytes are not all zero; the failure that must survive composition is the method's zeroization reaching the caller's secret
+    * `[ ]`   Own entry `committed_outboard_verifies_its_content`: condition `verify` is given the content, root, and outboard `commit` returned for it; outcome `Ok(VerifySuccessReturn)`, while the same root and outboard with one content byte changed in the third chunk return `Err(VerifyErrorReturn::ChunkMismatch { chunk_index: 2 })`; variation the reference content of 3073 bytes, four chunks under three parent nodes, intact and with one byte changed
+    * `[ ]`   Own entry `extracted_paths_verify_every_chunk`: condition `verify_chunk` is given, for every chunk index of a committed object, that chunk's bytes and the path `extract_path` returned for that index; outcome every call returns `Ok(VerifyChunkSuccessReturn)`, while chunk 1's path with chunk 0's bytes of the same length returns `Err(VerifyChunkErrorReturn::RootMismatch)`; variation the reference content of 3073 bytes, whose chunks differ, so a path that ignores the index fails
+    * `[ ]`   Own entry `a_challenge_response_verifies_against_the_root`: condition `respond` answers the chunk index `challenge` chose from fixed uniform bytes, over the committed content and outboard, and `verify_chunk` checks the response against the committed root; outcome `Ok(VerifyChunkSuccessReturn)`, while a response computed over an outboard with one parent byte changed returns `Err(VerifyChunkErrorReturn::RootMismatch)`; variation the intact outboard and the outboard altered in its first parent node, the root's, whose left child is the sibling on the challenged chunk's path, the false-possession case of SW-04
+    * `[ ]`   Own entry `keyed_paths_verify_only_under_their_key`: condition a path extracted from a keyed commitment is checked with `verify_chunk` under the same key and unkeyed; outcome `Ok(VerifyChunkSuccessReturn)` under the key and `Err(VerifyChunkErrorReturn::RootMismatch)` unkeyed; variation the mode, the content and chunk index fixed
+    * `[ ]`   Private surface: the chain of real functions is `build_blake3_bao_commitment` through `Blake3BaoCommitment::try_new`, then `Blake3BaoCommitment::commit`, `verify`, `extract_path`, `verify_chunk`, `challenge`, and `respond`, which run `bao::encode::outboard`, `blake3::Hasher`, `blake3::hazmat`, `Zeroize::zeroize`, and `Root::try_new` for real; the key is a `domain` `Secret` whose `expose` runs for real; no outer-edge collaborator is mocked; the observable results are the methods' returns and the borrowed key's bytes after the call
 
   * `[ ]`   `adapters/hashing/src/factory/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]`; imports the family's names from `super::interface`, `Secret` from `domain`, `build_secret` and `SecretConstructorParamsOverrides` from `domain`'s mocks, the four types and their builders from the crate's `root`, `outboard`, `authentication_path`, and `chunk` provides, and `serde_json::Value` and `serde_json::Map`
-    * `[ ]`   The reference inputs, defined here and public so the concrete's mock and tests read the same values the builders default to: `reference_content_bytes() -> Vec<u8>`, 2049 bytes whose byte at index `i` is `i % 251`, two full chunks and a third of one byte, so the three chunks' paths have different lengths; `reference_content() -> &'static [u8]`, those bytes held once in a `OnceLock`; `reference_key_bytes() -> Vec<u8>`, 32 bytes whose byte at index `i` is `i + 1`; `reference_key() -> &'static Secret<Vec<u8>>`, built once by `build_secret` in a `OnceLock`; and `reference_root()`, `reference_outboard()`, `reference_chunk()`, and `reference_path()`, each a `&'static` value built once in a `OnceLock` by the type's builder with no override
-    * `[ ]`   Every invalidator in this file returns `serde_json::Value`, a JSON object holding the representation of the built default's fields with each present corruption replacing its key: an enum as its variant name text by an exhaustive `match`, `CommitmentKey::Keyed` as an object with the one key `Keyed` holding the array of its secret's exposed bytes, an integer as a number, a byte slice or a root, outboard, chunk, or path as the array of its bytes through `as_bytes`; no production type is serialized
-    * `[ ]`   `CommitmentSchemeDeclarationOverrides`, `#[derive(Default)]`, one `Option` per field; `build_commitment_scheme_declaration(overrides) -> CommitmentSchemeDeclaration`, the defaults the mock concrete's own declaration: `identifier` `CommitmentSchemeIdentifier::MockV1`, `chunk_length` `1024`, `adapter_version` `1`, and `interface_version` `COMMITMENT_INTERFACE_VERSION`; `CommitmentSchemeDeclarationCorruptions`, one `Option<serde_json::Value>` per field; `invalidate_commitment_scheme_declaration(corruptions) -> serde_json::Value`
-    * `[ ]`   `CommitParamsOverrides`, `AuthenticateChunkParamsOverrides`, `VerifyChunkParamsOverrides`, and `ChallengeParamsOverrides`, each fieldless with `#[derive(Default)]`; `build_commit_params`, `build_authenticate_chunk_params`, `build_verify_chunk_params`, and `build_challenge_params`, each returning its fieldless params; no corruptions or invalidator, since a fieldless type has no rendering
-    * `[ ]`   `CommitPayloadOverrides<'a>`, `#[derive(Default)]`, one `Option` per field; `build_commit_payload<'a>(overrides) -> CommitPayload<'a>`, the defaults `key` `CommitmentKey::Unkeyed` and `content` `reference_content()`; `CommitPayloadCorruptions` and `invalidate_commit_payload(corruptions) -> serde_json::Value`
-    * `[ ]`   `CommitSuccessReturnOverrides`, `#[derive(Default)]`; `build_commit_success_return(overrides) -> CommitSuccessReturn`, the defaults `build_root` and `build_outboard` with no override; `CommitSuccessReturnCorruptions` and `invalidate_commit_success_return(corruptions) -> serde_json::Value`
-    * `[ ]`   `AuthenticateChunkPayloadOverrides<'a>`, `#[derive(Default)]`; `build_authenticate_chunk_payload<'a>(overrides) -> AuthenticateChunkPayload<'a>`, the defaults `content` `reference_content()`, `outboard` `reference_outboard()`, and `chunk_index` `0`; `AuthenticateChunkPayloadCorruptions` and `invalidate_authenticate_chunk_payload(corruptions) -> serde_json::Value`
-    * `[ ]`   `AuthenticateChunkSuccessReturnOverrides`, `#[derive(Default)]`; `build_authenticate_chunk_success_return(overrides) -> AuthenticateChunkSuccessReturn`, the defaults `build_chunk` and `build_authentication_path` with no override; `AuthenticateChunkSuccessReturnCorruptions` and `invalidate_authenticate_chunk_success_return(corruptions) -> serde_json::Value`
-    * `[ ]`   `VerifyChunkPayloadOverrides<'a>`, `#[derive(Default)]`; `build_verify_chunk_payload<'a>(overrides) -> VerifyChunkPayload<'a>`, the defaults `key` `CommitmentKey::Unkeyed`, `root` `reference_root()`, `content_length` `2049`, `chunk_index` `0`, `chunk` `reference_chunk()`, and `path` `reference_path()`; `VerifyChunkPayloadCorruptions` and `invalidate_verify_chunk_payload(corruptions) -> serde_json::Value`
-    * `[ ]`   `VerifyChunkSuccessReturnOverrides`, fieldless with `#[derive(Default)]`; `build_verify_chunk_success_return(overrides) -> VerifyChunkSuccessReturn`; no corruptions or invalidator
-    * `[ ]`   `ChallengePayloadOverrides`, `#[derive(Default)]`; `build_challenge_payload(overrides) -> ChallengePayload`, the defaults `content_length` `2049` and `draw` `0`; `ChallengePayloadCorruptions` and `invalidate_challenge_payload(corruptions) -> serde_json::Value`
-    * `[ ]`   `ChallengeSuccessReturnOverrides`, `#[derive(Default)]`; `build_challenge_success_return(overrides) -> ChallengeSuccessReturn`, the default `chunk_index` `0`; `ChallengeSuccessReturnCorruptions` and `invalidate_challenge_success_return(corruptions) -> serde_json::Value`
-    * `[ ]`   `MockICommitmentAdapterCommitErrorReturn` and `MockICommitmentAdapterAuthenticateChunkErrorReturn`, each a `pub` enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `ContentLengthUnrepresentable { length: usize }`, the mock concrete's own errors
-    * `[ ]`   `MockICommitmentAdapterConstructorParams`, a `pub(crate)` struct with `pub failure_mode: MockICommitmentAdapterFailureMode`; `MockICommitmentAdapterTryNewReturn`, the alias `Result<MockICommitmentAdapter, Infallible>`
-    * `[ ]`   `MockICommitmentAdapter`, a `pub(crate)` struct holding the failure mode in a private field, the family's mock concrete, self-contained and borrowing from no concrete; `MockICommitmentAdapter::DECLARATION`, the inherent constant `CommitmentSchemeDeclaration { identifier: CommitmentSchemeIdentifier::MockV1, chunk_length: 1024, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`; `MockICommitmentAdapter::try_new(params) -> MockICommitmentAdapterTryNewReturn`, returning `Ok` holding the params' failure mode
-    * `[ ]`   `impl ICommitmentAdapter for MockICommitmentAdapter`, a working simplified scheme over the same chunk geometry and checks as the family contract, its digest of a byte sequence the standard library's `DefaultHasher` over a mode tag, the key's bytes under `Keyed`, and the sequence, expanded by a running counter to 32 bytes with the first byte's lowest bit set so no digest is all zero: `declaration()` returns `Self::DECLARATION`; `commit` refuses a keyed key of a length other than 32 with `KeyLengthInvalid`, returns `Mock(ContentLengthUnrepresentable { length })` under that failure mode, and otherwise returns the root as the digest of the outboard's bytes after its header and the outboard as the content length's 8 little-endian bytes followed by each chunk's digest of its index and bytes, both through their types' `try_new` bound by `expect`; `authenticate_chunk` refuses as the contract states with `OutboardMalformed` against that outboard length, `OutboardContentLengthMismatch`, and `ChunkIndexOutOfRange`, returns `Mock(ContentLengthUnrepresentable { length })` under that failure mode, and otherwise returns the chunk's bytes and as its path every chunk digest after the header; `verify_chunk` refuses with `KeyLengthInvalid`, `ChunkIndexOutOfRange`, `ChunkLengthInvalid`, `PathMalformed` against a path of 32 bytes per chunk, and `Mismatch` when the chunk's digest differs from its entry in the path or the digest of the path differs from the root, and otherwise returns `Ok`; `challenge` returns `draw % chunk count`
-    * `[ ]`   `COMMITMENT_INTERFACE_VERSION`, `CommitmentSchemeIdentifier`, `CommitmentKey`, `MockICommitmentAdapterFailureMode`, and every error enum are used by their production value or type with no mock; every `…Return` alias has no mock; `ICommitmentAdapter` is answered by `MockICommitmentAdapter`
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]`; imports the family's names from `super::interface`, `Secret` from `domain`, `build_secret` from `domain`'s mocks, `std::collections::hash_map::DefaultHasher`, `std::hash::Hasher`, and `serde_json::Value` and `serde_json::Map`
+    * `[ ]`   Reference inputs, public so the concrete's tests and mock read the same values: `reference_content(length: usize) -> Vec<u8>`, bao's test-vector input, the little-endian bytes of the `u32` counter starting at 1 and incrementing per four bytes, truncated to `length`; `REFERENCE_CONTENT_LENGTH`, a `pub const` of type `usize` with value `3073`; `reference_key_bytes() -> Vec<u8>`, 32 bytes whose byte at index `i` is `i + 1`
+    * `[ ]`   Every invalidator in this file returns `serde_json::Value`, a JSON object holding the built default's fields with each present corruption replacing its key: an enum as its variant name text by an exhaustive `match`, an integer as a number, a byte array or vector as an array of byte numbers, and a vector of 32-byte arrays as an array of such arrays
+    * `[ ]`   `CommitmentDeclarationOverrides`, `#[derive(Default)]`, one `Option` per field; `build_commitment_declaration(overrides) -> CommitmentDeclaration`, defaulting to the mock concrete's own declaration; `CommitmentDeclarationCorruptions`, `#[derive(Default)]`, one `Option<serde_json::Value>` per field; `invalidate_commitment_declaration(corruptions) -> serde_json::Value`
+    * `[ ]`   `RootConstructorParamsOverrides`, `#[derive(Default)]`, `pub bytes: Option<[u8; 32]>`; `build_root_constructor_params(overrides) -> RootConstructorParams`, defaulting to 32 bytes of `0x01`; `RootConstructorParamsCorruptions`, `#[derive(Default)]`, `pub bytes: Option<serde_json::Value>`; `invalidate_root_constructor_params(corruptions) -> serde_json::Value`; `build_root(overrides: RootConstructorParamsOverrides) -> Root`, the real instance from `Root::try_new(build_root_constructor_params(overrides))` bound through `expect` naming that the built bytes are not all zero
+    * `[ ]`   `OutboardOverrides`, `#[derive(Default)]`, `pub bytes: Option<Vec<u8>>`; `build_outboard(overrides) -> Outboard`, defaulting to the eight zero bytes of the empty object's outboard; `OutboardCorruptions` and `invalidate_outboard(corruptions) -> serde_json::Value`, since an outboard arrives from storage and the swarm
+    * `[ ]`   `AuthenticationPathOverrides`, `#[derive(Default)]`, `pub siblings: Option<Vec<[u8; 32]>>`; `build_authentication_path(overrides) -> AuthenticationPath`, defaulting to no siblings; `AuthenticationPathCorruptions` and `invalidate_authentication_path(corruptions) -> serde_json::Value`
+    * `[ ]`   `ChunkOverrides`, `#[derive(Default)]`, `pub bytes: Option<Vec<u8>>`; `build_chunk(overrides) -> Chunk`, defaulting to no bytes; `ChunkCorruptions` and `invalidate_chunk(corruptions) -> serde_json::Value`
+    * `[ ]`   `CommitParamsOverrides`, `VerifyParamsOverrides`, `ExtractPathParamsOverrides`, `VerifyChunkParamsOverrides`, `ChallengeParamsOverrides`, and `RespondParamsOverrides`, each a fieldless struct with `#[derive(Default)]`, and `build_commit_params`, `build_verify_params`, `build_extract_path_params`, `build_verify_chunk_params`, `build_challenge_params`, and `build_respond_params`, each taking its overrides and returning the fieldless params; no corruptions or invalidator, since a fieldless type has no rendering
+    * `[ ]`   Payloads holding borrows take their borrowed fields and their key as leading parameters, in field order, and no invalidator: `CommitPayloadOverrides`, fieldless, and `build_commit_payload<'a>(content: &'a [u8], key: CommitmentKey<'a>, overrides) -> CommitPayload<'a>`; `VerifyPayloadOverrides`, fieldless, and `build_verify_payload<'a>(content: &'a [u8], outboard: &'a Outboard, root: &'a Root, key: CommitmentKey<'a>, overrides) -> VerifyPayload<'a>`; `ExtractPathPayloadOverrides`, `pub chunk_index: Option<u64>`, and `build_extract_path_payload<'a>(outboard: &'a Outboard, overrides) -> ExtractPathPayload<'a>`, the index defaulting to 0
+    * `[ ]`   `VerifyChunkPayloadOverrides`, `pub content_length: Option<u64>` and `pub chunk_index: Option<u64>`, and `build_verify_chunk_payload<'a>(root: &'a Root, chunk: &'a Chunk, path: &'a AuthenticationPath, key: CommitmentKey<'a>, overrides) -> VerifyChunkPayload<'a>`, the length defaulting to `REFERENCE_CONTENT_LENGTH` through `u64::try_from` bound by `expect` and the index to 0; `RespondPayloadOverrides`, `pub chunk_index: Option<u64>`, and `build_respond_payload<'a>(content: &'a [u8], outboard: &'a Outboard, overrides) -> RespondPayload<'a>`, the index defaulting to 0
+    * `[ ]`   `ChallengePayloadOverrides`, `#[derive(Default)]`, `pub uniform: Option<[u8; 8]>` and `pub content_length: Option<u64>`; `build_challenge_payload(overrides) -> ChallengePayload`, defaulting to eight zero bytes and `REFERENCE_CONTENT_LENGTH` as a `u64` through `expect`; no invalidator, since the uniform bytes come from the caller's randomness source in process
+    * `[ ]`   Success returns, each with a builder and an overrides struct of one `Option` per field and no invalidator, since they hold instances or are fieldless: `build_commit_success_return`, defaulting to `build_root(Default::default())` and `build_outboard(Default::default())`; `build_verify_success_return`; `build_extract_path_success_return`, defaulting to `build_authentication_path(Default::default())`; `build_verify_chunk_success_return`; `build_challenge_success_return`, defaulting to index 0; `build_respond_success_return`, defaulting to `build_chunk(Default::default())` and `build_authentication_path(Default::default())`
+    * `[ ]`   `MockICommitmentAdapterErrorReturn`, a `pub` enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `ContentLengthUnrepresentable { length: usize }` and `OffsetUnrepresentable { offset: u64 }`, the mock concrete's own errors
+    * `[ ]`   `MockICommitmentAdapterConstructorParams`, a `pub(crate)` struct with one field `pub failure_mode: MockICommitmentAdapterFailureMode`; `MockICommitmentAdapterTryNewReturn`, the alias `Result<MockICommitmentAdapter, Infallible>`
+    * `[ ]`   `MockICommitmentAdapter`, a `pub(crate)` struct holding the failure mode in a private field, the family's mock concrete: self-contained, taking no concrete as a type parameter and wrapping, delegating to, or borrowing from none; `MockICommitmentAdapter::DECLARATION`, the inherent constant `CommitmentDeclaration { identifier: CommitmentSchemeIdentifier::MockV1, chunk_length: 64, key_length: 32, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`; `MockICommitmentAdapter::try_new(params) -> MockICommitmentAdapterTryNewReturn`, returning `Ok` holding the params' failure mode
+    * `[ ]`   `impl ICommitmentAdapter for MockICommitmentAdapter`, a working simplified commitment answering the family's contract: the outboard layout, tree shape, admissions, flavors, and check order the concrete's interaction spec states, over its declared 64-byte chunks; a node's 32 bytes are four `u64` words, each the `DefaultHasher` digest of the key bytes or none, a role byte, `0` for a non-root leaf, `1` for a non-root parent, `2` for a root leaf, and `3` for a root parent, the leaf's offset as 8 little-endian bytes for a leaf, the node's input bytes, and the word's index, written little-endian; byte-length and offset conversions use `TryFrom` bound by `expect`, since they fit on every supported target and the mock carries no variant for them
+    * `[ ]`   The mock's failure modes: under `ContentLengthUnrepresentable` every method but `challenge` returns its `Mock(MockICommitmentAdapterErrorReturn::ContentLengthUnrepresentable { length })` before any admission, `length` the byte length of the payload's content, of the chunk for `verify_chunk`, and of the outboard for `extract_path`; under `OffsetUnrepresentable` every method but `challenge` returns its `Mock(MockICommitmentAdapterErrorReturn::OffsetUnrepresentable { offset })`, `offset` the payload's chunk index where the payload has one and the content's length as a `u64` otherwise; `challenge` ignores the failure mode
+    * `[ ]`   `MockICommitmentAdapterConstructorParamsOverrides`, `#[derive(Default)]`, `pub failure_mode: Option<MockICommitmentAdapterFailureMode>`; `build_mock_i_commitment_adapter_constructor_params(overrides)`, the mode defaulting to `NoFailure`; `build_mock_i_commitment_adapter(overrides) -> MockICommitmentAdapter`, the real instance through the irrefutable pattern `let Ok(adapter) = …;`
+    * `[ ]`   `COMMITMENT_INTERFACE_VERSION`, the layout constants, `CommitmentSchemeIdentifier`, `CommitmentKey`, `MockICommitmentAdapterFailureMode`, every error enum, and every return alias are used by their production value or type with no mock; `ICommitmentAdapter` is answered by `MockICommitmentAdapter`
 
   * `[ ]`   `adapters/hashing/src/factory/mod.rs`
-    * `[ ]`   Module wiring only: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, and `pub mod provides;`, nothing else
+    * `[ ]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `impl Root` with `pub fn try_new(params: RootConstructorParams) -> RootTryNewReturn`, returning `Err(RootTryNewErrorReturn::AllZero)` when every byte of `params.bytes` is zero and `Ok(Root { bytes: params.bytes })` otherwise, and `pub fn as_bytes(&self) -> &[u8; 32]`, returning a shared reference to the held bytes
+    * `[ ]`   No other item; `hashing/factory` adds the factory function; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/hashing/src/factory/test.rs`
+    * `[ ]`   Imports `Root`, `RootTryNewErrorReturn`, `RootConstructorParamsOverrides`, and `build_root_constructor_params` from `super::provides`
+    * `[ ]`   `root_try_new_holds_nonzero_bytes`
+      * `[ ]`   Contract: some byte of `params.bytes` is nonzero → `Ok(Root)` holding those bytes
+      * `[ ]`   Arrange: `build_root_constructor_params` with the bytes override 31 zero bytes followed by `0x01`, so only the last byte separates it from the refused value
+      * `[ ]`   Act: `Root::try_new`
+      * `[ ]`   Assert: the success arm's `as_bytes()` equals 31 zero bytes followed by `0x01`, written as a literal
+    * `[ ]`   `root_try_new_refuses_all_zero_bytes`
+      * `[ ]`   Contract: every byte of `params.bytes` is zero → `Err(RootTryNewErrorReturn::AllZero)`
+      * `[ ]`   Arrange: `build_root_constructor_params` with the bytes override 32 zero bytes
+      * `[ ]`   Act: `Root::try_new`
+      * `[ ]`   Assert: the result equals `Err(RootTryNewErrorReturn::AllZero)`
 
   * `[ ]`   `adapters/hashing/src/factory/provides.rs`
-    * `[ ]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and `#[cfg(any(test, feature = "mocks"))] pub use crate::blake3_bao::provides::{expected_authentication_path, expected_root};`, the oracles the `blake3_bao` concrete authors, so the crate's public mock surface carries the oracles and no other item of the concrete, nothing else
+    * `[ ]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and `#[cfg(any(test, feature = "mocks"))] pub use crate::blake3_bao::provides::{expected_keyed_root, expected_outboard, expected_path};`, the oracles the `blake3_bao` concrete authors, nothing else
 
   * `[ ]`   `adapters/hashing/src/blake3_bao/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]`; `expected_root`, `expected_authentication_path`, and the imports only they use are available under `#[cfg(any(test, feature = "mocks"))]`, and every other item and import in this file is under `#[cfg(test)]`
-    * `[ ]`   `Blake3BaoConstructorParamsOverrides`, fieldless with `#[derive(Default)]`; `build_blake3_bao_constructor_params(overrides) -> Blake3BaoConstructorParams`; `build_blake3_bao(overrides) -> Blake3Bao`, returning the real instance from `Blake3Bao::try_new(build_blake3_bao_constructor_params(overrides))` through the irrefutable pattern `let Ok(adapter) = …;`
-    * `[ ]`   `expected_root(key: CommitmentKey<'_>, content: &[u8]) -> [u8; 32]`, a `pub` oracle computed independently of `commit` and `verify_chunk`: `blake3::hash(content)` under `Unkeyed`, and under `Keyed` `blake3::keyed_hash` over the key's exposed bytes converted to `[u8; 32]` by `expect`, its `as_bytes` copied
-    * `[ ]`   `expected_authentication_path(content: &[u8], chunk_index: u64) -> Vec<u8>`, a `pub` oracle computed independently of `authenticate_chunk`'s descent: `bao::encode::outboard(content)`, then `bao::encode::SliceExtractor::new_outboard` over `Cursor`s of the content and that outboard, the slice starting at the chunk's byte offset and spanning `1024` bytes, read to its end through `Read::read_to_end`, and the bytes after its 8-byte header and before the chunk's own bytes returned; unkeyed only, since `bao` has no keyed mode
-    * `[ ]`   The layout constants, `Blake3BaoTryNewReturn`, and the error enums are used by their production value or type with no mock; `Blake3Bao` takes no overrides, invalidator, or mock function, and the trait it implements is answered by the family's mock concrete
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]`; imports `Blake3BaoCommitment` and `Blake3BaoCommitmentConstructorParams` from `super::interface`, `blake3::Hasher`, `blake3::keyed_hash`, and `blake3::hazmat`'s `HasherExt`, `Mode`, `merge_subtrees_non_root`, and `merge_subtrees_root`; the oracles and the imports only they use are available under `#[cfg(any(test, feature = "mocks"))]`, every other item under `#[cfg(test)]`
+    * `[ ]`   `Blake3BaoCommitmentConstructorParamsOverrides`, `#[derive(Default)]`, fieldless; `build_blake3_bao_commitment_constructor_params(overrides) -> Blake3BaoCommitmentConstructorParams`; `build_blake3_bao_commitment(overrides) -> Blake3BaoCommitment`, the real instance through the irrefutable pattern `let Ok(adapter) = …;`
+    * `[ ]`   `expected_keyed_root(key: &[u8; 32], content: &[u8]) -> [u8; 32]`, the bytes of `keyed_hash(key, content)`, an oracle independent of the concrete's tree walk
+    * `[ ]`   `expected_outboard(content: &[u8], key: Option<&[u8; 32]>) -> Vec<u8>` and `expected_path(content: &[u8], chunk_index: u64, key: Option<&[u8; 32]>) -> Vec<[u8; 32]>`, oracles written in this file independently of `mod.rs`: a recursive function over a subtree's offset and bytes returning its chaining value through `Hasher::new` or `Hasher::new_keyed` with `set_input_offset` and `finalize_non_root` for a leaf of at most 1024 bytes, a literal written here, and `merge_subtrees_non_root` otherwise, splitting at the largest power-of-two multiple of 1024 strictly less than the subtree's length, computed here by doubling; the outboard is the content length's 8 little-endian bytes followed by every parent's two child values in pre-order; the path is the sibling values from the root's split down to the chunk
+    * `[ ]`   `Blake3BaoCommitmentTryNewReturn`, the chunk and key length constants, and `Blake3BaoCommitmentErrorReturn` are used by their production value or type with no mock; `Blake3BaoCommitment` takes no overrides, invalidator, or mock function, and the trait it implements is answered by the family's mock concrete
 
   * `[ ]`   `adapters/hashing/src/blake3_bao/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `Blake3Bao`, `build_blake3_bao`, and `build_blake3_bao_constructor_params` from `super::provides`, and `ICommitmentAdapter`, `CommitmentSchemeIdentifier`, `COMMITMENT_INTERFACE_VERSION`, `build_challenge_params`, `build_challenge_payload`, and `ChallengePayloadOverrides` from `crate::factory::provides`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `Blake3BaoCommitment`, `build_blake3_bao_commitment`, `build_blake3_bao_commitment_constructor_params`, `expected_keyed_root`, `expected_outboard`, and `expected_path` from `super::provides`, the family's names, builders, and reference inputs from `crate::factory::provides`, `build_secret` from `domain`, `blake3::hash`, and `hex::decode`
     * `[ ]`   `try_new_returns_the_adapter`
-      * `[ ]`   Contract: any params → `Ok(Blake3Bao)`
-      * `[ ]`   Arrange: `build_blake3_bao_constructor_params` with no override, since the params declare no field
-      * `[ ]`   Act: `Blake3Bao::try_new` on the built params
-      * `[ ]`   Assert: the result matches `Ok(Blake3Bao)`
+      * `[ ]`   Contract: any params → `Ok(Blake3BaoCommitment)`
+      * `[ ]`   Arrange: `build_blake3_bao_commitment_constructor_params` with no override
+      * `[ ]`   Act: `Blake3BaoCommitment::try_new`
+      * `[ ]`   Assert: the result matches `Ok(Blake3BaoCommitment)`
     * `[ ]`   `declaration_returns_the_blake3_bao_declaration`
-      * `[ ]`   Contract: any adapter → `Blake3Bao::DECLARATION`
-      * `[ ]`   Arrange: `build_blake3_bao` with no override
+      * `[ ]`   Contract: any adapter → `Blake3BaoCommitment::DECLARATION`
+      * `[ ]`   Arrange: `build_blake3_bao_commitment` with no override
       * `[ ]`   Act: `adapter.declaration()`
-      * `[ ]`   Assert: the identifier equals `CommitmentSchemeIdentifier::Blake3BaoV1`; `chunk_length` equals the literal 1024; `adapter_version` equals the literal 1; `interface_version` equals `COMMITMENT_INTERFACE_VERSION`
-    * `[ ]`   `challenge_maps_the_draw_onto_a_chunk_index`
-      * `[ ]`   Contract: `payload.draw % chunk count` → `Ok(ChallengeSuccessReturn { chunk_index })`
-      * `[ ]`   Arrange: `build_challenge_payload` with the content length 2049, three chunks, and the draw override 7, so the index differs from the draw and from the draw divided by the count
-      * `[ ]`   Act: `adapter.challenge(build_challenge_params(Default::default()), payload)`
-      * `[ ]`   Assert: the result binds through the irrefutable `let Ok(success) = …;`; `chunk_index` equals the literal 1
-    * `[ ]`   `challenge_over_empty_content_returns_the_one_chunk`
-      * `[ ]`   Contract: the chunk count of an empty object is one → `Ok(ChallengeSuccessReturn { chunk_index: 0 })` for any draw
-      * `[ ]`   Arrange: `build_challenge_payload` with the content length override 0 and the draw override 5, so a count of zero would divide by zero and a count derived without the minimum returns another index
-      * `[ ]`   Act: `adapter.challenge(…)`
-      * `[ ]`   Assert: `chunk_index` equals the literal 0
-
-  * `[ ]`   `adapters/hashing/src/blake3_bao/test_commit.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_bao` and `expected_root` from `super::provides`, and `ICommitmentAdapter`, `CommitmentKey`, `CommitErrorReturn`, `build_commit_params`, `build_commit_payload`, `CommitPayloadOverrides`, `reference_content`, `reference_key`, and `reference_key_bytes` from `crate::factory::provides`, and `build_secret` from `domain`; every refusal is asserted by `assert_eq!` against the whole expected `Err`
-    * `[ ]`   `commit_unkeyed_returns_the_blake3_hash_of_the_content_as_root`
-      * `[ ]`   Contract: `Unkeyed` → `Ok` whose root is the BLAKE3 hash of the content
-      * `[ ]`   Arrange: `build_commit_payload` with no override, the 2049-byte reference content
+      * `[ ]`   Assert: the identifier matches `CommitmentSchemeIdentifier::Blake3BaoV1`; the chunk length equals the literal 1024; the key length equals the literal 32; the adapter version equals the literal 1; the interface version equals `COMMITMENT_INTERFACE_VERSION`
+    * `[ ]`   `commit_of_{input_len}_bytes_returns_the_bao_hash_test_vector`, one block per entry of bao's published `hash` vectors, each with its literal: 0 `af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262`; 1 `48fc721fbbc172e0925fa27af1671de225ba927134802998b10a1568a188652b`; 1023 `15f8c1ae1049fe7e837186612c8ce732e66835841a4569b71e4ac3e3d3411b90`; 1024 `f749c19181983b839cd97fe121cebaf076bc951e8c8e6d64accfedad5951ec22`; 1025 `3613596275c4ea790774dedf20835b2daf86cacc892feef6ce720c121572f1f9`; 2048 `fed8b40d6095dc7c5061f9cd832fd192337473bd392bf6f6bbaf1261ea78f8fa`; 2049 `64770fa15a4bbe7770654c4ac68ed4f0e975ad6c85b5edb4d3db3b4b604e084e`; 3072 `9748169f2aa70258d18cef6dc6b4b4511265e268e85f73dcbea6e34ab0341da1`; 3073 `5ba075072daba2470558a171e3769fba057dc3f12375c60892bdbe73348d9fd1`; 13312 `3e88d1dd20f426640077dcf82d6d4e18ee0062aa72f8ae547a0e65fcd36a0f06`
+      * `[ ]`   Contract: the key is `Unkeyed` → `Ok(CommitSuccessReturn)` whose root is the content's Bao hash
+      * `[ ]`   Arrange: `reference_content` of the block's length; `build_commit_payload` over it with `CommitmentKey::Unkeyed`; lengths straddle the chunk boundary and the tree's splits, so a wrong split or offset yields another hash
       * `[ ]`   Act: `adapter.commit(build_commit_params(Default::default()), payload)`
-      * `[ ]`   Assert: the success arm is bound through `expect`; `root.as_bytes()` equals `expected_root(CommitmentKey::Unkeyed, reference_content())`
-    * `[ ]`   `commit_keyed_returns_the_blake3_keyed_hash_of_the_content_as_root`
-      * `[ ]`   Contract: `Keyed` with a 32-byte key → `Ok` whose root is the BLAKE3 keyed hash of the content under the key
-      * `[ ]`   Arrange: `build_commit_payload` with the key override `CommitmentKey::Keyed(reference_key())`, so an unkeyed root differs
-      * `[ ]`   Act: `adapter.commit(…)`
-      * `[ ]`   Assert: `root.as_bytes()` equals `expected_root(CommitmentKey::Keyed(reference_key()), reference_content())`
-    * `[ ]`   `commit_unkeyed_returns_an_outboard_of_the_bao_layout`
-      * `[ ]`   Contract: `Unkeyed` → an outboard of the 8-byte little-endian length header followed by one 64-byte parent node per chunk after the first
-      * `[ ]`   Arrange: `build_commit_payload` with no override, three chunks, so the outboard holds two parent nodes
-      * `[ ]`   Act: `adapter.commit(…)`
-      * `[ ]`   Assert: `outboard.as_bytes().len()` equals the literal 136; its first 8 bytes equal the literals `[0x01, 0x08, 0, 0, 0, 0, 0, 0]`, 2049 little-endian
-    * `[ ]`   `commit_keyed_returns_an_outboard_of_the_bao_layout`
-      * `[ ]`   Contract: `Keyed` → an outboard of the same layout as the unkeyed branch's
-      * `[ ]`   Arrange: `build_commit_payload` with the key override `CommitmentKey::Keyed(reference_key())`
-      * `[ ]`   Act: `adapter.commit(…)`
-      * `[ ]`   Assert: `outboard.as_bytes().len()` equals the literal 136; its first 8 bytes equal the literals `[0x01, 0x08, 0, 0, 0, 0, 0, 0]`
-    * `[ ]`   `commit_keyed_outboard_differs_from_the_unkeyed_outboard`
-      * `[ ]`   Contract: the keyed branch's parent nodes are chaining values under the key
-      * `[ ]`   Arrange: two commits of the reference content, one `Unkeyed` and one `Keyed(reference_key())`, the mode the only variation
-      * `[ ]`   Act: `adapter.commit(…)` over each
-      * `[ ]`   Assert: the bytes after the 8-byte header of the two outboards differ
-    * `[ ]`   `commit_of_empty_content_returns_the_hash_of_the_empty_input`
-      * `[ ]`   Contract: an input of no bytes is one chunk with no parent node → its root is the BLAKE3 hash of the empty input and its outboard is the header alone
-      * `[ ]`   Arrange: `build_commit_payload` with the content override the empty slice
-      * `[ ]`   Act: `adapter.commit(…)`
-      * `[ ]`   Assert: `root.as_bytes()` equals `expected_root(CommitmentKey::Unkeyed, &[])`; `outboard.as_bytes()` equals the eight literal zero bytes
-    * `[ ]`   `commit_refuses_a_key_of_the_wrong_length`
-      * `[ ]`   Contract: `Keyed(key)` with a key other than 32 bytes → `Err(CommitErrorReturn::KeyLengthInvalid { length, expected_length: 32 })`
-      * `[ ]`   Arrange: a secret from `build_secret` over the first 16 of `reference_key_bytes()`; `build_commit_payload` with the key override `CommitmentKey::Keyed` of that secret
-      * `[ ]`   Act: `adapter.commit(…)`
-      * `[ ]`   Assert: the result equals `Err(CommitErrorReturn::KeyLengthInvalid { length: 16, expected_length: 32 })`
-
-  * `[ ]`   `adapters/hashing/src/blake3_bao/test_authenticate_chunk.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_bao` and `expected_authentication_path` from `super::provides`, and `ICommitmentAdapter`, `AuthenticateChunkErrorReturn`, `build_authenticate_chunk_params`, `build_authenticate_chunk_payload`, `AuthenticateChunkPayloadOverrides`, `build_commit_params`, `build_commit_payload`, `reference_content`, `build_outboard`, and `OutboardConstructorParamsOverrides` from `crate::factory::provides` and the crate's provides; the outboard under test is the adapter's own `commit` over the reference content, since an outboard no independent tool writes is the only valid input, and the expectations come from the independent oracle
-    * `[ ]`   `authenticate_chunk_returns_the_first_chunk_with_its_path`
-      * `[ ]`   Contract: every check passes → `Ok` with the chunk's bytes and the parent nodes above it, root first
-      * `[ ]`   Arrange: the reference content's outboard; `build_authenticate_chunk_payload` with the outboard override that outboard and the index override 0, whose path holds two parent nodes
-      * `[ ]`   Act: `adapter.authenticate_chunk(build_authenticate_chunk_params(Default::default()), payload)`
-      * `[ ]`   Assert: `chunk.as_bytes()` equals the first 1024 bytes of `reference_content()`; `path.as_bytes()` equals `expected_authentication_path(reference_content(), 0)` and has the literal length 128
-    * `[ ]`   `authenticate_chunk_returns_the_last_chunk_with_its_path`
-      * `[ ]`   Contract: the last chunk spans to the content's end → its one byte and the one parent node above it
-      * `[ ]`   Arrange: the reference content's outboard; the index override 2
-      * `[ ]`   Act: `adapter.authenticate_chunk(…)`
-      * `[ ]`   Assert: `chunk.as_bytes()` equals the one-byte literal `[2048 % 251]`, written as its value; `path.as_bytes()` equals `expected_authentication_path(reference_content(), 2)` and has the literal length 64
-    * `[ ]`   `authenticate_chunk_refuses_an_outboard_shorter_than_its_header`
-      * `[ ]`   Contract: an outboard whose length differs from the implied length, too short for a header included → `OutboardMalformed`
-      * `[ ]`   Arrange: `build_outboard` with the bytes override four bytes
-      * `[ ]`   Act: `adapter.authenticate_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(AuthenticateChunkErrorReturn::OutboardMalformed { expected_length: 136, actual_length: 4 })`
-    * `[ ]`   `authenticate_chunk_refuses_an_outboard_of_the_wrong_length`
-      * `[ ]`   Contract: an outboard one byte short of the implied length → `OutboardMalformed`
-      * `[ ]`   Arrange: `build_outboard` over the first 135 bytes of the reference content's outboard
-      * `[ ]`   Act: `adapter.authenticate_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(AuthenticateChunkErrorReturn::OutboardMalformed { expected_length: 136, actual_length: 135 })`
-    * `[ ]`   `authenticate_chunk_refuses_an_outboard_for_other_content`
-      * `[ ]`   Contract: a length-matching outboard whose header differs from the content's length → `OutboardContentLengthMismatch`
-      * `[ ]`   Arrange: the reference content's outboard paired with the reference content and one appended byte, 2050 bytes, whose implied outboard length is the same 136
-      * `[ ]`   Act: `adapter.authenticate_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(AuthenticateChunkErrorReturn::OutboardContentLengthMismatch { declared_length: 2049, content_length: 2050 })`
-    * `[ ]`   `authenticate_chunk_refuses_an_index_out_of_range`
-      * `[ ]`   Contract: an index not less than the chunk count → `ChunkIndexOutOfRange`
-      * `[ ]`   Arrange: the reference content's outboard; the index override 3, the least out-of-range index
-      * `[ ]`   Act: `adapter.authenticate_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(AuthenticateChunkErrorReturn::ChunkIndexOutOfRange { chunk_index: 3, chunk_count: 3 })`
-
-  * `[ ]`   `adapters/hashing/src/blake3_bao/test_verify_chunk.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_bao`, `expected_root`, and `expected_authentication_path` from `super::provides`, and `ICommitmentAdapter`, `CommitmentKey`, `VerifyChunkErrorReturn`, `VerifyChunkSuccessReturn`, `build_verify_chunk_params`, `build_verify_chunk_payload`, `VerifyChunkPayloadOverrides`, `reference_content`, `reference_key`, `reference_key_bytes`, `build_root`, `RootConstructorParamsOverrides`, `build_chunk`, `ChunkConstructorParamsOverrides`, `build_authentication_path`, and `AuthenticationPathConstructorParamsOverrides` from the crate's provides, and `build_secret` from `domain`; every root, chunk, and path is built by its builder over bytes from the reference content and the independent oracles, so no expectation comes from the subject; every refusal is asserted by `assert_eq!` against the whole expected `Err`
-    * `[ ]`   `verify_chunk_accepts_a_chunk_with_its_path`
-      * `[ ]`   Contract: every recomputed value matches → `Ok(VerifyChunkSuccessReturn)`
-      * `[ ]`   Arrange: the root over `expected_root(Unkeyed, reference_content())`, the chunk over the first 1024 reference bytes, the path over `expected_authentication_path(reference_content(), 0)`, the content length 2049, and the index 0
-      * `[ ]`   Act: `adapter.verify_chunk(build_verify_chunk_params(Default::default()), payload)`
+      * `[ ]`   Assert: the root's `as_bytes()` equals `hex::decode` of the block's literal
+    * `[ ]`   `commit_of_{input_len}_bytes_returns_the_bao_outboard_test_vector`, one block each for 1025, outboard length 72 and digest `025f630e00fbdcc023b970c9f1f21016c56c0a34e384e712c66428bf1c7999b9`, and 3073, outboard length 200 and digest `fa89135a2c00ff1a073321ed79fd17b9fdd53c2d2549236cd8d796232a89dc83`
+      * `[ ]`   Contract: the key is `Unkeyed` → `Ok(CommitSuccessReturn)` whose outboard is bao's outboard encoding of the content
+      * `[ ]`   Arrange: `reference_content` of the block's length with `CommitmentKey::Unkeyed`
+      * `[ ]`   Act: `adapter.commit`
+      * `[ ]`   Assert: the outboard's length equals the block's literal length; `blake3::hash` of the outboard's bytes equals `hex::decode` of the block's literal digest
+    * `[ ]`   `commit_under_a_key_returns_the_keyed_root_and_outboard`
+      * `[ ]`   Contract: the key is `Keyed` and admits → `Ok(CommitSuccessReturn)` with the keyed root and the keyed outboard
+      * `[ ]`   Arrange: `build_secret` over `reference_key_bytes()`; `reference_content(REFERENCE_CONTENT_LENGTH)`; `CommitmentKey::Keyed` borrowing the secret
+      * `[ ]`   Act: `adapter.commit`
+      * `[ ]`   Assert: the root's `as_bytes()` equals `expected_keyed_root` over the reference key and content; the outboard's bytes equal `expected_outboard` over the content and the reference key; the outboard's bytes differ from `expected_outboard` over the content unkeyed
+    * `[ ]`   `commit_under_a_key_of_the_wrong_length_returns_key_length_mismatch`
+      * `[ ]`   Contract: the key does not admit → `Err(CommitErrorReturn::KeyLengthMismatch { expected, actual })`
+      * `[ ]`   Arrange: `build_secret` over the first 31 bytes of `reference_key_bytes()`
+      * `[ ]`   Act: `adapter.commit` over the reference content
+      * `[ ]`   Assert: the result equals `Err(CommitErrorReturn::KeyLengthMismatch { expected: 32, actual: 31 })`
+    * `[ ]`   `verify_accepts_content_matching_its_root_and_outboard`
+      * `[ ]`   Contract: every check passes → `Ok(VerifySuccessReturn)`
+      * `[ ]`   Arrange: the reference content; `build_outboard` with the bytes `expected_outboard` over it unkeyed; `build_root` with the bytes `hex::decode` of the 3073-byte hash literal
+      * `[ ]`   Act: `adapter.verify` with `CommitmentKey::Unkeyed`
+      * `[ ]`   Assert: the result matches `Ok(VerifySuccessReturn)`
+    * `[ ]`   `verify_returns_chunk_mismatch_for_the_first_changed_chunk`, `verify_returns_chunk_mismatch_when_two_chunks_are_swapped`, `verify_returns_root_mismatch_for_another_root`, `verify_returns_parent_mismatch_for_a_changed_parent_node`, `verify_returns_content_length_mismatch`, `verify_returns_outboard_truncated`, `verify_returns_outboard_length_mismatch`, and `verify_returns_key_length_mismatch`, each over the arrangement of the accepting block with one variation and its whole-error assertion
+      * `[ ]`   Contract per block: the first failing check of `verify` in the interaction spec's order → its flavor
+      * `[ ]`   Arrange per block: one byte of chunk 2 inverted; chunks 0 and 1 exchanged; the root built from the 3072-byte hash literal; one byte of the third parent node inverted; content of 3072 bytes against the 3073-byte outboard; an outboard of 4 bytes; the outboard without its last 64 bytes; the key the first 31 bytes of `reference_key_bytes()`
+      * `[ ]`   Act per block: `adapter.verify`
+      * `[ ]`   Assert per block: the result equals `Err(VerifyErrorReturn::ChunkMismatch { chunk_index: 2 })`; `Err(VerifyErrorReturn::ChunkMismatch { chunk_index: 0 })`; `Err(VerifyErrorReturn::RootMismatch)`; `Err(VerifyErrorReturn::ParentMismatch { offset: 2048, length: 1025 })`; `Err(VerifyErrorReturn::ContentLengthMismatch { declared: 3073, actual: 3072 })`; `Err(VerifyErrorReturn::OutboardTruncated { length: 4 })`; `Err(VerifyErrorReturn::OutboardLengthMismatch { expected: 200, actual: 136 })`; `Err(VerifyErrorReturn::KeyLengthMismatch { expected: 32, actual: 31 })`
+    * `[ ]`   `extract_path_returns_the_siblings_of_the_chunk`
+      * `[ ]`   Contract: every check passes → `Ok(ExtractPathSuccessReturn)` with the sibling values from the root down to the chunk
+      * `[ ]`   Arrange: `build_outboard` with `expected_outboard` over the reference content unkeyed; `build_extract_path_payload` with the chunk index override 2, a chunk in the right subtree, so a descent that always goes left fails
+      * `[ ]`   Act: `adapter.extract_path`
+      * `[ ]`   Assert: the path's siblings equal `expected_path` over the reference content, index 2, unkeyed
+    * `[ ]`   `extract_path_returns_chunk_index_out_of_range`, `extract_path_returns_outboard_truncated`, and `extract_path_returns_outboard_length_mismatch`
+      * `[ ]`   Arrange per block: the chunk index 4; an outboard of 4 bytes; the outboard without its last 64 bytes
+      * `[ ]`   Act per block: `adapter.extract_path`
+      * `[ ]`   Assert per block: `Err(ExtractPathErrorReturn::ChunkIndexOutOfRange { chunk_index: 4, chunk_count: 4 })`; `Err(ExtractPathErrorReturn::OutboardTruncated { length: 4 })`; `Err(ExtractPathErrorReturn::OutboardLengthMismatch { expected: 200, actual: 136 })`
+    * `[ ]`   `verify_chunk_accepts_a_chunk_with_its_path`, unkeyed, and `verify_chunk_accepts_a_keyed_chunk_with_its_keyed_path`
+      * `[ ]`   Contract: every check passes → `Ok(VerifyChunkSuccessReturn)`
+      * `[ ]`   Arrange: `build_chunk` with bytes 2048 through 3071 of the reference content; `build_authentication_path` with `expected_path` at index 2 in the block's mode; `build_root` with the 3073-byte hash literal unkeyed, or `expected_keyed_root` keyed; `build_verify_chunk_payload` with the chunk index override 2
+      * `[ ]`   Act: `adapter.verify_chunk`
       * `[ ]`   Assert: the result matches `Ok(VerifyChunkSuccessReturn)`
-    * `[ ]`   `verify_chunk_accepts_the_chunk_of_a_one_chunk_object`
-      * `[ ]`   Contract: an object of one chunk has an empty path and its root is the chunk's hash → `Ok`
-      * `[ ]`   Arrange: five bytes of the reference content as the object; the root over `expected_root(Unkeyed, those bytes)`, the chunk over those bytes, the empty path, the content length 5, and the index 0
-      * `[ ]`   Act: `adapter.verify_chunk(…)`
-      * `[ ]`   Assert: the result matches `Ok(VerifyChunkSuccessReturn)`
-    * `[ ]`   `verify_chunk_refuses_a_corrupted_chunk`
-      * `[ ]`   Contract: a chunk whose chaining value differs from its half of the path node → `Mismatch`
-      * `[ ]`   Arrange: as the accepting block, the chunk's first byte incremented by one, so its length and the path are unchanged
-      * `[ ]`   Act: `adapter.verify_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
-    * `[ ]`   `verify_chunk_refuses_a_corrupted_path`
-      * `[ ]`   Contract: a path whose node differs from the recomputed children → `Mismatch`
-      * `[ ]`   Arrange: as the accepting block, the path's last byte incremented by one, so its length is unchanged
-      * `[ ]`   Act: `adapter.verify_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
-    * `[ ]`   `verify_chunk_refuses_another_root`
-      * `[ ]`   Contract: a recomputed root that differs from the given root → `Mismatch`
-      * `[ ]`   Arrange: as the accepting block, the root from `build_root` with no override, whose bytes are not the content's hash
-      * `[ ]`   Act: `adapter.verify_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
-    * `[ ]`   `verify_chunk_refuses_a_chunk_at_another_index`
-      * `[ ]`   Contract: a chunk presented at an index other than its own → `Mismatch`, since its chaining value carries its offset
-      * `[ ]`   Arrange: as the accepting block, the chunk over the second 1024 reference bytes, the same length as the first chunk, at the index 0 with the first chunk's path
-      * `[ ]`   Act: `adapter.verify_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
-    * `[ ]`   `verify_chunk_refuses_a_chunk_of_the_wrong_length`
-      * `[ ]`   Contract: a chunk whose length differs from the extent the content length assigns its index → `ChunkLengthInvalid`
-      * `[ ]`   Arrange: the last chunk, one byte, with its path, under the content length 2050, which assigns the last index two bytes
-      * `[ ]`   Act: `adapter.verify_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::ChunkLengthInvalid { chunk_index: 2, expected_length: 2, actual_length: 1 })`
-    * `[ ]`   `verify_chunk_refuses_a_path_of_the_wrong_length`
-      * `[ ]`   Contract: a path whose length differs from the length the geometry assigns the index → `PathMalformed`
-      * `[ ]`   Arrange: as the accepting block, the path over `expected_authentication_path(reference_content(), 2)`, one node where index 0 needs two
-      * `[ ]`   Act: `adapter.verify_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::PathMalformed { chunk_index: 0, expected_length: 128, actual_length: 64 })`
-    * `[ ]`   `verify_chunk_refuses_an_index_out_of_range`
-      * `[ ]`   Contract: an index not less than the chunk count → `ChunkIndexOutOfRange`
-      * `[ ]`   Arrange: as the accepting block, the index 3
-      * `[ ]`   Act: `adapter.verify_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::ChunkIndexOutOfRange { chunk_index: 3, chunk_count: 3 })`
-    * `[ ]`   `verify_chunk_refuses_a_keyed_verification_of_an_unkeyed_commitment`
-      * `[ ]`   Contract: the recomputed keyed root differs from the unkeyed root → `Mismatch`
-      * `[ ]`   Arrange: as the accepting block, the key `CommitmentKey::Keyed(reference_key())`
-      * `[ ]`   Act: `adapter.verify_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
-    * `[ ]`   `verify_chunk_refuses_a_key_of_the_wrong_length`
-      * `[ ]`   Contract: `Keyed(key)` with a key other than 32 bytes → `KeyLengthInvalid`, before any other check
-      * `[ ]`   Arrange: a secret from `build_secret` over the first 16 of `reference_key_bytes()`, and the index 3, out of range, so a check out of order reports the index
-      * `[ ]`   Act: `adapter.verify_chunk(…)`
-      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::KeyLengthInvalid { length: 16, expected_length: 32 })`
+    * `[ ]`   `verify_chunk_returns_root_mismatch_for_a_changed_chunk`, `verify_chunk_returns_root_mismatch_for_a_changed_sibling`, `verify_chunk_returns_chunk_length_mismatch`, `verify_chunk_returns_path_length_mismatch`, `verify_chunk_returns_chunk_index_out_of_range`, and `verify_chunk_returns_key_length_mismatch`, each over the unkeyed accepting arrangement with one variation
+      * `[ ]`   Arrange per block: one chunk byte inverted; one byte of the first sibling inverted; 1023 of the chunk's bytes; the path without its last sibling; the chunk index 4; the key the first 31 bytes of `reference_key_bytes()`
+      * `[ ]`   Act per block: `adapter.verify_chunk`
+      * `[ ]`   Assert per block: `Err(VerifyChunkErrorReturn::RootMismatch)`; `Err(VerifyChunkErrorReturn::RootMismatch)`; `Err(VerifyChunkErrorReturn::ChunkLengthMismatch { expected: 1024, actual: 1023 })`; `Err(VerifyChunkErrorReturn::PathLengthMismatch { expected: 2, actual: 1 })`; `Err(VerifyChunkErrorReturn::ChunkIndexOutOfRange { chunk_index: 4, chunk_count: 4 })`; `Err(VerifyChunkErrorReturn::KeyLengthMismatch { expected: 32, actual: 31 })`
+    * `[ ]`   `challenge_maps_uniform_bytes_to_a_chunk_index`
+      * `[ ]`   Contract: any payload → `Ok(ChallengeSuccessReturn)` with the uniform value modulo the chunk count
+      * `[ ]`   Arrange: `build_challenge_payload` with the uniform override the little-endian bytes of 6, so the index is neither the value nor zero
+      * `[ ]`   Act: `adapter.challenge`
+      * `[ ]`   Assert: the chunk index equals the literal 2
+    * `[ ]`   `challenge_of_empty_content_returns_index_zero`
+      * `[ ]`   Contract: content length zero → one chunk, index 0
+      * `[ ]`   Arrange: the uniform override the little-endian bytes of 6; the content length override 0
+      * `[ ]`   Act: `adapter.challenge`
+      * `[ ]`   Assert: the chunk index equals the literal 0
+    * `[ ]`   `respond_returns_the_chunk_and_its_path`
+      * `[ ]`   Contract: every check passes → `Ok(RespondSuccessReturn)` with the chunk's bytes and its path
+      * `[ ]`   Arrange: the reference content; `build_outboard` with `expected_outboard` over it unkeyed; `build_respond_payload` with the chunk index override 3, the short final chunk, so a response of a full chunk fails
+      * `[ ]`   Act: `adapter.respond`
+      * `[ ]`   Assert: the chunk's bytes equal byte 3072 of the reference content alone; the path's siblings equal `expected_path` at index 3 unkeyed
+    * `[ ]`   `respond_returns_content_length_mismatch`, `respond_returns_chunk_index_out_of_range`, and `respond_returns_outboard_truncated`
+      * `[ ]`   Arrange per block: content of 3072 bytes; the chunk index 4; an outboard of 4 bytes
+      * `[ ]`   Act per block: `adapter.respond`
+      * `[ ]`   Assert per block: `Err(RespondErrorReturn::ContentLengthMismatch { declared: 3073, actual: 3072 })`; `Err(RespondErrorReturn::ChunkIndexOutOfRange { chunk_index: 4, chunk_count: 4 })`; `Err(RespondErrorReturn::OutboardTruncated { length: 4 })`
 
   * `[ ]`   `construction`
-    * `[ ]`   `Blake3Bao::try_new` is the concrete's only producer, and its only caller is the hashing factory, which reads `Blake3Bao::DECLARATION` before constructing; `build_blake3_bao` builds it as a real instance for the concrete's own tests, and no consumer names the concrete
+    * `[ ]`   `Blake3BaoCommitment::try_new` is the concrete's only producer, and its only caller is the hashing factory, which reads `Blake3BaoCommitment::DECLARATION` before constructing; `Root::try_new` is the root's only producer
+    * `[ ]`   `build_blake3_bao_commitment` builds the concrete as a real instance for its own tests; no consumer names the concrete
 
   * `[ ]`   `adapters/hashing/src/blake3_bao/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, `#[cfg(test)] mod test;`, `#[cfg(test)] mod test_commit;`, `#[cfg(test)] mod test_authenticate_chunk;`, `#[cfg(test)] mod test_verify_chunk;`, and `#[cfg(test)] mod integration_test;`
-    * `[ ]`   `impl Blake3Bao` with `pub const DECLARATION: CommitmentSchemeDeclaration` as the interaction spec states and `pub fn try_new(_params: Blake3BaoConstructorParams) -> Blake3BaoTryNewReturn` returning `Ok(Blake3Bao)`
-    * `[ ]`   `impl ICommitmentAdapter for Blake3Bao` realizing every branch, the tree, the geometry, and the ordering of the interaction spec; every root, outboard, chunk, and path is constructed through its type's `try_new`, the irrefutable ones through `let Ok(value) = …;`
-    * `[ ]`   Imports the family's names from `crate::factory::provides`, the four types from the crate's `root`, `outboard`, `authentication_path`, and `chunk` provides, `zeroize::Zeroize`, `blake3::Hasher`, `blake3::hazmat`'s items, `bao::encode::outboard`, and this module's names from `interface`
-    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, `#[cfg(test)] mod test;`, and `#[cfg(test)] mod integration_test;`
+    * `[ ]`   `impl Blake3BaoCommitment` with `pub const DECLARATION: CommitmentDeclaration` and `pub fn try_new(_params: Blake3BaoCommitmentConstructorParams) -> Blake3BaoCommitmentTryNewReturn` returning `Ok(Blake3BaoCommitment)`, and private associated functions for the tree walks the methods share, the subtree chaining value, the pre-order outboard writer and reader, and the descent to a chunk
+    * `[ ]`   `impl ICommitmentAdapter for Blake3BaoCommitment` realizing every branch, admission, conversion, and ordering of the interaction spec
+    * `[ ]`   Imports the family's names from `crate::factory::provides`, `zeroize::Zeroize`, `blake3::Hasher`, `blake3::hazmat`'s items named in `context_slice`, `bao::encode::outboard`, and this module's names from `interface`
+    * `[ ]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[ ]`   `adapters/hashing/src/blake3_bao/integration_test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_bao` from `super::provides`, `ICommitmentAdapter`, `CommitmentKey`, `VerifyChunkErrorReturn`, `VerifyChunkSuccessReturn`, the four methods' params and payload builders and overrides, `reference_content`, and `reference_key_bytes` from `crate::factory::provides`, and `build_secret` from `domain`
-    * `[ ]`   `verify_chunk_accepts_every_chunk_authenticated_from_a_commitment`
-      * `[ ]`   Contract: the own entry; each chunk `authenticate_chunk` returns from an unkeyed commitment's outboard verifies against its root
-      * `[ ]`   Arrange: `build_blake3_bao`; the reference content, three chunks whose paths hold two, two, and one parent node
-      * `[ ]`   Act: `commit` under `Unkeyed`, then for each index 0, 1, and 2 `authenticate_chunk` and `verify_chunk` with the returned root, the content length, the index, and the returned chunk and path
-      * `[ ]`   Assert: every `verify_chunk` result matches `Ok(VerifyChunkSuccessReturn)`
-      * `[ ]`   Boundary: the crate-internal path `Blake3Bao::commit`, `Blake3Bao::authenticate_chunk`, and `Blake3Bao::verify_chunk`, running `bao`, `blake3`, and the crate's `Root`, `Outboard`, `Chunk`, and `AuthenticationPath` constructors and accessors for real
-      * `[ ]`   Mocked: nothing; the expected outcome is the verification, which the construction does not supply
-    * `[ ]`   `verify_chunk_accepts_every_chunk_authenticated_from_a_keyed_commitment`
-      * `[ ]`   Contract: the own entry; under `Keyed` of a 32-byte key, each authenticated chunk verifies under the same key
-      * `[ ]`   Arrange: a secret from `build_secret` over `reference_key_bytes()`; the reference content
-      * `[ ]`   Act: `commit` under `Keyed` of that secret, then for each index `authenticate_chunk` and `verify_chunk` under the same key
-      * `[ ]`   Assert: every `verify_chunk` result matches `Ok(VerifyChunkSuccessReturn)`
-      * `[ ]`   Boundary: as the unkeyed block, with `blake3`'s keyed mode and tree operations and the key's `Secret` running for real
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `build_blake3_bao_commitment` from `super::provides`, the family's names, builders, and reference inputs from `crate::factory::provides`, and `build_secret` from `domain`
+    * `[ ]`   `commit_under_a_key_leaves_the_borrowed_key_intact`
+      * `[ ]`   Contract: the entry of that name
+      * `[ ]`   Arrange: `build_secret` over `reference_key_bytes()`; the reference content
+      * `[ ]`   Act: `adapter.commit` with `CommitmentKey::Keyed` borrowing the secret
+      * `[ ]`   Assert: the success arm binds through `expect`; the secret's `expose()` equals `reference_key_bytes()`
+      * `[ ]`   Boundary: `Blake3BaoCommitment::commit` through `build_blake3_bao_commitment`, running `blake3`'s keyed hashers, `Zeroize::zeroize`, and `Root::try_new`
       * `[ ]`   Mocked: nothing
-    * `[ ]`   `a_keyed_commitment_does_not_verify_unkeyed`
-      * `[ ]`   Contract: the own entry; a keyed commitment's chunk and path verified under `Unkeyed` → `Err(VerifyChunkErrorReturn::Mismatch { chunk_index })`
-      * `[ ]`   Arrange: as the keyed block, index 0
-      * `[ ]`   Act: `verify_chunk` under `CommitmentKey::Unkeyed` with the keyed root, chunk, and path
-      * `[ ]`   Assert: the result equals `Err(VerifyChunkErrorReturn::Mismatch { chunk_index: 0 })`
-      * `[ ]`   Boundary: as the keyed block
+    * `[ ]`   `committed_outboard_verifies_its_content`
+      * `[ ]`   Contract: the entry of that name
+      * `[ ]`   Arrange: the reference content committed unkeyed; a copy with one byte of chunk 2 inverted
+      * `[ ]`   Act: `adapter.verify` over each with the committed root and outboard
+      * `[ ]`   Assert: the intact content returns `Ok(VerifySuccessReturn)`; the changed content returns `Err(VerifyErrorReturn::ChunkMismatch { chunk_index: 2 })`
+      * `[ ]`   Boundary: `commit` then `verify`, with `bao::encode::outboard` and `blake3::hazmat` running for real
       * `[ ]`   Mocked: nothing
-    * `[ ]`   `commit_leaves_the_borrowed_key_intact`
-      * `[ ]`   Contract: the own entry; `commit` under `Keyed` of a living `Secret<Vec<u8>>` → after the call the secret's `expose()` equals the bytes it held before
-      * `[ ]`   Arrange: a secret from `build_secret` over `reference_key_bytes()`, whose bytes are not all zero
-      * `[ ]`   Act: `commit` under `Keyed` of that secret
-      * `[ ]`   Assert: the success arm is bound through `expect`; the secret's `expose()` equals `reference_key_bytes()`
-      * `[ ]`   Boundary: the crate-internal path `Blake3Bao::commit`, running `blake3`'s keyed hashers and `Zeroize::zeroize` for real, with `Secret::expose` reading the result
-      * `[ ]`   Mocked: nothing; this block does not prove the zeroization of the hashers and the key's copy themselves, which no caller can observe
-    * `[ ]`   Enumeration: the spec's own entries are proven by the four blocks of the same names, and the absorbed read-back entries of `hashing/root`, `hashing/outboard`, `hashing/authentication_path`, and `hashing/chunk` by the two `verify_chunk_accepts_every_chunk_…` blocks
+    * `[ ]`   `extracted_paths_verify_every_chunk`
+      * `[ ]`   Contract: the entry of that name
+      * `[ ]`   Arrange: the reference content committed unkeyed
+      * `[ ]`   Act: for indexes 0 through 3, `extract_path` then `verify_chunk` over that chunk; then `verify_chunk` with chunk 1's path and chunk 0's bytes at index 1
+      * `[ ]`   Assert: every indexed call returns `Ok(VerifyChunkSuccessReturn)`; the mismatched call returns `Err(VerifyChunkErrorReturn::RootMismatch)`
+      * `[ ]`   Boundary: `commit`, `extract_path`, and `verify_chunk`
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `a_challenge_response_verifies_against_the_root`
+      * `[ ]`   Contract: the entry of that name
+      * `[ ]`   Arrange: the reference content committed unkeyed; the uniform bytes the little-endian bytes of 6; a copy of the outboard with one byte of its first parent node's left child inverted
+      * `[ ]`   Act: `challenge`, then `respond` over the intact and the altered outboard, then `verify_chunk` of each response against the committed root
+      * `[ ]`   Assert: the intact response returns `Ok(VerifyChunkSuccessReturn)`; the altered response returns `Err(VerifyChunkErrorReturn::RootMismatch)`
+      * `[ ]`   Boundary: `commit`, `challenge`, `respond`, and `verify_chunk`
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `keyed_paths_verify_only_under_their_key`
+      * `[ ]`   Contract: the entry of that name
+      * `[ ]`   Arrange: `build_secret` over `reference_key_bytes()`; the reference content committed under the key; chunk 2 and its extracted path
+      * `[ ]`   Act: `verify_chunk` under the key and unkeyed
+      * `[ ]`   Assert: under the key `Ok(VerifyChunkSuccessReturn)`; unkeyed `Err(VerifyChunkErrorReturn::RootMismatch)`
+      * `[ ]`   Boundary: keyed `commit`, `extract_path`, and `verify_chunk`
+      * `[ ]`   Mocked: nothing
 
   * `[ ]`   `adapters/hashing/src/blake3_bao/provides.rs`
-    * `[ ]`   `pub(crate) use super::interface::*;`, `#[cfg(test)] pub(crate) use super::mock::*;`, and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::{expected_authentication_path, expected_root};`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate, and the oracles are the items the factory's `provides` can re-export
+    * `[ ]`   `pub(crate) use super::interface::*;`, `#[cfg(test)] pub(crate) use super::mock::*;`, and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::{expected_keyed_root, expected_outboard, expected_path};`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate and the oracles are the items the factory's `provides` can re-export
 
   * `[ ]`   `directionality`
-    * `[ ]`   `blake3_bao` depends on the `factory` module's surface through `crate::factory::provides`, on the `root`, `outboard`, `authentication_path`, and `chunk` modules' provides, on `domain`, on `zeroize`, on `blake3`, and on `bao`; the `factory` module depends on `domain`, on those four modules, and on `blake3_bao`'s errors through `crate::blake3_bao::provides`, the family form's recorded cycle, which `hashing/factory` completes by constructing the concrete; among repository crates the crate depends on `crates/domain` alone, inward; nothing outside the crate depends on the family's interface yet
+    * `[ ]`   `blake3_bao` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, `zeroize`, `blake3`, and `bao`; the `factory` module depends on `domain` and on `blake3_bao`'s error through `crate::blake3_bao::provides`, the family form's recorded cycle, which `hashing/factory` completes by constructing the concrete; among repository crates the crate depends on `crates/domain` alone and on no encoding; nothing depends on the crate yet
 
   * `[ ]`   `requirements`
-    * `[ ]`   `adapters/hashing/Cargo.toml` carries exactly the entries stated above and in the earlier hashing nodes, and `blake3` and `bao` are named nowhere in the crate outside `adapters/hashing/src/blake3_bao`
-    * `[ ]`   `CommitErrorReturn`, `AuthenticateChunkErrorReturn`, `VerifyChunkErrorReturn`, `Blake3BaoCommitErrorReturn`, `Blake3BaoAuthenticateChunkErrorReturn`, and the mock concrete's error enums derive `Debug`, `PartialEq`, and `Eq`
+    * `[ ]`   `adapters/hashing/Cargo.toml` carries exactly the tables and keys stated above; `blake3` and `bao` are named nowhere in the crate outside `adapters/hashing/src/blake3_bao`
+    * `[ ]`   Every error enum of the family and the concrete derives `Debug`, `PartialEq`, and `Eq`
     * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `blake3_bao` concrete, which `hashing/factory` resolves by constructing the concrete
-    * `[ ]`   Every block in `test.rs`, `test_commit.rs`, `test_authenticate_chunk.rs`, and `test_verify_chunk.rs` passes (CR-02 construction, verification, and challenges, with corruption of roots, paths, chunks, lengths, and order detected; EC-02, unauthenticated bytes refused; SW-04, the challenge and its response)
-    * `[ ]`   Every block in `integration_test.rs` passes
-    * `[ ]`   Code outside `adapters/hashing` naming `Blake3Bao` or anything under `blake3_bao` fails to compile; the crate's public surface is the `provides` of the `root`, `outboard`, `authentication_path`, `chunk`, and `factory` modules
+    * `[ ]`   `root_try_new_holds_nonzero_bytes` and `root_try_new_refuses_all_zero_bytes` pass
+    * `[ ]`   Every `commit_of_…_returns_the_bao_hash_test_vector` and `commit_of_…_returns_the_bao_outboard_test_vector` test passes (CR-02, construction against bao's published vectors)
+    * `[ ]`   Every `verify_…`, `extract_path_…`, `verify_chunk_…`, `challenge_…`, and `respond_…` test passes (CR-02, corruption of roots, paths, chunks, lengths, and order detected; EC-02; SW-04)
+    * `[ ]`   The five integration blocks pass, one per own entry the spec lists
+    * `[ ]`   Code outside `adapters/hashing` naming `Blake3BaoCommitment` or anything under `blake3_bao` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* `[ ]`   `hashing/factory` 
+* `[ ]`   `hashing/factory` **Hashing factory constructing the concrete the configuration names, admitted against the commitment-scheme identifier the hash-card requires, and returning it behind the family's trait, which reports its declaration; carries the family's integration test**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: every content root, outboard, authentication path, and custody challenge passes through the hashing family's generic surface, and a consumer resolves the hashing concrete from the commitment-scheme identifier a deployment's hash-card carries rather than assuming the scheme, so a concrete that does not declare the required identifier is refused before anything is constructed (CR-02; EC-02; SW-04; Composition Boundary; `docs/research/cryptography.md`'s The Hash-Card, commitment-scheme identifier row)
+    * `[ ]`   Functional: given the concrete the configuration names and the commitment-scheme identifier required, the factory refuses a concrete whose declared identifier is not the required one, with no construction; the identifier alone admits
+    * `[ ]`   Functional: an admitted concrete is constructed and returned as `Box<dyn ICommitmentAdapter>` that reports its declaration
+    * `[ ]`   Functional: a concrete's constructor error is returned unchanged in the factory's error arm, one variant per concrete
+    * `[ ]`   Functional: the concrete the factory returns for the `Blake3BaoV1` identifier commits the reference content to bao's published hash and outboard
+    * `[ ]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, its branch here, and its entry in the declared set; adding an identifier is its variant in `CommitmentSchemeIdentifier`; no consumer changes
+
+  * `[ ]`   `role`
+    * `[ ]`   Adapter family factory: the implementation of the `factory` module, the hashing family's construction point, and the crate's public surface
+    * `[ ]`   Returns the concrete behind `Box<dyn ICommitmentAdapter>`, because the family's trait is object-safe, as the key-derivation factory returns its adapter
+    * `[ ]`   Selects by concrete and admits by commitment-scheme identifier alone, so a further concrete implementing an existing identifier and a further identifier each arrive as a variant and a branch, with no change to the params or to any consumer
+    * `[ ]`   Does not read a hash-card or the configuration; the composition resolver passes the concrete the configuration names as a typed `CommitmentConcrete` and the identifier the hash-card requires as a typed `CommitmentSchemeIdentifier`
+    * `[ ]`   Does not hash; every commitment operation is the concrete's
+    * `[ ]`   Carries the family's integration test across factory and concretes; does not carry a commit
+
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `factory` module of `adapters/hashing`, holding the factory function, its deps, params, payload, and return types, its signature type, the selection enum and the declared set, the function mock and builders, the module's private integration test, and the crate's public integration test under `adapters/hashing/tests`
+    * `[ ]`   Outside: the concrete's behavior, the root's encoding, the hash-card, the configuration catalogue, and every consumer of the family
+
+  * `[ ]`   `deps`
+    * `[ ]`   The `blake3_bao` concrete, through `crate::blake3_bao::provides`: `Blake3BaoCommitment`, `Blake3BaoCommitmentConstructorParams`, `Blake3BaoCommitment::try_new`, and `Blake3BaoCommitment::DECLARATION`; the factory constructs its concrete, completing the family form's recorded cycle that `hashing/blake3_bao` opened
+    * `[ ]`   The `factory` module's own interface, authored by `hashing/blake3_bao`: `ICommitmentAdapter`, `CommitmentSchemeIdentifier`, `CommitmentDeclaration`, `COMMITMENT_INTERFACE_VERSION`, `MockICommitmentAdapterFailureMode`, and each method's params, payload, success, error, and return types
+    * `[ ]`   The `factory` module's own mock, authored by `hashing/blake3_bao`, through `super::mock` in `factory/mod.rs` under `#[cfg(any(test, feature = "mocks"))]`: `MockICommitmentAdapter`, `MockICommitmentAdapterConstructorParams`, `MockICommitmentAdapter::try_new`, and `MockICommitmentAdapter::DECLARATION`
+    * `[ ]`   The `factory` module's mock surface through `provides` under the `mocks` feature, in `factory/test.rs`, `factory/integration_test.rs`, and `tests/factory_integration_test.rs` only: this module's builders and overrides, the method builders `build_commit_params`, `build_commit_payload`, `build_verify_params`, `build_verify_payload`, `build_extract_path_params`, `build_extract_path_payload`, `build_verify_chunk_params`, `build_verify_chunk_payload`, `build_challenge_params`, `build_challenge_payload`, `build_respond_params`, and `build_respond_payload` with their overrides, `build_chunk` and `ChunkOverrides`, `reference_content`, `REFERENCE_CONTENT_LENGTH`, `reference_key_bytes`, `MockICommitmentAdapterErrorReturn`, the declared set `DECLARED_COMMITMENT_SELECTIONS`, and the oracle `expected_outboard`, which `hashing/blake3_bao` authors and the factory's mock surface re-exports; the tests reach the family only through `create_commitment` and name no concrete
+    * `[ ]`   `domain` with its `mocks` feature, the existing dev-dependency, in `factory/integration_test.rs` only: `build_secret` with `SecretConstructorParamsOverrides`
+    * `[ ]`   `hex` `0.4.3`, the existing dev-dependency, in `tests/factory_integration_test.rs` only: `hex::decode` over bao's published 3073-byte hash literal
+    * `[ ]`   `core::convert::Infallible`, standard library, the concretes' constructor error carried in the factory's error arm
+    * `[ ]`   Integration entries of the direct dependency `hashing/blake3_bao`: `commit_under_a_key_leaves_the_borrowed_key_intact`, `committed_outboard_verifies_its_content`, `extracted_paths_verify_every_chunk`, `a_challenge_response_verifies_against_the_root`, and `keyed_paths_verify_only_under_their_key`, each dispositioned in the spec
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From the concrete: `Blake3BaoCommitment::try_new(Blake3BaoCommitmentConstructorParams) -> Result<Blake3BaoCommitment, Infallible>`, the inherent constant `Blake3BaoCommitment::DECLARATION: CommitmentDeclaration`, and `Blake3BaoCommitment`'s implementation of `ICommitmentAdapter`
+    * `[ ]`   From the mock concrete: `MockICommitmentAdapter::try_new(MockICommitmentAdapterConstructorParams) -> Result<MockICommitmentAdapter, Infallible>`, `MockICommitmentAdapter::DECLARATION: CommitmentDeclaration`, and its implementation of `ICommitmentAdapter`
+    * `[ ]`   From the family's interface, in the tests: `ICommitmentAdapter::declaration`, `commit`, `verify`, `extract_path`, `verify_chunk`, `challenge`, and `respond`, and `Root::as_bytes`
+
+  * `[ ]`   `adapters/hashing/src/factory/interface.rs`
+    * `[ ]`   `CommitmentConcrete`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]`, the variant `Blake3Bao`, and, behind `#[cfg(any(test, feature = "mocks"))]`, the variant `Mock(MockICommitmentAdapterFailureMode)`, the selection of the family's mock concrete carrying the failure mode the configuration names
+    * `[ ]`   `CreateCommitmentDeps`, the fieldless struct `pub struct CreateCommitmentDeps;`
+    * `[ ]`   `CreateCommitmentParams`, a struct with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]`, `pub concrete: CommitmentConcrete` and `pub identifier: CommitmentSchemeIdentifier`, the selection and the identifier the concrete must declare
+    * `[ ]`   `CreateCommitmentPayload`, the fieldless struct `pub struct CreateCommitmentPayload;`, since the factory operates on no data
+    * `[ ]`   `CreateCommitmentSuccessReturn`, a struct with only `pub adapter: Box<dyn ICommitmentAdapter>`; callers read the declaration through `adapter.declaration()`
+    * `[ ]`   `CreateCommitmentErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]`, which `Infallible` satisfies, and the variants `UnsupportedCommitmentScheme`, the named concrete not declaring the required identifier, `Blake3Bao(Infallible)`, the BLAKE3/Bao concrete's constructor error carried unchanged, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(Infallible)`, the mock concrete's constructor error carried unchanged; each further concrete's constructor error is its own variant
+    * `[ ]`   `CreateCommitmentReturn`, the alias `Result<CreateCommitmentSuccessReturn, CreateCommitmentErrorReturn>`
+    * `[ ]`   `CreateCommitmentFn`, the alias `fn(&CreateCommitmentDeps, CreateCommitmentParams, CreateCommitmentPayload) -> CreateCommitmentReturn`
+    * `[ ]`   `DECLARED_COMMITMENT_SELECTIONS`, a `pub const` slice of `CreateCommitmentParams` holding, for each real concrete, its selection and the identifier it declares, here `CreateCommitmentParams { concrete: CommitmentConcrete::Blake3Bao, identifier: CommitmentSchemeIdentifier::Blake3BaoV1 }`, the declared set, which never holds the mock selection
+    * `[ ]`   Adds the import of `core::convert::Infallible`; every item `hashing/blake3_bao` authored in this file is unchanged
+
+  * `[ ]`   `adapters/hashing/src/factory/interaction.spec.md`
+    * `[ ]`   `create_commitment(deps: &CreateCommitmentDeps, params: CreateCommitmentParams, payload: CreateCommitmentPayload) -> CreateCommitmentReturn`: decision a `match` on `params.concrete`, one arm per `CommitmentConcrete` variant, exhaustive so a variant with no arm fails to compile
+    * `[ ]`   Unsupported identifier: condition the named concrete's `DECLARATION.identifier` is not `params.identifier`; decision equality, read before any construction; dependency call none; outcome `Err(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)`, with nothing constructed; under the `mocks` feature the mock concrete declares `CommitmentSchemeIdentifier::MockV1`, so a `Mock` selection paired with another concrete's identifier takes this branch
+    * `[ ]`   Admitted: condition the named concrete's declared identifier is `params.identifier`; dependency call the concrete's `try_new` with its fieldless constructor params, exactly once, its success destructured irrefutably because its error arm is uninhabited; outcome `Ok(CreateCommitmentSuccessReturn { adapter: Box::new(commitment) })`, whose adapter reports the concrete's `DECLARATION`
+    * `[ ]`   `Mock` arm, under `#[cfg(any(test, feature = "mocks"))]`: the same admission over `MockICommitmentAdapter::DECLARATION.identifier`; dependency call the mock concrete's `try_new` with `MockICommitmentAdapterConstructorParams { failure_mode }`, the failure mode the selection carries, exactly once, its success destructured irrefutably; outcome `Ok(CreateCommitmentSuccessReturn { adapter: Box::new(mock) })`, whose adapter reports `CommitmentSchemeIdentifier::MockV1` and answers under the failure mode
+    * `[ ]`   `CreateCommitmentErrorReturn::Blake3Bao` and `CreateCommitmentErrorReturn::Mock` carry the constructors' uninhabited error type in the return union, so no branch produces them
+    * `[ ]`   `params.concrete` selects and `params.identifier` admits; `deps` and `payload` carry nothing and are not read
+    * `[ ]`   Shared terms for the entries below: `L` is the returned adapter's `declaration().chunk_length`; the reference content is `reference_content(REFERENCE_CONTENT_LENGTH)`; its chunk count is `REFERENCE_CONTENT_LENGTH` as a `u64` divided by `L`, rounded up; chunk `i` is the content's bytes from `i × L` to the lesser of `(i + 1) × L` and the content's length
+    * `[ ]`   Callee disposition, `hashing/blake3_bao` entry `commit_under_a_key_leaves_the_borrowed_key_intact`: absorbed, proven by `every_concrete_leaves_the_borrowed_key_intact` in the private integration test element `factory/integration_test.rs`, which runs the entry through `create_commitment` over the declared set and the mock selection
+    * `[ ]`   Callee disposition, `hashing/blake3_bao` entry `committed_outboard_verifies_its_content`: absorbed, proven by `every_concrete_verifies_the_content_it_committed` in `factory/integration_test.rs`, restated in this node's terms: the changed byte is at offset `2 × L`, the first byte of chunk 2 under each concrete's declared chunk length, and the outcome for the changed content is `Err(VerifyErrorReturn::ChunkMismatch { chunk_index: 2 })`
+    * `[ ]`   Callee disposition, `hashing/blake3_bao` entry `extracted_paths_verify_every_chunk`: absorbed, proven by `every_concrete_verifies_every_chunk_with_its_extracted_path` in `factory/integration_test.rs`, restated in this node's terms: the indexes are every index below the reference content's chunk count under each concrete's declared chunk length
+    * `[ ]`   Callee disposition, `hashing/blake3_bao` entry `a_challenge_response_verifies_against_the_root`: absorbed, proven by `every_concrete_answers_a_challenge_with_a_response_that_verifies` in `factory/integration_test.rs`, restated in this node's terms: the altered outboard has one byte inverted in each of the two child values the root's parent node records, so the challenged chunk's topmost sibling is altered whichever side of the root's split the chunk lies on
+    * `[ ]`   Callee disposition, `hashing/blake3_bao` entry `keyed_paths_verify_only_under_their_key`: absorbed, proven by `every_concrete_verifies_a_keyed_path_only_under_its_key` in `factory/integration_test.rs`, which runs the entry through `create_commitment` over the declared set and the mock selection
+    * `[ ]`   Own entry `every_concrete_is_constructed_under_the_identifier_it_declares`: condition `create_commitment` is called with the selection of a concrete and the identifier that concrete declares; outcome `Ok(CreateCommitmentSuccessReturn { adapter })` with `adapter.declaration()` reporting the identifier required and the interface version `COMMITMENT_INTERFACE_VERSION`; variation each case of the declared set and the mock selection, whose declared identifiers differ, so a factory that constructs a concrete other than the selected one reports another identifier; edge that must survive the composition: every concrete the factory admits declares the interface version the family's consumers are written against
+    * `[ ]`   Own entry `every_concrete_is_refused_under_an_identifier_it_does_not_declare`: condition `create_commitment` is called with the selection of a concrete and an identifier that concrete does not declare; outcome `Err(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)`; variation each case paired with the declared identifier of every other case whose declared identifier differs from its own, so an admission that compares against a constant or ignores the selection admits a pairing it must refuse; edge that must survive the composition: the refusal is decided by the selected concrete's own declaration
+    * `[ ]`   Own entry `every_concrete_returns_its_own_error_when_a_content_length_cannot_be_represented`: condition the adapter `create_commitment` returns for the mock selection under the failure mode `ContentLengthUnrepresentable` commits the reference content unkeyed; outcome `Err(CommitErrorReturn::Mock(MockICommitmentAdapterErrorReturn::ContentLengthUnrepresentable { length }))` with `length` equal to `REFERENCE_CONTENT_LENGTH`; variation the mock selection under that failure mode, the case that reaches this arm, since a `usize` byte length fits a `u64` on every supported target and no input takes it for a real concrete; edge that must survive the composition: the failure mode the configuration names is the failure mode of the concrete the factory constructs, and the concrete's own error arrives whole in the family's error union
+    * `[ ]`   Own entry `every_concrete_returns_its_own_error_when_an_offset_cannot_be_represented`: condition the adapter `create_commitment` returns for the mock selection under the failure mode `OffsetUnrepresentable` commits the reference content unkeyed; outcome `Err(CommitErrorReturn::Mock(MockICommitmentAdapterErrorReturn::OffsetUnrepresentable { offset }))` with `offset` equal to `REFERENCE_CONTENT_LENGTH` as a `u64`, the content's length, since `commit`'s payload carries no chunk index; variation the mock selection under that failure mode, the case that reaches this arm; edge that must survive the composition: as the entry above
+    * `[ ]`   Own entry `every_concrete_declaring_the_blake3_bao_identifier_commits_the_reference_content_to_the_bao_hash_and_outboard`: condition `create_commitment` is called with the selection of a concrete that declares `CommitmentSchemeIdentifier::Blake3BaoV1` and that identifier, and the adapter commits the reference content unkeyed; outcome `Ok(CommitSuccessReturn { root, outboard })` with `root.as_bytes()` equal to bao's published 3073-byte hash `5ba075072daba2470558a171e3769fba057dc3f12375c60892bdbe73348d9fd1` and `outboard.bytes` equal to `expected_outboard` over the reference content unkeyed; variation each case of the declared set that declares the identifier; edge that must survive the composition: the concrete the factory constructs commits, through the family's trait object, to the values the published vector and the independent oracle state
+    * `[ ]`   Private surface: the chain of real functions `create_commitment`, the selected concrete's `try_new`, and `declaration`, `commit`, `verify`, `extract_path`, `verify_chunk`, `challenge`, and `respond` as called on the returned adapter, with `Secret::expose` of `domain` running for real; the cases are the declared set and the mock selection; no outer-edge collaborator is mocked, `blake3`, `bao`, `zeroize`, and `domain` running as themselves; the observable result is the `Result` `create_commitment` returns, the declaration, each method's return, and the borrowed key's bytes after the call; the entries proven are `every_concrete_is_constructed_under_the_identifier_it_declares`, `every_concrete_is_refused_under_an_identifier_it_does_not_declare`, `every_concrete_returns_its_own_error_when_a_content_length_cannot_be_represented`, `every_concrete_returns_its_own_error_when_an_offset_cannot_be_represented`, and the absorbed entries
+    * `[ ]`   Public surface: an outside caller invokes `create_commitment` with `CreateCommitmentDeps`, a `CreateCommitmentParams` taken from `DECLARED_COMMITMENT_SELECTIONS`, and a `CreateCommitmentPayload`, calls `commit` on the returned adapter with `CommitParams` and `CommitPayload`, and observes the root's bytes and the outboard's bytes; the entry proven is `every_concrete_declaring_the_blake3_bao_identifier_commits_the_reference_content_to_the_bao_hash_and_outboard`
+
+  * `[ ]`   `adapters/hashing/src/factory/mock.rs`
+    * `[ ]`   Imports the added names from `super::interface`
+    * `[ ]`   `CreateCommitmentDepsOverrides`, `#[derive(Default)]`, fieldless, since the deps declare no field; `build_create_commitment_deps(overrides: CreateCommitmentDepsOverrides) -> CreateCommitmentDeps`; no corruptions struct and no invalidator
+    * `[ ]`   `CreateCommitmentPayloadOverrides`, `#[derive(Default)]`, fieldless; `build_create_commitment_payload(overrides: CreateCommitmentPayloadOverrides) -> CreateCommitmentPayload`; no corruptions struct and no invalidator
+    * `[ ]`   `CreateCommitmentParamsOverrides`, `#[derive(Default)]`, one `Option` per field of `CreateCommitmentParams`; `build_create_commitment_params(overrides: CreateCommitmentParamsOverrides) -> CreateCommitmentParams`, the omitted fields defaulting to `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure)` and `CommitmentSchemeIdentifier::MockV1`, so the defaults select the mock concrete under the identifier it declares
+    * `[ ]`   `CreateCommitmentParamsCorruptions`, `#[derive(Default)]`, one `Option<serde_json::Value>` per field; `invalidate_create_commitment_params(corruptions: CreateCommitmentParamsCorruptions) -> serde_json::Value` over `build_create_commitment_params` with no override, an enum represented as its variant name text by an exhaustive `match` and the `Mock` variant of `CommitmentConcrete` as a JSON object keyed `Mock` holding the failure mode's variant name text
+    * `[ ]`   `CreateCommitmentSuccessReturnOverrides`, the fieldless unit struct with `#[derive(Default)]`, since the adapter is handed; `build_create_commitment_success_return(adapter: Box<dyn ICommitmentAdapter>, overrides: CreateCommitmentSuccessReturnOverrides) -> CreateCommitmentSuccessReturn`, the adapter its leading parameter; no corruptions struct and no invalidator, the type holding a handed value
+    * `[ ]`   `mock_create_commitment`, a function of the production type `CreateCommitmentFn`, standing in for the factory that constructs a concrete: it builds the family's mock concrete from `MockICommitmentAdapter::try_new(MockICommitmentAdapterConstructorParams { failure_mode: MockICommitmentAdapterFailureMode::NoFailure })` through the irrefutable pattern `let Ok(adapter) = …;` and returns `Ok(build_create_commitment_success_return(Box::new(adapter), Default::default()))`
+    * `[ ]`   `CommitmentConcrete` and `CreateCommitmentErrorReturn` are used by their production variants with no mock; `DECLARED_COMMITMENT_SELECTIONS` is used by its production value; `CreateCommitmentReturn` is an alias of `Result` and `CreateCommitmentFn` is a function type whose mock is `mock_create_commitment`; no failure mode is added, since `MockICommitmentAdapterFailureMode` carries the arms no input reaches
+
+  * `[ ]`   `adapters/hashing/src/factory/test.rs`
+    * `[ ]`   Adds to the imports `hashing/blake3_bao` authored `create_commitment`, `CreateCommitmentErrorReturn`, `CreateCommitmentParamsOverrides`, `ICommitmentAdapter`, `CommitmentSchemeIdentifier`, `build_create_commitment_deps`, `build_create_commitment_params`, and `build_create_commitment_payload` from `super::provides`, and the module-level `#![allow(clippy::expect_used)]`; `root_try_new_holds_nonzero_bytes` and `root_try_new_refuses_all_zero_bytes` are unchanged
+    * `[ ]`   `create_commitment_returns_the_adapter_of_the_selected_concrete`
+      * `[ ]`   Contract: `create_commitment`, admitted: the named concrete's declared identifier is `params.identifier` → `Ok(CreateCommitmentSuccessReturn { adapter })` whose adapter reports the declaration of the concrete the selection names
+      * `[ ]`   Collaborators: the family's mock concrete, reached through `create_commitment` by `build_create_commitment_params` at its defaults, which select it under the identifier it declares; `build_create_commitment_deps` and `build_create_commitment_payload` at their defaults; no test names a concrete
+      * `[ ]`   Arrange: `build_create_commitment_deps`, `build_create_commitment_params`, and `build_create_commitment_payload`, each with no override; the selected concrete declares an identifier no other concrete declares, so a factory that constructs another concrete reports another identifier
+      * `[ ]`   Act: `create_commitment(&deps, params, payload)`
+      * `[ ]`   Assert: the success arm is bound through `expect`; `adapter.declaration().identifier` equals `CommitmentSchemeIdentifier::MockV1` by `assert_eq!`, the expectation a literal and not read from the arrangement
+    * `[ ]`   `create_commitment_refuses_a_concrete_that_declares_another_identifier`
+      * `[ ]`   Contract: `create_commitment`, unsupported identifier: the named concrete's `DECLARATION.identifier` is not `params.identifier` → `Err(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)`
+      * `[ ]`   Collaborators: the family's mock concrete, reached through `create_commitment` by `build_create_commitment_params`; `build_create_commitment_deps` and `build_create_commitment_payload` at their defaults; no test names a concrete
+      * `[ ]`   Arrange: `build_create_commitment_deps` and `build_create_commitment_payload` with no override; `build_create_commitment_params` with the identifier override `CommitmentSchemeIdentifier::Blake3BaoV1`, an identifier the mock concrete does not declare
+      * `[ ]`   Act: `create_commitment(&deps, params, payload)`
+      * `[ ]`   Assert: `result.err()` equals `Some(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)` by `assert_eq!`
+
+  * `[ ]`   `construction`
+    * `[ ]`   The composition root calls `create_commitment` with `&CreateCommitmentDeps`, `CreateCommitmentParams` holding the concrete the configuration names and the commitment-scheme identifier the hash-card requires, and `CreateCommitmentPayload`, and places the returned `Box<dyn ICommitmentAdapter>` in each consumer's deps; no consumer constructs or names a concrete
+
+  * `[ ]`   `adapters/hashing/src/factory/mod.rs`
+    * `[ ]`   Adds `#[cfg(test)] mod integration_test;` to the wiring `hashing/blake3_bao` authored; `impl Root` is unchanged
+    * `[ ]`   `pub fn create_commitment(_deps: &CreateCommitmentDeps, params: CreateCommitmentParams, _payload: CreateCommitmentPayload) -> CreateCommitmentReturn`, a `match` on `params.concrete` whose `CommitmentConcrete::Blake3Bao` arm returns the refusal when `Blake3BaoCommitment::DECLARATION.identifier` is not `params.identifier`, then binds the concrete by `let Ok(commitment) = Blake3BaoCommitment::try_new(Blake3BaoCommitmentConstructorParams);` and returns `Ok(CreateCommitmentSuccessReturn { adapter: Box::new(commitment) })`
+    * `[ ]`   Behind `#[cfg(any(test, feature = "mocks"))]`, the `CommitmentConcrete::Mock(failure_mode)` arm returns the refusal when `MockICommitmentAdapter::DECLARATION.identifier` is not `params.identifier`, then binds the concrete by `let Ok(mock) = MockICommitmentAdapter::try_new(MockICommitmentAdapterConstructorParams { failure_mode });` and returns `Ok(CreateCommitmentSuccessReturn { adapter: Box::new(mock) })`
+    * `[ ]`   Imports `Blake3BaoCommitment` and `Blake3BaoCommitmentConstructorParams` from `crate::blake3_bao::provides`, this module's types from `interface`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `MockICommitmentAdapter` and `MockICommitmentAdapterConstructorParams` from `super::mock`
+    * `[ ]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/hashing/src/factory/integration_test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports from `super::provides` `create_commitment`, `DECLARED_COMMITMENT_SELECTIONS`, `CreateCommitmentErrorReturn`, `CreateCommitmentParamsOverrides`, `CommitmentConcrete`, `CommitmentKey`, `ICommitmentAdapter`, `COMMITMENT_INTERFACE_VERSION`, `MockICommitmentAdapterFailureMode`, `MockICommitmentAdapterErrorReturn`, the method error enums and success returns, the method params and payload builders with their overrides, `build_chunk`, `ChunkOverrides`, `build_outboard`, `OutboardOverrides`, `reference_content`, `REFERENCE_CONTENT_LENGTH`, `reference_key_bytes`, `build_create_commitment_deps`, `build_create_commitment_params`, and `build_create_commitment_payload`; and `build_secret` and `SecretConstructorParamsOverrides` from `domain`
+    * `[ ]`   Cases: every block's body is written once and runs over each entry of `DECLARED_COMMITMENT_SELECTIONS` and over the mock selection, `build_create_commitment_params` at its defaults, except where a block states the mock selection alone; each case's adapter comes from `create_commitment` over `build_create_commitment_deps`, the case's params, and `build_create_commitment_payload`, bound through `expect`; no block names a concrete; `L`, the reference content, chunk counts, and chunks are as the spec's shared terms state
+    * `[ ]`   `every_concrete_is_constructed_under_the_identifier_it_declares`
+      * `[ ]`   Contract: the own entry of that name
+      * `[ ]`   Arrange: for each case, `build_create_commitment_params` overriding `concrete` and `identifier` with the case's selection and identifier; the cases declare different identifiers
+      * `[ ]`   Act: `create_commitment(&deps, params, payload)` for the case
+      * `[ ]`   Assert: `adapter.declaration().identifier` equals the case's identifier by `assert_eq!`, and `adapter.declaration().interface_version` equals `COMMITMENT_INTERFACE_VERSION` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_commitment` through the selected concrete's `try_new`, with the declaration read through the returned adapter
+      * `[ ]`   Mocked: nothing; the declared concretes and the mock concrete run as themselves, so this block does not prove a commitment
+    * `[ ]`   `every_concrete_is_refused_under_an_identifier_it_does_not_declare`
+      * `[ ]`   Contract: the own entry of that name
+      * `[ ]`   Arrange: for each pair of cases whose declared identifiers differ, `build_create_commitment_params` overriding `concrete` with the first case's selection and `identifier` with the second case's identifier
+      * `[ ]`   Act: `create_commitment(&deps, params, payload)` for the pairing
+      * `[ ]`   Assert: `result.err()` equals `Some(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_commitment`, whose admission reads the selected concrete's declaration
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `every_concrete_returns_its_own_error_when_a_content_length_cannot_be_represented`
+      * `[ ]`   Contract: the own entry of that name
+      * `[ ]`   Arrange: the case is the mock selection alone, which the declared set cannot reach; `build_create_commitment_params` with the `concrete` override `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable)`; `build_commit_params` with no override; `build_commit_payload` over the reference content with `CommitmentKey::Unkeyed`
+      * `[ ]`   Act: `adapter.commit(params, payload)`
+      * `[ ]`   Assert: `result.err()` equals `Some(CommitErrorReturn::Mock(MockICommitmentAdapterErrorReturn::ContentLengthUnrepresentable { length: REFERENCE_CONTENT_LENGTH }))` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_commitment` through the mock concrete's `try_new` with the configured failure mode, then the returned adapter's `commit`
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `every_concrete_returns_its_own_error_when_an_offset_cannot_be_represented`
+      * `[ ]`   Contract: the own entry of that name
+      * `[ ]`   Arrange: as the block above, with the failure mode `MockICommitmentAdapterFailureMode::OffsetUnrepresentable`
+      * `[ ]`   Act: `adapter.commit(params, payload)`
+      * `[ ]`   Assert: `result.err()` equals `Some(CommitErrorReturn::Mock(MockICommitmentAdapterErrorReturn::OffsetUnrepresentable { offset }))` by `assert_eq!`, with `offset` `REFERENCE_CONTENT_LENGTH` converted through `u64::try_from` bound by `expect`
+      * `[ ]`   Boundary: the crate-internal path `create_commitment` through the mock concrete's `try_new` with the configured failure mode, then the returned adapter's `commit`
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `every_concrete_leaves_the_borrowed_key_intact`
+      * `[ ]`   Contract: the absorbed entry `hashing/blake3_bao` `commit_under_a_key_leaves_the_borrowed_key_intact`: `commit` is called on the adapter `create_commitment` returns with `CommitmentKey::Keyed` borrowing a living `Secret<Vec<u8>>` → after the call the secret's `expose()` equals the bytes it held before the call
+      * `[ ]`   Arrange: `build_secret` with the value override `reference_key_bytes()`, whose bytes are not all zero; for each case, `build_commit_payload` over the reference content with `CommitmentKey::Keyed` borrowing that secret
+      * `[ ]`   Act: `adapter.commit(build_commit_params(Default::default()), payload)` for the case
+      * `[ ]`   Assert: the success arm is bound through `expect`; the secret's `expose()` equals `reference_key_bytes()` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_commitment` through the selected concrete's `try_new`, then the returned adapter's keyed `commit`, with `Secret::expose` reading the key
+      * `[ ]`   Mocked: nothing; `blake3`, `bao`, `zeroize`, and `domain` run for real
+    * `[ ]`   `every_concrete_verifies_the_content_it_committed`
+      * `[ ]`   Contract: the absorbed entry `hashing/blake3_bao` `committed_outboard_verifies_its_content`, in this node's terms: `verify` is given the content, root, and outboard `commit` returned for it → `Ok(VerifySuccessReturn)`, while the same root and outboard over the content with the byte at offset `2 × L` inverted → `Err(VerifyErrorReturn::ChunkMismatch { chunk_index: 2 })`
+      * `[ ]`   Arrange: for each case, the reference content committed unkeyed, the success arm bound through `expect`; a copy of the content with the byte at offset `2 × L` inverted, `L` read from the case's declaration, so the changed chunk is chunk 2 under each concrete's own chunk length
+      * `[ ]`   Act: `adapter.verify` over the intact content and over the changed copy, each with the committed root and outboard and `CommitmentKey::Unkeyed`
+      * `[ ]`   Assert: the intact content's result matches `Ok(VerifySuccessReturn)`; the changed copy's result equals `Err(VerifyErrorReturn::ChunkMismatch { chunk_index: 2 })` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_commitment`, then `commit` and `verify` on the returned adapter
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `every_concrete_verifies_every_chunk_with_its_extracted_path`
+      * `[ ]`   Contract: the absorbed entry `hashing/blake3_bao` `extracted_paths_verify_every_chunk`, in this node's terms: for every index below the reference content's chunk count, `verify_chunk` given that chunk and the path `extract_path` returned for its index → `Ok(VerifyChunkSuccessReturn)`, while chunk 1's path with chunk 0's bytes at index 1 → `Err(VerifyChunkErrorReturn::RootMismatch)`
+      * `[ ]`   Arrange: for each case, the reference content committed unkeyed; for each index below its chunk count, `build_extract_path_payload` over the committed outboard with that index, and `build_chunk` with that chunk's bytes; `build_chunk` with chunk 0's bytes for the mismatched call, chunks 0 and 1 being full chunks of different bytes under every concrete
+      * `[ ]`   Act: `extract_path` then `verify_chunk` for each index, with `build_verify_chunk_payload` over the committed root, the chunk, the path, and `CommitmentKey::Unkeyed`, the content length the reference length and the index the chunk's; then `verify_chunk` with chunk 1's path and chunk 0's bytes at index 1
+      * `[ ]`   Assert: every indexed call matches `Ok(VerifyChunkSuccessReturn)`; the mismatched call equals `Err(VerifyChunkErrorReturn::RootMismatch)` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_commitment`, then `commit`, `extract_path`, and `verify_chunk` on the returned adapter
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `every_concrete_answers_a_challenge_with_a_response_that_verifies`
+      * `[ ]`   Contract: the absorbed entry `hashing/blake3_bao` `a_challenge_response_verifies_against_the_root`, in this node's terms: `respond` answers the chunk index `challenge` chose from fixed uniform bytes over the committed content and outboard, and `verify_chunk` checks the response against the committed root → `Ok(VerifyChunkSuccessReturn)`, while a response computed over the outboard with one byte inverted in each of the two child values the root's parent node records → `Err(VerifyChunkErrorReturn::RootMismatch)`
+      * `[ ]`   Arrange: for each case, the reference content committed unkeyed; `build_challenge_payload` with the uniform override the little-endian bytes of 6; a copy of the committed outboard built through `build_outboard` with the bytes at offsets `8` and `40`, the first byte of each child value of the root's parent node, inverted
+      * `[ ]`   Act: `challenge`, then `respond` at the chosen index over the intact and the altered outboard, then `verify_chunk` of each response against the committed root, unkeyed, at that index and the reference content length
+      * `[ ]`   Assert: the intact response's result matches `Ok(VerifyChunkSuccessReturn)`; the altered response's result equals `Err(VerifyChunkErrorReturn::RootMismatch)` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_commitment`, then `commit`, `challenge`, `respond`, and `verify_chunk` on the returned adapter
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   `every_concrete_verifies_a_keyed_path_only_under_its_key`
+      * `[ ]`   Contract: the absorbed entry `hashing/blake3_bao` `keyed_paths_verify_only_under_their_key`: a path extracted from a keyed commitment is checked with `verify_chunk` under the same key and unkeyed → `Ok(VerifyChunkSuccessReturn)` under the key and `Err(VerifyChunkErrorReturn::RootMismatch)` unkeyed
+      * `[ ]`   Arrange: `build_secret` with the value override `reference_key_bytes()`; for each case, the reference content committed with `CommitmentKey::Keyed` borrowing that secret; chunk 2 and the path `extract_path` returns for index 2
+      * `[ ]`   Act: `verify_chunk` at index 2 over the committed root under `CommitmentKey::Keyed` borrowing the secret, and under `CommitmentKey::Unkeyed`
+      * `[ ]`   Assert: under the key the result matches `Ok(VerifyChunkSuccessReturn)`; unkeyed the result equals `Err(VerifyChunkErrorReturn::RootMismatch)` by `assert_eq!`
+      * `[ ]`   Boundary: the crate-internal path `create_commitment`, then keyed `commit`, `extract_path`, and `verify_chunk` on the returned adapter
+      * `[ ]`   Mocked: nothing; `blake3`, `bao`, `zeroize`, and `domain` run for real
+
+  * `[ ]`   `adapters/hashing/src/factory/provides.rs`
+    * `[ ]`   Adds `pub use super::create_commitment;` to the re-exports `hashing/blake3_bao` authored
+
+  * `[ ]`   `adapters/hashing/tests/factory_integration_test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports from the crate's public surface under the `mocks` feature `create_commitment`, `DECLARED_COMMITMENT_SELECTIONS`, `CommitmentSchemeIdentifier`, `CommitmentKey`, `ICommitmentAdapter`, `expected_outboard`, `reference_content`, `REFERENCE_CONTENT_LENGTH`, `build_create_commitment_deps`, `build_create_commitment_params`, `CreateCommitmentParamsOverrides`, `build_create_commitment_payload`, `build_commit_params`, and `build_commit_payload`; and `hex::decode`
+    * `[ ]`   Cases: every block's body is written once and runs over each entry of `DECLARED_COMMITMENT_SELECTIONS` whose identifier is `CommitmentSchemeIdentifier::Blake3BaoV1`; no block names a concrete
+    * `[ ]`   `every_concrete_declaring_the_blake3_bao_identifier_commits_the_reference_content_to_the_bao_hash_and_outboard`
+      * `[ ]`   Contract: the own entry of that name
+      * `[ ]`   Arrange: for each case, the adapter from `create_commitment` over `build_create_commitment_deps`, `build_create_commitment_params` overriding `concrete` and `identifier` with the case's selection and identifier, and `build_create_commitment_payload`, bound through `expect`; `build_commit_payload` over `reference_content(REFERENCE_CONTENT_LENGTH)` with `CommitmentKey::Unkeyed`
+      * `[ ]`   Act: `adapter.commit(build_commit_params(Default::default()), payload)` for the case
+      * `[ ]`   Assert: the success arm is bound through `expect`; `root.as_bytes()` equals `hex::decode` of the literal `5ba075072daba2470558a171e3769fba057dc3f12375c60892bdbe73348d9fd1` by `assert_eq!`; `outboard.bytes` equals `expected_outboard` over the reference content with no key by `assert_eq!`, the expectations a published vector and an independent oracle and not read from the arrangement
+      * `[ ]`   Boundary: the public call `create_commitment` and the returned adapter's `commit`; the route `create_commitment`, the selected concrete's constructor, and its `commit`
+      * `[ ]`   Mocked: nothing; `blake3` and `bao` run for real
+
+  * `[ ]`   `directionality`
+    * `[ ]`   The `factory` module depends on the `blake3_bao` concrete through `crate::blake3_bao::provides` and on its own interface; `blake3_bao` depends on the `factory` module's surface, the family form's recorded cycle, which this node completes by constructing the concrete; the crate's public surface is the `factory` module's `provides`
+    * `[ ]`   Among repository crates the crate depends on `crates/domain` alone and on no encoding; no cycle
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `CommitmentConcrete`, `CreateCommitmentParams`, and `CreateCommitmentErrorReturn` derive `Debug`, `PartialEq`, and `Eq`; every table of `adapters/hashing/Cargo.toml` `hashing/blake3_bao` stated is unchanged
+    * `[ ]`   `create_commitment_returns_the_adapter_of_the_selected_concrete` and `create_commitment_refuses_a_concrete_that_declares_another_identifier` pass
+    * `[ ]`   `every_concrete_is_constructed_under_the_identifier_it_declares`, `every_concrete_is_refused_under_an_identifier_it_does_not_declare`, `every_concrete_returns_its_own_error_when_a_content_length_cannot_be_represented`, and `every_concrete_returns_its_own_error_when_an_offset_cannot_be_represented` pass
+    * `[ ]`   `every_concrete_leaves_the_borrowed_key_intact`, `every_concrete_verifies_the_content_it_committed`, `every_concrete_verifies_every_chunk_with_its_extracted_path`, `every_concrete_answers_a_challenge_with_a_response_that_verifies`, and `every_concrete_verifies_a_keyed_path_only_under_its_key` pass (CR-02, corruption of chunks, parents, and roots detected through the factory; EC-02; SW-04)
+    * `[ ]`   `every_concrete_declaring_the_blake3_bao_identifier_commits_the_reference_content_to_the_bao_hash_and_outboard` passes (CR-02, construction through the hashing factory against bao's published vector)
+    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning in every target, the `blake3_bao` concrete's unused-item warnings having no remaining cause
+    * `[ ]`   `blake3` and `bao` are named nowhere outside `adapters/hashing/src/blake3_bao`, and no code outside `adapters/hashing` can name `Blake3BaoCommitment`
 
 * `[ ]`   `encoding/abi` **Ethereum ABI concrete encoding and decoding any described domain type as the ABI parameter encoding of its canonical fields, byte strings and width kinds included; authors the encoding family's encoder and decoder interfaces, the versioned encoding identifier, the declaration, and their mocks, and adds the byte-string, fixed twenty-byte, and 256-bit unsigned kinds to the encoding contract**
 

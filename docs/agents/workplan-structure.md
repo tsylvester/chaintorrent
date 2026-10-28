@@ -6,13 +6,6 @@ The node is this repo's unit of scope, so every rule below is an application of 
 
 Cited by: construction view (the workplan author builds nodes) and, for handling rules, every turn. Governed by all Process topics.
 
-## Line length, line wrapping, and line breaks
-- Do not hard wrap the document at some arbitrary width.
-- Do not write lines longer than 1000 chars. 
-- If you are using more than 1000 chars in one line, you are trying to cram too much density into a single line. 
-- If you are reading a workplan and encounter a line longer than 1000 chars, propose recomposing the line into shorter, more focused lines. 
-- If you are reading the workplan and encounter a line longer than 2000 chars, insert a linebreak at a convenient location, read the elements, and recompose the line into shorter, more focused lines. 
-
 ## Node anatomy
 
 - A top-level node addresses exactly **one source file** and its entire support system — its interface, interface test, mock, guard test, guard, tests, provides, and integration tests, to the extent the work requires them. This is inviolate.
