@@ -5,14 +5,14 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
+use crate::sidecar::derivation_context::provides::{
+    DerivationContextDescription, DerivationContextDescriptionConstructorParams,
+};
 use crate::sidecar::wrap::provides::{
     PIECE_GROUP_KEY_LENGTH, PieceGroupKey, PieceGroupKeyConstructorParams,
 };
 use domain::{Secret, SecretConstructorParams};
-use encoding::{
-    DerivationContextDescription, DerivationContextDescriptionConstructorParams, EncodeParams,
-    IEncoderAdapter,
-};
+use encoding::{EncodeParams, IEncoderAdapter};
 use interface::{
     UnwrapPieceGroupKeyDeps, UnwrapPieceGroupKeyErrorReturn, UnwrapPieceGroupKeyParams,
     UnwrapPieceGroupKeyPayload, UnwrapPieceGroupKeyReturn, UnwrapPieceGroupKeySuccessReturn,

@@ -19,7 +19,7 @@ serde_json = "1.0.151"
 hex = "0.4.3"
 
 [features]
-mocks = ["dep:serde_json"]
+mocks = ["dep:serde_json", "domain/mocks", "pairing/mocks"]
 
 [lints]
 workspace = true

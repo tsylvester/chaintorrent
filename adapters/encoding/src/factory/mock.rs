@@ -6,10 +6,12 @@ use super::interface::{
     CreateEncodingReturn, CreateEncodingSuccessReturn, DecodeErrorReturn, DecodeParams,
     DecodeReturn, DecodeSuccessReturn, ENCODING_INTERFACE_VERSION, EncodeErrorReturn, EncodeParams,
     EncodeReturn, EncodeSuccessReturn, EncodingConcrete, EncodingDeclaration, EncodingIdentifier,
-    FromFieldParams, FromFieldSuccessReturn, FromFieldsParams, FromFieldsReturn,
-    FromFieldsSuccessReturn, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer,
-    IEncodingContract, MockIEncodingConsumerOutput, MockIEncodingContractFromFieldsErrorReturn,
-    ToFieldParams, ToFieldSuccessReturn, ToFieldsParams, ToFieldsReturn, ToFieldsSuccessReturn,
+    EncodingTypeName, EncodingTypeNameConstructorParams, FromFieldParams, FromFieldSuccessReturn,
+    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IDecoderAdapter, IEncoderAdapter,
+    IEncodingConsumer, IEncodingContract, MockIEncodingConsumerOutput,
+    MockIEncodingContractFromFieldsErrorReturn, ToFieldParams, ToFieldSuccessReturn,
+    ToFieldsParams, ToFieldsReturn, ToFieldsSuccessReturn, TypeNameParams, TypeNameReturn,
+    TypeNameSuccessReturn,
 };
 
 #[derive(Default)]
@@ -192,6 +194,48 @@ pub fn build_encode_success_return(overrides: EncodeSuccessReturnOverrides) -> E
     }
 }
 
+#[derive(Default)]
+pub struct EncodingTypeNameConstructorParamsOverrides {
+    pub name: Option<String>,
+}
+
+pub fn build_encoding_type_name_constructor_params(
+    overrides: EncodingTypeNameConstructorParamsOverrides,
+) -> EncodingTypeNameConstructorParams {
+    EncodingTypeNameConstructorParams {
+        name: overrides.name.unwrap_or_else(|| "mockName".to_string()),
+    }
+}
+
+pub fn build_encoding_type_name(
+    overrides: EncodingTypeNameConstructorParamsOverrides,
+) -> EncodingTypeName {
+    EncodingTypeName::try_new(build_encoding_type_name_constructor_params(overrides))
+        .expect("the built name is a valid encoding type name")
+}
+
+#[derive(Default)]
+pub struct TypeNameParamsOverrides;
+
+pub fn build_type_name_params(_overrides: TypeNameParamsOverrides) -> TypeNameParams {
+    TypeNameParams
+}
+
+#[derive(Default)]
+pub struct TypeNameSuccessReturnOverrides {
+    pub name: Option<EncodingTypeName>,
+}
+
+pub fn build_type_name_success_return(
+    overrides: TypeNameSuccessReturnOverrides,
+) -> TypeNameSuccessReturn {
+    TypeNameSuccessReturn {
+        name: overrides
+            .name
+            .unwrap_or_else(|| build_encoding_type_name(Default::default())),
+    }
+}
+
 pub fn build_encode_params<'a, D: IEncodingContract>(description: &'a D) -> EncodeParams<'a, D> {
     EncodeParams { description }
 }
@@ -293,6 +337,25 @@ impl IEncoderAdapter for MockIEncoderAdapter {
             }
         }
         Ok(EncodeSuccessReturn { bytes })
+    }
+
+    fn type_name(&self, _params: TypeNameParams, payload: CanonicalFieldKind) -> TypeNameReturn {
+        let name = match payload {
+            CanonicalFieldKind::FixedBytes32 => "mockFixedBytes32",
+            CanonicalFieldKind::Unsigned16 => "mockUnsigned16",
+            CanonicalFieldKind::Unsigned32 => "mockUnsigned32",
+            CanonicalFieldKind::Unsigned64 => "mockUnsigned64",
+            CanonicalFieldKind::Text => "mockText",
+            CanonicalFieldKind::Bytes => "mockBytes",
+            CanonicalFieldKind::FixedBytes20 => "mockFixedBytes20",
+            CanonicalFieldKind::Unsigned256 => "mockUnsigned256",
+        };
+        Ok(TypeNameSuccessReturn {
+            name: EncodingTypeName::try_new(EncodingTypeNameConstructorParams {
+                name: name.to_string(),
+            })
+            .expect("every declared mock name is a valid encoding type name"),
+        })
     }
 }
 
@@ -477,6 +540,16 @@ impl<'a, D: IEncodingContract> IEncodingConsumer for MockIEncodingConsumer<'a, D
             decoded: payload
                 .adapter
                 .decode(build_decode_params(self.description), &self.bytes),
+            type_names: D::FIELDS
+                .iter()
+                .map(|kind| {
+                    payload
+                        .adapter
+                        .type_name(build_type_name_params(Default::default()), *kind)
+                        .expect("the encoder's type_name return is infallible")
+                        .name
+                })
+                .collect(),
         }
     }
 }
@@ -504,6 +577,7 @@ pub struct MockIEncodingConsumerOutputOverrides {
     pub truncated_bytes:
         Option<DecodeReturn<CanonicalFields, MockIEncodingContractFromFieldsErrorReturn>>,
     pub decoded: Option<DecodeReturn<CanonicalFields, MockIEncodingContractFromFieldsErrorReturn>>,
+    pub type_names: Option<Vec<EncodingTypeName>>,
 }
 
 pub fn build_mock_i_encoding_consumer_output(
@@ -531,6 +605,25 @@ pub fn build_mock_i_encoding_consumer_output(
             Ok(build_decode_success_return(build_canonical_fields(
                 Default::default(),
             )))
+        }),
+        type_names: overrides.type_names.unwrap_or_else(|| {
+            [
+                "mockText",
+                "mockBytes",
+                "mockFixedBytes32",
+                "mockUnsigned16",
+                "mockUnsigned32",
+                "mockUnsigned64",
+                "mockFixedBytes20",
+                "mockUnsigned256",
+            ]
+            .into_iter()
+            .map(|name| {
+                build_encoding_type_name(EncodingTypeNameConstructorParamsOverrides {
+                    name: Some(name.to_string()),
+                })
+            })
+            .collect()
         }),
     }
 }

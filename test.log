@@ -3,67 +3,79 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling hash-to-scalar v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.91s
-     Running unittests src\lib.rs (target\debug\deps\hash_to_scalar-56162f84773b37c6.exe)
+   Compiling kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
+   Compiling workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.96s
+     Running unittests src\lib.rs (target\debug\deps\workflows-a01e7c76b6c36ae9.exe)
 
-running 34 tests
-test domain_tag::test::try_new_admits_the_lowest_and_highest_graphic_bytes_at_the_edges ... ok
-test domain_tag::test::try_new_admits_a_tag_of_the_maximum_length ... ok
-test domain_tag::test::as_bytes_returns_the_held_bytes_without_copy ... ok
-test domain_tag::test::try_new_admits_a_tag_with_interior_spaces ... ok
-test domain_tag::test::try_new_moves_the_params_bytes_into_the_tag ... ok
-test domain_tag::test::try_new_rejects_a_byte_below_the_printable_range ... ok
-test domain_tag::test::try_new_rejects_an_empty_tag ... ok
-test domain_tag::test::try_new_rejects_a_non_ascii_byte ... ok
-test domain_tag::test::try_new_reports_the_bytes_before_the_edges ... ok
-test domain_tag::test::try_new_reports_the_length_before_the_bytes ... ok
-test domain_tag::test::try_new_rejects_the_byte_above_the_printable_range ... ok
-test domain_tag::test::try_new_rejects_the_lowest_byte_outside_printable_ascii ... ok
-test domain_tag::test::try_new_rejects_a_tag_one_byte_over_the_maximum ... ok
-test domain_tag::test::try_new_reports_the_leading_edge_before_the_trailing_edge ... ok
-test domain_tag::test::try_new_rejects_a_trailing_space ... ok
-test domain_tag::test::try_new_rejects_a_leading_space ... ok
-test factory::test::create_hash_to_scalar_refuses_each_declared_concrete_under_an_identifier_it_does_not_declare ... ok
-test factory::test::create_hash_to_scalar_refuses_the_mock_selection_under_an_identifier_it_does_not_declare ... ok
-test factory::test::create_hash_to_scalar_returns_the_adapter_the_mock_selection_names ... ok
-test factory::integration_test::every_concrete_is_refused_under_an_identifier_it_does_not_declare ... ok
-test factory::integration_test::every_concrete_is_constructed_under_the_identifier_it_declares ... ok
-test keccak256::test::declaration_reports_the_constant ... ok
-test factory::integration_test::every_concrete_returns_the_sampling_bound_refusal_whole ... ok
-test keccak256::test::declaration_constant_names_the_keccak256_identifier_and_versions ... ok
-test keccak256::test::hash_to_scalar_refuses_a_sampling_input_shorter_than_the_digest ... ok
-test keccak256::test::try_new_returns_the_adapter ... ok
-test factory::integration_test::every_concrete_declaring_the_keccak256_identifier_matches_the_oracle_for_the_empty_message ... ok
-test keccak256::integration_test::hash_to_scalar_matches_the_oracle_for_the_reference_tag_and_message ... ok
-test factory::integration_test::every_concrete_declaring_the_keccak256_identifier_binds_the_tag_length ... ok
-test factory::integration_test::every_concrete_declaring_the_keccak256_identifier_separates_domains ... ok
-test keccak256::integration_test::hash_to_scalar_binds_the_tag_length ... ok
-test factory::integration_test::every_concrete_declaring_the_keccak256_identifier_matches_the_oracle_for_the_reference_tag_and_message ... ok
-test keccak256::integration_test::hash_to_scalar_separates_domains ... ok
-test keccak256::integration_test::hash_to_scalar_matches_the_oracle_for_the_empty_message ... ok
+running 31 tests
+test sidecar::derivation_context::test_basic::description_try_new_returns_the_description ... ok
+test sidecar::derivation_context::test_basic::fields_declares_the_nine_canonical_kinds ... ok
+test sidecar::derivation_context::test_basic::fields_to_value_returns_the_context_the_fields_describe ... ok
+test sidecar::derivation_context::test_basic::to_fields_lists_the_context_in_canonical_order ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_context_refusal_whole ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_geometry_refusal_whole ... ok
+test sidecar::derivation_context::test_basic::try_new_admits_the_last_group_of_the_geometry ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_deployment_refusal_whole ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_parameter_set_refusal_whole ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_suite_refusal_whole ... ok
+test sidecar::derivation_context::test_error::fields_to_value_checks_every_kind_before_admitting_any_component ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_root_refusal_whole ... ok
+test sidecar::derivation_context::test_error::fields_to_value_checks_the_count_before_any_kind ... ok
+test sidecar::derivation_context::test_error::fields_to_value_rejects_one_value_long ... ok
+test sidecar::derivation_context::test_error::fields_to_value_rejects_a_suite_version_of_another_width ... ok
+test sidecar::derivation_context::test_error::fields_to_value_rejects_one_value_short ... ok
+test sidecar::derivation_context::test_error::fields_to_value_reports_the_first_component_refusal ... ok
+test sidecar::derivation_context::test_error::try_new_refuses_a_group_index_equal_to_the_group_count ... ok
+test sidecar::derivation_context::test_error::fields_to_value_reports_the_lowest_field_of_the_wrong_kind ... ok
+test sidecar::unwrap::test::unwrap_returns_the_key_derivation_refusal_unchanged ... ok
+test sidecar::wrap::test::piece_group_key_try_new_holds_the_bytes_of_an_admitted_secret ... ok
+test sidecar::unwrap::test::unwrap_returns_a_zero_key_when_the_wrapped_key_equals_the_wrapping_key ... ok
+test sidecar::unwrap::test::unwrap_returns_the_complement_of_the_wrapping_key_when_the_wrapped_key_is_all_ones ... ok
+test sidecar::wrap::test::piece_group_key_try_new_refuses_a_secret_longer_than_the_key_length ... ok
+test sidecar::wrap::test::piece_group_key_try_new_refuses_a_secret_shorter_than_the_key_length ... ok
+test sidecar::wrap::test::wrap_returns_a_zero_wrapped_key_when_the_piece_group_key_equals_the_wrapping_key ... ok
+test sidecar::wrap::test::wrap_returns_the_complement_of_the_wrapping_key_when_the_piece_group_key_is_all_ones ... ok
+test sidecar::wrap::test::wrap_returns_the_key_derivation_refusal_unchanged ... ok
+test sidecar::wrap::test::wrapped_piece_group_key_try_new_holds_the_admitted_bytes ... ok
+test sidecar::wrap::test::wrapped_piece_group_key_try_new_refuses_bytes_longer_than_the_key_length ... ok
+test sidecar::wrap::test::wrapped_piece_group_key_try_new_refuses_bytes_shorter_than_the_key_length ... ok
 
-test result: ok. 34 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\domain_tag_integration_test.rs (target\debug\deps\domain_tag_integration_test-c577ac7590dcd51a.exe)
+     Running tests\derivation_context_integration_test.rs (target\debug\deps\derivation_context_integration_test-2ee17791218d3696.exe)
 
-running 2 tests
-test a_tag_one_byte_over_the_maximum_is_refused_whole_through_the_crate_root ... ok
-test a_tag_of_the_maximum_length_reads_back_through_the_crate_root ... ok
+running 5 tests
+test the_crate_root_refuses_a_group_index_outside_the_geometry_whole ... ok
+test every_concrete_decodes_the_derivation_context_it_encodes ... ok
+test every_concrete_declaring_the_ethereum_abi_identifier_returns_the_context_refusal_whole ... ok
+test every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_context ... ok
+test every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_context_to_the_reference_vector ... ok
 
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-215a5e44f57ff4e6.exe)
+     Running tests\unwrap_integration_test.rs (target\debug\deps\unwrap_integration_test-2a9cccf44cc7688a.exe)
 
-running 4 tests
-test a_tag_one_byte_over_the_maximum_is_refused_whole_before_the_factory_is_reached ... ok
-test every_concrete_declaring_the_keccak256_identifier_hashes_the_reference_inputs_to_the_oracle ... ok
-test a_tag_read_back_through_the_crate_root_is_the_tag_the_factory_adapter_hashes ... ok
-test every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_encoding_factory_encodes_to_the_oracle ... ok
+running 6 tests
+test unwrapping_returns_a_key_derivation_refusal_whole ... ok
+test unwrapping_an_all_ones_wrapped_key_yields_the_complement_of_the_wrapping_key_the_oracle_states ... ok
+test unwrapping_what_the_wrap_produced_returns_the_piece_group_key ... ok
+test unwrapping_a_wrapped_key_equal_to_the_wrapping_key_the_oracle_states_yields_a_zero_piece_group_key ... ok
+test two_independently_generated_entitlement_scope_sets_unwrap_one_piece_group_key ... ok
+test an_escrow_set_and_a_claimants_set_unwrap_one_piece_group_key ... ok
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.04s
 
-   Doc-tests hash_to_scalar
+     Running tests\wrap_integration_test.rs (target\debug\deps\wrap_integration_test-1de2d999c8d47bf0.exe)
+
+running 3 tests
+test a_key_derivation_refusal_reaches_the_caller_whole ... ok
+test wrapping_a_zero_piece_group_key_yields_the_wrapping_key_the_oracle_states ... ok
+test wrapping_an_all_ones_piece_group_key_yields_the_complement_of_the_wrapping_key_the_oracle_states ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests workflows
 
 running 0 tests
 

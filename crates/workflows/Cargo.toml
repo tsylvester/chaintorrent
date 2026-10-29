@@ -7,13 +7,19 @@ publish.workspace = true
 [dependencies]
 domain = { path = "../domain" }
 encoding = { path = "../../adapters/encoding" }
+hash-to-scalar = { path = "../../adapters/hash-to-scalar", optional = true }
+hashing = { path = "../../adapters/hashing" }
 kdf = { path = "../../adapters/kdf" }
 kem = { path = "../../adapters/kem" }
+pairing = { path = "../../adapters/pairing", optional = true }
+random = { path = "../../adapters/random", optional = true }
 serde_json = { version = "1.0.151", optional = true }
 
 [dev-dependencies]
 domain = { path = "../domain", features = ["mocks"] }
 encoding = { path = "../../adapters/encoding", features = ["mocks"] }
+hashing = { path = "../../adapters/hashing", features = ["mocks"] }
+hex = "0.4.3"
 kdf = { path = "../../adapters/kdf", features = ["mocks"] }
 kem = { path = "../../adapters/kem", features = ["mocks"] }
 pairing = { path = "../../adapters/pairing", features = ["mocks"] }
@@ -22,7 +28,7 @@ random = { path = "../../adapters/random", features = ["mocks"] }
 serde_json = "1.0.151"
 
 [features]
-mocks = ["domain/mocks", "dep:serde_json"]
+mocks = ["domain/mocks", "hashing/mocks", "encoding/mocks", "kdf/mocks", "kem/mocks", "pairing/mocks", "hash-to-scalar/mocks", "random/mocks", "dep:serde_json"]
 
 [lints]
 workspace = true

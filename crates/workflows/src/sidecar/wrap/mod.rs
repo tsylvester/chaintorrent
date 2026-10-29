@@ -5,11 +5,11 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
-use domain::{Secret, SecretConstructorParams};
-use encoding::{
-    DerivationContextDescription, DerivationContextDescriptionConstructorParams, EncodeParams,
-    IEncoderAdapter,
+use crate::sidecar::derivation_context::provides::{
+    DerivationContextDescription, DerivationContextDescriptionConstructorParams,
 };
+use domain::{Secret, SecretConstructorParams};
+use encoding::{EncodeParams, IEncoderAdapter};
 use interface::{
     PIECE_GROUP_KEY_LENGTH, PieceGroupKey, PieceGroupKeyConstructorParams,
     PieceGroupKeyErrorReturn, WrapPieceGroupKeyDeps, WrapPieceGroupKeyErrorReturn,

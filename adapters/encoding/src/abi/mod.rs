@@ -8,8 +8,9 @@ mod test;
 use crate::factory::provides::{
     CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, DecodeErrorReturn, DecodeParams,
     DecodeReturn, DecodeSuccessReturn, ENCODING_INTERFACE_VERSION, EncodeErrorReturn, EncodeParams,
-    EncodeReturn, EncodeSuccessReturn, EncodingDeclaration, EncodingIdentifier, FromFieldsParams,
-    IDecoderAdapter, IEncoderAdapter, IEncodingContract, ToFieldsParams,
+    EncodeReturn, EncodeSuccessReturn, EncodingDeclaration, EncodingIdentifier, EncodingTypeName,
+    EncodingTypeNameConstructorParams, FromFieldsParams, IDecoderAdapter, IEncoderAdapter,
+    IEncodingContract, ToFieldsParams, TypeNameParams, TypeNameReturn, TypeNameSuccessReturn,
 };
 use alloy::dyn_abi::{DynSolType, DynSolValue};
 use alloy::primitives::{B256, U256};
@@ -101,6 +102,25 @@ impl IEncoderAdapter for AbiEncoding {
         Ok(EncodeSuccessReturn {
             bytes: tuple.abi_encode_params(),
         })
+    }
+
+    fn type_name(&self, _params: TypeNameParams, payload: CanonicalFieldKind) -> TypeNameReturn {
+        let name = match payload {
+            CanonicalFieldKind::FixedBytes32 => "bytes32",
+            CanonicalFieldKind::Unsigned16 => "uint16",
+            CanonicalFieldKind::Unsigned32 => "uint32",
+            CanonicalFieldKind::Unsigned64 => "uint64",
+            CanonicalFieldKind::Text => "string",
+            CanonicalFieldKind::Bytes => "bytes",
+            CanonicalFieldKind::FixedBytes20 => "bytes20",
+            CanonicalFieldKind::Unsigned256 => "uint256",
+        };
+        let Ok(name) = EncodingTypeName::try_new(EncodingTypeNameConstructorParams {
+            name: name.to_string(),
+        }) else {
+            unreachable!("every name the table states is a valid encoding type name")
+        };
+        Ok(TypeNameSuccessReturn { name })
     }
 }
 

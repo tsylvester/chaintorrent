@@ -1,5 +1,10 @@
-use domain::{DerivationContext, Secret};
+use crate::sidecar::derivation_context::provides::DerivationContext;
+use domain::Secret;
+#[cfg(any(test, feature = "mocks"))]
+use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter};
 use encoding::{EncodeErrorReturn, IEncoderAdapter};
+#[cfg(any(test, feature = "mocks"))]
+use kdf::{CreateKeyDerivationErrorReturn, CreateKeyDerivationParams};
 use kdf::{DeriveKeyErrorReturn, IKeyDerivationAdapter};
 use kem::EncapsulatedValue;
 
@@ -65,3 +70,56 @@ pub type WrapPieceGroupKeyFn<E> = fn(
     WrapPieceGroupKeyParams,
     WrapPieceGroupKeyPayload<'_>,
 ) -> WrapPieceGroupKeyReturn;
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait IWrapPieceGroupKeyCaseConsumer {
+    type Output;
+
+    fn consume_wrap_piece_group_key_case<E: IEncoderAdapter + IDecoderAdapter>(
+        &self,
+        encoder: &E,
+        kdf: &dyn IKeyDerivationAdapter,
+        payload: &WrapPieceGroupKeyCasePayload<'_>,
+    ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct WrapPieceGroupKeyCaseDeps<C: IWrapPieceGroupKeyCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct WrapPieceGroupKeyCaseParams {
+    pub encoding: CreateEncodingParams,
+    pub key_derivation: CreateKeyDerivationParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct WrapPieceGroupKeyCasePayload<'a> {
+    pub encapsulated: &'a EncapsulatedValue,
+    pub context: &'a DerivationContext,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct WrapPieceGroupKeyCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum WrapPieceGroupKeyCaseErrorReturn {
+    CreateEncoding(CreateEncodingErrorReturn),
+    CreateKeyDerivation(CreateKeyDerivationErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type WrapPieceGroupKeyCaseReturn<O> =
+    Result<WrapPieceGroupKeyCaseSuccessReturn<O>, WrapPieceGroupKeyCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunWrapPieceGroupKeyCaseFn<C> =
+    fn(
+        &WrapPieceGroupKeyCaseDeps<C>,
+        WrapPieceGroupKeyCaseParams,
+        WrapPieceGroupKeyCasePayload<'_>,
+    ) -> WrapPieceGroupKeyCaseReturn<<C as IWrapPieceGroupKeyCaseConsumer>::Output>;

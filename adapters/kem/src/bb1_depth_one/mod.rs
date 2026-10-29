@@ -154,11 +154,11 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         );
         let scope = match params.scope {
             SetupScope::Entitlement => Bb1DepthOneParameterSetScope::Entitlement,
-            SetupScope::Asset { identity_hash } => {
+            SetupScope::Asset { root } => {
                 let mapped = match self.hash_to_scalar.hash_to_scalar(
                     HashToScalarParams { tag: &self.tag },
                     HashToScalarPayload {
-                        message: identity_hash.as_bytes(),
+                        message: root.as_bytes(),
                     },
                 ) {
                     Ok(mapped) => mapped,
@@ -228,7 +228,7 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> 
         }
         let bytes = match payload.identity {
             KemIdentity::Entitlement { canonical } => canonical,
-            KemIdentity::Asset { identity_hash } => identity_hash.as_bytes(),
+            KemIdentity::Asset { root } => root.as_bytes(),
         };
         let mapped = match self.hash_to_scalar.hash_to_scalar(
             HashToScalarParams { tag: &self.tag },

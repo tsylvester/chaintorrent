@@ -126,6 +126,31 @@ pub enum EncodeErrorReturn {
 
 pub type EncodeReturn = Result<EncodeSuccessReturn, EncodeErrorReturn>;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EncodingTypeName {
+    pub(super) name: String,
+}
+
+pub struct EncodingTypeNameConstructorParams {
+    pub name: String,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum EncodingTypeNameErrorReturn {
+    Empty,
+    NotAlphanumeric,
+}
+
+pub type EncodingTypeNameTryNewReturn = Result<EncodingTypeName, EncodingTypeNameErrorReturn>;
+
+pub struct TypeNameParams;
+
+pub struct TypeNameSuccessReturn {
+    pub name: EncodingTypeName,
+}
+
+pub type TypeNameReturn = Result<TypeNameSuccessReturn, Infallible>;
+
 pub trait IEncoderAdapter {
     const DECLARATION: EncodingDeclaration;
 
@@ -134,6 +159,8 @@ pub trait IEncoderAdapter {
         params: EncodeParams<'_, D>,
         payload: &D::Described,
     ) -> EncodeReturn;
+
+    fn type_name(&self, params: TypeNameParams, payload: CanonicalFieldKind) -> TypeNameReturn;
 }
 
 pub struct DecodeParams<'a, D> {
@@ -234,4 +261,5 @@ pub struct MockIEncodingConsumerOutput<D: IEncodingContract> {
     pub trailing_bytes: DecodeReturn<D::Described, D::FromFieldsErrorReturn>,
     pub truncated_bytes: DecodeReturn<D::Described, D::FromFieldsErrorReturn>,
     pub decoded: DecodeReturn<D::Described, D::FromFieldsErrorReturn>,
+    pub type_names: Vec<EncodingTypeName>,
 }

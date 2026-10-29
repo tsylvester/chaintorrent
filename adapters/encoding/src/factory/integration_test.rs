@@ -8,6 +8,7 @@ use super::provides::{
     MockIEncodingContractFromFieldsErrorReturn, build_canonical_fields, build_create_encoding_deps,
     build_create_encoding_params, build_create_encoding_payload, build_mock_i_encoding_consumer,
 };
+use std::collections::BTreeSet;
 
 /// Contract: the own entry, every concrete is handed to the consumer under
 ///   the identifier it declares: `create_encoding` called with a concrete's
@@ -594,3 +595,75 @@ fn every_concrete_returns_the_description_refusal_unchanged() {
     }
 }
 // every_concrete_returns_the_description_refusal_unchanged
+
+/// Contract: the own entry, every concrete names every canonical field
+///   kind: `create_encoding` called with a concrete's selection and the
+///   identifier it declares, the consumer asking for the name of each kind
+///   of the official description's `FIELDS` →
+///   `Ok(CreateEncodingSuccessReturn { output })` with `output.type_names`
+///   one `EncodingTypeName` per kind in order, no two equal.
+/// Arrange: for each case, `build_create_encoding_deps` over
+///   `build_mock_i_encoding_consumer` taking `&MockIEncodingContract`,
+///   `build_canonical_fields` at its defaults, and no bytes,
+///   `build_create_encoding_params` overriding `concrete` and `identifier`
+///   with the case's selection and identifier, and
+///   `build_create_encoding_payload`; the cases name the kinds differently,
+///   so a hand-over of a concrete other than the selected one, or a
+///   consumer that supplies names of its own, returns another list.
+/// Act:     `create_encoding(&deps, params, payload)` for the case.
+/// Assert:  the `type_names` of the `output` of the `Ok` arm holds one name
+///   per kind of `<MockIEncodingContract as IEncodingContract>::FIELDS` by
+///   `assert_eq!` on its length, and its names are pairwise distinct by
+///   `assert_eq!` on the count of the set of their text.
+/// Boundary: the crate-internal call `create_encoding`; the route
+///   `create_encoding`, the selected concrete's constructor where it has
+///   one, and the concrete's `type_name` as the consumer calls it.
+/// Mocked:  the consumer, replaced by `MockIEncodingConsumer`, and the
+///   description it carries, replaced by `MockIEncodingContract`; the
+///   concretes are real, the mock selection reaching the family's official
+///   mock concrete.
+#[test]
+fn every_concrete_names_every_canonical_field_kind() {
+    // Arrange
+    let mock_case = build_create_encoding_params(Default::default());
+    let cases = || {
+        DECLARED_ENCODING_SELECTIONS
+            .iter()
+            .chain(core::iter::once(&mock_case))
+    };
+
+    for case in cases() {
+        let consumer = build_mock_i_encoding_consumer(
+            &MockIEncodingContract,
+            build_canonical_fields(Default::default()),
+            Vec::new(),
+        );
+        let deps = build_create_encoding_deps(consumer);
+        let params = build_create_encoding_params(CreateEncodingParamsOverrides {
+            concrete: Some(case.concrete),
+            identifier: Some(case.identifier),
+        });
+        let payload = build_create_encoding_payload(Default::default());
+
+        // Act
+        let result = create_encoding(&deps, params, payload);
+
+        // Assert
+        let success = result.expect("the selection is admitted under the identifier it declares");
+        assert_eq!(
+            success.output.type_names.len(),
+            <MockIEncodingContract as IEncodingContract>::FIELDS.len()
+        );
+        let names: BTreeSet<&str> = success
+            .output
+            .type_names
+            .iter()
+            .map(|name| name.as_str())
+            .collect();
+        assert_eq!(
+            names.len(),
+            <MockIEncodingContract as IEncodingContract>::FIELDS.len()
+        );
+    }
+}
+// every_concrete_names_every_canonical_field_kind

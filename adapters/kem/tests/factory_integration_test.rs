@@ -1,23 +1,26 @@
 #![cfg(feature = "mocks")]
 #![allow(clippy::expect_used)]
 
-use domain::{Secret, build_asset_identity_hash, build_derivation_context, build_secret};
+use domain::{Secret, build_secret};
 use encoding::{
-    CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, EncodingIdentifier,
-    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
-    build_derivation_context_description, build_mock_i_encoding_consumer, create_encoding,
+    CanonicalFieldsOverrides, CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS,
+    EncodingIdentifier, MockIEncodingContract, build_canonical_fields, build_create_encoding_deps,
+    build_create_encoding_params, build_create_encoding_payload, build_mock_i_encoding_consumer,
+    create_encoding,
 };
 use hash_to_scalar::{
     DECLARED_HASH_TO_SCALAR_SELECTIONS, DomainTagConstructorParamsOverrides,
-    HashToScalarIdentifier, build_create_hash_to_scalar_deps, build_create_hash_to_scalar_payload,
-    build_domain_tag, create_hash_to_scalar, expected_uniform_bytes,
+    HashToScalarIdentifier, IHashToScalarAdapter, build_domain_tag, expected_uniform_bytes,
 };
+use hashing::build_root;
 use kem::{
-    ConsumeKemParams, ConsumeKemPayload, CreateKemErrorReturn, CreateKemParams,
-    CreateKemParamsOverrides, DECLARED_KEM_SELECTIONS, DeriveIdentityPayloadOverrides,
-    EncapsulatePayloadOverrides, ICredentialKemAdapter, IKemConsumer, IdentityScope,
-    IssuePayloadOverrides, KEM_INTERFACE_VERSION, KemIdentifier, KemIdentity, SetupParamsOverrides,
-    SetupPayloadOverrides, SetupScope, build_create_kem_deps, build_create_kem_params,
+    ConsumeKemParams, ConsumeKemPayload, CreateKemCaseParamsOverrides, CreateKemCasePayload,
+    CreateKemErrorReturn, CreateKemParams, CreateKemParamsOverrides, DECLARED_KEM_SELECTIONS,
+    DeriveIdentityPayloadOverrides, EncapsulatePayloadOverrides, ICreateKemCaseConsumer,
+    ICredentialKemAdapter, IKemConsumer, IdentityScope, IssuePayloadOverrides,
+    KEM_INTERFACE_VERSION, KemIdentifier, KemIdentity, SetupParamsOverrides, SetupPayloadOverrides,
+    SetupScope, build_create_kem_case_deps, build_create_kem_case_params,
+    build_create_kem_case_payload, build_create_kem_deps, build_create_kem_params,
     build_create_kem_payload, build_decapsulate_params, build_decapsulate_payload,
     build_derive_identity_params, build_derive_identity_payload, build_encapsulate_params,
     build_encapsulate_payload, build_identity_element_components_params,
@@ -25,15 +28,14 @@ use kem::{
     build_is_well_formed_params, build_is_well_formed_payload, build_issue_params,
     build_issue_payload, build_parameter_set_components_params,
     build_parameter_set_components_payload, build_setup_params, build_setup_payload, create_kem,
+    run_create_kem_case,
 };
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
-    CreatePairingPayload, EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload,
+    CreatePairingParamsOverrides, EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload,
     EncodeScalarParams, EncodeScalarPayload, G1GeneratorParams, G1GeneratorPayload,
-    G2GeneratorParams, G2GeneratorPayload, IPairingArithmetic, IPairingConsumer,
+    G2GeneratorParams, G2GeneratorPayload, IPairingArithmetic, IPairingReference,
     ISampleUniformScalar, PAIRING_CONCRETES, SampleUniformScalarParams, SampleUniformScalarPayload,
-    TargetGroupEncodingIdentifier, build_create_pairing_deps, build_create_pairing_params,
-    create_pairing,
+    TargetGroupEncodingIdentifier, build_create_pairing_params,
 };
 use random::{
     CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
@@ -50,10 +52,10 @@ use random::{
 ///   `K::DECLARATION.identity_scopes` containing `params.scope`, and
 ///   `payload.scope()` equal to `params.scope`.
 /// Arrange: each case of `DECLARED_KEM_SELECTIONS` with its declared identifier
-///   and scope, over every case of `DECLARED_HASH_TO_SCALAR_SELECTIONS` and
-///   every member of `PAIRING_CONCRETES`; the cases' declared identifiers
-///   differ, so a construction of another concrete reports another identifier.
-/// Act:     `create_kem` per case, inside `PairingConsumer`.
+///   and scope, run once per member of `PAIRING_CONCRETES` and each case of
+///   `DECLARED_HASH_TO_SCALAR_SELECTIONS` the case params name.
+/// Act:     `run_create_kem_case` runs the case, whose `Consumer`'s call per
+///   case is `create_kem`.
 /// Assert:  in `KemConsumer`, the four declaration and scope reads above by
 ///   `assert_eq!`/`assert!`; outside the consumers, `created.is_ok()`.
 /// Boundary: the public call `create_kem`, with the route `create_pairing`,
@@ -82,52 +84,51 @@ fn every_concrete_is_constructed_under_the_identifier_and_scope_it_declares() {
         }
     }
 
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &CreateKemCasePayload,
         ) -> Self::Output {
-            for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                let hashed = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_case,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection admits its concrete");
-                for case in DECLARED_KEM_SELECTIONS {
-                    let created = create_kem(
-                        &build_create_kem_deps(
-                            &consumed.adapter,
-                            &*hashed.adapter,
-                            KemConsumer { params: *case },
-                            Default::default(),
-                        ),
-                        *case,
-                        build_create_kem_payload(Default::default()),
-                    );
-                    assert!(created.is_ok());
-                }
+            for case in DECLARED_KEM_SELECTIONS {
+                let created = create_kem(
+                    &build_create_kem_deps(
+                        pairing,
+                        hash_to_scalar,
+                        KemConsumer { params: *case },
+                        Default::default(),
+                    ),
+                    *case,
+                    build_create_kem_payload(Default::default()),
+                );
+                assert!(created.is_ok());
             }
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(PairingConsumer, Default::default());
+        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_create_kem_case(
+                &build_create_kem_case_deps(Consumer, Default::default()),
+                build_create_kem_case_params(CreateKemCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(*h2s_case),
+                }),
+                build_create_kem_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -138,11 +139,12 @@ fn every_concrete_is_constructed_under_the_identifier_and_scope_it_declares() {
 ///   `Err(CreateKemErrorReturn::UnsupportedKemIdentifier)` and the consumer
 ///   never runs.
 /// Arrange: each case of `DECLARED_KEM_SELECTIONS` with `KemIdentifier::Mock`,
-///   which no declared concrete declares, over every case of
-///   `DECLARED_HASH_TO_SCALAR_SELECTIONS` and every member of
-///   `PAIRING_CONCRETES`; `KemConsumer` is the deps' consumer and its body
+///   which no declared concrete declares, run once per member of
+///   `PAIRING_CONCRETES` and each case of `DECLARED_HASH_TO_SCALAR_SELECTIONS`
+///   the case params name; `KemConsumer` is the deps' consumer and its body
 ///   fails the block if run.
-/// Act:     `create_kem` per case, inside `PairingConsumer`.
+/// Act:     `run_create_kem_case` runs the case, whose `Consumer`'s call per
+///   case is `create_kem`.
 /// Assert:  `assert_eq!(result.err(),
 ///   Some(CreateKemErrorReturn::UnsupportedKemIdentifier))` per case; outside
 ///   the consumers, `created.is_ok()`.
@@ -166,59 +168,58 @@ fn every_concrete_is_refused_under_an_identifier_it_does_not_declare() {
         }
     }
 
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &CreateKemCasePayload,
         ) -> Self::Output {
-            for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                let hashed = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_case,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection admits its concrete");
-                for case in DECLARED_KEM_SELECTIONS {
-                    let result = create_kem(
-                        &build_create_kem_deps(
-                            &consumed.adapter,
-                            &*hashed.adapter,
-                            KemConsumer,
-                            Default::default(),
-                        ),
-                        build_create_kem_params(CreateKemParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(KemIdentifier::Mock),
-                            scope: Some(case.scope),
-                        }),
-                        build_create_kem_payload(Default::default()),
-                    );
-                    assert_eq!(
-                        result.err(),
-                        Some(CreateKemErrorReturn::UnsupportedKemIdentifier)
-                    );
-                }
+            for case in DECLARED_KEM_SELECTIONS {
+                let result = create_kem(
+                    &build_create_kem_deps(
+                        pairing,
+                        hash_to_scalar,
+                        KemConsumer,
+                        Default::default(),
+                    ),
+                    build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(case.concrete),
+                        identifier: Some(KemIdentifier::Mock),
+                        scope: Some(case.scope),
+                    }),
+                    build_create_kem_payload(Default::default()),
+                );
+                assert_eq!(
+                    result.err(),
+                    Some(CreateKemErrorReturn::UnsupportedKemIdentifier)
+                );
             }
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(PairingConsumer, Default::default());
+        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_create_kem_case(
+                &build_create_kem_case_deps(Consumer, Default::default()),
+                build_create_kem_case_params(CreateKemCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(*h2s_case),
+                }),
+                build_create_kem_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -283,16 +284,14 @@ fn a_kem_from_the_factory_round_trips_from_operating_system_draws() {
                     .bytes
             };
             let scope = payload.scope();
-            let hash = build_asset_identity_hash(Default::default());
+            let root = build_root(Default::default());
             let setup = payload
                 .adapter
                 .setup(
                     build_setup_params(SetupParamsOverrides {
                         scope: Some(match scope {
                             IdentityScope::Entitlement => SetupScope::Entitlement,
-                            IdentityScope::Asset => SetupScope::Asset {
-                                identity_hash: &hash,
-                            },
+                            IdentityScope::Asset => SetupScope::Asset { root: &root },
                         }),
                     }),
                     build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
@@ -311,9 +310,7 @@ fn a_kem_from_the_factory_round_trips_from_operating_system_draws() {
                         match scope {
                             IdentityScope::Entitlement => DeriveIdentityPayloadOverrides::default(),
                             IdentityScope::Asset => DeriveIdentityPayloadOverrides {
-                                identity: Some(KemIdentity::Asset {
-                                    identity_hash: &hash,
-                                }),
+                                identity: Some(KemIdentity::Asset { root: &root }),
                             },
                         },
                     ),
@@ -384,57 +381,55 @@ fn a_kem_from_the_factory_round_trips_from_operating_system_draws() {
         }
     }
 
-    struct PairingConsumer<'a> {
+    struct Consumer<'a> {
         random: &'a dyn IRandomSourceAdapter,
     }
 
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
+    impl<'a> ICreateKemCaseConsumer for Consumer<'a> {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &CreateKemCasePayload,
         ) -> Self::Output {
-            for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                let hashed = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_case,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection admits its concrete");
-                for case in DECLARED_KEM_SELECTIONS {
-                    let created = create_kem(
-                        &build_create_kem_deps(
-                            &consumed.adapter,
-                            &*hashed.adapter,
-                            KemConsumer {
-                                random: self.random,
-                            },
-                            Default::default(),
-                        ),
-                        *case,
-                        build_create_kem_payload(Default::default()),
-                    );
-                    assert!(created.is_ok());
-                }
+            for case in DECLARED_KEM_SELECTIONS {
+                let created = create_kem(
+                    &build_create_kem_deps(
+                        pairing,
+                        hash_to_scalar,
+                        KemConsumer {
+                            random: self.random,
+                        },
+                        Default::default(),
+                    ),
+                    *case,
+                    build_create_kem_payload(Default::default()),
+                );
+                assert!(created.is_ok());
             }
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps =
-            build_create_pairing_deps(PairingConsumer { random: &*random }, Default::default());
+        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_create_kem_case(
+                &build_create_kem_case_deps(Consumer { random: &*random }, Default::default()),
+                build_create_kem_case_params(CreateKemCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(*h2s_case),
+                }),
+                build_create_kem_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -445,7 +440,7 @@ fn a_kem_from_the_factory_round_trips_from_operating_system_draws() {
 ///   the pairing it holds agreeing with the adapter's.
 /// Arrange: each member of `PAIRING_CONCRETES` with each case of
 ///   `DECLARED_KEM_SELECTIONS`, over every case of
-///   `DECLARED_HASH_TO_SCALAR_SELECTIONS`; the consumer holds the pairing the
+///   `DECLARED_HASH_TO_SCALAR_SELECTIONS`; `KemConsumer` holds the pairing the
 ///   deps borrow and reads its `g1_generator` and `g2_generator`; `setup` runs
 ///   in the arrangement under the case's scope.
 /// Act:     `parameter_set_components` on the parameter set `setup` returned.
@@ -474,16 +469,14 @@ fn the_consumer_receives_the_concrete_the_params_name() {
             payload: ConsumeKemPayload<K>,
         ) -> Self::Output {
             let scope = payload.scope();
-            let hash = build_asset_identity_hash(Default::default());
+            let root = build_root(Default::default());
             let setup = payload
                 .adapter
                 .setup(
                     build_setup_params(SetupParamsOverrides {
                         scope: Some(match scope {
                             IdentityScope::Entitlement => SetupScope::Entitlement,
-                            IdentityScope::Asset => SetupScope::Asset {
-                                identity_hash: &hash,
-                            },
+                            IdentityScope::Asset => SetupScope::Asset { root: &root },
                         }),
                     }),
                     build_setup_payload::<P::Scalar>(Default::default()),
@@ -534,54 +527,51 @@ fn the_consumer_receives_the_concrete_the_params_name() {
         }
     }
 
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &CreateKemCasePayload,
         ) -> Self::Output {
-            for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                let hashed = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_case,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection admits its concrete");
-                for case in DECLARED_KEM_SELECTIONS {
-                    let created = create_kem(
-                        &build_create_kem_deps(
-                            &consumed.adapter,
-                            &*hashed.adapter,
-                            KemConsumer {
-                                pairing: &consumed.adapter,
-                            },
-                            Default::default(),
-                        ),
-                        *case,
-                        build_create_kem_payload(Default::default()),
-                    );
-                    assert!(created.is_ok());
-                }
+            for case in DECLARED_KEM_SELECTIONS {
+                let created = create_kem(
+                    &build_create_kem_deps(
+                        pairing,
+                        hash_to_scalar,
+                        KemConsumer { pairing },
+                        Default::default(),
+                    ),
+                    *case,
+                    build_create_kem_payload(Default::default()),
+                );
+                assert!(created.is_ok());
             }
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(PairingConsumer, Default::default());
+        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_create_kem_case(
+                &build_create_kem_case_deps(Consumer, Default::default()),
+                build_create_kem_case_params(CreateKemCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(*h2s_case),
+                }),
+                build_create_kem_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -594,13 +584,13 @@ fn the_consumer_receives_the_concrete_the_params_name() {
 /// Arrange: every member of `PAIRING_CONCRETES`, each with identical uniform
 ///   bytes for `setup` and `encapsulate` from the payload builders' defaults,
 ///   under one scope of the declared set, over every case of
-///   `DECLARED_HASH_TO_SCALAR_SELECTIONS`; the `KemConsumer` returns the
-///   pairing's `P::DECLARATION.target_group_encoding` with the `key_material()`
-///   bytes, collected across the members.
+///   `DECLARED_HASH_TO_SCALAR_SELECTIONS`; `KemConsumer` returns the pairing's
+///   `P::DECLARATION.target_group_encoding` with the `key_material()` bytes,
+///   collected across the members.
 /// Act:     `encapsulate`, inside `KemConsumer`, over the parameter set `setup`
 ///   returned.
-/// Assert:  any two members whose identifiers are equal return equal bytes;
-///   outside the consumers, `created.is_ok()`.
+/// Assert:  any two collected pairs whose identifiers are equal hold equal
+///   bytes; outside the consumers, `created.is_ok()`.
 /// Boundary: the public call `create_kem`, with the route `create_pairing`, the
 ///   arm's concrete through its `try_new`, `create_hash_to_scalar`, the
 ///   selected concrete's `try_new`, `create_kem`, `setup`, `encapsulate`,
@@ -620,16 +610,14 @@ fn libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes(
             payload: ConsumeKemPayload<K>,
         ) -> Self::Output {
             let scope = payload.scope();
-            let hash = build_asset_identity_hash(Default::default());
+            let root = build_root(Default::default());
             let setup = payload
                 .adapter
                 .setup(
                     build_setup_params(SetupParamsOverrides {
                         scope: Some(match scope {
                             IdentityScope::Entitlement => SetupScope::Entitlement,
-                            IdentityScope::Asset => SetupScope::Asset {
-                                identity_hash: &hash,
-                            },
+                            IdentityScope::Asset => SetupScope::Asset { root: &root },
                         }),
                     }),
                     build_setup_payload::<P::Scalar>(Default::default()),
@@ -652,43 +640,26 @@ fn libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes(
         }
     }
 
-    struct PairingConsumer {
+    struct Consumer {
         case: CreateKemParams,
     }
 
-    impl IPairingConsumer for PairingConsumer {
+    impl ICreateKemCaseConsumer for Consumer {
         type Output = (TargetGroupEncodingIdentifier, Vec<u8>);
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &CreateKemCasePayload,
         ) -> Self::Output {
-            let mut observed = None;
-            for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                let hashed = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_case,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection admits its concrete");
-                let created = create_kem(
-                    &build_create_kem_deps(
-                        &consumed.adapter,
-                        &*hashed.adapter,
-                        KemConsumer,
-                        Default::default(),
-                    ),
-                    self.case,
-                    build_create_kem_payload(Default::default()),
-                )
-                .expect("the declared case admits its concrete");
-                if let Some(previous) = &observed {
-                    assert_eq!(*previous, created.output);
-                }
-                observed = Some(created.output);
-            }
-            observed.expect("the declared hash-to-scalar set holds a case")
+            create_kem(
+                &build_create_kem_deps(pairing, hash_to_scalar, KemConsumer, Default::default()),
+                self.case,
+                build_create_kem_payload(Default::default()),
+            )
+            .expect("the declared case admits its concrete")
+            .output
         }
     }
 
@@ -697,18 +668,24 @@ fn libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes(
         .expect("the declared set holds a case");
     let mut observed: Vec<(TargetGroupEncodingIdentifier, Vec<u8>)> = Vec::new();
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(PairingConsumer { case }, Default::default());
+        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_create_kem_case(
+                &build_create_kem_case_deps(Consumer { case }, Default::default()),
+                build_create_kem_case_params(CreateKemCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(*h2s_case),
+                }),
+                build_create_kem_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
-        observed.push(created.expect("the pairing constructed").output);
+            // Assert
+            assert!(created.is_ok());
+            observed.push(created.expect("the case ran").output);
+        }
     }
     for left in &observed {
         for right in &observed {
@@ -723,19 +700,19 @@ fn libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes(
 ///   `every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_encoding_factory_encodes_to_the_oracle`,
 ///   restated by the spec; `derive_identity` hashes the canonical identity bytes
 ///   the caller supplies unchanged, so the scalar `identity_element_components`
-///   returns for the bytes `create_encoding` returns for a derivation context
-///   encodes to the encoding of the scalar the received scalar type samples
-///   from `expected_uniform_bytes` over the tag built from
-///   `K::DECLARATION.identity_tag` and those bytes.
+///   returns for the bytes `create_encoding` returns for a value of the
+///   family's mock description encodes to the encoding of the scalar the
+///   received scalar type samples from `expected_uniform_bytes` over the tag
+///   built from `K::DECLARATION.identity_tag` and those bytes.
 /// Arrange: each case of `DECLARED_KEM_SELECTIONS` under the entitlement scope,
 ///   over each case of `DECLARED_HASH_TO_SCALAR_SELECTIONS` that declares
 ///   `HashToScalarIdentifier::Keccak256V1`, each case of
 ///   `DECLARED_ENCODING_SELECTIONS` that declares
 ///   `EncodingIdentifier::EthereumAbiV1`, and every member of
 ///   `PAIRING_CONCRETES`; the canonical bytes are the bytes `create_encoding`
-///   returns for the derivation context the `domain` builder returns, through
-///   `build_mock_i_encoding_consumer`; `setup` and `derive_identity` run in the
-///   arrangement.
+///   returns for the value `build_canonical_fields` returns at its defaults,
+///   through `build_mock_i_encoding_consumer` carrying `MockIEncodingContract`;
+///   `setup` and `derive_identity` run in the arrangement.
 /// Act:     `identity_element_components` on the identity element
 ///   `derive_identity` returned over `KemIdentity::Entitlement` of those bytes.
 /// Assert:  `encode_scalar` of the scalar equals `encode_scalar` of the scalar
@@ -830,47 +807,37 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
         }
     }
 
-    struct PairingConsumer<'a> {
+    struct Consumer<'a> {
         canonical: &'a [u8],
     }
 
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
+    impl<'a> ICreateKemCaseConsumer for Consumer<'a> {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &CreateKemCasePayload,
         ) -> Self::Output {
-            for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+            for case in DECLARED_KEM_SELECTIONS
                 .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                .filter(|case| case.scope == IdentityScope::Entitlement)
             {
-                let hashed = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_case,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection admits its concrete");
-                for case in DECLARED_KEM_SELECTIONS
-                    .iter()
-                    .filter(|case| case.scope == IdentityScope::Entitlement)
-                {
-                    let created = create_kem(
-                        &build_create_kem_deps(
-                            &consumed.adapter,
-                            &*hashed.adapter,
-                            KemConsumer {
-                                pairing: &consumed.adapter,
-                                canonical: self.canonical,
-                            },
-                            Default::default(),
-                        ),
-                        *case,
-                        build_create_kem_payload(Default::default()),
-                    );
-                    assert!(created.is_ok());
-                }
+                let created = create_kem(
+                    &build_create_kem_deps(
+                        pairing,
+                        hash_to_scalar,
+                        KemConsumer {
+                            pairing,
+                            canonical: self.canonical,
+                        },
+                        Default::default(),
+                    ),
+                    *case,
+                    build_create_kem_payload(Default::default()),
+                );
+                assert!(created.is_ok());
             }
         }
     }
@@ -879,10 +846,9 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
         .iter()
         .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
     {
-        let description = build_derivation_context_description(Default::default());
         let consumer = build_mock_i_encoding_consumer(
-            &description,
-            build_derivation_context(Default::default()),
+            &MockIEncodingContract,
+            build_canonical_fields(CanonicalFieldsOverrides::default()),
             Vec::new(),
         );
         let canonical = create_encoding(
@@ -896,26 +862,35 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
         .expect("an admitted encoding selection returns the consumer's output")
         .output
         .encoded
-        .expect("the derivation context encodes")
+        .expect("the canonical fields encode")
         .bytes;
 
         for concrete in PAIRING_CONCRETES {
-            let params = build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*concrete),
-                ..Default::default()
-            });
-            let deps = build_create_pairing_deps(
-                PairingConsumer {
-                    canonical: canonical.as_slice(),
-                },
-                Default::default(),
-            );
+            for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                .iter()
+                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+            {
+                // Act
+                let created = run_create_kem_case(
+                    &build_create_kem_case_deps(
+                        Consumer {
+                            canonical: canonical.as_slice(),
+                        },
+                        Default::default(),
+                    ),
+                    build_create_kem_case_params(CreateKemCaseParamsOverrides {
+                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                            concrete: Some(*concrete),
+                            ..Default::default()
+                        })),
+                        hash_to_scalar: Some(*h2s_case),
+                    }),
+                    build_create_kem_case_payload(Default::default()),
+                );
 
-            // Act
-            let created = create_pairing(&deps, params, CreatePairingPayload);
-
-            // Assert
-            assert!(created.is_ok());
+                // Assert
+                assert!(created.is_ok());
+            }
         }
     }
 }

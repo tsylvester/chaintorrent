@@ -9,6 +9,7 @@ use encoding::{
     build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
     build_mock_i_encoding_consumer, create_encoding,
 };
+use std::collections::BTreeSet;
 
 const REFERENCE_VECTOR_HEX: &str = concat!(
     "0000000000000000000000000000000000000000000000000000000000000100",
@@ -680,3 +681,140 @@ fn every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_ve
     }
 }
 // every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_fields
+
+/// Contract: the own entry, every concrete names every canonical field
+///   kind: `create_encoding` called with a concrete's selection and the
+///   identifier it declares, the consumer asking for the name of each kind
+///   of the official description's `FIELDS` →
+///   `Ok(CreateEncodingSuccessReturn { output })` with `output.type_names`
+///   one `EncodingTypeName` per kind in order, no two equal.
+/// Arrange: for each case, `build_create_encoding_deps` over
+///   `build_mock_i_encoding_consumer` taking `&MockIEncodingContract`,
+///   `build_canonical_fields` at its defaults, and no bytes,
+///   `build_create_encoding_params` overriding `concrete` and `identifier`
+///   with the case's selection and identifier, and
+///   `build_create_encoding_payload`, all from the crate's public surface
+///   under the `mocks` feature.
+/// Act:     `create_encoding(&deps, params, payload)` for the case.
+/// Assert:  the `type_names` of the `output` of the `Ok` arm holds one name
+///   per kind of `<MockIEncodingContract as IEncodingContract>::FIELDS` by
+///   `assert_eq!` on its length, and its names are pairwise distinct by
+///   `assert_eq!` on the count of the set of their text.
+/// Boundary: the public call `create_encoding`; the route
+///   `create_encoding`, the selected concrete's constructor where it has
+///   one, and the concrete's `type_name` as the consumer calls it.
+/// Mocked:  the consumer, replaced by the official `MockIEncodingConsumer`,
+///   and the description it carries, replaced by the official
+///   `MockIEncodingContract`.
+#[test]
+fn every_concrete_names_every_canonical_field_kind() {
+    // Arrange
+    for case in DECLARED_ENCODING_SELECTIONS {
+        let consumer = build_mock_i_encoding_consumer(
+            &MockIEncodingContract,
+            build_canonical_fields(Default::default()),
+            Vec::new(),
+        );
+        let deps = build_create_encoding_deps(consumer);
+        let params = build_create_encoding_params(CreateEncodingParamsOverrides {
+            concrete: Some(case.concrete),
+            identifier: Some(case.identifier),
+        });
+        let payload = build_create_encoding_payload(Default::default());
+
+        // Act
+        let result = create_encoding(&deps, params, payload);
+
+        // Assert
+        let success = result.expect("the selection is admitted under the identifier it declares");
+        assert_eq!(
+            success.output.type_names.len(),
+            <MockIEncodingContract as IEncodingContract>::FIELDS.len()
+        );
+        let names: BTreeSet<&str> = success
+            .output
+            .type_names
+            .iter()
+            .map(|name| name.as_str())
+            .collect();
+        assert_eq!(
+            names.len(),
+            <MockIEncodingContract as IEncodingContract>::FIELDS.len()
+        );
+    }
+}
+// every_concrete_names_every_canonical_field_kind
+
+/// Contract: the own entry, every concrete declaring the Ethereum ABI
+///   identifier names every kind by its ABI type: `create_encoding` called
+///   with the selection of a concrete that declares
+///   `EncodingIdentifier::EthereumAbiV1` and that identifier, the consumer
+///   asking for the name of each kind of the official description's
+///   `FIELDS` → `Ok(CreateEncodingSuccessReturn { output })` with
+///   `output.type_names` equal, in order, to `string`, `bytes`, `bytes32`,
+///   `uint16`, `uint32`, `uint64`, `bytes20`, and `uint256`.
+/// Arrange: for each case whose identifier is `EncodingIdentifier::EthereumAbiV1`,
+///   `build_create_encoding_deps` over `build_mock_i_encoding_consumer`
+///   taking `&MockIEncodingContract`, `build_canonical_fields` at its
+///   defaults, and no bytes, `build_create_encoding_params` overriding
+///   `concrete` and `identifier` with the case's selection and identifier,
+///   and `build_create_encoding_payload`, all from the crate's public
+///   surface under the `mocks` feature; the official description holds one
+///   kind of each, so a swapped or missing name changes the list.
+/// Act:     `create_encoding(&deps, params, payload)` for the case.
+/// Assert:  the text of each name of the `type_names` of the `output` of
+///   the `Ok` arm equals, in order, `string`, `bytes`, `bytes32`, `uint16`,
+///   `uint32`, `uint64`, `bytes20`, and `uint256` by `assert_eq!`, the
+///   expectation written from the ABI specification and not read back from
+///   the arrangement, and the name of the fixed twenty-byte kind does not
+///   equal `address` by `assert_ne!`.
+/// Boundary: the public call `create_encoding`; the route
+///   `create_encoding`, the selected concrete's constructor, and
+///   `type_name`.
+/// Mocked:  the consumer, replaced by the official `MockIEncodingConsumer`,
+///   and the description it carries, replaced by the official
+///   `MockIEncodingContract`.
+#[test]
+fn every_concrete_declaring_the_ethereum_abi_identifier_names_every_kind_by_its_abi_type() {
+    // Arrange
+    for case in DECLARED_ENCODING_SELECTIONS
+        .iter()
+        .filter(|case| case.identifier == EncodingIdentifier::EthereumAbiV1)
+    {
+        let consumer = build_mock_i_encoding_consumer(
+            &MockIEncodingContract,
+            build_canonical_fields(Default::default()),
+            Vec::new(),
+        );
+        let deps = build_create_encoding_deps(consumer);
+        let params = build_create_encoding_params(CreateEncodingParamsOverrides {
+            concrete: Some(case.concrete),
+            identifier: Some(case.identifier),
+        });
+        let payload = build_create_encoding_payload(Default::default());
+
+        // Act
+        let result = create_encoding(&deps, params, payload);
+
+        // Assert
+        let success = result.expect("the selection is admitted under the identifier it declares");
+        let names: Vec<&str> = success
+            .output
+            .type_names
+            .iter()
+            .map(|name| name.as_str())
+            .collect();
+        assert_eq!(
+            names,
+            vec![
+                "string", "bytes", "bytes32", "uint16", "uint32", "uint64", "bytes20", "uint256"
+            ]
+        );
+        let position = <MockIEncodingContract as IEncodingContract>::FIELDS
+            .iter()
+            .position(|kind| *kind == CanonicalFieldKind::FixedBytes20)
+            .expect("the official description names the fixed twenty-byte kind");
+        assert_ne!(names[position], "address");
+    }
+}
+// every_concrete_declaring_the_ethereum_abi_identifier_names_every_kind_by_its_abi_type

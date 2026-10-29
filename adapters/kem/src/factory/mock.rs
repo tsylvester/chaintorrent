@@ -4,22 +4,25 @@ use super::interface::{
     CapsuleComponents, CapsuleComponentsParams, CapsuleComponentsPayload, CapsuleComponentsReturn,
     CapsuleComponentsSuccessReturn, CapsuleFromComponentsParams, CapsuleFromComponentsPayload,
     CapsuleFromComponentsReturn, CapsuleFromComponentsSuccessReturn, ConsumeKemParams,
-    ConsumeKemPayload, CreateKemDeps, CreateKemFn, CreateKemParams, CreateKemPayload,
-    CreateKemReturn, CreateKemSuccessReturn, CredentialComponents, CredentialComponentsParams,
-    CredentialComponentsPayload, CredentialComponentsReturn, CredentialComponentsSuccessReturn,
-    CredentialFromComponentsParams, CredentialFromComponentsPayload,
-    CredentialFromComponentsReturn, CredentialFromComponentsSuccessReturn, DecapsulateParams,
-    DecapsulatePayload, DecapsulateReturn, DecapsulateSuccessReturn, DeriveIdentityErrorReturn,
-    DeriveIdentityParams, DeriveIdentityPayload, DeriveIdentityReturn, DeriveIdentitySuccessReturn,
+    ConsumeKemPayload, CreateKemCaseDeps, CreateKemCaseErrorReturn, CreateKemCaseParams,
+    CreateKemCasePayload, CreateKemCaseReturn, CreateKemCaseSuccessReturn, CreateKemDeps,
+    CreateKemFn, CreateKemParams, CreateKemPayload, CreateKemReturn, CreateKemSuccessReturn,
+    CredentialComponents, CredentialComponentsParams, CredentialComponentsPayload,
+    CredentialComponentsReturn, CredentialComponentsSuccessReturn, CredentialFromComponentsParams,
+    CredentialFromComponentsPayload, CredentialFromComponentsReturn,
+    CredentialFromComponentsSuccessReturn, DecapsulateParams, DecapsulatePayload,
+    DecapsulateReturn, DecapsulateSuccessReturn, DeriveIdentityErrorReturn, DeriveIdentityParams,
+    DeriveIdentityPayload, DeriveIdentityReturn, DeriveIdentitySuccessReturn,
     EncapsulateErrorReturn, EncapsulateParams, EncapsulatePayload, EncapsulateReturn,
-    EncapsulateSuccessReturn, EncapsulatedValue, ICredentialKemAdapter, IKemConsumer,
-    IdentityElementComponents, IdentityElementComponentsParams, IdentityElementComponentsPayload,
-    IdentityElementComponentsReturn, IdentityElementComponentsSuccessReturn, IdentityScope,
-    IsValidParams, IsValidPayload, IsValidReturn, IsValidSuccessReturn, IsWellFormedParams,
-    IsWellFormedPayload, IsWellFormedReturn, IsWellFormedSuccessReturn, IssueErrorReturn,
-    IssueParams, IssuePayload, IssueReturn, IssueSuccessReturn, KEM_INTERFACE_VERSION, KemConcrete,
-    KemDeclaration, KemIdentifier, KemIdentity, MasterScalarComponents,
-    MasterScalarComponentsParams, MasterScalarComponentsPayload, MasterScalarComponentsReturn,
+    EncapsulateSuccessReturn, EncapsulatedValue, ICreateKemCaseConsumer, ICredentialKemAdapter,
+    IKemConsumer, IdentityElementComponents, IdentityElementComponentsParams,
+    IdentityElementComponentsPayload, IdentityElementComponentsReturn,
+    IdentityElementComponentsSuccessReturn, IdentityScope, IsValidParams, IsValidPayload,
+    IsValidReturn, IsValidSuccessReturn, IsWellFormedParams, IsWellFormedPayload,
+    IsWellFormedReturn, IsWellFormedSuccessReturn, IssueErrorReturn, IssueParams, IssuePayload,
+    IssueReturn, IssueSuccessReturn, KEM_INTERFACE_VERSION, KemConcrete, KemDeclaration,
+    KemIdentifier, KemIdentity, MasterScalarComponents, MasterScalarComponentsParams,
+    MasterScalarComponentsPayload, MasterScalarComponentsReturn,
     MasterScalarComponentsSuccessReturn, MasterScalarFromComponentsParams,
     MasterScalarFromComponentsPayload, MasterScalarFromComponentsReturn,
     MasterScalarFromComponentsSuccessReturn, ParameterSetComponents, ParameterSetComponentsParams,
@@ -28,23 +31,30 @@ use super::interface::{
     ParameterSetFromComponentsPayload, ParameterSetFromComponentsReturn,
     ParameterSetFromComponentsSuccessReturn, ParameterSetScopeComponents, RerandomizeErrorReturn,
     RerandomizeParams, RerandomizePayload, RerandomizeReturn, RerandomizeSuccessReturn,
-    SetupErrorReturn, SetupParams, SetupPayload, SetupReturn, SetupScope, SetupSuccessReturn,
+    RunCreateKemCaseFn, SetupErrorReturn, SetupParams, SetupPayload, SetupReturn, SetupScope,
+    SetupSuccessReturn,
 };
 use core::convert::Infallible;
 use domain::{Secret, SecretConstructorParams, build_secret};
 use hash_to_scalar::{
-    DomainTag, DomainTagConstructorParamsOverrides, HashToScalarErrorReturn, HashToScalarParams,
-    HashToScalarPayload, IHashToScalarAdapter, build_domain_tag,
+    CreateHashToScalarErrorReturn, CreateHashToScalarParams, DomainTag,
+    DomainTagConstructorParamsOverrides, HashToScalarErrorReturn, HashToScalarParams,
+    HashToScalarPayload, IHashToScalarAdapter, build_create_hash_to_scalar_deps,
+    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload, build_domain_tag,
+    create_hash_to_scalar,
 };
 use pairing::{
-    AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, EncodeG1Params, EncodeG1Payload,
-    EncodeG2Params, EncodeG2Payload, EncodeGtParams, EncodeGtPayload, EncodeScalarParams,
-    EncodeScalarPayload, G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams,
-    G2GeneratorPayload, IPairingAdapter, IPairingArithmetic, ISampleUniformScalar,
-    IsIdentityG1Params, IsIdentityG1Payload, MsmG1Params, MsmG1Payload, MsmG1Term, MulG1Params,
-    MulG1Payload, MulG2Params, MulG2Payload, NegG1Params, NegG1Payload, PairingProductIsOneParams,
-    PairingProductIsOnePayload, PairingProductParams, PairingProductPayload, PairingProductTerm,
-    SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
+    AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, ConsumePairingParams,
+    ConsumePairingPayload, CreatePairingParams, CreatePairingPayload, EncodeG1Params,
+    EncodeG1Payload, EncodeG2Params, EncodeG2Payload, EncodeGtParams, EncodeGtPayload,
+    EncodeScalarParams, EncodeScalarPayload, G1GeneratorParams, G1GeneratorPayload,
+    G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingArithmetic, IPairingConsumer,
+    IPairingReference, ISampleUniformScalar, IsIdentityG1Params, IsIdentityG1Payload, MsmG1Params,
+    MsmG1Payload, MsmG1Term, MulG1Params, MulG1Payload, MulG2Params, MulG2Payload, NegG1Params,
+    NegG1Payload, PairingProductIsOneParams, PairingProductIsOnePayload, PairingProductParams,
+    PairingProductPayload, PairingProductTerm, SampleUniformScalarErrorReturn,
+    SampleUniformScalarParams, SampleUniformScalarPayload, build_create_pairing_deps,
+    build_create_pairing_params, create_pairing,
 };
 use serde_json::{Map, Value};
 use zeroize::Zeroize;
@@ -124,7 +134,7 @@ impl<'a, P: IPairingArithmetic> MockICredentialKemAdapter<'a, P> {
     ) -> Result<(P::Scalar, P::G1), MapIdentityFailure> {
         let message: &[u8] = match identity {
             KemIdentity::Entitlement { canonical } => canonical,
-            KemIdentity::Asset { identity_hash } => identity_hash.as_bytes(),
+            KemIdentity::Asset { root } => root.as_bytes(),
         };
         let scalar = self
             .hash_to_scalar
@@ -211,12 +221,8 @@ impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for MockICredentialKemAdap
         );
         let scope = match params.scope {
             SetupScope::Entitlement => ParameterSetScopeComponents::Entitlement,
-            SetupScope::Asset { identity_hash } => {
-                match self.map_identity(
-                    &KemIdentity::Asset { identity_hash },
-                    &u0.product,
-                    &u1.product,
-                ) {
+            SetupScope::Asset { root } => {
+                match self.map_identity(&KemIdentity::Asset { root }, &u0.product, &u1.product) {
                     Ok((_, element)) => ParameterSetScopeComponents::Asset {
                         identity_element: element,
                     },
@@ -2480,4 +2486,109 @@ pub fn mock_create_kem<'a, P: IPairingArithmetic, C: IKemConsumer<P>>(
         build_consume_kem_payload(adapter, Default::default()),
     );
     Ok(build_create_kem_success_return(output, Default::default()))
+}
+
+#[derive(Default)]
+pub struct CreateKemCaseParamsOverrides {
+    pub pairing: Option<CreatePairingParams>,
+    pub hash_to_scalar: Option<CreateHashToScalarParams>,
+}
+
+pub fn build_create_kem_case_params(
+    overrides: CreateKemCaseParamsOverrides,
+) -> CreateKemCaseParams {
+    CreateKemCaseParams {
+        pairing: overrides
+            .pairing
+            .unwrap_or_else(|| build_create_pairing_params(Default::default())),
+        hash_to_scalar: overrides
+            .hash_to_scalar
+            .unwrap_or_else(|| build_create_hash_to_scalar_params(Default::default())),
+    }
+}
+
+#[derive(Default)]
+pub struct CreateKemCaseDepsOverrides;
+
+pub fn build_create_kem_case_deps<C: ICreateKemCaseConsumer>(
+    consumer: C,
+    _overrides: CreateKemCaseDepsOverrides,
+) -> CreateKemCaseDeps<C> {
+    CreateKemCaseDeps { consumer }
+}
+
+#[derive(Default)]
+pub struct CreateKemCasePayloadOverrides;
+
+pub fn build_create_kem_case_payload(
+    _overrides: CreateKemCasePayloadOverrides,
+) -> CreateKemCasePayload {
+    CreateKemCasePayload
+}
+
+#[derive(Default)]
+pub struct CreateKemCaseSuccessReturnOverrides;
+
+pub fn build_create_kem_case_success_return<O>(
+    output: O,
+    _overrides: CreateKemCaseSuccessReturnOverrides,
+) -> CreateKemCaseSuccessReturn<O> {
+    CreateKemCaseSuccessReturn { output }
+}
+
+struct CaseAtPairing<'a, C: ICreateKemCaseConsumer> {
+    consumer: &'a C,
+    case_payload: &'a CreateKemCasePayload,
+    hash_to_scalar_params: CreateHashToScalarParams,
+}
+
+impl<C: ICreateKemCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
+    type Output = CreateKemCaseReturn<C::Output>;
+
+    fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        &self,
+        _params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output {
+        let hashed: Result<_, CreateHashToScalarErrorReturn> = create_hash_to_scalar::<P::Scalar>(
+            &build_create_hash_to_scalar_deps(Default::default()),
+            self.hash_to_scalar_params,
+            build_create_hash_to_scalar_payload(Default::default()),
+        );
+        let hashed = match hashed {
+            Ok(hashed) => hashed,
+            Err(error) => {
+                return Err(CreateKemCaseErrorReturn::CreateHashToScalar(error));
+            }
+        };
+        let output = self.consumer.consume_create_kem_case(
+            &payload.adapter,
+            &*hashed.adapter,
+            self.case_payload,
+        );
+        Ok(CreateKemCaseSuccessReturn { output })
+    }
+}
+
+pub fn run_create_kem_case<C: ICreateKemCaseConsumer>(
+    deps: &CreateKemCaseDeps<C>,
+    params: CreateKemCaseParams,
+    payload: CreateKemCasePayload,
+) -> CreateKemCaseReturn<C::Output> {
+    let _: RunCreateKemCaseFn<C> = run_create_kem_case;
+    match create_pairing(
+        &build_create_pairing_deps(
+            CaseAtPairing {
+                consumer: &deps.consumer,
+                case_payload: &payload,
+                hash_to_scalar_params: params.hash_to_scalar,
+            },
+            Default::default(),
+        ),
+        params.pairing,
+        CreatePairingPayload,
+    ) {
+        Ok(success) => success.output,
+        Err(error) => Err(CreateKemCaseErrorReturn::CreatePairing(error)),
+    }
 }

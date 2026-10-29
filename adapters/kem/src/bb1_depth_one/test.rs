@@ -1,60 +1,60 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use super::interface::{
-    BB1_DEPTH_ONE_IDENTITY_TAG, Bb1DepthOneCapsule, Bb1DepthOneKem, Bb1DepthOneParameterSetScope,
+    BB1_DEPTH_ONE_IDENTITY_TAG, Bb1DepthOneCapsule, Bb1DepthOneCasePayload, Bb1DepthOneKem,
+    Bb1DepthOneParameterSetScope, IBb1DepthOneCaseConsumer,
 };
 use super::mock::{
-    Bb1DepthOneCredentialOverrides, Bb1DepthOneParameterSetOverrides,
+    Bb1DepthOneCaseParamsOverrides, Bb1DepthOneCredentialOverrides,
+    Bb1DepthOneParameterSetOverrides, build_bb1_depth_one_case_deps,
+    build_bb1_depth_one_case_params, build_bb1_depth_one_case_payload,
     build_bb1_depth_one_credential, build_bb1_depth_one_identity_element, build_bb1_depth_one_kem,
     build_bb1_depth_one_kem_constructor_params, build_bb1_depth_one_master_scalar,
-    build_bb1_depth_one_parameter_set,
+    build_bb1_depth_one_parameter_set, run_bb1_depth_one_case,
 };
 use crate::factory::provides::{
     CapsuleComponents, CapsuleFromComponentsPayloadOverrides, CredentialComponentsOverrides,
-    CredentialFromComponentsPayloadOverrides, DeriveIdentityErrorReturn,
+    CredentialFromComponentsPayloadOverrides, DecapsulateReturn, DeriveIdentityErrorReturn,
     DeriveIdentityPayloadOverrides, EncapsulateErrorReturn, EncapsulatePayloadOverrides,
-    ICredentialKemAdapter, IssueErrorReturn, IssuePayloadOverrides, KemIdentity,
-    MasterScalarComponentsOverrides, MasterScalarFromComponentsPayloadOverrides,
-    ParameterSetComponentsOverrides, ParameterSetFromComponentsPayloadOverrides,
-    ParameterSetScopeComponents, RerandomizeErrorReturn, RerandomizePayloadOverrides,
-    SetupErrorReturn, SetupParamsOverrides, SetupPayloadOverrides, SetupScope,
-    build_capsule_components_params, build_capsule_components_payload,
-    build_capsule_from_components_params, build_capsule_from_components_payload,
-    build_credential_components, build_credential_components_params,
-    build_credential_components_payload, build_credential_from_components_params,
-    build_credential_from_components_payload, build_decapsulate_params, build_decapsulate_payload,
-    build_derive_identity_params, build_derive_identity_payload, build_encapsulate_params,
-    build_encapsulate_payload, build_identity_element_components_params,
-    build_identity_element_components_payload, build_is_valid_params, build_is_valid_payload,
-    build_is_well_formed_params, build_is_well_formed_payload, build_issue_params,
-    build_issue_payload, build_master_scalar_components, build_master_scalar_components_params,
+    ICredentialKemAdapter, IsValidReturn, IsWellFormedReturn, IssueErrorReturn,
+    IssuePayloadOverrides, KemIdentity, MasterScalarComponentsOverrides,
+    MasterScalarFromComponentsPayloadOverrides, ParameterSetComponentsOverrides,
+    ParameterSetFromComponentsPayloadOverrides, ParameterSetScopeComponents,
+    RerandomizeErrorReturn, RerandomizePayloadOverrides, SetupErrorReturn, SetupParamsOverrides,
+    SetupPayloadOverrides, SetupScope, build_capsule_components_params,
+    build_capsule_components_payload, build_capsule_from_components_params,
+    build_capsule_from_components_payload, build_credential_components,
+    build_credential_components_params, build_credential_components_payload,
+    build_credential_from_components_params, build_credential_from_components_payload,
+    build_decapsulate_params, build_decapsulate_payload, build_derive_identity_params,
+    build_derive_identity_payload, build_encapsulate_params, build_encapsulate_payload,
+    build_identity_element_components_params, build_identity_element_components_payload,
+    build_is_valid_params, build_is_valid_payload, build_is_well_formed_params,
+    build_is_well_formed_payload, build_issue_params, build_issue_payload,
+    build_master_scalar_components, build_master_scalar_components_params,
     build_master_scalar_components_payload, build_master_scalar_from_components_params,
     build_master_scalar_from_components_payload, build_parameter_set_components,
     build_parameter_set_components_params, build_parameter_set_components_payload,
     build_parameter_set_from_components_params, build_parameter_set_from_components_payload,
     build_rerandomize_params, build_rerandomize_payload, build_setup_params, build_setup_payload,
 };
-use domain::{
-    AssetIdentityHashConstructorParamsOverrides, Secret, build_asset_identity_hash, build_secret,
-};
+use domain::{Secret, build_secret};
 use hash_to_scalar::{
     CreateHashToScalarParamsOverrides, HashToScalarConcrete, HashToScalarErrorReturn,
-    MockIHashToScalarAdapterFailureMode, build_create_hash_to_scalar_deps,
-    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload, create_hash_to_scalar,
+    IHashToScalarAdapter, MockIHashToScalarAdapterFailureMode, build_create_hash_to_scalar_params,
 };
+use hashing::{RootConstructorParamsOverrides, build_root};
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingPayload, EncodeG1Params,
-    EncodeG1PayloadOverrides, EncodeG2Params, EncodeG2PayloadOverrides, EncodeGtParams,
-    EncodeGtPayloadOverrides, EncodeScalarParams, EncodeScalarPayloadOverrides, IPairingAdapter,
-    IPairingArithmetic, IPairingConsumer, ISampleUniformScalar, MulG1Params, MulG1PayloadOverrides,
-    MulG2Params, MulG2PayloadOverrides, PairingProductParams, PairingProductPayloadOverrides,
-    PairingProductTerm, PairingProductTermOverrides, SampleUniformScalarErrorReturn,
-    SampleUniformScalarParams, SampleUniformScalarPayloadOverrides, build_create_pairing_deps,
-    build_create_pairing_params, build_encode_g1_payload, build_encode_g2_payload,
-    build_encode_gt_payload, build_encode_scalar_payload, build_g1_generator_success_return,
+    EncodeG1Params, EncodeG1PayloadOverrides, EncodeG2Params, EncodeG2PayloadOverrides,
+    EncodeGtParams, EncodeGtPayloadOverrides, EncodeScalarParams, EncodeScalarPayloadOverrides,
+    IPairingAdapter, IPairingArithmetic, IPairingReference, ISampleUniformScalar, MulG1Params,
+    MulG1PayloadOverrides, MulG2Params, MulG2PayloadOverrides, PairingProductParams,
+    PairingProductPayloadOverrides, PairingProductTerm, PairingProductTermOverrides,
+    SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayloadOverrides,
+    build_encode_g1_payload, build_encode_g2_payload, build_encode_gt_payload,
+    build_encode_scalar_payload, build_g1_generator_success_return,
     build_g2_generator_success_return, build_mul_g1_payload, build_mul_g2_payload,
     build_pairing_product_payload, build_pairing_product_term, build_sample_uniform_scalar_payload,
-    create_pairing,
 };
 
 fn scalar_bytes<P: IPairingAdapter>(value: u8) -> Secret<Vec<u8>> {
@@ -203,26 +203,20 @@ fn try_new_holds_the_tag_the_declaration_names() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
+            // Arrange
             let params = build_bb1_depth_one_kem_constructor_params(
-                &consumed.adapter,
-                &*made.adapter,
+                pairing,
+                hash_to_scalar,
                 Default::default(),
             );
 
@@ -238,10 +232,10 @@ fn try_new_holds_the_tag_the_declaration_names() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -261,25 +255,18 @@ fn setup_returns_the_master_sampling_refusal_whole() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let params = build_setup_params(Default::default());
             let payload = build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
                 master_uniform: Some(shortened::<P>()),
@@ -306,10 +293,10 @@ fn setup_returns_the_master_sampling_refusal_whole() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -328,25 +315,18 @@ fn setup_returns_the_u0_sampling_refusal_whole() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let params = build_setup_params(Default::default());
             let payload = build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
                 u0_uniform: Some(shortened::<P>()),
@@ -371,10 +351,10 @@ fn setup_returns_the_u0_sampling_refusal_whole() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -393,25 +373,18 @@ fn setup_returns_the_u1_sampling_refusal_whole() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let params = build_setup_params(Default::default());
             let payload = build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
                 u1_uniform: Some(shortened::<P>()),
@@ -436,10 +409,10 @@ fn setup_returns_the_u1_sampling_refusal_whole() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -458,25 +431,18 @@ fn setup_returns_the_master_refusal_when_the_master_and_u0_bytes_are_both_refuse
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let params = build_setup_params(Default::default());
             let payload = build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
                 master_uniform: Some(shortened::<P>()),
@@ -504,10 +470,10 @@ fn setup_returns_the_master_refusal_when_the_master_and_u0_bytes_are_both_refuse
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -527,25 +493,18 @@ fn setup_fixes_an_entitlement_scope_set_to_no_identity() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let params = build_setup_params(Default::default());
             let payload = build_setup_payload::<P::Scalar>(Default::default());
 
@@ -564,20 +523,20 @@ fn setup_fixes_an_entitlement_scope_set_to_no_identity() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
     assert!(created.is_ok());
 }
 
-/// Contract: `params.scope` is `SetupScope::Asset { identity_hash }` and the
+/// Contract: `params.scope` is `SetupScope::Asset { root }` and the
 ///   identity mapping succeeds → `Ok` holding a parameter set whose scope is
 ///   `Bb1DepthOneParameterSetScope::Asset { identity_element }`.
-/// Arrange: the asset scope with `hash` from `build_asset_identity_hash` with
+/// Arrange: the asset scope with `root` from `build_root` with
 ///   `bytes: Some([0xa1; 32])`, and `build_setup_payload(Default::default())`.
 /// Act:     `kem.setup(params, payload)`.
 /// Assert:  `success.parameter_set.scope` matches
@@ -587,32 +546,23 @@ fn setup_fixes_an_asset_scope_set_to_its_identity_element() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
                 bytes: Some([0xa1; 32]),
             });
             let params = build_setup_params(SetupParamsOverrides {
-                scope: Some(SetupScope::Asset {
-                    identity_hash: &hash,
-                }),
+                scope: Some(SetupScope::Asset { root: &root }),
             });
             let payload = build_setup_payload::<P::Scalar>(Default::default());
 
@@ -631,21 +581,21 @@ fn setup_fixes_an_asset_scope_set_to_its_identity_element() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
     assert!(created.is_ok());
 }
 
-/// Contract: `params.scope` is `SetupScope::Asset { identity_hash }` and the
+/// Contract: `params.scope` is `SetupScope::Asset { root }` and the
 ///   hash adapter refuses → `Err(SetupErrorReturn::HashToScalar(error))`, the
 ///   refusal unchanged.
 /// Arrange: `made` under the `SamplingRefused` failure mode, the asset scope
-///   with `hash` from `build_asset_identity_hash` with `bytes:
+///   with `root` from `build_root` with `bytes:
 ///   Some([0xa1; 32])`, and `build_setup_payload(Default::default())`.
 /// Act:     `kem.setup(params, payload)`.
 /// Assert:  the whole error equals `SetupErrorReturn::HashToScalar(
@@ -655,37 +605,22 @@ fn setup_returns_the_hash_refusal_whole_under_the_asset_scope() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = CreateHashToScalarParamsOverrides {
-                concrete: Some(HashToScalarConcrete::Mock(
-                    MockIHashToScalarAdapterFailureMode::SamplingRefused,
-                )),
-                ..Default::default()
-            };
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the named selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
                 bytes: Some([0xa1; 32]),
             });
             let params = build_setup_params(SetupParamsOverrides {
-                scope: Some(SetupScope::Asset {
-                    identity_hash: &hash,
-                }),
+                scope: Some(SetupScope::Asset { root: &root }),
             });
             let payload = build_setup_payload::<P::Scalar>(Default::default());
 
@@ -709,17 +644,27 @@ fn setup_returns_the_hash_refusal_whole_under_the_asset_scope() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+            hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                CreateHashToScalarParamsOverrides {
+                    concrete: Some(HashToScalarConcrete::Mock(
+                        MockIHashToScalarAdapterFailureMode::SamplingRefused,
+                    )),
+                    ..Default::default()
+                },
+            )),
+            ..Default::default()
+        }),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
     assert!(created.is_ok());
 }
 
-/// Contract: `params.scope` is `SetupScope::Asset { identity_hash }` and `F`
+/// Contract: `params.scope` is `SetupScope::Asset { root }` and `F`
 ///   is the identity element → `Err(SetupErrorReturn::TrivialIdentityElement)`.
 /// Arrange: the asset scope as the asset-scope admission block and
 ///   `build_setup_payload` with `u0_uniform` and `u1_uniform` each
@@ -732,32 +677,23 @@ fn setup_refuses_a_trivial_identity_element_under_the_asset_scope() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
                 bytes: Some([0xa1; 32]),
             });
             let params = build_setup_params(SetupParamsOverrides {
-                scope: Some(SetupScope::Asset {
-                    identity_hash: &hash,
-                }),
+                scope: Some(SetupScope::Asset { root: &root }),
             });
             let payload = build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
                 u0_uniform: Some(scalar_bytes::<P>(0)),
@@ -777,10 +713,10 @@ fn setup_refuses_a_trivial_identity_element_under_the_asset_scope() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -792,7 +728,7 @@ fn setup_refuses_a_trivial_identity_element_under_the_asset_scope() {
 ///   before hashing.
 /// Arrange: `made` under the `SamplingRefused` failure mode, so a hash that
 ///   ran first returns the hash refusal, the default entitlement parameter
-///   set, and `KemIdentity::Asset { identity_hash: &hash }`.
+///   set, and `KemIdentity::Asset { root: &root }`.
 /// Act:     `kem.derive_identity(params, payload)`.
 /// Assert:  the whole error equals `DeriveIdentityErrorReturn::
 ///   WrongIdentityScope`.
@@ -801,38 +737,22 @@ fn derive_identity_refuses_an_asset_identity_under_an_entitlement_set_before_has
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = CreateHashToScalarParamsOverrides {
-                concrete: Some(HashToScalarConcrete::Mock(
-                    MockIHashToScalarAdapterFailureMode::SamplingRefused,
-                )),
-                ..Default::default()
-            };
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the named selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
-            let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
                 bytes: Some([0xa1; 32]),
             });
-            let identity = KemIdentity::Asset {
-                identity_hash: &hash,
-            };
+            let identity = KemIdentity::Asset { root: &root };
             let params = build_derive_identity_params(Default::default());
             let payload = build_derive_identity_payload(
                 &parameter_set,
@@ -853,10 +773,20 @@ fn derive_identity_refuses_an_asset_identity_under_an_entitlement_set_before_has
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+            hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                CreateHashToScalarParamsOverrides {
+                    concrete: Some(HashToScalarConcrete::Mock(
+                        MockIHashToScalarAdapterFailureMode::SamplingRefused,
+                    )),
+                    ..Default::default()
+                },
+            )),
+            ..Default::default()
+        }),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -877,36 +807,23 @@ fn derive_identity_refuses_an_entitlement_identity_under_an_asset_set_before_has
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = CreateHashToScalarParamsOverrides {
-                concrete: Some(HashToScalarConcrete::Mock(
-                    MockIHashToScalarAdapterFailureMode::SamplingRefused,
-                )),
-                ..Default::default()
-            };
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the named selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let parameter_set = build_bb1_depth_one_parameter_set(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneParameterSetOverrides {
                     scope: Some(Bb1DepthOneParameterSetScope::Asset {
                         identity_element: build_bb1_depth_one_identity_element(
-                            &consumed.adapter,
+                            pairing,
                             Default::default(),
                         )
                         .element,
@@ -937,10 +854,20 @@ fn derive_identity_refuses_an_entitlement_identity_under_an_asset_set_before_has
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+            hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                CreateHashToScalarParamsOverrides {
+                    concrete: Some(HashToScalarConcrete::Mock(
+                        MockIHashToScalarAdapterFailureMode::SamplingRefused,
+                    )),
+                    ..Default::default()
+                },
+            )),
+            ..Default::default()
+        }),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -960,32 +887,18 @@ fn derive_identity_returns_the_hash_refusal_whole() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = CreateHashToScalarParamsOverrides {
-                concrete: Some(HashToScalarConcrete::Mock(
-                    MockIHashToScalarAdapterFailureMode::SamplingRefused,
-                )),
-                ..Default::default()
-            };
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the named selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_derive_identity_params(Default::default());
             let payload = build_derive_identity_payload(&parameter_set, Default::default());
 
@@ -1009,10 +922,20 @@ fn derive_identity_returns_the_hash_refusal_whole() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+            hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                CreateHashToScalarParamsOverrides {
+                    concrete: Some(HashToScalarConcrete::Mock(
+                        MockIHashToScalarAdapterFailureMode::SamplingRefused,
+                    )),
+                    ..Default::default()
+                },
+            )),
+            ..Default::default()
+        }),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1032,28 +955,21 @@ fn derive_identity_refuses_a_trivial_identity_element() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let identity_point = identity_g1(&consumed.adapter);
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let identity_point = identity_g1(pairing);
             let parameter_set = build_bb1_depth_one_parameter_set(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneParameterSetOverrides {
                     u0: Some(identity_point.clone()),
                     u1: Some(identity_point),
@@ -1075,10 +991,10 @@ fn derive_identity_refuses_a_trivial_identity_element() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1091,7 +1007,7 @@ fn derive_identity_refuses_a_trivial_identity_element() {
 /// Arrange: the parameter set with `u1` the first-group identity element, so
 ///   `F` is the set's default `u0`, `scope` the asset scope fixing the
 ///   first-group generator, a point other than that `u0`, and
-///   `KemIdentity::Asset { identity_hash: &hash }`.
+///   `KemIdentity::Asset { root: &root }`.
 /// Act:     `kem.derive_identity(params, payload)`.
 /// Assert:  the whole error equals `DeriveIdentityErrorReturn::
 ///   OutsideAssetScope`.
@@ -1100,41 +1016,32 @@ fn derive_identity_refuses_an_element_outside_the_asset_scope() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let parameter_set = build_bb1_depth_one_parameter_set(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneParameterSetOverrides {
-                    u1: Some(identity_g1(&consumed.adapter)),
+                    u1: Some(identity_g1(pairing)),
                     scope: Some(Bb1DepthOneParameterSetScope::Asset {
-                        identity_element: point_g1(&consumed.adapter),
+                        identity_element: point_g1(pairing),
                     }),
                     ..Default::default()
                 },
             );
-            let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
+            let root = build_root(RootConstructorParamsOverrides {
                 bytes: Some([0xa1; 32]),
             });
-            let identity = KemIdentity::Asset {
-                identity_hash: &hash,
-            };
+            let identity = KemIdentity::Asset { root: &root };
             let params = build_derive_identity_params(Default::default());
             let payload = build_derive_identity_payload(
                 &parameter_set,
@@ -1155,10 +1062,10 @@ fn derive_identity_refuses_an_element_outside_the_asset_scope() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1170,7 +1077,7 @@ fn derive_identity_refuses_an_element_outside_the_asset_scope() {
 /// Arrange: `u0` the default parameter set's `u0`, the parameter set with `u1`
 ///   the first-group identity element, so `F` is `u0` whatever `I` is, `scope`
 ///   the asset scope fixing `u0`, and `KemIdentity::Asset
-///   { identity_hash: &hash }`.
+///   { root: &root }`.
 /// Act:     `kem.derive_identity(params, payload)`.
 /// Assert:  `encoded_g1(success.identity_element.element)` equals
 ///   `encoded_g1(u0)`, the sum of `u0` and a multiple of the identity element.
@@ -1179,42 +1086,33 @@ fn derive_identity_derives_the_element_under_the_asset_scope() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let u0 = build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default()).u0;
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let u0 = build_bb1_depth_one_parameter_set(pairing, Default::default()).u0;
             let parameter_set = build_bb1_depth_one_parameter_set(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneParameterSetOverrides {
-                    u1: Some(identity_g1(&consumed.adapter)),
+                    u1: Some(identity_g1(pairing)),
                     scope: Some(Bb1DepthOneParameterSetScope::Asset {
                         identity_element: u0.clone(),
                     }),
                     ..Default::default()
                 },
             );
-            let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
+            let root = build_root(RootConstructorParamsOverrides {
                 bytes: Some([0xa1; 32]),
             });
-            let identity = KemIdentity::Asset {
-                identity_hash: &hash,
-            };
+            let identity = KemIdentity::Asset { root: &root };
             let params = build_derive_identity_params(Default::default());
             let payload = build_derive_identity_payload(
                 &parameter_set,
@@ -1231,17 +1129,16 @@ fn derive_identity_derives_the_element_under_the_asset_scope() {
                 panic!("a derived element inside the asset scope is admitted")
             };
             assert!(
-                encoded_g1(&consumed.adapter, success.identity_element.element)
-                    == encoded_g1(&consumed.adapter, u0)
+                encoded_g1(pairing, success.identity_element.element) == encoded_g1(pairing, u0)
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1261,30 +1158,23 @@ fn derive_identity_derives_the_element_under_the_entitlement_scope() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let u0 = build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default()).u0;
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let u0 = build_bb1_depth_one_parameter_set(pairing, Default::default()).u0;
             let parameter_set = build_bb1_depth_one_parameter_set(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneParameterSetOverrides {
-                    u1: Some(identity_g1(&consumed.adapter)),
+                    u1: Some(identity_g1(pairing)),
                     ..Default::default()
                 },
             );
@@ -1299,17 +1189,16 @@ fn derive_identity_derives_the_element_under_the_entitlement_scope() {
                 panic!("the mapping under the entitlement scope is admitted")
             };
             assert!(
-                encoded_g1(&consumed.adapter, success.identity_element.element)
-                    == encoded_g1(&consumed.adapter, u0)
+                encoded_g1(pairing, success.identity_element.element) == encoded_g1(pairing, u0)
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1329,30 +1218,22 @@ fn issue_returns_the_sampling_refusal_whole() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let master_scalar = build_bb1_depth_one_master_scalar(Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
             let params = build_issue_params(Default::default());
             let payload = build_issue_payload::<P::Scalar, _, _, _>(
                 &parameter_set,
@@ -1381,10 +1262,10 @@ fn issue_returns_the_sampling_refusal_whole() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1404,31 +1285,23 @@ fn issue_returns_the_default_credential_for_unit_randomness() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let master_scalar = build_bb1_depth_one_master_scalar(Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
-            let credential = build_bb1_depth_one_credential(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
+            let credential = build_bb1_depth_one_credential(pairing, Default::default());
             let params = build_issue_params(Default::default());
             let payload = build_issue_payload::<P::Scalar, _, _, _>(
                 &parameter_set,
@@ -1446,22 +1319,16 @@ fn issue_returns_the_default_credential_for_unit_randomness() {
             let Ok(success) = result else {
                 panic!("the default payload is admitted")
             };
-            assert!(
-                encoded_g1(&consumed.adapter, success.credential.a)
-                    == encoded_g1(&consumed.adapter, credential.a)
-            );
-            assert!(
-                encoded_g2(&consumed.adapter, success.credential.b)
-                    == encoded_g2(&consumed.adapter, credential.b)
-            );
+            assert!(encoded_g1(pairing, success.credential.a) == encoded_g1(pairing, credential.a));
+            assert!(encoded_g2(pairing, success.credential.b) == encoded_g2(pairing, credential.b));
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1478,30 +1345,22 @@ fn issue_derives_b_as_the_identity_element_for_zero_randomness() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let master_scalar = build_bb1_depth_one_master_scalar(Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
             let params = build_issue_params(Default::default());
             let payload = build_issue_payload::<P::Scalar, _, _, _>(
                 &parameter_set,
@@ -1520,17 +1379,17 @@ fn issue_derives_b_as_the_identity_element_for_zero_randomness() {
                 panic!("the default payload is admitted")
             };
             assert!(
-                encoded_g2(&consumed.adapter, success.credential.b)
-                    == encoded_g2(&consumed.adapter, identity_g2(&consumed.adapter))
+                encoded_g2(pairing, success.credential.b)
+                    == encoded_g2(pairing, identity_g2(pairing))
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1546,30 +1405,22 @@ fn issue_returns_the_sampled_randomness() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let master_scalar = build_bb1_depth_one_master_scalar(Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
             let params = build_issue_params(Default::default());
             let payload = build_issue_payload::<P::Scalar, _, _, _>(
                 &parameter_set,
@@ -1588,17 +1439,17 @@ fn issue_returns_the_sampled_randomness() {
                 panic!("the default payload is admitted")
             };
             assert!(
-                encoded_scalar(&consumed.adapter, success.randomness.expose().clone())
-                    == encoded_scalar(&consumed.adapter, scalar::<P>(1))
+                encoded_scalar(pairing, success.randomness.expose().clone())
+                    == encoded_scalar(pairing, scalar::<P>(1))
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1618,30 +1469,22 @@ fn rerandomize_returns_the_sampling_refusal_whole() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
-            let credential = build_bb1_depth_one_credential(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
+            let credential = build_bb1_depth_one_credential(pairing, Default::default());
             let params = build_rerandomize_params(Default::default());
             let payload = build_rerandomize_payload::<P::Scalar, _, _, _>(
                 &parameter_set,
@@ -1670,10 +1513,10 @@ fn rerandomize_returns_the_sampling_refusal_whole() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1691,30 +1534,22 @@ fn rerandomize_leaves_a_unchanged_for_a_zero_offset() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
-            let credential = build_bb1_depth_one_credential(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
+            let credential = build_bb1_depth_one_credential(pairing, Default::default());
             let params = build_rerandomize_params(Default::default());
             let payload = build_rerandomize_payload::<P::Scalar, _, _, _>(
                 &parameter_set,
@@ -1732,18 +1567,15 @@ fn rerandomize_leaves_a_unchanged_for_a_zero_offset() {
             let Ok(success) = result else {
                 panic!("the default payload is admitted")
             };
-            assert!(
-                encoded_g1(&consumed.adapter, success.credential.a)
-                    == encoded_g1(&consumed.adapter, credential.a)
-            );
+            assert!(encoded_g1(pairing, success.credential.a) == encoded_g1(pairing, credential.a));
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1759,30 +1591,22 @@ fn rerandomize_leaves_b_unchanged_for_a_zero_offset() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
-            let credential = build_bb1_depth_one_credential(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
+            let credential = build_bb1_depth_one_credential(pairing, Default::default());
             let params = build_rerandomize_params(Default::default());
             let payload = build_rerandomize_payload::<P::Scalar, _, _, _>(
                 &parameter_set,
@@ -1800,18 +1624,15 @@ fn rerandomize_leaves_b_unchanged_for_a_zero_offset() {
             let Ok(success) = result else {
                 panic!("the default payload is admitted")
             };
-            assert!(
-                encoded_g2(&consumed.adapter, success.credential.b)
-                    == encoded_g2(&consumed.adapter, credential.b)
-            );
+            assert!(encoded_g2(pairing, success.credential.b) == encoded_g2(pairing, credential.b));
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1827,30 +1648,22 @@ fn rerandomize_returns_the_sampled_offset() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
-            let credential = build_bb1_depth_one_credential(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
+            let credential = build_bb1_depth_one_credential(pairing, Default::default());
             let params = build_rerandomize_params(Default::default());
             let payload = build_rerandomize_payload::<P::Scalar, _, _, _>(
                 &parameter_set,
@@ -1869,17 +1682,17 @@ fn rerandomize_returns_the_sampled_offset() {
                 panic!("the default payload is admitted")
             };
             assert!(
-                encoded_scalar(&consumed.adapter, success.offset.expose().clone())
-                    == encoded_scalar(&consumed.adapter, scalar::<P>(1))
+                encoded_scalar(pairing, success.offset.expose().clone())
+                    == encoded_scalar(pairing, scalar::<P>(1))
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -1897,30 +1710,22 @@ fn is_valid_accepts_a_credential_that_satisfies_the_check() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = IsValidReturn;
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
-            let credential = build_bb1_depth_one_credential(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
+            let credential = build_bb1_depth_one_credential(pairing, Default::default());
             let params = build_is_valid_params(Default::default());
             let payload = build_is_valid_payload(
                 &parameter_set,
@@ -1930,23 +1735,23 @@ fn is_valid_accepts_a_credential_that_satisfies_the_check() {
             );
 
             // Act
-            let result = kem.is_valid(params, payload);
-
-            // Assert
-            let Ok(success) = result;
-            assert!(success.is_valid);
+            kem.is_valid(params, payload)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let Ok(success) = created.output;
+    assert!(success.is_valid);
 }
 
 /// Contract: the check fails → `Ok(IsValidSuccessReturn { is_valid: false })`.
@@ -1959,31 +1764,23 @@ fn is_valid_rejects_a_credential_with_another_a() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = IsValidReturn;
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
             let credential = build_bb1_depth_one_credential(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneCredentialOverrides {
                     a: Some(parameter_set.g1.clone()),
                     ..Default::default()
@@ -1998,23 +1795,23 @@ fn is_valid_rejects_a_credential_with_another_a() {
             );
 
             // Act
-            let result = kem.is_valid(params, payload);
-
-            // Assert
-            let Ok(success) = result;
-            assert!(!success.is_valid);
+            kem.is_valid(params, payload)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let Ok(success) = created.output;
+    assert!(!success.is_valid);
 }
 
 /// Contract: the uniform bytes are refused →
@@ -2029,27 +1826,19 @@ fn encapsulate_returns_the_sampling_refusal_whole() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_encapsulate_params(Default::default());
             let payload = build_encapsulate_payload::<P::Scalar, _>(
                 &parameter_set,
@@ -2076,10 +1865,10 @@ fn encapsulate_returns_the_sampling_refusal_whole() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -2095,27 +1884,19 @@ fn encapsulate_returns_u_as_g2_for_unit_randomness() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_encapsulate_params(Default::default());
             let payload = build_encapsulate_payload::<P::Scalar, _>(
                 &parameter_set,
@@ -2134,18 +1915,15 @@ fn encapsulate_returns_u_as_g2_for_unit_randomness() {
             let Bb1DepthOneCapsule::Entitlement { u, .. } = success.capsule else {
                 panic!("the entitlement scope returns an entitlement capsule")
             };
-            assert!(
-                encoded_g2(&consumed.adapter, u)
-                    == encoded_g2(&consumed.adapter, point_g2(&consumed.adapter))
-            );
+            assert!(encoded_g2(pairing, u) == encoded_g2(pairing, point_g2(pairing)));
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -2162,27 +1940,19 @@ fn encapsulate_returns_v_as_u0_for_unit_randomness_under_the_entitlement_scope()
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_encapsulate_params(Default::default());
             let payload = build_encapsulate_payload::<P::Scalar, _>(
                 &parameter_set,
@@ -2201,17 +1971,15 @@ fn encapsulate_returns_v_as_u0_for_unit_randomness_under_the_entitlement_scope()
             let Bb1DepthOneCapsule::Entitlement { v, .. } = success.capsule else {
                 panic!("the entitlement scope returns an entitlement capsule")
             };
-            assert!(
-                encoded_g1(&consumed.adapter, v) == encoded_g1(&consumed.adapter, parameter_set.u0)
-            );
+            assert!(encoded_g1(pairing, v) == encoded_g1(pairing, parameter_set.u0));
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -2228,27 +1996,19 @@ fn encapsulate_returns_w_as_u1_for_unit_randomness_under_the_entitlement_scope()
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_encapsulate_params(Default::default());
             let payload = build_encapsulate_payload::<P::Scalar, _>(
                 &parameter_set,
@@ -2267,17 +2027,15 @@ fn encapsulate_returns_w_as_u1_for_unit_randomness_under_the_entitlement_scope()
             let Bb1DepthOneCapsule::Entitlement { w, .. } = success.capsule else {
                 panic!("the entitlement scope returns an entitlement capsule")
             };
-            assert!(
-                encoded_g1(&consumed.adapter, w) == encoded_g1(&consumed.adapter, parameter_set.u1)
-            );
+            assert!(encoded_g1(pairing, w) == encoded_g1(pairing, parameter_set.u1));
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -2295,29 +2053,22 @@ fn encapsulate_returns_v_as_the_fixed_element_for_unit_randomness_under_the_asse
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default()).element;
+                build_bb1_depth_one_identity_element(pairing, Default::default()).element;
             let parameter_set = build_bb1_depth_one_parameter_set(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneParameterSetOverrides {
                     scope: Some(Bb1DepthOneParameterSetScope::Asset {
                         identity_element: identity_element.clone(),
@@ -2343,17 +2094,15 @@ fn encapsulate_returns_v_as_the_fixed_element_for_unit_randomness_under_the_asse
             let Bb1DepthOneCapsule::Asset { v, .. } = success.capsule else {
                 panic!("the asset scope returns an asset capsule")
             };
-            assert!(
-                encoded_g1(&consumed.adapter, v) == encoded_g1(&consumed.adapter, identity_element)
-            );
+            assert!(encoded_g1(pairing, v) == encoded_g1(pairing, identity_element));
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -2372,27 +2121,19 @@ fn encapsulate_returns_the_pairing_of_g1_and_hpub_as_the_encapsulated_value_for_
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_encapsulate_params(Default::default());
             let payload = build_encapsulate_payload::<P::Scalar, _>(
                 &parameter_set,
@@ -2409,11 +2150,11 @@ fn encapsulate_returns_the_pairing_of_g1_and_hpub_as_the_encapsulated_value_for_
                 panic!("the default payload is admitted")
             };
             let expected = encoded_gt(
-                &consumed.adapter,
+                pairing,
                 vec![build_pairing_product_term(
-                    &consumed.adapter,
+                    pairing,
                     PairingProductTermOverrides {
-                        g1: Some(point_g1(&consumed.adapter)),
+                        g1: Some(point_g1(pairing)),
                         g2: Some(parameter_set.hpub.clone()),
                     },
                 )],
@@ -2423,10 +2164,10 @@ fn encapsulate_returns_the_pairing_of_g1_and_hpub_as_the_encapsulated_value_for_
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -2445,29 +2186,21 @@ fn is_well_formed_accepts_an_entitlement_capsule_of_the_set() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = IsWellFormedReturn;
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let capsule = Bb1DepthOneCapsule::Entitlement {
-                u: point_g2(&consumed.adapter),
+                u: point_g2(pairing),
                 v: parameter_set.u0.clone(),
                 w: parameter_set.u1.clone(),
             };
@@ -2476,23 +2209,23 @@ fn is_well_formed_accepts_an_entitlement_capsule_of_the_set() {
                 build_is_well_formed_payload(&parameter_set, &capsule, Default::default());
 
             // Act
-            let result = kem.is_well_formed(params, payload);
-
-            // Assert
-            let Ok(success) = result;
-            assert!(success.is_well_formed);
+            kem.is_well_formed(params, payload)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let Ok(success) = created.output;
+    assert!(success.is_well_formed);
 }
 
 /// Contract: `e(V, g2) = e(u0, U)` fails → `Ok(IsWellFormedSuccessReturn
@@ -2506,30 +2239,22 @@ fn is_well_formed_rejects_an_entitlement_capsule_with_another_v() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = IsWellFormedReturn;
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let capsule = Bb1DepthOneCapsule::Entitlement {
-                u: point_g2(&consumed.adapter),
-                v: point_g1(&consumed.adapter),
+                u: point_g2(pairing),
+                v: point_g1(pairing),
                 w: parameter_set.u1.clone(),
             };
             let params = build_is_well_formed_params(Default::default());
@@ -2537,23 +2262,23 @@ fn is_well_formed_rejects_an_entitlement_capsule_with_another_v() {
                 build_is_well_formed_payload(&parameter_set, &capsule, Default::default());
 
             // Act
-            let result = kem.is_well_formed(params, payload);
-
-            // Assert
-            let Ok(success) = result;
-            assert!(!success.is_well_formed);
+            kem.is_well_formed(params, payload)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let Ok(success) = created.output;
+    assert!(!success.is_well_formed);
 }
 
 /// Contract: `e(W, g2) = e(u1, U)` fails → `Ok(IsWellFormedSuccessReturn
@@ -2567,54 +2292,46 @@ fn is_well_formed_rejects_an_entitlement_capsule_with_another_w() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = IsWellFormedReturn;
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let capsule = Bb1DepthOneCapsule::Entitlement {
-                u: point_g2(&consumed.adapter),
+                u: point_g2(pairing),
                 v: parameter_set.u0.clone(),
-                w: point_g1(&consumed.adapter),
+                w: point_g1(pairing),
             };
             let params = build_is_well_formed_params(Default::default());
             let payload =
                 build_is_well_formed_payload(&parameter_set, &capsule, Default::default());
 
             // Act
-            let result = kem.is_well_formed(params, payload);
-
-            // Assert
-            let Ok(success) = result;
-            assert!(!success.is_well_formed);
+            kem.is_well_formed(params, payload)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let Ok(success) = created.output;
+    assert!(!success.is_well_formed);
 }
 
 /// Contract: the scope is `Asset { identity_element }`, the capsule is
@@ -2628,29 +2345,22 @@ fn is_well_formed_accepts_an_asset_capsule_of_the_set() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = IsWellFormedReturn;
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default()).element;
+                build_bb1_depth_one_identity_element(pairing, Default::default()).element;
             let parameter_set = build_bb1_depth_one_parameter_set(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneParameterSetOverrides {
                     scope: Some(Bb1DepthOneParameterSetScope::Asset {
                         identity_element: identity_element.clone(),
@@ -2659,7 +2369,7 @@ fn is_well_formed_accepts_an_asset_capsule_of_the_set() {
                 },
             );
             let capsule = Bb1DepthOneCapsule::Asset {
-                u: point_g2(&consumed.adapter),
+                u: point_g2(pairing),
                 v: identity_element,
             };
             let params = build_is_well_formed_params(Default::default());
@@ -2667,23 +2377,23 @@ fn is_well_formed_accepts_an_asset_capsule_of_the_set() {
                 build_is_well_formed_payload(&parameter_set, &capsule, Default::default());
 
             // Act
-            let result = kem.is_well_formed(params, payload);
-
-            // Assert
-            let Ok(success) = result;
-            assert!(success.is_well_formed);
+            kem.is_well_formed(params, payload)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let Ok(success) = created.output;
+    assert!(success.is_well_formed);
 }
 
 /// Contract: `e(V, g2) = e(F, U)` fails → `Ok` holding `false`.
@@ -2696,60 +2406,53 @@ fn is_well_formed_rejects_an_asset_capsule_with_another_v() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = IsWellFormedReturn;
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default()).element;
+                build_bb1_depth_one_identity_element(pairing, Default::default()).element;
             let parameter_set = build_bb1_depth_one_parameter_set(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneParameterSetOverrides {
                     scope: Some(Bb1DepthOneParameterSetScope::Asset { identity_element }),
                     ..Default::default()
                 },
             );
             let capsule = Bb1DepthOneCapsule::Asset {
-                u: point_g2(&consumed.adapter),
-                v: point_g1(&consumed.adapter),
+                u: point_g2(pairing),
+                v: point_g1(pairing),
             };
             let params = build_is_well_formed_params(Default::default());
             let payload =
                 build_is_well_formed_payload(&parameter_set, &capsule, Default::default());
 
             // Act
-            let result = kem.is_well_formed(params, payload);
-
-            // Assert
-            let Ok(success) = result;
-            assert!(!success.is_well_formed);
+            kem.is_well_formed(params, payload)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let Ok(success) = created.output;
+    assert!(!success.is_well_formed);
 }
 
 /// Contract: the capsule's variant is not the parameter set's scope →
@@ -2765,27 +2468,19 @@ fn is_well_formed_rejects_an_asset_capsule_under_an_entitlement_set() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = IsWellFormedReturn;
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let capsule = Bb1DepthOneCapsule::Asset {
                 u: parameter_set.g2.clone(),
                 v: parameter_set.g1.clone(),
@@ -2795,23 +2490,23 @@ fn is_well_formed_rejects_an_asset_capsule_under_an_entitlement_set() {
                 build_is_well_formed_payload(&parameter_set, &capsule, Default::default());
 
             // Act
-            let result = kem.is_well_formed(params, payload);
-
-            // Assert
-            let Ok(success) = result;
-            assert!(!success.is_well_formed);
+            kem.is_well_formed(params, payload)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let Ok(success) = created.output;
+    assert!(!success.is_well_formed);
 }
 
 /// Contract: the capsule's variant is not the parameter set's scope → `Ok`
@@ -2825,31 +2520,24 @@ fn is_well_formed_rejects_an_entitlement_capsule_under_an_asset_set() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = IsWellFormedReturn;
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let parameter_set = build_bb1_depth_one_parameter_set(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneParameterSetOverrides {
                     scope: Some(Bb1DepthOneParameterSetScope::Asset {
                         identity_element: build_bb1_depth_one_identity_element(
-                            &consumed.adapter,
+                            pairing,
                             Default::default(),
                         )
                         .element,
@@ -2858,32 +2546,32 @@ fn is_well_formed_rejects_an_entitlement_capsule_under_an_asset_set() {
                 },
             );
             let capsule = Bb1DepthOneCapsule::Entitlement {
-                u: point_g2(&consumed.adapter),
-                v: point_g1(&consumed.adapter),
-                w: point_g1(&consumed.adapter),
+                u: point_g2(pairing),
+                v: point_g1(pairing),
+                w: point_g1(pairing),
             };
             let params = build_is_well_formed_params(Default::default());
             let payload =
                 build_is_well_formed_payload(&parameter_set, &capsule, Default::default());
 
             // Act
-            let result = kem.is_well_formed(params, payload);
-
-            // Assert
-            let Ok(success) = result;
-            assert!(!success.is_well_formed);
+            kem.is_well_formed(params, payload)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let Ok(success) = created.output;
+    assert!(!success.is_well_formed);
 }
 
 /// Contract: the capsule is `Entitlement { u, v, w }` →
@@ -2902,32 +2590,24 @@ fn decapsulate_recovers_the_pairing_of_g1_and_hpub_from_an_entitlement_capsule_f
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = (DecapsulateReturn, Vec<u8>);
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
-            let credential = build_bb1_depth_one_credential(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
+            let credential = build_bb1_depth_one_credential(pairing, Default::default());
             let capsule = Bb1DepthOneCapsule::Entitlement {
-                u: point_g2(&consumed.adapter),
+                u: point_g2(pairing),
                 v: parameter_set.u0.clone(),
                 w: parameter_set.u1.clone(),
             };
@@ -2943,30 +2623,34 @@ fn decapsulate_recovers_the_pairing_of_g1_and_hpub_from_an_entitlement_capsule_f
             let result = kem.decapsulate(params, payload);
 
             // Assert
-            let Ok(success) = result;
             let expected = encoded_gt(
-                &consumed.adapter,
+                pairing,
                 vec![build_pairing_product_term(
-                    &consumed.adapter,
+                    pairing,
                     PairingProductTermOverrides {
-                        g1: Some(point_g1(&consumed.adapter)),
+                        g1: Some(point_g1(pairing)),
                         g2: Some(parameter_set.hpub.clone()),
                     },
                 )],
             );
-            assert_eq!(success.encapsulated.key_material().expose(), &expected);
+            (result, expected)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let (result, expected) = created.output;
+    let Ok(success) = result;
+    assert_eq!(success.encapsulated.key_material().expose(), &expected);
 }
 
 /// Contract: the capsule is `Asset { u, v }` →
@@ -2981,32 +2665,24 @@ fn decapsulate_recovers_the_pairing_of_g1_and_hpub_from_an_asset_capsule_for_uni
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
-        type Output = ();
+    impl IBb1DepthOneCaseConsumer for Consumer {
+        type Output = (DecapsulateReturn, Vec<u8>);
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
-            let credential = build_bb1_depth_one_credential(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
+            let credential = build_bb1_depth_one_credential(pairing, Default::default());
             let capsule = Bb1DepthOneCapsule::Asset {
-                u: point_g2(&consumed.adapter),
+                u: point_g2(pairing),
                 v: identity_element.element.clone(),
             };
             let params = build_decapsulate_params(Default::default());
@@ -3021,30 +2697,34 @@ fn decapsulate_recovers_the_pairing_of_g1_and_hpub_from_an_asset_capsule_for_uni
             let result = kem.decapsulate(params, payload);
 
             // Assert
-            let Ok(success) = result;
             let expected = encoded_gt(
-                &consumed.adapter,
+                pairing,
                 vec![build_pairing_product_term(
-                    &consumed.adapter,
+                    pairing,
                     PairingProductTermOverrides {
-                        g1: Some(point_g1(&consumed.adapter)),
+                        g1: Some(point_g1(pairing)),
                         g2: Some(parameter_set.hpub.clone()),
                     },
                 )],
             );
-            assert_eq!(success.encapsulated.key_material().expose(), &expected);
+            (result, expected)
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
-    assert!(created.is_ok());
+    let Ok(created) = created else {
+        panic!("the case ran")
+    };
+    let (result, expected) = created.output;
+    let Ok(success) = result;
+    assert_eq!(success.encapsulated.key_material().expose(), &expected);
 }
 /// Contract: `parameter_set_components` maps
 ///   `Bb1DepthOneParameterSetScope::Entitlement` to
@@ -3058,27 +2738,19 @@ fn parameter_set_components_maps_the_entitlement_scope_to_the_entitlement_compon
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_parameter_set_components_params(Default::default());
             let payload =
                 build_parameter_set_components_payload(&parameter_set, Default::default());
@@ -3096,10 +2768,10 @@ fn parameter_set_components_maps_the_entitlement_scope_to_the_entitlement_compon
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3118,31 +2790,24 @@ fn parameter_set_components_maps_the_asset_scope_to_the_asset_components() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let parameter_set = build_bb1_depth_one_parameter_set(
-                &consumed.adapter,
+                pairing,
                 Bb1DepthOneParameterSetOverrides {
                     scope: Some(Bb1DepthOneParameterSetScope::Asset {
                         identity_element: build_bb1_depth_one_identity_element(
-                            &consumed.adapter,
+                            pairing,
                             Default::default(),
                         )
                         .element,
@@ -3167,10 +2832,10 @@ fn parameter_set_components_maps_the_asset_scope_to_the_asset_components() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3189,29 +2854,22 @@ fn parameter_set_from_components_maps_the_entitlement_components_back() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let components = build_parameter_set_components(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let components = build_parameter_set_components(pairing, Default::default());
             let params = build_parameter_set_from_components_params(Default::default());
             let payload = build_parameter_set_from_components_payload(
-                &consumed.adapter,
+                pairing,
                 ParameterSetFromComponentsPayloadOverrides {
                     components: Some(components),
                 },
@@ -3230,10 +2888,10 @@ fn parameter_set_from_components_maps_the_entitlement_components_back() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3252,31 +2910,24 @@ fn parameter_set_from_components_maps_the_asset_components_back() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let components = build_parameter_set_components(
-                &consumed.adapter,
+                pairing,
                 ParameterSetComponentsOverrides {
                     scope: Some(ParameterSetScopeComponents::Asset {
                         identity_element: build_bb1_depth_one_identity_element(
-                            &consumed.adapter,
+                            pairing,
                             Default::default(),
                         )
                         .element,
@@ -3286,7 +2937,7 @@ fn parameter_set_from_components_maps_the_asset_components_back() {
             );
             let params = build_parameter_set_from_components_params(Default::default());
             let payload = build_parameter_set_from_components_payload(
-                &consumed.adapter,
+                pairing,
                 ParameterSetFromComponentsPayloadOverrides {
                     components: Some(components),
                 },
@@ -3305,10 +2956,10 @@ fn parameter_set_from_components_maps_the_asset_components_back() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3328,27 +2979,19 @@ fn capsule_components_maps_the_entitlement_capsule_to_the_entitlement_components
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let capsule = Bb1DepthOneCapsule::Entitlement {
                 u: parameter_set.g2.clone(),
                 v: parameter_set.g1.clone(),
@@ -3370,10 +3013,10 @@ fn capsule_components_maps_the_entitlement_capsule_to_the_entitlement_components
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3390,27 +3033,19 @@ fn capsule_components_maps_the_asset_capsule_to_the_asset_components() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let capsule = Bb1DepthOneCapsule::Asset {
                 u: parameter_set.g2.clone(),
                 v: parameter_set.g1.clone(),
@@ -3431,10 +3066,10 @@ fn capsule_components_maps_the_asset_capsule_to_the_asset_components() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3453,30 +3088,22 @@ fn capsule_from_components_maps_the_entitlement_components_to_the_entitlement_ca
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_capsule_from_components_params(Default::default());
             let payload = build_capsule_from_components_payload(
-                &consumed.adapter,
+                pairing,
                 CapsuleFromComponentsPayloadOverrides {
                     components: Some(CapsuleComponents::Entitlement {
                         u: parameter_set.g2.clone(),
@@ -3499,10 +3126,10 @@ fn capsule_from_components_maps_the_entitlement_components_to_the_entitlement_ca
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3520,30 +3147,22 @@ fn capsule_from_components_maps_the_asset_components_to_the_asset_capsule() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_capsule_from_components_params(Default::default());
             let payload = build_capsule_from_components_payload(
-                &consumed.adapter,
+                pairing,
                 CapsuleFromComponentsPayloadOverrides {
                     components: Some(CapsuleComponents::Asset {
                         u: parameter_set.g2.clone(),
@@ -3562,10 +3181,10 @@ fn capsule_from_components_maps_the_asset_components_to_the_asset_capsule() {
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3584,26 +3203,19 @@ fn credential_components_returns_the_a_and_b_of_the_credential() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let credential = build_bb1_depth_one_credential(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let credential = build_bb1_depth_one_credential(pairing, Default::default());
             let params = build_credential_components_params(Default::default());
             let payload = build_credential_components_payload(&credential, Default::default());
 
@@ -3613,21 +3225,21 @@ fn credential_components_returns_the_a_and_b_of_the_credential() {
             // Assert
             let Ok(success) = result;
             assert!(
-                encoded_g1(&consumed.adapter, success.components.a)
-                    == encoded_g1(&consumed.adapter, credential.a.clone())
+                encoded_g1(pairing, success.components.a)
+                    == encoded_g1(pairing, credential.a.clone())
             );
             assert!(
-                encoded_g2(&consumed.adapter, success.components.b)
-                    == encoded_g2(&consumed.adapter, credential.b.clone())
+                encoded_g2(pairing, success.components.b)
+                    == encoded_g2(pairing, credential.b.clone())
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3647,29 +3259,21 @@ fn credential_from_components_moves_the_components_into_the_credential() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let components = build_credential_components(
-                &consumed.adapter,
+                pairing,
                 CredentialComponentsOverrides {
                     a: Some(parameter_set.u0.clone()),
                     b: Some(parameter_set.hpub.clone()),
@@ -3677,7 +3281,7 @@ fn credential_from_components_moves_the_components_into_the_credential() {
             );
             let params = build_credential_from_components_params(Default::default());
             let payload = build_credential_from_components_payload(
-                &consumed.adapter,
+                pairing,
                 CredentialFromComponentsPayloadOverrides {
                     components: Some(components),
                 },
@@ -3689,21 +3293,20 @@ fn credential_from_components_moves_the_components_into_the_credential() {
             // Assert
             let Ok(success) = result;
             assert!(
-                encoded_g1(&consumed.adapter, success.credential.a)
-                    == encoded_g1(&consumed.adapter, parameter_set.u0)
+                encoded_g1(pairing, success.credential.a) == encoded_g1(pairing, parameter_set.u0)
             );
             assert!(
-                encoded_g2(&consumed.adapter, success.credential.b)
-                    == encoded_g2(&consumed.adapter, parameter_set.hpub)
+                encoded_g2(pairing, success.credential.b)
+                    == encoded_g2(pairing, parameter_set.hpub)
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3723,27 +3326,19 @@ fn parameter_set_components_returns_the_fields_of_the_parameter_set() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_parameter_set_components_params(Default::default());
             let payload =
                 build_parameter_set_components_payload(&parameter_set, Default::default());
@@ -3754,33 +3349,29 @@ fn parameter_set_components_returns_the_fields_of_the_parameter_set() {
             // Assert
             let Ok(success) = result;
             assert!(
-                encoded_g1(&consumed.adapter, success.components.g1)
-                    == encoded_g1(&consumed.adapter, parameter_set.g1)
+                encoded_g1(pairing, success.components.g1) == encoded_g1(pairing, parameter_set.g1)
             );
             assert!(
-                encoded_g1(&consumed.adapter, success.components.u0)
-                    == encoded_g1(&consumed.adapter, parameter_set.u0)
+                encoded_g1(pairing, success.components.u0) == encoded_g1(pairing, parameter_set.u0)
             );
             assert!(
-                encoded_g1(&consumed.adapter, success.components.u1)
-                    == encoded_g1(&consumed.adapter, parameter_set.u1)
+                encoded_g1(pairing, success.components.u1) == encoded_g1(pairing, parameter_set.u1)
             );
             assert!(
-                encoded_g2(&consumed.adapter, success.components.g2)
-                    == encoded_g2(&consumed.adapter, parameter_set.g2)
+                encoded_g2(pairing, success.components.g2) == encoded_g2(pairing, parameter_set.g2)
             );
             assert!(
-                encoded_g2(&consumed.adapter, success.components.hpub)
-                    == encoded_g2(&consumed.adapter, parameter_set.hpub)
+                encoded_g2(pairing, success.components.hpub)
+                    == encoded_g2(pairing, parameter_set.hpub)
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3800,26 +3391,19 @@ fn parameter_set_from_components_moves_the_components_into_the_parameter_set() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let components = build_parameter_set_components(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let components = build_parameter_set_components(pairing, Default::default());
             let g1 = components.g1.clone();
             let u0 = components.u0.clone();
             let u1 = components.u1.clone();
@@ -3827,7 +3411,7 @@ fn parameter_set_from_components_moves_the_components_into_the_parameter_set() {
             let hpub = components.hpub.clone();
             let params = build_parameter_set_from_components_params(Default::default());
             let payload = build_parameter_set_from_components_payload(
-                &consumed.adapter,
+                pairing,
                 ParameterSetFromComponentsPayloadOverrides {
                     components: Some(components),
                 },
@@ -3838,34 +3422,19 @@ fn parameter_set_from_components_moves_the_components_into_the_parameter_set() {
 
             // Assert
             let Ok(success) = result;
-            assert!(
-                encoded_g1(&consumed.adapter, success.parameter_set.g1)
-                    == encoded_g1(&consumed.adapter, g1)
-            );
-            assert!(
-                encoded_g1(&consumed.adapter, success.parameter_set.u0)
-                    == encoded_g1(&consumed.adapter, u0)
-            );
-            assert!(
-                encoded_g1(&consumed.adapter, success.parameter_set.u1)
-                    == encoded_g1(&consumed.adapter, u1)
-            );
-            assert!(
-                encoded_g2(&consumed.adapter, success.parameter_set.g2)
-                    == encoded_g2(&consumed.adapter, g2)
-            );
-            assert!(
-                encoded_g2(&consumed.adapter, success.parameter_set.hpub)
-                    == encoded_g2(&consumed.adapter, hpub)
-            );
+            assert!(encoded_g1(pairing, success.parameter_set.g1) == encoded_g1(pairing, g1));
+            assert!(encoded_g1(pairing, success.parameter_set.u0) == encoded_g1(pairing, u0));
+            assert!(encoded_g1(pairing, success.parameter_set.u1) == encoded_g1(pairing, u1));
+            assert!(encoded_g2(pairing, success.parameter_set.g2) == encoded_g2(pairing, g2));
+            assert!(encoded_g2(pairing, success.parameter_set.hpub) == encoded_g2(pairing, hpub));
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3885,27 +3454,20 @@ fn identity_element_components_returns_the_scalar_and_the_element() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let identity_element =
-                build_bb1_depth_one_identity_element(&consumed.adapter, Default::default());
+                build_bb1_depth_one_identity_element(pairing, Default::default());
             let params = build_identity_element_components_params(Default::default());
             let payload =
                 build_identity_element_components_payload(&identity_element, Default::default());
@@ -3916,21 +3478,21 @@ fn identity_element_components_returns_the_scalar_and_the_element() {
             // Assert
             let Ok(success) = result;
             assert!(
-                encoded_scalar(&consumed.adapter, success.components.scalar)
-                    == encoded_scalar(&consumed.adapter, identity_element.scalar.clone())
+                encoded_scalar(pairing, success.components.scalar)
+                    == encoded_scalar(pairing, identity_element.scalar.clone())
             );
             assert!(
-                encoded_g1(&consumed.adapter, success.components.element)
-                    == encoded_g1(&consumed.adapter, identity_element.element.clone())
+                encoded_g1(pairing, success.components.element)
+                    == encoded_g1(pairing, identity_element.element.clone())
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -3949,25 +3511,18 @@ fn master_scalar_components_returns_a_secret_of_the_value() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let master_scalar = build_bb1_depth_one_master_scalar(Default::default());
             let params = build_master_scalar_components_params(Default::default());
             let payload =
@@ -3979,17 +3534,17 @@ fn master_scalar_components_returns_a_secret_of_the_value() {
             // Assert
             let Ok(success) = result;
             assert!(
-                encoded_scalar(&consumed.adapter, success.components.value.expose().clone())
-                    == encoded_scalar(&consumed.adapter, master_scalar.value.expose().clone())
+                encoded_scalar(pairing, success.components.value.expose().clone())
+                    == encoded_scalar(pairing, master_scalar.value.expose().clone())
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -4008,25 +3563,18 @@ fn master_scalar_from_components_moves_the_secret_into_the_master_scalar() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let components =
                 build_master_scalar_components::<P::Scalar>(MasterScalarComponentsOverrides {
                     value: Some(build_secret(scalar::<P>(3), Default::default())),
@@ -4044,19 +3592,17 @@ fn master_scalar_from_components_moves_the_secret_into_the_master_scalar() {
             // Assert
             let Ok(success) = result;
             assert!(
-                encoded_scalar(
-                    &consumed.adapter,
-                    success.master_scalar.value.expose().clone()
-                ) == encoded_scalar(&consumed.adapter, scalar::<P>(3))
+                encoded_scalar(pairing, success.master_scalar.value.expose().clone())
+                    == encoded_scalar(pairing, scalar::<P>(3))
             );
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -4076,29 +3622,21 @@ fn capsule_components_returns_the_entitlement_elements_in_their_slots() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let capsule = Bb1DepthOneCapsule::Entitlement {
-                u: point_g2(&consumed.adapter),
+                u: point_g2(pairing),
                 v: parameter_set.u0.clone(),
                 w: parameter_set.u1.clone(),
             };
@@ -4113,24 +3651,17 @@ fn capsule_components_returns_the_entitlement_elements_in_their_slots() {
             let CapsuleComponents::Entitlement { u, v, w } = success.components else {
                 panic!("an entitlement capsule returns entitlement components")
             };
-            assert!(
-                encoded_g2(&consumed.adapter, u)
-                    == encoded_g2(&consumed.adapter, point_g2(&consumed.adapter))
-            );
-            assert!(
-                encoded_g1(&consumed.adapter, v) == encoded_g1(&consumed.adapter, parameter_set.u0)
-            );
-            assert!(
-                encoded_g1(&consumed.adapter, w) == encoded_g1(&consumed.adapter, parameter_set.u1)
-            );
+            assert!(encoded_g2(pairing, u) == encoded_g2(pairing, point_g2(pairing)));
+            assert!(encoded_g1(pairing, v) == encoded_g1(pairing, parameter_set.u0));
+            assert!(encoded_g1(pairing, w) == encoded_g1(pairing, parameter_set.u1));
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert
@@ -4150,33 +3681,25 @@ fn capsule_from_components_moves_the_entitlement_elements_into_their_slots() {
     // Arrange
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
             // Arrange
-            let params = Default::default();
-            let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(params),
-                build_create_hash_to_scalar_payload(Default::default()),
-            ) else {
-                panic!("the default selection constructs the hash-to-scalar mock concrete")
-            };
-            let kem =
-                build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-            let parameter_set =
-                build_bb1_depth_one_parameter_set(&consumed.adapter, Default::default());
+            // Arrange
+            let kem = build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let parameter_set = build_bb1_depth_one_parameter_set(pairing, Default::default());
             let params = build_capsule_from_components_params(Default::default());
             let payload = build_capsule_from_components_payload(
-                &consumed.adapter,
+                pairing,
                 CapsuleFromComponentsPayloadOverrides {
                     components: Some(CapsuleComponents::Entitlement {
-                        u: point_g2(&consumed.adapter),
+                        u: point_g2(pairing),
                         v: parameter_set.u0.clone(),
                         w: parameter_set.u1.clone(),
                     }),
@@ -4191,24 +3714,17 @@ fn capsule_from_components_moves_the_entitlement_elements_into_their_slots() {
             let Bb1DepthOneCapsule::Entitlement { u, v, w } = success.capsule else {
                 panic!("entitlement components return an entitlement capsule")
             };
-            assert!(
-                encoded_g2(&consumed.adapter, u)
-                    == encoded_g2(&consumed.adapter, point_g2(&consumed.adapter))
-            );
-            assert!(
-                encoded_g1(&consumed.adapter, v) == encoded_g1(&consumed.adapter, parameter_set.u0)
-            );
-            assert!(
-                encoded_g1(&consumed.adapter, w) == encoded_g1(&consumed.adapter, parameter_set.u1)
-            );
+            assert!(encoded_g2(pairing, u) == encoded_g2(pairing, point_g2(pairing)));
+            assert!(encoded_g1(pairing, v) == encoded_g1(pairing, parameter_set.u0));
+            assert!(encoded_g1(pairing, w) == encoded_g1(pairing, parameter_set.u1));
         }
     }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let created = run_bb1_depth_one_case(
+        &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+        build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides::default()),
+        build_bb1_depth_one_case_payload(Default::default()),
     );
 
     // Assert

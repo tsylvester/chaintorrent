@@ -5,10 +5,13 @@ use super::provides::{
 };
 use crate::factory::provides::{
     CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, DecodeErrorReturn,
-    EncodeErrorReturn, IDecoderAdapter, IEncoderAdapter, IEncodingContract, MockIEncodingContract,
-    build_canonical_fields, build_decode_params, build_encode_params,
+    EncodeErrorReturn, EncodingTypeName, EncodingTypeNameConstructorParamsOverrides,
+    EncodingTypeNameErrorReturn, IDecoderAdapter, IEncoderAdapter, IEncodingContract,
+    MockIEncodingContract, build_canonical_fields, build_decode_params, build_encode_params,
+    build_encoding_type_name_constructor_params, build_type_name_params,
 };
 use alloy::dyn_abi::DynSolType;
+use std::collections::BTreeSet;
 
 const REFERENCE_VECTOR_HEX: &str = concat!(
     "0000000000000000000000000000000000000000000000000000000000000100",
@@ -604,3 +607,181 @@ fn decode_rejects_a_uint64_word_wider_than_sixty_four_bits() {
         ))
     );
 }
+
+/// Contract: `type_name`, one total branch: every `CanonicalFieldKind` →
+///   `Ok(TypeNameSuccessReturn { name })` with the ABI type name the table
+///   states.
+/// Arrange: the adapter, the eight kinds with their expected names written
+///   from the ABI specification and not read back from the arrangement:
+///   `FixedBytes32` `bytes32`, `Unsigned16` `uint16`, `Unsigned32` `uint32`,
+///   `Unsigned64` `uint64`, `Text` `string`, `Bytes` `bytes`, `FixedBytes20`
+///   `bytes20`, and `Unsigned256` `uint256`; the params from
+///   `build_type_name_params`.
+/// Act:     `adapter.type_name(params, kind)` for each kind.
+/// Assert:  `result.ok().map(|success| success.name.as_str().to_owned())`
+///   equals `Some` of the expected name for each kind by `assert_eq!`.
+#[test]
+fn type_name_gives_each_canonical_field_kind_its_abi_type_name() {
+    // Arrange
+    let adapter = build_abi_encoding(Default::default());
+    let cases = [
+        (CanonicalFieldKind::FixedBytes32, "bytes32"),
+        (CanonicalFieldKind::Unsigned16, "uint16"),
+        (CanonicalFieldKind::Unsigned32, "uint32"),
+        (CanonicalFieldKind::Unsigned64, "uint64"),
+        (CanonicalFieldKind::Text, "string"),
+        (CanonicalFieldKind::Bytes, "bytes"),
+        (CanonicalFieldKind::FixedBytes20, "bytes20"),
+        (CanonicalFieldKind::Unsigned256, "uint256"),
+    ];
+
+    for (kind, expected) in cases {
+        // Act
+        let result = adapter.type_name(build_type_name_params(Default::default()), kind);
+
+        // Assert
+        assert_eq!(
+            result.ok().map(|success| success.name.as_str().to_owned()),
+            Some(expected.to_owned())
+        );
+    }
+}
+// type_name_gives_each_canonical_field_kind_its_abi_type_name
+
+/// Contract: `type_name`, one total branch: `CanonicalFieldKind::FixedBytes20`
+///   → the name `bytes20`.
+/// Arrange: the adapter, the kind `FixedBytes20`, and the params from
+///   `build_type_name_params`.
+/// Act:     `adapter.type_name(params, CanonicalFieldKind::FixedBytes20)`.
+/// Assert:  the name equals `bytes20` by `assert_eq!` and does not equal
+///   `address` by `assert_ne!`, each compared apart.
+#[test]
+fn type_name_names_the_twenty_byte_kind_bytes20_and_never_address() {
+    // Arrange
+    let adapter = build_abi_encoding(Default::default());
+    let params = build_type_name_params(Default::default());
+
+    // Act
+    let result = adapter.type_name(params, CanonicalFieldKind::FixedBytes20);
+    let name = result.ok().map(|success| success.name.as_str().to_owned());
+
+    // Assert
+    assert_eq!(name, Some("bytes20".to_owned()));
+    assert_ne!(name, Some("address".to_owned()));
+}
+// type_name_names_the_twenty_byte_kind_bytes20_and_never_address
+
+/// Contract: `type_name`, one total branch: no two kinds share a name.
+/// Arrange: the adapter, the eight kinds, and the params from
+///   `build_type_name_params`.
+/// Act:     `adapter.type_name(params, kind)` for each kind, collecting the
+///   names.
+/// Assert:  the collected names hold eight distinct values by `assert_eq!`
+///   on the count of the set.
+#[test]
+fn type_name_gives_every_kind_exactly_one_distinct_name() {
+    // Arrange
+    let adapter = build_abi_encoding(Default::default());
+    let kinds = [
+        CanonicalFieldKind::FixedBytes32,
+        CanonicalFieldKind::Unsigned16,
+        CanonicalFieldKind::Unsigned32,
+        CanonicalFieldKind::Unsigned64,
+        CanonicalFieldKind::Text,
+        CanonicalFieldKind::Bytes,
+        CanonicalFieldKind::FixedBytes20,
+        CanonicalFieldKind::Unsigned256,
+    ];
+
+    // Act
+    let names: BTreeSet<String> = kinds
+        .iter()
+        .map(|kind| {
+            adapter
+                .type_name(build_type_name_params(Default::default()), *kind)
+                .expect("every kind has a name")
+                .name
+                .as_str()
+                .to_owned()
+        })
+        .collect();
+
+    // Assert
+    assert_eq!(names.len(), 8);
+}
+// type_name_gives_every_kind_exactly_one_distinct_name
+
+/// Contract: `EncodingTypeName::try_new`, admitted name: a non-empty name of
+///   ASCII letters and digits → `Ok(EncodingTypeName)` holding the text.
+/// Arrange: `build_encoding_type_name_constructor_params` overriding `name`
+///   with `uint256`.
+/// Act:     `EncodingTypeName::try_new(params)`.
+/// Assert:  `result.ok().map(|name| name.as_str().to_owned())` equals
+///   `Some("uint256".to_owned())` by `assert_eq!`.
+#[test]
+fn encoding_type_name_try_new_admits_an_alphanumeric_name() {
+    // Arrange
+    let params =
+        build_encoding_type_name_constructor_params(EncodingTypeNameConstructorParamsOverrides {
+            name: Some("uint256".to_string()),
+        });
+
+    // Act
+    let result = EncodingTypeName::try_new(params);
+
+    // Assert
+    assert_eq!(
+        result.ok().map(|name| name.as_str().to_owned()),
+        Some("uint256".to_owned())
+    );
+}
+// encoding_type_name_try_new_admits_an_alphanumeric_name
+
+/// Contract: `EncodingTypeName::try_new`, empty name →
+///   `Err(EncodingTypeNameErrorReturn::Empty)`.
+/// Arrange: `build_encoding_type_name_constructor_params` overriding `name`
+///   with the empty string.
+/// Act:     `EncodingTypeName::try_new(params)`.
+/// Assert:  `result.err()` equals `Some(EncodingTypeNameErrorReturn::Empty)`
+///   by `assert_eq!`.
+#[test]
+fn encoding_type_name_try_new_refuses_an_empty_name() {
+    // Arrange
+    let params =
+        build_encoding_type_name_constructor_params(EncodingTypeNameConstructorParamsOverrides {
+            name: Some(String::new()),
+        });
+
+    // Act
+    let result = EncodingTypeName::try_new(params);
+
+    // Assert
+    assert_eq!(result.err(), Some(EncodingTypeNameErrorReturn::Empty));
+}
+// encoding_type_name_try_new_refuses_an_empty_name
+
+/// Contract: `EncodingTypeName::try_new`, non-alphanumeric name →
+///   `Err(EncodingTypeNameErrorReturn::NotAlphanumeric)`.
+/// Arrange: `build_encoding_type_name_constructor_params` overriding `name`
+///   with `uint 256`.
+/// Act:     `EncodingTypeName::try_new(params)`.
+/// Assert:  `result.err()` equals
+///   `Some(EncodingTypeNameErrorReturn::NotAlphanumeric)` by `assert_eq!`.
+#[test]
+fn encoding_type_name_try_new_refuses_a_name_with_a_character_beyond_letters_and_digits() {
+    // Arrange
+    let params =
+        build_encoding_type_name_constructor_params(EncodingTypeNameConstructorParamsOverrides {
+            name: Some("uint 256".to_string()),
+        });
+
+    // Act
+    let result = EncodingTypeName::try_new(params);
+
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(EncodingTypeNameErrorReturn::NotAlphanumeric)
+    );
+}
+// encoding_type_name_try_new_refuses_a_name_with_a_character_beyond_letters_and_digits

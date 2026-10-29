@@ -1,7 +1,10 @@
 #![allow(clippy::expect_used, clippy::panic)]
 
-use super::interface::Bb1DepthOneKem;
-use super::mock::build_bb1_depth_one_kem;
+use super::interface::{Bb1DepthOneCasePayload, Bb1DepthOneKem, IBb1DepthOneCaseConsumer};
+use super::mock::{
+    Bb1DepthOneCaseParamsOverrides, build_bb1_depth_one_case_deps, build_bb1_depth_one_case_params,
+    build_bb1_depth_one_case_payload, build_bb1_depth_one_kem, run_bb1_depth_one_case,
+};
 use crate::factory::provides::{
     CapsuleComponents, CapsuleFromComponentsPayloadOverrides,
     CredentialFromComponentsPayloadOverrides, DeriveIdentityErrorReturn,
@@ -23,18 +26,15 @@ use crate::factory::provides::{
     build_parameter_set_from_components_payload, build_rerandomize_params,
     build_rerandomize_payload, build_setup_params, build_setup_payload,
 };
-use domain::{
-    AssetIdentityHashConstructorParamsOverrides, Secret, build_asset_identity_hash, build_secret,
-};
+use domain::{Secret, build_secret};
 use hash_to_scalar::{
-    CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS,
-    build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
-    build_create_hash_to_scalar_payload, create_hash_to_scalar,
+    CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, IHashToScalarAdapter,
+    build_create_hash_to_scalar_params,
 };
+use hashing::{RootConstructorParamsOverrides, build_root};
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
-    CreatePairingPayload, IPairingArithmetic, IPairingConsumer, ISampleUniformScalar,
-    PAIRING_CONCRETES, build_create_pairing_deps, build_create_pairing_params, create_pairing,
+    CreatePairingParamsOverrides, IPairingArithmetic, IPairingReference, ISampleUniformScalar,
+    PAIRING_CONCRETES, build_create_pairing_params,
 };
 
 fn scalar_bytes<S: ISampleUniformScalar>(value: u8) -> Secret<Vec<u8>> {
@@ -51,7 +51,7 @@ fn scalar_bytes<S: ISampleUniformScalar>(value: u8) -> Secret<Vec<u8>> {
 ///   binds `made` from `create_hash_to_scalar::<P::Scalar>` under the case's
 ///   concrete and identifier and `kem` from `build_bb1_depth_one_kem`, then per
 ///   scope — `SetupScope::Entitlement` with `b"entitlement-one"` and
-///   `SetupScope::Asset` with the hash `build_asset_identity_hash` returns for
+///   `SetupScope::Asset` with the root `build_root` returns for
 ///   `[0xa1; 32]` — runs `setup` with a distinct `scalar_bytes(n)` for the
 ///   master, `u0`, and `u1` samplers, `derive_identity` over the scope's
 ///   identity, and `issue` with the master scalar `setup` returned and a
@@ -70,115 +70,110 @@ fn scalar_bytes<S: ISampleUniformScalar>(value: u8) -> Secret<Vec<u8>> {
 fn every_credential_issued_under_a_setup_parameter_set_is_valid_for_its_identity() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            });
+            for (scope, identity) in [
+                (
+                    SetupScope::Entitlement,
+                    KemIdentity::Entitlement {
+                        canonical: b"entitlement-one",
+                    },
+                ),
+                (
+                    SetupScope::Asset { root: &root },
+                    KemIdentity::Asset { root: &root },
+                ),
+            ] {
+                let setup = kem.setup(
+                    build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
+                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
                     }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
+                );
+                let Ok(setup) = setup else {
+                    panic!("setup admits distinct nonzero uniform bytes under each scope")
                 };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                    bytes: Some([0xa1; 32]),
-                });
-                for (scope, identity) in [
-                    (
-                        SetupScope::Entitlement,
-                        KemIdentity::Entitlement {
-                            canonical: b"entitlement-one",
+                let derived = kem.derive_identity(
+                    build_derive_identity_params(Default::default()),
+                    build_derive_identity_payload(
+                        &setup.parameter_set,
+                        DeriveIdentityPayloadOverrides {
+                            identity: Some(identity),
                         },
                     ),
-                    (
-                        SetupScope::Asset {
-                            identity_hash: &hash,
-                        },
-                        KemIdentity::Asset {
-                            identity_hash: &hash,
+                );
+                let Ok(derived) = derived else {
+                    panic!("the identity the parameter set's scope selects derives")
+                };
+                let issued = kem.issue(
+                    build_issue_params(Default::default()),
+                    build_issue_payload::<P::Scalar, _, _, _>(
+                        &setup.parameter_set,
+                        &setup.master_scalar,
+                        &derived.identity_element,
+                        IssuePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(4)),
                         },
                     ),
-                ] {
-                    let setup = kem.setup(
-                        build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
-                        build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                            master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                            u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                            u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
-                        }),
-                    );
-                    let Ok(setup) = setup else {
-                        panic!("setup admits distinct nonzero uniform bytes under each scope")
-                    };
-                    let derived = kem.derive_identity(
-                        build_derive_identity_params(Default::default()),
-                        build_derive_identity_payload(
-                            &setup.parameter_set,
-                            DeriveIdentityPayloadOverrides {
-                                identity: Some(identity),
-                            },
-                        ),
-                    );
-                    let Ok(derived) = derived else {
-                        panic!("the identity the parameter set's scope selects derives")
-                    };
-                    let issued = kem.issue(
-                        build_issue_params(Default::default()),
-                        build_issue_payload::<P::Scalar, _, _, _>(
-                            &setup.parameter_set,
-                            &setup.master_scalar,
-                            &derived.identity_element,
-                            IssuePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(4)),
-                            },
-                        ),
-                    );
-                    let Ok(issued) = issued else {
-                        panic!("issuance admits distinct nonzero uniform bytes")
-                    };
+                );
+                let Ok(issued) = issued else {
+                    panic!("issuance admits distinct nonzero uniform bytes")
+                };
 
-                    // Act
-                    let result = kem.is_valid(
-                        build_is_valid_params(Default::default()),
-                        build_is_valid_payload(
-                            &setup.parameter_set,
-                            &derived.identity_element,
-                            &issued.credential,
-                            Default::default(),
-                        ),
-                    );
+                // Act
+                let result = kem.is_valid(
+                    build_is_valid_params(Default::default()),
+                    build_is_valid_payload(
+                        &setup.parameter_set,
+                        &derived.identity_element,
+                        &issued.credential,
+                        Default::default(),
+                    ),
+                );
 
-                    // Assert
-                    assert!(result.expect("the validity check never refuses").is_valid);
-                }
+                // Assert
+                assert!(result.expect("the validity check never refuses").is_valid);
             }
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -205,143 +200,138 @@ fn every_credential_issued_under_a_setup_parameter_set_is_valid_for_its_identity
 fn a_rerandomized_credential_is_valid_for_its_identity() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            });
+            for (scope, identity) in [
+                (
+                    SetupScope::Entitlement,
+                    KemIdentity::Entitlement {
+                        canonical: b"entitlement-one",
+                    },
+                ),
+                (
+                    SetupScope::Asset { root: &root },
+                    KemIdentity::Asset { root: &root },
+                ),
+            ] {
+                let setup = kem.setup(
+                    build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
+                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
                     }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
+                );
+                let Ok(setup) = setup else {
+                    panic!("setup admits distinct nonzero uniform bytes under each scope")
                 };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                    bytes: Some([0xa1; 32]),
-                });
-                for (scope, identity) in [
-                    (
-                        SetupScope::Entitlement,
-                        KemIdentity::Entitlement {
-                            canonical: b"entitlement-one",
+                let derived = kem.derive_identity(
+                    build_derive_identity_params(Default::default()),
+                    build_derive_identity_payload(
+                        &setup.parameter_set,
+                        DeriveIdentityPayloadOverrides {
+                            identity: Some(identity),
                         },
                     ),
-                    (
-                        SetupScope::Asset {
-                            identity_hash: &hash,
-                        },
-                        KemIdentity::Asset {
-                            identity_hash: &hash,
+                );
+                let Ok(derived) = derived else {
+                    panic!("the identity the parameter set's scope selects derives")
+                };
+                let issued = kem.issue(
+                    build_issue_params(Default::default()),
+                    build_issue_payload::<P::Scalar, _, _, _>(
+                        &setup.parameter_set,
+                        &setup.master_scalar,
+                        &derived.identity_element,
+                        IssuePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(4)),
                         },
                     ),
-                ] {
-                    let setup = kem.setup(
-                        build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
-                        build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                            master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                            u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                            u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
-                        }),
-                    );
-                    let Ok(setup) = setup else {
-                        panic!("setup admits distinct nonzero uniform bytes under each scope")
-                    };
-                    let derived = kem.derive_identity(
-                        build_derive_identity_params(Default::default()),
-                        build_derive_identity_payload(
-                            &setup.parameter_set,
-                            DeriveIdentityPayloadOverrides {
-                                identity: Some(identity),
-                            },
-                        ),
-                    );
-                    let Ok(derived) = derived else {
-                        panic!("the identity the parameter set's scope selects derives")
-                    };
-                    let issued = kem.issue(
-                        build_issue_params(Default::default()),
-                        build_issue_payload::<P::Scalar, _, _, _>(
-                            &setup.parameter_set,
-                            &setup.master_scalar,
-                            &derived.identity_element,
-                            IssuePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(4)),
-                            },
-                        ),
-                    );
-                    let Ok(issued) = issued else {
-                        panic!("issuance admits distinct nonzero uniform bytes")
-                    };
-                    let rerandomized = kem.rerandomize(
-                        build_rerandomize_params(Default::default()),
-                        build_rerandomize_payload::<P::Scalar, _, _, _>(
-                            &setup.parameter_set,
-                            &derived.identity_element,
-                            &issued.credential,
-                            RerandomizePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(5)),
-                            },
-                        ),
-                    );
-                    let Ok(rerandomized) = rerandomized else {
-                        panic!("rerandomization admits distinct nonzero uniform bytes")
-                    };
+                );
+                let Ok(issued) = issued else {
+                    panic!("issuance admits distinct nonzero uniform bytes")
+                };
+                let rerandomized = kem.rerandomize(
+                    build_rerandomize_params(Default::default()),
+                    build_rerandomize_payload::<P::Scalar, _, _, _>(
+                        &setup.parameter_set,
+                        &derived.identity_element,
+                        &issued.credential,
+                        RerandomizePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(5)),
+                        },
+                    ),
+                );
+                let Ok(rerandomized) = rerandomized else {
+                    panic!("rerandomization admits distinct nonzero uniform bytes")
+                };
 
-                    // Act
-                    let result = kem.is_valid(
-                        build_is_valid_params(Default::default()),
-                        build_is_valid_payload(
-                            &setup.parameter_set,
-                            &derived.identity_element,
-                            &rerandomized.credential,
-                            Default::default(),
-                        ),
-                    );
+                // Act
+                let result = kem.is_valid(
+                    build_is_valid_params(Default::default()),
+                    build_is_valid_payload(
+                        &setup.parameter_set,
+                        &derived.identity_element,
+                        &rerandomized.credential,
+                        Default::default(),
+                    ),
+                );
 
-                    // Assert
-                    assert!(result.expect("the validity check never refuses").is_valid);
+                // Assert
+                assert!(result.expect("the validity check never refuses").is_valid);
 
-                    // Act
-                    let result = kem.is_valid(
-                        build_is_valid_params(Default::default()),
-                        build_is_valid_payload(
-                            &setup.parameter_set,
-                            &derived.identity_element,
-                            &issued.credential,
-                            Default::default(),
-                        ),
-                    );
+                // Act
+                let result = kem.is_valid(
+                    build_is_valid_params(Default::default()),
+                    build_is_valid_payload(
+                        &setup.parameter_set,
+                        &derived.identity_element,
+                        &issued.credential,
+                        Default::default(),
+                    ),
+                );
 
-                    // Assert
-                    assert!(result.expect("the validity check never refuses").is_valid);
-                }
+                // Assert
+                assert!(result.expect("the validity check never refuses").is_valid);
             }
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -351,12 +341,12 @@ fn a_rerandomized_credential_is_valid_for_its_identity() {
 ///   of that capsule with the issued credential and with the rerandomized
 ///   credential each recover the bytes `encapsulate` returned; under the asset
 ///   scope the payload's identity element is the one `derive_identity` returns
-///   for the other asset hash, which the asset branch does not read.
+///   for the other asset root, which the asset branch does not read.
 /// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
 ///   binds `made` and `kem` as the blocks above, then per scope runs `setup`,
 ///   `derive_identity`, `issue`, `rerandomize`, and `encapsulate` with distinct
 ///   `scalar_bytes(n)` per sampler; under the asset scope a second `setup`
-///   over `SetupScope::Asset` with the hash for `[0xb2; 32]` and a
+///   over `SetupScope::Asset` with the root for `[0xb2; 32]` and a
 ///   `derive_identity` over it supply the identity element the `decapsulate`
 ///   payload carries, since the asset branch reads no identity element.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)` per concrete
@@ -375,228 +365,218 @@ fn a_rerandomized_credential_is_valid_for_its_identity() {
 fn every_valid_credential_decapsulates_a_well_formed_capsule_to_the_encapsulated_bytes() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            });
+            let other_root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xb2; 32]),
+            });
+            for (scope, identity) in [
+                (
+                    SetupScope::Entitlement,
+                    KemIdentity::Entitlement {
+                        canonical: b"entitlement-one",
+                    },
+                ),
+                (
+                    SetupScope::Asset { root: &root },
+                    KemIdentity::Asset { root: &root },
+                ),
+            ] {
+                let scope_is_asset = matches!(scope, SetupScope::Asset { .. });
+                let setup = kem.setup(
+                    build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
+                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
                     }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
+                );
+                let Ok(setup) = setup else {
+                    panic!("setup admits distinct nonzero uniform bytes under each scope")
                 };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                    bytes: Some([0xa1; 32]),
-                });
-                let other_hash =
-                    build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                        bytes: Some([0xb2; 32]),
-                    });
-                for (scope, identity) in [
-                    (
-                        SetupScope::Entitlement,
-                        KemIdentity::Entitlement {
-                            canonical: b"entitlement-one",
+                let derived = kem.derive_identity(
+                    build_derive_identity_params(Default::default()),
+                    build_derive_identity_payload(
+                        &setup.parameter_set,
+                        DeriveIdentityPayloadOverrides {
+                            identity: Some(identity),
                         },
                     ),
-                    (
-                        SetupScope::Asset {
-                            identity_hash: &hash,
-                        },
-                        KemIdentity::Asset {
-                            identity_hash: &hash,
+                );
+                let Ok(derived) = derived else {
+                    panic!("the identity the parameter set's scope selects derives")
+                };
+                let issued = kem.issue(
+                    build_issue_params(Default::default()),
+                    build_issue_payload::<P::Scalar, _, _, _>(
+                        &setup.parameter_set,
+                        &setup.master_scalar,
+                        &derived.identity_element,
+                        IssuePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(4)),
                         },
                     ),
-                ] {
-                    let scope_is_asset = matches!(scope, SetupScope::Asset { .. });
-                    let setup = kem.setup(
-                        build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
+                );
+                let Ok(issued) = issued else {
+                    panic!("issuance admits distinct nonzero uniform bytes")
+                };
+                let rerandomized = kem.rerandomize(
+                    build_rerandomize_params(Default::default()),
+                    build_rerandomize_payload::<P::Scalar, _, _, _>(
+                        &setup.parameter_set,
+                        &derived.identity_element,
+                        &issued.credential,
+                        RerandomizePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(5)),
+                        },
+                    ),
+                );
+                let Ok(rerandomized) = rerandomized else {
+                    panic!("rerandomization admits distinct nonzero uniform bytes")
+                };
+                let encapsulated = kem.encapsulate(
+                    build_encapsulate_params(Default::default()),
+                    build_encapsulate_payload::<P::Scalar, _>(
+                        &setup.parameter_set,
+                        EncapsulatePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(6)),
+                        },
+                    ),
+                );
+                let Ok(encapsulated) = encapsulated else {
+                    panic!("encapsulation admits distinct nonzero uniform bytes")
+                };
+                let other_identity_element = if scope_is_asset {
+                    let other_setup = kem.setup(
+                        build_setup_params(SetupParamsOverrides {
+                            scope: Some(SetupScope::Asset { root: &other_root }),
+                        }),
                         build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                            master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                            u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                            u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
+                            master_uniform: Some(scalar_bytes::<P::Scalar>(7)),
+                            u0_uniform: Some(scalar_bytes::<P::Scalar>(8)),
+                            u1_uniform: Some(scalar_bytes::<P::Scalar>(9)),
                         }),
                     );
-                    let Ok(setup) = setup else {
-                        panic!("setup admits distinct nonzero uniform bytes under each scope")
+                    let Ok(other_setup) = other_setup else {
+                        panic!("the second asset setup admits its uniform bytes")
                     };
-                    let derived = kem.derive_identity(
+                    let other_derived = kem.derive_identity(
                         build_derive_identity_params(Default::default()),
                         build_derive_identity_payload(
-                            &setup.parameter_set,
+                            &other_setup.parameter_set,
                             DeriveIdentityPayloadOverrides {
-                                identity: Some(identity),
+                                identity: Some(KemIdentity::Asset { root: &other_root }),
                             },
                         ),
                     );
-                    let Ok(derived) = derived else {
-                        panic!("the identity the parameter set's scope selects derives")
+                    let Ok(other_derived) = other_derived else {
+                        panic!("the other asset root derives under the set it fixes")
                     };
-                    let issued = kem.issue(
-                        build_issue_params(Default::default()),
-                        build_issue_payload::<P::Scalar, _, _, _>(
-                            &setup.parameter_set,
-                            &setup.master_scalar,
-                            &derived.identity_element,
-                            IssuePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(4)),
-                            },
-                        ),
-                    );
-                    let Ok(issued) = issued else {
-                        panic!("issuance admits distinct nonzero uniform bytes")
-                    };
-                    let rerandomized = kem.rerandomize(
-                        build_rerandomize_params(Default::default()),
-                        build_rerandomize_payload::<P::Scalar, _, _, _>(
-                            &setup.parameter_set,
-                            &derived.identity_element,
-                            &issued.credential,
-                            RerandomizePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(5)),
-                            },
-                        ),
-                    );
-                    let Ok(rerandomized) = rerandomized else {
-                        panic!("rerandomization admits distinct nonzero uniform bytes")
-                    };
-                    let encapsulated = kem.encapsulate(
-                        build_encapsulate_params(Default::default()),
-                        build_encapsulate_payload::<P::Scalar, _>(
-                            &setup.parameter_set,
-                            EncapsulatePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(6)),
-                            },
-                        ),
-                    );
-                    let Ok(encapsulated) = encapsulated else {
-                        panic!("encapsulation admits distinct nonzero uniform bytes")
-                    };
-                    let other_identity_element = if scope_is_asset {
-                        let other_setup = kem.setup(
-                            build_setup_params(SetupParamsOverrides {
-                                scope: Some(SetupScope::Asset {
-                                    identity_hash: &other_hash,
-                                }),
-                            }),
-                            build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                                master_uniform: Some(scalar_bytes::<P::Scalar>(7)),
-                                u0_uniform: Some(scalar_bytes::<P::Scalar>(8)),
-                                u1_uniform: Some(scalar_bytes::<P::Scalar>(9)),
-                            }),
-                        );
-                        let Ok(other_setup) = other_setup else {
-                            panic!("the second asset setup admits its uniform bytes")
-                        };
-                        let other_derived = kem.derive_identity(
-                            build_derive_identity_params(Default::default()),
-                            build_derive_identity_payload(
-                                &other_setup.parameter_set,
-                                DeriveIdentityPayloadOverrides {
-                                    identity: Some(KemIdentity::Asset {
-                                        identity_hash: &other_hash,
-                                    }),
-                                },
-                            ),
-                        );
-                        let Ok(other_derived) = other_derived else {
-                            panic!("the other asset hash derives under the set it fixes")
-                        };
-                        Some(other_derived.identity_element)
-                    } else {
-                        None
-                    };
-                    let decapsulation_identity_element = other_identity_element
-                        .as_ref()
-                        .unwrap_or(&derived.identity_element);
+                    Some(other_derived.identity_element)
+                } else {
+                    None
+                };
+                let decapsulation_identity_element = other_identity_element
+                    .as_ref()
+                    .unwrap_or(&derived.identity_element);
 
-                    // Act
-                    let result = kem.is_well_formed(
-                        build_is_well_formed_params(Default::default()),
-                        build_is_well_formed_payload(
-                            &setup.parameter_set,
-                            &encapsulated.capsule,
-                            Default::default(),
-                        ),
-                    );
+                // Act
+                let result = kem.is_well_formed(
+                    build_is_well_formed_params(Default::default()),
+                    build_is_well_formed_payload(
+                        &setup.parameter_set,
+                        &encapsulated.capsule,
+                        Default::default(),
+                    ),
+                );
 
-                    // Assert
-                    assert!(
-                        result
-                            .expect("the well-formedness check never refuses")
-                            .is_well_formed
-                    );
+                // Assert
+                assert!(
+                    result
+                        .expect("the well-formedness check never refuses")
+                        .is_well_formed
+                );
 
-                    // Act
-                    let result = kem.decapsulate(
-                        build_decapsulate_params(Default::default()),
-                        build_decapsulate_payload(
-                            decapsulation_identity_element,
-                            &issued.credential,
-                            &encapsulated.capsule,
-                            Default::default(),
-                        ),
-                    );
+                // Act
+                let result = kem.decapsulate(
+                    build_decapsulate_params(Default::default()),
+                    build_decapsulate_payload(
+                        decapsulation_identity_element,
+                        &issued.credential,
+                        &encapsulated.capsule,
+                        Default::default(),
+                    ),
+                );
 
-                    // Assert
-                    assert_eq!(
-                        result
-                            .expect("decapsulation never refuses")
-                            .encapsulated
-                            .key_material()
-                            .expose(),
-                        encapsulated.encapsulated.key_material().expose()
-                    );
+                // Assert
+                assert_eq!(
+                    result
+                        .expect("decapsulation never refuses")
+                        .encapsulated
+                        .key_material()
+                        .expose(),
+                    encapsulated.encapsulated.key_material().expose()
+                );
 
-                    // Act
-                    let result = kem.decapsulate(
-                        build_decapsulate_params(Default::default()),
-                        build_decapsulate_payload(
-                            decapsulation_identity_element,
-                            &rerandomized.credential,
-                            &encapsulated.capsule,
-                            Default::default(),
-                        ),
-                    );
+                // Act
+                let result = kem.decapsulate(
+                    build_decapsulate_params(Default::default()),
+                    build_decapsulate_payload(
+                        decapsulation_identity_element,
+                        &rerandomized.credential,
+                        &encapsulated.capsule,
+                        Default::default(),
+                    ),
+                );
 
-                    // Assert
-                    assert_eq!(
-                        result
-                            .expect("decapsulation never refuses")
-                            .encapsulated
-                            .key_material()
-                            .expose(),
-                        encapsulated.encapsulated.key_material().expose()
-                    );
-                }
+                // Assert
+                assert_eq!(
+                    result
+                        .expect("decapsulation never refuses")
+                        .encapsulated
+                        .key_material()
+                        .expose(),
+                    encapsulated.encapsulated.key_material().expose()
+                );
             }
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -625,170 +605,169 @@ fn every_valid_credential_decapsulates_a_well_formed_capsule_to_the_encapsulated
 fn credentials_of_different_entitlements_under_one_parameter_set_recover_the_same_bytes() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
-                    }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
-                };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let setup = kem.setup(
-                    build_setup_params(Default::default()),
-                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
-                    }),
-                );
-                let Ok(setup) = setup else {
-                    panic!("setup admits distinct nonzero uniform bytes")
-                };
-                let first_derived = kem.derive_identity(
-                    build_derive_identity_params(Default::default()),
-                    build_derive_identity_payload(
-                        &setup.parameter_set,
-                        DeriveIdentityPayloadOverrides {
-                            identity: Some(KemIdentity::Entitlement {
-                                canonical: b"entitlement-one",
-                            }),
-                        },
-                    ),
-                );
-                let Ok(first_derived) = first_derived else {
-                    panic!("the first entitlement identity derives")
-                };
-                let second_derived = kem.derive_identity(
-                    build_derive_identity_params(Default::default()),
-                    build_derive_identity_payload(
-                        &setup.parameter_set,
-                        DeriveIdentityPayloadOverrides {
-                            identity: Some(KemIdentity::Entitlement {
-                                canonical: b"entitlement-two",
-                            }),
-                        },
-                    ),
-                );
-                let Ok(second_derived) = second_derived else {
-                    panic!("the second entitlement identity derives")
-                };
-                let first_issued = kem.issue(
-                    build_issue_params(Default::default()),
-                    build_issue_payload::<P::Scalar, _, _, _>(
-                        &setup.parameter_set,
-                        &setup.master_scalar,
-                        &first_derived.identity_element,
-                        IssuePayloadOverrides {
-                            uniform: Some(scalar_bytes::<P::Scalar>(4)),
-                        },
-                    ),
-                );
-                let Ok(first_issued) = first_issued else {
-                    panic!("the first issuance admits distinct nonzero uniform bytes")
-                };
-                let second_issued = kem.issue(
-                    build_issue_params(Default::default()),
-                    build_issue_payload::<P::Scalar, _, _, _>(
-                        &setup.parameter_set,
-                        &setup.master_scalar,
-                        &second_derived.identity_element,
-                        IssuePayloadOverrides {
-                            uniform: Some(scalar_bytes::<P::Scalar>(5)),
-                        },
-                    ),
-                );
-                let Ok(second_issued) = second_issued else {
-                    panic!("the second issuance admits distinct nonzero uniform bytes")
-                };
-                let encapsulated = kem.encapsulate(
-                    build_encapsulate_params(Default::default()),
-                    build_encapsulate_payload::<P::Scalar, _>(
-                        &setup.parameter_set,
-                        EncapsulatePayloadOverrides {
-                            uniform: Some(scalar_bytes::<P::Scalar>(6)),
-                        },
-                    ),
-                );
-                let Ok(encapsulated) = encapsulated else {
-                    panic!("encapsulation admits distinct nonzero uniform bytes")
-                };
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let setup = kem.setup(
+                build_setup_params(Default::default()),
+                build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                    master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                    u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                    u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
+                }),
+            );
+            let Ok(setup) = setup else {
+                panic!("setup admits distinct nonzero uniform bytes")
+            };
+            let first_derived = kem.derive_identity(
+                build_derive_identity_params(Default::default()),
+                build_derive_identity_payload(
+                    &setup.parameter_set,
+                    DeriveIdentityPayloadOverrides {
+                        identity: Some(KemIdentity::Entitlement {
+                            canonical: b"entitlement-one",
+                        }),
+                    },
+                ),
+            );
+            let Ok(first_derived) = first_derived else {
+                panic!("the first entitlement identity derives")
+            };
+            let second_derived = kem.derive_identity(
+                build_derive_identity_params(Default::default()),
+                build_derive_identity_payload(
+                    &setup.parameter_set,
+                    DeriveIdentityPayloadOverrides {
+                        identity: Some(KemIdentity::Entitlement {
+                            canonical: b"entitlement-two",
+                        }),
+                    },
+                ),
+            );
+            let Ok(second_derived) = second_derived else {
+                panic!("the second entitlement identity derives")
+            };
+            let first_issued = kem.issue(
+                build_issue_params(Default::default()),
+                build_issue_payload::<P::Scalar, _, _, _>(
+                    &setup.parameter_set,
+                    &setup.master_scalar,
+                    &first_derived.identity_element,
+                    IssuePayloadOverrides {
+                        uniform: Some(scalar_bytes::<P::Scalar>(4)),
+                    },
+                ),
+            );
+            let Ok(first_issued) = first_issued else {
+                panic!("the first issuance admits distinct nonzero uniform bytes")
+            };
+            let second_issued = kem.issue(
+                build_issue_params(Default::default()),
+                build_issue_payload::<P::Scalar, _, _, _>(
+                    &setup.parameter_set,
+                    &setup.master_scalar,
+                    &second_derived.identity_element,
+                    IssuePayloadOverrides {
+                        uniform: Some(scalar_bytes::<P::Scalar>(5)),
+                    },
+                ),
+            );
+            let Ok(second_issued) = second_issued else {
+                panic!("the second issuance admits distinct nonzero uniform bytes")
+            };
+            let encapsulated = kem.encapsulate(
+                build_encapsulate_params(Default::default()),
+                build_encapsulate_payload::<P::Scalar, _>(
+                    &setup.parameter_set,
+                    EncapsulatePayloadOverrides {
+                        uniform: Some(scalar_bytes::<P::Scalar>(6)),
+                    },
+                ),
+            );
+            let Ok(encapsulated) = encapsulated else {
+                panic!("encapsulation admits distinct nonzero uniform bytes")
+            };
 
-                // Act
-                let first = kem.decapsulate(
-                    build_decapsulate_params(Default::default()),
-                    build_decapsulate_payload(
-                        &first_derived.identity_element,
-                        &first_issued.credential,
-                        &encapsulated.capsule,
-                        Default::default(),
-                    ),
-                );
+            // Act
+            let first = kem.decapsulate(
+                build_decapsulate_params(Default::default()),
+                build_decapsulate_payload(
+                    &first_derived.identity_element,
+                    &first_issued.credential,
+                    &encapsulated.capsule,
+                    Default::default(),
+                ),
+            );
 
-                // Assert
-                let first_bytes = first
-                    .expect("decapsulation never refuses")
-                    .encapsulated
-                    .key_material()
-                    .expose()
-                    .clone();
-                assert_eq!(
-                    &first_bytes,
-                    encapsulated.encapsulated.key_material().expose()
-                );
+            // Assert
+            let first_bytes = first
+                .expect("decapsulation never refuses")
+                .encapsulated
+                .key_material()
+                .expose()
+                .clone();
+            assert_eq!(
+                &first_bytes,
+                encapsulated.encapsulated.key_material().expose()
+            );
 
-                // Act
-                let second = kem.decapsulate(
-                    build_decapsulate_params(Default::default()),
-                    build_decapsulate_payload(
-                        &second_derived.identity_element,
-                        &second_issued.credential,
-                        &encapsulated.capsule,
-                        Default::default(),
-                    ),
-                );
+            // Act
+            let second = kem.decapsulate(
+                build_decapsulate_params(Default::default()),
+                build_decapsulate_payload(
+                    &second_derived.identity_element,
+                    &second_issued.credential,
+                    &encapsulated.capsule,
+                    Default::default(),
+                ),
+            );
 
-                // Assert
-                let second_bytes = second
-                    .expect("decapsulation never refuses")
-                    .encapsulated
-                    .key_material()
-                    .expose()
-                    .clone();
-                assert_eq!(
-                    &second_bytes,
-                    encapsulated.encapsulated.key_material().expose()
-                );
-                assert_eq!(first_bytes, second_bytes);
-            }
+            // Assert
+            let second_bytes = second
+                .expect("decapsulation never refuses")
+                .encapsulated
+                .key_material()
+                .expose()
+                .clone();
+            assert_eq!(
+                &second_bytes,
+                encapsulated.encapsulated.key_material().expose()
+            );
+            assert_eq!(first_bytes, second_bytes);
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -801,7 +780,7 @@ fn credentials_of_different_entitlements_under_one_parameter_set_recover_the_sam
 ///   binds `made` and `kem` as the blocks above, then per scope runs `setup`,
 ///   `derive_identity`, and `issue` with distinct `scalar_bytes(n)` per
 ///   sampler; the other identity is `b"entitlement-two"` under the entitlement
-///   scope and the hash `[0xb2; 32]` under the asset scope, whose identity
+///   scope and the root `[0xb2; 32]` under the asset scope, whose identity
 ///   element a second asset `setup` and `derive_identity` supply; the other
 ///   parameter set comes from `setup` with a different `scalar_bytes(n)` for
 ///   each sampler.
@@ -819,186 +798,176 @@ fn credentials_of_different_entitlements_under_one_parameter_set_recover_the_sam
 fn a_credential_is_invalid_for_another_identity_and_under_another_parameter_set() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            });
+            let other_root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xb2; 32]),
+            });
+            for (scope, identity) in [
+                (
+                    SetupScope::Entitlement,
+                    KemIdentity::Entitlement {
+                        canonical: b"entitlement-one",
+                    },
+                ),
+                (
+                    SetupScope::Asset { root: &root },
+                    KemIdentity::Asset { root: &root },
+                ),
+            ] {
+                let scope_is_asset = matches!(scope, SetupScope::Asset { .. });
+                let setup = kem.setup(
+                    build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
+                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
                     }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
+                );
+                let Ok(setup) = setup else {
+                    panic!("setup admits distinct nonzero uniform bytes under each scope")
                 };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                    bytes: Some([0xa1; 32]),
-                });
-                let other_hash =
-                    build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                        bytes: Some([0xb2; 32]),
-                    });
-                for (scope, identity) in [
-                    (
-                        SetupScope::Entitlement,
-                        KemIdentity::Entitlement {
-                            canonical: b"entitlement-one",
+                let derived = kem.derive_identity(
+                    build_derive_identity_params(Default::default()),
+                    build_derive_identity_payload(
+                        &setup.parameter_set,
+                        DeriveIdentityPayloadOverrides {
+                            identity: Some(identity),
                         },
                     ),
-                    (
-                        SetupScope::Asset {
-                            identity_hash: &hash,
-                        },
-                        KemIdentity::Asset {
-                            identity_hash: &hash,
+                );
+                let Ok(derived) = derived else {
+                    panic!("the identity the parameter set's scope selects derives")
+                };
+                let issued = kem.issue(
+                    build_issue_params(Default::default()),
+                    build_issue_payload::<P::Scalar, _, _, _>(
+                        &setup.parameter_set,
+                        &setup.master_scalar,
+                        &derived.identity_element,
+                        IssuePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(4)),
                         },
                     ),
-                ] {
-                    let scope_is_asset = matches!(scope, SetupScope::Asset { .. });
-                    let setup = kem.setup(
-                        build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
-                        build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                            master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                            u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                            u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
+                );
+                let Ok(issued) = issued else {
+                    panic!("issuance admits distinct nonzero uniform bytes")
+                };
+                let other_setup = kem.setup(
+                    build_setup_params(SetupParamsOverrides {
+                        scope: Some(if scope_is_asset {
+                            SetupScope::Asset { root: &other_root }
+                        } else {
+                            SetupScope::Entitlement
                         }),
+                    }),
+                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                        master_uniform: Some(scalar_bytes::<P::Scalar>(5)),
+                        u0_uniform: Some(scalar_bytes::<P::Scalar>(6)),
+                        u1_uniform: Some(scalar_bytes::<P::Scalar>(7)),
+                    }),
+                );
+                let Ok(other_setup) = other_setup else {
+                    panic!("the other setup admits distinct nonzero uniform bytes")
+                };
+                let other_identity_element = if scope_is_asset {
+                    let other_derived = kem.derive_identity(
+                        build_derive_identity_params(Default::default()),
+                        build_derive_identity_payload(
+                            &other_setup.parameter_set,
+                            DeriveIdentityPayloadOverrides {
+                                identity: Some(KemIdentity::Asset { root: &other_root }),
+                            },
+                        ),
                     );
-                    let Ok(setup) = setup else {
-                        panic!("setup admits distinct nonzero uniform bytes under each scope")
+                    let Ok(other_derived) = other_derived else {
+                        panic!("the other asset root derives under the set it fixes")
                     };
-                    let derived = kem.derive_identity(
+                    other_derived.identity_element
+                } else {
+                    let other_derived = kem.derive_identity(
                         build_derive_identity_params(Default::default()),
                         build_derive_identity_payload(
                             &setup.parameter_set,
                             DeriveIdentityPayloadOverrides {
-                                identity: Some(identity),
+                                identity: Some(KemIdentity::Entitlement {
+                                    canonical: b"entitlement-two",
+                                }),
                             },
                         ),
                     );
-                    let Ok(derived) = derived else {
-                        panic!("the identity the parameter set's scope selects derives")
+                    let Ok(other_derived) = other_derived else {
+                        panic!("the other entitlement identity derives")
                     };
-                    let issued = kem.issue(
-                        build_issue_params(Default::default()),
-                        build_issue_payload::<P::Scalar, _, _, _>(
-                            &setup.parameter_set,
-                            &setup.master_scalar,
-                            &derived.identity_element,
-                            IssuePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(4)),
-                            },
-                        ),
-                    );
-                    let Ok(issued) = issued else {
-                        panic!("issuance admits distinct nonzero uniform bytes")
-                    };
-                    let other_setup = kem.setup(
-                        build_setup_params(SetupParamsOverrides {
-                            scope: Some(if scope_is_asset {
-                                SetupScope::Asset {
-                                    identity_hash: &other_hash,
-                                }
-                            } else {
-                                SetupScope::Entitlement
-                            }),
-                        }),
-                        build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                            master_uniform: Some(scalar_bytes::<P::Scalar>(5)),
-                            u0_uniform: Some(scalar_bytes::<P::Scalar>(6)),
-                            u1_uniform: Some(scalar_bytes::<P::Scalar>(7)),
-                        }),
-                    );
-                    let Ok(other_setup) = other_setup else {
-                        panic!("the other setup admits distinct nonzero uniform bytes")
-                    };
-                    let other_identity_element = if scope_is_asset {
-                        let other_derived = kem.derive_identity(
-                            build_derive_identity_params(Default::default()),
-                            build_derive_identity_payload(
-                                &other_setup.parameter_set,
-                                DeriveIdentityPayloadOverrides {
-                                    identity: Some(KemIdentity::Asset {
-                                        identity_hash: &other_hash,
-                                    }),
-                                },
-                            ),
-                        );
-                        let Ok(other_derived) = other_derived else {
-                            panic!("the other asset hash derives under the set it fixes")
-                        };
-                        other_derived.identity_element
-                    } else {
-                        let other_derived = kem.derive_identity(
-                            build_derive_identity_params(Default::default()),
-                            build_derive_identity_payload(
-                                &setup.parameter_set,
-                                DeriveIdentityPayloadOverrides {
-                                    identity: Some(KemIdentity::Entitlement {
-                                        canonical: b"entitlement-two",
-                                    }),
-                                },
-                            ),
-                        );
-                        let Ok(other_derived) = other_derived else {
-                            panic!("the other entitlement identity derives")
-                        };
-                        other_derived.identity_element
-                    };
+                    other_derived.identity_element
+                };
 
-                    // Act
-                    let result = kem.is_valid(
-                        build_is_valid_params(Default::default()),
-                        build_is_valid_payload(
-                            &setup.parameter_set,
-                            &other_identity_element,
-                            &issued.credential,
-                            Default::default(),
-                        ),
-                    );
+                // Act
+                let result = kem.is_valid(
+                    build_is_valid_params(Default::default()),
+                    build_is_valid_payload(
+                        &setup.parameter_set,
+                        &other_identity_element,
+                        &issued.credential,
+                        Default::default(),
+                    ),
+                );
 
-                    // Assert
-                    assert!(!result.expect("the validity check never refuses").is_valid);
+                // Assert
+                assert!(!result.expect("the validity check never refuses").is_valid);
 
-                    // Act
-                    let result = kem.is_valid(
-                        build_is_valid_params(Default::default()),
-                        build_is_valid_payload(
-                            &other_setup.parameter_set,
-                            &derived.identity_element,
-                            &issued.credential,
-                            Default::default(),
-                        ),
-                    );
+                // Act
+                let result = kem.is_valid(
+                    build_is_valid_params(Default::default()),
+                    build_is_valid_payload(
+                        &other_setup.parameter_set,
+                        &derived.identity_element,
+                        &issued.credential,
+                        Default::default(),
+                    ),
+                );
 
-                    // Assert
-                    assert!(!result.expect("the validity check never refuses").is_valid);
-                }
+                // Assert
+                assert!(!result.expect("the validity check never refuses").is_valid);
             }
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -1028,123 +997,118 @@ fn a_credential_is_invalid_for_another_identity_and_under_another_parameter_set(
 fn a_capsule_with_exchanged_identity_base_elements_is_ill_formed() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
-                    }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
-                };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let setup = kem.setup(
-                    build_setup_params(Default::default()),
-                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
-                    }),
-                );
-                let Ok(setup) = setup else {
-                    panic!("setup admits distinct nonzero uniform bytes")
-                };
-                let encapsulated = kem.encapsulate(
-                    build_encapsulate_params(Default::default()),
-                    build_encapsulate_payload::<P::Scalar, _>(
-                        &setup.parameter_set,
-                        EncapsulatePayloadOverrides {
-                            uniform: Some(scalar_bytes::<P::Scalar>(4)),
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let setup = kem.setup(
+                build_setup_params(Default::default()),
+                build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                    master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                    u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                    u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
+                }),
+            );
+            let Ok(setup) = setup else {
+                panic!("setup admits distinct nonzero uniform bytes")
+            };
+            let encapsulated = kem.encapsulate(
+                build_encapsulate_params(Default::default()),
+                build_encapsulate_payload::<P::Scalar, _>(
+                    &setup.parameter_set,
+                    EncapsulatePayloadOverrides {
+                        uniform: Some(scalar_bytes::<P::Scalar>(4)),
+                    },
+                ),
+            );
+            let Ok(encapsulated) = encapsulated else {
+                panic!("encapsulation admits distinct nonzero uniform bytes")
+            };
+            let components = kem
+                .capsule_components(
+                    build_capsule_components_params(Default::default()),
+                    build_capsule_components_payload(&encapsulated.capsule, Default::default()),
+                )
+                .expect("extracting components never refuses")
+                .components;
+            let CapsuleComponents::Entitlement { u, v, w } = components else {
+                panic!("an entitlement capsule yields the entitlement components")
+            };
+            let rebuilt = kem
+                .capsule_from_components(
+                    build_capsule_from_components_params(Default::default()),
+                    build_capsule_from_components_payload(
+                        pairing,
+                        CapsuleFromComponentsPayloadOverrides {
+                            components: Some(CapsuleComponents::Entitlement { u, v: w, w: v }),
                         },
                     ),
-                );
-                let Ok(encapsulated) = encapsulated else {
-                    panic!("encapsulation admits distinct nonzero uniform bytes")
-                };
-                let components = kem
-                    .capsule_components(
-                        build_capsule_components_params(Default::default()),
-                        build_capsule_components_payload(&encapsulated.capsule, Default::default()),
-                    )
-                    .expect("extracting components never refuses")
-                    .components;
-                let CapsuleComponents::Entitlement { u, v, w } = components else {
-                    panic!("an entitlement capsule yields the entitlement components")
-                };
-                let rebuilt = kem
-                    .capsule_from_components(
-                        build_capsule_from_components_params(Default::default()),
-                        build_capsule_from_components_payload(
-                            &consumed.adapter,
-                            CapsuleFromComponentsPayloadOverrides {
-                                components: Some(CapsuleComponents::Entitlement { u, v: w, w: v }),
-                            },
-                        ),
-                    )
-                    .expect("rebuilding components never refuses")
-                    .capsule;
+                )
+                .expect("rebuilding components never refuses")
+                .capsule;
 
-                // Act
-                let result = kem.is_well_formed(
-                    build_is_well_formed_params(Default::default()),
-                    build_is_well_formed_payload(
-                        &setup.parameter_set,
-                        &encapsulated.capsule,
-                        Default::default(),
-                    ),
-                );
+            // Act
+            let result = kem.is_well_formed(
+                build_is_well_formed_params(Default::default()),
+                build_is_well_formed_payload(
+                    &setup.parameter_set,
+                    &encapsulated.capsule,
+                    Default::default(),
+                ),
+            );
 
-                // Assert
-                assert!(
-                    result
-                        .expect("the well-formedness check never refuses")
-                        .is_well_formed
-                );
+            // Assert
+            assert!(
+                result
+                    .expect("the well-formedness check never refuses")
+                    .is_well_formed
+            );
 
-                // Act
-                let result = kem.is_well_formed(
-                    build_is_well_formed_params(Default::default()),
-                    build_is_well_formed_payload(
-                        &setup.parameter_set,
-                        &rebuilt,
-                        Default::default(),
-                    ),
-                );
+            // Act
+            let result = kem.is_well_formed(
+                build_is_well_formed_params(Default::default()),
+                build_is_well_formed_payload(&setup.parameter_set, &rebuilt, Default::default()),
+            );
 
-                // Assert
-                assert!(
-                    !result
-                        .expect("the well-formedness check never refuses")
-                        .is_well_formed
-                );
-            }
+            // Assert
+            assert!(
+                !result
+                    .expect("the well-formedness check never refuses")
+                    .is_well_formed
+            );
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -1173,131 +1137,123 @@ fn a_capsule_with_exchanged_identity_base_elements_is_ill_formed() {
 fn a_capsule_is_ill_formed_under_another_parameter_set() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            });
+            for scope in [SetupScope::Entitlement, SetupScope::Asset { root: &root }] {
+                let scope_is_asset = matches!(scope, SetupScope::Asset { .. });
+                let setup = kem.setup(
+                    build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
+                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
                     }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
+                );
+                let Ok(setup) = setup else {
+                    panic!("setup admits distinct nonzero uniform bytes under each scope")
                 };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                    bytes: Some([0xa1; 32]),
-                });
-                for scope in [
-                    SetupScope::Entitlement,
-                    SetupScope::Asset {
-                        identity_hash: &hash,
-                    },
-                ] {
-                    let scope_is_asset = matches!(scope, SetupScope::Asset { .. });
-                    let setup = kem.setup(
-                        build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
-                        build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                            master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                            u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                            u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
+                let encapsulated = kem.encapsulate(
+                    build_encapsulate_params(Default::default()),
+                    build_encapsulate_payload::<P::Scalar, _>(
+                        &setup.parameter_set,
+                        EncapsulatePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(4)),
+                        },
+                    ),
+                );
+                let Ok(encapsulated) = encapsulated else {
+                    panic!("encapsulation admits distinct nonzero uniform bytes")
+                };
+                let other_setup = kem.setup(
+                    build_setup_params(SetupParamsOverrides {
+                        scope: Some(if scope_is_asset {
+                            SetupScope::Asset { root: &root }
+                        } else {
+                            SetupScope::Entitlement
                         }),
-                    );
-                    let Ok(setup) = setup else {
-                        panic!("setup admits distinct nonzero uniform bytes under each scope")
-                    };
-                    let encapsulated = kem.encapsulate(
-                        build_encapsulate_params(Default::default()),
-                        build_encapsulate_payload::<P::Scalar, _>(
-                            &setup.parameter_set,
-                            EncapsulatePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(4)),
-                            },
-                        ),
-                    );
-                    let Ok(encapsulated) = encapsulated else {
-                        panic!("encapsulation admits distinct nonzero uniform bytes")
-                    };
-                    let other_setup = kem.setup(
-                        build_setup_params(SetupParamsOverrides {
-                            scope: Some(if scope_is_asset {
-                                SetupScope::Asset {
-                                    identity_hash: &hash,
-                                }
-                            } else {
-                                SetupScope::Entitlement
-                            }),
-                        }),
-                        build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                            master_uniform: Some(scalar_bytes::<P::Scalar>(5)),
-                            u0_uniform: Some(scalar_bytes::<P::Scalar>(6)),
-                            u1_uniform: Some(scalar_bytes::<P::Scalar>(7)),
-                        }),
-                    );
-                    let Ok(other_setup) = other_setup else {
-                        panic!("the other setup admits distinct nonzero uniform bytes")
-                    };
+                    }),
+                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                        master_uniform: Some(scalar_bytes::<P::Scalar>(5)),
+                        u0_uniform: Some(scalar_bytes::<P::Scalar>(6)),
+                        u1_uniform: Some(scalar_bytes::<P::Scalar>(7)),
+                    }),
+                );
+                let Ok(other_setup) = other_setup else {
+                    panic!("the other setup admits distinct nonzero uniform bytes")
+                };
 
-                    // Act
-                    let result = kem.is_well_formed(
-                        build_is_well_formed_params(Default::default()),
-                        build_is_well_formed_payload(
-                            &other_setup.parameter_set,
-                            &encapsulated.capsule,
-                            Default::default(),
-                        ),
-                    );
+                // Act
+                let result = kem.is_well_formed(
+                    build_is_well_formed_params(Default::default()),
+                    build_is_well_formed_payload(
+                        &other_setup.parameter_set,
+                        &encapsulated.capsule,
+                        Default::default(),
+                    ),
+                );
 
-                    // Assert
-                    assert!(
-                        !result
-                            .expect("the well-formedness check never refuses")
-                            .is_well_formed
-                    );
+                // Assert
+                assert!(
+                    !result
+                        .expect("the well-formedness check never refuses")
+                        .is_well_formed
+                );
 
-                    // Act
-                    let result = kem.is_well_formed(
-                        build_is_well_formed_params(Default::default()),
-                        build_is_well_formed_payload(
-                            &setup.parameter_set,
-                            &encapsulated.capsule,
-                            Default::default(),
-                        ),
-                    );
+                // Act
+                let result = kem.is_well_formed(
+                    build_is_well_formed_params(Default::default()),
+                    build_is_well_formed_payload(
+                        &setup.parameter_set,
+                        &encapsulated.capsule,
+                        Default::default(),
+                    ),
+                );
 
-                    // Assert
-                    assert!(
-                        result
-                            .expect("the well-formedness check never refuses")
-                            .is_well_formed
-                    );
-                }
+                // Assert
+                assert!(
+                    result
+                        .expect("the well-formedness check never refuses")
+                        .is_well_formed
+                );
             }
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -1308,7 +1264,7 @@ fn a_capsule_is_ill_formed_under_another_parameter_set() {
 ///   being well formed under a parameter set of its own scope.
 /// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
 ///   binds `made` and `kem` as the blocks above, runs one `setup` under
-///   `SetupScope::Entitlement` and one under `SetupScope::Asset` with the hash
+///   `SetupScope::Entitlement` and one under `SetupScope::Asset` with the root
 ///   for `[0xa1; 32]`, each with a distinct `scalar_bytes(n)` per sampler, and
 ///   `encapsulate` under each parameter set.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)` per concrete
@@ -1326,165 +1282,162 @@ fn a_capsule_is_ill_formed_under_another_parameter_set() {
 fn a_capsule_of_the_other_scope_is_ill_formed() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
-                    }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
-                };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                    bytes: Some([0xa1; 32]),
-                });
-                let entitlement_setup = kem.setup(
-                    build_setup_params(Default::default()),
-                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
-                    }),
-                );
-                let Ok(entitlement_setup) = entitlement_setup else {
-                    panic!("the entitlement setup admits distinct nonzero uniform bytes")
-                };
-                let entitlement_capsule = kem.encapsulate(
-                    build_encapsulate_params(Default::default()),
-                    build_encapsulate_payload::<P::Scalar, _>(
-                        &entitlement_setup.parameter_set,
-                        EncapsulatePayloadOverrides {
-                            uniform: Some(scalar_bytes::<P::Scalar>(4)),
-                        },
-                    ),
-                );
-                let Ok(entitlement_capsule) = entitlement_capsule else {
-                    panic!("the entitlement encapsulation admits its uniform bytes")
-                };
-                let asset_setup = kem.setup(
-                    build_setup_params(SetupParamsOverrides {
-                        scope: Some(SetupScope::Asset {
-                            identity_hash: &hash,
-                        }),
-                    }),
-                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                        master_uniform: Some(scalar_bytes::<P::Scalar>(5)),
-                        u0_uniform: Some(scalar_bytes::<P::Scalar>(6)),
-                        u1_uniform: Some(scalar_bytes::<P::Scalar>(7)),
-                    }),
-                );
-                let Ok(asset_setup) = asset_setup else {
-                    panic!("the asset setup admits distinct nonzero uniform bytes")
-                };
-                let asset_capsule = kem.encapsulate(
-                    build_encapsulate_params(Default::default()),
-                    build_encapsulate_payload::<P::Scalar, _>(
-                        &asset_setup.parameter_set,
-                        EncapsulatePayloadOverrides {
-                            uniform: Some(scalar_bytes::<P::Scalar>(8)),
-                        },
-                    ),
-                );
-                let Ok(asset_capsule) = asset_capsule else {
-                    panic!("the asset encapsulation admits its uniform bytes")
-                };
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            });
+            let entitlement_setup = kem.setup(
+                build_setup_params(Default::default()),
+                build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                    master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                    u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                    u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
+                }),
+            );
+            let Ok(entitlement_setup) = entitlement_setup else {
+                panic!("the entitlement setup admits distinct nonzero uniform bytes")
+            };
+            let entitlement_capsule = kem.encapsulate(
+                build_encapsulate_params(Default::default()),
+                build_encapsulate_payload::<P::Scalar, _>(
+                    &entitlement_setup.parameter_set,
+                    EncapsulatePayloadOverrides {
+                        uniform: Some(scalar_bytes::<P::Scalar>(4)),
+                    },
+                ),
+            );
+            let Ok(entitlement_capsule) = entitlement_capsule else {
+                panic!("the entitlement encapsulation admits its uniform bytes")
+            };
+            let asset_setup = kem.setup(
+                build_setup_params(SetupParamsOverrides {
+                    scope: Some(SetupScope::Asset { root: &root }),
+                }),
+                build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                    master_uniform: Some(scalar_bytes::<P::Scalar>(5)),
+                    u0_uniform: Some(scalar_bytes::<P::Scalar>(6)),
+                    u1_uniform: Some(scalar_bytes::<P::Scalar>(7)),
+                }),
+            );
+            let Ok(asset_setup) = asset_setup else {
+                panic!("the asset setup admits distinct nonzero uniform bytes")
+            };
+            let asset_capsule = kem.encapsulate(
+                build_encapsulate_params(Default::default()),
+                build_encapsulate_payload::<P::Scalar, _>(
+                    &asset_setup.parameter_set,
+                    EncapsulatePayloadOverrides {
+                        uniform: Some(scalar_bytes::<P::Scalar>(8)),
+                    },
+                ),
+            );
+            let Ok(asset_capsule) = asset_capsule else {
+                panic!("the asset encapsulation admits its uniform bytes")
+            };
 
-                // Act
-                let result = kem.is_well_formed(
-                    build_is_well_formed_params(Default::default()),
-                    build_is_well_formed_payload(
-                        &entitlement_setup.parameter_set,
-                        &entitlement_capsule.capsule,
-                        Default::default(),
-                    ),
-                );
+            // Act
+            let result = kem.is_well_formed(
+                build_is_well_formed_params(Default::default()),
+                build_is_well_formed_payload(
+                    &entitlement_setup.parameter_set,
+                    &entitlement_capsule.capsule,
+                    Default::default(),
+                ),
+            );
 
-                // Assert
-                assert!(
-                    result
-                        .expect("the well-formedness check never refuses")
-                        .is_well_formed
-                );
+            // Assert
+            assert!(
+                result
+                    .expect("the well-formedness check never refuses")
+                    .is_well_formed
+            );
 
-                // Act
-                let result = kem.is_well_formed(
-                    build_is_well_formed_params(Default::default()),
-                    build_is_well_formed_payload(
-                        &asset_setup.parameter_set,
-                        &asset_capsule.capsule,
-                        Default::default(),
-                    ),
-                );
+            // Act
+            let result = kem.is_well_formed(
+                build_is_well_formed_params(Default::default()),
+                build_is_well_formed_payload(
+                    &asset_setup.parameter_set,
+                    &asset_capsule.capsule,
+                    Default::default(),
+                ),
+            );
 
-                // Assert
-                assert!(
-                    result
-                        .expect("the well-formedness check never refuses")
-                        .is_well_formed
-                );
+            // Assert
+            assert!(
+                result
+                    .expect("the well-formedness check never refuses")
+                    .is_well_formed
+            );
 
-                // Act
-                let result = kem.is_well_formed(
-                    build_is_well_formed_params(Default::default()),
-                    build_is_well_formed_payload(
-                        &asset_setup.parameter_set,
-                        &entitlement_capsule.capsule,
-                        Default::default(),
-                    ),
-                );
+            // Act
+            let result = kem.is_well_formed(
+                build_is_well_formed_params(Default::default()),
+                build_is_well_formed_payload(
+                    &asset_setup.parameter_set,
+                    &entitlement_capsule.capsule,
+                    Default::default(),
+                ),
+            );
 
-                // Assert
-                assert!(
-                    !result
-                        .expect("the well-formedness check never refuses")
-                        .is_well_formed
-                );
+            // Assert
+            assert!(
+                !result
+                    .expect("the well-formedness check never refuses")
+                    .is_well_formed
+            );
 
-                // Act
-                let result = kem.is_well_formed(
-                    build_is_well_formed_params(Default::default()),
-                    build_is_well_formed_payload(
-                        &entitlement_setup.parameter_set,
-                        &asset_capsule.capsule,
-                        Default::default(),
-                    ),
-                );
+            // Act
+            let result = kem.is_well_formed(
+                build_is_well_formed_params(Default::default()),
+                build_is_well_formed_payload(
+                    &entitlement_setup.parameter_set,
+                    &asset_capsule.capsule,
+                    Default::default(),
+                ),
+            );
 
-                // Assert
-                assert!(
-                    !result
-                        .expect("the well-formedness check never refuses")
-                        .is_well_formed
-                );
-            }
+            // Assert
+            assert!(
+                !result
+                    .expect("the well-formedness check never refuses")
+                    .is_well_formed
+            );
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -1514,104 +1467,103 @@ fn a_capsule_of_the_other_scope_is_ill_formed() {
 fn derive_identity_refuses_a_trivial_identity_element() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
-                    }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
-                };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let trivial_setup = kem.setup(
-                    build_setup_params(Default::default()),
-                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                        u0_uniform: Some(scalar_bytes::<P::Scalar>(0)),
-                        u1_uniform: Some(scalar_bytes::<P::Scalar>(0)),
-                    }),
-                );
-                let Ok(trivial_setup) = trivial_setup else {
-                    panic!("the entitlement scope skips the trivial-element check")
-                };
-                let setup = kem.setup(
-                    build_setup_params(Default::default()),
-                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
-                    }),
-                );
-                let Ok(setup) = setup else {
-                    panic!("setup admits distinct nonzero uniform bytes")
-                };
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let trivial_setup = kem.setup(
+                build_setup_params(Default::default()),
+                build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                    master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                    u0_uniform: Some(scalar_bytes::<P::Scalar>(0)),
+                    u1_uniform: Some(scalar_bytes::<P::Scalar>(0)),
+                }),
+            );
+            let Ok(trivial_setup) = trivial_setup else {
+                panic!("the entitlement scope skips the trivial-element check")
+            };
+            let setup = kem.setup(
+                build_setup_params(Default::default()),
+                build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                    master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                    u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                    u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
+                }),
+            );
+            let Ok(setup) = setup else {
+                panic!("setup admits distinct nonzero uniform bytes")
+            };
 
-                // Act
-                let result = kem.derive_identity(
-                    build_derive_identity_params(Default::default()),
-                    build_derive_identity_payload(&trivial_setup.parameter_set, Default::default()),
-                );
+            // Act
+            let result = kem.derive_identity(
+                build_derive_identity_params(Default::default()),
+                build_derive_identity_payload(&trivial_setup.parameter_set, Default::default()),
+            );
 
-                // Assert
-                let Err(error) = result else {
-                    panic!("a trivial identity element is refused")
-                };
-                assert_eq!(error, DeriveIdentityErrorReturn::TrivialIdentityElement);
+            // Assert
+            let Err(error) = result else {
+                panic!("a trivial identity element is refused")
+            };
+            assert_eq!(error, DeriveIdentityErrorReturn::TrivialIdentityElement);
 
-                // Act
-                let result = kem.derive_identity(
-                    build_derive_identity_params(Default::default()),
-                    build_derive_identity_payload(&setup.parameter_set, Default::default()),
-                );
+            // Act
+            let result = kem.derive_identity(
+                build_derive_identity_params(Default::default()),
+                build_derive_identity_payload(&setup.parameter_set, Default::default()),
+            );
 
-                // Assert
-                assert!(result.is_ok());
-            }
+            // Assert
+            assert!(result.is_ok());
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
 /// Contract: entry
 ///   `derive_identity_derives_under_the_asset_scope_only_the_identity_the_set_fixes`;
-///   an asset parameter set `setup` returned for an asset identity hash fixes
-///   that identity's element, so `derive_identity` over the same hash yields
+///   an asset parameter set `setup` returned for an asset root fixes
+///   that identity's element, so `derive_identity` over the same root yields
 ///   `Ok(DeriveIdentitySuccessReturn { identity_element })` and over another
-///   hash yields `Err(DeriveIdentityErrorReturn::OutsideAssetScope)`.
+///   root yields `Err(DeriveIdentityErrorReturn::OutsideAssetScope)`.
 /// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
 ///   binds `made` and `kem` as the blocks above and runs `setup` under
-///   `SetupScope::Asset` with the hash for `[0xa1; 32]`, the other hash being
+///   `SetupScope::Asset` with the root for `[0xa1; 32]`, the other root being
 ///   `[0xb2; 32]`, each sampler fed a distinct `scalar_bytes(n)`.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)` per concrete
 ///   of `PAIRING_CONCRETES`, whose consumer's calls under test are
-///   `derive_identity` over the hash the set fixes, then over the other.
-/// Assert:  in the consumer, `result.is_ok()` for the hash the set fixes and
+///   `derive_identity` over the root the set fixes, then over the other.
+/// Assert:  in the consumer, `result.is_ok()` for the root the set fixes and
 ///   `assert_eq!` of the whole error against
 ///   `DeriveIdentityErrorReturn::OutsideAssetScope` for the other; outside the
 ///   consumer, `created.is_ok()`.
@@ -1623,101 +1575,93 @@ fn derive_identity_refuses_a_trivial_identity_element() {
 fn derive_identity_derives_under_the_asset_scope_only_the_identity_the_set_fixes() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
-                    }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
-                };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                    bytes: Some([0xa1; 32]),
-                });
-                let other_hash =
-                    build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                        bytes: Some([0xb2; 32]),
-                    });
-                let setup = kem.setup(
-                    build_setup_params(SetupParamsOverrides {
-                        scope: Some(SetupScope::Asset {
-                            identity_hash: &hash,
-                        }),
-                    }),
-                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
-                    }),
-                );
-                let Ok(setup) = setup else {
-                    panic!("the asset setup admits distinct nonzero uniform bytes")
-                };
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            });
+            let other_root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xb2; 32]),
+            });
+            let setup = kem.setup(
+                build_setup_params(SetupParamsOverrides {
+                    scope: Some(SetupScope::Asset { root: &root }),
+                }),
+                build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                    master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                    u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                    u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
+                }),
+            );
+            let Ok(setup) = setup else {
+                panic!("the asset setup admits distinct nonzero uniform bytes")
+            };
 
-                // Act
-                let result = kem.derive_identity(
-                    build_derive_identity_params(Default::default()),
-                    build_derive_identity_payload(
-                        &setup.parameter_set,
-                        DeriveIdentityPayloadOverrides {
-                            identity: Some(KemIdentity::Asset {
-                                identity_hash: &hash,
-                            }),
-                        },
-                    ),
-                );
+            // Act
+            let result = kem.derive_identity(
+                build_derive_identity_params(Default::default()),
+                build_derive_identity_payload(
+                    &setup.parameter_set,
+                    DeriveIdentityPayloadOverrides {
+                        identity: Some(KemIdentity::Asset { root: &root }),
+                    },
+                ),
+            );
 
-                // Assert
-                assert!(result.is_ok());
+            // Assert
+            assert!(result.is_ok());
 
-                // Act
-                let result = kem.derive_identity(
-                    build_derive_identity_params(Default::default()),
-                    build_derive_identity_payload(
-                        &setup.parameter_set,
-                        DeriveIdentityPayloadOverrides {
-                            identity: Some(KemIdentity::Asset {
-                                identity_hash: &other_hash,
-                            }),
-                        },
-                    ),
-                );
+            // Act
+            let result = kem.derive_identity(
+                build_derive_identity_params(Default::default()),
+                build_derive_identity_payload(
+                    &setup.parameter_set,
+                    DeriveIdentityPayloadOverrides {
+                        identity: Some(KemIdentity::Asset { root: &other_root }),
+                    },
+                ),
+            );
 
-                // Assert
-                let Err(error) = result else {
-                    panic!("an identity outside the scope the set fixes is refused")
-                };
-                assert_eq!(error, DeriveIdentityErrorReturn::OutsideAssetScope);
-            }
+            // Assert
+            let Err(error) = result else {
+                panic!("an identity outside the scope the set fixes is refused")
+            };
+            assert_eq!(error, DeriveIdentityErrorReturn::OutsideAssetScope);
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }
 
@@ -1756,267 +1700,256 @@ fn derive_identity_derives_under_the_asset_scope_only_the_identity_the_set_fixes
 fn every_value_rebuilt_from_its_components_behaves_as_the_value_it_was_read_from() {
     struct Consumer;
 
-    impl IPairingConsumer for Consumer {
+    impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic>(
+        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _payload: &Bb1DepthOneCasePayload,
         ) -> Self::Output {
-            for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                // Arrange
-                let Ok(made) = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(case.concrete),
-                        identifier: Some(case.identifier),
+            let kem: Bb1DepthOneKem<'_, P> =
+                build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
+            let root = build_root(RootConstructorParamsOverrides {
+                bytes: Some([0xa1; 32]),
+            });
+            for (scope, identity) in [
+                (
+                    SetupScope::Entitlement,
+                    KemIdentity::Entitlement {
+                        canonical: b"entitlement-one",
+                    },
+                ),
+                (
+                    SetupScope::Asset { root: &root },
+                    KemIdentity::Asset { root: &root },
+                ),
+            ] {
+                let setup = kem.setup(
+                    build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
+                    build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                        master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
+                        u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
+                        u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
                     }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                ) else {
-                    panic!("the declared selection admits the concrete it names")
+                );
+                let Ok(setup) = setup else {
+                    panic!("setup admits distinct nonzero uniform bytes under each scope")
                 };
-                let kem: Bb1DepthOneKem<'_, P> =
-                    build_bb1_depth_one_kem(&consumed.adapter, &*made.adapter, Default::default());
-                let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-                    bytes: Some([0xa1; 32]),
-                });
-                for (scope, identity) in [
-                    (
-                        SetupScope::Entitlement,
-                        KemIdentity::Entitlement {
-                            canonical: b"entitlement-one",
+                let derived = kem.derive_identity(
+                    build_derive_identity_params(Default::default()),
+                    build_derive_identity_payload(
+                        &setup.parameter_set,
+                        DeriveIdentityPayloadOverrides {
+                            identity: Some(identity),
                         },
                     ),
-                    (
-                        SetupScope::Asset {
-                            identity_hash: &hash,
-                        },
-                        KemIdentity::Asset {
-                            identity_hash: &hash,
+                );
+                let Ok(derived) = derived else {
+                    panic!("the identity the parameter set's scope selects derives")
+                };
+                let issued = kem.issue(
+                    build_issue_params(Default::default()),
+                    build_issue_payload::<P::Scalar, _, _, _>(
+                        &setup.parameter_set,
+                        &setup.master_scalar,
+                        &derived.identity_element,
+                        IssuePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(4)),
                         },
                     ),
-                ] {
-                    let setup = kem.setup(
-                        build_setup_params(SetupParamsOverrides { scope: Some(scope) }),
-                        build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
-                            master_uniform: Some(scalar_bytes::<P::Scalar>(1)),
-                            u0_uniform: Some(scalar_bytes::<P::Scalar>(2)),
-                            u1_uniform: Some(scalar_bytes::<P::Scalar>(3)),
-                        }),
-                    );
-                    let Ok(setup) = setup else {
-                        panic!("setup admits distinct nonzero uniform bytes under each scope")
-                    };
-                    let derived = kem.derive_identity(
-                        build_derive_identity_params(Default::default()),
-                        build_derive_identity_payload(
+                );
+                let Ok(issued) = issued else {
+                    panic!("issuance admits distinct nonzero uniform bytes")
+                };
+                let encapsulated = kem.encapsulate(
+                    build_encapsulate_params(Default::default()),
+                    build_encapsulate_payload::<P::Scalar, _>(
+                        &setup.parameter_set,
+                        EncapsulatePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(5)),
+                        },
+                    ),
+                );
+                let Ok(encapsulated) = encapsulated else {
+                    panic!("encapsulation admits distinct nonzero uniform bytes")
+                };
+                let parameter_set_components = kem
+                    .parameter_set_components(
+                        build_parameter_set_components_params(Default::default()),
+                        build_parameter_set_components_payload(
                             &setup.parameter_set,
-                            DeriveIdentityPayloadOverrides {
-                                identity: Some(identity),
-                            },
+                            Default::default(),
                         ),
-                    );
-                    let Ok(derived) = derived else {
-                        panic!("the identity the parameter set's scope selects derives")
-                    };
-                    let issued = kem.issue(
-                        build_issue_params(Default::default()),
-                        build_issue_payload::<P::Scalar, _, _, _>(
-                            &setup.parameter_set,
+                    )
+                    .expect("extracting components never refuses")
+                    .components;
+                let master_scalar_components = kem
+                    .master_scalar_components(
+                        build_master_scalar_components_params(Default::default()),
+                        build_master_scalar_components_payload(
                             &setup.master_scalar,
-                            &derived.identity_element,
-                            IssuePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(4)),
+                            Default::default(),
+                        ),
+                    )
+                    .expect("extracting components never refuses")
+                    .components;
+                let credential_components = kem
+                    .credential_components(
+                        build_credential_components_params(Default::default()),
+                        build_credential_components_payload(&issued.credential, Default::default()),
+                    )
+                    .expect("extracting components never refuses")
+                    .components;
+                let capsule_components = kem
+                    .capsule_components(
+                        build_capsule_components_params(Default::default()),
+                        build_capsule_components_payload(&encapsulated.capsule, Default::default()),
+                    )
+                    .expect("extracting components never refuses")
+                    .components;
+                let rebuilt_parameter_set = kem
+                    .parameter_set_from_components(
+                        build_parameter_set_from_components_params(Default::default()),
+                        build_parameter_set_from_components_payload(
+                            pairing,
+                            ParameterSetFromComponentsPayloadOverrides {
+                                components: Some(parameter_set_components),
                             },
                         ),
-                    );
-                    let Ok(issued) = issued else {
-                        panic!("issuance admits distinct nonzero uniform bytes")
-                    };
-                    let encapsulated = kem.encapsulate(
-                        build_encapsulate_params(Default::default()),
-                        build_encapsulate_payload::<P::Scalar, _>(
-                            &setup.parameter_set,
-                            EncapsulatePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(5)),
+                    )
+                    .expect("rebuilding components never refuses")
+                    .parameter_set;
+                let rebuilt_master_scalar = kem
+                    .master_scalar_from_components(
+                        build_master_scalar_from_components_params(Default::default()),
+                        build_master_scalar_from_components_payload::<P::Scalar>(
+                            MasterScalarFromComponentsPayloadOverrides {
+                                components: Some(master_scalar_components),
                             },
                         ),
-                    );
-                    let Ok(encapsulated) = encapsulated else {
-                        panic!("encapsulation admits distinct nonzero uniform bytes")
-                    };
-                    let parameter_set_components = kem
-                        .parameter_set_components(
-                            build_parameter_set_components_params(Default::default()),
-                            build_parameter_set_components_payload(
-                                &setup.parameter_set,
-                                Default::default(),
-                            ),
-                        )
-                        .expect("extracting components never refuses")
-                        .components;
-                    let master_scalar_components = kem
-                        .master_scalar_components(
-                            build_master_scalar_components_params(Default::default()),
-                            build_master_scalar_components_payload(
-                                &setup.master_scalar,
-                                Default::default(),
-                            ),
-                        )
-                        .expect("extracting components never refuses")
-                        .components;
-                    let credential_components = kem
-                        .credential_components(
-                            build_credential_components_params(Default::default()),
-                            build_credential_components_payload(
-                                &issued.credential,
-                                Default::default(),
-                            ),
-                        )
-                        .expect("extracting components never refuses")
-                        .components;
-                    let capsule_components = kem
-                        .capsule_components(
-                            build_capsule_components_params(Default::default()),
-                            build_capsule_components_payload(
-                                &encapsulated.capsule,
-                                Default::default(),
-                            ),
-                        )
-                        .expect("extracting components never refuses")
-                        .components;
-                    let rebuilt_parameter_set = kem
-                        .parameter_set_from_components(
-                            build_parameter_set_from_components_params(Default::default()),
-                            build_parameter_set_from_components_payload(
-                                &consumed.adapter,
-                                ParameterSetFromComponentsPayloadOverrides {
-                                    components: Some(parameter_set_components),
-                                },
-                            ),
-                        )
-                        .expect("rebuilding components never refuses")
-                        .parameter_set;
-                    let rebuilt_master_scalar = kem
-                        .master_scalar_from_components(
-                            build_master_scalar_from_components_params(Default::default()),
-                            build_master_scalar_from_components_payload::<P::Scalar>(
-                                MasterScalarFromComponentsPayloadOverrides {
-                                    components: Some(master_scalar_components),
-                                },
-                            ),
-                        )
-                        .expect("rebuilding components never refuses")
-                        .master_scalar;
-                    let rebuilt_credential = kem
-                        .credential_from_components(
-                            build_credential_from_components_params(Default::default()),
-                            build_credential_from_components_payload(
-                                &consumed.adapter,
-                                CredentialFromComponentsPayloadOverrides {
-                                    components: Some(credential_components),
-                                },
-                            ),
-                        )
-                        .expect("rebuilding components never refuses")
-                        .credential;
-                    let rebuilt_capsule = kem
-                        .capsule_from_components(
-                            build_capsule_from_components_params(Default::default()),
-                            build_capsule_from_components_payload(
-                                &consumed.adapter,
-                                CapsuleFromComponentsPayloadOverrides {
-                                    components: Some(capsule_components),
-                                },
-                            ),
-                        )
-                        .expect("rebuilding components never refuses")
-                        .capsule;
+                    )
+                    .expect("rebuilding components never refuses")
+                    .master_scalar;
+                let rebuilt_credential = kem
+                    .credential_from_components(
+                        build_credential_from_components_params(Default::default()),
+                        build_credential_from_components_payload(
+                            pairing,
+                            CredentialFromComponentsPayloadOverrides {
+                                components: Some(credential_components),
+                            },
+                        ),
+                    )
+                    .expect("rebuilding components never refuses")
+                    .credential;
+                let rebuilt_capsule = kem
+                    .capsule_from_components(
+                        build_capsule_from_components_params(Default::default()),
+                        build_capsule_from_components_payload(
+                            pairing,
+                            CapsuleFromComponentsPayloadOverrides {
+                                components: Some(capsule_components),
+                            },
+                        ),
+                    )
+                    .expect("rebuilding components never refuses")
+                    .capsule;
 
-                    // Act
-                    let reissued = kem.issue(
-                        build_issue_params(Default::default()),
-                        build_issue_payload::<P::Scalar, _, _, _>(
-                            &rebuilt_parameter_set,
-                            &rebuilt_master_scalar,
-                            &derived.identity_element,
-                            IssuePayloadOverrides {
-                                uniform: Some(scalar_bytes::<P::Scalar>(6)),
-                            },
-                        ),
-                    );
+                // Act
+                let reissued = kem.issue(
+                    build_issue_params(Default::default()),
+                    build_issue_payload::<P::Scalar, _, _, _>(
+                        &rebuilt_parameter_set,
+                        &rebuilt_master_scalar,
+                        &derived.identity_element,
+                        IssuePayloadOverrides {
+                            uniform: Some(scalar_bytes::<P::Scalar>(6)),
+                        },
+                    ),
+                );
 
-                    // Assert
-                    let Ok(reissued) = reissued else {
-                        panic!("issuance under the rebuilt values admits its sampler")
-                    };
-                    let result = kem.is_valid(
-                        build_is_valid_params(Default::default()),
-                        build_is_valid_payload(
-                            &setup.parameter_set,
-                            &derived.identity_element,
-                            &reissued.credential,
-                            Default::default(),
-                        ),
-                    );
-                    assert!(result.expect("the validity check never refuses").is_valid);
-                    let result = kem.is_valid(
-                        build_is_valid_params(Default::default()),
-                        build_is_valid_payload(
-                            &setup.parameter_set,
-                            &derived.identity_element,
-                            &rebuilt_credential,
-                            Default::default(),
-                        ),
-                    );
-                    assert!(result.expect("the validity check never refuses").is_valid);
-                    let result = kem.decapsulate(
-                        build_decapsulate_params(Default::default()),
-                        build_decapsulate_payload(
-                            &derived.identity_element,
-                            &rebuilt_credential,
-                            &rebuilt_capsule,
-                            Default::default(),
-                        ),
-                    );
-                    assert_eq!(
-                        result
-                            .expect("decapsulation never refuses")
-                            .encapsulated
-                            .key_material()
-                            .expose(),
-                        encapsulated.encapsulated.key_material().expose()
-                    );
-                    let result = kem.is_well_formed(
-                        build_is_well_formed_params(Default::default()),
-                        build_is_well_formed_payload(
-                            &setup.parameter_set,
-                            &rebuilt_capsule,
-                            Default::default(),
-                        ),
-                    );
-                    assert!(
-                        result
-                            .expect("the well-formedness check never refuses")
-                            .is_well_formed
-                    );
-                }
+                // Assert
+                let Ok(reissued) = reissued else {
+                    panic!("issuance under the rebuilt values admits its sampler")
+                };
+                let result = kem.is_valid(
+                    build_is_valid_params(Default::default()),
+                    build_is_valid_payload(
+                        &setup.parameter_set,
+                        &derived.identity_element,
+                        &reissued.credential,
+                        Default::default(),
+                    ),
+                );
+                assert!(result.expect("the validity check never refuses").is_valid);
+                let result = kem.is_valid(
+                    build_is_valid_params(Default::default()),
+                    build_is_valid_payload(
+                        &setup.parameter_set,
+                        &derived.identity_element,
+                        &rebuilt_credential,
+                        Default::default(),
+                    ),
+                );
+                assert!(result.expect("the validity check never refuses").is_valid);
+                let result = kem.decapsulate(
+                    build_decapsulate_params(Default::default()),
+                    build_decapsulate_payload(
+                        &derived.identity_element,
+                        &rebuilt_credential,
+                        &rebuilt_capsule,
+                        Default::default(),
+                    ),
+                );
+                assert_eq!(
+                    result
+                        .expect("decapsulation never refuses")
+                        .encapsulated
+                        .key_material()
+                        .expose(),
+                    encapsulated.encapsulated.key_material().expose()
+                );
+                let result = kem.is_well_formed(
+                    build_is_well_formed_params(Default::default()),
+                    build_is_well_formed_payload(
+                        &setup.parameter_set,
+                        &rebuilt_capsule,
+                        Default::default(),
+                    ),
+                );
+                assert!(
+                    result
+                        .expect("the well-formedness check never refuses")
+                        .is_well_formed
+                );
             }
         }
     }
 
     for concrete in PAIRING_CONCRETES {
-        let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
-            ..Default::default()
-        });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            // Act
+            let created = run_bb1_depth_one_case(
+                &build_bb1_depth_one_case_deps(Consumer, Default::default()),
+                build_bb1_depth_one_case_params(Bb1DepthOneCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(case.concrete),
+                            identifier: Some(case.identifier),
+                        },
+                    )),
+                }),
+                build_bb1_depth_one_case_payload(Default::default()),
+            );
 
-        // Act
-        let created = create_pairing(&deps, params, CreatePairingPayload);
-
-        // Assert
-        assert!(created.is_ok());
+            // Assert
+            assert!(created.is_ok());
+        }
     }
 }

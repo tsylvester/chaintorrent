@@ -13,10 +13,31 @@ use interface::IEncoderAdapter;
 use interface::{
     ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingDeps, CreateEncodingErrorReturn,
     CreateEncodingParams, CreateEncodingPayload, CreateEncodingReturn, CreateEncodingSuccessReturn,
-    EncodingConcrete, IEncodingConsumer,
+    EncodingConcrete, EncodingTypeName, EncodingTypeNameConstructorParams,
+    EncodingTypeNameErrorReturn, EncodingTypeNameTryNewReturn, IEncodingConsumer,
 };
 #[cfg(any(test, feature = "mocks"))]
 use mock::MockIEncoderAdapter;
+
+impl EncodingTypeName {
+    pub fn try_new(params: EncodingTypeNameConstructorParams) -> EncodingTypeNameTryNewReturn {
+        if params.name.is_empty() {
+            return Err(EncodingTypeNameErrorReturn::Empty);
+        }
+        if !params
+            .name
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric())
+        {
+            return Err(EncodingTypeNameErrorReturn::NotAlphanumeric);
+        }
+        Ok(EncodingTypeName { name: params.name })
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.name.as_str()
+    }
+}
 
 pub fn create_encoding<C: IEncodingConsumer>(
     deps: &CreateEncodingDeps<C>,

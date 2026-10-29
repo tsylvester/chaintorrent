@@ -1,8 +1,13 @@
 use core::convert::Infallible;
-use domain::{AssetIdentityHash, Secret};
+use domain::Secret;
 #[cfg(any(test, feature = "mocks"))]
 use hash_to_scalar::DomainTagTryNewErrorReturn;
+#[cfg(any(test, feature = "mocks"))]
+use hash_to_scalar::{CreateHashToScalarErrorReturn, CreateHashToScalarParams};
 use hash_to_scalar::{HashToScalarErrorReturn, IHashToScalarAdapter};
+use hashing::Root;
+#[cfg(any(test, feature = "mocks"))]
+use pairing::{CreatePairingErrorReturn, CreatePairingParams, IPairingReference};
 use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorReturn};
 use serde::Serialize;
 use zeroize::Zeroize;
@@ -39,9 +44,7 @@ pub struct EncapsulatedValue {
 #[derive(Clone, Copy)]
 pub enum SetupScope<'a> {
     Entitlement,
-    Asset {
-        identity_hash: &'a AssetIdentityHash,
-    },
+    Asset { root: &'a Root },
 }
 
 pub struct SetupParams<'a> {
@@ -72,12 +75,8 @@ pub type SetupReturn<PS, M> = Result<SetupSuccessReturn<PS, M>, SetupErrorReturn
 
 #[derive(Clone, Copy)]
 pub enum KemIdentity<'a> {
-    Entitlement {
-        canonical: &'a [u8],
-    },
-    Asset {
-        identity_hash: &'a AssetIdentityHash,
-    },
+    Entitlement { canonical: &'a [u8] },
+    Asset { root: &'a Root },
 }
 
 pub struct DeriveIdentityParams;
@@ -571,3 +570,51 @@ pub const DECLARED_KEM_SELECTIONS: &[CreateKemParams] = &[
         scope: IdentityScope::Asset,
     },
 ];
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait ICreateKemCaseConsumer {
+    type Output;
+
+    fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        &self,
+        pairing: &P,
+        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+        payload: &CreateKemCasePayload,
+    ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateKemCaseDeps<C: ICreateKemCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateKemCaseParams {
+    pub pairing: CreatePairingParams,
+    pub hash_to_scalar: CreateHashToScalarParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateKemCasePayload;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateKemCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum CreateKemCaseErrorReturn {
+    CreatePairing(CreatePairingErrorReturn),
+    CreateHashToScalar(CreateHashToScalarErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type CreateKemCaseReturn<O> = Result<CreateKemCaseSuccessReturn<O>, CreateKemCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunCreateKemCaseFn<C> = fn(
+    &CreateKemCaseDeps<C>,
+    CreateKemCaseParams,
+    CreateKemCasePayload,
+) -> CreateKemCaseReturn<<C as ICreateKemCaseConsumer>::Output>;
