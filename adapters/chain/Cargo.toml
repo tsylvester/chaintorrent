@@ -6,13 +6,15 @@ publish.workspace = true
 
 [dependencies]
 encoding = { path = "../encoding" }
-serde = { version = "1.0.229", features = ["derive"] }
+domain = { path = "../../crates/domain" }
+sha3 = "0.12.0"
 
 [dev-dependencies]
 encoding = { path = "../encoding", features = ["mocks"] }
+domain = { path = "../../crates/domain", features = ["mocks"] }
 
 [features]
-mocks = ["encoding/mocks"]
+mocks = ["encoding/mocks", "domain/mocks"]
 
 [lints]
 workspace = true

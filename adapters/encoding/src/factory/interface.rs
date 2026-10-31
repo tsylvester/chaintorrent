@@ -90,7 +90,7 @@ pub trait ICanonicalField: Sized {
 
 pub const ENCODING_INTERFACE_VERSION: u32 = 1;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EncodingIdentifier {
     EthereumAbiV1,
     #[cfg(any(test, feature = "mocks"))]

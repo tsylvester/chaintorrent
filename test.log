@@ -3,98 +3,103 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling domain v0.0.0 (C:\Users\Tim\ChainTorrent\crates\domain)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.39s
-     Running unittests src\lib.rs (target\debug\deps\domain-8bf3307dd67c6836.exe)
+   Compiling chain v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\chain)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.83s
+     Running unittests src\lib.rs (target\debug\deps\chain-8b4f8337d0446be9.exe)
 
-running 83 tests
-test asset_identity::test::as_ref_returns_the_registry_hash_preimage ... ok
-test asset_identity::test::coordinate_writes_the_only_registry_hash_preimage ... ok
-test asset_identity::test::name_returns_the_held_name ... ok
-test asset_identity::test::try_new_admits_a_scoped_name_and_a_prerelease_version ... ok
-test asset_identity::test::try_new_rejects_a_version_byte_outside_visible_ascii ... ok
-test asset_identity::test::try_new_rejects_a_non_ascii_version ... ok
-test asset_identity::test::try_new_admits_the_lowest_and_highest_visible_ascii_bytes ... ok
-test asset_identity::test::try_new_reports_a_version_byte_outside_visible_ascii_before_a_later_separator ... ok
-test asset_identity::test::try_new_rejects_a_version_containing_the_separator ... ok
-test asset_identity::test::try_new_rejects_an_empty_version ... ok
-test asset_identity::test::try_new_rejects_the_lowest_name_byte_outside_visible_ascii ... ok
-test asset_identity::test::try_new_rejects_a_non_ascii_name ... ok
-test asset_identity::test::try_new_reports_a_version_separator_before_a_later_byte_outside_visible_ascii ... ok
-test asset_identity_hash::test::try_new_rejects_the_all_zero_hash ... ok
-test asset_identity::test::try_new_reports_the_name_before_the_version_bytes ... ok
-test asset_identity::test::try_new_rejects_an_empty_name ... ok
-test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last ... ok
-test asset_identity_hash::test::as_bytes_returns_a_reference_to_the_held_array ... ok
-test asset_identity_hash::test::try_new_admits_a_hash_whose_only_nonzero_byte_is_the_first ... ok
-test asset_identity_hash::test::try_new_admits_a_hash_whose_only_nonzero_byte_is_the_last ... ok
-test asset_identity::test::try_new_reports_the_name_before_an_empty_version ... ok
-test deployment_identity::test::as_bytes_returns_the_held_bytes ... ok
-test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_interior ... ok
-test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first ... ok
-test asset_identity::test::version_returns_the_held_version ... ok
-test deployment_identity::test::try_new_rejects_the_all_zero_identity ... ok
-test derivation_context::test::asset_returns_the_held_asset ... ok
-test derivation_context::test::deployment_returns_the_held_deployment ... ok
-test derivation_context::test::try_new_rejects_a_group_index_equal_to_the_group_count ... ok
-test derivation_context::test::group_index_returns_the_held_group_index ... ok
-test derivation_context::test::parameter_set_returns_the_held_parameter_set ... ok
-test derivation_context::test::suite_returns_the_held_suite ... ok
-test derivation_context::test::try_new_rejects_the_largest_group_index ... ok
-test derivation_context::test::try_new_admits_index_zero_of_a_one_group_geometry ... ok
-test derivation_context::test::try_new_admits_the_last_group_of_the_geometry ... ok
-test derivation_context::test::geometry_returns_the_held_geometry ... ok
-test group_index::test::try_new_admits_the_highest_index ... ok
-test group_index::test::try_new_admits_the_lowest_index ... ok
-test group_index::test::value_returns_the_held_index ... ok
-test parameter_set_identifier::test::as_bytes_returns_the_held_bytes ... ok
-test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior ... ok
-test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first ... ok
-test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last ... ok
-test parameter_set_identifier::test::try_new_rejects_the_all_zero_identifier ... ok
-test piece_geometry::test::group_count_does_not_round_up_an_exact_extent ... ok
-test piece_geometry::test::group_count_holds_at_the_largest_extent ... ok
-test piece_geometry::test::group_count_rounds_up_a_partial_group ... ok
-test piece_geometry::test::piece_count_does_not_round_up_an_exact_extent ... ok
-test piece_geometry::test::piece_count_holds_at_the_largest_extent ... ok
-test piece_geometry::test::piece_count_rounds_up_a_partial_piece ... ok
-test piece_geometry::test::piece_group_size_returns_the_held_piece_group_size ... ok
-test piece_geometry::test::piece_size_returns_the_held_piece_size ... ok
-test piece_geometry::test::total_extent_returns_the_held_total_extent ... ok
-test piece_geometry::test::try_new_admits_a_piece_group_size_that_is_an_odd_multiple_of_the_piece_size ... ok
-test piece_geometry::test::try_new_admits_the_smallest_geometry ... ok
-test piece_geometry::test::try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size ... ok
-test piece_geometry::test::try_new_rejects_a_piece_group_smaller_than_a_piece ... ok
-test piece_geometry::test::try_new_rejects_a_piece_size_below_the_minimum ... ok
-test piece_geometry::test::try_new_rejects_a_piece_size_that_is_not_a_power_of_two ... ok
-test piece_geometry::test::try_new_rejects_a_zero_piece_group_size ... ok
-test piece_geometry::test::try_new_rejects_a_zero_piece_size ... ok
-test piece_geometry::test::try_new_rejects_a_zero_total_extent ... ok
-test piece_geometry::test::try_new_reports_the_piece_group_size_before_the_total_extent ... ok
-test piece_geometry::test::try_new_reports_the_piece_size_before_the_piece_group_size ... ok
-test piece_geometry::test::try_new_reports_the_piece_size_before_the_total_extent ... ok
-test secret::test::dropping_a_secret_zeroizes_its_value ... ok
-test secret::test::dropping_a_secret_during_unwinding_zeroizes_its_value ... ok
-test secret::test::expose_returns_a_reference_to_the_held_value ... ok
-test secret::test::exposing_a_secret_does_not_zeroize_it ... ok
-test secret::test::try_new_holds_the_value_in_params ... ok
-test secret::test::try_new_moves_the_value_without_copying_it ... ok
-test signature_scheme_identifier::test::identifier_returns_the_held_identifier ... ok
-test signature_scheme_identifier::test::try_new_admits_the_largest_identifier ... ok
-test signature_scheme_identifier::test::try_new_admits_the_smallest_nonzero_identifier ... ok
-test signature_scheme_identifier::test::try_new_rejects_a_zero_identifier ... ok
-test suite_identifier::test::identifier_returns_the_held_identifier ... ok
-test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior_with_version_one ... ok
-test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version ... ok
-test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one ... ok
-test suite_identifier::test::try_new_rejects_a_zero_version ... ok
-test suite_identifier::test::try_new_rejects_an_all_zero_identifier ... ok
-test suite_identifier::test::try_new_reports_the_identifier_before_the_version ... ok
-test suite_identifier::test::version_returns_the_held_version ... ok
+running 74 tests
+test create_chain_forms::integration_test::chain_forms_handed_to_the_consumer_declare_the_required_identifier ... ok
+test create_chain_forms::integration_test::chain_forms_refuse_an_encoder_declaring_another_encoding_identifier ... ok
+test create_chain_forms::integration_test::chain_forms_interval_survives_its_field_round_trip ... ok
+test create_chain_forms::integration_test::chain_forms_chain_identifier_survives_its_field_round_trip ... ok
+test create_chain_forms::integration_test::chain_forms_entitlement_survives_its_field_round_trip ... ok
+test create_chain_forms::integration_test::chain_forms_identity_survives_its_field_round_trip ... ok
+test evm_forms::integration_test::evm_chain_identifier_form_survives_its_field_round_trip ... ok
+test create_chain_forms::test::create_chain_forms_admits_and_constructs_the_evm_forms ... ok
+test create_chain_forms::test::create_chain_forms_admits_and_constructs_the_mock_concrete ... ok
+test create_chain_forms::test::create_chain_forms_refuses_an_encoder_declaring_another_encoding_identifier_for_the_evm_forms ... ok
+test create_chain_forms::test::create_chain_forms_refuses_an_encoder_declaring_another_encoding_identifier_for_the_mock_concrete ... ok
+test evm_forms::integration_test::evm_identity_form_survives_its_field_round_trip ... ok
+test evm_forms::integration_test::evm_interval_form_survives_its_field_round_trip ... ok
+test evm_forms::test::evm_chain_identifier_form_is_rebuilt_from_a_256_bit_unsigned_field ... ok
+test evm_forms::test::evm_chain_identifier_form_refuses_a_field_of_another_kind ... ok
+test create_chain_forms::integration_test::chain_forms_key_identifier_survives_its_field_round_trip ... ok
+test create_chain_forms::integration_test::chain_forms_signed_intent_survives_its_field_round_trip ... ok
+test evm_forms::test::evm_chain_identifier_form_try_new_moves_the_bytes_of_its_params_into_the_form ... ok
+test evm_forms::test::evm_chain_identifier_form_yields_its_bytes_as_a_256_bit_unsigned_field ... ok
+test evm_forms::test::evm_entitlement_form_is_rebuilt_from_a_256_bit_unsigned_field ... ok
+test evm_forms::integration_test::evm_key_identifier_derived_through_the_identity_form_survives_its_field_round_trip ... ok
+test evm_forms::test::evm_entitlement_form_refuses_a_field_of_another_kind ... ok
+test evm_forms::integration_test::evm_entitlement_form_survives_its_field_round_trip ... ok
+test evm_forms::test::evm_entitlement_form_try_new_moves_the_bytes_of_its_params_into_the_form ... ok
+test evm_forms::test::evm_entitlement_form_yields_its_bytes_as_a_256_bit_unsigned_field ... ok
+test evm_forms::test::evm_forms_bind_the_chain_identifier_to_the_256_bit_unsigned_kind ... ok
+test evm_forms::integration_test::evm_signed_intent_survives_its_field_round_trip ... ok
+test evm_forms::test::evm_forms_bind_the_entitlement_to_the_256_bit_unsigned_kind ... ok
+test evm_forms::test::evm_forms_bind_the_identity_to_the_fixed_twenty_byte_kind ... ok
+test evm_forms::test::evm_forms_bind_the_key_identifier_to_the_fixed_32_byte_kind ... ok
+test evm_forms::test::evm_forms_bind_the_interval_to_the_64_bit_unsigned_kind ... ok
+test evm_forms::test::evm_forms_bind_the_signed_intent_to_the_fixed_32_byte_kind ... ok
+test evm_forms::test::evm_forms_declares_its_identifier_versions_and_intent_values ... ok
+test evm_forms::test::evm_forms_implement_the_chain_forms_interface_with_their_declaration ... ok
+test evm_forms::test::evm_forms_signed_intent_decides_the_operation_before_the_fields_and_the_fields_before_the_nonce ... ok
+test evm_forms::test::evm_forms_signed_intent_refuses_a_field_name_that_is_not_an_identifier ... ok
+test evm_forms::test::evm_forms_signed_intent_refuses_a_nonce_of_another_kind ... ok
+test evm_forms::test::evm_forms_signed_intent_refuses_a_repeated_field_name ... ok
+test evm_forms::test::evm_forms_signed_intent_refuses_an_expiry_of_another_kind ... ok
+test evm_forms::test::evm_forms_signed_intent_refuses_an_operation_beginning_with_a_digit ... ok
+test evm_forms::test::evm_forms_signed_intent_refuses_an_operation_named_as_the_struct ... ok
+test evm_forms::test::evm_forms_signed_intent_refuses_an_operation_that_is_not_an_identifier ... ok
+test evm_forms::test::evm_forms_try_new_reads_the_type_name_of_every_kind_from_its_encoder ... ok
+test evm_forms::test::evm_forms_try_new_returns_the_forms ... ok
+test evm_forms::test::evm_identity_form_derives_another_key_identifier_for_another_key ... ok
+test evm_forms::test::evm_identity_form_derives_another_key_identifier_under_another_scheme ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_the_acting_identity ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_a_call_field_name ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_the_chain ... ok
+test evm_forms::test::evm_identity_form_derives_the_keccak_digest_of_the_tag_the_scheme_byte_and_the_key ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_a_call_field_value ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_the_contract ... ok
+test evm_forms::test::evm_identity_form_derives_the_same_key_identifier_for_the_same_key_and_scheme ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_the_expiry ... ok
+test evm_forms::test::evm_identity_form_is_rebuilt_from_a_fixed_twenty_byte_field ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_the_nonce ... ok
+test evm_forms::test::evm_identity_form_refuses_a_field_of_another_kind ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_the_operation ... ok
+test evm_forms::test::evm_identity_form_try_new_moves_the_bytes_of_its_params_into_the_form ... ok
+test evm_forms::test::evm_identity_form_yields_its_bytes_as_a_fixed_twenty_byte_field ... ok
+test evm_forms::integration_test::evm_signed_intent_types_its_members_by_the_names_its_encoder_returns ... ok
+test evm_forms::test::evm_interval_form_is_rebuilt_from_a_64_bit_unsigned_field ... ok
+test evm_forms::test::evm_interval_form_refuses_a_field_of_another_kind ... ok
+test evm_forms::test::evm_interval_form_try_new_moves_the_value_of_its_params_into_the_form ... ok
+test evm_forms::test::evm_interval_form_yields_its_value_as_a_64_bit_unsigned_field ... ok
+test evm_forms::test::evm_key_identifier_form_is_rebuilt_from_a_fixed_32_byte_field ... ok
+test evm_forms::test::evm_key_identifier_form_refuses_a_field_of_another_kind ... ok
+test evm_forms::test::evm_key_identifier_form_try_new_moves_the_bytes_of_its_params_into_the_form ... ok
+test evm_forms::test::evm_key_identifier_form_yields_its_bytes_as_a_fixed_32_byte_field ... ok
+test evm_forms::test::evm_forms_signed_intent_returns_the_eip712_digest_of_its_inputs ... ok
+test evm_forms::test::evm_signed_intent_form_is_rebuilt_from_a_fixed_32_byte_field ... ok
+test evm_forms::test::evm_signed_intent_form_refuses_a_field_of_another_kind ... ok
+test evm_forms::test::evm_signed_intent_form_try_new_moves_the_bytes_of_its_params_into_the_form ... ok
+test evm_forms::test::evm_signed_intent_form_yields_its_bytes_as_a_fixed_32_byte_field ... ok
 
-test result: ok. 83 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 74 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
-   Doc-tests domain
+     Running tests\create_chain_forms_integration_test.rs (target\debug\deps\create_chain_forms_integration_test-adfc84705d6e2234.exe)
+
+running 8 tests
+test create_chain_forms_hands_an_outside_consumer_an_identity_form_that_survives_its_field_round_trip ... ok
+test create_chain_forms_hands_forms_declaring_the_required_identifier_to_an_outside_consumer ... ok
+test create_chain_forms_hands_an_outside_consumer_an_interval_form_that_survives_its_field_round_trip ... ok
+test create_chain_forms_hands_an_outside_consumer_a_chain_identifier_form_that_survives_its_field_round_trip ... ok
+test create_chain_forms_hands_an_outside_consumer_an_entitlement_form_that_survives_its_field_round_trip ... ok
+test create_chain_forms_refuses_an_encoder_declaring_another_encoding_identifier_for_an_outside_consumer ... ok
+test create_chain_forms_hands_an_outside_consumer_a_key_identifier_that_survives_its_field_round_trip ... ok
+test create_chain_forms_hands_an_outside_consumer_forms_that_produce_a_signed_intent_that_survives_its_field_round_trip ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests chain
 
 running 0 tests
 
