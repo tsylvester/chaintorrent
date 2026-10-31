@@ -1,10 +1,20 @@
 use core::convert::Infallible;
 use domain::Secret;
 use encoding::IEncoderAdapter;
+#[cfg(any(test, feature = "mocks"))]
+use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter};
 use hash_to_scalar::IHashToScalarAdapter;
+#[cfg(any(test, feature = "mocks"))]
+use hash_to_scalar::{CreateHashToScalarErrorReturn, CreateHashToScalarParams};
 use kem::CredentialComponents;
+#[cfg(any(test, feature = "mocks"))]
+use kem::{CreateKemErrorReturn, CreateKemParams, ICredentialKemAdapter};
+#[cfg(any(test, feature = "mocks"))]
+use pairing::{CreatePairingErrorReturn, CreatePairingParams, IPairingReference};
 use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorReturn};
 use random::IRandomSourceAdapter;
+#[cfg(any(test, feature = "mocks"))]
+use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use serde::Serialize;
 use zeroize::Zeroize;
 
@@ -177,6 +187,12 @@ pub struct PossessionComponentsSuccessReturn<S, G1, G2> {
 pub type PossessionComponentsReturn<S, G1, G2> =
     Result<PossessionComponentsSuccessReturn<S, G1, G2>, Infallible>;
 
+pub type PossessionComponentsReturnFor<P> = PossessionComponentsReturn<
+    <P as IPairingAdapter>::Scalar,
+    <P as IPairingAdapter>::G1,
+    <P as IPairingAdapter>::G2,
+>;
+
 pub struct EnvelopeComponentsParams;
 
 pub struct EnvelopeComponentsPayload<'a, E> {
@@ -247,6 +263,12 @@ pub struct PossessionFromComponentsSuccessReturn<PO> {
 pub type PossessionFromComponentsReturn<PO> =
     Result<PossessionFromComponentsSuccessReturn<PO>, Infallible>;
 
+pub type PossessionFromComponentsPayloadFor<P> = PossessionFromComponentsPayload<
+    <P as IPairingAdapter>::Scalar,
+    <P as IPairingAdapter>::G1,
+    <P as IPairingAdapter>::G2,
+>;
+
 pub struct EnvelopeFromComponentsParams;
 
 pub struct EnvelopeFromComponentsPayload<G1, G2> {
@@ -316,16 +338,11 @@ pub trait IKeyAgreementAdapter {
         <Self::Pairing as IPairingAdapter>::G2,
     >;
 
-    #[allow(clippy::type_complexity)]
     fn possession_components(
         &self,
         params: PossessionComponentsParams,
         payload: PossessionComponentsPayload<'_, Self::Possession>,
-    ) -> PossessionComponentsReturn<
-        <Self::Pairing as IPairingAdapter>::Scalar,
-        <Self::Pairing as IPairingAdapter>::G1,
-        <Self::Pairing as IPairingAdapter>::G2,
-    >;
+    ) -> PossessionComponentsReturnFor<Self::Pairing>;
 
     fn envelope_components(
         &self,
@@ -353,15 +370,10 @@ pub trait IKeyAgreementAdapter {
         >,
     ) -> PublicKeysFromComponentsReturn<Self::PublicKeys>;
 
-    #[allow(clippy::type_complexity)]
     fn possession_from_components(
         &self,
         params: PossessionFromComponentsParams,
-        payload: PossessionFromComponentsPayload<
-            <Self::Pairing as IPairingAdapter>::Scalar,
-            <Self::Pairing as IPairingAdapter>::G1,
-            <Self::Pairing as IPairingAdapter>::G2,
-        >,
+        payload: PossessionFromComponentsPayloadFor<Self::Pairing>,
     ) -> PossessionFromComponentsReturn<Self::Possession>;
 
     fn envelope_from_components(
@@ -441,6 +453,69 @@ pub const DECLARED_KEY_AGREEMENT_SELECTIONS: &[CreateKeyAgreementParams] =
         identifier: KeyAgreementIdentifier::PairingElGamalV1,
         algebra: EnvelopeAlgebra::PairingElGamal,
     }];
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait ICreateKeyAgreementCaseConsumer {
+    type Output;
+
+    fn consume_create_key_agreement_case<
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter + IDecoderAdapter,
+        K: ICredentialKemAdapter<Pairing = P>,
+    >(
+        &self,
+        pairing: &P,
+        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &E,
+        random: &dyn IRandomSourceAdapter,
+        kem: &K,
+        payload: &CreateKeyAgreementCasePayload,
+    ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateKeyAgreementCaseDeps<C: ICreateKeyAgreementCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateKeyAgreementCaseParams {
+    pub pairing: CreatePairingParams,
+    pub encoding: CreateEncodingParams,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub random_source: CreateRandomSourceParams,
+    pub kem: CreateKemParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateKeyAgreementCasePayload;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateKeyAgreementCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum CreateKeyAgreementCaseErrorReturn {
+    CreatePairing(CreatePairingErrorReturn),
+    CreateEncoding(CreateEncodingErrorReturn),
+    CreateHashToScalar(CreateHashToScalarErrorReturn),
+    CreateRandomSource(CreateRandomSourceErrorReturn),
+    CreateKem(CreateKemErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type CreateKeyAgreementCaseReturn<O> =
+    Result<CreateKeyAgreementCaseSuccessReturn<O>, CreateKeyAgreementCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunCreateKeyAgreementCaseFn<C> =
+    fn(
+        &CreateKeyAgreementCaseDeps<C>,
+        CreateKeyAgreementCaseParams,
+        CreateKeyAgreementCasePayload,
+    ) -> CreateKeyAgreementCaseReturn<<C as ICreateKeyAgreementCaseConsumer>::Output>;
 
 #[cfg(any(test, feature = "mocks"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]

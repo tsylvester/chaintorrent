@@ -1,50 +1,72 @@
 #![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
-    ConsumeKeyAgreementParams, ConsumeKeyAgreementPayload, CreateKeyAgreementDeps,
+    ConsumeKeyAgreementParams, ConsumeKeyAgreementPayload, CreateKeyAgreementCaseDeps,
+    CreateKeyAgreementCaseErrorReturn, CreateKeyAgreementCaseParams, CreateKeyAgreementCasePayload,
+    CreateKeyAgreementCaseReturn, CreateKeyAgreementCaseSuccessReturn, CreateKeyAgreementDeps,
     CreateKeyAgreementFn, CreateKeyAgreementParams, CreateKeyAgreementPayload,
     CreateKeyAgreementReturn, CreateKeyAgreementSuccessReturn, EnvelopeAlgebra, EnvelopeCoins,
     EnvelopeComponents, EnvelopeComponentsParams, EnvelopeComponentsPayload,
     EnvelopeComponentsReturn, EnvelopeComponentsSuccessReturn, EnvelopeFromComponentsParams,
     EnvelopeFromComponentsPayload, EnvelopeFromComponentsReturn,
     EnvelopeFromComponentsSuccessReturn, GenerateKeysErrorReturn, GenerateKeysParams,
-    GenerateKeysPayload, GenerateKeysReturn, GenerateKeysSuccessReturn, IKeyAgreementAdapter,
-    IKeyAgreementConsumer, KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementConcrete,
-    KeyAgreementDeclaration, KeyAgreementIdentifier, KeyPairComponents, KeyPairComponentsParams,
-    KeyPairComponentsPayload, KeyPairComponentsReturn, KeyPairComponentsSuccessReturn,
-    KeyPairFromComponentsErrorReturn, KeyPairFromComponentsParams, KeyPairFromComponentsPayload,
-    KeyPairFromComponentsReturn, KeyPairFromComponentsSuccessReturn, KeyPairPublicKeysParams,
-    KeyPairPublicKeysPayload, KeyPairPublicKeysReturn, KeyPairPublicKeysSuccessReturn,
-    MockIKeyAgreementAdapterFailureMode, MockIKeyAgreementAdapterGenerateKeysErrorReturn,
-    MockIKeyAgreementAdapterWrapToErrorReturn, PossessionComponents, PossessionComponentsParams,
-    PossessionComponentsPayload, PossessionComponentsReturn, PossessionComponentsSuccessReturn,
-    PossessionFromComponentsParams, PossessionFromComponentsPayload,
-    PossessionFromComponentsReturn, PossessionFromComponentsSuccessReturn, PublicKeysComponents,
-    PublicKeysComponentsParams, PublicKeysComponentsPayload, PublicKeysComponentsReturn,
-    PublicKeysComponentsSuccessReturn, PublicKeysFromComponentsErrorReturn,
-    PublicKeysFromComponentsParams, PublicKeysFromComponentsPayload,
-    PublicKeysFromComponentsReturn, PublicKeysFromComponentsSuccessReturn, UnwrapParams,
+    GenerateKeysPayload, GenerateKeysReturn, GenerateKeysSuccessReturn,
+    ICreateKeyAgreementCaseConsumer, IKeyAgreementAdapter, IKeyAgreementConsumer,
+    KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementConcrete, KeyAgreementDeclaration,
+    KeyAgreementIdentifier, KeyPairComponents, KeyPairComponentsParams, KeyPairComponentsPayload,
+    KeyPairComponentsReturn, KeyPairComponentsSuccessReturn, KeyPairFromComponentsErrorReturn,
+    KeyPairFromComponentsParams, KeyPairFromComponentsPayload, KeyPairFromComponentsReturn,
+    KeyPairFromComponentsSuccessReturn, KeyPairPublicKeysParams, KeyPairPublicKeysPayload,
+    KeyPairPublicKeysReturn, KeyPairPublicKeysSuccessReturn, MockIKeyAgreementAdapterFailureMode,
+    MockIKeyAgreementAdapterGenerateKeysErrorReturn, MockIKeyAgreementAdapterWrapToErrorReturn,
+    PossessionComponents, PossessionComponentsParams, PossessionComponentsPayload,
+    PossessionComponentsReturn, PossessionComponentsSuccessReturn, PossessionFromComponentsParams,
+    PossessionFromComponentsPayload, PossessionFromComponentsReturn,
+    PossessionFromComponentsSuccessReturn, PublicKeysComponents, PublicKeysComponentsParams,
+    PublicKeysComponentsPayload, PublicKeysComponentsReturn, PublicKeysComponentsSuccessReturn,
+    PublicKeysFromComponentsErrorReturn, PublicKeysFromComponentsParams,
+    PublicKeysFromComponentsPayload, PublicKeysFromComponentsReturn,
+    PublicKeysFromComponentsSuccessReturn, RunCreateKeyAgreementCaseFn, UnwrapParams,
     UnwrapPayload, UnwrapReturn, UnwrapSuccessReturn, WrapToErrorReturn, WrapToParams,
     WrapToPayload, WrapToReturn, WrapToSuccessReturn,
 };
 use core::convert::Infallible;
 use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
-use encoding::IEncoderAdapter;
-use hash_to_scalar::IHashToScalarAdapter;
-use kem::{CredentialComponents, CredentialComponentsOverrides, build_credential_components};
+use encoding::{
+    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingDeps, CreateEncodingParams,
+    CreateEncodingParamsOverrides, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer,
+    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
+    create_encoding,
+};
+use hash_to_scalar::{
+    CreateHashToScalarParams, IHashToScalarAdapter, build_create_hash_to_scalar_deps,
+    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload, create_hash_to_scalar,
+};
+use kem::{
+    ConsumeKemParams, ConsumeKemPayload, CreateKemDeps, CreateKemParams, CredentialComponents,
+    CredentialComponentsOverrides, ICredentialKemAdapter, IKemConsumer, build_create_kem_deps,
+    build_create_kem_params, build_create_kem_payload, build_credential_components, create_kem,
+};
 use pairing::{
     AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, AddScalarParams, AddScalarPayload,
+    ConsumePairingParams, ConsumePairingPayload, CreatePairingDeps, CreatePairingParams,
     EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload, EncodeScalarParams,
     EncodeScalarPayload, G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams,
-    G2GeneratorPayload, IPairingAdapter, IPairingArithmetic, ISampleUniformScalar,
-    IsIdentityG1Params, IsIdentityG1Payload, IsIdentityG2Params, IsIdentityG2Payload, MsmG1Params,
-    MsmG1Payload, MsmG1Term, MsmG2Params, MsmG2Payload, MsmG2Term, MulG1Params, MulG1Payload,
-    MulG2Params, MulG2Payload, MulScalarParams, MulScalarPayload, NegG1Params, NegG1Payload,
-    NegG2Params, NegG2Payload, NegScalarParams, NegScalarPayload, PairingProductIsOneParams,
-    PairingProductIsOnePayload, PairingProductTerm, SampleUniformScalarErrorReturn,
-    SampleUniformScalarParams, SampleUniformScalarPayload,
+    G2GeneratorPayload, IPairingAdapter, IPairingArithmetic, IPairingConsumer, IPairingReference,
+    ISampleUniformScalar, IsIdentityG1Params, IsIdentityG1Payload, IsIdentityG2Params,
+    IsIdentityG2Payload, MsmG1Params, MsmG1Payload, MsmG1Term, MsmG2Params, MsmG2Payload,
+    MsmG2Term, MulG1Params, MulG1Payload, MulG2Params, MulG2Payload, MulScalarParams,
+    MulScalarPayload, NegG1Params, NegG1Payload, NegG2Params, NegG2Payload, NegScalarParams,
+    NegScalarPayload, PairingProductIsOneParams, PairingProductIsOnePayload, PairingProductTerm,
+    SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
+    build_create_pairing_deps, build_create_pairing_params, build_create_pairing_payload,
+    create_pairing,
 };
-use random::IRandomSourceAdapter;
+use random::{
+    CreateRandomSourceParams, CreateRandomSourceParamsOverrides, IRandomSourceAdapter,
+    build_create_random_source_deps, build_create_random_source_params,
+    build_create_random_source_payload, create_random_source,
+};
 use serde_json::{Map, Value};
 use zeroize::Zeroize;
 
@@ -2409,4 +2431,239 @@ pub fn mock_create_key_agreement<
         output,
         Default::default(),
     ))
+}
+
+#[derive(Default)]
+pub struct CreateKeyAgreementCaseDepsOverrides;
+
+pub fn build_create_key_agreement_case_deps<C: ICreateKeyAgreementCaseConsumer>(
+    consumer: C,
+    _overrides: CreateKeyAgreementCaseDepsOverrides,
+) -> CreateKeyAgreementCaseDeps<C> {
+    CreateKeyAgreementCaseDeps { consumer }
+}
+
+#[derive(Default)]
+pub struct CreateKeyAgreementCaseParamsOverrides {
+    pub pairing: Option<CreatePairingParams>,
+    pub encoding: Option<CreateEncodingParams>,
+    pub hash_to_scalar: Option<CreateHashToScalarParams>,
+    pub random_source: Option<CreateRandomSourceParams>,
+    pub kem: Option<CreateKemParams>,
+}
+
+pub fn build_create_key_agreement_case_params(
+    overrides: CreateKeyAgreementCaseParamsOverrides,
+) -> CreateKeyAgreementCaseParams {
+    CreateKeyAgreementCaseParams {
+        pairing: overrides
+            .pairing
+            .unwrap_or_else(|| build_create_pairing_params(Default::default())),
+        encoding: overrides
+            .encoding
+            .unwrap_or_else(|| build_create_encoding_params(Default::default())),
+        hash_to_scalar: overrides
+            .hash_to_scalar
+            .unwrap_or_else(|| build_create_hash_to_scalar_params(Default::default())),
+        random_source: overrides
+            .random_source
+            .unwrap_or_else(|| build_create_random_source_params(Default::default())),
+        kem: overrides
+            .kem
+            .unwrap_or_else(|| build_create_kem_params(Default::default())),
+    }
+}
+
+#[derive(Default)]
+pub struct CreateKeyAgreementCasePayloadOverrides;
+
+pub fn build_create_key_agreement_case_payload(
+    _overrides: CreateKeyAgreementCasePayloadOverrides,
+) -> CreateKeyAgreementCasePayload {
+    CreateKeyAgreementCasePayload
+}
+
+#[derive(Default)]
+pub struct CreateKeyAgreementCaseSuccessReturnOverrides;
+
+pub fn build_create_key_agreement_case_success_return<O>(
+    output: O,
+    _overrides: CreateKeyAgreementCaseSuccessReturnOverrides,
+) -> CreateKeyAgreementCaseSuccessReturn<O> {
+    CreateKeyAgreementCaseSuccessReturn { output }
+}
+
+struct CaseAtPairing<'a, C: ICreateKeyAgreementCaseConsumer> {
+    pub consumer: &'a C,
+    pub encoding: CreateEncodingParams,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub random_source: CreateRandomSourceParams,
+    pub kem: CreateKemParams,
+}
+
+impl<C: ICreateKeyAgreementCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
+    type Output = CreateKeyAgreementCaseReturn<C::Output>;
+
+    fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        &self,
+        _params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output {
+        let encoding_deps: CreateEncodingDeps<CaseAtEncoding<'_, '_, C, P>> =
+            build_create_encoding_deps(CaseAtEncoding {
+                consumer: self.consumer,
+                pairing: &payload.adapter,
+                hash_to_scalar: self.hash_to_scalar,
+                random_source: build_create_random_source_params(
+                    CreateRandomSourceParamsOverrides {
+                        kind: Some(self.random_source.kind),
+                    },
+                ),
+                kem: self.kem,
+            });
+        match create_encoding(
+            &encoding_deps,
+            build_create_encoding_params(CreateEncodingParamsOverrides {
+                concrete: Some(self.encoding.concrete),
+                identifier: Some(self.encoding.identifier),
+            }),
+            build_create_encoding_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(CreateKeyAgreementCaseErrorReturn::CreateEncoding(error)),
+        }
+    }
+}
+
+struct CaseAtEncoding<
+    'a,
+    'p,
+    C: ICreateKeyAgreementCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+> {
+    pub consumer: &'a C,
+    pub pairing: &'p P,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub random_source: CreateRandomSourceParams,
+    pub kem: CreateKemParams,
+}
+
+impl<C: ICreateKeyAgreementCaseConsumer, P: IPairingArithmetic + IPairingReference>
+    IEncodingConsumer for CaseAtEncoding<'_, '_, C, P>
+{
+    type Output = CreateKeyAgreementCaseReturn<C::Output>;
+
+    fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+        &self,
+        _params: ConsumeEncodingParams,
+        payload: ConsumeEncodingPayload<E>,
+    ) -> Self::Output {
+        let created_hash_to_scalar = match create_hash_to_scalar::<P::Scalar>(
+            &build_create_hash_to_scalar_deps(Default::default()),
+            self.hash_to_scalar,
+            build_create_hash_to_scalar_payload(Default::default()),
+        ) {
+            Ok(created) => created,
+            Err(error) => {
+                return Err(CreateKeyAgreementCaseErrorReturn::CreateHashToScalar(error));
+            }
+        };
+        let created_random = match create_random_source(
+            &build_create_random_source_deps(Default::default()),
+            build_create_random_source_params(CreateRandomSourceParamsOverrides {
+                kind: Some(self.random_source.kind),
+            }),
+            build_create_random_source_payload(Default::default()),
+        ) {
+            Ok(created) => created,
+            Err(error) => {
+                return Err(CreateKeyAgreementCaseErrorReturn::CreateRandomSource(error));
+            }
+        };
+        let kem_deps: CreateKemDeps<'_, P, CaseAtKem<'_, '_, C, P, E>> = build_create_kem_deps(
+            self.pairing,
+            &*created_hash_to_scalar.adapter,
+            CaseAtKem {
+                consumer: self.consumer,
+                pairing: self.pairing,
+                hash_to_scalar: &*created_hash_to_scalar.adapter,
+                encoder: &payload.adapter,
+                random: &*created_random.adapter,
+            },
+            Default::default(),
+        );
+        match create_kem(
+            &kem_deps,
+            self.kem,
+            build_create_kem_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(CreateKeyAgreementCaseErrorReturn::CreateKem(error)),
+        }
+    }
+}
+
+struct CaseAtKem<
+    'a,
+    'p,
+    C: ICreateKeyAgreementCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+> {
+    pub consumer: &'a C,
+    pub pairing: &'p P,
+    pub hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    pub encoder: &'a E,
+    pub random: &'a dyn IRandomSourceAdapter,
+}
+
+impl<
+    C: ICreateKeyAgreementCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+> IKemConsumer<P> for CaseAtKem<'_, '_, C, P, E>
+{
+    type Output = CreateKeyAgreementCaseReturn<C::Output>;
+
+    fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        &self,
+        _params: ConsumeKemParams,
+        payload: ConsumeKemPayload<K>,
+    ) -> Self::Output {
+        let output = self.consumer.consume_create_key_agreement_case(
+            self.pairing,
+            self.hash_to_scalar,
+            self.encoder,
+            self.random,
+            &payload.adapter,
+            &CreateKeyAgreementCasePayload,
+        );
+        Ok(CreateKeyAgreementCaseSuccessReturn { output })
+    }
+}
+
+pub fn run_create_key_agreement_case<C: ICreateKeyAgreementCaseConsumer>(
+    deps: &CreateKeyAgreementCaseDeps<C>,
+    params: CreateKeyAgreementCaseParams,
+    _payload: CreateKeyAgreementCasePayload,
+) -> CreateKeyAgreementCaseReturn<C::Output> {
+    let _: RunCreateKeyAgreementCaseFn<C> = run_create_key_agreement_case::<C>;
+    let pairing_deps: CreatePairingDeps<CaseAtPairing<'_, C>> = build_create_pairing_deps(
+        CaseAtPairing {
+            consumer: &deps.consumer,
+            encoding: params.encoding,
+            hash_to_scalar: params.hash_to_scalar,
+            random_source: params.random_source,
+            kem: params.kem,
+        },
+        Default::default(),
+    );
+    match create_pairing(
+        &pairing_deps,
+        params.pairing,
+        build_create_pairing_payload(Default::default()),
+    ) {
+        Ok(success) => success.output,
+        Err(error) => Err(CreateKeyAgreementCaseErrorReturn::CreatePairing(error)),
+    }
 }

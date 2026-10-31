@@ -1878,6 +1878,7 @@ dependencies = [
  "domain",
  "encoding",
  "hash-to-scalar",
+ "hashing",
  "kem",
  "pairing 0.0.0",
  "random",

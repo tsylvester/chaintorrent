@@ -6,6 +6,19 @@ The node is this repo's unit of scope, so every rule below is an application of 
 
 Cited by: construction view (the workplan author builds nodes) and, for handling rules, every turn. Governed by all Process topics.
 
+## Idemopotent, bounded, and tautological
+
+- The workplan node must be written tautologically and idempotently so that it is correct regardless of the state of the implementation.
+- The workplan node must be descriptive and directive, saying what must be true for the node to be correctly implemented. 
+- The workplan is transformed into files by a low-reasoning agent. 
+- The low-reasoning agent is explicitly instructed not to try to solve any undescribed code challenges. 
+- The workplan nodes are revised in place if a change is required. 
+- If a node is written conditionally or statefully, the implementation agent is forced to reason about the conditions or states. That is an undescribed coding challenge, which the agent is forbidden to solve. 
+- The workplan node cannot contain a statement that will be invalidated by progress in the implementation, which is both conditional and stateful, for example "nothing else", "carries exactly", or ordinals that count contents of files.
+- What a node "is" is bounded, exact, and specific, what a node "is not" is infinite, unbounded, and impossible to specify. 
+- Negative statements, when required, must describe exactly what is to be changed or removed, not ambiguous blanket statements.  
+- Test your work: Reread it after writing and ask if the statement is tautological; or if it is conditional and stateful. If the statement is always true, it is valid. If it is conditionally or statefully true, rewrite it to be tautological. 
+
 ## Node anatomy
 
 - A top-level node addresses exactly **one source file** and its entire support system — its interface, interface test, mock, guard test, guard, tests, provides, and integration tests, to the extent the work requires them. This is inviolate.

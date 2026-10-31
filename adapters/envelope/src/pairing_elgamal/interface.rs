@@ -1,9 +1,17 @@
 use domain::Secret;
+#[cfg(test)]
+use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter};
 use encoding::{EncodeErrorReturn, IEncoderAdapter};
+#[cfg(test)]
+use hash_to_scalar::{CreateHashToScalarErrorReturn, CreateHashToScalarParams};
 use hash_to_scalar::{
     DomainTag, DomainTagTryNewErrorReturn, HashToScalarErrorReturn, IHashToScalarAdapter,
 };
+#[cfg(test)]
+use pairing::{CreatePairingErrorReturn, CreatePairingParams, IPairingReference};
 use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorReturn};
+#[cfg(test)]
+use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
 use crate::possession_statement::provides::{
@@ -89,3 +97,65 @@ pub enum PairingElGamalWrapToErrorReturn {
     CoinDraw(FillBytesErrorReturn),
     CoinSampling(SampleUniformScalarErrorReturn),
 }
+
+#[cfg(test)]
+pub trait IPairingElGamalKeyAgreementCaseConsumer {
+    type Output;
+
+    fn consume_pairing_elgamal_key_agreement_case<
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter + IDecoderAdapter,
+    >(
+        &self,
+        pairing: &P,
+        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &E,
+        random: &dyn IRandomSourceAdapter,
+        payload: &PairingElGamalKeyAgreementCasePayload,
+    ) -> Self::Output;
+}
+
+#[cfg(test)]
+pub struct PairingElGamalKeyAgreementCaseDeps<C: IPairingElGamalKeyAgreementCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(test)]
+pub struct PairingElGamalKeyAgreementCaseParams {
+    pub pairing: CreatePairingParams,
+    pub encoding: CreateEncodingParams,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub random_source: CreateRandomSourceParams,
+}
+
+#[cfg(test)]
+pub struct PairingElGamalKeyAgreementCasePayload;
+
+#[cfg(test)]
+pub struct PairingElGamalKeyAgreementCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(test)]
+#[derive(Debug, PartialEq, Eq)]
+pub enum PairingElGamalKeyAgreementCaseErrorReturn {
+    CreatePairing(CreatePairingErrorReturn),
+    CreateEncoding(CreateEncodingErrorReturn),
+    CreateHashToScalar(CreateHashToScalarErrorReturn),
+    CreateRandomSource(CreateRandomSourceErrorReturn),
+}
+
+#[cfg(test)]
+pub type PairingElGamalKeyAgreementCaseReturn<O> = Result<
+    PairingElGamalKeyAgreementCaseSuccessReturn<O>,
+    PairingElGamalKeyAgreementCaseErrorReturn,
+>;
+
+#[cfg(test)]
+pub type RunPairingElGamalKeyAgreementCaseFn<C> = fn(
+    &PairingElGamalKeyAgreementCaseDeps<C>,
+    PairingElGamalKeyAgreementCaseParams,
+    PairingElGamalKeyAgreementCasePayload,
+) -> PairingElGamalKeyAgreementCaseReturn<
+    <C as IPairingElGamalKeyAgreementCaseConsumer>::Output,
+>;

@@ -3,79 +3,98 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
-   Compiling workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.96s
-     Running unittests src\lib.rs (target\debug\deps\workflows-a01e7c76b6c36ae9.exe)
+   Compiling domain v0.0.0 (C:\Users\Tim\ChainTorrent\crates\domain)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.39s
+     Running unittests src\lib.rs (target\debug\deps\domain-8bf3307dd67c6836.exe)
 
-running 31 tests
-test sidecar::derivation_context::test_basic::description_try_new_returns_the_description ... ok
-test sidecar::derivation_context::test_basic::fields_declares_the_nine_canonical_kinds ... ok
-test sidecar::derivation_context::test_basic::fields_to_value_returns_the_context_the_fields_describe ... ok
-test sidecar::derivation_context::test_basic::to_fields_lists_the_context_in_canonical_order ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_context_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_geometry_refusal_whole ... ok
-test sidecar::derivation_context::test_basic::try_new_admits_the_last_group_of_the_geometry ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_deployment_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_parameter_set_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_suite_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_checks_every_kind_before_admitting_any_component ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_root_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_checks_the_count_before_any_kind ... ok
-test sidecar::derivation_context::test_error::fields_to_value_rejects_one_value_long ... ok
-test sidecar::derivation_context::test_error::fields_to_value_rejects_a_suite_version_of_another_width ... ok
-test sidecar::derivation_context::test_error::fields_to_value_rejects_one_value_short ... ok
-test sidecar::derivation_context::test_error::fields_to_value_reports_the_first_component_refusal ... ok
-test sidecar::derivation_context::test_error::try_new_refuses_a_group_index_equal_to_the_group_count ... ok
-test sidecar::derivation_context::test_error::fields_to_value_reports_the_lowest_field_of_the_wrong_kind ... ok
-test sidecar::unwrap::test::unwrap_returns_the_key_derivation_refusal_unchanged ... ok
-test sidecar::wrap::test::piece_group_key_try_new_holds_the_bytes_of_an_admitted_secret ... ok
-test sidecar::unwrap::test::unwrap_returns_a_zero_key_when_the_wrapped_key_equals_the_wrapping_key ... ok
-test sidecar::unwrap::test::unwrap_returns_the_complement_of_the_wrapping_key_when_the_wrapped_key_is_all_ones ... ok
-test sidecar::wrap::test::piece_group_key_try_new_refuses_a_secret_longer_than_the_key_length ... ok
-test sidecar::wrap::test::piece_group_key_try_new_refuses_a_secret_shorter_than_the_key_length ... ok
-test sidecar::wrap::test::wrap_returns_a_zero_wrapped_key_when_the_piece_group_key_equals_the_wrapping_key ... ok
-test sidecar::wrap::test::wrap_returns_the_complement_of_the_wrapping_key_when_the_piece_group_key_is_all_ones ... ok
-test sidecar::wrap::test::wrap_returns_the_key_derivation_refusal_unchanged ... ok
-test sidecar::wrap::test::wrapped_piece_group_key_try_new_holds_the_admitted_bytes ... ok
-test sidecar::wrap::test::wrapped_piece_group_key_try_new_refuses_bytes_longer_than_the_key_length ... ok
-test sidecar::wrap::test::wrapped_piece_group_key_try_new_refuses_bytes_shorter_than_the_key_length ... ok
+running 83 tests
+test asset_identity::test::as_ref_returns_the_registry_hash_preimage ... ok
+test asset_identity::test::coordinate_writes_the_only_registry_hash_preimage ... ok
+test asset_identity::test::name_returns_the_held_name ... ok
+test asset_identity::test::try_new_admits_a_scoped_name_and_a_prerelease_version ... ok
+test asset_identity::test::try_new_rejects_a_version_byte_outside_visible_ascii ... ok
+test asset_identity::test::try_new_rejects_a_non_ascii_version ... ok
+test asset_identity::test::try_new_admits_the_lowest_and_highest_visible_ascii_bytes ... ok
+test asset_identity::test::try_new_reports_a_version_byte_outside_visible_ascii_before_a_later_separator ... ok
+test asset_identity::test::try_new_rejects_a_version_containing_the_separator ... ok
+test asset_identity::test::try_new_rejects_an_empty_version ... ok
+test asset_identity::test::try_new_rejects_the_lowest_name_byte_outside_visible_ascii ... ok
+test asset_identity::test::try_new_rejects_a_non_ascii_name ... ok
+test asset_identity::test::try_new_reports_a_version_separator_before_a_later_byte_outside_visible_ascii ... ok
+test asset_identity_hash::test::try_new_rejects_the_all_zero_hash ... ok
+test asset_identity::test::try_new_reports_the_name_before_the_version_bytes ... ok
+test asset_identity::test::try_new_rejects_an_empty_name ... ok
+test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_the_last ... ok
+test asset_identity_hash::test::as_bytes_returns_a_reference_to_the_held_array ... ok
+test asset_identity_hash::test::try_new_admits_a_hash_whose_only_nonzero_byte_is_the_first ... ok
+test asset_identity_hash::test::try_new_admits_a_hash_whose_only_nonzero_byte_is_the_last ... ok
+test asset_identity::test::try_new_reports_the_name_before_an_empty_version ... ok
+test deployment_identity::test::as_bytes_returns_the_held_bytes ... ok
+test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_interior ... ok
+test deployment_identity::test::try_new_admits_an_identity_whose_only_nonzero_byte_is_the_first ... ok
+test asset_identity::test::version_returns_the_held_version ... ok
+test deployment_identity::test::try_new_rejects_the_all_zero_identity ... ok
+test derivation_context::test::asset_returns_the_held_asset ... ok
+test derivation_context::test::deployment_returns_the_held_deployment ... ok
+test derivation_context::test::try_new_rejects_a_group_index_equal_to_the_group_count ... ok
+test derivation_context::test::group_index_returns_the_held_group_index ... ok
+test derivation_context::test::parameter_set_returns_the_held_parameter_set ... ok
+test derivation_context::test::suite_returns_the_held_suite ... ok
+test derivation_context::test::try_new_rejects_the_largest_group_index ... ok
+test derivation_context::test::try_new_admits_index_zero_of_a_one_group_geometry ... ok
+test derivation_context::test::try_new_admits_the_last_group_of_the_geometry ... ok
+test derivation_context::test::geometry_returns_the_held_geometry ... ok
+test group_index::test::try_new_admits_the_highest_index ... ok
+test group_index::test::try_new_admits_the_lowest_index ... ok
+test group_index::test::value_returns_the_held_index ... ok
+test parameter_set_identifier::test::as_bytes_returns_the_held_bytes ... ok
+test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior ... ok
+test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first ... ok
+test parameter_set_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last ... ok
+test parameter_set_identifier::test::try_new_rejects_the_all_zero_identifier ... ok
+test piece_geometry::test::group_count_does_not_round_up_an_exact_extent ... ok
+test piece_geometry::test::group_count_holds_at_the_largest_extent ... ok
+test piece_geometry::test::group_count_rounds_up_a_partial_group ... ok
+test piece_geometry::test::piece_count_does_not_round_up_an_exact_extent ... ok
+test piece_geometry::test::piece_count_holds_at_the_largest_extent ... ok
+test piece_geometry::test::piece_count_rounds_up_a_partial_piece ... ok
+test piece_geometry::test::piece_group_size_returns_the_held_piece_group_size ... ok
+test piece_geometry::test::piece_size_returns_the_held_piece_size ... ok
+test piece_geometry::test::total_extent_returns_the_held_total_extent ... ok
+test piece_geometry::test::try_new_admits_a_piece_group_size_that_is_an_odd_multiple_of_the_piece_size ... ok
+test piece_geometry::test::try_new_admits_the_smallest_geometry ... ok
+test piece_geometry::test::try_new_rejects_a_piece_group_size_that_is_not_a_multiple_of_the_piece_size ... ok
+test piece_geometry::test::try_new_rejects_a_piece_group_smaller_than_a_piece ... ok
+test piece_geometry::test::try_new_rejects_a_piece_size_below_the_minimum ... ok
+test piece_geometry::test::try_new_rejects_a_piece_size_that_is_not_a_power_of_two ... ok
+test piece_geometry::test::try_new_rejects_a_zero_piece_group_size ... ok
+test piece_geometry::test::try_new_rejects_a_zero_piece_size ... ok
+test piece_geometry::test::try_new_rejects_a_zero_total_extent ... ok
+test piece_geometry::test::try_new_reports_the_piece_group_size_before_the_total_extent ... ok
+test piece_geometry::test::try_new_reports_the_piece_size_before_the_piece_group_size ... ok
+test piece_geometry::test::try_new_reports_the_piece_size_before_the_total_extent ... ok
+test secret::test::dropping_a_secret_zeroizes_its_value ... ok
+test secret::test::dropping_a_secret_during_unwinding_zeroizes_its_value ... ok
+test secret::test::expose_returns_a_reference_to_the_held_value ... ok
+test secret::test::exposing_a_secret_does_not_zeroize_it ... ok
+test secret::test::try_new_holds_the_value_in_params ... ok
+test secret::test::try_new_moves_the_value_without_copying_it ... ok
+test signature_scheme_identifier::test::identifier_returns_the_held_identifier ... ok
+test signature_scheme_identifier::test::try_new_admits_the_largest_identifier ... ok
+test signature_scheme_identifier::test::try_new_admits_the_smallest_nonzero_identifier ... ok
+test signature_scheme_identifier::test::try_new_rejects_a_zero_identifier ... ok
+test suite_identifier::test::identifier_returns_the_held_identifier ... ok
+test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_interior_with_version_one ... ok
+test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_first_with_the_largest_version ... ok
+test suite_identifier::test::try_new_admits_an_identifier_whose_only_nonzero_byte_is_the_last_with_version_one ... ok
+test suite_identifier::test::try_new_rejects_a_zero_version ... ok
+test suite_identifier::test::try_new_rejects_an_all_zero_identifier ... ok
+test suite_identifier::test::try_new_reports_the_identifier_before_the_version ... ok
+test suite_identifier::test::version_returns_the_held_version ... ok
 
-test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 83 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
-     Running tests\derivation_context_integration_test.rs (target\debug\deps\derivation_context_integration_test-2ee17791218d3696.exe)
-
-running 5 tests
-test the_crate_root_refuses_a_group_index_outside_the_geometry_whole ... ok
-test every_concrete_decodes_the_derivation_context_it_encodes ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_returns_the_context_refusal_whole ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_context ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_context_to_the_reference_vector ... ok
-
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running tests\unwrap_integration_test.rs (target\debug\deps\unwrap_integration_test-2a9cccf44cc7688a.exe)
-
-running 6 tests
-test unwrapping_returns_a_key_derivation_refusal_whole ... ok
-test unwrapping_an_all_ones_wrapped_key_yields_the_complement_of_the_wrapping_key_the_oracle_states ... ok
-test unwrapping_what_the_wrap_produced_returns_the_piece_group_key ... ok
-test unwrapping_a_wrapped_key_equal_to_the_wrapping_key_the_oracle_states_yields_a_zero_piece_group_key ... ok
-test two_independently_generated_entitlement_scope_sets_unwrap_one_piece_group_key ... ok
-test an_escrow_set_and_a_claimants_set_unwrap_one_piece_group_key ... ok
-
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.04s
-
-     Running tests\wrap_integration_test.rs (target\debug\deps\wrap_integration_test-1de2d999c8d47bf0.exe)
-
-running 3 tests
-test a_key_derivation_refusal_reaches_the_caller_whole ... ok
-test wrapping_a_zero_piece_group_key_yields_the_wrapping_key_the_oracle_states ... ok
-test wrapping_an_all_ones_piece_group_key_yields_the_complement_of_the_wrapping_key_the_oracle_states ... ok
-
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests workflows
+   Doc-tests domain
 
 running 0 tests
 

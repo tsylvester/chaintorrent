@@ -1,7 +1,5 @@
 #![allow(clippy::expect_used)]
 
-use core::marker::PhantomData;
-
 use crate::factory::provides::{
     EnvelopeAlgebra, IKeyAgreementAdapter, KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementIdentifier,
     WrapToPayloadOverrides, build_envelope_components_params, build_envelope_components_payload,
@@ -17,10 +15,15 @@ use crate::factory::provides::{
     build_wrap_to_params, build_wrap_to_payload,
 };
 use crate::pairing_elgamal::provides::{
-    PairingElGamalEnvelopeOverrides, PairingElGamalKeyAgreement, PairingElGamalKeyPairOverrides,
-    build_pairing_elgamal_envelope, build_pairing_elgamal_key_agreement,
+    IPairingElGamalKeyAgreementCaseConsumer, PairingElGamalEnvelopeOverrides,
+    PairingElGamalKeyAgreement, PairingElGamalKeyAgreementCasePayload,
+    PairingElGamalKeyPairOverrides, build_pairing_elgamal_envelope,
+    build_pairing_elgamal_key_agreement, build_pairing_elgamal_key_agreement_case_deps,
+    build_pairing_elgamal_key_agreement_case_params,
+    build_pairing_elgamal_key_agreement_case_payload,
     build_pairing_elgamal_key_agreement_constructor_params, build_pairing_elgamal_key_pair,
     build_pairing_elgamal_possession, build_pairing_elgamal_public_keys,
+    run_pairing_elgamal_key_agreement_case,
 };
 use crate::possession_statement::provides::{
     PossessionG1StatementOverrides, PossessionG2StatementOverrides, build_possession_g1_statement,
@@ -28,33 +31,23 @@ use crate::possession_statement::provides::{
     build_possession_g2_statement_description,
 };
 use domain::{SecretConstructorParamsOverrides, build_secret};
-use encoding::{
-    ConsumeEncodingParams, ConsumeEncodingPayload, EncodeParams, IDecoderAdapter, IEncoderAdapter,
-    IEncodingConsumer, build_create_encoding_deps, build_create_encoding_params,
-    build_create_encoding_payload, create_encoding,
-};
+use encoding::{EncodeParams, IDecoderAdapter, IEncoderAdapter};
 use hash_to_scalar::{
     DomainTag, DomainTagConstructorParams, HashToScalarParams, HashToScalarPayload,
-    build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
-    build_create_hash_to_scalar_payload, create_hash_to_scalar,
+    IHashToScalarAdapter,
 };
 use kem::{CredentialComponentsOverrides, build_credential_components};
 use pairing::{
-    AddG1Params, AddG1PayloadOverrides, AddG2Params, AddG2PayloadOverrides, ConsumePairingParams,
-    ConsumePairingPayload, CreatePairingPayload, EncodeG1Params, EncodeG1PayloadOverrides,
-    EncodeG2Params, EncodeG2PayloadOverrides, EncodeScalarParams, EncodeScalarPayloadOverrides,
-    G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter,
-    IPairingArithmetic, IPairingConsumer, IPairingReference, ISampleUniformScalar, MulG1Params,
+    AddG1Params, AddG1PayloadOverrides, AddG2Params, AddG2PayloadOverrides, EncodeG1Params,
+    EncodeG1PayloadOverrides, EncodeG2Params, EncodeG2PayloadOverrides, EncodeScalarParams,
+    EncodeScalarPayloadOverrides, G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams,
+    G2GeneratorPayload, IPairingArithmetic, IPairingReference, ISampleUniformScalar, MulG1Params,
     MulG1PayloadOverrides, MulG2Params, MulG2PayloadOverrides, SampleUniformScalarParams,
     SampleUniformScalarPayloadOverrides, build_add_g1_payload, build_add_g2_payload,
-    build_create_pairing_deps, build_create_pairing_params, build_encode_g1_payload,
-    build_encode_g2_payload, build_encode_scalar_payload, build_mul_g1_payload,
-    build_mul_g2_payload, build_sample_uniform_scalar_payload, create_pairing,
+    build_encode_g1_payload, build_encode_g2_payload, build_encode_scalar_payload,
+    build_mul_g1_payload, build_mul_g2_payload, build_sample_uniform_scalar_payload,
 };
-use random::{
-    CreateRandomSourceDeps, CreateRandomSourcePayload, build_create_random_source_params,
-    create_random_source,
-};
+use random::IRandomSourceAdapter;
 
 /// Contract: `try_new` over admitted params returns `Ok` whose adapter holds
 ///   the tags `DomainTag::try_new` builds from
@@ -73,83 +66,54 @@ use random::{
 #[test]
 fn try_new_holds_the_tags_built_from_the_possession_constants() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
-            // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-
-                    // Act
-                    let created = PairingElGamalKeyAgreement::try_new(
-                        build_pairing_elgamal_key_agreement_constructor_params(
-                            self.pairing,
-                            &*hash_to_scalar.adapter,
-                            &encoded.adapter,
-                            &*random.adapter,
-                            Default::default(),
-                        ),
-                    );
-
-                    // Assert
-                    let adapter = created.expect("admitted constructor params admit the adapter");
-                    assert_eq!(
-                        adapter.g1_tag.as_bytes(),
-                        b"ChainTorrent-v1-envelope-possession-g1"
-                    );
-                    assert_eq!(
-                        adapter.g2_tag.as_bytes(),
-                        b"ChainTorrent-v1-envelope-possession-g2"
-                    );
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            // Act
+            let created = PairingElGamalKeyAgreement::try_new(
+                build_pairing_elgamal_key_agreement_constructor_params(
+                    pairing,
+                    hash_to_scalar,
+                    encoder,
+                    random,
+                    Default::default(),
+                ),
             );
-            assert!(created.is_ok());
+
+            // Assert
+            let adapter = created.expect("admitted constructor params admit the adapter");
+            assert_eq!(
+                adapter.g1_tag.as_bytes(),
+                b"ChainTorrent-v1-envelope-possession-g1"
+            );
+            assert_eq!(
+                adapter.g2_tag.as_bytes(),
+                b"ChainTorrent-v1-envelope-possession-g2"
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 
@@ -170,156 +134,128 @@ fn try_new_holds_the_tags_built_from_the_possession_constants() {
 #[test]
 fn generate_keys_returns_the_secrets_its_draws_sample() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let draws = build_generate_keys_payload(pairing, Default::default());
-                    let expected_x = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                draws.x_uniform.expose().clone(),
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length x draw samples a scalar")
-                    .scalar;
-                    let expected_y = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                draws.y_uniform.expose().clone(),
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length y draw samples a scalar")
-                    .scalar;
-
-                    // Act
-                    let generated = adapter
-                        .generate_keys(build_generate_keys_params(Default::default()), draws);
-
-                    // Assert
-                    let generated = generated.expect("differing draws admit a key pair");
-                    let x_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(generated.key_pair.x.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first secret succeeds")
-                        .bytes;
-                    let y_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(generated.key_pair.y.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second secret succeeds")
-                        .bytes;
-                    let expected_x_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(expected_x.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first expected scalar succeeds")
-                        .bytes;
-                    let expected_y_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(expected_y.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second expected scalar succeeds")
-                        .bytes;
-                    assert_eq!(
-                        x_encoded.expose().as_ref(),
-                        expected_x_encoded.expose().as_ref()
-                    );
-                    assert_eq!(
-                        y_encoded.expose().as_ref(),
-                        expected_y_encoded.expose().as_ref()
-                    );
-                    assert_ne!(x_encoded.expose().as_ref(), y_encoded.expose().as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let draws = build_generate_keys_payload(pairing, Default::default());
+            let expected_x = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        draws.x_uniform.expose().clone(),
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length x draw samples a scalar")
+            .scalar;
+            let expected_y = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        draws.y_uniform.expose().clone(),
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length y draw samples a scalar")
+            .scalar;
+
+            // Act
+            let generated =
+                adapter.generate_keys(build_generate_keys_params(Default::default()), draws);
+
+            // Assert
+            let generated = generated.expect("differing draws admit a key pair");
+            let x_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(generated.key_pair.x.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first secret succeeds")
+                .bytes;
+            let y_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(generated.key_pair.y.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second secret succeeds")
+                .bytes;
+            let expected_x_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(expected_x.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first expected scalar succeeds")
+                .bytes;
+            let expected_y_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(expected_y.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second expected scalar succeeds")
+                .bytes;
+            assert_eq!(
+                x_encoded.expose().as_ref(),
+                expected_x_encoded.expose().as_ref()
+            );
+            assert_eq!(
+                y_encoded.expose().as_ref(),
+                expected_y_encoded.expose().as_ref()
+            );
+            assert_ne!(x_encoded.expose().as_ref(), y_encoded.expose().as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 
@@ -341,194 +277,163 @@ fn generate_keys_returns_the_secrets_its_draws_sample() {
 #[test]
 fn generate_keys_returns_the_public_keys_its_secrets_form() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let draws = build_generate_keys_payload(pairing, Default::default());
-                    let expected_x = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                draws.x_uniform.expose().clone(),
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length x draw samples a scalar")
-                    .scalar;
-                    let expected_y = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                draws.y_uniform.expose().clone(),
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length y draw samples a scalar")
-                    .scalar;
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let expected_pk1 = pairing
-                        .mul_g1(
-                            MulG1Params,
-                            build_mul_g1_payload(
-                                pairing,
-                                MulG1PayloadOverrides {
-                                    point: Some(g1.clone()),
-                                    scalar: Some(expected_x.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the first generator succeeds")
-                        .product;
-                    let expected_pk2 = pairing
-                        .mul_g2(
-                            MulG2Params,
-                            build_mul_g2_payload(
-                                pairing,
-                                MulG2PayloadOverrides {
-                                    point: Some(g2),
-                                    scalar: Some(expected_y.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the second generator succeeds")
-                        .product;
-
-                    // Act
-                    let generated = adapter
-                        .generate_keys(build_generate_keys_params(Default::default()), draws);
-
-                    // Assert
-                    let generated = generated.expect("differing draws admit a key pair");
-                    let pk1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(generated.key_pair.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first public key succeeds")
-                        .bytes;
-                    let pk2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(generated.key_pair.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second public key succeeds")
-                        .bytes;
-                    let expected_pk1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(expected_pk1),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first expected point succeeds")
-                        .bytes;
-                    let expected_pk2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(expected_pk2),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second expected point succeeds")
-                        .bytes;
-                    let g1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(g1) },
-                            ),
-                        )
-                        .expect("encoding the first generator succeeds")
-                        .bytes;
-                    assert_eq!(pk1_encoded.as_ref(), expected_pk1_encoded.as_ref());
-                    assert_eq!(pk2_encoded.as_ref(), expected_pk2_encoded.as_ref());
-                    assert_ne!(pk1_encoded.as_ref(), g1_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let draws = build_generate_keys_payload(pairing, Default::default());
+            let expected_x = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        draws.x_uniform.expose().clone(),
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length x draw samples a scalar")
+            .scalar;
+            let expected_y = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        draws.y_uniform.expose().clone(),
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length y draw samples a scalar")
+            .scalar;
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let expected_pk1 = pairing
+                .mul_g1(
+                    MulG1Params,
+                    build_mul_g1_payload(
+                        pairing,
+                        MulG1PayloadOverrides {
+                            point: Some(g1.clone()),
+                            scalar: Some(expected_x.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the first generator succeeds")
+                .product;
+            let expected_pk2 = pairing
+                .mul_g2(
+                    MulG2Params,
+                    build_mul_g2_payload(
+                        pairing,
+                        MulG2PayloadOverrides {
+                            point: Some(g2),
+                            scalar: Some(expected_y.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the second generator succeeds")
+                .product;
+
+            // Act
+            let generated =
+                adapter.generate_keys(build_generate_keys_params(Default::default()), draws);
+
+            // Assert
+            let generated = generated.expect("differing draws admit a key pair");
+            let pk1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(generated.key_pair.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first public key succeeds")
+                .bytes;
+            let pk2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(generated.key_pair.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second public key succeeds")
+                .bytes;
+            let expected_pk1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(expected_pk1),
+                        },
+                    ),
+                )
+                .expect("encoding the first expected point succeeds")
+                .bytes;
+            let expected_pk2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(expected_pk2),
+                        },
+                    ),
+                )
+                .expect("encoding the second expected point succeeds")
+                .bytes;
+            let g1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(pairing, EncodeG1PayloadOverrides { point: Some(g1) }),
+                )
+                .expect("encoding the first generator succeeds")
+                .bytes;
+            assert_eq!(pk1_encoded.as_ref(), expected_pk1_encoded.as_ref());
+            assert_eq!(pk2_encoded.as_ref(), expected_pk2_encoded.as_ref());
+            assert_ne!(pk1_encoded.as_ref(), g1_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 
@@ -553,275 +458,243 @@ fn generate_keys_returns_the_public_keys_its_secrets_form() {
 #[test]
 fn generate_keys_returns_proofs_that_satisfy_the_verification_equation() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let draws = build_generate_keys_payload(pairing, Default::default());
-                    let g1_tag = DomainTag::try_new(DomainTagConstructorParams {
-                        bytes: b"ChainTorrent-v1-envelope-possession-g1".to_vec(),
-                    })
-                    .expect("the first group's possession tag is admitted");
-                    let g2_tag = DomainTag::try_new(DomainTagConstructorParams {
-                        bytes: b"ChainTorrent-v1-envelope-possession-g2".to_vec(),
-                    })
-                    .expect("the second group's possession tag is admitted");
-
-                    // Act
-                    let generated = adapter
-                        .generate_keys(build_generate_keys_params(Default::default()), draws);
-
-                    // Assert
-                    let generated = generated.expect("differing draws admit a key pair");
-                    let g1_statement = build_possession_g1_statement(
-                        pairing,
-                        PossessionG1StatementOverrides {
-                            key: Some(generated.key_pair.pk1.clone()),
-                            commitment: Some(generated.possession.r1.clone()),
-                        },
-                    );
-                    let encoded_g1_statement = encoded
-                        .adapter
-                        .encode(
-                            EncodeParams {
-                                description: &build_possession_g1_statement_description(
-                                    pairing,
-                                    Default::default(),
-                                ),
-                            },
-                            &g1_statement,
-                        )
-                        .expect("encoding the first group's statement succeeds")
-                        .bytes;
-                    let c1 = hash_to_scalar
-                        .adapter
-                        .hash_to_scalar(
-                            HashToScalarParams { tag: &g1_tag },
-                            HashToScalarPayload {
-                                message: &encoded_g1_statement,
-                            },
-                        )
-                        .expect("hashing the first group's challenge succeeds")
-                        .scalar;
-                    let g2_statement = build_possession_g2_statement(
-                        pairing,
-                        PossessionG2StatementOverrides {
-                            key: Some(generated.key_pair.pk2.clone()),
-                            commitment: Some(generated.possession.r2.clone()),
-                        },
-                    );
-                    let encoded_g2_statement = encoded
-                        .adapter
-                        .encode(
-                            EncodeParams {
-                                description: &build_possession_g2_statement_description(
-                                    pairing,
-                                    Default::default(),
-                                ),
-                            },
-                            &g2_statement,
-                        )
-                        .expect("encoding the second group's statement succeeds")
-                        .bytes;
-                    let c2 = hash_to_scalar
-                        .adapter
-                        .hash_to_scalar(
-                            HashToScalarParams { tag: &g2_tag },
-                            HashToScalarPayload {
-                                message: &encoded_g2_statement,
-                            },
-                        )
-                        .expect("hashing the second group's challenge succeeds")
-                        .scalar;
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let lhs1 = pairing
-                        .mul_g1(
-                            MulG1Params,
-                            build_mul_g1_payload(
-                                pairing,
-                                MulG1PayloadOverrides {
-                                    point: Some(g1),
-                                    scalar: Some(generated.possession.z1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the first generator by z1 succeeds")
-                        .product;
-                    let rhs1 = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(generated.possession.r1.clone()),
-                                    right: Some(
-                                        pairing
-                                            .mul_g1(
-                                                MulG1Params,
-                                                build_mul_g1_payload(
-                                                    pairing,
-                                                    MulG1PayloadOverrides {
-                                                        point: Some(generated.key_pair.pk1.clone()),
-                                                        scalar: Some(c1),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("multiplying pk1 by c1 succeeds")
-                                            .product,
-                                    ),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let lhs2 = pairing
-                        .mul_g2(
-                            MulG2Params,
-                            build_mul_g2_payload(
-                                pairing,
-                                MulG2PayloadOverrides {
-                                    point: Some(g2),
-                                    scalar: Some(generated.possession.z2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the second generator by z2 succeeds")
-                        .product;
-                    let rhs2 = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(generated.possession.r2.clone()),
-                                    right: Some(
-                                        pairing
-                                            .mul_g2(
-                                                MulG2Params,
-                                                build_mul_g2_payload(
-                                                    pairing,
-                                                    MulG2PayloadOverrides {
-                                                        point: Some(generated.key_pair.pk2.clone()),
-                                                        scalar: Some(c2),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("multiplying pk2 by c2 succeeds")
-                                            .product,
-                                    ),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let lhs1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(lhs1) },
-                            ),
-                        )
-                        .expect("encoding the first group's left side succeeds")
-                        .bytes;
-                    let rhs1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(rhs1) },
-                            ),
-                        )
-                        .expect("encoding the first group's right side succeeds")
-                        .bytes;
-                    let lhs2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides { point: Some(lhs2) },
-                            ),
-                        )
-                        .expect("encoding the second group's left side succeeds")
-                        .bytes;
-                    let rhs2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides { point: Some(rhs2) },
-                            ),
-                        )
-                        .expect("encoding the second group's right side succeeds")
-                        .bytes;
-                    assert_eq!(lhs1_encoded.as_ref(), rhs1_encoded.as_ref());
-                    assert_eq!(lhs2_encoded.as_ref(), rhs2_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let draws = build_generate_keys_payload(pairing, Default::default());
+            let g1_tag = DomainTag::try_new(DomainTagConstructorParams {
+                bytes: b"ChainTorrent-v1-envelope-possession-g1".to_vec(),
+            })
+            .expect("the first group's possession tag is admitted");
+            let g2_tag = DomainTag::try_new(DomainTagConstructorParams {
+                bytes: b"ChainTorrent-v1-envelope-possession-g2".to_vec(),
+            })
+            .expect("the second group's possession tag is admitted");
+
+            // Act
+            let generated =
+                adapter.generate_keys(build_generate_keys_params(Default::default()), draws);
+
+            // Assert
+            let generated = generated.expect("differing draws admit a key pair");
+            let g1_statement = build_possession_g1_statement(
+                pairing,
+                PossessionG1StatementOverrides {
+                    key: Some(generated.key_pair.pk1.clone()),
+                    commitment: Some(generated.possession.r1.clone()),
+                },
+            );
+            let encoded_g1_statement = encoder
+                .encode(
+                    EncodeParams {
+                        description: &build_possession_g1_statement_description(
+                            pairing,
+                            Default::default(),
+                        ),
+                    },
+                    &g1_statement,
+                )
+                .expect("encoding the first group's statement succeeds")
+                .bytes;
+            let c1 = hash_to_scalar
+                .hash_to_scalar(
+                    HashToScalarParams { tag: &g1_tag },
+                    HashToScalarPayload {
+                        message: &encoded_g1_statement,
+                    },
+                )
+                .expect("hashing the first group's challenge succeeds")
+                .scalar;
+            let g2_statement = build_possession_g2_statement(
+                pairing,
+                PossessionG2StatementOverrides {
+                    key: Some(generated.key_pair.pk2.clone()),
+                    commitment: Some(generated.possession.r2.clone()),
+                },
+            );
+            let encoded_g2_statement = encoder
+                .encode(
+                    EncodeParams {
+                        description: &build_possession_g2_statement_description(
+                            pairing,
+                            Default::default(),
+                        ),
+                    },
+                    &g2_statement,
+                )
+                .expect("encoding the second group's statement succeeds")
+                .bytes;
+            let c2 = hash_to_scalar
+                .hash_to_scalar(
+                    HashToScalarParams { tag: &g2_tag },
+                    HashToScalarPayload {
+                        message: &encoded_g2_statement,
+                    },
+                )
+                .expect("hashing the second group's challenge succeeds")
+                .scalar;
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let lhs1 = pairing
+                .mul_g1(
+                    MulG1Params,
+                    build_mul_g1_payload(
+                        pairing,
+                        MulG1PayloadOverrides {
+                            point: Some(g1),
+                            scalar: Some(generated.possession.z1.clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the first generator by z1 succeeds")
+                .product;
+            let rhs1 = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(generated.possession.r1.clone()),
+                            right: Some(
+                                pairing
+                                    .mul_g1(
+                                        MulG1Params,
+                                        build_mul_g1_payload(
+                                            pairing,
+                                            MulG1PayloadOverrides {
+                                                point: Some(generated.key_pair.pk1.clone()),
+                                                scalar: Some(c1),
+                                            },
+                                        ),
+                                    )
+                                    .expect("multiplying pk1 by c1 succeeds")
+                                    .product,
+                            ),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let lhs2 = pairing
+                .mul_g2(
+                    MulG2Params,
+                    build_mul_g2_payload(
+                        pairing,
+                        MulG2PayloadOverrides {
+                            point: Some(g2),
+                            scalar: Some(generated.possession.z2.clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the second generator by z2 succeeds")
+                .product;
+            let rhs2 = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(generated.possession.r2.clone()),
+                            right: Some(
+                                pairing
+                                    .mul_g2(
+                                        MulG2Params,
+                                        build_mul_g2_payload(
+                                            pairing,
+                                            MulG2PayloadOverrides {
+                                                point: Some(generated.key_pair.pk2.clone()),
+                                                scalar: Some(c2),
+                                            },
+                                        ),
+                                    )
+                                    .expect("multiplying pk2 by c2 succeeds")
+                                    .product,
+                            ),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let lhs1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides { point: Some(lhs1) },
+                    ),
+                )
+                .expect("encoding the first group's left side succeeds")
+                .bytes;
+            let rhs1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides { point: Some(rhs1) },
+                    ),
+                )
+                .expect("encoding the first group's right side succeeds")
+                .bytes;
+            let lhs2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides { point: Some(lhs2) },
+                    ),
+                )
+                .expect("encoding the second group's left side succeeds")
+                .bytes;
+            let rhs2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides { point: Some(rhs2) },
+                    ),
+                )
+                .expect("encoding the second group's right side succeeds")
+                .bytes;
+            assert_eq!(lhs1_encoded.as_ref(), rhs1_encoded.as_ref());
+            assert_eq!(lhs2_encoded.as_ref(), rhs2_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 
@@ -839,283 +712,247 @@ fn generate_keys_returns_proofs_that_satisfy_the_verification_equation() {
 #[test]
 fn generate_keys_hashes_each_challenge_under_its_groups_tag() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let draws = build_generate_keys_payload(pairing, Default::default());
-                    let g1_tag = DomainTag::try_new(DomainTagConstructorParams {
-                        bytes: b"ChainTorrent-v1-envelope-possession-g1".to_vec(),
-                    })
-                    .expect("the first group's possession tag is admitted");
-                    let g2_tag = DomainTag::try_new(DomainTagConstructorParams {
-                        bytes: b"ChainTorrent-v1-envelope-possession-g2".to_vec(),
-                    })
-                    .expect("the second group's possession tag is admitted");
-
-                    // Act
-                    let generated = adapter
-                        .generate_keys(build_generate_keys_params(Default::default()), draws);
-
-                    // Assert
-                    let generated = generated.expect("differing draws admit a key pair");
-                    let g1_statement = build_possession_g1_statement(
-                        pairing,
-                        PossessionG1StatementOverrides {
-                            key: Some(generated.key_pair.pk1.clone()),
-                            commitment: Some(generated.possession.r1.clone()),
-                        },
-                    );
-                    let encoded_g1_statement = encoded
-                        .adapter
-                        .encode(
-                            EncodeParams {
-                                description: &build_possession_g1_statement_description(
-                                    pairing,
-                                    Default::default(),
-                                ),
-                            },
-                            &g1_statement,
-                        )
-                        .expect("encoding the first group's statement succeeds")
-                        .bytes;
-                    let wrong_c1 = hash_to_scalar
-                        .adapter
-                        .hash_to_scalar(
-                            HashToScalarParams { tag: &g2_tag },
-                            HashToScalarPayload {
-                                message: &encoded_g1_statement,
-                            },
-                        )
-                        .expect("hashing under the other tag succeeds")
-                        .scalar;
-                    let g2_statement = build_possession_g2_statement(
-                        pairing,
-                        PossessionG2StatementOverrides {
-                            key: Some(generated.key_pair.pk2.clone()),
-                            commitment: Some(generated.possession.r2.clone()),
-                        },
-                    );
-                    let encoded_g2_statement = encoded
-                        .adapter
-                        .encode(
-                            EncodeParams {
-                                description: &build_possession_g2_statement_description(
-                                    pairing,
-                                    Default::default(),
-                                ),
-                            },
-                            &g2_statement,
-                        )
-                        .expect("encoding the second group's statement succeeds")
-                        .bytes;
-                    let wrong_c2 = hash_to_scalar
-                        .adapter
-                        .hash_to_scalar(
-                            HashToScalarParams { tag: &g1_tag },
-                            HashToScalarPayload {
-                                message: &encoded_g2_statement,
-                            },
-                        )
-                        .expect("hashing under the other tag succeeds")
-                        .scalar;
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let lhs1 = pairing
-                        .mul_g1(
-                            MulG1Params,
-                            build_mul_g1_payload(
-                                pairing,
-                                MulG1PayloadOverrides {
-                                    point: Some(g1),
-                                    scalar: Some(generated.possession.z1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the first generator by z1 succeeds")
-                        .product;
-                    let wrong_rhs1 = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(generated.possession.r1.clone()),
-                                    right: Some(
-                                        pairing
-                                            .mul_g1(
-                                                MulG1Params,
-                                                build_mul_g1_payload(
-                                                    pairing,
-                                                    MulG1PayloadOverrides {
-                                                        point: Some(generated.key_pair.pk1.clone()),
-                                                        scalar: Some(wrong_c1),
-                                                    },
-                                                ),
-                                            )
-                                            .expect(
-                                                "multiplying pk1 by the wrong challenge succeeds",
-                                            )
-                                            .product,
-                                    ),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let lhs2 = pairing
-                        .mul_g2(
-                            MulG2Params,
-                            build_mul_g2_payload(
-                                pairing,
-                                MulG2PayloadOverrides {
-                                    point: Some(g2),
-                                    scalar: Some(generated.possession.z2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the second generator by z2 succeeds")
-                        .product;
-                    let wrong_rhs2 = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(generated.possession.r2.clone()),
-                                    right: Some(
-                                        pairing
-                                            .mul_g2(
-                                                MulG2Params,
-                                                build_mul_g2_payload(
-                                                    pairing,
-                                                    MulG2PayloadOverrides {
-                                                        point: Some(generated.key_pair.pk2.clone()),
-                                                        scalar: Some(wrong_c2),
-                                                    },
-                                                ),
-                                            )
-                                            .expect(
-                                                "multiplying pk2 by the wrong challenge succeeds",
-                                            )
-                                            .product,
-                                    ),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let lhs1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(lhs1) },
-                            ),
-                        )
-                        .expect("encoding the first group's left side succeeds")
-                        .bytes;
-                    let wrong_rhs1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(wrong_rhs1),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first group's wrong right side succeeds")
-                        .bytes;
-                    let lhs2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides { point: Some(lhs2) },
-                            ),
-                        )
-                        .expect("encoding the second group's left side succeeds")
-                        .bytes;
-                    let wrong_rhs2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(wrong_rhs2),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second group's wrong right side succeeds")
-                        .bytes;
-                    assert_ne!(lhs1_encoded.as_ref(), wrong_rhs1_encoded.as_ref());
-                    assert_ne!(lhs2_encoded.as_ref(), wrong_rhs2_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let draws = build_generate_keys_payload(pairing, Default::default());
+            let g1_tag = DomainTag::try_new(DomainTagConstructorParams {
+                bytes: b"ChainTorrent-v1-envelope-possession-g1".to_vec(),
+            })
+            .expect("the first group's possession tag is admitted");
+            let g2_tag = DomainTag::try_new(DomainTagConstructorParams {
+                bytes: b"ChainTorrent-v1-envelope-possession-g2".to_vec(),
+            })
+            .expect("the second group's possession tag is admitted");
+
+            // Act
+            let generated =
+                adapter.generate_keys(build_generate_keys_params(Default::default()), draws);
+
+            // Assert
+            let generated = generated.expect("differing draws admit a key pair");
+            let g1_statement = build_possession_g1_statement(
+                pairing,
+                PossessionG1StatementOverrides {
+                    key: Some(generated.key_pair.pk1.clone()),
+                    commitment: Some(generated.possession.r1.clone()),
+                },
+            );
+            let encoded_g1_statement = encoder
+                .encode(
+                    EncodeParams {
+                        description: &build_possession_g1_statement_description(
+                            pairing,
+                            Default::default(),
+                        ),
+                    },
+                    &g1_statement,
+                )
+                .expect("encoding the first group's statement succeeds")
+                .bytes;
+            let wrong_c1 = hash_to_scalar
+                .hash_to_scalar(
+                    HashToScalarParams { tag: &g2_tag },
+                    HashToScalarPayload {
+                        message: &encoded_g1_statement,
+                    },
+                )
+                .expect("hashing under the other tag succeeds")
+                .scalar;
+            let g2_statement = build_possession_g2_statement(
+                pairing,
+                PossessionG2StatementOverrides {
+                    key: Some(generated.key_pair.pk2.clone()),
+                    commitment: Some(generated.possession.r2.clone()),
+                },
+            );
+            let encoded_g2_statement = encoder
+                .encode(
+                    EncodeParams {
+                        description: &build_possession_g2_statement_description(
+                            pairing,
+                            Default::default(),
+                        ),
+                    },
+                    &g2_statement,
+                )
+                .expect("encoding the second group's statement succeeds")
+                .bytes;
+            let wrong_c2 = hash_to_scalar
+                .hash_to_scalar(
+                    HashToScalarParams { tag: &g1_tag },
+                    HashToScalarPayload {
+                        message: &encoded_g2_statement,
+                    },
+                )
+                .expect("hashing under the other tag succeeds")
+                .scalar;
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let lhs1 = pairing
+                .mul_g1(
+                    MulG1Params,
+                    build_mul_g1_payload(
+                        pairing,
+                        MulG1PayloadOverrides {
+                            point: Some(g1),
+                            scalar: Some(generated.possession.z1.clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the first generator by z1 succeeds")
+                .product;
+            let wrong_rhs1 = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(generated.possession.r1.clone()),
+                            right: Some(
+                                pairing
+                                    .mul_g1(
+                                        MulG1Params,
+                                        build_mul_g1_payload(
+                                            pairing,
+                                            MulG1PayloadOverrides {
+                                                point: Some(generated.key_pair.pk1.clone()),
+                                                scalar: Some(wrong_c1),
+                                            },
+                                        ),
+                                    )
+                                    .expect("multiplying pk1 by the wrong challenge succeeds")
+                                    .product,
+                            ),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let lhs2 = pairing
+                .mul_g2(
+                    MulG2Params,
+                    build_mul_g2_payload(
+                        pairing,
+                        MulG2PayloadOverrides {
+                            point: Some(g2),
+                            scalar: Some(generated.possession.z2.clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the second generator by z2 succeeds")
+                .product;
+            let wrong_rhs2 = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(generated.possession.r2.clone()),
+                            right: Some(
+                                pairing
+                                    .mul_g2(
+                                        MulG2Params,
+                                        build_mul_g2_payload(
+                                            pairing,
+                                            MulG2PayloadOverrides {
+                                                point: Some(generated.key_pair.pk2.clone()),
+                                                scalar: Some(wrong_c2),
+                                            },
+                                        ),
+                                    )
+                                    .expect("multiplying pk2 by the wrong challenge succeeds")
+                                    .product,
+                            ),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let lhs1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides { point: Some(lhs1) },
+                    ),
+                )
+                .expect("encoding the first group's left side succeeds")
+                .bytes;
+            let wrong_rhs1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(wrong_rhs1),
+                        },
+                    ),
+                )
+                .expect("encoding the first group's wrong right side succeeds")
+                .bytes;
+            let lhs2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides { point: Some(lhs2) },
+                    ),
+                )
+                .expect("encoding the second group's left side succeeds")
+                .bytes;
+            let wrong_rhs2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(wrong_rhs2),
+                        },
+                    ),
+                )
+                .expect("encoding the second group's wrong right side succeeds")
+                .bytes;
+            assert_ne!(lhs1_encoded.as_ref(), wrong_rhs1_encoded.as_ref());
+            assert_ne!(lhs2_encoded.as_ref(), wrong_rhs2_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 
@@ -1138,308 +975,278 @@ fn generate_keys_hashes_each_challenge_under_its_groups_tag() {
 #[test]
 fn wrap_to_returns_the_envelope_its_coins_form() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let public_keys =
-                        build_pairing_elgamal_public_keys(pairing, Default::default());
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let a = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(g1.clone()),
-                                    right: Some(public_keys.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let b = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(g2.clone()),
-                                    right: Some(public_keys.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let credential = build_credential_components(
-                        pairing,
-                        CredentialComponentsOverrides {
-                            a: Some(a.clone()),
-                            b: Some(b.clone()),
-                        },
-                    );
-                    let payload = build_wrap_to_payload(
-                        pairing,
-                        &public_keys,
-                        WrapToPayloadOverrides {
-                            credential: Some(credential),
-                        },
-                    );
-
-                    // Act
-                    let wrapped =
-                        adapter.wrap_to(build_wrap_to_params(Default::default()), payload);
-
-                    // Assert
-                    let wrapped = wrapped.expect("the admitted public keys admit a wrap");
-                    let rho = wrapped.coins.rho.expose().clone();
-                    let sigma = wrapped.coins.sigma.expose().clone();
-                    let expected_c1 = pairing
-                        .mul_g1(
-                            MulG1Params,
-                            build_mul_g1_payload(
-                                pairing,
-                                MulG1PayloadOverrides {
-                                    point: Some(g1.clone()),
-                                    scalar: Some(rho.clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the first generator by rho succeeds")
-                        .product;
-                    let expected_c2 = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(a),
-                                    right: Some(
-                                        pairing
-                                            .mul_g1(
-                                                MulG1Params,
-                                                build_mul_g1_payload(
-                                                    pairing,
-                                                    MulG1PayloadOverrides {
-                                                        point: Some(public_keys.pk1.clone()),
-                                                        scalar: Some(rho),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("multiplying pk1 by rho succeeds")
-                                            .product,
-                                    ),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let expected_d1 = pairing
-                        .mul_g2(
-                            MulG2Params,
-                            build_mul_g2_payload(
-                                pairing,
-                                MulG2PayloadOverrides {
-                                    point: Some(g2),
-                                    scalar: Some(sigma.clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the second generator by sigma succeeds")
-                        .product;
-                    let expected_d2 = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(b),
-                                    right: Some(
-                                        pairing
-                                            .mul_g2(
-                                                MulG2Params,
-                                                build_mul_g2_payload(
-                                                    pairing,
-                                                    MulG2PayloadOverrides {
-                                                        point: Some(public_keys.pk2.clone()),
-                                                        scalar: Some(sigma),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("multiplying pk2 by sigma succeeds")
-                                            .product,
-                                    ),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let c1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(wrapped.envelope.c1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding c1 succeeds")
-                        .bytes;
-                    let c2_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(wrapped.envelope.c2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding c2 succeeds")
-                        .bytes;
-                    let d1_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(wrapped.envelope.d1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding d1 succeeds")
-                        .bytes;
-                    let d2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(wrapped.envelope.d2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding d2 succeeds")
-                        .bytes;
-                    let expected_c1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(expected_c1),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected c1 succeeds")
-                        .bytes;
-                    let expected_c2_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(expected_c2),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected c2 succeeds")
-                        .bytes;
-                    let expected_d1_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(expected_d1),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected d1 succeeds")
-                        .bytes;
-                    let expected_d2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(expected_d2),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected d2 succeeds")
-                        .bytes;
-                    assert_eq!(c1_encoded.as_ref(), expected_c1_encoded.as_ref());
-                    assert_eq!(c2_encoded.as_ref(), expected_c2_encoded.as_ref());
-                    assert_eq!(d1_encoded.as_ref(), expected_d1_encoded.as_ref());
-                    assert_eq!(d2_encoded.as_ref(), expected_d2_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let public_keys = build_pairing_elgamal_public_keys(pairing, Default::default());
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let a = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(g1.clone()),
+                            right: Some(public_keys.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let b = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(g2.clone()),
+                            right: Some(public_keys.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let credential = build_credential_components(
+                pairing,
+                CredentialComponentsOverrides {
+                    a: Some(a.clone()),
+                    b: Some(b.clone()),
+                },
+            );
+            let payload = build_wrap_to_payload(
+                pairing,
+                &public_keys,
+                WrapToPayloadOverrides {
+                    credential: Some(credential),
+                },
+            );
+
+            // Act
+            let wrapped = adapter.wrap_to(build_wrap_to_params(Default::default()), payload);
+
+            // Assert
+            let wrapped = wrapped.expect("the admitted public keys admit a wrap");
+            let rho = wrapped.coins.rho.expose().clone();
+            let sigma = wrapped.coins.sigma.expose().clone();
+            let expected_c1 = pairing
+                .mul_g1(
+                    MulG1Params,
+                    build_mul_g1_payload(
+                        pairing,
+                        MulG1PayloadOverrides {
+                            point: Some(g1.clone()),
+                            scalar: Some(rho.clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the first generator by rho succeeds")
+                .product;
+            let expected_c2 = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(a),
+                            right: Some(
+                                pairing
+                                    .mul_g1(
+                                        MulG1Params,
+                                        build_mul_g1_payload(
+                                            pairing,
+                                            MulG1PayloadOverrides {
+                                                point: Some(public_keys.pk1.clone()),
+                                                scalar: Some(rho),
+                                            },
+                                        ),
+                                    )
+                                    .expect("multiplying pk1 by rho succeeds")
+                                    .product,
+                            ),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let expected_d1 = pairing
+                .mul_g2(
+                    MulG2Params,
+                    build_mul_g2_payload(
+                        pairing,
+                        MulG2PayloadOverrides {
+                            point: Some(g2),
+                            scalar: Some(sigma.clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the second generator by sigma succeeds")
+                .product;
+            let expected_d2 = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(b),
+                            right: Some(
+                                pairing
+                                    .mul_g2(
+                                        MulG2Params,
+                                        build_mul_g2_payload(
+                                            pairing,
+                                            MulG2PayloadOverrides {
+                                                point: Some(public_keys.pk2.clone()),
+                                                scalar: Some(sigma),
+                                            },
+                                        ),
+                                    )
+                                    .expect("multiplying pk2 by sigma succeeds")
+                                    .product,
+                            ),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let c1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(wrapped.envelope.c1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding c1 succeeds")
+                .bytes;
+            let c2_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(wrapped.envelope.c2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding c2 succeeds")
+                .bytes;
+            let d1_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(wrapped.envelope.d1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding d1 succeeds")
+                .bytes;
+            let d2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(wrapped.envelope.d2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding d2 succeeds")
+                .bytes;
+            let expected_c1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(expected_c1),
+                        },
+                    ),
+                )
+                .expect("encoding the expected c1 succeeds")
+                .bytes;
+            let expected_c2_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(expected_c2),
+                        },
+                    ),
+                )
+                .expect("encoding the expected c2 succeeds")
+                .bytes;
+            let expected_d1_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(expected_d1),
+                        },
+                    ),
+                )
+                .expect("encoding the expected d1 succeeds")
+                .bytes;
+            let expected_d2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(expected_d2),
+                        },
+                    ),
+                )
+                .expect("encoding the expected d2 succeeds")
+                .bytes;
+            assert_eq!(c1_encoded.as_ref(), expected_c1_encoded.as_ref());
+            assert_eq!(c2_encoded.as_ref(), expected_c2_encoded.as_ref());
+            assert_eq!(d1_encoded.as_ref(), expected_d1_encoded.as_ref());
+            assert_eq!(d2_encoded.as_ref(), expected_d2_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 
@@ -1459,154 +1266,124 @@ fn wrap_to_returns_the_envelope_its_coins_form() {
 #[test]
 fn wrap_to_draws_each_coin_from_its_own_draw() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let public_keys =
-                        build_pairing_elgamal_public_keys(pairing, Default::default());
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let a = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(g1),
-                                    right: Some(public_keys.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let b = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(g2.clone()),
-                                    right: Some(public_keys.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let credential = build_credential_components(
-                        pairing,
-                        CredentialComponentsOverrides {
-                            a: Some(a),
-                            b: Some(b),
-                        },
-                    );
-                    let payload = build_wrap_to_payload(
-                        pairing,
-                        &public_keys,
-                        WrapToPayloadOverrides {
-                            credential: Some(credential),
-                        },
-                    );
-
-                    // Act
-                    let wrapped =
-                        adapter.wrap_to(build_wrap_to_params(Default::default()), payload);
-
-                    // Assert
-                    let wrapped = wrapped.expect("the admitted public keys admit a wrap");
-                    let rho_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(wrapped.coins.rho.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding rho succeeds")
-                        .bytes;
-                    let sigma_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(wrapped.coins.sigma.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding sigma succeeds")
-                        .bytes;
-                    assert_ne!(
-                        rho_encoded.expose().as_ref(),
-                        sigma_encoded.expose().as_ref()
-                    );
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let public_keys = build_pairing_elgamal_public_keys(pairing, Default::default());
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let a = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(g1),
+                            right: Some(public_keys.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let b = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(g2.clone()),
+                            right: Some(public_keys.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let credential = build_credential_components(
+                pairing,
+                CredentialComponentsOverrides {
+                    a: Some(a),
+                    b: Some(b),
+                },
+            );
+            let payload = build_wrap_to_payload(
+                pairing,
+                &public_keys,
+                WrapToPayloadOverrides {
+                    credential: Some(credential),
+                },
+            );
+
+            // Act
+            let wrapped = adapter.wrap_to(build_wrap_to_params(Default::default()), payload);
+
+            // Assert
+            let wrapped = wrapped.expect("the admitted public keys admit a wrap");
+            let rho_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(wrapped.coins.rho.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding rho succeeds")
+                .bytes;
+            let sigma_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(wrapped.coins.sigma.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding sigma succeeds")
+                .bytes;
+            assert_ne!(
+                rho_encoded.expose().as_ref(),
+                sigma_encoded.expose().as_ref()
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 
@@ -1627,289 +1404,241 @@ fn wrap_to_draws_each_coin_from_its_own_draw() {
 #[test]
 fn unwrap_returns_the_components_the_envelope_was_formed_from() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let a = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(g1.clone()),
-                                    right: Some(key_pair.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let b = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(g2.clone()),
-                                    right: Some(key_pair.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let rho = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x21u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length rho draw samples a scalar")
-                    .scalar;
-                    let sigma = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x22u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length sigma draw samples a scalar")
-                    .scalar;
-                    let envelope = build_pairing_elgamal_envelope(
-                        pairing,
-                        PairingElGamalEnvelopeOverrides {
-                            c1: Some(
-                                pairing
-                                    .mul_g1(
-                                        MulG1Params,
-                                        build_mul_g1_payload(
-                                            pairing,
-                                            MulG1PayloadOverrides {
-                                                point: Some(g1),
-                                                scalar: Some(rho.expose().clone()),
-                                            },
-                                        ),
-                                    )
-                                    .expect("multiplying the first generator by rho succeeds")
-                                    .product,
-                            ),
-                            c2: Some(
-                                pairing
-                                    .add_g1(
-                                        AddG1Params,
-                                        build_add_g1_payload(
-                                            pairing,
-                                            AddG1PayloadOverrides {
-                                                left: Some(a.clone()),
-                                                right: Some(
-                                                    pairing
-                                                        .mul_g1(
-                                                            MulG1Params,
-                                                            build_mul_g1_payload(
-                                                                pairing,
-                                                                MulG1PayloadOverrides {
-                                                                    point: Some(
-                                                                        key_pair.pk1.clone(),
-                                                                    ),
-                                                                    scalar: Some(
-                                                                        rho.expose().clone(),
-                                                                    ),
-                                                                },
-                                                            ),
-                                                        )
-                                                        .expect("multiplying pk1 by rho succeeds")
-                                                        .product,
-                                                ),
-                                            },
-                                        ),
-                                    )
-                                    .expect("adding the first group's terms succeeds")
-                                    .sum,
-                            ),
-                            d1: Some(
-                                pairing
-                                    .mul_g2(
-                                        MulG2Params,
-                                        build_mul_g2_payload(
-                                            pairing,
-                                            MulG2PayloadOverrides {
-                                                point: Some(g2),
-                                                scalar: Some(sigma.expose().clone()),
-                                            },
-                                        ),
-                                    )
-                                    .expect("multiplying the second generator by sigma succeeds")
-                                    .product,
-                            ),
-                            d2: Some(
-                                pairing
-                                    .add_g2(
-                                        AddG2Params,
-                                        build_add_g2_payload(
-                                            pairing,
-                                            AddG2PayloadOverrides {
-                                                left: Some(b.clone()),
-                                                right: Some(
-                                                    pairing
-                                                        .mul_g2(
-                                                            MulG2Params,
-                                                            build_mul_g2_payload(
-                                                                pairing,
-                                                                MulG2PayloadOverrides {
-                                                                    point: Some(
-                                                                        key_pair.pk2.clone(),
-                                                                    ),
-                                                                    scalar: Some(
-                                                                        sigma.expose().clone(),
-                                                                    ),
-                                                                },
-                                                            ),
-                                                        )
-                                                        .expect("multiplying pk2 by sigma succeeds")
-                                                        .product,
-                                                ),
-                                            },
-                                        ),
-                                    )
-                                    .expect("adding the second group's terms succeeds")
-                                    .sum,
-                            ),
-                        },
-                    );
-
-                    // Act
-                    let unwrapped = adapter.unwrap(
-                        build_unwrap_params(Default::default()),
-                        build_unwrap_payload(&key_pair, &envelope, Default::default()),
-                    );
-
-                    // Assert
-                    let unwrapped = unwrapped.expect("unwrap over an admitted envelope succeeds");
-                    let a_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(unwrapped.credential.a.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the returned first component succeeds")
-                        .bytes;
-                    let b_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(unwrapped.credential.b.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the returned second component succeeds")
-                        .bytes;
-                    let expected_a_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(a) },
-                            ),
-                        )
-                        .expect("encoding A succeeds")
-                        .bytes;
-                    let expected_b_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides { point: Some(b) },
-                            ),
-                        )
-                        .expect("encoding B succeeds")
-                        .bytes;
-                    assert_eq!(a_encoded.as_ref(), expected_a_encoded.as_ref());
-                    assert_eq!(b_encoded.as_ref(), expected_b_encoded.as_ref());
-                    assert_ne!(a_encoded.as_ref(), b_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let a = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(g1.clone()),
+                            right: Some(key_pair.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let b = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(g2.clone()),
+                            right: Some(key_pair.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let rho = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x21u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length rho draw samples a scalar")
+            .scalar;
+            let sigma = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x22u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length sigma draw samples a scalar")
+            .scalar;
+            let envelope = build_pairing_elgamal_envelope(
+                pairing,
+                PairingElGamalEnvelopeOverrides {
+                    c1: Some(
+                        pairing
+                            .mul_g1(
+                                MulG1Params,
+                                build_mul_g1_payload(
+                                    pairing,
+                                    MulG1PayloadOverrides {
+                                        point: Some(g1),
+                                        scalar: Some(rho.expose().clone()),
+                                    },
+                                ),
+                            )
+                            .expect("multiplying the first generator by rho succeeds")
+                            .product,
+                    ),
+                    c2: Some(
+                        pairing
+                            .add_g1(
+                                AddG1Params,
+                                build_add_g1_payload(
+                                    pairing,
+                                    AddG1PayloadOverrides {
+                                        left: Some(a.clone()),
+                                        right: Some(
+                                            pairing
+                                                .mul_g1(
+                                                    MulG1Params,
+                                                    build_mul_g1_payload(
+                                                        pairing,
+                                                        MulG1PayloadOverrides {
+                                                            point: Some(key_pair.pk1.clone()),
+                                                            scalar: Some(rho.expose().clone()),
+                                                        },
+                                                    ),
+                                                )
+                                                .expect("multiplying pk1 by rho succeeds")
+                                                .product,
+                                        ),
+                                    },
+                                ),
+                            )
+                            .expect("adding the first group's terms succeeds")
+                            .sum,
+                    ),
+                    d1: Some(
+                        pairing
+                            .mul_g2(
+                                MulG2Params,
+                                build_mul_g2_payload(
+                                    pairing,
+                                    MulG2PayloadOverrides {
+                                        point: Some(g2),
+                                        scalar: Some(sigma.expose().clone()),
+                                    },
+                                ),
+                            )
+                            .expect("multiplying the second generator by sigma succeeds")
+                            .product,
+                    ),
+                    d2: Some(
+                        pairing
+                            .add_g2(
+                                AddG2Params,
+                                build_add_g2_payload(
+                                    pairing,
+                                    AddG2PayloadOverrides {
+                                        left: Some(b.clone()),
+                                        right: Some(
+                                            pairing
+                                                .mul_g2(
+                                                    MulG2Params,
+                                                    build_mul_g2_payload(
+                                                        pairing,
+                                                        MulG2PayloadOverrides {
+                                                            point: Some(key_pair.pk2.clone()),
+                                                            scalar: Some(sigma.expose().clone()),
+                                                        },
+                                                    ),
+                                                )
+                                                .expect("multiplying pk2 by sigma succeeds")
+                                                .product,
+                                        ),
+                                    },
+                                ),
+                            )
+                            .expect("adding the second group's terms succeeds")
+                            .sum,
+                    ),
+                },
+            );
+
+            // Act
+            let unwrapped = adapter.unwrap(
+                build_unwrap_params(Default::default()),
+                build_unwrap_payload(&key_pair, &envelope, Default::default()),
+            );
+
+            // Assert
+            let unwrapped = unwrapped.expect("unwrap over an admitted envelope succeeds");
+            let a_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(unwrapped.credential.a.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the returned first component succeeds")
+                .bytes;
+            let b_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(unwrapped.credential.b.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the returned second component succeeds")
+                .bytes;
+            let expected_a_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(pairing, EncodeG1PayloadOverrides { point: Some(a) }),
+                )
+                .expect("encoding A succeeds")
+                .bytes;
+            let expected_b_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(pairing, EncodeG2PayloadOverrides { point: Some(b) }),
+                )
+                .expect("encoding B succeeds")
+                .bytes;
+            assert_eq!(a_encoded.as_ref(), expected_a_encoded.as_ref());
+            assert_eq!(b_encoded.as_ref(), expected_b_encoded.as_ref());
+            assert_ne!(a_encoded.as_ref(), b_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 
@@ -1928,325 +1657,281 @@ fn unwrap_returns_the_components_the_envelope_was_formed_from() {
 #[test]
 fn unwrap_under_another_key_pair_returns_different_components() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let a = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(g1.clone()),
-                                    right: Some(key_pair.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let b = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(g2.clone()),
-                                    right: Some(key_pair.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let rho = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x21u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length rho draw samples a scalar")
-                    .scalar;
-                    let sigma = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x22u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length sigma draw samples a scalar")
-                    .scalar;
-                    let envelope = build_pairing_elgamal_envelope(
-                        pairing,
-                        PairingElGamalEnvelopeOverrides {
-                            c1: Some(
-                                pairing
-                                    .mul_g1(
-                                        MulG1Params,
-                                        build_mul_g1_payload(
-                                            pairing,
-                                            MulG1PayloadOverrides {
-                                                point: Some(g1),
-                                                scalar: Some(rho.expose().clone()),
-                                            },
-                                        ),
-                                    )
-                                    .expect("multiplying the first generator by rho succeeds")
-                                    .product,
-                            ),
-                            c2: Some(
-                                pairing
-                                    .add_g1(
-                                        AddG1Params,
-                                        build_add_g1_payload(
-                                            pairing,
-                                            AddG1PayloadOverrides {
-                                                left: Some(a.clone()),
-                                                right: Some(
-                                                    pairing
-                                                        .mul_g1(
-                                                            MulG1Params,
-                                                            build_mul_g1_payload(
-                                                                pairing,
-                                                                MulG1PayloadOverrides {
-                                                                    point: Some(
-                                                                        key_pair.pk1.clone(),
-                                                                    ),
-                                                                    scalar: Some(
-                                                                        rho.expose().clone(),
-                                                                    ),
-                                                                },
-                                                            ),
-                                                        )
-                                                        .expect("multiplying pk1 by rho succeeds")
-                                                        .product,
-                                                ),
-                                            },
-                                        ),
-                                    )
-                                    .expect("adding the first group's terms succeeds")
-                                    .sum,
-                            ),
-                            d1: Some(
-                                pairing
-                                    .mul_g2(
-                                        MulG2Params,
-                                        build_mul_g2_payload(
-                                            pairing,
-                                            MulG2PayloadOverrides {
-                                                point: Some(g2),
-                                                scalar: Some(sigma.expose().clone()),
-                                            },
-                                        ),
-                                    )
-                                    .expect("multiplying the second generator by sigma succeeds")
-                                    .product,
-                            ),
-                            d2: Some(
-                                pairing
-                                    .add_g2(
-                                        AddG2Params,
-                                        build_add_g2_payload(
-                                            pairing,
-                                            AddG2PayloadOverrides {
-                                                left: Some(b.clone()),
-                                                right: Some(
-                                                    pairing
-                                                        .mul_g2(
-                                                            MulG2Params,
-                                                            build_mul_g2_payload(
-                                                                pairing,
-                                                                MulG2PayloadOverrides {
-                                                                    point: Some(
-                                                                        key_pair.pk2.clone(),
-                                                                    ),
-                                                                    scalar: Some(
-                                                                        sigma.expose().clone(),
-                                                                    ),
-                                                                },
-                                                            ),
-                                                        )
-                                                        .expect("multiplying pk2 by sigma succeeds")
-                                                        .product,
-                                                ),
-                                            },
-                                        ),
-                                    )
-                                    .expect("adding the second group's terms succeeds")
-                                    .sum,
-                            ),
-                        },
-                    );
-                    let other_key_pair = build_pairing_elgamal_key_pair(
-                        pairing,
-                        PairingElGamalKeyPairOverrides {
-                            x: Some(P::Scalar::sample_from_uniform_bytes(
-                                SampleUniformScalarParams,
-                                build_sample_uniform_scalar_payload(
-                                    SampleUniformScalarPayloadOverrides {
-                                        uniform: Some(build_secret(
-                                            vec![0x31u8;
-                                                <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
-                                            SecretConstructorParamsOverrides,
-                                        )),
-                                    },
-                                ),
-                            )
-                            .expect("a full-length x draw samples a scalar")
-                            .scalar),
-                            y: Some(P::Scalar::sample_from_uniform_bytes(
-                                SampleUniformScalarParams,
-                                build_sample_uniform_scalar_payload(
-                                    SampleUniformScalarPayloadOverrides {
-                                        uniform: Some(build_secret(
-                                            vec![0x32u8;
-                                                <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
-                                            SecretConstructorParamsOverrides,
-                                        )),
-                                    },
-                                ),
-                            )
-                            .expect("a full-length y draw samples a scalar")
-                            .scalar),
-                            pk1: None,
-                            pk2: None,
-                        },
-                    );
-
-                    // Act
-                    let unwrapped = adapter.unwrap(
-                        build_unwrap_params(Default::default()),
-                        build_unwrap_payload(&other_key_pair, &envelope, Default::default()),
-                    );
-
-                    // Assert
-                    let unwrapped = unwrapped.expect("unwrap over an admitted envelope succeeds");
-                    let a_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(unwrapped.credential.a.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the returned first component succeeds")
-                        .bytes;
-                    let b_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(unwrapped.credential.b.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the returned second component succeeds")
-                        .bytes;
-                    let expected_a_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(a) },
-                            ),
-                        )
-                        .expect("encoding A succeeds")
-                        .bytes;
-                    let expected_b_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides { point: Some(b) },
-                            ),
-                        )
-                        .expect("encoding B succeeds")
-                        .bytes;
-                    assert_ne!(a_encoded.as_ref(), expected_a_encoded.as_ref());
-                    assert_ne!(a_encoded.as_ref(), expected_b_encoded.as_ref());
-                    assert_ne!(b_encoded.as_ref(), expected_a_encoded.as_ref());
-                    assert_ne!(b_encoded.as_ref(), expected_b_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let a = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(g1.clone()),
+                            right: Some(key_pair.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let b = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(g2.clone()),
+                            right: Some(key_pair.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let rho = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x21u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length rho draw samples a scalar")
+            .scalar;
+            let sigma = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x22u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length sigma draw samples a scalar")
+            .scalar;
+            let envelope = build_pairing_elgamal_envelope(
+                pairing,
+                PairingElGamalEnvelopeOverrides {
+                    c1: Some(
+                        pairing
+                            .mul_g1(
+                                MulG1Params,
+                                build_mul_g1_payload(
+                                    pairing,
+                                    MulG1PayloadOverrides {
+                                        point: Some(g1),
+                                        scalar: Some(rho.expose().clone()),
+                                    },
+                                ),
+                            )
+                            .expect("multiplying the first generator by rho succeeds")
+                            .product,
+                    ),
+                    c2: Some(
+                        pairing
+                            .add_g1(
+                                AddG1Params,
+                                build_add_g1_payload(
+                                    pairing,
+                                    AddG1PayloadOverrides {
+                                        left: Some(a.clone()),
+                                        right: Some(
+                                            pairing
+                                                .mul_g1(
+                                                    MulG1Params,
+                                                    build_mul_g1_payload(
+                                                        pairing,
+                                                        MulG1PayloadOverrides {
+                                                            point: Some(key_pair.pk1.clone()),
+                                                            scalar: Some(rho.expose().clone()),
+                                                        },
+                                                    ),
+                                                )
+                                                .expect("multiplying pk1 by rho succeeds")
+                                                .product,
+                                        ),
+                                    },
+                                ),
+                            )
+                            .expect("adding the first group's terms succeeds")
+                            .sum,
+                    ),
+                    d1: Some(
+                        pairing
+                            .mul_g2(
+                                MulG2Params,
+                                build_mul_g2_payload(
+                                    pairing,
+                                    MulG2PayloadOverrides {
+                                        point: Some(g2),
+                                        scalar: Some(sigma.expose().clone()),
+                                    },
+                                ),
+                            )
+                            .expect("multiplying the second generator by sigma succeeds")
+                            .product,
+                    ),
+                    d2: Some(
+                        pairing
+                            .add_g2(
+                                AddG2Params,
+                                build_add_g2_payload(
+                                    pairing,
+                                    AddG2PayloadOverrides {
+                                        left: Some(b.clone()),
+                                        right: Some(
+                                            pairing
+                                                .mul_g2(
+                                                    MulG2Params,
+                                                    build_mul_g2_payload(
+                                                        pairing,
+                                                        MulG2PayloadOverrides {
+                                                            point: Some(key_pair.pk2.clone()),
+                                                            scalar: Some(sigma.expose().clone()),
+                                                        },
+                                                    ),
+                                                )
+                                                .expect("multiplying pk2 by sigma succeeds")
+                                                .product,
+                                        ),
+                                    },
+                                ),
+                            )
+                            .expect("adding the second group's terms succeeds")
+                            .sum,
+                    ),
+                },
+            );
+            let other_key_pair = build_pairing_elgamal_key_pair(
+                pairing,
+                PairingElGamalKeyPairOverrides {
+                    x: Some(
+                        P::Scalar::sample_from_uniform_bytes(
+                            SampleUniformScalarParams,
+                            build_sample_uniform_scalar_payload(
+                                SampleUniformScalarPayloadOverrides {
+                                    uniform: Some(build_secret(
+                                        vec![0x31u8;
+                                            <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                                        SecretConstructorParamsOverrides,
+                                    )),
+                                },
+                            ),
+                        )
+                        .expect("a full-length x draw samples a scalar")
+                        .scalar,
+                    ),
+                    y: Some(
+                        P::Scalar::sample_from_uniform_bytes(
+                            SampleUniformScalarParams,
+                            build_sample_uniform_scalar_payload(
+                                SampleUniformScalarPayloadOverrides {
+                                    uniform: Some(build_secret(
+                                        vec![0x32u8;
+                                            <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                                        SecretConstructorParamsOverrides,
+                                    )),
+                                },
+                            ),
+                        )
+                        .expect("a full-length y draw samples a scalar")
+                        .scalar,
+                    ),
+                    pk1: None,
+                    pk2: None,
+                },
+            );
+
+            // Act
+            let unwrapped = adapter.unwrap(
+                build_unwrap_params(Default::default()),
+                build_unwrap_payload(&other_key_pair, &envelope, Default::default()),
+            );
+
+            // Assert
+            let unwrapped = unwrapped.expect("unwrap over an admitted envelope succeeds");
+            let a_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(unwrapped.credential.a.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the returned first component succeeds")
+                .bytes;
+            let b_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(unwrapped.credential.b.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the returned second component succeeds")
+                .bytes;
+            let expected_a_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(pairing, EncodeG1PayloadOverrides { point: Some(a) }),
+                )
+                .expect("encoding A succeeds")
+                .bytes;
+            let expected_b_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(pairing, EncodeG2PayloadOverrides { point: Some(b) }),
+                )
+                .expect("encoding B succeeds")
+                .bytes;
+            assert_ne!(a_encoded.as_ref(), expected_a_encoded.as_ref());
+            assert_ne!(a_encoded.as_ref(), expected_b_encoded.as_ref());
+            assert_ne!(b_encoded.as_ref(), expected_a_encoded.as_ref());
+            assert_ne!(b_encoded.as_ref(), expected_b_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 
@@ -2269,66 +1954,55 @@ fn unwrap_under_another_key_pair_returns_different_components() {
 #[test]
 fn declaration_names_the_identifier_algebra_tags_and_versions() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            _consumed: ConsumePairingPayload<P>,
+            _pairing: &P,
+            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            _encoder: &E,
+            _random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
-            // Arrange
-            struct EncodingConsumer<P>(PhantomData<P>);
+            // Act
+            let declaration = PairingElGamalKeyAgreement::<'_, P, E>::DECLARATION;
 
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    _encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Act
-                    let declaration = PairingElGamalKeyAgreement::<'_, P, E>::DECLARATION;
-
-                    // Assert
-                    assert!(matches!(
-                        declaration.identifier,
-                        KeyAgreementIdentifier::PairingElGamalV1
-                    ));
-                    assert_eq!(declaration.algebra, EnvelopeAlgebra::PairingElGamal);
-                    assert_eq!(
-                        declaration.possession_g1_tag,
-                        b"ChainTorrent-v1-envelope-possession-g1"
-                    );
-                    assert_eq!(
-                        declaration.possession_g2_tag,
-                        b"ChainTorrent-v1-envelope-possession-g2"
-                    );
-                    assert_eq!(declaration.adapter_version, 1);
-                    assert_eq!(
-                        declaration.interface_version,
-                        KEY_AGREEMENT_INTERFACE_VERSION
-                    );
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer::<P>(PhantomData)),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            // Assert
+            assert!(matches!(
+                declaration.identifier,
+                KeyAgreementIdentifier::PairingElGamalV1
+            ));
+            assert_eq!(declaration.algebra, EnvelopeAlgebra::PairingElGamal);
+            assert_eq!(
+                declaration.possession_g1_tag,
+                b"ChainTorrent-v1-envelope-possession-g1"
             );
-            assert!(created.is_ok());
+            assert_eq!(
+                declaration.possession_g2_tag,
+                b"ChainTorrent-v1-envelope-possession-g2"
+            );
+            assert_eq!(declaration.adapter_version, 1);
+            assert_eq!(
+                declaration.interface_version,
+                KEY_AGREEMENT_INTERFACE_VERSION
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end declaration_names_the_identifier_algebra_tags_and_versions
@@ -2347,325 +2021,281 @@ fn declaration_names_the_identifier_algebra_tags_and_versions() {
 #[test]
 fn unwrap_with_exchanged_secrets_returns_different_components() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let a = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(g1.clone()),
-                                    right: Some(key_pair.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let b = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(g2.clone()),
-                                    right: Some(key_pair.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let rho = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x21u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length rho draw samples a scalar")
-                    .scalar;
-                    let sigma = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x22u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length sigma draw samples a scalar")
-                    .scalar;
-                    let envelope = build_pairing_elgamal_envelope(
-                        pairing,
-                        PairingElGamalEnvelopeOverrides {
-                            c1: Some(
-                                pairing
-                                    .mul_g1(
-                                        MulG1Params,
-                                        build_mul_g1_payload(
-                                            pairing,
-                                            MulG1PayloadOverrides {
-                                                point: Some(g1),
-                                                scalar: Some(rho.expose().clone()),
-                                            },
-                                        ),
-                                    )
-                                    .expect("multiplying the first generator by rho succeeds")
-                                    .product,
-                            ),
-                            c2: Some(
-                                pairing
-                                    .add_g1(
-                                        AddG1Params,
-                                        build_add_g1_payload(
-                                            pairing,
-                                            AddG1PayloadOverrides {
-                                                left: Some(a.clone()),
-                                                right: Some(
-                                                    pairing
-                                                        .mul_g1(
-                                                            MulG1Params,
-                                                            build_mul_g1_payload(
-                                                                pairing,
-                                                                MulG1PayloadOverrides {
-                                                                    point: Some(
-                                                                        key_pair.pk1.clone(),
-                                                                    ),
-                                                                    scalar: Some(
-                                                                        rho.expose().clone(),
-                                                                    ),
-                                                                },
-                                                            ),
-                                                        )
-                                                        .expect("multiplying pk1 by rho succeeds")
-                                                        .product,
-                                                ),
-                                            },
-                                        ),
-                                    )
-                                    .expect("adding the first group's terms succeeds")
-                                    .sum,
-                            ),
-                            d1: Some(
-                                pairing
-                                    .mul_g2(
-                                        MulG2Params,
-                                        build_mul_g2_payload(
-                                            pairing,
-                                            MulG2PayloadOverrides {
-                                                point: Some(g2),
-                                                scalar: Some(sigma.expose().clone()),
-                                            },
-                                        ),
-                                    )
-                                    .expect("multiplying the second generator by sigma succeeds")
-                                    .product,
-                            ),
-                            d2: Some(
-                                pairing
-                                    .add_g2(
-                                        AddG2Params,
-                                        build_add_g2_payload(
-                                            pairing,
-                                            AddG2PayloadOverrides {
-                                                left: Some(b.clone()),
-                                                right: Some(
-                                                    pairing
-                                                        .mul_g2(
-                                                            MulG2Params,
-                                                            build_mul_g2_payload(
-                                                                pairing,
-                                                                MulG2PayloadOverrides {
-                                                                    point: Some(
-                                                                        key_pair.pk2.clone(),
-                                                                    ),
-                                                                    scalar: Some(
-                                                                        sigma.expose().clone(),
-                                                                    ),
-                                                                },
-                                                            ),
-                                                        )
-                                                        .expect("multiplying pk2 by sigma succeeds")
-                                                        .product,
-                                                ),
-                                            },
-                                        ),
-                                    )
-                                    .expect("adding the second group's terms succeeds")
-                                    .sum,
-                            ),
-                        },
-                    );
-                    let exchanged_key_pair = build_pairing_elgamal_key_pair(
-                        pairing,
-                        PairingElGamalKeyPairOverrides {
-                            x: Some(P::Scalar::sample_from_uniform_bytes(
-                                SampleUniformScalarParams,
-                                build_sample_uniform_scalar_payload(
-                                    SampleUniformScalarPayloadOverrides {
-                                        uniform: Some(build_secret(
-                                            vec![0x02u8;
-                                                <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
-                                            SecretConstructorParamsOverrides,
-                                        )),
-                                    },
-                                ),
-                            )
-                            .expect("a full-length x draw samples a scalar")
-                            .scalar),
-                            y: Some(P::Scalar::sample_from_uniform_bytes(
-                                SampleUniformScalarParams,
-                                build_sample_uniform_scalar_payload(
-                                    SampleUniformScalarPayloadOverrides {
-                                        uniform: Some(build_secret(
-                                            vec![0x01u8;
-                                                <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
-                                            SecretConstructorParamsOverrides,
-                                        )),
-                                    },
-                                ),
-                            )
-                            .expect("a full-length y draw samples a scalar")
-                            .scalar),
-                            pk1: None,
-                            pk2: None,
-                        },
-                    );
-
-                    // Act
-                    let unwrapped = adapter.unwrap(
-                        build_unwrap_params(Default::default()),
-                        build_unwrap_payload(&exchanged_key_pair, &envelope, Default::default()),
-                    );
-
-                    // Assert
-                    let unwrapped = unwrapped.expect("unwrap over an admitted envelope succeeds");
-                    let a_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(unwrapped.credential.a.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the returned first component succeeds")
-                        .bytes;
-                    let b_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(unwrapped.credential.b.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the returned second component succeeds")
-                        .bytes;
-                    let expected_a_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(a) },
-                            ),
-                        )
-                        .expect("encoding A succeeds")
-                        .bytes;
-                    let expected_b_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides { point: Some(b) },
-                            ),
-                        )
-                        .expect("encoding B succeeds")
-                        .bytes;
-                    assert_ne!(a_encoded.as_ref(), expected_a_encoded.as_ref());
-                    assert_ne!(a_encoded.as_ref(), expected_b_encoded.as_ref());
-                    assert_ne!(b_encoded.as_ref(), expected_a_encoded.as_ref());
-                    assert_ne!(b_encoded.as_ref(), expected_b_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let a = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(g1.clone()),
+                            right: Some(key_pair.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let b = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(g2.clone()),
+                            right: Some(key_pair.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let rho = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x21u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length rho draw samples a scalar")
+            .scalar;
+            let sigma = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x22u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length sigma draw samples a scalar")
+            .scalar;
+            let envelope = build_pairing_elgamal_envelope(
+                pairing,
+                PairingElGamalEnvelopeOverrides {
+                    c1: Some(
+                        pairing
+                            .mul_g1(
+                                MulG1Params,
+                                build_mul_g1_payload(
+                                    pairing,
+                                    MulG1PayloadOverrides {
+                                        point: Some(g1),
+                                        scalar: Some(rho.expose().clone()),
+                                    },
+                                ),
+                            )
+                            .expect("multiplying the first generator by rho succeeds")
+                            .product,
+                    ),
+                    c2: Some(
+                        pairing
+                            .add_g1(
+                                AddG1Params,
+                                build_add_g1_payload(
+                                    pairing,
+                                    AddG1PayloadOverrides {
+                                        left: Some(a.clone()),
+                                        right: Some(
+                                            pairing
+                                                .mul_g1(
+                                                    MulG1Params,
+                                                    build_mul_g1_payload(
+                                                        pairing,
+                                                        MulG1PayloadOverrides {
+                                                            point: Some(key_pair.pk1.clone()),
+                                                            scalar: Some(rho.expose().clone()),
+                                                        },
+                                                    ),
+                                                )
+                                                .expect("multiplying pk1 by rho succeeds")
+                                                .product,
+                                        ),
+                                    },
+                                ),
+                            )
+                            .expect("adding the first group's terms succeeds")
+                            .sum,
+                    ),
+                    d1: Some(
+                        pairing
+                            .mul_g2(
+                                MulG2Params,
+                                build_mul_g2_payload(
+                                    pairing,
+                                    MulG2PayloadOverrides {
+                                        point: Some(g2),
+                                        scalar: Some(sigma.expose().clone()),
+                                    },
+                                ),
+                            )
+                            .expect("multiplying the second generator by sigma succeeds")
+                            .product,
+                    ),
+                    d2: Some(
+                        pairing
+                            .add_g2(
+                                AddG2Params,
+                                build_add_g2_payload(
+                                    pairing,
+                                    AddG2PayloadOverrides {
+                                        left: Some(b.clone()),
+                                        right: Some(
+                                            pairing
+                                                .mul_g2(
+                                                    MulG2Params,
+                                                    build_mul_g2_payload(
+                                                        pairing,
+                                                        MulG2PayloadOverrides {
+                                                            point: Some(key_pair.pk2.clone()),
+                                                            scalar: Some(sigma.expose().clone()),
+                                                        },
+                                                    ),
+                                                )
+                                                .expect("multiplying pk2 by sigma succeeds")
+                                                .product,
+                                        ),
+                                    },
+                                ),
+                            )
+                            .expect("adding the second group's terms succeeds")
+                            .sum,
+                    ),
+                },
+            );
+            let exchanged_key_pair = build_pairing_elgamal_key_pair(
+                pairing,
+                PairingElGamalKeyPairOverrides {
+                    x: Some(
+                        P::Scalar::sample_from_uniform_bytes(
+                            SampleUniformScalarParams,
+                            build_sample_uniform_scalar_payload(
+                                SampleUniformScalarPayloadOverrides {
+                                    uniform: Some(build_secret(
+                                        vec![0x02u8;
+                                            <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                                        SecretConstructorParamsOverrides,
+                                    )),
+                                },
+                            ),
+                        )
+                        .expect("a full-length x draw samples a scalar")
+                        .scalar,
+                    ),
+                    y: Some(
+                        P::Scalar::sample_from_uniform_bytes(
+                            SampleUniformScalarParams,
+                            build_sample_uniform_scalar_payload(
+                                SampleUniformScalarPayloadOverrides {
+                                    uniform: Some(build_secret(
+                                        vec![0x01u8;
+                                            <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                                        SecretConstructorParamsOverrides,
+                                    )),
+                                },
+                            ),
+                        )
+                        .expect("a full-length y draw samples a scalar")
+                        .scalar,
+                    ),
+                    pk1: None,
+                    pk2: None,
+                },
+            );
+
+            // Act
+            let unwrapped = adapter.unwrap(
+                build_unwrap_params(Default::default()),
+                build_unwrap_payload(&exchanged_key_pair, &envelope, Default::default()),
+            );
+
+            // Assert
+            let unwrapped = unwrapped.expect("unwrap over an admitted envelope succeeds");
+            let a_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(unwrapped.credential.a.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the returned first component succeeds")
+                .bytes;
+            let b_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(unwrapped.credential.b.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the returned second component succeeds")
+                .bytes;
+            let expected_a_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(pairing, EncodeG1PayloadOverrides { point: Some(a) }),
+                )
+                .expect("encoding A succeeds")
+                .bytes;
+            let expected_b_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(pairing, EncodeG2PayloadOverrides { point: Some(b) }),
+                )
+                .expect("encoding B succeeds")
+                .bytes;
+            assert_ne!(a_encoded.as_ref(), expected_a_encoded.as_ref());
+            assert_ne!(a_encoded.as_ref(), expected_b_encoded.as_ref());
+            assert_ne!(b_encoded.as_ref(), expected_a_encoded.as_ref());
+            assert_ne!(b_encoded.as_ref(), expected_b_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end unwrap_with_exchanged_secrets_returns_different_components
@@ -2684,290 +2314,247 @@ fn unwrap_with_exchanged_secrets_returns_different_components() {
 #[test]
 fn unwrap_with_a_first_group_coin_element_from_another_envelope_changes_only_the_first_component() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let a = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(g1.clone()),
-                                    right: Some(key_pair.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let b = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(g2.clone()),
-                                    right: Some(key_pair.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let rho = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x21u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length rho draw samples a scalar")
-                    .scalar;
-                    let sigma = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x22u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length sigma draw samples a scalar")
-                    .scalar;
-                    let c2 = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(a.clone()),
-                                    right: Some(
-                                        pairing
-                                            .mul_g1(
-                                                MulG1Params,
-                                                build_mul_g1_payload(
-                                                    pairing,
-                                                    MulG1PayloadOverrides {
-                                                        point: Some(key_pair.pk1.clone()),
-                                                        scalar: Some(rho.expose().clone()),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("multiplying pk1 by rho succeeds")
-                                            .product,
-                                    ),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let d1 = pairing
-                        .mul_g2(
-                            MulG2Params,
-                            build_mul_g2_payload(
-                                pairing,
-                                MulG2PayloadOverrides {
-                                    point: Some(g2.clone()),
-                                    scalar: Some(sigma.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the second generator by sigma succeeds")
-                        .product;
-                    let d2 = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(b.clone()),
-                                    right: Some(
-                                        pairing
-                                            .mul_g2(
-                                                MulG2Params,
-                                                build_mul_g2_payload(
-                                                    pairing,
-                                                    MulG2PayloadOverrides {
-                                                        point: Some(key_pair.pk2.clone()),
-                                                        scalar: Some(sigma.expose().clone()),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("multiplying pk2 by sigma succeeds")
-                                            .product,
-                                    ),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let other_rho = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x41u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length rho draw samples a scalar")
-                    .scalar;
-                    let other_c1 = pairing
-                        .mul_g1(
-                            MulG1Params,
-                            build_mul_g1_payload(
-                                pairing,
-                                MulG1PayloadOverrides {
-                                    point: Some(g1),
-                                    scalar: Some(other_rho.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the first generator by the other rho succeeds")
-                        .product;
-                    let mixed_envelope = build_pairing_elgamal_envelope(
-                        pairing,
-                        PairingElGamalEnvelopeOverrides {
-                            c1: Some(other_c1),
-                            c2: Some(c2),
-                            d1: Some(d1),
-                            d2: Some(d2),
-                        },
-                    );
-
-                    // Act
-                    let unwrapped = adapter.unwrap(
-                        build_unwrap_params(Default::default()),
-                        build_unwrap_payload(&key_pair, &mixed_envelope, Default::default()),
-                    );
-
-                    // Assert
-                    let unwrapped = unwrapped.expect("unwrap over an admitted envelope succeeds");
-                    let a_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(unwrapped.credential.a.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the returned first component succeeds")
-                        .bytes;
-                    let b_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(unwrapped.credential.b.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the returned second component succeeds")
-                        .bytes;
-                    let expected_a_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(a) },
-                            ),
-                        )
-                        .expect("encoding A succeeds")
-                        .bytes;
-                    let expected_b_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides { point: Some(b) },
-                            ),
-                        )
-                        .expect("encoding B succeeds")
-                        .bytes;
-                    assert_ne!(a_encoded.as_ref(), expected_a_encoded.as_ref());
-                    assert_eq!(b_encoded.as_ref(), expected_b_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let a = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(g1.clone()),
+                            right: Some(key_pair.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let b = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(g2.clone()),
+                            right: Some(key_pair.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let rho = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x21u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length rho draw samples a scalar")
+            .scalar;
+            let sigma = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x22u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length sigma draw samples a scalar")
+            .scalar;
+            let c2 = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(a.clone()),
+                            right: Some(
+                                pairing
+                                    .mul_g1(
+                                        MulG1Params,
+                                        build_mul_g1_payload(
+                                            pairing,
+                                            MulG1PayloadOverrides {
+                                                point: Some(key_pair.pk1.clone()),
+                                                scalar: Some(rho.expose().clone()),
+                                            },
+                                        ),
+                                    )
+                                    .expect("multiplying pk1 by rho succeeds")
+                                    .product,
+                            ),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let d1 = pairing
+                .mul_g2(
+                    MulG2Params,
+                    build_mul_g2_payload(
+                        pairing,
+                        MulG2PayloadOverrides {
+                            point: Some(g2.clone()),
+                            scalar: Some(sigma.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the second generator by sigma succeeds")
+                .product;
+            let d2 = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(b.clone()),
+                            right: Some(
+                                pairing
+                                    .mul_g2(
+                                        MulG2Params,
+                                        build_mul_g2_payload(
+                                            pairing,
+                                            MulG2PayloadOverrides {
+                                                point: Some(key_pair.pk2.clone()),
+                                                scalar: Some(sigma.expose().clone()),
+                                            },
+                                        ),
+                                    )
+                                    .expect("multiplying pk2 by sigma succeeds")
+                                    .product,
+                            ),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let other_rho = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x41u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length rho draw samples a scalar")
+            .scalar;
+            let other_c1 = pairing
+                .mul_g1(
+                    MulG1Params,
+                    build_mul_g1_payload(
+                        pairing,
+                        MulG1PayloadOverrides {
+                            point: Some(g1),
+                            scalar: Some(other_rho.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the first generator by the other rho succeeds")
+                .product;
+            let mixed_envelope = build_pairing_elgamal_envelope(
+                pairing,
+                PairingElGamalEnvelopeOverrides {
+                    c1: Some(other_c1),
+                    c2: Some(c2),
+                    d1: Some(d1),
+                    d2: Some(d2),
+                },
+            );
+
+            // Act
+            let unwrapped = adapter.unwrap(
+                build_unwrap_params(Default::default()),
+                build_unwrap_payload(&key_pair, &mixed_envelope, Default::default()),
+            );
+
+            // Assert
+            let unwrapped = unwrapped.expect("unwrap over an admitted envelope succeeds");
+            let a_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(unwrapped.credential.a.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the returned first component succeeds")
+                .bytes;
+            let b_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(unwrapped.credential.b.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the returned second component succeeds")
+                .bytes;
+            let expected_a_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(pairing, EncodeG1PayloadOverrides { point: Some(a) }),
+                )
+                .expect("encoding A succeeds")
+                .bytes;
+            let expected_b_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(pairing, EncodeG2PayloadOverrides { point: Some(b) }),
+                )
+                .expect("encoding B succeeds")
+                .bytes;
+            assert_ne!(a_encoded.as_ref(), expected_a_encoded.as_ref());
+            assert_eq!(b_encoded.as_ref(), expected_b_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end unwrap_with_a_first_group_coin_element_from_another_envelope_changes_only_the_first_component
@@ -2987,290 +2574,247 @@ fn unwrap_with_a_first_group_coin_element_from_another_envelope_changes_only_the
 fn unwrap_with_a_second_group_coin_element_from_another_envelope_changes_only_the_second_component()
 {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let a = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(g1.clone()),
-                                    right: Some(key_pair.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let b = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(g2.clone()),
-                                    right: Some(key_pair.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let rho = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x21u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length rho draw samples a scalar")
-                    .scalar;
-                    let sigma = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x22u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length sigma draw samples a scalar")
-                    .scalar;
-                    let c1 = pairing
-                        .mul_g1(
-                            MulG1Params,
-                            build_mul_g1_payload(
-                                pairing,
-                                MulG1PayloadOverrides {
-                                    point: Some(g1.clone()),
-                                    scalar: Some(rho.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the first generator by rho succeeds")
-                        .product;
-                    let c2 = pairing
-                        .add_g1(
-                            AddG1Params,
-                            build_add_g1_payload(
-                                pairing,
-                                AddG1PayloadOverrides {
-                                    left: Some(a.clone()),
-                                    right: Some(
-                                        pairing
-                                            .mul_g1(
-                                                MulG1Params,
-                                                build_mul_g1_payload(
-                                                    pairing,
-                                                    MulG1PayloadOverrides {
-                                                        point: Some(key_pair.pk1.clone()),
-                                                        scalar: Some(rho.expose().clone()),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("multiplying pk1 by rho succeeds")
-                                            .product,
-                                    ),
-                                },
-                            ),
-                        )
-                        .expect("adding the first group's terms succeeds")
-                        .sum;
-                    let d2 = pairing
-                        .add_g2(
-                            AddG2Params,
-                            build_add_g2_payload(
-                                pairing,
-                                AddG2PayloadOverrides {
-                                    left: Some(b.clone()),
-                                    right: Some(
-                                        pairing
-                                            .mul_g2(
-                                                MulG2Params,
-                                                build_mul_g2_payload(
-                                                    pairing,
-                                                    MulG2PayloadOverrides {
-                                                        point: Some(key_pair.pk2.clone()),
-                                                        scalar: Some(sigma.expose().clone()),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("multiplying pk2 by sigma succeeds")
-                                            .product,
-                                    ),
-                                },
-                            ),
-                        )
-                        .expect("adding the second group's terms succeeds")
-                        .sum;
-                    let other_sigma = P::Scalar::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
-                            uniform: Some(build_secret(
-                                vec![
-                                    0x42u8;
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
-                                ],
-                                SecretConstructorParamsOverrides,
-                            )),
-                        }),
-                    )
-                    .expect("a full-length sigma draw samples a scalar")
-                    .scalar;
-                    let other_d1 = pairing
-                        .mul_g2(
-                            MulG2Params,
-                            build_mul_g2_payload(
-                                pairing,
-                                MulG2PayloadOverrides {
-                                    point: Some(g2),
-                                    scalar: Some(other_sigma.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the second generator by the other sigma succeeds")
-                        .product;
-                    let mixed_envelope = build_pairing_elgamal_envelope(
-                        pairing,
-                        PairingElGamalEnvelopeOverrides {
-                            c1: Some(c1),
-                            c2: Some(c2),
-                            d1: Some(other_d1),
-                            d2: Some(d2),
-                        },
-                    );
-
-                    // Act
-                    let unwrapped = adapter.unwrap(
-                        build_unwrap_params(Default::default()),
-                        build_unwrap_payload(&key_pair, &mixed_envelope, Default::default()),
-                    );
-
-                    // Assert
-                    let unwrapped = unwrapped.expect("unwrap over an admitted envelope succeeds");
-                    let a_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(unwrapped.credential.a.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the returned first component succeeds")
-                        .bytes;
-                    let b_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(unwrapped.credential.b.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the returned second component succeeds")
-                        .bytes;
-                    let expected_a_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(a) },
-                            ),
-                        )
-                        .expect("encoding A succeeds")
-                        .bytes;
-                    let expected_b_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides { point: Some(b) },
-                            ),
-                        )
-                        .expect("encoding B succeeds")
-                        .bytes;
-                    assert_eq!(a_encoded.as_ref(), expected_a_encoded.as_ref());
-                    assert_ne!(b_encoded.as_ref(), expected_b_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let a = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(g1.clone()),
+                            right: Some(key_pair.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let b = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(g2.clone()),
+                            right: Some(key_pair.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let rho = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x21u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length rho draw samples a scalar")
+            .scalar;
+            let sigma = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x22u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length sigma draw samples a scalar")
+            .scalar;
+            let c1 = pairing
+                .mul_g1(
+                    MulG1Params,
+                    build_mul_g1_payload(
+                        pairing,
+                        MulG1PayloadOverrides {
+                            point: Some(g1.clone()),
+                            scalar: Some(rho.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the first generator by rho succeeds")
+                .product;
+            let c2 = pairing
+                .add_g1(
+                    AddG1Params,
+                    build_add_g1_payload(
+                        pairing,
+                        AddG1PayloadOverrides {
+                            left: Some(a.clone()),
+                            right: Some(
+                                pairing
+                                    .mul_g1(
+                                        MulG1Params,
+                                        build_mul_g1_payload(
+                                            pairing,
+                                            MulG1PayloadOverrides {
+                                                point: Some(key_pair.pk1.clone()),
+                                                scalar: Some(rho.expose().clone()),
+                                            },
+                                        ),
+                                    )
+                                    .expect("multiplying pk1 by rho succeeds")
+                                    .product,
+                            ),
+                        },
+                    ),
+                )
+                .expect("adding the first group's terms succeeds")
+                .sum;
+            let d2 = pairing
+                .add_g2(
+                    AddG2Params,
+                    build_add_g2_payload(
+                        pairing,
+                        AddG2PayloadOverrides {
+                            left: Some(b.clone()),
+                            right: Some(
+                                pairing
+                                    .mul_g2(
+                                        MulG2Params,
+                                        build_mul_g2_payload(
+                                            pairing,
+                                            MulG2PayloadOverrides {
+                                                point: Some(key_pair.pk2.clone()),
+                                                scalar: Some(sigma.expose().clone()),
+                                            },
+                                        ),
+                                    )
+                                    .expect("multiplying pk2 by sigma succeeds")
+                                    .product,
+                            ),
+                        },
+                    ),
+                )
+                .expect("adding the second group's terms succeeds")
+                .sum;
+            let other_sigma = P::Scalar::sample_from_uniform_bytes(
+                SampleUniformScalarParams,
+                build_sample_uniform_scalar_payload(SampleUniformScalarPayloadOverrides {
+                    uniform: Some(build_secret(
+                        vec![0x42u8; <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH],
+                        SecretConstructorParamsOverrides,
+                    )),
+                }),
+            )
+            .expect("a full-length sigma draw samples a scalar")
+            .scalar;
+            let other_d1 = pairing
+                .mul_g2(
+                    MulG2Params,
+                    build_mul_g2_payload(
+                        pairing,
+                        MulG2PayloadOverrides {
+                            point: Some(g2),
+                            scalar: Some(other_sigma.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the second generator by the other sigma succeeds")
+                .product;
+            let mixed_envelope = build_pairing_elgamal_envelope(
+                pairing,
+                PairingElGamalEnvelopeOverrides {
+                    c1: Some(c1),
+                    c2: Some(c2),
+                    d1: Some(other_d1),
+                    d2: Some(d2),
+                },
+            );
+
+            // Act
+            let unwrapped = adapter.unwrap(
+                build_unwrap_params(Default::default()),
+                build_unwrap_payload(&key_pair, &mixed_envelope, Default::default()),
+            );
+
+            // Assert
+            let unwrapped = unwrapped.expect("unwrap over an admitted envelope succeeds");
+            let a_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(unwrapped.credential.a.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the returned first component succeeds")
+                .bytes;
+            let b_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(unwrapped.credential.b.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the returned second component succeeds")
+                .bytes;
+            let expected_a_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(pairing, EncodeG1PayloadOverrides { point: Some(a) }),
+                )
+                .expect("encoding A succeeds")
+                .bytes;
+            let expected_b_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(pairing, EncodeG2PayloadOverrides { point: Some(b) }),
+                )
+                .expect("encoding B succeeds")
+                .bytes;
+            assert_eq!(a_encoded.as_ref(), expected_a_encoded.as_ref());
+            assert_ne!(b_encoded.as_ref(), expected_b_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end unwrap_with_a_second_group_coin_element_from_another_envelope_changes_only_the_second_component
@@ -3292,223 +2836,193 @@ fn unwrap_with_a_second_group_coin_element_from_another_envelope_changes_only_th
 #[test]
 fn key_pair_from_components_returns_the_key_pair_its_secrets_form() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let payload =
-                        build_key_pair_from_components_payload(pairing, Default::default());
-                    let expected =
-                        build_key_pair_from_components_payload(pairing, Default::default())
-                            .components;
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-                    let expected_pk1 = pairing
-                        .mul_g1(
-                            MulG1Params,
-                            build_mul_g1_payload(
-                                pairing,
-                                MulG1PayloadOverrides {
-                                    point: Some(g1),
-                                    scalar: Some(expected.x.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the first generator succeeds")
-                        .product;
-                    let expected_pk2 = pairing
-                        .mul_g2(
-                            MulG2Params,
-                            build_mul_g2_payload(
-                                pairing,
-                                MulG2PayloadOverrides {
-                                    point: Some(g2),
-                                    scalar: Some(expected.y.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("multiplying the second generator succeeds")
-                        .product;
-
-                    // Act
-                    let result = adapter.key_pair_from_components(
-                        build_key_pair_from_components_params(Default::default()),
-                        payload,
-                    );
-
-                    // Assert
-                    let result = result.expect("distinct nonzero secrets admit a key pair");
-                    let x_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(result.key_pair.x.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first secret succeeds")
-                        .bytes;
-                    let y_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(result.key_pair.y.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second secret succeeds")
-                        .bytes;
-                    let pk1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(result.key_pair.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first public key succeeds")
-                        .bytes;
-                    let pk2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(result.key_pair.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second public key succeeds")
-                        .bytes;
-                    let expected_x_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(expected.x.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first expected scalar succeeds")
-                        .bytes;
-                    let expected_y_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(expected.y.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second expected scalar succeeds")
-                        .bytes;
-                    let expected_pk1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(expected_pk1),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first expected point succeeds")
-                        .bytes;
-                    let expected_pk2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(expected_pk2),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second expected point succeeds")
-                        .bytes;
-                    assert_eq!(
-                        x_encoded.expose().as_ref(),
-                        expected_x_encoded.expose().as_ref()
-                    );
-                    assert_eq!(
-                        y_encoded.expose().as_ref(),
-                        expected_y_encoded.expose().as_ref()
-                    );
-                    assert_eq!(pk1_encoded.as_ref(), expected_pk1_encoded.as_ref());
-                    assert_eq!(pk2_encoded.as_ref(), expected_pk2_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let payload = build_key_pair_from_components_payload(pairing, Default::default());
+            let expected =
+                build_key_pair_from_components_payload(pairing, Default::default()).components;
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+            let expected_pk1 = pairing
+                .mul_g1(
+                    MulG1Params,
+                    build_mul_g1_payload(
+                        pairing,
+                        MulG1PayloadOverrides {
+                            point: Some(g1),
+                            scalar: Some(expected.x.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the first generator succeeds")
+                .product;
+            let expected_pk2 = pairing
+                .mul_g2(
+                    MulG2Params,
+                    build_mul_g2_payload(
+                        pairing,
+                        MulG2PayloadOverrides {
+                            point: Some(g2),
+                            scalar: Some(expected.y.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("multiplying the second generator succeeds")
+                .product;
+
+            // Act
+            let result = adapter.key_pair_from_components(
+                build_key_pair_from_components_params(Default::default()),
+                payload,
+            );
+
+            // Assert
+            let result = result.expect("distinct nonzero secrets admit a key pair");
+            let x_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(result.key_pair.x.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first secret succeeds")
+                .bytes;
+            let y_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(result.key_pair.y.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second secret succeeds")
+                .bytes;
+            let pk1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(result.key_pair.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first public key succeeds")
+                .bytes;
+            let pk2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(result.key_pair.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second public key succeeds")
+                .bytes;
+            let expected_x_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(expected.x.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first expected scalar succeeds")
+                .bytes;
+            let expected_y_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(expected.y.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second expected scalar succeeds")
+                .bytes;
+            let expected_pk1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(expected_pk1),
+                        },
+                    ),
+                )
+                .expect("encoding the first expected point succeeds")
+                .bytes;
+            let expected_pk2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(expected_pk2),
+                        },
+                    ),
+                )
+                .expect("encoding the second expected point succeeds")
+                .bytes;
+            assert_eq!(
+                x_encoded.expose().as_ref(),
+                expected_x_encoded.expose().as_ref()
+            );
+            assert_eq!(
+                y_encoded.expose().as_ref(),
+                expected_y_encoded.expose().as_ref()
+            );
+            assert_eq!(pk1_encoded.as_ref(), expected_pk1_encoded.as_ref());
+            assert_eq!(pk2_encoded.as_ref(), expected_pk2_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end key_pair_from_components_returns_the_key_pair_its_secrets_form
@@ -3530,136 +3044,105 @@ fn key_pair_from_components_returns_the_key_pair_its_secrets_form() {
 #[test]
 fn public_keys_from_components_returns_the_public_keys_the_components_hold() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
-                    let possession =
-                        build_pairing_elgamal_possession(&adapter, &key_pair, Default::default());
-                    let payload = build_public_keys_from_components_payload(
-                        pairing,
-                        &possession,
-                        Default::default(),
-                    );
-
-                    // Act
-                    let result = adapter.public_keys_from_components(
-                        build_public_keys_from_components_params(Default::default()),
-                        payload,
-                    );
-
-                    // Assert
-                    let result = result.expect("a valid possession admits the public keys");
-                    let pk1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(result.public_keys.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first public key succeeds")
-                        .bytes;
-                    let pk2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(result.public_keys.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second public key succeeds")
-                        .bytes;
-                    let key_pair_pk1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(key_pair.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the key pair's first key succeeds")
-                        .bytes;
-                    let key_pair_pk2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(key_pair.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the key pair's second key succeeds")
-                        .bytes;
-                    assert_eq!(pk1_encoded.as_ref(), key_pair_pk1_encoded.as_ref());
-                    assert_eq!(pk2_encoded.as_ref(), key_pair_pk2_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+            let possession =
+                build_pairing_elgamal_possession(&adapter, &key_pair, Default::default());
+            let payload =
+                build_public_keys_from_components_payload(pairing, &possession, Default::default());
+
+            // Act
+            let result = adapter.public_keys_from_components(
+                build_public_keys_from_components_params(Default::default()),
+                payload,
+            );
+
+            // Assert
+            let result = result.expect("a valid possession admits the public keys");
+            let pk1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(result.public_keys.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first public key succeeds")
+                .bytes;
+            let pk2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(result.public_keys.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second public key succeeds")
+                .bytes;
+            let key_pair_pk1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(key_pair.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the key pair's first key succeeds")
+                .bytes;
+            let key_pair_pk2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(key_pair.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the key pair's second key succeeds")
+                .bytes;
+            assert_eq!(pk1_encoded.as_ref(), key_pair_pk1_encoded.as_ref());
+            assert_eq!(pk2_encoded.as_ref(), key_pair_pk2_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end public_keys_from_components_returns_the_public_keys_the_components_hold
@@ -3678,136 +3161,108 @@ fn public_keys_from_components_returns_the_public_keys_the_components_hold() {
 #[test]
 fn key_pair_components_returns_new_secrets_holding_the_key_pairs_secrets() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
-
-                    // Act
-                    let result = adapter.key_pair_components(
-                        build_key_pair_components_params(Default::default()),
-                        build_key_pair_components_payload(&key_pair, Default::default()),
-                    );
-
-                    // Assert
-                    let result = result.expect("reading a key pair's components succeeds");
-                    let x_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(result.components.x.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first component succeeds")
-                        .bytes;
-                    let y_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(result.components.y.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second component succeeds")
-                        .bytes;
-                    let key_pair_x_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(key_pair.x.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the key pair's first secret succeeds")
-                        .bytes;
-                    let key_pair_y_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(key_pair.y.expose().clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the key pair's second secret succeeds")
-                        .bytes;
-                    assert_eq!(
-                        x_encoded.expose().as_ref(),
-                        key_pair_x_encoded.expose().as_ref()
-                    );
-                    assert_eq!(
-                        y_encoded.expose().as_ref(),
-                        key_pair_y_encoded.expose().as_ref()
-                    );
-                    assert_ne!(x_encoded.expose().as_ref(), y_encoded.expose().as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+
+            // Act
+            let result = adapter.key_pair_components(
+                build_key_pair_components_params(Default::default()),
+                build_key_pair_components_payload(&key_pair, Default::default()),
+            );
+
+            // Assert
+            let result = result.expect("reading a key pair's components succeeds");
+            let x_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(result.components.x.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first component succeeds")
+                .bytes;
+            let y_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(result.components.y.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second component succeeds")
+                .bytes;
+            let key_pair_x_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(key_pair.x.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the key pair's first secret succeeds")
+                .bytes;
+            let key_pair_y_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(key_pair.y.expose().clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the key pair's second secret succeeds")
+                .bytes;
+            assert_eq!(
+                x_encoded.expose().as_ref(),
+                key_pair_x_encoded.expose().as_ref()
+            );
+            assert_eq!(
+                y_encoded.expose().as_ref(),
+                key_pair_y_encoded.expose().as_ref()
+            );
+            assert_ne!(x_encoded.expose().as_ref(), y_encoded.expose().as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end key_pair_components_returns_new_secrets_holding_the_key_pairs_secrets
@@ -3825,159 +3280,125 @@ fn key_pair_components_returns_new_secrets_holding_the_key_pairs_secrets() {
 #[test]
 fn key_pair_public_keys_returns_the_key_pairs_public_keys() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-
-                    // Act
-                    let result = adapter.key_pair_public_keys(
-                        build_key_pair_public_keys_params(Default::default()),
-                        build_key_pair_public_keys_payload(&key_pair, Default::default()),
-                    );
-
-                    // Assert
-                    let result = result.expect("reading a key pair's public keys succeeds");
-                    let pk1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(result.components.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first component succeeds")
-                        .bytes;
-                    let pk2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(result.components.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second component succeeds")
-                        .bytes;
-                    let key_pair_pk1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(key_pair.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the key pair's first key succeeds")
-                        .bytes;
-                    let key_pair_pk2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(key_pair.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the key pair's second key succeeds")
-                        .bytes;
-                    let g1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(g1) },
-                            ),
-                        )
-                        .expect("encoding the first generator succeeds")
-                        .bytes;
-                    let g2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides { point: Some(g2) },
-                            ),
-                        )
-                        .expect("encoding the second generator succeeds")
-                        .bytes;
-                    assert_eq!(pk1_encoded.as_ref(), key_pair_pk1_encoded.as_ref());
-                    assert_eq!(pk2_encoded.as_ref(), key_pair_pk2_encoded.as_ref());
-                    assert_ne!(pk1_encoded.as_ref(), g1_encoded.as_ref());
-                    assert_ne!(pk2_encoded.as_ref(), g2_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+
+            // Act
+            let result = adapter.key_pair_public_keys(
+                build_key_pair_public_keys_params(Default::default()),
+                build_key_pair_public_keys_payload(&key_pair, Default::default()),
+            );
+
+            // Assert
+            let result = result.expect("reading a key pair's public keys succeeds");
+            let pk1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(result.components.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first component succeeds")
+                .bytes;
+            let pk2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(result.components.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second component succeeds")
+                .bytes;
+            let key_pair_pk1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(key_pair.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the key pair's first key succeeds")
+                .bytes;
+            let key_pair_pk2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(key_pair.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the key pair's second key succeeds")
+                .bytes;
+            let g1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(pairing, EncodeG1PayloadOverrides { point: Some(g1) }),
+                )
+                .expect("encoding the first generator succeeds")
+                .bytes;
+            let g2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(pairing, EncodeG2PayloadOverrides { point: Some(g2) }),
+                )
+                .expect("encoding the second generator succeeds")
+                .bytes;
+            assert_eq!(pk1_encoded.as_ref(), key_pair_pk1_encoded.as_ref());
+            assert_eq!(pk2_encoded.as_ref(), key_pair_pk2_encoded.as_ref());
+            assert_ne!(pk1_encoded.as_ref(), g1_encoded.as_ref());
+            assert_ne!(pk2_encoded.as_ref(), g2_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end key_pair_public_keys_returns_the_key_pairs_public_keys
@@ -3995,160 +3416,125 @@ fn key_pair_public_keys_returns_the_key_pairs_public_keys() {
 #[test]
 fn public_keys_components_returns_the_public_keys_elements() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let public_keys =
-                        build_pairing_elgamal_public_keys(pairing, Default::default());
-                    let g1 = pairing
-                        .g1_generator(G1GeneratorParams, G1GeneratorPayload)
-                        .expect("the first-group generator reads")
-                        .point;
-                    let g2 = pairing
-                        .g2_generator(G2GeneratorParams, G2GeneratorPayload)
-                        .expect("the second-group generator reads")
-                        .point;
-
-                    // Act
-                    let result = adapter.public_keys_components(
-                        build_public_keys_components_params(Default::default()),
-                        build_public_keys_components_payload(&public_keys, Default::default()),
-                    );
-
-                    // Assert
-                    let result = result.expect("reading public keys' components succeeds");
-                    let pk1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(result.components.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first component succeeds")
-                        .bytes;
-                    let pk2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(result.components.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second component succeeds")
-                        .bytes;
-                    let public_keys_pk1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(public_keys.pk1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the public keys' first key succeeds")
-                        .bytes;
-                    let public_keys_pk2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(public_keys.pk2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the public keys' second key succeeds")
-                        .bytes;
-                    let g1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides { point: Some(g1) },
-                            ),
-                        )
-                        .expect("encoding the first generator succeeds")
-                        .bytes;
-                    let g2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides { point: Some(g2) },
-                            ),
-                        )
-                        .expect("encoding the second generator succeeds")
-                        .bytes;
-                    assert_eq!(pk1_encoded.as_ref(), public_keys_pk1_encoded.as_ref());
-                    assert_eq!(pk2_encoded.as_ref(), public_keys_pk2_encoded.as_ref());
-                    assert_ne!(pk1_encoded.as_ref(), g1_encoded.as_ref());
-                    assert_ne!(pk2_encoded.as_ref(), g2_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let public_keys = build_pairing_elgamal_public_keys(pairing, Default::default());
+            let g1 = pairing
+                .g1_generator(G1GeneratorParams, G1GeneratorPayload)
+                .expect("the first-group generator reads")
+                .point;
+            let g2 = pairing
+                .g2_generator(G2GeneratorParams, G2GeneratorPayload)
+                .expect("the second-group generator reads")
+                .point;
+
+            // Act
+            let result = adapter.public_keys_components(
+                build_public_keys_components_params(Default::default()),
+                build_public_keys_components_payload(&public_keys, Default::default()),
+            );
+
+            // Assert
+            let result = result.expect("reading public keys' components succeeds");
+            let pk1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(result.components.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first component succeeds")
+                .bytes;
+            let pk2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(result.components.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second component succeeds")
+                .bytes;
+            let public_keys_pk1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(public_keys.pk1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the public keys' first key succeeds")
+                .bytes;
+            let public_keys_pk2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(public_keys.pk2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the public keys' second key succeeds")
+                .bytes;
+            let g1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(pairing, EncodeG1PayloadOverrides { point: Some(g1) }),
+                )
+                .expect("encoding the first generator succeeds")
+                .bytes;
+            let g2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(pairing, EncodeG2PayloadOverrides { point: Some(g2) }),
+                )
+                .expect("encoding the second generator succeeds")
+                .bytes;
+            assert_eq!(pk1_encoded.as_ref(), public_keys_pk1_encoded.as_ref());
+            assert_eq!(pk2_encoded.as_ref(), public_keys_pk2_encoded.as_ref());
+            assert_ne!(pk1_encoded.as_ref(), g1_encoded.as_ref());
+            assert_ne!(pk2_encoded.as_ref(), g2_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end public_keys_components_returns_the_public_keys_elements
@@ -4168,188 +3554,160 @@ fn public_keys_components_returns_the_public_keys_elements() {
 #[test]
 fn possession_components_returns_the_possessions_elements() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
-                    let possession =
-                        build_pairing_elgamal_possession(&adapter, &key_pair, Default::default());
-
-                    // Act
-                    let result = adapter.possession_components(
-                        build_possession_components_params(Default::default()),
-                        build_possession_components_payload(&possession, Default::default()),
-                    );
-
-                    // Assert
-                    let result = result.expect("reading a possession's components succeeds");
-                    let r1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(result.components.r1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first commitment succeeds")
-                        .bytes;
-                    let z1_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(result.components.z1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first response succeeds")
-                        .bytes;
-                    let r2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(result.components.r2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second commitment succeeds")
-                        .bytes;
-                    let z2_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(result.components.z2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second response succeeds")
-                        .bytes;
-                    let possession_r1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(possession.r1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the possession's first commitment succeeds")
-                        .bytes;
-                    let possession_z1_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(possession.z1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the possession's first response succeeds")
-                        .bytes;
-                    let possession_r2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(possession.r2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the possession's second commitment succeeds")
-                        .bytes;
-                    let possession_z2_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(possession.z2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the possession's second response succeeds")
-                        .bytes;
-                    assert_eq!(r1_encoded.as_ref(), possession_r1_encoded.as_ref());
-                    assert_eq!(
-                        z1_encoded.expose().as_ref(),
-                        possession_z1_encoded.expose().as_ref()
-                    );
-                    assert_eq!(r2_encoded.as_ref(), possession_r2_encoded.as_ref());
-                    assert_eq!(
-                        z2_encoded.expose().as_ref(),
-                        possession_z2_encoded.expose().as_ref()
-                    );
-                    assert_ne!(z1_encoded.expose().as_ref(), z2_encoded.expose().as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let key_pair = build_pairing_elgamal_key_pair(pairing, Default::default());
+            let possession =
+                build_pairing_elgamal_possession(&adapter, &key_pair, Default::default());
+
+            // Act
+            let result = adapter.possession_components(
+                build_possession_components_params(Default::default()),
+                build_possession_components_payload(&possession, Default::default()),
+            );
+
+            // Assert
+            let result = result.expect("reading a possession's components succeeds");
+            let r1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(result.components.r1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first commitment succeeds")
+                .bytes;
+            let z1_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(result.components.z1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first response succeeds")
+                .bytes;
+            let r2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(result.components.r2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second commitment succeeds")
+                .bytes;
+            let z2_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(result.components.z2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second response succeeds")
+                .bytes;
+            let possession_r1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(possession.r1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the possession's first commitment succeeds")
+                .bytes;
+            let possession_z1_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(possession.z1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the possession's first response succeeds")
+                .bytes;
+            let possession_r2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(possession.r2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the possession's second commitment succeeds")
+                .bytes;
+            let possession_z2_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(possession.z2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the possession's second response succeeds")
+                .bytes;
+            assert_eq!(r1_encoded.as_ref(), possession_r1_encoded.as_ref());
+            assert_eq!(
+                z1_encoded.expose().as_ref(),
+                possession_z1_encoded.expose().as_ref()
+            );
+            assert_eq!(r2_encoded.as_ref(), possession_r2_encoded.as_ref());
+            assert_eq!(
+                z2_encoded.expose().as_ref(),
+                possession_z2_encoded.expose().as_ref()
+            );
+            assert_ne!(z1_encoded.expose().as_ref(), z2_encoded.expose().as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end possession_components_returns_the_possessions_elements
@@ -4368,190 +3726,160 @@ fn possession_components_returns_the_possessions_elements() {
 #[test]
 fn possession_from_components_holds_the_components() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let payload =
-                        build_possession_from_components_payload(pairing, Default::default());
-                    let expected =
-                        build_possession_from_components_payload(pairing, Default::default())
-                            .components;
-
-                    // Act
-                    let result = adapter.possession_from_components(
-                        build_possession_from_components_params(Default::default()),
-                        payload,
-                    );
-
-                    // Assert
-                    let result = result.expect("admitted components admit a possession");
-                    let r1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(result.possession.r1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first commitment succeeds")
-                        .bytes;
-                    let z1_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(result.possession.z1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first response succeeds")
-                        .bytes;
-                    let r2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(result.possession.r2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second commitment succeeds")
-                        .bytes;
-                    let z2_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(result.possession.z2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second response succeeds")
-                        .bytes;
-                    let expected_r1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(expected.r1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected first commitment succeeds")
-                        .bytes;
-                    let expected_z1_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(expected.z1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected first response succeeds")
-                        .bytes;
-                    let expected_r2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(expected.r2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected second commitment succeeds")
-                        .bytes;
-                    let expected_z2_encoded = pairing
-                        .encode_scalar(
-                            EncodeScalarParams,
-                            build_encode_scalar_payload(
-                                pairing,
-                                EncodeScalarPayloadOverrides {
-                                    scalar: Some(expected.z2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected second response succeeds")
-                        .bytes;
-                    assert_eq!(r1_encoded.as_ref(), expected_r1_encoded.as_ref());
-                    assert_eq!(
-                        z1_encoded.expose().as_ref(),
-                        expected_z1_encoded.expose().as_ref()
-                    );
-                    assert_eq!(r2_encoded.as_ref(), expected_r2_encoded.as_ref());
-                    assert_eq!(
-                        z2_encoded.expose().as_ref(),
-                        expected_z2_encoded.expose().as_ref()
-                    );
-                    assert_ne!(z1_encoded.expose().as_ref(), z2_encoded.expose().as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let payload = build_possession_from_components_payload(pairing, Default::default());
+            let expected =
+                build_possession_from_components_payload(pairing, Default::default()).components;
+
+            // Act
+            let result = adapter.possession_from_components(
+                build_possession_from_components_params(Default::default()),
+                payload,
+            );
+
+            // Assert
+            let result = result.expect("admitted components admit a possession");
+            let r1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(result.possession.r1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first commitment succeeds")
+                .bytes;
+            let z1_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(result.possession.z1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first response succeeds")
+                .bytes;
+            let r2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(result.possession.r2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second commitment succeeds")
+                .bytes;
+            let z2_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(result.possession.z2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second response succeeds")
+                .bytes;
+            let expected_r1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(expected.r1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the expected first commitment succeeds")
+                .bytes;
+            let expected_z1_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(expected.z1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the expected first response succeeds")
+                .bytes;
+            let expected_r2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(expected.r2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the expected second commitment succeeds")
+                .bytes;
+            let expected_z2_encoded = pairing
+                .encode_scalar(
+                    EncodeScalarParams,
+                    build_encode_scalar_payload(
+                        pairing,
+                        EncodeScalarPayloadOverrides {
+                            scalar: Some(expected.z2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the expected second response succeeds")
+                .bytes;
+            assert_eq!(r1_encoded.as_ref(), expected_r1_encoded.as_ref());
+            assert_eq!(
+                z1_encoded.expose().as_ref(),
+                expected_z1_encoded.expose().as_ref()
+            );
+            assert_eq!(r2_encoded.as_ref(), expected_r2_encoded.as_ref());
+            assert_eq!(
+                z2_encoded.expose().as_ref(),
+                expected_z2_encoded.expose().as_ref()
+            );
+            assert_ne!(z1_encoded.expose().as_ref(), z2_encoded.expose().as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end possession_from_components_holds_the_components
@@ -4571,180 +3899,152 @@ fn possession_from_components_holds_the_components() {
 #[test]
 fn envelope_components_returns_the_envelopes_elements() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let envelope = build_pairing_elgamal_envelope(pairing, Default::default());
-
-                    // Act
-                    let result = adapter.envelope_components(
-                        build_envelope_components_params(Default::default()),
-                        build_envelope_components_payload(&envelope, Default::default()),
-                    );
-
-                    // Assert
-                    let result = result.expect("reading an envelope's components succeeds");
-                    let c1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(result.components.c1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first component succeeds")
-                        .bytes;
-                    let c2_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(result.components.c2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second component succeeds")
-                        .bytes;
-                    let d1_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(result.components.d1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the third component succeeds")
-                        .bytes;
-                    let d2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(result.components.d2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the fourth component succeeds")
-                        .bytes;
-                    let envelope_c1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(envelope.c1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the envelope's first element succeeds")
-                        .bytes;
-                    let envelope_c2_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(envelope.c2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the envelope's second element succeeds")
-                        .bytes;
-                    let envelope_d1_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(envelope.d1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the envelope's third element succeeds")
-                        .bytes;
-                    let envelope_d2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(envelope.d2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the envelope's fourth element succeeds")
-                        .bytes;
-                    assert_eq!(c1_encoded.as_ref(), envelope_c1_encoded.as_ref());
-                    assert_eq!(c2_encoded.as_ref(), envelope_c2_encoded.as_ref());
-                    assert_eq!(d1_encoded.as_ref(), envelope_d1_encoded.as_ref());
-                    assert_eq!(d2_encoded.as_ref(), envelope_d2_encoded.as_ref());
-                    assert_ne!(c1_encoded.as_ref(), c2_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let envelope = build_pairing_elgamal_envelope(pairing, Default::default());
+
+            // Act
+            let result = adapter.envelope_components(
+                build_envelope_components_params(Default::default()),
+                build_envelope_components_payload(&envelope, Default::default()),
+            );
+
+            // Assert
+            let result = result.expect("reading an envelope's components succeeds");
+            let c1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(result.components.c1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first component succeeds")
+                .bytes;
+            let c2_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(result.components.c2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second component succeeds")
+                .bytes;
+            let d1_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(result.components.d1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the third component succeeds")
+                .bytes;
+            let d2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(result.components.d2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the fourth component succeeds")
+                .bytes;
+            let envelope_c1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(envelope.c1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the envelope's first element succeeds")
+                .bytes;
+            let envelope_c2_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(envelope.c2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the envelope's second element succeeds")
+                .bytes;
+            let envelope_d1_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(envelope.d1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the envelope's third element succeeds")
+                .bytes;
+            let envelope_d2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(envelope.d2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the envelope's fourth element succeeds")
+                .bytes;
+            assert_eq!(c1_encoded.as_ref(), envelope_c1_encoded.as_ref());
+            assert_eq!(c2_encoded.as_ref(), envelope_c2_encoded.as_ref());
+            assert_eq!(d1_encoded.as_ref(), envelope_d1_encoded.as_ref());
+            assert_eq!(d2_encoded.as_ref(), envelope_d2_encoded.as_ref());
+            assert_ne!(c1_encoded.as_ref(), c2_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end envelope_components_returns_the_envelopes_elements
@@ -4763,184 +4063,154 @@ fn envelope_components_returns_the_envelopes_elements() {
 #[test]
 fn envelope_from_components_holds_the_components() {
     // Arrange
-    struct PairingConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            consumed: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _payload: &PairingElGamalKeyAgreementCasePayload,
         ) -> Self::Output {
             // Arrange
-            struct EncodingConsumer<'a, P: IPairingAdapter> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic + IPairingReference> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    // Arrange
-                    let pairing = self.pairing;
-                    let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                        &build_create_hash_to_scalar_deps(Default::default()),
-                        build_create_hash_to_scalar_params(Default::default()),
-                        build_create_hash_to_scalar_payload(Default::default()),
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let random = create_random_source(
-                        &CreateRandomSourceDeps,
-                        build_create_random_source_params(Default::default()),
-                        CreateRandomSourcePayload,
-                    )
-                    .expect("the family's default params select its mock concrete");
-                    let adapter = build_pairing_elgamal_key_agreement(
-                        pairing,
-                        &*hash_to_scalar.adapter,
-                        &encoded.adapter,
-                        &*random.adapter,
-                        Default::default(),
-                    );
-                    let payload =
-                        build_envelope_from_components_payload(pairing, Default::default());
-                    let expected =
-                        build_envelope_from_components_payload(pairing, Default::default())
-                            .components;
-
-                    // Act
-                    let result = adapter.envelope_from_components(
-                        build_envelope_from_components_params(Default::default()),
-                        payload,
-                    );
-
-                    // Assert
-                    let result = result.expect("admitted components admit an envelope");
-                    let c1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(result.envelope.c1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the first element succeeds")
-                        .bytes;
-                    let c2_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(result.envelope.c2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the second element succeeds")
-                        .bytes;
-                    let d1_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(result.envelope.d1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the third element succeeds")
-                        .bytes;
-                    let d2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(result.envelope.d2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the fourth element succeeds")
-                        .bytes;
-                    let expected_c1_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(expected.c1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected first element succeeds")
-                        .bytes;
-                    let expected_c2_encoded = pairing
-                        .encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                pairing,
-                                EncodeG1PayloadOverrides {
-                                    point: Some(expected.c2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected second element succeeds")
-                        .bytes;
-                    let expected_d1_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(expected.d1.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected third element succeeds")
-                        .bytes;
-                    let expected_d2_encoded = pairing
-                        .encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                pairing,
-                                EncodeG2PayloadOverrides {
-                                    point: Some(expected.d2.clone()),
-                                },
-                            ),
-                        )
-                        .expect("encoding the expected fourth element succeeds")
-                        .bytes;
-                    assert_eq!(c1_encoded.as_ref(), expected_c1_encoded.as_ref());
-                    assert_eq!(c2_encoded.as_ref(), expected_c2_encoded.as_ref());
-                    assert_eq!(d1_encoded.as_ref(), expected_d1_encoded.as_ref());
-                    assert_eq!(d2_encoded.as_ref(), expected_d2_encoded.as_ref());
-                    assert_ne!(c1_encoded.as_ref(), c2_encoded.as_ref());
-                }
-            }
-
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &consumed.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            let adapter = build_pairing_elgamal_key_agreement(
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                Default::default(),
             );
-            assert!(created.is_ok());
+            let payload = build_envelope_from_components_payload(pairing, Default::default());
+            let expected =
+                build_envelope_from_components_payload(pairing, Default::default()).components;
+
+            // Act
+            let result = adapter.envelope_from_components(
+                build_envelope_from_components_params(Default::default()),
+                payload,
+            );
+
+            // Assert
+            let result = result.expect("admitted components admit an envelope");
+            let c1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(result.envelope.c1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the first element succeeds")
+                .bytes;
+            let c2_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(result.envelope.c2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the second element succeeds")
+                .bytes;
+            let d1_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(result.envelope.d1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the third element succeeds")
+                .bytes;
+            let d2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(result.envelope.d2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the fourth element succeeds")
+                .bytes;
+            let expected_c1_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(expected.c1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the expected first element succeeds")
+                .bytes;
+            let expected_c2_encoded = pairing
+                .encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides {
+                            point: Some(expected.c2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the expected second element succeeds")
+                .bytes;
+            let expected_d1_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(expected.d1.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the expected third element succeeds")
+                .bytes;
+            let expected_d2_encoded = pairing
+                .encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides {
+                            point: Some(expected.d2.clone()),
+                        },
+                    ),
+                )
+                .expect("encoding the expected fourth element succeeds")
+                .bytes;
+            assert_eq!(c1_encoded.as_ref(), expected_c1_encoded.as_ref());
+            assert_eq!(c2_encoded.as_ref(), expected_c2_encoded.as_ref());
+            assert_eq!(d1_encoded.as_ref(), expected_d1_encoded.as_ref());
+            assert_eq!(d2_encoded.as_ref(), expected_d2_encoded.as_ref());
+            assert_ne!(c1_encoded.as_ref(), c2_encoded.as_ref());
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(PairingConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
+
+    // Assert
     assert!(created.is_ok());
 }
 // end envelope_from_components_holds_the_components
