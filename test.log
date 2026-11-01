@@ -136,17 +136,22 @@ error[E0432]: unresolved import `generate::provides`
    |                   ^^^^^^^^ could not find `provides` in `generate`
 
 error[E0432]: unresolved import `crate::VectorCount`
- --> apps\harness-crypto\src\vectors\cross_holder\interface.rs:8:5
-  |
-8 | use crate::VectorCount;
-  |     ^^^^^^^-----------
-  |            |
-  |            no `VectorCount` in the root
-  |
+  --> apps\harness-crypto\src\vectors\cross_holder\interface.rs:8:5
+   |
+ 8 | use crate::VectorCount;
+   |     ^^^^^^^-----------
+   |            |
+   |            no `VectorCount` in the root
+   |
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: consider importing this variant instead
-  |
-8 | use crate::AdmitGenerateErrorReturn::VectorCount;
-  |            ++++++++++++++++++++++++++
+   |
+ 8 | use crate::AdmitGenerateErrorReturn::VectorCount;
+   |            ++++++++++++++++++++++++++
 
 error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
   --> apps\harness-crypto\src\vectors\cross_holder\mock.rs:11:13
@@ -158,6 +163,11 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_coun
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 11 - use crate::{VectorCount, build_vector_count};
@@ -165,17 +175,22 @@ help: a similar name exists in the module
    |
 
 error[E0432]: unresolved import `crate::VectorCount`
- --> apps\harness-crypto\src\vectors\malformed_capsules\interface.rs:5:5
-  |
-5 | use crate::VectorCount;
-  |     ^^^^^^^-----------
-  |            |
-  |            no `VectorCount` in the root
-  |
+  --> apps\harness-crypto\src\vectors\malformed_capsules\interface.rs:5:5
+   |
+ 5 | use crate::VectorCount;
+   |     ^^^^^^^-----------
+   |            |
+   |            no `VectorCount` in the root
+   |
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: consider importing this variant instead
-  |
-5 | use crate::AdmitGenerateErrorReturn::VectorCount;
-  |            ++++++++++++++++++++++++++
+   |
+ 5 | use crate::AdmitGenerateErrorReturn::VectorCount;
+   |            ++++++++++++++++++++++++++
 
 error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
   --> apps\harness-crypto\src\vectors\malformed_capsules\mock.rs:11:13
@@ -187,6 +202,11 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_coun
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 11 - use crate::{VectorCount, build_vector_count};
@@ -194,17 +214,22 @@ help: a similar name exists in the module
    |
 
 error[E0432]: unresolved import `crate::VectorCount`
- --> apps\harness-crypto\src\vectors\non_convertibility\interface.rs:7:5
-  |
-7 | use crate::VectorCount;
-  |     ^^^^^^^-----------
-  |            |
-  |            no `VectorCount` in the root
-  |
+  --> apps\harness-crypto\src\vectors\non_convertibility\interface.rs:7:5
+   |
+ 7 | use crate::VectorCount;
+   |     ^^^^^^^-----------
+   |            |
+   |            no `VectorCount` in the root
+   |
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: consider importing this variant instead
-  |
-7 | use crate::AdmitGenerateErrorReturn::VectorCount;
-  |            ++++++++++++++++++++++++++
+   |
+ 7 | use crate::AdmitGenerateErrorReturn::VectorCount;
+   |            ++++++++++++++++++++++++++
 
 error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
   --> apps\harness-crypto\src\vectors\non_convertibility\mock.rs:11:13
@@ -216,6 +241,11 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_coun
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 11 - use crate::{VectorCount, build_vector_count};
@@ -223,17 +253,22 @@ help: a similar name exists in the module
    |
 
 error[E0432]: unresolved import `crate::VectorCount`
- --> apps\harness-crypto\src\vectors\rerandomization\interface.rs:8:5
-  |
-8 | use crate::VectorCount;
-  |     ^^^^^^^-----------
-  |            |
-  |            no `VectorCount` in the root
-  |
+  --> apps\harness-crypto\src\vectors\rerandomization\interface.rs:8:5
+   |
+ 8 | use crate::VectorCount;
+   |     ^^^^^^^-----------
+   |            |
+   |            no `VectorCount` in the root
+   |
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: consider importing this variant instead
-  |
-8 | use crate::AdmitGenerateErrorReturn::VectorCount;
-  |            ++++++++++++++++++++++++++
+   |
+ 8 | use crate::AdmitGenerateErrorReturn::VectorCount;
+   |            ++++++++++++++++++++++++++
 
 error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
   --> apps\harness-crypto\src\vectors\rerandomization\mock.rs:11:13
@@ -245,19 +280,42 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_coun
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 11 - use crate::{VectorCount, build_vector_count};
 11 + use crate::{VectorCount, build_verify_cost};
    |
 
+warning: unused import: `super::challenge_vectors`
+ --> apps\harness-crypto\src\generate\solidity\challenge_vectors\provides.rs:1:16
+  |
+1 | pub(crate) use super::challenge_vectors;
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `super::interface::*`
+ --> apps\harness-crypto\src\generate\solidity\challenge_vectors\provides.rs:2:9
+  |
+2 | pub use super::interface::*;
+  |         ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::mock::*`
+ --> apps\harness-crypto\src\generate\solidity\challenge_vectors\provides.rs:4:9
+  |
+4 | pub use super::mock::*;
+  |         ^^^^^^^^^^^^^^
+
 warning: unused import: `super::constants`
  --> apps\harness-crypto\src\generate\solidity\constants\provides.rs:1:16
   |
 1 | pub(crate) use super::constants;
   |                ^^^^^^^^^^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 warning: unused import: `super::interface::*`
  --> apps\harness-crypto\src\generate\solidity\constants\provides.rs:2:9
@@ -270,6 +328,84 @@ warning: unused import: `super::mock::*`
   |
 4 | pub use super::mock::*;
   |         ^^^^^^^^^^^^^^
+
+warning: unused import: `super::group_vectors`
+ --> apps\harness-crypto\src\generate\solidity\group_vectors\provides.rs:1:16
+  |
+1 | pub(crate) use super::group_vectors;
+  |                ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::interface::*`
+ --> apps\harness-crypto\src\generate\solidity\mapping_vectors\provides.rs:1:9
+  |
+1 | pub use super::interface::*;
+  |         ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::mapping_vectors`
+ --> apps\harness-crypto\src\generate\solidity\mapping_vectors\provides.rs:2:16
+  |
+2 | pub(crate) use super::mapping_vectors;
+  |                ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::mock::*`
+ --> apps\harness-crypto\src\generate\solidity\mapping_vectors\provides.rs:4:9
+  |
+4 | pub use super::mock::*;
+  |         ^^^^^^^^^^^^^^
+
+warning: unused import: `super::interface::*`
+ --> apps\harness-crypto\src\generate\solidity\possession_vectors\provides.rs:1:9
+  |
+1 | pub use super::interface::*;
+  |         ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::mock::*`
+ --> apps\harness-crypto\src\generate\solidity\possession_vectors\provides.rs:3:9
+  |
+3 | pub use super::mock::*;
+  |         ^^^^^^^^^^^^^^
+
+warning: unused import: `super::possession_vectors`
+ --> apps\harness-crypto\src\generate\solidity\possession_vectors\provides.rs:4:16
+  |
+4 | pub(crate) use super::possession_vectors;
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::interface::*`
+ --> apps\harness-crypto\src\generate\solidity\proof_vectors\provides.rs:1:9
+  |
+1 | pub use super::interface::*;
+  |         ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::mock::*`
+ --> apps\harness-crypto\src\generate\solidity\proof_vectors\provides.rs:3:9
+  |
+3 | pub use super::mock::*;
+  |         ^^^^^^^^^^^^^^
+
+warning: unused import: `super::proof_vectors`
+ --> apps\harness-crypto\src\generate\solidity\proof_vectors\provides.rs:4:16
+  |
+4 | pub(crate) use super::proof_vectors;
+  |                ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::interface::*`
+ --> apps\harness-crypto\src\generate\solidity\rejection_vectors\provides.rs:1:9
+  |
+1 | pub use super::interface::*;
+  |         ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::mock::*`
+ --> apps\harness-crypto\src\generate\solidity\rejection_vectors\provides.rs:3:9
+  |
+3 | pub use super::mock::*;
+  |         ^^^^^^^^^^^^^^
+
+warning: unused import: `super::rejection_vectors`
+ --> apps\harness-crypto\src\generate\solidity\rejection_vectors\provides.rs:4:16
+  |
+4 | pub(crate) use super::rejection_vectors;
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: unused import: `super::render`
  --> apps\harness-crypto\src\generate\solidity\render\provides.rs:4:16
@@ -311,8 +447,6 @@ error[E0432]: unresolved import `crate::generate::provides`
 23 | use crate::generate::provides::SpdxLicenseIdentifierTryNewErrorReturn;
    |                      ^^^^^^^^ could not find `provides` in `generate`
 
-Some errors have detailed explanations: E0223, E0432.
-For more information about an error, try `rustc --explain E0223`.
 error[E0432]: unresolved import `crate::generate::provides`
   --> apps\harness-crypto\src\config\test.rs:44:22
    |
@@ -361,8 +495,10 @@ error[E0432]: unresolved import `crate::generate::provides`
 47 | use crate::generate::provides::{
    |                      ^^^^^^^^ could not find `provides` in `generate`
 
-warning: `harness-crypto` (lib) generated 4 warnings
-error: could not compile `harness-crypto` (lib) due to 28 previous errors; 4 warnings emitted
+Some errors have detailed explanations: E0223, E0432.
+For more information about an error, try `rustc --explain E0223`.
+warning: `harness-crypto` (lib) generated 20 warnings
+error: could not compile `harness-crypto` (lib) due to 28 previous errors; 20 warnings emitted
 warning: build failed, waiting for other jobs to finish...
 error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
   --> apps\harness-crypto\src\vectors\cross_holder\integration_test.rs:53:13
@@ -375,6 +511,16 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstr
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
+   |
+33 | pub struct VectorCountConstructorParamsOverrides {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 53 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
@@ -397,6 +543,16 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstr
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
+   |
+33 | pub struct VectorCountConstructorParamsOverrides {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
@@ -418,6 +574,11 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_coun
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 36 - use crate::{VectorCount, build_vector_count};
@@ -435,6 +596,16 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstr
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
+   |
+33 | pub struct VectorCountConstructorParamsOverrides {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
@@ -457,6 +628,16 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstr
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
+   |
+33 | pub struct VectorCountConstructorParamsOverrides {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 37 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
@@ -478,6 +659,11 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_coun
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 32 - use crate::{VectorCount, build_vector_count};
@@ -495,6 +681,16 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstr
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
+   |
+33 | pub struct VectorCountConstructorParamsOverrides {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
@@ -517,6 +713,16 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstr
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
+   |
+33 | pub struct VectorCountConstructorParamsOverrides {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 33 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
@@ -538,6 +744,11 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_coun
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 35 - use crate::{VectorCount, build_vector_count};
@@ -555,6 +766,16 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstr
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
+   |
+33 | pub struct VectorCountConstructorParamsOverrides {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 49 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
@@ -577,6 +798,16 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstr
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
+   |
+33 | pub struct VectorCountConstructorParamsOverrides {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 41 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
@@ -598,11 +829,16 @@ error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_coun
    |
    = help: consider importing this variant instead:
            crate::AdmitGenerateErrorReturn::VectorCount
+note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
+  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
+   |
+14 | pub struct VectorCount {
+   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
 36 - use crate::{VectorCount, build_vector_count};
 36 + use crate::{VectorCount, build_verify_cost};
    |
 
-warning: `harness-crypto` (lib test) generated 2 warnings (2 duplicates)
-error: could not compile `harness-crypto` (lib test) due to 50 previous errors; 2 warnings emitted
+warning: `harness-crypto` (lib test) generated 18 warnings (18 duplicates)
+error: could not compile `harness-crypto` (lib test) due to 50 previous errors; 18 warnings emitted
