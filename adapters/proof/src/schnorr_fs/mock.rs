@@ -4,7 +4,9 @@ use super::challenge::provides::{
     ChallengeDeps, ChallengeParams, ChallengePayload, ChallengeTranscript, challenge,
 };
 use super::interface::{
-    SchnorrFsDeliveryProof, SchnorrFsDeliveryProofConstructorParams, SchnorrFsProof,
+    ISchnorrFsCaseConsumer, SchnorrFsCaseDeps, SchnorrFsCaseErrorReturn, SchnorrFsCaseParams,
+    SchnorrFsCasePayload, SchnorrFsCaseReturn, SchnorrFsCaseSuccessReturn, SchnorrFsDeliveryProof,
+    SchnorrFsDeliveryProofConstructorParams, SchnorrFsProof,
 };
 use crate::factory::provides::{
     MintResponses, MintSecondGroupFirstMessages, ProveMintPayload, ProveTransferPayload,
@@ -16,20 +18,39 @@ use crate::mint_statement::provides::{
 use crate::transfer_statement::provides::{
     TransferFirstMessages, TransferStatement, TransferStatementOverrides, build_transfer_statement,
 };
-use chain::IChainForms;
-use domain::{Secret, build_secret};
-use encoding::IEncoderAdapter;
-use envelope::{EnvelopeComponents, PublicKeysComponents};
-use hash_to_scalar::{DomainTag, IHashToScalarAdapter};
-use pairing::{
-    AddScalarParams, AddScalarPayload, G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams,
-    G2GeneratorPayload, IPairingAdapter, IPairingArithmetic, ISampleUniformScalar, MsmG1Params,
-    MsmG1Payload, MsmG1Term, MsmG2Params, MsmG2Payload, MsmG2Term, MulG1Params, MulG1Payload,
-    MulG2Params, MulG2Payload, MulScalarParams, MulScalarPayload, NegScalarParams,
-    NegScalarPayload, SampleUniformScalarParams, SampleUniformScalarPayload,
-    VerifierGroupArithmetic,
+use chain::{
+    ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsParams, IChainForms,
+    IChainFormsConsumer, build_create_chain_forms_deps, build_create_chain_forms_params,
+    build_create_chain_forms_payload, create_chain_forms,
 };
-use random::IRandomSourceAdapter;
+use domain::{Secret, build_secret};
+use encoding::{
+    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams,
+    CreateEncodingParamsOverrides, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer,
+    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
+    create_encoding,
+};
+use envelope::{EnvelopeComponents, PublicKeysComponents};
+use hash_to_scalar::{
+    CreateHashToScalarParams, DomainTag, IHashToScalarAdapter, build_create_hash_to_scalar_deps,
+    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload, create_hash_to_scalar,
+};
+use hashing::{Root, RootConstructorParams};
+use pairing::{
+    AddScalarParams, AddScalarPayload, ConsumePairingParams, ConsumePairingPayload,
+    CreatePairingParams, G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams,
+    G2GeneratorPayload, IPairingAdapter, IPairingArithmetic, IPairingConsumer, IPairingReference,
+    ISampleUniformScalar, MsmG1Params, MsmG1Payload, MsmG1Term, MsmG2Params, MsmG2Payload,
+    MsmG2Term, MulG1Params, MulG1Payload, MulG2Params, MulG2Payload, MulScalarParams,
+    MulScalarPayload, NegScalarParams, NegScalarPayload, SampleUniformScalarParams,
+    SampleUniformScalarPayload, VerifierGroupArithmetic, build_create_pairing_deps,
+    build_create_pairing_params, build_create_pairing_payload, create_pairing,
+};
+use random::{
+    CreateRandomSourceParams, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
+    IRandomSourceAdapter, build_create_random_source_deps, build_create_random_source_params,
+    create_random_source,
+};
 
 #[derive(Default)]
 pub struct SchnorrFsDeliveryProofConstructorParamsOverrides {
@@ -172,13 +193,17 @@ pub fn build_schnorr_fs_mint_proof<
             d2: t_d2,
         });
 
+    let asset_root = Root::try_new(RootConstructorParams {
+        bytes: *statement.context.asset_identity_hash.as_bytes(),
+    })
+    .expect("the asset identity hash is never all zero");
     let transcript: MintStatement<P, F> = build_mint_statement::<P, F>(
         pairing,
         MintStatementOverrides {
             suite_identifier: Some(statement.context.suite_identifier.clone()),
             chain: Some(statement.context.chain.clone()),
             entitlement_contract: Some(statement.context.entitlement_contract.clone()),
-            asset_identity_hash: Some(statement.context.asset_identity_hash.clone()),
+            asset_root: Some(asset_root),
             parameter_set_identifier: Some(statement.context.parameter_set_identifier.clone()),
             source_entitlement: Some(statement.context.source_entitlement.clone()),
             target_entitlement: Some(statement.context.target_entitlement.clone()),
@@ -298,13 +323,17 @@ pub fn build_schnorr_fs_transfer_proof<
                 d2: t_d2,
             });
 
+    let asset_root = Root::try_new(RootConstructorParams {
+        bytes: *statement.context.asset_identity_hash.as_bytes(),
+    })
+    .expect("the asset identity hash is never all zero");
     let transcript: TransferStatement<P, F> = build_transfer_statement::<P, F>(
         pairing,
         TransferStatementOverrides {
             suite_identifier: Some(statement.context.suite_identifier.clone()),
             chain: Some(statement.context.chain.clone()),
             entitlement_contract: Some(statement.context.entitlement_contract.clone()),
-            asset_identity_hash: Some(statement.context.asset_identity_hash.clone()),
+            asset_root: Some(asset_root),
             parameter_set_identifier: Some(statement.context.parameter_set_identifier.clone()),
             source_entitlement: Some(statement.context.source_entitlement.clone()),
             target_entitlement: Some(statement.context.target_entitlement.clone()),
@@ -459,4 +488,231 @@ fn response<P: IPairingArithmetic>(
         },
     );
     sum.sum
+}
+
+#[derive(Default)]
+pub struct SchnorrFsCaseDepsOverrides;
+
+pub fn build_schnorr_fs_case_deps<C: ISchnorrFsCaseConsumer>(
+    consumer: C,
+    _overrides: SchnorrFsCaseDepsOverrides,
+) -> SchnorrFsCaseDeps<C> {
+    SchnorrFsCaseDeps { consumer }
+}
+
+#[derive(Default)]
+pub struct SchnorrFsCaseParamsOverrides {
+    pub pairing: Option<CreatePairingParams>,
+    pub chain_forms: Option<CreateChainFormsParams>,
+    pub encoding: Option<CreateEncodingParams>,
+    pub hash_to_scalar: Option<CreateHashToScalarParams>,
+    pub random_source: Option<CreateRandomSourceParams>,
+}
+
+pub fn build_schnorr_fs_case_params(
+    overrides: SchnorrFsCaseParamsOverrides,
+) -> SchnorrFsCaseParams {
+    SchnorrFsCaseParams {
+        pairing: overrides
+            .pairing
+            .unwrap_or_else(|| build_create_pairing_params(Default::default())),
+        chain_forms: overrides
+            .chain_forms
+            .unwrap_or_else(|| build_create_chain_forms_params(Default::default())),
+        encoding: overrides
+            .encoding
+            .unwrap_or_else(|| build_create_encoding_params(Default::default())),
+        hash_to_scalar: overrides
+            .hash_to_scalar
+            .unwrap_or_else(|| build_create_hash_to_scalar_params(Default::default())),
+        random_source: overrides
+            .random_source
+            .unwrap_or_else(|| build_create_random_source_params(Default::default())),
+    }
+}
+
+#[derive(Default)]
+pub struct SchnorrFsCasePayloadOverrides;
+
+pub fn build_schnorr_fs_case_payload(
+    _overrides: SchnorrFsCasePayloadOverrides,
+) -> SchnorrFsCasePayload {
+    SchnorrFsCasePayload
+}
+
+#[derive(Default)]
+pub struct SchnorrFsCaseSuccessReturnOverrides;
+
+pub fn build_schnorr_fs_case_success_return<O>(
+    output: O,
+    _overrides: SchnorrFsCaseSuccessReturnOverrides,
+) -> SchnorrFsCaseSuccessReturn<O> {
+    SchnorrFsCaseSuccessReturn { output }
+}
+
+struct CaseAtPairing<'a, C: ISchnorrFsCaseConsumer> {
+    pub consumer: &'a C,
+    pub chain_forms: CreateChainFormsParams,
+    pub encoding: CreateEncodingParams,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub random_source: CreateRandomSourceParams,
+}
+
+impl<C: ISchnorrFsCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
+    type Output = SchnorrFsCaseReturn<C::Output>;
+
+    fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        &self,
+        _params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output {
+        let encoding_deps = build_create_encoding_deps(CaseAtEncoding {
+            consumer: self.consumer,
+            pairing: &payload.adapter,
+            chain_forms: self.chain_forms,
+            hash_to_scalar: self.hash_to_scalar,
+            random_source: build_create_random_source_params(CreateRandomSourceParamsOverrides {
+                kind: Some(self.random_source.kind),
+            }),
+        });
+        match create_encoding(
+            &encoding_deps,
+            build_create_encoding_params(CreateEncodingParamsOverrides {
+                concrete: Some(self.encoding.concrete),
+                identifier: Some(self.encoding.identifier),
+            }),
+            build_create_encoding_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(SchnorrFsCaseErrorReturn::CreateEncoding(error)),
+        }
+    }
+}
+
+struct CaseAtEncoding<'a, 'p, C: ISchnorrFsCaseConsumer, P: IPairingArithmetic + IPairingReference>
+{
+    pub consumer: &'a C,
+    pub pairing: &'p P,
+    pub chain_forms: CreateChainFormsParams,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub random_source: CreateRandomSourceParams,
+}
+
+impl<C: ISchnorrFsCaseConsumer, P: IPairingArithmetic + IPairingReference> IEncodingConsumer
+    for CaseAtEncoding<'_, '_, C, P>
+{
+    type Output = SchnorrFsCaseReturn<C::Output>;
+
+    fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+        &self,
+        _params: ConsumeEncodingParams,
+        payload: ConsumeEncodingPayload<E>,
+    ) -> Self::Output {
+        let chain_forms_deps = build_create_chain_forms_deps(
+            CaseAtChainForms {
+                consumer: self.consumer,
+                pairing: self.pairing,
+                encoder: &payload.adapter,
+                hash_to_scalar: self.hash_to_scalar,
+                random_source: build_create_random_source_params(
+                    CreateRandomSourceParamsOverrides {
+                        kind: Some(self.random_source.kind),
+                    },
+                ),
+            },
+            &payload.adapter,
+            Default::default(),
+        );
+        match create_chain_forms(
+            &chain_forms_deps,
+            self.chain_forms,
+            build_create_chain_forms_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(SchnorrFsCaseErrorReturn::CreateChainForms(error)),
+        }
+    }
+}
+
+struct CaseAtChainForms<
+    'a,
+    'p,
+    C: ISchnorrFsCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+> {
+    pub consumer: &'a C,
+    pub pairing: &'p P,
+    pub encoder: &'a E,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub random_source: CreateRandomSourceParams,
+}
+
+impl<
+    C: ISchnorrFsCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+> IChainFormsConsumer for CaseAtChainForms<'_, '_, C, P, E>
+{
+    type Output = SchnorrFsCaseReturn<C::Output>;
+
+    fn consume_chain_forms<F: IChainForms>(
+        &self,
+        _params: ConsumeChainFormsParams,
+        payload: ConsumeChainFormsPayload<F>,
+    ) -> Self::Output {
+        let hash_to_scalar = match create_hash_to_scalar::<P::Scalar>(
+            &build_create_hash_to_scalar_deps(Default::default()),
+            self.hash_to_scalar,
+            build_create_hash_to_scalar_payload(Default::default()),
+        ) {
+            Ok(success) => success,
+            Err(error) => return Err(SchnorrFsCaseErrorReturn::CreateHashToScalar(error)),
+        };
+        let random = match create_random_source(
+            &build_create_random_source_deps(Default::default()),
+            build_create_random_source_params(CreateRandomSourceParamsOverrides {
+                kind: Some(self.random_source.kind),
+            }),
+            CreateRandomSourcePayload,
+        ) {
+            Ok(success) => success,
+            Err(error) => return Err(SchnorrFsCaseErrorReturn::CreateRandomSource(error)),
+        };
+        Ok(SchnorrFsCaseSuccessReturn {
+            output: self.consumer.consume_schnorr_fs_case(
+                self.pairing,
+                &payload.forms,
+                self.encoder,
+                &*hash_to_scalar.adapter,
+                &*random.adapter,
+                &SchnorrFsCasePayload,
+            ),
+        })
+    }
+}
+
+pub fn run_schnorr_fs_case<C: ISchnorrFsCaseConsumer>(
+    deps: &SchnorrFsCaseDeps<C>,
+    params: SchnorrFsCaseParams,
+    _payload: SchnorrFsCasePayload,
+) -> SchnorrFsCaseReturn<C::Output> {
+    let pairing_deps = build_create_pairing_deps(
+        CaseAtPairing {
+            consumer: &deps.consumer,
+            chain_forms: params.chain_forms,
+            encoding: params.encoding,
+            hash_to_scalar: params.hash_to_scalar,
+            random_source: params.random_source,
+        },
+        Default::default(),
+    );
+    match create_pairing(
+        &pairing_deps,
+        params.pairing,
+        build_create_pairing_payload(Default::default()),
+    ) {
+        Ok(success) => success.output,
+        Err(error) => Err(SchnorrFsCaseErrorReturn::CreatePairing(error)),
+    }
 }

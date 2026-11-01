@@ -1,47 +1,37 @@
 #![cfg(feature = "mocks")]
 #![allow(clippy::expect_used)]
 
-use core::marker::PhantomData;
-
 use chain::{
-    CHAIN_FORMS_CONCRETES, ConsumeChainFormsParams, ConsumeChainFormsPayload,
-    CreateChainFormsParamsOverrides, IChainForms, IChainFormsConsumer,
-    build_create_chain_forms_deps, build_create_chain_forms_params,
-    build_create_chain_forms_payload, create_chain_forms,
+    CHAIN_FORMS_CONCRETES, CreateChainFormsParamsOverrides, IChainForms,
+    build_create_chain_forms_params,
 };
-use domain::{Secret, SecretConstructorParamsOverrides, build_asset_identity_hash, build_secret};
+use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
 use encoding::{
-    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParamsOverrides,
-    DECLARED_ENCODING_SELECTIONS, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer,
-    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
-    create_encoding,
+    CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, IEncoderAdapter,
+    build_create_encoding_params,
 };
 use envelope::{
-    ConsumeKeyAgreementParams, ConsumeKeyAgreementPayload, DECLARED_KEY_AGREEMENT_SELECTIONS,
-    EnvelopeAlgebra, EnvelopeCoins, EnvelopeComponents, GenerateKeysPayloadOverrides,
-    IKeyAgreementAdapter, IKeyAgreementConsumer, KeyPairComponents, PublicKeysComponents,
+    DECLARED_KEY_AGREEMENT_SELECTIONS, EnvelopeAlgebra, EnvelopeCoins, EnvelopeComponents,
+    GenerateKeysPayloadOverrides, IKeyAgreementAdapter, KeyPairComponents, PublicKeysComponents,
     PublicKeysFromComponentsPayloadOverrides, WrapToPayloadOverrides,
-    build_create_key_agreement_deps, build_create_key_agreement_payload,
     build_envelope_components_params, build_envelope_components_payload,
     build_generate_keys_params, build_generate_keys_payload, build_key_pair_components_params,
     build_key_pair_components_payload, build_key_pair_public_keys_params,
     build_key_pair_public_keys_payload, build_public_keys_components_params,
     build_public_keys_components_payload, build_public_keys_from_components_params,
     build_public_keys_from_components_payload, build_unwrap_params, build_unwrap_payload,
-    build_wrap_to_params, build_wrap_to_payload, create_key_agreement,
+    build_wrap_to_params, build_wrap_to_payload,
 };
 use hash_to_scalar::{
     CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, IHashToScalarAdapter,
-    build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
-    build_create_hash_to_scalar_payload, create_hash_to_scalar,
+    build_create_hash_to_scalar_params,
 };
+use hashing::build_root;
 use kem::{
-    ConsumeKemParams, ConsumeKemPayload, CredentialComponents,
-    CredentialFromComponentsPayloadOverrides, DECLARED_KEM_SELECTIONS,
-    DeriveIdentityPayloadOverrides, ICredentialKemAdapter, IKemConsumer, IdentityScope,
-    IssuePayloadOverrides, KemIdentity, MasterScalarComponents, RerandomizePayloadOverrides,
-    SetupParamsOverrides, SetupPayloadOverrides, SetupScope, build_create_kem_deps,
-    build_create_kem_payload, build_credential_components_params,
+    CredentialComponents, CredentialFromComponentsPayloadOverrides, DECLARED_KEM_SELECTIONS,
+    DeriveIdentityPayloadOverrides, ICredentialKemAdapter, IdentityScope, IssuePayloadOverrides,
+    KemIdentity, MasterScalarComponents, RerandomizePayloadOverrides, SetupParamsOverrides,
+    SetupPayloadOverrides, SetupScope, build_credential_components_params,
     build_credential_components_payload, build_credential_from_components_params,
     build_credential_from_components_payload, build_derive_identity_params,
     build_derive_identity_payload, build_identity_element_components_params,
@@ -49,30 +39,30 @@ use kem::{
     build_issue_params, build_issue_payload, build_master_scalar_components_params,
     build_master_scalar_components_payload, build_parameter_set_components_params,
     build_parameter_set_components_payload, build_rerandomize_params, build_rerandomize_payload,
-    build_setup_params, build_setup_payload, create_kem,
+    build_setup_params, build_setup_payload,
 };
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
-    CreatePairingPayload, IPairingAdapter, IPairingArithmetic, IPairingConsumer, IPairingReference,
-    ISampleUniformScalar, PAIRING_CONCRETES, VerifierGroupArithmetic, build_create_pairing_deps,
-    build_create_pairing_params, create_pairing,
+    CreatePairingParamsOverrides, IPairingAdapter, IPairingArithmetic, ISampleUniformScalar,
+    PAIRING_CONCRETES, build_create_pairing_params,
 };
 use proof::{
     AlgebraicMintStatementOverrides, AlgebraicStatement, AlgebraicTransferStatementOverrides,
-    ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload, CreateDeliveryProofParamsOverrides,
+    ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload,
+    CreateDeliveryProofCaseParamsOverrides, CreateDeliveryProofParamsOverrides,
     DELIVERY_PROOF_CONCRETES, DELIVERY_PROOF_INTERFACE_VERSION, DELIVERY_STATEMENT_VERSION_ONE,
-    DeliveryContextOverrides, DeliveryProofDeclaration, IDeliveryProofAdapter,
-    IDeliveryProofConsumer, ProveMintParams, ProveMintPayloadOverrides, ProveTransferParams,
-    ProveTransferPayloadOverrides, TransferPurpose, VerifyParams, build_algebraic_mint_statement,
-    build_algebraic_transfer_statement, build_create_delivery_proof_deps,
+    DeliveryContextOverrides, DeliveryProofDeclaration, ICreateDeliveryProofCaseConsumer,
+    IDeliveryProofAdapter, IDeliveryProofConsumer, ProveMintParams, ProveMintPayloadOverrides,
+    ProveTransferParams, ProveTransferPayloadOverrides, TransferPurpose, VerifyParams,
+    build_algebraic_mint_statement, build_algebraic_transfer_statement,
+    build_create_delivery_proof_case_deps, build_create_delivery_proof_case_params,
+    build_create_delivery_proof_case_payload, build_create_delivery_proof_deps,
     build_create_delivery_proof_params, build_create_delivery_proof_payload,
     build_delivery_context, build_prove_mint_payload, build_prove_transfer_payload,
-    build_verify_payload, create_delivery_proof,
+    build_verify_payload, create_delivery_proof, run_create_delivery_proof_case,
 };
 use random::{
-    CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
-    FillBytesParams, FillBytesPayload, IRandomSourceAdapter, RandomSourceKind,
-    build_create_random_source_params, create_random_source,
+    CreateRandomSourceParamsOverrides, FillBytesParams, FillBytesPayload, IRandomSourceAdapter,
+    RandomSourceKind, build_create_random_source_params,
 };
 
 /// Contract: entry
@@ -121,310 +111,128 @@ fn an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_vers
         }
     }
 
-    struct PairingConsumer;
+    struct CaseConsumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl ICreateDeliveryProofCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_delivery_proof_case<
+            P: IPairingArithmetic,
+            E: IEncoderAdapter,
+            F: IChainForms,
+            K: ICredentialKemAdapter<Pairing = P>,
+            A: IKeyAgreementAdapter<Pairing = P>,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _forms: &F,
+            _kem: &K,
+            _key_agreement: &A,
         ) -> Self::Output {
-            let pairing = &payload.adapter;
             let verifier_form = P::DECLARATION.verifier_group_arithmetic;
-
-            struct EncodingConsumer<'a, P: IPairingArithmetic> {
-                pairing: &'a P,
-                verifier_form: VerifierGroupArithmetic,
-            }
-
-            impl<P: IPairingArithmetic> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    let pairing = self.pairing;
-                    for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                        // Arrange
-                        let hashed = create_hash_to_scalar::<P::Scalar>(
-                            &build_create_hash_to_scalar_deps(Default::default()),
-                            build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                                concrete: Some(hash_case.concrete),
-                                identifier: Some(hash_case.identifier),
-                            }),
-                            build_create_hash_to_scalar_payload(Default::default()),
-                        );
-                        assert!(hashed.is_ok());
-                        let hashed =
-                            hashed.expect("the declared selection admits the concrete it names");
-                        let random = create_random_source(
-                            &CreateRandomSourceDeps,
-                            build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                                kind: Some(RandomSourceKind::OperatingSystem),
-                            }),
-                            CreateRandomSourcePayload,
-                        );
-                        assert!(random.is_ok());
-                        let random = random.expect("the operating system's source constructs");
-
-                        struct ChainConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter> {
-                            pairing: &'a P,
-                            encoder: &'a E,
-                            hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                            random: &'a dyn IRandomSourceAdapter,
-                            verifier_form: VerifierGroupArithmetic,
-                        }
-
-                        impl<P: IPairingArithmetic, E: IEncoderAdapter> IChainFormsConsumer for ChainConsumer<'_, P, E> {
-                            type Output = ();
-
-                            fn consume_chain_forms<F: IChainForms>(
-                                &self,
-                                _params: ConsumeChainFormsParams,
-                                _payload: ConsumeChainFormsPayload<F>,
-                            ) -> Self::Output {
-                                let pairing = self.pairing;
-
-                                struct KemConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter, F> {
-                                    pairing: &'a P,
-                                    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                                    encoder: &'a E,
-                                    random: &'a dyn IRandomSourceAdapter,
-                                    verifier_form: VerifierGroupArithmetic,
-                                    _forms: PhantomData<F>,
-                                }
-
-                                impl<P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms>
-                                    IKemConsumer<P> for KemConsumer<'_, P, E, F>
-                                {
-                                    type Output = ();
-
-                                    fn consume_kem<Km: ICredentialKemAdapter<Pairing = P>>(
-                                        &self,
-                                        _params: ConsumeKemParams,
-                                        _payload: ConsumeKemPayload<Km>,
-                                    ) -> Self::Output {
-                                        let pairing = self.pairing;
-
-                                        struct KeyAgreementConsumer<
-                                            'a,
-                                            P: IPairingArithmetic,
-                                            E: IEncoderAdapter,
-                                            F,
-                                        > {
-                                            pairing: &'a P,
-                                            hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                                            encoder: &'a E,
-                                            random: &'a dyn IRandomSourceAdapter,
-                                            verifier_form: VerifierGroupArithmetic,
-                                            _forms: PhantomData<F>,
-                                        }
-
-                                        impl<
-                                            P: IPairingArithmetic,
-                                            E: IEncoderAdapter,
-                                            F: IChainForms,
-                                        >
-                                            IKeyAgreementConsumer<P>
-                                            for KeyAgreementConsumer<'_, P, E, F>
-                                        {
-                                            type Output = ();
-
-                                            fn consume_key_agreement<
-                                                K: IKeyAgreementAdapter<Pairing = P>,
-                                            >(
-                                                &self,
-                                                _params: ConsumeKeyAgreementParams,
-                                                _payload: ConsumeKeyAgreementPayload<K>,
-                                            ) -> Self::Output
-                                            {
-                                                for concrete in DELIVERY_PROOF_CONCRETES {
-                                                    let params = build_create_delivery_proof_params(
-                                                        CreateDeliveryProofParamsOverrides {
-                                                            concrete: Some(*concrete),
-                                                            algebra: Some(
-                                                                EnvelopeAlgebra::PairingElGamal,
-                                                            ),
-                                                            verifier_form: Some(self.verifier_form),
-                                                            statement_version: Some(
-                                                                DELIVERY_STATEMENT_VERSION_ONE,
-                                                            ),
-                                                        },
-                                                    );
-
-                                                    // Act
-                                                    let created = create_delivery_proof::<
-                                                        P,
-                                                        E,
-                                                        F,
-                                                        DeclarationConsumer,
-                                                    >(
-                                                        &build_create_delivery_proof_deps(
-                                                            self.pairing,
-                                                            self.hash_to_scalar,
-                                                            self.encoder,
-                                                            self.random,
-                                                            DeclarationConsumer,
-                                                            Default::default(),
-                                                        ),
-                                                        params,
-                                                        build_create_delivery_proof_payload(
-                                                            Default::default(),
-                                                        ),
-                                                    );
-
-                                                    // Assert
-                                                    assert!(created.is_ok());
-                                                    let declaration = created
-                                                        .expect(
-                                                            "the admitted selection returns the consumer's output",
-                                                        )
-                                                        .output;
-                                                    assert!(declaration.algebras.contains(
-                                                        &EnvelopeAlgebra::PairingElGamal
-                                                    ));
-                                                    assert!(
-                                                        declaration
-                                                            .verifier_forms
-                                                            .contains(&self.verifier_form)
-                                                    );
-                                                    assert!(
-                                                        declaration.statement_versions.contains(
-                                                            &DELIVERY_STATEMENT_VERSION_ONE
-                                                        )
-                                                    );
-                                                    assert_eq!(
-                                                        declaration.interface_version,
-                                                        DELIVERY_PROOF_INTERFACE_VERSION
-                                                    );
-                                                }
-                                            }
-                                        }
-
-                                        for ka_case in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                                            // Act
-                                            let created = create_key_agreement::<
-                                                P,
-                                                E,
-                                                KeyAgreementConsumer<'_, P, E, F>,
-                                            >(
-                                                &build_create_key_agreement_deps(
-                                                    pairing,
-                                                    self.hash_to_scalar,
-                                                    self.encoder,
-                                                    self.random,
-                                                    KeyAgreementConsumer {
-                                                        pairing,
-                                                        hash_to_scalar: self.hash_to_scalar,
-                                                        encoder: self.encoder,
-                                                        random: self.random,
-                                                        verifier_form: self.verifier_form,
-                                                        _forms: PhantomData,
-                                                    },
-                                                    Default::default(),
-                                                ),
-                                                *ka_case,
-                                                build_create_key_agreement_payload(
-                                                    Default::default(),
-                                                ),
-                                            );
-
-                                            // Assert
-                                            assert!(created.is_ok());
-                                        }
-                                    }
-                                }
-
-                                for kem_case in DECLARED_KEM_SELECTIONS {
-                                    // Act
-                                    let created = create_kem::<P, KemConsumer<'_, P, E, F>>(
-                                        &build_create_kem_deps(
-                                            pairing,
-                                            self.hash_to_scalar,
-                                            KemConsumer {
-                                                pairing,
-                                                hash_to_scalar: self.hash_to_scalar,
-                                                encoder: self.encoder,
-                                                random: self.random,
-                                                verifier_form: self.verifier_form,
-                                                _forms: PhantomData,
-                                            },
-                                            Default::default(),
-                                        ),
-                                        *kem_case,
-                                        build_create_kem_payload(Default::default()),
-                                    );
-
-                                    // Assert
-                                    assert!(created.is_ok());
-                                }
-                            }
-                        }
-
-                        for concrete in CHAIN_FORMS_CONCRETES {
-                            // Act
-                            let created = create_chain_forms(
-                                &build_create_chain_forms_deps(
-                                    ChainConsumer {
-                                        pairing,
-                                        encoder: &encoded.adapter,
-                                        hash_to_scalar: &*hashed.adapter,
-                                        random: &*random.adapter,
-                                        verifier_form: self.verifier_form,
-                                    },
-                                    Default::default(),
-                                ),
-                                build_create_chain_forms_params(CreateChainFormsParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                }),
-                                build_create_chain_forms_payload(Default::default()),
-                            );
-
-                            // Assert
-                            assert!(created.is_ok());
-                        }
-                    }
-                }
-            }
-
-            for selection in DECLARED_ENCODING_SELECTIONS {
+            for concrete in DELIVERY_PROOF_CONCRETES {
                 // Act
-                let created = create_encoding(
-                    &build_create_encoding_deps(EncodingConsumer {
+                let created = create_delivery_proof::<P, E, F, DeclarationConsumer>(
+                    &build_create_delivery_proof_deps(
                         pairing,
-                        verifier_form,
+                        hash_to_scalar,
+                        encoder,
+                        random,
+                        DeclarationConsumer,
+                        Default::default(),
+                    ),
+                    build_create_delivery_proof_params(CreateDeliveryProofParamsOverrides {
+                        concrete: Some(*concrete),
+                        algebra: Some(EnvelopeAlgebra::PairingElGamal),
+                        statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE),
                     }),
-                    build_create_encoding_params(CreateEncodingParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(selection.identifier),
-                    }),
-                    build_create_encoding_payload(Default::default()),
+                    build_create_delivery_proof_payload(Default::default()),
                 );
 
                 // Assert
                 assert!(created.is_ok());
+                let declaration = created
+                    .expect("the admitted selection returns the consumer's output")
+                    .output;
+                assert!(
+                    declaration
+                        .algebras
+                        .contains(&EnvelopeAlgebra::PairingElGamal)
+                );
+                assert!(declaration.verifier_forms.contains(&verifier_form));
+                assert!(
+                    declaration
+                        .statement_versions
+                        .contains(&DELIVERY_STATEMENT_VERSION_ONE)
+                );
+                assert_eq!(
+                    declaration.interface_version,
+                    DELIVERY_PROOF_INTERFACE_VERSION
+                );
             }
         }
     }
 
-    for concrete in PAIRING_CONCRETES {
-        // Act
-        let created = create_pairing(
-            &build_create_pairing_deps(PairingConsumer, Default::default()),
-            build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*concrete),
-                ..Default::default()
-            }),
-            CreatePairingPayload,
-        );
+    for pairing_case in PAIRING_CONCRETES {
+        for selection in DECLARED_ENCODING_SELECTIONS {
+            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                for forms_concrete in CHAIN_FORMS_CONCRETES {
+                    for kem_case in DECLARED_KEM_SELECTIONS {
+                        for key_agreement_case in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                            // Act
+                            let result = run_create_delivery_proof_case(
+                                &build_create_delivery_proof_case_deps(
+                                    CaseConsumer,
+                                    Default::default(),
+                                ),
+                                build_create_delivery_proof_case_params(
+                                    CreateDeliveryProofCaseParamsOverrides {
+                                        pairing: Some(build_create_pairing_params(
+                                            CreatePairingParamsOverrides {
+                                                concrete: Some(*pairing_case),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                            CreateHashToScalarParamsOverrides {
+                                                concrete: Some(hash_case.concrete),
+                                                identifier: Some(hash_case.identifier),
+                                            },
+                                        )),
+                                        encoding: Some(build_create_encoding_params(
+                                            CreateEncodingParamsOverrides {
+                                                concrete: Some(selection.concrete),
+                                                identifier: Some(selection.identifier),
+                                            },
+                                        )),
+                                        chain_forms: Some(build_create_chain_forms_params(
+                                            CreateChainFormsParamsOverrides {
+                                                concrete: Some(*forms_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        kem: Some(*kem_case),
+                                        key_agreement: Some(*key_agreement_case),
+                                        random_source: Some(build_create_random_source_params(
+                                            CreateRandomSourceParamsOverrides {
+                                                kind: Some(RandomSourceKind::OperatingSystem),
+                                            },
+                                        )),
+                                    },
+                                ),
+                                build_create_delivery_proof_case_payload(Default::default()),
+                            );
 
-        // Assert
-        assert!(created.is_ok());
+                            // Assert
+                            assert!(result.is_ok());
+                        }
+                    }
+                }
+            }
+        }
     }
     // an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_version
 }
@@ -550,604 +358,300 @@ fn a_credential_issued_and_wrapped_through_the_families_is_proved_by_a_mint_proo
         }
     }
 
-    struct PairingConsumer;
+    struct CaseConsumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl ICreateDeliveryProofCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_delivery_proof_case<
+            P: IPairingArithmetic,
+            E: IEncoderAdapter,
+            F: IChainForms,
+            K: ICredentialKemAdapter<Pairing = P>,
+            A: IKeyAgreementAdapter<Pairing = P>,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _forms: &F,
+            kem: &K,
+            key_agreement: &A,
         ) -> Self::Output {
-            let pairing = &payload.adapter;
-            let verifier_form = P::DECLARATION.verifier_group_arithmetic;
-
-            struct EncodingConsumer<'a, P: IPairingArithmetic> {
-                pairing: &'a P,
-                verifier_form: VerifierGroupArithmetic,
-            }
-
-            impl<P: IPairingArithmetic> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    let pairing = self.pairing;
-                    for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                        // Arrange
-                        let hashed = create_hash_to_scalar::<P::Scalar>(
-                            &build_create_hash_to_scalar_deps(Default::default()),
-                            build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                                concrete: Some(hash_case.concrete),
-                                identifier: Some(hash_case.identifier),
+            let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
+            let draw = |length: usize| {
+                random
+                    .fill_bytes(FillBytesParams, FillBytesPayload { length })
+                    .expect("the operating system's generator draws")
+                    .bytes
+            };
+            for &scope in K::DECLARATION.identity_scopes {
+                // Arrange
+                let root = build_root(Default::default());
+                let setup = kem
+                    .setup(
+                        build_setup_params(SetupParamsOverrides {
+                            scope: Some(match scope {
+                                IdentityScope::Entitlement => SetupScope::Entitlement,
+                                IdentityScope::Asset => SetupScope::Asset { root: &root },
                             }),
-                            build_create_hash_to_scalar_payload(Default::default()),
-                        );
-                        assert!(hashed.is_ok());
-                        let hashed =
-                            hashed.expect("the declared selection admits the concrete it names");
-                        let random = create_random_source(
-                            &CreateRandomSourceDeps,
-                            build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                                kind: Some(RandomSourceKind::OperatingSystem),
-                            }),
-                            CreateRandomSourcePayload,
-                        );
-                        assert!(random.is_ok());
-                        let random = random.expect("the operating system's source constructs");
-
-                        struct ChainConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter> {
-                            pairing: &'a P,
-                            encoder: &'a E,
-                            hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                            random: &'a dyn IRandomSourceAdapter,
-                            verifier_form: VerifierGroupArithmetic,
-                        }
-
-                        impl<P: IPairingArithmetic, E: IEncoderAdapter> IChainFormsConsumer for ChainConsumer<'_, P, E> {
-                            type Output = ();
-
-                            fn consume_chain_forms<F: IChainForms>(
-                                &self,
-                                _params: ConsumeChainFormsParams,
-                                _payload: ConsumeChainFormsPayload<F>,
-                            ) -> Self::Output {
-                                let pairing = self.pairing;
-
-                                struct KemConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter, F> {
-                                    pairing: &'a P,
-                                    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                                    encoder: &'a E,
-                                    random: &'a dyn IRandomSourceAdapter,
-                                    verifier_form: VerifierGroupArithmetic,
-                                    _forms: PhantomData<F>,
+                        }),
+                        build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                            master_uniform: Some(draw(bound)),
+                            u0_uniform: Some(draw(bound)),
+                            u1_uniform: Some(draw(bound)),
+                        }),
+                    )
+                    .expect("setup admits the scope the case selects and the drawn uniforms");
+                let derived = kem
+                    .derive_identity(
+                        build_derive_identity_params(Default::default()),
+                        build_derive_identity_payload(
+                            &setup.parameter_set,
+                            match scope {
+                                IdentityScope::Entitlement => {
+                                    DeriveIdentityPayloadOverrides::default()
                                 }
-
-                                impl<P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms>
-                                    IKemConsumer<P> for KemConsumer<'_, P, E, F>
-                                {
-                                    type Output = ();
-
-                                    fn consume_kem<Km: ICredentialKemAdapter<Pairing = P>>(
-                                        &self,
-                                        _params: ConsumeKemParams,
-                                        payload: ConsumeKemPayload<Km>,
-                                    ) -> Self::Output {
-                                        let pairing = self.pairing;
-                                        let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
-                                        let draw = |length: usize| {
-                                            self.random
-                                                .fill_bytes(
-                                                    FillBytesParams,
-                                                    FillBytesPayload { length },
-                                                )
-                                                .expect("the operating system's generator draws")
-                                                .bytes
-                                        };
-                                        let scope = payload.scope();
-                                        let hash = build_asset_identity_hash(Default::default());
-                                        let setup = payload
-                                            .adapter
-                                            .setup(
-                                                build_setup_params(SetupParamsOverrides {
-                                                    scope: Some(match scope {
-                                                        IdentityScope::Entitlement => {
-                                                            SetupScope::Entitlement
-                                                        }
-                                                        IdentityScope::Asset => {
-                                                            SetupScope::Asset {
-                                                                identity_hash: &hash,
-                                                            }
-                                                        }
-                                                    }),
-                                                }),
-                                                build_setup_payload::<P::Scalar>(
-                                                    SetupPayloadOverrides {
-                                                        master_uniform: Some(draw(bound)),
-                                                        u0_uniform: Some(draw(bound)),
-                                                        u1_uniform: Some(draw(bound)),
-                                                    },
-                                                ),
-                                            )
-                                            .expect(
-                                                "setup admits the scope the case selects and the drawn uniforms",
-                                            );
-                                        let derived = payload
-                                            .adapter
-                                            .derive_identity(
-                                                build_derive_identity_params(Default::default()),
-                                                build_derive_identity_payload(
-                                                    &setup.parameter_set,
-                                                    match scope {
-                                                        IdentityScope::Entitlement => {
-                                                            DeriveIdentityPayloadOverrides::default(
-                                                            )
-                                                        }
-                                                        IdentityScope::Asset => {
-                                                            DeriveIdentityPayloadOverrides {
-                                                                identity: Some(
-                                                                    KemIdentity::Asset {
-                                                                        identity_hash: &hash,
-                                                                    },
-                                                                ),
-                                                            }
-                                                        }
-                                                    },
-                                                ),
-                                            )
-                                            .expect("the identity the set fixes derives");
-                                        let issued = payload
-                                            .adapter
-                                            .issue(
-                                                build_issue_params(Default::default()),
-                                                build_issue_payload::<P::Scalar, _, _, _>(
-                                                    &setup.parameter_set,
-                                                    &setup.master_scalar,
-                                                    &derived.identity_element,
-                                                    IssuePayloadOverrides {
-                                                        uniform: Some(draw(bound)),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("issue admits the credential inputs");
-                                        let parameter_set = payload
-                                            .adapter
-                                            .parameter_set_components(
-                                                build_parameter_set_components_params(
-                                                    Default::default(),
-                                                ),
-                                                build_parameter_set_components_payload(
-                                                    &setup.parameter_set,
-                                                    Default::default(),
-                                                ),
-                                            )
-                                            .expect("the parameter set's components read")
-                                            .components;
-                                        let identity_element = payload
-                                            .adapter
-                                            .identity_element_components(
-                                                build_identity_element_components_params(
-                                                    Default::default(),
-                                                ),
-                                                build_identity_element_components_payload(
-                                                    &derived.identity_element,
-                                                    Default::default(),
-                                                ),
-                                            )
-                                            .expect("the identity element's components read")
-                                            .components;
-                                        let master_scalar = payload
-                                            .adapter
-                                            .master_scalar_components(
-                                                build_master_scalar_components_params(
-                                                    Default::default(),
-                                                ),
-                                                build_master_scalar_components_payload(
-                                                    &setup.master_scalar,
-                                                    Default::default(),
-                                                ),
-                                            )
-                                            .expect("the master scalar's components read")
-                                            .components;
-                                        let credential = payload
-                                            .adapter
-                                            .credential_components(
-                                                build_credential_components_params(
-                                                    Default::default(),
-                                                ),
-                                                build_credential_components_payload(
-                                                    &issued.credential,
-                                                    Default::default(),
-                                                ),
-                                            )
-                                            .expect("the credential's components read")
-                                            .components;
-
-                                        struct KeyAgreementConsumer<
-                                            'a,
-                                            P: IPairingArithmetic,
-                                            E: IEncoderAdapter,
-                                            F,
-                                        > {
-                                            pairing: &'a P,
-                                            hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                                            encoder: &'a E,
-                                            random: &'a dyn IRandomSourceAdapter,
-                                            verifier_form: VerifierGroupArithmetic,
-                                            _forms: PhantomData<F>,
-                                            credential: CredentialComponents<P::G1, P::G2>,
-                                            hpub: P::G2,
-                                            identity_element: P::G1,
-                                            master_scalar: MasterScalarComponents<P::Scalar>,
-                                            randomness: Secret<P::Scalar>,
-                                        }
-
-                                        impl<
-                                            P: IPairingArithmetic,
-                                            E: IEncoderAdapter,
-                                            F: IChainForms,
-                                        >
-                                            IKeyAgreementConsumer<P>
-                                            for KeyAgreementConsumer<'_, P, E, F>
-                                        {
-                                            type Output = ();
-
-                                            fn consume_key_agreement<
-                                                K: IKeyAgreementAdapter<Pairing = P>,
-                                            >(
-                                                &self,
-                                                _params: ConsumeKeyAgreementParams,
-                                                payload: ConsumeKeyAgreementPayload<K>,
-                                            ) -> Self::Output
-                                            {
-                                                let pairing = self.pairing;
-                                                let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
-                                                let draw = |length: usize| {
-                                                    self.random
-                                                        .fill_bytes(
-                                                            FillBytesParams,
-                                                            FillBytesPayload { length },
-                                                        )
-                                                        .expect(
-                                                            "the operating system's generator draws",
-                                                        )
-                                                        .bytes
-                                                };
-                                                let buyer = payload
-                                                    .adapter
-                                                    .generate_keys(
-                                                        build_generate_keys_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_generate_keys_payload(
-                                                            pairing,
-                                                            GenerateKeysPayloadOverrides {
-                                                                x_uniform: Some(draw(bound)),
-                                                                y_uniform: Some(draw(bound)),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect("the drawn keys generate");
-                                                let components = payload
-                                                    .adapter
-                                                    .key_pair_public_keys(
-                                                        build_key_pair_public_keys_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_key_pair_public_keys_payload(
-                                                            &buyer.key_pair,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the key pair's public keys read")
-                                                    .components;
-                                                let buyer_public_keys = payload
-                                                    .adapter
-                                                    .public_keys_from_components(
-                                                        build_public_keys_from_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_public_keys_from_components_payload(
-                                                            pairing,
-                                                            &buyer.possession,
-                                                            PublicKeysFromComponentsPayloadOverrides {
-                                                                components: Some(components),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the key pair's own proof admits its public keys",
-                                                    )
-                                                    .public_keys;
-                                                let buyer_keys = payload
-                                                    .adapter
-                                                    .public_keys_components(
-                                                        build_public_keys_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_public_keys_components_payload(
-                                                            &buyer_public_keys,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the admitted keys' components read")
-                                                    .components;
-                                                let wrapped = payload
-                                                    .adapter
-                                                    .wrap_to(
-                                                        build_wrap_to_params(Default::default()),
-                                                        build_wrap_to_payload(
-                                                            pairing,
-                                                            &buyer_public_keys,
-                                                            WrapToPayloadOverrides {
-                                                                credential: Some(
-                                                                    CredentialComponents {
-                                                                        a: self
-                                                                            .credential
-                                                                            .a
-                                                                            .clone(),
-                                                                        b: self
-                                                                            .credential
-                                                                            .b
-                                                                            .clone(),
-                                                                    },
-                                                                ),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the credential wraps to the admitted keys",
-                                                    );
-                                                let envelope = payload
-                                                    .adapter
-                                                    .envelope_components(
-                                                        build_envelope_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_envelope_components_payload(
-                                                            &wrapped.envelope,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the envelope's components read")
-                                                    .components;
-
-                                                for concrete in DELIVERY_PROOF_CONCRETES {
-                                                    // Act
-                                                    let created = create_delivery_proof::<
-                                                        P,
-                                                        E,
-                                                        F,
-                                                        MintConsumer<'_, P>,
-                                                    >(
-                                                        &build_create_delivery_proof_deps(
-                                                            pairing,
-                                                            self.hash_to_scalar,
-                                                            self.encoder,
-                                                            self.random,
-                                                            MintConsumer {
-                                                                pairing,
-                                                                hpub: self.hpub.clone(),
-                                                                identity_element: self
-                                                                    .identity_element
-                                                                    .clone(),
-                                                                buyer_keys: PublicKeysComponents {
-                                                                    pk1: buyer_keys.pk1.clone(),
-                                                                    pk2: buyer_keys.pk2.clone(),
-                                                                },
-                                                                envelope: EnvelopeComponents {
-                                                                    c1: envelope.c1.clone(),
-                                                                    c2: envelope.c2.clone(),
-                                                                    d1: envelope.d1.clone(),
-                                                                    d2: envelope.d2.clone(),
-                                                                },
-                                                                master_scalar:
-                                                                    MasterScalarComponents {
-                                                                        value: build_secret(
-                                                                            self.master_scalar
-                                                                                .value
-                                                                                .expose()
-                                                                                .clone(),
-                                                                            SecretConstructorParamsOverrides,
-                                                                        ),
-                                                                    },
-                                                                randomness: build_secret(
-                                                                    self.randomness
-                                                                        .expose()
-                                                                        .clone(),
-                                                                    SecretConstructorParamsOverrides,
-                                                                ),
-                                                                coins: EnvelopeCoins {
-                                                                    rho: build_secret(
-                                                                        wrapped
-                                                                            .coins
-                                                                            .rho
-                                                                            .expose()
-                                                                            .clone(),
-                                                                        SecretConstructorParamsOverrides,
-                                                                    ),
-                                                                    sigma: build_secret(
-                                                                        wrapped
-                                                                            .coins
-                                                                            .sigma
-                                                                            .expose()
-                                                                            .clone(),
-                                                                        SecretConstructorParamsOverrides,
-                                                                    ),
-                                                                },
-                                                            },
-                                                            Default::default(),
-                                                        ),
-                                                        build_create_delivery_proof_params(
-                                                            CreateDeliveryProofParamsOverrides {
-                                                                concrete: Some(*concrete),
-                                                                algebra: Some(
-                                                                    EnvelopeAlgebra::PairingElGamal,
-                                                                ),
-                                                                verifier_form: Some(
-                                                                    self.verifier_form,
-                                                                ),
-                                                                statement_version: Some(
-                                                                    DELIVERY_STATEMENT_VERSION_ONE,
-                                                                ),
-                                                            },
-                                                        ),
-                                                        build_create_delivery_proof_payload(
-                                                            Default::default(),
-                                                        ),
-                                                    );
-
-                                                    // Assert
-                                                    assert!(created.is_ok());
-                                                }
-                                            }
-                                        }
-
-                                        for ka_case in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                                            // Act
-                                            let created = create_key_agreement::<
-                                                P,
-                                                E,
-                                                KeyAgreementConsumer<'_, P, E, F>,
-                                            >(
-                                                &build_create_key_agreement_deps(
-                                                    pairing,
-                                                    self.hash_to_scalar,
-                                                    self.encoder,
-                                                    self.random,
-                                                    KeyAgreementConsumer {
-                                                        pairing,
-                                                        hash_to_scalar: self.hash_to_scalar,
-                                                        encoder: self.encoder,
-                                                        random: self.random,
-                                                        verifier_form: self.verifier_form,
-                                                        _forms: PhantomData,
-                                                        credential: CredentialComponents {
-                                                            a: credential.a.clone(),
-                                                            b: credential.b.clone(),
-                                                        },
-                                                        hpub: parameter_set.hpub.clone(),
-                                                        identity_element: identity_element
-                                                            .element
-                                                            .clone(),
-                                                        master_scalar: MasterScalarComponents {
-                                                            value: build_secret(
-                                                                master_scalar
-                                                                    .value
-                                                                    .expose()
-                                                                    .clone(),
-                                                                SecretConstructorParamsOverrides,
-                                                            ),
-                                                        },
-                                                        randomness: build_secret(
-                                                            issued.randomness.expose().clone(),
-                                                            SecretConstructorParamsOverrides,
-                                                        ),
-                                                    },
-                                                    Default::default(),
-                                                ),
-                                                *ka_case,
-                                                build_create_key_agreement_payload(
-                                                    Default::default(),
-                                                ),
-                                            );
-
-                                            // Assert
-                                            assert!(created.is_ok());
-                                        }
-                                    }
-                                }
-
-                                for kem_case in DECLARED_KEM_SELECTIONS {
-                                    // Act
-                                    let created = create_kem::<P, KemConsumer<'_, P, E, F>>(
-                                        &build_create_kem_deps(
-                                            pairing,
-                                            self.hash_to_scalar,
-                                            KemConsumer {
-                                                pairing,
-                                                hash_to_scalar: self.hash_to_scalar,
-                                                encoder: self.encoder,
-                                                random: self.random,
-                                                verifier_form: self.verifier_form,
-                                                _forms: PhantomData,
-                                            },
-                                            Default::default(),
-                                        ),
-                                        *kem_case,
-                                        build_create_kem_payload(Default::default()),
-                                    );
-
-                                    // Assert
-                                    assert!(created.is_ok());
-                                }
-                            }
-                        }
-
-                        for concrete in CHAIN_FORMS_CONCRETES {
-                            // Act
-                            let created = create_chain_forms(
-                                &build_create_chain_forms_deps(
-                                    ChainConsumer {
-                                        pairing,
-                                        encoder: &encoded.adapter,
-                                        hash_to_scalar: &*hashed.adapter,
-                                        random: &*random.adapter,
-                                        verifier_form: self.verifier_form,
-                                    },
-                                    Default::default(),
-                                ),
-                                build_create_chain_forms_params(CreateChainFormsParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
+                                IdentityScope::Asset => DeriveIdentityPayloadOverrides {
+                                    identity: Some(KemIdentity::Asset { root: &root }),
+                                },
+                            },
+                        ),
+                    )
+                    .expect("the identity the set fixes derives");
+                let issued = kem
+                    .issue(
+                        build_issue_params(Default::default()),
+                        build_issue_payload::<P::Scalar, _, _, _>(
+                            &setup.parameter_set,
+                            &setup.master_scalar,
+                            &derived.identity_element,
+                            IssuePayloadOverrides {
+                                uniform: Some(draw(bound)),
+                            },
+                        ),
+                    )
+                    .expect("issue admits the credential inputs");
+                let parameter_set = kem
+                    .parameter_set_components(
+                        build_parameter_set_components_params(Default::default()),
+                        build_parameter_set_components_payload(
+                            &setup.parameter_set,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the parameter set's components read")
+                    .components;
+                let identity_element = kem
+                    .identity_element_components(
+                        build_identity_element_components_params(Default::default()),
+                        build_identity_element_components_payload(
+                            &derived.identity_element,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the identity element's components read")
+                    .components;
+                let master_scalar = kem
+                    .master_scalar_components(
+                        build_master_scalar_components_params(Default::default()),
+                        build_master_scalar_components_payload(
+                            &setup.master_scalar,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the master scalar's components read")
+                    .components;
+                let credential = kem
+                    .credential_components(
+                        build_credential_components_params(Default::default()),
+                        build_credential_components_payload(&issued.credential, Default::default()),
+                    )
+                    .expect("the credential's components read")
+                    .components;
+                let buyer = key_agreement
+                    .generate_keys(
+                        build_generate_keys_params(Default::default()),
+                        build_generate_keys_payload(
+                            pairing,
+                            GenerateKeysPayloadOverrides {
+                                x_uniform: Some(draw(bound)),
+                                y_uniform: Some(draw(bound)),
+                            },
+                        ),
+                    )
+                    .expect("the drawn keys generate");
+                let components = key_agreement
+                    .key_pair_public_keys(
+                        build_key_pair_public_keys_params(Default::default()),
+                        build_key_pair_public_keys_payload(&buyer.key_pair, Default::default()),
+                    )
+                    .expect("the key pair's public keys read")
+                    .components;
+                let buyer_public_keys = key_agreement
+                    .public_keys_from_components(
+                        build_public_keys_from_components_params(Default::default()),
+                        build_public_keys_from_components_payload(
+                            pairing,
+                            &buyer.possession,
+                            PublicKeysFromComponentsPayloadOverrides {
+                                components: Some(components),
+                            },
+                        ),
+                    )
+                    .expect("the key pair's own proof admits its public keys")
+                    .public_keys;
+                let buyer_keys = key_agreement
+                    .public_keys_components(
+                        build_public_keys_components_params(Default::default()),
+                        build_public_keys_components_payload(
+                            &buyer_public_keys,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the admitted keys' components read")
+                    .components;
+                let wrapped = key_agreement
+                    .wrap_to(
+                        build_wrap_to_params(Default::default()),
+                        build_wrap_to_payload(
+                            pairing,
+                            &buyer_public_keys,
+                            WrapToPayloadOverrides {
+                                credential: Some(CredentialComponents {
+                                    a: credential.a.clone(),
+                                    b: credential.b.clone(),
                                 }),
-                                build_create_chain_forms_payload(Default::default()),
-                            );
+                            },
+                        ),
+                    )
+                    .expect("the credential wraps to the admitted keys");
+                let envelope = key_agreement
+                    .envelope_components(
+                        build_envelope_components_params(Default::default()),
+                        build_envelope_components_payload(&wrapped.envelope, Default::default()),
+                    )
+                    .expect("the envelope's components read")
+                    .components;
 
-                            // Assert
-                            assert!(created.is_ok());
-                        }
-                    }
+                for concrete in DELIVERY_PROOF_CONCRETES {
+                    // Act
+                    let created = create_delivery_proof::<P, E, F, MintConsumer<'_, P>>(
+                        &build_create_delivery_proof_deps(
+                            pairing,
+                            hash_to_scalar,
+                            encoder,
+                            random,
+                            MintConsumer {
+                                pairing,
+                                hpub: parameter_set.hpub.clone(),
+                                identity_element: identity_element.element.clone(),
+                                buyer_keys: PublicKeysComponents {
+                                    pk1: buyer_keys.pk1.clone(),
+                                    pk2: buyer_keys.pk2.clone(),
+                                },
+                                envelope: EnvelopeComponents {
+                                    c1: envelope.c1.clone(),
+                                    c2: envelope.c2.clone(),
+                                    d1: envelope.d1.clone(),
+                                    d2: envelope.d2.clone(),
+                                },
+                                master_scalar: MasterScalarComponents {
+                                    value: build_secret(
+                                        master_scalar.value.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                },
+                                randomness: build_secret(
+                                    issued.randomness.expose().clone(),
+                                    SecretConstructorParamsOverrides,
+                                ),
+                                coins: EnvelopeCoins {
+                                    rho: build_secret(
+                                        wrapped.coins.rho.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                    sigma: build_secret(
+                                        wrapped.coins.sigma.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                },
+                            },
+                            Default::default(),
+                        ),
+                        build_create_delivery_proof_params(CreateDeliveryProofParamsOverrides {
+                            concrete: Some(*concrete),
+                            algebra: Some(EnvelopeAlgebra::PairingElGamal),
+                            statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE),
+                        }),
+                        build_create_delivery_proof_payload(Default::default()),
+                    );
+
+                    // Assert
+                    assert!(created.is_ok());
                 }
-            }
-
-            for selection in DECLARED_ENCODING_SELECTIONS {
-                // Act
-                let created = create_encoding(
-                    &build_create_encoding_deps(EncodingConsumer {
-                        pairing,
-                        verifier_form,
-                    }),
-                    build_create_encoding_params(CreateEncodingParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(selection.identifier),
-                    }),
-                    build_create_encoding_payload(Default::default()),
-                );
-
-                // Assert
-                assert!(created.is_ok());
             }
         }
     }
 
-    for concrete in PAIRING_CONCRETES {
-        // Act
-        let created = create_pairing(
-            &build_create_pairing_deps(PairingConsumer, Default::default()),
-            build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*concrete),
-                ..Default::default()
-            }),
-            CreatePairingPayload,
-        );
+    for pairing_case in PAIRING_CONCRETES {
+        for selection in DECLARED_ENCODING_SELECTIONS {
+            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                for forms_concrete in CHAIN_FORMS_CONCRETES {
+                    for kem_case in DECLARED_KEM_SELECTIONS {
+                        for key_agreement_case in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                            // Act
+                            let result = run_create_delivery_proof_case(
+                                &build_create_delivery_proof_case_deps(
+                                    CaseConsumer,
+                                    Default::default(),
+                                ),
+                                build_create_delivery_proof_case_params(
+                                    CreateDeliveryProofCaseParamsOverrides {
+                                        pairing: Some(build_create_pairing_params(
+                                            CreatePairingParamsOverrides {
+                                                concrete: Some(*pairing_case),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                            CreateHashToScalarParamsOverrides {
+                                                concrete: Some(hash_case.concrete),
+                                                identifier: Some(hash_case.identifier),
+                                            },
+                                        )),
+                                        encoding: Some(build_create_encoding_params(
+                                            CreateEncodingParamsOverrides {
+                                                concrete: Some(selection.concrete),
+                                                identifier: Some(selection.identifier),
+                                            },
+                                        )),
+                                        chain_forms: Some(build_create_chain_forms_params(
+                                            CreateChainFormsParamsOverrides {
+                                                concrete: Some(*forms_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        kem: Some(*kem_case),
+                                        key_agreement: Some(*key_agreement_case),
+                                        random_source: Some(build_create_random_source_params(
+                                            CreateRandomSourceParamsOverrides {
+                                                kind: Some(RandomSourceKind::OperatingSystem),
+                                            },
+                                        )),
+                                    },
+                                ),
+                                build_create_delivery_proof_case_payload(Default::default()),
+                            );
 
-        // Assert
-        assert!(created.is_ok());
+                            // Assert
+                            assert!(result.is_ok());
+                        }
+                    }
+                }
+            }
+        }
     }
     // a_credential_issued_and_wrapped_through_the_families_is_proved_by_a_mint_proof_that_verifies
 }
@@ -1349,782 +853,418 @@ fn a_credential_rerandomized_and_wrapped_to_the_buyer_is_proved_by_a_transfer_pr
         }
     }
 
-    struct PairingConsumer;
+    struct CaseConsumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl ICreateDeliveryProofCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_delivery_proof_case<
+            P: IPairingArithmetic,
+            E: IEncoderAdapter,
+            F: IChainForms,
+            K: ICredentialKemAdapter<Pairing = P>,
+            A: IKeyAgreementAdapter<Pairing = P>,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _forms: &F,
+            kem: &K,
+            key_agreement: &A,
         ) -> Self::Output {
-            let pairing = &payload.adapter;
-            let verifier_form = P::DECLARATION.verifier_group_arithmetic;
-
-            struct EncodingConsumer<'a, P: IPairingArithmetic> {
-                pairing: &'a P,
-                verifier_form: VerifierGroupArithmetic,
-            }
-
-            impl<P: IPairingArithmetic> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    let pairing = self.pairing;
-                    for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                        // Arrange
-                        let hashed = create_hash_to_scalar::<P::Scalar>(
-                            &build_create_hash_to_scalar_deps(Default::default()),
-                            build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                                concrete: Some(hash_case.concrete),
-                                identifier: Some(hash_case.identifier),
+            let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
+            let draw = |length: usize| {
+                random
+                    .fill_bytes(FillBytesParams, FillBytesPayload { length })
+                    .expect("the operating system's generator draws")
+                    .bytes
+            };
+            for &scope in K::DECLARATION.identity_scopes {
+                // Arrange
+                let root = build_root(Default::default());
+                let setup = kem
+                    .setup(
+                        build_setup_params(SetupParamsOverrides {
+                            scope: Some(match scope {
+                                IdentityScope::Entitlement => SetupScope::Entitlement,
+                                IdentityScope::Asset => SetupScope::Asset { root: &root },
                             }),
-                            build_create_hash_to_scalar_payload(Default::default()),
-                        );
-                        assert!(hashed.is_ok());
-                        let hashed =
-                            hashed.expect("the declared selection admits the concrete it names");
-                        let random = create_random_source(
-                            &CreateRandomSourceDeps,
-                            build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                                kind: Some(RandomSourceKind::OperatingSystem),
-                            }),
-                            CreateRandomSourcePayload,
-                        );
-                        assert!(random.is_ok());
-                        let random = random.expect("the operating system's source constructs");
-
-                        struct ChainConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter> {
-                            pairing: &'a P,
-                            encoder: &'a E,
-                            hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                            random: &'a dyn IRandomSourceAdapter,
-                            verifier_form: VerifierGroupArithmetic,
-                        }
-
-                        impl<P: IPairingArithmetic, E: IEncoderAdapter> IChainFormsConsumer for ChainConsumer<'_, P, E> {
-                            type Output = ();
-
-                            fn consume_chain_forms<F: IChainForms>(
-                                &self,
-                                _params: ConsumeChainFormsParams,
-                                _payload: ConsumeChainFormsPayload<F>,
-                            ) -> Self::Output {
-                                let pairing = self.pairing;
-
-                                struct KemConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter, F> {
-                                    pairing: &'a P,
-                                    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                                    encoder: &'a E,
-                                    random: &'a dyn IRandomSourceAdapter,
-                                    verifier_form: VerifierGroupArithmetic,
-                                    _forms: PhantomData<F>,
+                        }),
+                        build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                            master_uniform: Some(draw(bound)),
+                            u0_uniform: Some(draw(bound)),
+                            u1_uniform: Some(draw(bound)),
+                        }),
+                    )
+                    .expect("setup admits the scope the case selects and the drawn uniforms");
+                let derived = kem
+                    .derive_identity(
+                        build_derive_identity_params(Default::default()),
+                        build_derive_identity_payload(
+                            &setup.parameter_set,
+                            match scope {
+                                IdentityScope::Entitlement => {
+                                    DeriveIdentityPayloadOverrides::default()
                                 }
-
-                                impl<P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms>
-                                    IKemConsumer<P> for KemConsumer<'_, P, E, F>
-                                {
-                                    type Output = ();
-
-                                    fn consume_kem<Km: ICredentialKemAdapter<Pairing = P>>(
-                                        &self,
-                                        _params: ConsumeKemParams,
-                                        payload: ConsumeKemPayload<Km>,
-                                    ) -> Self::Output {
-                                        let pairing = self.pairing;
-                                        let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
-                                        let draw = |length: usize| {
-                                            self.random
-                                                .fill_bytes(
-                                                    FillBytesParams,
-                                                    FillBytesPayload { length },
-                                                )
-                                                .expect("the operating system's generator draws")
-                                                .bytes
-                                        };
-                                        let scope = payload.scope();
-                                        let hash = build_asset_identity_hash(Default::default());
-                                        let setup = payload
-                                            .adapter
-                                            .setup(
-                                                build_setup_params(SetupParamsOverrides {
-                                                    scope: Some(match scope {
-                                                        IdentityScope::Entitlement => {
-                                                            SetupScope::Entitlement
-                                                        }
-                                                        IdentityScope::Asset => {
-                                                            SetupScope::Asset {
-                                                                identity_hash: &hash,
-                                                            }
-                                                        }
-                                                    }),
-                                                }),
-                                                build_setup_payload::<P::Scalar>(
-                                                    SetupPayloadOverrides {
-                                                        master_uniform: Some(draw(bound)),
-                                                        u0_uniform: Some(draw(bound)),
-                                                        u1_uniform: Some(draw(bound)),
-                                                    },
-                                                ),
-                                            )
-                                            .expect(
-                                                "setup admits the scope the case selects and the drawn uniforms",
-                                            );
-                                        let derived = payload
-                                            .adapter
-                                            .derive_identity(
-                                                build_derive_identity_params(Default::default()),
-                                                build_derive_identity_payload(
-                                                    &setup.parameter_set,
-                                                    match scope {
-                                                        IdentityScope::Entitlement => {
-                                                            DeriveIdentityPayloadOverrides::default(
-                                                            )
-                                                        }
-                                                        IdentityScope::Asset => {
-                                                            DeriveIdentityPayloadOverrides {
-                                                                identity: Some(
-                                                                    KemIdentity::Asset {
-                                                                        identity_hash: &hash,
-                                                                    },
-                                                                ),
-                                                            }
-                                                        }
-                                                    },
-                                                ),
-                                            )
-                                            .expect("the identity the set fixes derives");
-                                        let issued = payload
-                                            .adapter
-                                            .issue(
-                                                build_issue_params(Default::default()),
-                                                build_issue_payload::<P::Scalar, _, _, _>(
-                                                    &setup.parameter_set,
-                                                    &setup.master_scalar,
-                                                    &derived.identity_element,
-                                                    IssuePayloadOverrides {
-                                                        uniform: Some(draw(bound)),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("issue admits the credential inputs");
-                                        let identity_element = payload
-                                            .adapter
-                                            .identity_element_components(
-                                                build_identity_element_components_params(
-                                                    Default::default(),
-                                                ),
-                                                build_identity_element_components_payload(
-                                                    &derived.identity_element,
-                                                    Default::default(),
-                                                ),
-                                            )
-                                            .expect("the identity element's components read")
-                                            .components;
-                                        let credential = payload
-                                            .adapter
-                                            .credential_components(
-                                                build_credential_components_params(
-                                                    Default::default(),
-                                                ),
-                                                build_credential_components_payload(
-                                                    &issued.credential,
-                                                    Default::default(),
-                                                ),
-                                            )
-                                            .expect("the credential's components read")
-                                            .components;
-
-                                        struct KeyAgreementConsumer<
-                                            'a,
-                                            P: IPairingArithmetic,
-                                            E: IEncoderAdapter,
-                                            F,
-                                            Km: ICredentialKemAdapter<Pairing = P>,
-                                        > {
-                                            pairing: &'a P,
-                                            hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                                            encoder: &'a E,
-                                            random: &'a dyn IRandomSourceAdapter,
-                                            verifier_form: VerifierGroupArithmetic,
-                                            _forms: PhantomData<F>,
-                                            kem: &'a Km,
-                                            parameter_set: &'a Km::ParameterSet,
-                                            identity_element: &'a Km::IdentityElement,
-                                            identity_element_element: P::G1,
-                                            credential: CredentialComponents<P::G1, P::G2>,
-                                        }
-
-                                        impl<
-                                            P: IPairingArithmetic,
-                                            E: IEncoderAdapter,
-                                            F: IChainForms,
-                                            Km: ICredentialKemAdapter<Pairing = P>,
-                                        >
-                                            IKeyAgreementConsumer<P>
-                                            for KeyAgreementConsumer<'_, P, E, F, Km>
-                                        {
-                                            type Output = ();
-
-                                            fn consume_key_agreement<
-                                                K: IKeyAgreementAdapter<Pairing = P>,
-                                            >(
-                                                &self,
-                                                _params: ConsumeKeyAgreementParams,
-                                                payload: ConsumeKeyAgreementPayload<K>,
-                                            ) -> Self::Output
-                                            {
-                                                let pairing = self.pairing;
-                                                let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
-                                                let draw = |length: usize| {
-                                                    self.random
-                                                        .fill_bytes(
-                                                            FillBytesParams,
-                                                            FillBytesPayload { length },
-                                                        )
-                                                        .expect(
-                                                            "the operating system's generator draws",
-                                                        )
-                                                        .bytes
-                                                };
-                                                let seller = payload
-                                                    .adapter
-                                                    .generate_keys(
-                                                        build_generate_keys_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_generate_keys_payload(
-                                                            pairing,
-                                                            GenerateKeysPayloadOverrides {
-                                                                x_uniform: Some(draw(bound)),
-                                                                y_uniform: Some(draw(bound)),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect("the seller's drawn keys generate");
-                                                let buyer = payload
-                                                    .adapter
-                                                    .generate_keys(
-                                                        build_generate_keys_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_generate_keys_payload(
-                                                            pairing,
-                                                            GenerateKeysPayloadOverrides {
-                                                                x_uniform: Some(draw(bound)),
-                                                                y_uniform: Some(draw(bound)),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect("the buyer's drawn keys generate");
-                                                let seller_components = payload
-                                                    .adapter
-                                                    .key_pair_public_keys(
-                                                        build_key_pair_public_keys_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_key_pair_public_keys_payload(
-                                                            &seller.key_pair,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the seller's public keys read")
-                                                    .components;
-                                                let seller_public_keys = payload
-                                                    .adapter
-                                                    .public_keys_from_components(
-                                                        build_public_keys_from_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_public_keys_from_components_payload(
-                                                            pairing,
-                                                            &seller.possession,
-                                                            PublicKeysFromComponentsPayloadOverrides {
-                                                                components: Some(seller_components),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the seller's own proof admits its public keys",
-                                                    )
-                                                    .public_keys;
-                                                let buyer_components = payload
-                                                    .adapter
-                                                    .key_pair_public_keys(
-                                                        build_key_pair_public_keys_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_key_pair_public_keys_payload(
-                                                            &buyer.key_pair,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the buyer's public keys read")
-                                                    .components;
-                                                let buyer_public_keys = payload
-                                                    .adapter
-                                                    .public_keys_from_components(
-                                                        build_public_keys_from_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_public_keys_from_components_payload(
-                                                            pairing,
-                                                            &buyer.possession,
-                                                            PublicKeysFromComponentsPayloadOverrides {
-                                                                components: Some(buyer_components),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the buyer's own proof admits its public keys",
-                                                    )
-                                                    .public_keys;
-                                                let seller_keys = payload
-                                                    .adapter
-                                                    .public_keys_components(
-                                                        build_public_keys_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_public_keys_components_payload(
-                                                            &seller_public_keys,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the seller's components read")
-                                                    .components;
-                                                let buyer_keys = payload
-                                                    .adapter
-                                                    .public_keys_components(
-                                                        build_public_keys_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_public_keys_components_payload(
-                                                            &buyer_public_keys,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the buyer's components read")
-                                                    .components;
-                                                let seller_secrets = payload
-                                                    .adapter
-                                                    .key_pair_components(
-                                                        build_key_pair_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_key_pair_components_payload(
-                                                            &seller.key_pair,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the seller's key-pair components read")
-                                                    .components;
-                                                let wrapped_old = payload
-                                                    .adapter
-                                                    .wrap_to(
-                                                        build_wrap_to_params(Default::default()),
-                                                        build_wrap_to_payload(
-                                                            pairing,
-                                                            &seller_public_keys,
-                                                            WrapToPayloadOverrides {
-                                                                credential: Some(
-                                                                    CredentialComponents {
-                                                                        a: self
-                                                                            .credential
-                                                                            .a
-                                                                            .clone(),
-                                                                        b: self
-                                                                            .credential
-                                                                            .b
-                                                                            .clone(),
-                                                                    },
-                                                                ),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the credential wraps to the seller's keys",
-                                                    );
-                                                let opened = payload
-                                                    .adapter
-                                                    .unwrap(
-                                                        build_unwrap_params(Default::default()),
-                                                        build_unwrap_payload(
-                                                            &seller.key_pair,
-                                                            &wrapped_old.envelope,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the seller's unwrap is infallible");
-                                                let delivered = self
-                                                    .kem
-                                                    .credential_from_components(
-                                                        build_credential_from_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_credential_from_components_payload(
-                                                            pairing,
-                                                            CredentialFromComponentsPayloadOverrides {
-                                                                components: Some(opened.credential),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect("the credential rebuild is infallible")
-                                                    .credential;
-                                                let rerandomized = self
-                                                    .kem
-                                                    .rerandomize(
-                                                        build_rerandomize_params(Default::default()),
-                                                        build_rerandomize_payload::<
-                                                            P::Scalar,
-                                                            _,
-                                                            _,
-                                                            _,
-                                                        >(
-                                                            self.parameter_set,
-                                                            self.identity_element,
-                                                            &delivered,
-                                                            RerandomizePayloadOverrides {
-                                                                uniform: Some(draw(bound)),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the drawn uniform rerandomizes the credential",
-                                                    );
-                                                let rerandomized_components = self
-                                                    .kem
-                                                    .credential_components(
-                                                        build_credential_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_credential_components_payload(
-                                                            &rerandomized.credential,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the credential's components read")
-                                                    .components;
-                                                let wrapped_new = payload
-                                                    .adapter
-                                                    .wrap_to(
-                                                        build_wrap_to_params(Default::default()),
-                                                        build_wrap_to_payload(
-                                                            pairing,
-                                                            &buyer_public_keys,
-                                                            WrapToPayloadOverrides {
-                                                                credential: Some(
-                                                                    rerandomized_components,
-                                                                ),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the credential wraps to the buyer's keys",
-                                                    );
-                                                let old_envelope = payload
-                                                    .adapter
-                                                    .envelope_components(
-                                                        build_envelope_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_envelope_components_payload(
-                                                            &wrapped_old.envelope,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the old envelope's components read")
-                                                    .components;
-                                                let new_envelope_components = payload
-                                                    .adapter
-                                                    .envelope_components(
-                                                        build_envelope_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_envelope_components_payload(
-                                                            &wrapped_new.envelope,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the new envelope's components read")
-                                                    .components;
-
-                                                for concrete in DELIVERY_PROOF_CONCRETES {
-                                                    // Act
-                                                    let created = create_delivery_proof::<
-                                                        P,
-                                                        E,
-                                                        F,
-                                                        TransferConsumer<'_, P, Km, K>,
-                                                    >(
-                                                        &build_create_delivery_proof_deps(
-                                                            pairing,
-                                                            self.hash_to_scalar,
-                                                            self.encoder,
-                                                            self.random,
-                                                            TransferConsumer {
-                                                                pairing,
-                                                                kem: self.kem,
-                                                                parameter_set: self.parameter_set,
-                                                                identity_element: self
-                                                                    .identity_element,
-                                                                identity_element_element: self
-                                                                    .identity_element_element
-                                                                    .clone(),
-                                                                key_agreement: &payload.adapter,
-                                                                buyer_key_pair: &buyer.key_pair,
-                                                                new_envelope: &wrapped_new.envelope,
-                                                                seller_secrets: KeyPairComponents {
-                                                                    x: build_secret(
-                                                                        seller_secrets
-                                                                            .x
-                                                                            .expose()
-                                                                            .clone(),
-                                                                        SecretConstructorParamsOverrides,
-                                                                    ),
-                                                                    y: build_secret(
-                                                                        seller_secrets
-                                                                            .y
-                                                                            .expose()
-                                                                            .clone(),
-                                                                        SecretConstructorParamsOverrides,
-                                                                    ),
-                                                                },
-                                                                offset: build_secret(
-                                                                    rerandomized
-                                                                        .offset
-                                                                        .expose()
-                                                                        .clone(),
-                                                                    SecretConstructorParamsOverrides,
-                                                                ),
-                                                                coins: EnvelopeCoins {
-                                                                    rho: build_secret(
-                                                                        wrapped_new
-                                                                            .coins
-                                                                            .rho
-                                                                            .expose()
-                                                                            .clone(),
-                                                                        SecretConstructorParamsOverrides,
-                                                                    ),
-                                                                    sigma: build_secret(
-                                                                        wrapped_new
-                                                                            .coins
-                                                                            .sigma
-                                                                            .expose()
-                                                                            .clone(),
-                                                                        SecretConstructorParamsOverrides,
-                                                                    ),
-                                                                },
-                                                                seller_keys:
-                                                                    PublicKeysComponents {
-                                                                        pk1: seller_keys
-                                                                            .pk1
-                                                                            .clone(),
-                                                                        pk2: seller_keys
-                                                                            .pk2
-                                                                            .clone(),
-                                                                    },
-                                                                buyer_keys:
-                                                                    PublicKeysComponents {
-                                                                        pk1: buyer_keys
-                                                                            .pk1
-                                                                            .clone(),
-                                                                        pk2: buyer_keys
-                                                                            .pk2
-                                                                            .clone(),
-                                                                    },
-                                                                old_envelope:
-                                                                    EnvelopeComponents {
-                                                                        c1: old_envelope
-                                                                            .c1
-                                                                            .clone(),
-                                                                        c2: old_envelope
-                                                                            .c2
-                                                                            .clone(),
-                                                                        d1: old_envelope
-                                                                            .d1
-                                                                            .clone(),
-                                                                        d2: old_envelope
-                                                                            .d2
-                                                                            .clone(),
-                                                                    },
-                                                                new_envelope_components:
-                                                                    EnvelopeComponents {
-                                                                        c1: new_envelope_components
-                                                                            .c1
-                                                                            .clone(),
-                                                                        c2: new_envelope_components
-                                                                            .c2
-                                                                            .clone(),
-                                                                        d1: new_envelope_components
-                                                                            .d1
-                                                                            .clone(),
-                                                                        d2: new_envelope_components
-                                                                            .d2
-                                                                            .clone(),
-                                                                    },
-                                                            },
-                                                            Default::default(),
-                                                        ),
-                                                        build_create_delivery_proof_params(
-                                                            CreateDeliveryProofParamsOverrides {
-                                                                concrete: Some(*concrete),
-                                                                algebra: Some(
-                                                                    EnvelopeAlgebra::PairingElGamal,
-                                                                ),
-                                                                verifier_form: Some(
-                                                                    self.verifier_form,
-                                                                ),
-                                                                statement_version: Some(
-                                                                    DELIVERY_STATEMENT_VERSION_ONE,
-                                                                ),
-                                                            },
-                                                        ),
-                                                        build_create_delivery_proof_payload(
-                                                            Default::default(),
-                                                        ),
-                                                    );
-
-                                                    // Assert
-                                                    assert!(created.is_ok());
-                                                }
-                                            }
-                                        }
-
-                                        for ka_case in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                                            // Act
-                                            let created = create_key_agreement::<
-                                                P,
-                                                E,
-                                                KeyAgreementConsumer<'_, P, E, F, Km>,
-                                            >(
-                                                &build_create_key_agreement_deps(
-                                                    pairing,
-                                                    self.hash_to_scalar,
-                                                    self.encoder,
-                                                    self.random,
-                                                    KeyAgreementConsumer {
-                                                        pairing,
-                                                        hash_to_scalar: self.hash_to_scalar,
-                                                        encoder: self.encoder,
-                                                        random: self.random,
-                                                        verifier_form: self.verifier_form,
-                                                        _forms: PhantomData,
-                                                        kem: &payload.adapter,
-                                                        parameter_set: &setup.parameter_set,
-                                                        identity_element: &derived.identity_element,
-                                                        identity_element_element: identity_element
-                                                            .element
-                                                            .clone(),
-                                                        credential: CredentialComponents {
-                                                            a: credential.a.clone(),
-                                                            b: credential.b.clone(),
-                                                        },
-                                                    },
-                                                    Default::default(),
-                                                ),
-                                                *ka_case,
-                                                build_create_key_agreement_payload(
-                                                    Default::default(),
-                                                ),
-                                            );
-
-                                            // Assert
-                                            assert!(created.is_ok());
-                                        }
-                                    }
-                                }
-
-                                for kem_case in DECLARED_KEM_SELECTIONS {
-                                    // Act
-                                    let created = create_kem::<P, KemConsumer<'_, P, E, F>>(
-                                        &build_create_kem_deps(
-                                            pairing,
-                                            self.hash_to_scalar,
-                                            KemConsumer {
-                                                pairing,
-                                                hash_to_scalar: self.hash_to_scalar,
-                                                encoder: self.encoder,
-                                                random: self.random,
-                                                verifier_form: self.verifier_form,
-                                                _forms: PhantomData,
-                                            },
-                                            Default::default(),
-                                        ),
-                                        *kem_case,
-                                        build_create_kem_payload(Default::default()),
-                                    );
-
-                                    // Assert
-                                    assert!(created.is_ok());
-                                }
-                            }
-                        }
-
-                        for concrete in CHAIN_FORMS_CONCRETES {
-                            // Act
-                            let created = create_chain_forms(
-                                &build_create_chain_forms_deps(
-                                    ChainConsumer {
-                                        pairing,
-                                        encoder: &encoded.adapter,
-                                        hash_to_scalar: &*hashed.adapter,
-                                        random: &*random.adapter,
-                                        verifier_form: self.verifier_form,
-                                    },
-                                    Default::default(),
-                                ),
-                                build_create_chain_forms_params(CreateChainFormsParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
+                                IdentityScope::Asset => DeriveIdentityPayloadOverrides {
+                                    identity: Some(KemIdentity::Asset { root: &root }),
+                                },
+                            },
+                        ),
+                    )
+                    .expect("the identity the set fixes derives");
+                let issued = kem
+                    .issue(
+                        build_issue_params(Default::default()),
+                        build_issue_payload::<P::Scalar, _, _, _>(
+                            &setup.parameter_set,
+                            &setup.master_scalar,
+                            &derived.identity_element,
+                            IssuePayloadOverrides {
+                                uniform: Some(draw(bound)),
+                            },
+                        ),
+                    )
+                    .expect("issue admits the credential inputs");
+                let identity_element = kem
+                    .identity_element_components(
+                        build_identity_element_components_params(Default::default()),
+                        build_identity_element_components_payload(
+                            &derived.identity_element,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the identity element's components read")
+                    .components;
+                let credential = kem
+                    .credential_components(
+                        build_credential_components_params(Default::default()),
+                        build_credential_components_payload(&issued.credential, Default::default()),
+                    )
+                    .expect("the credential's components read")
+                    .components;
+                let seller = key_agreement
+                    .generate_keys(
+                        build_generate_keys_params(Default::default()),
+                        build_generate_keys_payload(
+                            pairing,
+                            GenerateKeysPayloadOverrides {
+                                x_uniform: Some(draw(bound)),
+                                y_uniform: Some(draw(bound)),
+                            },
+                        ),
+                    )
+                    .expect("the seller's drawn keys generate");
+                let buyer = key_agreement
+                    .generate_keys(
+                        build_generate_keys_params(Default::default()),
+                        build_generate_keys_payload(
+                            pairing,
+                            GenerateKeysPayloadOverrides {
+                                x_uniform: Some(draw(bound)),
+                                y_uniform: Some(draw(bound)),
+                            },
+                        ),
+                    )
+                    .expect("the buyer's drawn keys generate");
+                let seller_components = key_agreement
+                    .key_pair_public_keys(
+                        build_key_pair_public_keys_params(Default::default()),
+                        build_key_pair_public_keys_payload(&seller.key_pair, Default::default()),
+                    )
+                    .expect("the seller's public keys read")
+                    .components;
+                let seller_public_keys = key_agreement
+                    .public_keys_from_components(
+                        build_public_keys_from_components_params(Default::default()),
+                        build_public_keys_from_components_payload(
+                            pairing,
+                            &seller.possession,
+                            PublicKeysFromComponentsPayloadOverrides {
+                                components: Some(seller_components),
+                            },
+                        ),
+                    )
+                    .expect("the seller's own proof admits its public keys")
+                    .public_keys;
+                let buyer_components = key_agreement
+                    .key_pair_public_keys(
+                        build_key_pair_public_keys_params(Default::default()),
+                        build_key_pair_public_keys_payload(&buyer.key_pair, Default::default()),
+                    )
+                    .expect("the buyer's public keys read")
+                    .components;
+                let buyer_public_keys = key_agreement
+                    .public_keys_from_components(
+                        build_public_keys_from_components_params(Default::default()),
+                        build_public_keys_from_components_payload(
+                            pairing,
+                            &buyer.possession,
+                            PublicKeysFromComponentsPayloadOverrides {
+                                components: Some(buyer_components),
+                            },
+                        ),
+                    )
+                    .expect("the buyer's own proof admits its public keys")
+                    .public_keys;
+                let seller_keys = key_agreement
+                    .public_keys_components(
+                        build_public_keys_components_params(Default::default()),
+                        build_public_keys_components_payload(
+                            &seller_public_keys,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the seller's components read")
+                    .components;
+                let buyer_keys = key_agreement
+                    .public_keys_components(
+                        build_public_keys_components_params(Default::default()),
+                        build_public_keys_components_payload(
+                            &buyer_public_keys,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the buyer's components read")
+                    .components;
+                let seller_secrets = key_agreement
+                    .key_pair_components(
+                        build_key_pair_components_params(Default::default()),
+                        build_key_pair_components_payload(&seller.key_pair, Default::default()),
+                    )
+                    .expect("the seller's key-pair components read")
+                    .components;
+                let wrapped_old = key_agreement
+                    .wrap_to(
+                        build_wrap_to_params(Default::default()),
+                        build_wrap_to_payload(
+                            pairing,
+                            &seller_public_keys,
+                            WrapToPayloadOverrides {
+                                credential: Some(CredentialComponents {
+                                    a: credential.a.clone(),
+                                    b: credential.b.clone(),
                                 }),
-                                build_create_chain_forms_payload(Default::default()),
-                            );
+                            },
+                        ),
+                    )
+                    .expect("the credential wraps to the seller's keys");
+                let opened = key_agreement
+                    .unwrap(
+                        build_unwrap_params(Default::default()),
+                        build_unwrap_payload(
+                            &seller.key_pair,
+                            &wrapped_old.envelope,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the seller's unwrap is infallible");
+                let delivered = kem
+                    .credential_from_components(
+                        build_credential_from_components_params(Default::default()),
+                        build_credential_from_components_payload(
+                            pairing,
+                            CredentialFromComponentsPayloadOverrides {
+                                components: Some(opened.credential),
+                            },
+                        ),
+                    )
+                    .expect("the credential rebuild is infallible")
+                    .credential;
+                let rerandomized = kem
+                    .rerandomize(
+                        build_rerandomize_params(Default::default()),
+                        build_rerandomize_payload::<P::Scalar, _, _, _>(
+                            &setup.parameter_set,
+                            &derived.identity_element,
+                            &delivered,
+                            RerandomizePayloadOverrides {
+                                uniform: Some(draw(bound)),
+                            },
+                        ),
+                    )
+                    .expect("the drawn uniform rerandomizes the credential");
+                let rerandomized_components = kem
+                    .credential_components(
+                        build_credential_components_params(Default::default()),
+                        build_credential_components_payload(
+                            &rerandomized.credential,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the credential's components read")
+                    .components;
+                let wrapped_new = key_agreement
+                    .wrap_to(
+                        build_wrap_to_params(Default::default()),
+                        build_wrap_to_payload(
+                            pairing,
+                            &buyer_public_keys,
+                            WrapToPayloadOverrides {
+                                credential: Some(rerandomized_components),
+                            },
+                        ),
+                    )
+                    .expect("the credential wraps to the buyer's keys");
+                let old_envelope = key_agreement
+                    .envelope_components(
+                        build_envelope_components_params(Default::default()),
+                        build_envelope_components_payload(
+                            &wrapped_old.envelope,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the old envelope's components read")
+                    .components;
+                let new_envelope_components = key_agreement
+                    .envelope_components(
+                        build_envelope_components_params(Default::default()),
+                        build_envelope_components_payload(
+                            &wrapped_new.envelope,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the new envelope's components read")
+                    .components;
 
-                            // Assert
-                            assert!(created.is_ok());
-                        }
-                    }
+                for concrete in DELIVERY_PROOF_CONCRETES {
+                    // Act
+                    let created = create_delivery_proof::<P, E, F, TransferConsumer<'_, P, K, A>>(
+                        &build_create_delivery_proof_deps(
+                            pairing,
+                            hash_to_scalar,
+                            encoder,
+                            random,
+                            TransferConsumer {
+                                pairing,
+                                kem,
+                                parameter_set: &setup.parameter_set,
+                                identity_element: &derived.identity_element,
+                                identity_element_element: identity_element.element.clone(),
+                                key_agreement,
+                                buyer_key_pair: &buyer.key_pair,
+                                new_envelope: &wrapped_new.envelope,
+                                seller_secrets: KeyPairComponents {
+                                    x: build_secret(
+                                        seller_secrets.x.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                    y: build_secret(
+                                        seller_secrets.y.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                },
+                                offset: build_secret(
+                                    rerandomized.offset.expose().clone(),
+                                    SecretConstructorParamsOverrides,
+                                ),
+                                coins: EnvelopeCoins {
+                                    rho: build_secret(
+                                        wrapped_new.coins.rho.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                    sigma: build_secret(
+                                        wrapped_new.coins.sigma.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                },
+                                seller_keys: PublicKeysComponents {
+                                    pk1: seller_keys.pk1.clone(),
+                                    pk2: seller_keys.pk2.clone(),
+                                },
+                                buyer_keys: PublicKeysComponents {
+                                    pk1: buyer_keys.pk1.clone(),
+                                    pk2: buyer_keys.pk2.clone(),
+                                },
+                                old_envelope: EnvelopeComponents {
+                                    c1: old_envelope.c1.clone(),
+                                    c2: old_envelope.c2.clone(),
+                                    d1: old_envelope.d1.clone(),
+                                    d2: old_envelope.d2.clone(),
+                                },
+                                new_envelope_components: EnvelopeComponents {
+                                    c1: new_envelope_components.c1.clone(),
+                                    c2: new_envelope_components.c2.clone(),
+                                    d1: new_envelope_components.d1.clone(),
+                                    d2: new_envelope_components.d2.clone(),
+                                },
+                            },
+                            Default::default(),
+                        ),
+                        build_create_delivery_proof_params(CreateDeliveryProofParamsOverrides {
+                            concrete: Some(*concrete),
+                            algebra: Some(EnvelopeAlgebra::PairingElGamal),
+                            statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE),
+                        }),
+                        build_create_delivery_proof_payload(Default::default()),
+                    );
+
+                    // Assert
+                    assert!(created.is_ok());
                 }
-            }
-
-            for selection in DECLARED_ENCODING_SELECTIONS {
-                // Act
-                let created = create_encoding(
-                    &build_create_encoding_deps(EncodingConsumer {
-                        pairing,
-                        verifier_form,
-                    }),
-                    build_create_encoding_params(CreateEncodingParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(selection.identifier),
-                    }),
-                    build_create_encoding_payload(Default::default()),
-                );
-
-                // Assert
-                assert!(created.is_ok());
             }
         }
     }
 
-    for concrete in PAIRING_CONCRETES {
-        // Act
-        let created = create_pairing(
-            &build_create_pairing_deps(PairingConsumer, Default::default()),
-            build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*concrete),
-                ..Default::default()
-            }),
-            CreatePairingPayload,
-        );
+    for pairing_case in PAIRING_CONCRETES {
+        for selection in DECLARED_ENCODING_SELECTIONS {
+            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                for forms_concrete in CHAIN_FORMS_CONCRETES {
+                    for kem_case in DECLARED_KEM_SELECTIONS {
+                        for key_agreement_case in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                            // Act
+                            let result = run_create_delivery_proof_case(
+                                &build_create_delivery_proof_case_deps(
+                                    CaseConsumer,
+                                    Default::default(),
+                                ),
+                                build_create_delivery_proof_case_params(
+                                    CreateDeliveryProofCaseParamsOverrides {
+                                        pairing: Some(build_create_pairing_params(
+                                            CreatePairingParamsOverrides {
+                                                concrete: Some(*pairing_case),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                            CreateHashToScalarParamsOverrides {
+                                                concrete: Some(hash_case.concrete),
+                                                identifier: Some(hash_case.identifier),
+                                            },
+                                        )),
+                                        encoding: Some(build_create_encoding_params(
+                                            CreateEncodingParamsOverrides {
+                                                concrete: Some(selection.concrete),
+                                                identifier: Some(selection.identifier),
+                                            },
+                                        )),
+                                        chain_forms: Some(build_create_chain_forms_params(
+                                            CreateChainFormsParamsOverrides {
+                                                concrete: Some(*forms_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        kem: Some(*kem_case),
+                                        key_agreement: Some(*key_agreement_case),
+                                        random_source: Some(build_create_random_source_params(
+                                            CreateRandomSourceParamsOverrides {
+                                                kind: Some(RandomSourceKind::OperatingSystem),
+                                            },
+                                        )),
+                                    },
+                                ),
+                                build_create_delivery_proof_case_payload(Default::default()),
+                            );
 
-        // Assert
-        assert!(created.is_ok());
+                            // Assert
+                            assert!(result.is_ok());
+                        }
+                    }
+                }
+            }
+        }
     }
     // a_credential_rerandomized_and_wrapped_to_the_buyer_is_proved_by_a_transfer_proof_that_verifies_and_opens
 }
@@ -2276,775 +1416,412 @@ fn a_transfer_proof_fails_against_a_statement_with_another_expiry() {
         }
     }
 
-    struct PairingConsumer;
+    struct CaseConsumer;
 
-    impl IPairingConsumer for PairingConsumer {
+    impl ICreateDeliveryProofCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_delivery_proof_case<
+            P: IPairingArithmetic,
+            E: IEncoderAdapter,
+            F: IChainForms,
+            K: ICredentialKemAdapter<Pairing = P>,
+            A: IKeyAgreementAdapter<Pairing = P>,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _forms: &F,
+            kem: &K,
+            key_agreement: &A,
         ) -> Self::Output {
-            let pairing = &payload.adapter;
-            let verifier_form = P::DECLARATION.verifier_group_arithmetic;
-
-            struct EncodingConsumer<'a, P: IPairingArithmetic> {
-                pairing: &'a P,
-                verifier_form: VerifierGroupArithmetic,
-            }
-
-            impl<P: IPairingArithmetic> IEncodingConsumer for EncodingConsumer<'_, P> {
-                type Output = ();
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    encoded: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    let pairing = self.pairing;
-                    for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                        // Arrange
-                        let hashed = create_hash_to_scalar::<P::Scalar>(
-                            &build_create_hash_to_scalar_deps(Default::default()),
-                            build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                                concrete: Some(hash_case.concrete),
-                                identifier: Some(hash_case.identifier),
+            let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
+            let draw = |length: usize| {
+                random
+                    .fill_bytes(FillBytesParams, FillBytesPayload { length })
+                    .expect("the operating system's generator draws")
+                    .bytes
+            };
+            for &scope in K::DECLARATION.identity_scopes {
+                // Arrange
+                let root = build_root(Default::default());
+                let setup = kem
+                    .setup(
+                        build_setup_params(SetupParamsOverrides {
+                            scope: Some(match scope {
+                                IdentityScope::Entitlement => SetupScope::Entitlement,
+                                IdentityScope::Asset => SetupScope::Asset { root: &root },
                             }),
-                            build_create_hash_to_scalar_payload(Default::default()),
-                        );
-                        assert!(hashed.is_ok());
-                        let hashed =
-                            hashed.expect("the declared selection admits the concrete it names");
-                        let random = create_random_source(
-                            &CreateRandomSourceDeps,
-                            build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                                kind: Some(RandomSourceKind::OperatingSystem),
-                            }),
-                            CreateRandomSourcePayload,
-                        );
-                        assert!(random.is_ok());
-                        let random = random.expect("the operating system's source constructs");
-
-                        struct ChainConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter> {
-                            pairing: &'a P,
-                            encoder: &'a E,
-                            hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                            random: &'a dyn IRandomSourceAdapter,
-                            verifier_form: VerifierGroupArithmetic,
-                        }
-
-                        impl<P: IPairingArithmetic, E: IEncoderAdapter> IChainFormsConsumer for ChainConsumer<'_, P, E> {
-                            type Output = ();
-
-                            fn consume_chain_forms<F: IChainForms>(
-                                &self,
-                                _params: ConsumeChainFormsParams,
-                                _payload: ConsumeChainFormsPayload<F>,
-                            ) -> Self::Output {
-                                let pairing = self.pairing;
-
-                                struct KemConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter, F> {
-                                    pairing: &'a P,
-                                    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                                    encoder: &'a E,
-                                    random: &'a dyn IRandomSourceAdapter,
-                                    verifier_form: VerifierGroupArithmetic,
-                                    _forms: PhantomData<F>,
+                        }),
+                        build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
+                            master_uniform: Some(draw(bound)),
+                            u0_uniform: Some(draw(bound)),
+                            u1_uniform: Some(draw(bound)),
+                        }),
+                    )
+                    .expect("setup admits the scope the case selects and the drawn uniforms");
+                let derived = kem
+                    .derive_identity(
+                        build_derive_identity_params(Default::default()),
+                        build_derive_identity_payload(
+                            &setup.parameter_set,
+                            match scope {
+                                IdentityScope::Entitlement => {
+                                    DeriveIdentityPayloadOverrides::default()
                                 }
-
-                                impl<P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms>
-                                    IKemConsumer<P> for KemConsumer<'_, P, E, F>
-                                {
-                                    type Output = ();
-
-                                    fn consume_kem<Km: ICredentialKemAdapter<Pairing = P>>(
-                                        &self,
-                                        _params: ConsumeKemParams,
-                                        payload: ConsumeKemPayload<Km>,
-                                    ) -> Self::Output {
-                                        let pairing = self.pairing;
-                                        let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
-                                        let draw = |length: usize| {
-                                            self.random
-                                                .fill_bytes(
-                                                    FillBytesParams,
-                                                    FillBytesPayload { length },
-                                                )
-                                                .expect("the operating system's generator draws")
-                                                .bytes
-                                        };
-                                        let scope = payload.scope();
-                                        let hash = build_asset_identity_hash(Default::default());
-                                        let setup = payload
-                                            .adapter
-                                            .setup(
-                                                build_setup_params(SetupParamsOverrides {
-                                                    scope: Some(match scope {
-                                                        IdentityScope::Entitlement => {
-                                                            SetupScope::Entitlement
-                                                        }
-                                                        IdentityScope::Asset => {
-                                                            SetupScope::Asset {
-                                                                identity_hash: &hash,
-                                                            }
-                                                        }
-                                                    }),
-                                                }),
-                                                build_setup_payload::<P::Scalar>(
-                                                    SetupPayloadOverrides {
-                                                        master_uniform: Some(draw(bound)),
-                                                        u0_uniform: Some(draw(bound)),
-                                                        u1_uniform: Some(draw(bound)),
-                                                    },
-                                                ),
-                                            )
-                                            .expect(
-                                                "setup admits the scope the case selects and the drawn uniforms",
-                                            );
-                                        let derived = payload
-                                            .adapter
-                                            .derive_identity(
-                                                build_derive_identity_params(Default::default()),
-                                                build_derive_identity_payload(
-                                                    &setup.parameter_set,
-                                                    match scope {
-                                                        IdentityScope::Entitlement => {
-                                                            DeriveIdentityPayloadOverrides::default(
-                                                            )
-                                                        }
-                                                        IdentityScope::Asset => {
-                                                            DeriveIdentityPayloadOverrides {
-                                                                identity: Some(
-                                                                    KemIdentity::Asset {
-                                                                        identity_hash: &hash,
-                                                                    },
-                                                                ),
-                                                            }
-                                                        }
-                                                    },
-                                                ),
-                                            )
-                                            .expect("the identity the set fixes derives");
-                                        let issued = payload
-                                            .adapter
-                                            .issue(
-                                                build_issue_params(Default::default()),
-                                                build_issue_payload::<P::Scalar, _, _, _>(
-                                                    &setup.parameter_set,
-                                                    &setup.master_scalar,
-                                                    &derived.identity_element,
-                                                    IssuePayloadOverrides {
-                                                        uniform: Some(draw(bound)),
-                                                    },
-                                                ),
-                                            )
-                                            .expect("issue admits the credential inputs");
-                                        let identity_element = payload
-                                            .adapter
-                                            .identity_element_components(
-                                                build_identity_element_components_params(
-                                                    Default::default(),
-                                                ),
-                                                build_identity_element_components_payload(
-                                                    &derived.identity_element,
-                                                    Default::default(),
-                                                ),
-                                            )
-                                            .expect("the identity element's components read")
-                                            .components;
-                                        let credential = payload
-                                            .adapter
-                                            .credential_components(
-                                                build_credential_components_params(
-                                                    Default::default(),
-                                                ),
-                                                build_credential_components_payload(
-                                                    &issued.credential,
-                                                    Default::default(),
-                                                ),
-                                            )
-                                            .expect("the credential's components read")
-                                            .components;
-
-                                        struct KeyAgreementConsumer<
-                                            'a,
-                                            P: IPairingArithmetic,
-                                            E: IEncoderAdapter,
-                                            F,
-                                            Km: ICredentialKemAdapter<Pairing = P>,
-                                        > {
-                                            pairing: &'a P,
-                                            hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-                                            encoder: &'a E,
-                                            random: &'a dyn IRandomSourceAdapter,
-                                            verifier_form: VerifierGroupArithmetic,
-                                            _forms: PhantomData<F>,
-                                            kem: &'a Km,
-                                            parameter_set: &'a Km::ParameterSet,
-                                            identity_element: &'a Km::IdentityElement,
-                                            identity_element_element: P::G1,
-                                            credential: CredentialComponents<P::G1, P::G2>,
-                                        }
-
-                                        impl<
-                                            P: IPairingArithmetic,
-                                            E: IEncoderAdapter,
-                                            F: IChainForms,
-                                            Km: ICredentialKemAdapter<Pairing = P>,
-                                        >
-                                            IKeyAgreementConsumer<P>
-                                            for KeyAgreementConsumer<'_, P, E, F, Km>
-                                        {
-                                            type Output = ();
-
-                                            fn consume_key_agreement<
-                                                K: IKeyAgreementAdapter<Pairing = P>,
-                                            >(
-                                                &self,
-                                                _params: ConsumeKeyAgreementParams,
-                                                payload: ConsumeKeyAgreementPayload<K>,
-                                            ) -> Self::Output
-                                            {
-                                                let pairing = self.pairing;
-                                                let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
-                                                let draw = |length: usize| {
-                                                    self.random
-                                                        .fill_bytes(
-                                                            FillBytesParams,
-                                                            FillBytesPayload { length },
-                                                        )
-                                                        .expect(
-                                                            "the operating system's generator draws",
-                                                        )
-                                                        .bytes
-                                                };
-                                                let seller = payload
-                                                    .adapter
-                                                    .generate_keys(
-                                                        build_generate_keys_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_generate_keys_payload(
-                                                            pairing,
-                                                            GenerateKeysPayloadOverrides {
-                                                                x_uniform: Some(draw(bound)),
-                                                                y_uniform: Some(draw(bound)),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect("the seller's drawn keys generate");
-                                                let buyer = payload
-                                                    .adapter
-                                                    .generate_keys(
-                                                        build_generate_keys_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_generate_keys_payload(
-                                                            pairing,
-                                                            GenerateKeysPayloadOverrides {
-                                                                x_uniform: Some(draw(bound)),
-                                                                y_uniform: Some(draw(bound)),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect("the buyer's drawn keys generate");
-                                                let seller_components = payload
-                                                    .adapter
-                                                    .key_pair_public_keys(
-                                                        build_key_pair_public_keys_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_key_pair_public_keys_payload(
-                                                            &seller.key_pair,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the seller's public keys read")
-                                                    .components;
-                                                let seller_public_keys = payload
-                                                    .adapter
-                                                    .public_keys_from_components(
-                                                        build_public_keys_from_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_public_keys_from_components_payload(
-                                                            pairing,
-                                                            &seller.possession,
-                                                            PublicKeysFromComponentsPayloadOverrides {
-                                                                components: Some(seller_components),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the seller's own proof admits its public keys",
-                                                    )
-                                                    .public_keys;
-                                                let buyer_components = payload
-                                                    .adapter
-                                                    .key_pair_public_keys(
-                                                        build_key_pair_public_keys_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_key_pair_public_keys_payload(
-                                                            &buyer.key_pair,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the buyer's public keys read")
-                                                    .components;
-                                                let buyer_public_keys = payload
-                                                    .adapter
-                                                    .public_keys_from_components(
-                                                        build_public_keys_from_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_public_keys_from_components_payload(
-                                                            pairing,
-                                                            &buyer.possession,
-                                                            PublicKeysFromComponentsPayloadOverrides {
-                                                                components: Some(buyer_components),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the buyer's own proof admits its public keys",
-                                                    )
-                                                    .public_keys;
-                                                let seller_keys = payload
-                                                    .adapter
-                                                    .public_keys_components(
-                                                        build_public_keys_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_public_keys_components_payload(
-                                                            &seller_public_keys,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the seller's components read")
-                                                    .components;
-                                                let buyer_keys = payload
-                                                    .adapter
-                                                    .public_keys_components(
-                                                        build_public_keys_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_public_keys_components_payload(
-                                                            &buyer_public_keys,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the buyer's components read")
-                                                    .components;
-                                                let seller_secrets = payload
-                                                    .adapter
-                                                    .key_pair_components(
-                                                        build_key_pair_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_key_pair_components_payload(
-                                                            &seller.key_pair,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the seller's key-pair components read")
-                                                    .components;
-                                                let wrapped_old = payload
-                                                    .adapter
-                                                    .wrap_to(
-                                                        build_wrap_to_params(Default::default()),
-                                                        build_wrap_to_payload(
-                                                            pairing,
-                                                            &seller_public_keys,
-                                                            WrapToPayloadOverrides {
-                                                                credential: Some(
-                                                                    CredentialComponents {
-                                                                        a: self
-                                                                            .credential
-                                                                            .a
-                                                                            .clone(),
-                                                                        b: self
-                                                                            .credential
-                                                                            .b
-                                                                            .clone(),
-                                                                    },
-                                                                ),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the credential wraps to the seller's keys",
-                                                    );
-                                                let opened = payload
-                                                    .adapter
-                                                    .unwrap(
-                                                        build_unwrap_params(Default::default()),
-                                                        build_unwrap_payload(
-                                                            &seller.key_pair,
-                                                            &wrapped_old.envelope,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the seller's unwrap is infallible");
-                                                let delivered = self
-                                                    .kem
-                                                    .credential_from_components(
-                                                        build_credential_from_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_credential_from_components_payload(
-                                                            pairing,
-                                                            CredentialFromComponentsPayloadOverrides {
-                                                                components: Some(opened.credential),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect("the credential rebuild is infallible")
-                                                    .credential;
-                                                let rerandomized = self
-                                                    .kem
-                                                    .rerandomize(
-                                                        build_rerandomize_params(Default::default()),
-                                                        build_rerandomize_payload::<
-                                                            P::Scalar,
-                                                            _,
-                                                            _,
-                                                            _,
-                                                        >(
-                                                            self.parameter_set,
-                                                            self.identity_element,
-                                                            &delivered,
-                                                            RerandomizePayloadOverrides {
-                                                                uniform: Some(draw(bound)),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the drawn uniform rerandomizes the credential",
-                                                    );
-                                                let rerandomized_components = self
-                                                    .kem
-                                                    .credential_components(
-                                                        build_credential_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_credential_components_payload(
-                                                            &rerandomized.credential,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the credential's components read")
-                                                    .components;
-                                                let wrapped_new = payload
-                                                    .adapter
-                                                    .wrap_to(
-                                                        build_wrap_to_params(Default::default()),
-                                                        build_wrap_to_payload(
-                                                            pairing,
-                                                            &buyer_public_keys,
-                                                            WrapToPayloadOverrides {
-                                                                credential: Some(
-                                                                    rerandomized_components,
-                                                                ),
-                                                            },
-                                                        ),
-                                                    )
-                                                    .expect(
-                                                        "the credential wraps to the buyer's keys",
-                                                    );
-                                                let old_envelope = payload
-                                                    .adapter
-                                                    .envelope_components(
-                                                        build_envelope_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_envelope_components_payload(
-                                                            &wrapped_old.envelope,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the old envelope's components read")
-                                                    .components;
-                                                let new_envelope = payload
-                                                    .adapter
-                                                    .envelope_components(
-                                                        build_envelope_components_params(
-                                                            Default::default(),
-                                                        ),
-                                                        build_envelope_components_payload(
-                                                            &wrapped_new.envelope,
-                                                            Default::default(),
-                                                        ),
-                                                    )
-                                                    .expect("the new envelope's components read")
-                                                    .components;
-
-                                                for concrete in DELIVERY_PROOF_CONCRETES {
-                                                    // Act
-                                                    let created = create_delivery_proof::<
-                                                        P,
-                                                        E,
-                                                        F,
-                                                        ExpiryConsumer<'_, P>,
-                                                    >(
-                                                        &build_create_delivery_proof_deps(
-                                                            pairing,
-                                                            self.hash_to_scalar,
-                                                            self.encoder,
-                                                            self.random,
-                                                            ExpiryConsumer {
-                                                                pairing,
-                                                                identity_element: self
-                                                                    .identity_element_element
-                                                                    .clone(),
-                                                                seller_secrets: KeyPairComponents {
-                                                                    x: build_secret(
-                                                                        seller_secrets
-                                                                            .x
-                                                                            .expose()
-                                                                            .clone(),
-                                                                        SecretConstructorParamsOverrides,
-                                                                    ),
-                                                                    y: build_secret(
-                                                                        seller_secrets
-                                                                            .y
-                                                                            .expose()
-                                                                            .clone(),
-                                                                        SecretConstructorParamsOverrides,
-                                                                    ),
-                                                                },
-                                                                offset: build_secret(
-                                                                    rerandomized
-                                                                        .offset
-                                                                        .expose()
-                                                                        .clone(),
-                                                                    SecretConstructorParamsOverrides,
-                                                                ),
-                                                                coins: EnvelopeCoins {
-                                                                    rho: build_secret(
-                                                                        wrapped_new
-                                                                            .coins
-                                                                            .rho
-                                                                            .expose()
-                                                                            .clone(),
-                                                                        SecretConstructorParamsOverrides,
-                                                                    ),
-                                                                    sigma: build_secret(
-                                                                        wrapped_new
-                                                                            .coins
-                                                                            .sigma
-                                                                            .expose()
-                                                                            .clone(),
-                                                                        SecretConstructorParamsOverrides,
-                                                                    ),
-                                                                },
-                                                                seller_keys:
-                                                                    PublicKeysComponents {
-                                                                        pk1: seller_keys
-                                                                            .pk1
-                                                                            .clone(),
-                                                                        pk2: seller_keys
-                                                                            .pk2
-                                                                            .clone(),
-                                                                    },
-                                                                buyer_keys:
-                                                                    PublicKeysComponents {
-                                                                        pk1: buyer_keys
-                                                                            .pk1
-                                                                            .clone(),
-                                                                        pk2: buyer_keys
-                                                                            .pk2
-                                                                            .clone(),
-                                                                    },
-                                                                old_envelope:
-                                                                    EnvelopeComponents {
-                                                                        c1: old_envelope
-                                                                            .c1
-                                                                            .clone(),
-                                                                        c2: old_envelope
-                                                                            .c2
-                                                                            .clone(),
-                                                                        d1: old_envelope
-                                                                            .d1
-                                                                            .clone(),
-                                                                        d2: old_envelope
-                                                                            .d2
-                                                                            .clone(),
-                                                                    },
-                                                                new_envelope:
-                                                                    EnvelopeComponents {
-                                                                        c1: new_envelope
-                                                                            .c1
-                                                                            .clone(),
-                                                                        c2: new_envelope
-                                                                            .c2
-                                                                            .clone(),
-                                                                        d1: new_envelope
-                                                                            .d1
-                                                                            .clone(),
-                                                                        d2: new_envelope
-                                                                            .d2
-                                                                            .clone(),
-                                                                    },
-                                                            },
-                                                            Default::default(),
-                                                        ),
-                                                        build_create_delivery_proof_params(
-                                                            CreateDeliveryProofParamsOverrides {
-                                                                concrete: Some(*concrete),
-                                                                algebra: Some(
-                                                                    EnvelopeAlgebra::PairingElGamal,
-                                                                ),
-                                                                verifier_form: Some(
-                                                                    self.verifier_form,
-                                                                ),
-                                                                statement_version: Some(
-                                                                    DELIVERY_STATEMENT_VERSION_ONE,
-                                                                ),
-                                                            },
-                                                        ),
-                                                        build_create_delivery_proof_payload(
-                                                            Default::default(),
-                                                        ),
-                                                    );
-
-                                                    // Assert
-                                                    assert!(created.is_ok());
-                                                }
-                                            }
-                                        }
-
-                                        for ka_case in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                                            // Act
-                                            let created = create_key_agreement::<
-                                                P,
-                                                E,
-                                                KeyAgreementConsumer<'_, P, E, F, Km>,
-                                            >(
-                                                &build_create_key_agreement_deps(
-                                                    pairing,
-                                                    self.hash_to_scalar,
-                                                    self.encoder,
-                                                    self.random,
-                                                    KeyAgreementConsumer {
-                                                        pairing,
-                                                        hash_to_scalar: self.hash_to_scalar,
-                                                        encoder: self.encoder,
-                                                        random: self.random,
-                                                        verifier_form: self.verifier_form,
-                                                        _forms: PhantomData,
-                                                        kem: &payload.adapter,
-                                                        parameter_set: &setup.parameter_set,
-                                                        identity_element: &derived.identity_element,
-                                                        identity_element_element: identity_element
-                                                            .element
-                                                            .clone(),
-                                                        credential: CredentialComponents {
-                                                            a: credential.a.clone(),
-                                                            b: credential.b.clone(),
-                                                        },
-                                                    },
-                                                    Default::default(),
-                                                ),
-                                                *ka_case,
-                                                build_create_key_agreement_payload(
-                                                    Default::default(),
-                                                ),
-                                            );
-
-                                            // Assert
-                                            assert!(created.is_ok());
-                                        }
-                                    }
-                                }
-
-                                for kem_case in DECLARED_KEM_SELECTIONS {
-                                    // Act
-                                    let created = create_kem::<P, KemConsumer<'_, P, E, F>>(
-                                        &build_create_kem_deps(
-                                            pairing,
-                                            self.hash_to_scalar,
-                                            KemConsumer {
-                                                pairing,
-                                                hash_to_scalar: self.hash_to_scalar,
-                                                encoder: self.encoder,
-                                                random: self.random,
-                                                verifier_form: self.verifier_form,
-                                                _forms: PhantomData,
-                                            },
-                                            Default::default(),
-                                        ),
-                                        *kem_case,
-                                        build_create_kem_payload(Default::default()),
-                                    );
-
-                                    // Assert
-                                    assert!(created.is_ok());
-                                }
-                            }
-                        }
-
-                        for concrete in CHAIN_FORMS_CONCRETES {
-                            // Act
-                            let created = create_chain_forms(
-                                &build_create_chain_forms_deps(
-                                    ChainConsumer {
-                                        pairing,
-                                        encoder: &encoded.adapter,
-                                        hash_to_scalar: &*hashed.adapter,
-                                        random: &*random.adapter,
-                                        verifier_form: self.verifier_form,
-                                    },
-                                    Default::default(),
-                                ),
-                                build_create_chain_forms_params(CreateChainFormsParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
+                                IdentityScope::Asset => DeriveIdentityPayloadOverrides {
+                                    identity: Some(KemIdentity::Asset { root: &root }),
+                                },
+                            },
+                        ),
+                    )
+                    .expect("the identity the set fixes derives");
+                let issued = kem
+                    .issue(
+                        build_issue_params(Default::default()),
+                        build_issue_payload::<P::Scalar, _, _, _>(
+                            &setup.parameter_set,
+                            &setup.master_scalar,
+                            &derived.identity_element,
+                            IssuePayloadOverrides {
+                                uniform: Some(draw(bound)),
+                            },
+                        ),
+                    )
+                    .expect("issue admits the credential inputs");
+                let identity_element = kem
+                    .identity_element_components(
+                        build_identity_element_components_params(Default::default()),
+                        build_identity_element_components_payload(
+                            &derived.identity_element,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the identity element's components read")
+                    .components;
+                let credential = kem
+                    .credential_components(
+                        build_credential_components_params(Default::default()),
+                        build_credential_components_payload(&issued.credential, Default::default()),
+                    )
+                    .expect("the credential's components read")
+                    .components;
+                let seller = key_agreement
+                    .generate_keys(
+                        build_generate_keys_params(Default::default()),
+                        build_generate_keys_payload(
+                            pairing,
+                            GenerateKeysPayloadOverrides {
+                                x_uniform: Some(draw(bound)),
+                                y_uniform: Some(draw(bound)),
+                            },
+                        ),
+                    )
+                    .expect("the seller's drawn keys generate");
+                let buyer = key_agreement
+                    .generate_keys(
+                        build_generate_keys_params(Default::default()),
+                        build_generate_keys_payload(
+                            pairing,
+                            GenerateKeysPayloadOverrides {
+                                x_uniform: Some(draw(bound)),
+                                y_uniform: Some(draw(bound)),
+                            },
+                        ),
+                    )
+                    .expect("the buyer's drawn keys generate");
+                let seller_components = key_agreement
+                    .key_pair_public_keys(
+                        build_key_pair_public_keys_params(Default::default()),
+                        build_key_pair_public_keys_payload(&seller.key_pair, Default::default()),
+                    )
+                    .expect("the seller's public keys read")
+                    .components;
+                let seller_public_keys = key_agreement
+                    .public_keys_from_components(
+                        build_public_keys_from_components_params(Default::default()),
+                        build_public_keys_from_components_payload(
+                            pairing,
+                            &seller.possession,
+                            PublicKeysFromComponentsPayloadOverrides {
+                                components: Some(seller_components),
+                            },
+                        ),
+                    )
+                    .expect("the seller's own proof admits its public keys")
+                    .public_keys;
+                let buyer_components = key_agreement
+                    .key_pair_public_keys(
+                        build_key_pair_public_keys_params(Default::default()),
+                        build_key_pair_public_keys_payload(&buyer.key_pair, Default::default()),
+                    )
+                    .expect("the buyer's public keys read")
+                    .components;
+                let buyer_public_keys = key_agreement
+                    .public_keys_from_components(
+                        build_public_keys_from_components_params(Default::default()),
+                        build_public_keys_from_components_payload(
+                            pairing,
+                            &buyer.possession,
+                            PublicKeysFromComponentsPayloadOverrides {
+                                components: Some(buyer_components),
+                            },
+                        ),
+                    )
+                    .expect("the buyer's own proof admits its public keys")
+                    .public_keys;
+                let seller_keys = key_agreement
+                    .public_keys_components(
+                        build_public_keys_components_params(Default::default()),
+                        build_public_keys_components_payload(
+                            &seller_public_keys,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the seller's components read")
+                    .components;
+                let buyer_keys = key_agreement
+                    .public_keys_components(
+                        build_public_keys_components_params(Default::default()),
+                        build_public_keys_components_payload(
+                            &buyer_public_keys,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the buyer's components read")
+                    .components;
+                let seller_secrets = key_agreement
+                    .key_pair_components(
+                        build_key_pair_components_params(Default::default()),
+                        build_key_pair_components_payload(&seller.key_pair, Default::default()),
+                    )
+                    .expect("the seller's key-pair components read")
+                    .components;
+                let wrapped_old = key_agreement
+                    .wrap_to(
+                        build_wrap_to_params(Default::default()),
+                        build_wrap_to_payload(
+                            pairing,
+                            &seller_public_keys,
+                            WrapToPayloadOverrides {
+                                credential: Some(CredentialComponents {
+                                    a: credential.a.clone(),
+                                    b: credential.b.clone(),
                                 }),
-                                build_create_chain_forms_payload(Default::default()),
-                            );
+                            },
+                        ),
+                    )
+                    .expect("the credential wraps to the seller's keys");
+                let opened = key_agreement
+                    .unwrap(
+                        build_unwrap_params(Default::default()),
+                        build_unwrap_payload(
+                            &seller.key_pair,
+                            &wrapped_old.envelope,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the seller's unwrap is infallible");
+                let delivered = kem
+                    .credential_from_components(
+                        build_credential_from_components_params(Default::default()),
+                        build_credential_from_components_payload(
+                            pairing,
+                            CredentialFromComponentsPayloadOverrides {
+                                components: Some(opened.credential),
+                            },
+                        ),
+                    )
+                    .expect("the credential rebuild is infallible")
+                    .credential;
+                let rerandomized = kem
+                    .rerandomize(
+                        build_rerandomize_params(Default::default()),
+                        build_rerandomize_payload::<P::Scalar, _, _, _>(
+                            &setup.parameter_set,
+                            &derived.identity_element,
+                            &delivered,
+                            RerandomizePayloadOverrides {
+                                uniform: Some(draw(bound)),
+                            },
+                        ),
+                    )
+                    .expect("the drawn uniform rerandomizes the credential");
+                let rerandomized_components = kem
+                    .credential_components(
+                        build_credential_components_params(Default::default()),
+                        build_credential_components_payload(
+                            &rerandomized.credential,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the credential's components read")
+                    .components;
+                let wrapped_new = key_agreement
+                    .wrap_to(
+                        build_wrap_to_params(Default::default()),
+                        build_wrap_to_payload(
+                            pairing,
+                            &buyer_public_keys,
+                            WrapToPayloadOverrides {
+                                credential: Some(rerandomized_components),
+                            },
+                        ),
+                    )
+                    .expect("the credential wraps to the buyer's keys");
+                let old_envelope = key_agreement
+                    .envelope_components(
+                        build_envelope_components_params(Default::default()),
+                        build_envelope_components_payload(
+                            &wrapped_old.envelope,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the old envelope's components read")
+                    .components;
+                let new_envelope = key_agreement
+                    .envelope_components(
+                        build_envelope_components_params(Default::default()),
+                        build_envelope_components_payload(
+                            &wrapped_new.envelope,
+                            Default::default(),
+                        ),
+                    )
+                    .expect("the new envelope's components read")
+                    .components;
 
-                            // Assert
-                            assert!(created.is_ok());
-                        }
-                    }
+                for concrete in DELIVERY_PROOF_CONCRETES {
+                    // Act
+                    let created = create_delivery_proof::<P, E, F, ExpiryConsumer<'_, P>>(
+                        &build_create_delivery_proof_deps(
+                            pairing,
+                            hash_to_scalar,
+                            encoder,
+                            random,
+                            ExpiryConsumer {
+                                pairing,
+                                identity_element: identity_element.element.clone(),
+                                seller_secrets: KeyPairComponents {
+                                    x: build_secret(
+                                        seller_secrets.x.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                    y: build_secret(
+                                        seller_secrets.y.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                },
+                                offset: build_secret(
+                                    rerandomized.offset.expose().clone(),
+                                    SecretConstructorParamsOverrides,
+                                ),
+                                coins: EnvelopeCoins {
+                                    rho: build_secret(
+                                        wrapped_new.coins.rho.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                    sigma: build_secret(
+                                        wrapped_new.coins.sigma.expose().clone(),
+                                        SecretConstructorParamsOverrides,
+                                    ),
+                                },
+                                seller_keys: PublicKeysComponents {
+                                    pk1: seller_keys.pk1.clone(),
+                                    pk2: seller_keys.pk2.clone(),
+                                },
+                                buyer_keys: PublicKeysComponents {
+                                    pk1: buyer_keys.pk1.clone(),
+                                    pk2: buyer_keys.pk2.clone(),
+                                },
+                                old_envelope: EnvelopeComponents {
+                                    c1: old_envelope.c1.clone(),
+                                    c2: old_envelope.c2.clone(),
+                                    d1: old_envelope.d1.clone(),
+                                    d2: old_envelope.d2.clone(),
+                                },
+                                new_envelope: EnvelopeComponents {
+                                    c1: new_envelope.c1.clone(),
+                                    c2: new_envelope.c2.clone(),
+                                    d1: new_envelope.d1.clone(),
+                                    d2: new_envelope.d2.clone(),
+                                },
+                            },
+                            Default::default(),
+                        ),
+                        build_create_delivery_proof_params(CreateDeliveryProofParamsOverrides {
+                            concrete: Some(*concrete),
+                            algebra: Some(EnvelopeAlgebra::PairingElGamal),
+                            statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE),
+                        }),
+                        build_create_delivery_proof_payload(Default::default()),
+                    );
+
+                    // Assert
+                    assert!(created.is_ok());
                 }
-            }
-
-            for selection in DECLARED_ENCODING_SELECTIONS {
-                // Act
-                let created = create_encoding(
-                    &build_create_encoding_deps(EncodingConsumer {
-                        pairing,
-                        verifier_form,
-                    }),
-                    build_create_encoding_params(CreateEncodingParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(selection.identifier),
-                    }),
-                    build_create_encoding_payload(Default::default()),
-                );
-
-                // Assert
-                assert!(created.is_ok());
             }
         }
     }
 
-    for concrete in PAIRING_CONCRETES {
-        // Act
-        let created = create_pairing(
-            &build_create_pairing_deps(PairingConsumer, Default::default()),
-            build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*concrete),
-                ..Default::default()
-            }),
-            CreatePairingPayload,
-        );
+    for pairing_case in PAIRING_CONCRETES {
+        for selection in DECLARED_ENCODING_SELECTIONS {
+            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                for forms_concrete in CHAIN_FORMS_CONCRETES {
+                    for kem_case in DECLARED_KEM_SELECTIONS {
+                        for key_agreement_case in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                            // Act
+                            let result = run_create_delivery_proof_case(
+                                &build_create_delivery_proof_case_deps(
+                                    CaseConsumer,
+                                    Default::default(),
+                                ),
+                                build_create_delivery_proof_case_params(
+                                    CreateDeliveryProofCaseParamsOverrides {
+                                        pairing: Some(build_create_pairing_params(
+                                            CreatePairingParamsOverrides {
+                                                concrete: Some(*pairing_case),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                            CreateHashToScalarParamsOverrides {
+                                                concrete: Some(hash_case.concrete),
+                                                identifier: Some(hash_case.identifier),
+                                            },
+                                        )),
+                                        encoding: Some(build_create_encoding_params(
+                                            CreateEncodingParamsOverrides {
+                                                concrete: Some(selection.concrete),
+                                                identifier: Some(selection.identifier),
+                                            },
+                                        )),
+                                        chain_forms: Some(build_create_chain_forms_params(
+                                            CreateChainFormsParamsOverrides {
+                                                concrete: Some(*forms_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        kem: Some(*kem_case),
+                                        key_agreement: Some(*key_agreement_case),
+                                        random_source: Some(build_create_random_source_params(
+                                            CreateRandomSourceParamsOverrides {
+                                                kind: Some(RandomSourceKind::OperatingSystem),
+                                            },
+                                        )),
+                                    },
+                                ),
+                                build_create_delivery_proof_case_payload(Default::default()),
+                            );
 
-        // Assert
-        assert!(created.is_ok());
+                            // Assert
+                            assert!(result.is_ok());
+                        }
+                    }
+                }
+            }
+        }
     }
     // a_transfer_proof_fails_against_a_statement_with_another_expiry
 }

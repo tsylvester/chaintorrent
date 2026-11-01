@@ -9,14 +9,15 @@ use crate::mint_statement::provides::TransferPurpose;
 use chain::IChainForms;
 use core::marker::PhantomData;
 use domain::{
-    AssetIdentityHash, AssetIdentityHashConstructorParams, ParameterSetIdentifier,
-    ParameterSetIdentifierConstructorParams, SuiteIdentifier, SuiteIdentifierConstructorParams,
+    ParameterSetIdentifier, ParameterSetIdentifierConstructorParams, SuiteIdentifier,
+    SuiteIdentifierConstructorParams,
 };
 use encoding::{
     CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldParams, FromFieldsParams,
     FromFieldsReturn, FromFieldsSuccessReturn, ICanonicalField, IEncodingContract, ToFieldParams,
     ToFieldsParams, ToFieldsReturn, ToFieldsSuccessReturn,
 };
+use hashing::{Root, RootConstructorParams};
 use interface::{
     TRANSFER_STATEMENT_FIELD_COUNT, TransferFirstMessages, TransferStatement,
     TransferStatementDescription, TransferStatementDescriptionConstructorParams,
@@ -135,7 +136,7 @@ impl<P: IPairingAdapter, F: IChainForms> IEncodingContract
                     CanonicalFieldValue::Unsigned16(payload.suite_identifier.version()),
                     chain.field,
                     entitlement_contract.field,
-                    CanonicalFieldValue::FixedBytes32(*payload.asset_identity_hash.as_bytes()),
+                    CanonicalFieldValue::FixedBytes32(*payload.asset_root.as_bytes()),
                     CanonicalFieldValue::FixedBytes32(*payload.parameter_set_identifier.as_bytes()),
                     source_entitlement.field,
                     target_entitlement.field,
@@ -188,7 +189,7 @@ impl<P: IPairingAdapter, F: IChainForms> IEncodingContract
             suite_version_value,
             chain_value,
             entitlement_contract_value,
-            asset_identity_hash_value,
+            asset_root_value,
             parameter_set_identifier_value,
             source_entitlement_value,
             target_entitlement_value,
@@ -259,25 +260,20 @@ impl<P: IPairingAdapter, F: IChainForms> IEncodingContract
                     });
                 }
             };
-        let CanonicalFieldValue::FixedBytes32(asset_identity_hash_bytes) =
-            asset_identity_hash_value
-        else {
+        let CanonicalFieldValue::FixedBytes32(asset_root_bytes) = asset_root_value else {
             return Err(TransferStatementFromFieldsErrorReturn::FieldKind {
                 index: 4,
                 expected: CanonicalFieldKind::FixedBytes32,
             });
         };
-        let asset_identity_hash =
-            match AssetIdentityHash::try_new(AssetIdentityHashConstructorParams {
-                bytes: asset_identity_hash_bytes,
-            }) {
-                Ok(value) => value,
-                Err(error) => {
-                    return Err(TransferStatementFromFieldsErrorReturn::AssetIdentityHash(
-                        error,
-                    ));
-                }
-            };
+        let asset_root = match Root::try_new(RootConstructorParams {
+            bytes: asset_root_bytes,
+        }) {
+            Ok(value) => value,
+            Err(error) => {
+                return Err(TransferStatementFromFieldsErrorReturn::AssetRoot(error));
+            }
+        };
         let CanonicalFieldValue::FixedBytes32(parameter_set_identifier_bytes) =
             parameter_set_identifier_value
         else {
@@ -493,7 +489,7 @@ impl<P: IPairingAdapter, F: IChainForms> IEncodingContract
                 suite_identifier,
                 chain,
                 entitlement_contract,
-                asset_identity_hash,
+                asset_root,
                 parameter_set_identifier,
                 source_entitlement,
                 target_entitlement,

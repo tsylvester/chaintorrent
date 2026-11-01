@@ -37,6 +37,7 @@ pub fn create_delivery_proof<
     params: CreateDeliveryProofParams,
     _payload: CreateDeliveryProofPayload,
 ) -> CreateDeliveryProofReturn<C::Output> {
+    let form = P::DECLARATION.verifier_group_arithmetic;
     match params.concrete {
         DeliveryProofConcrete::SchnorrFs => {
             if !SchnorrFsDeliveryProof::<'a, P, E, F>::DECLARATION
@@ -47,9 +48,9 @@ pub fn create_delivery_proof<
             }
             if !SchnorrFsDeliveryProof::<'a, P, E, F>::DECLARATION
                 .verifier_forms
-                .contains(&params.verifier_form)
+                .contains(&form)
             {
-                return Err(CreateDeliveryProofErrorReturn::UnsupportedVerifierForm);
+                return Err(CreateDeliveryProofErrorReturn::UnsupportedVerifierForm { form });
             }
             if !SchnorrFsDeliveryProof::<'a, P, E, F>::DECLARATION
                 .statement_versions
@@ -63,7 +64,7 @@ pub fn create_delivery_proof<
                     hash_to_scalar: deps.hash_to_scalar,
                     encoder: deps.encoder,
                     random: deps.random,
-                    verifier_form: params.verifier_form,
+                    verifier_form: form,
                 },
             ) {
                 Ok(adapter) => adapter,
@@ -85,9 +86,9 @@ pub fn create_delivery_proof<
             }
             if !MockIDeliveryProofAdapter::<'a, P, F>::DECLARATION
                 .verifier_forms
-                .contains(&params.verifier_form)
+                .contains(&form)
             {
-                return Err(CreateDeliveryProofErrorReturn::UnsupportedVerifierForm);
+                return Err(CreateDeliveryProofErrorReturn::UnsupportedVerifierForm { form });
             }
             if !MockIDeliveryProofAdapter::<'a, P, F>::DECLARATION
                 .statement_versions
@@ -98,7 +99,7 @@ pub fn create_delivery_proof<
             let Ok(adapter) =
                 MockIDeliveryProofAdapter::try_new(MockIDeliveryProofAdapterConstructorParams {
                     pairing: deps.pairing,
-                    verifier_form: params.verifier_form,
+                    verifier_form: form,
                     failure_mode,
                 });
             let output = deps.consumer.consume_delivery_proof(

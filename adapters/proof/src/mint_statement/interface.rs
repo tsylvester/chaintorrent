@@ -1,12 +1,21 @@
 use chain::IChainForms;
+#[cfg(any(test, feature = "mocks"))]
+use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams};
 use core::convert::Infallible;
 use core::marker::PhantomData;
 use domain::{
-    AssetIdentityHash, AssetIdentityHashTryNewErrorReturn, ParameterSetIdentifier,
-    ParameterSetIdentifierTryNewErrorReturn, SuiteIdentifier, SuiteIdentifierTryNewErrorReturn,
+    ParameterSetIdentifier, ParameterSetIdentifierTryNewErrorReturn, SuiteIdentifier,
+    SuiteIdentifierTryNewErrorReturn,
 };
 use encoding::{CanonicalFieldKind, FromFieldErrorReturn};
+#[cfg(any(test, feature = "mocks"))]
+use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter, IEncoderAdapter};
 use envelope::{EnvelopeComponents, PublicKeysComponents};
+use hashing::{Root, RootTryNewErrorReturn};
+#[cfg(any(test, feature = "mocks"))]
+use pairing::{
+    CreatePairingErrorReturn, CreatePairingParams, IPairingArithmetic, IPairingReference,
+};
 use pairing::{DecodeG1ErrorReturn, DecodeG2ErrorReturn, IPairingAdapter};
 
 pub const DELIVERY_STATEMENT_VERSION_ONE: u16 = 1;
@@ -128,7 +137,7 @@ pub struct MintStatement<P: IPairingAdapter, F: IChainForms> {
     pub suite_identifier: SuiteIdentifier,
     pub chain: F::ChainIdentifier,
     pub entitlement_contract: F::Identity,
-    pub asset_identity_hash: AssetIdentityHash,
+    pub asset_root: Root,
     pub parameter_set_identifier: ParameterSetIdentifier,
     pub source_entitlement: F::Entitlement,
     pub target_entitlement: F::Entitlement,
@@ -166,7 +175,7 @@ pub enum MintStatementFromFieldsErrorReturn {
         expected: CanonicalFieldKind,
     },
     SuiteIdentifier(SuiteIdentifierTryNewErrorReturn),
-    AssetIdentityHash(AssetIdentityHashTryNewErrorReturn),
+    AssetRoot(RootTryNewErrorReturn),
     ParameterSetIdentifier(ParameterSetIdentifierTryNewErrorReturn),
     PurposeCode {
         index: usize,
@@ -197,3 +206,60 @@ pub enum MintStatementFromFieldsErrorReturn {
         error: FromFieldErrorReturn,
     },
 }
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait IMintStatementCaseConsumer {
+    type Output;
+
+    fn consume_mint_statement_case<
+        P: IPairingArithmetic + IPairingReference,
+        E: IEncoderAdapter + IDecoderAdapter,
+        F: IChainForms,
+    >(
+        &self,
+        pairing: &P,
+        encoder: &E,
+        forms: &F,
+        payload: &MintStatementCasePayload,
+    ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct MintStatementCaseDeps<C: IMintStatementCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct MintStatementCaseParams {
+    pub pairing: CreatePairingParams,
+    pub encoding: CreateEncodingParams,
+    pub chain_forms: CreateChainFormsParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct MintStatementCasePayload;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct MintStatementCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum MintStatementCaseErrorReturn {
+    CreatePairing(CreatePairingErrorReturn),
+    CreateEncoding(CreateEncodingErrorReturn),
+    CreateChainForms(CreateChainFormsErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type MintStatementCaseReturn<O> =
+    Result<MintStatementCaseSuccessReturn<O>, MintStatementCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunMintStatementCaseFn<C> =
+    fn(
+        &MintStatementCaseDeps<C>,
+        MintStatementCaseParams,
+        MintStatementCasePayload,
+    ) -> MintStatementCaseReturn<<C as IMintStatementCaseConsumer>::Output>;

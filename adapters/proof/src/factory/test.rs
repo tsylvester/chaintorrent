@@ -3,37 +3,29 @@
 use super::provides::{
     CreateDeliveryProofErrorReturn, CreateDeliveryProofParamsOverrides, CreateDeliveryProofReturn,
     DeliveryProofComponents, DeliveryProofConcrete, DeliveryProofShapeErrorReturn,
-    DeliveryProofWireComponents, DeliveryProofWireComponentsOverrides, MockIDeliveryProofConsumer,
-    build_create_delivery_proof_deps, build_create_delivery_proof_params,
-    build_create_delivery_proof_payload, build_delivery_proof_wire_components,
-    build_mint_responses, build_mint_second_group_first_messages, build_transfer_responses,
+    DeliveryProofWireComponents, DeliveryProofWireComponentsOverrides,
+    ICreateDeliveryProofCaseConsumer, MockIDeliveryProofConsumer,
+    build_create_delivery_proof_case_deps, build_create_delivery_proof_case_params,
+    build_create_delivery_proof_case_payload, build_create_delivery_proof_deps,
+    build_create_delivery_proof_params, build_create_delivery_proof_payload,
+    build_delivery_proof_wire_components, build_mint_responses,
+    build_mint_second_group_first_messages, build_transfer_responses,
     build_transfer_second_group_first_messages, create_delivery_proof,
+    run_create_delivery_proof_case,
 };
 use crate::mint_statement::provides::{DELIVERY_STATEMENT_VERSION_ONE, DeliveryRelation};
-use chain::{
-    ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsReturn, IChainForms,
-    IChainFormsConsumer, build_create_chain_forms_deps, build_create_chain_forms_params,
-    build_create_chain_forms_payload, create_chain_forms,
-};
-use encoding::{
-    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingReturn, IDecoderAdapter,
-    IEncoderAdapter, IEncodingConsumer, build_create_encoding_deps, build_create_encoding_params,
-    build_create_encoding_payload, create_encoding,
-};
-use hash_to_scalar::{
-    build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
-    build_create_hash_to_scalar_payload, create_hash_to_scalar,
-};
+use chain::IChainForms;
+use encoding::IEncoderAdapter;
+use envelope::IKeyAgreementAdapter;
+use hash_to_scalar::IHashToScalarAdapter;
+use kem::ICredentialKemAdapter;
 use pairing::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingPayload, EncodeG2Params,
     EncodeG2Payload, EncodeScalarParams, EncodeScalarPayload, IPairingArithmetic, IPairingConsumer,
     IPairingReference, VerifierGroupArithmetic, build_create_pairing_deps,
     build_create_pairing_params, create_pairing,
 };
-use random::{
-    CreateRandomSourceDeps, CreateRandomSourcePayload, build_create_random_source_params,
-    create_random_source,
-};
+use random::IRandomSourceAdapter;
 
 /// Contract: wire conversion, admitted: both counts match → `Ok(components)`
 ///   in the variant of the wire's relation and form, the vectors named in the
@@ -841,131 +833,65 @@ fn wire_components_check_the_response_count_before_the_first_message_count() {
 /// Arrange: params from `build_create_delivery_proof_params` overridden to
 ///   `concrete` `DeliveryProofConcrete::SchnorrFs`, the other fields at the
 ///   defaults the concrete's declaration lists.
-/// Act:     `create_delivery_proof`, called in the innermost consumer's
+/// Act:     `create_delivery_proof`, called in the case consumer's
 ///   method.
 /// Assert:  `assert!(result.is_ok())`; the output, the unit value of
 ///   `MockIDeliveryProofConsumer`, is not asserted.
-/// Collaborators: the pairing, encoding, chain-forms, hash-to-scalar, and
-///   randomness families' mock concretes through `create_pairing`,
-///   `create_encoding`, `create_chain_forms`, `create_hash_to_scalar`, and
-///   `create_random_source`, each at the defaults of its params builder;
+/// Collaborators: every family's mock concrete, reached through
+///   `run_create_delivery_proof_case` at the defaults of
+///   `build_create_delivery_proof_case_params` and named nowhere;
 ///   `MockIDeliveryProofConsumer` in the deps.
 #[test]
 fn create_delivery_proof_returns_the_consumers_output_for_the_schnorr_fs_selection() {
-    struct OuterConsumer;
+    struct CaseConsumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateEncodingReturn<CreateChainFormsReturn<CreateDeliveryProofReturn<()>>>;
+    impl ICreateDeliveryProofCaseConsumer for CaseConsumer {
+        type Output = CreateDeliveryProofReturn<()>;
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_delivery_proof_case<
+            P: IPairingArithmetic,
+            E: IEncoderAdapter,
+            F: IChainForms,
+            K: ICredentialKemAdapter<Pairing = P>,
+            A: IKeyAgreementAdapter<Pairing = P>,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _forms: &F,
+            _kem: &K,
+            _key_agreement: &A,
         ) -> Self::Output {
-            struct MiddleConsumer<'a, P: IPairingArithmetic> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic> IEncodingConsumer for MiddleConsumer<'_, P> {
-                type Output = CreateChainFormsReturn<CreateDeliveryProofReturn<()>>;
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    consumed: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    struct InnerConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter> {
-                        pairing: &'a P,
-                        encoder: &'a E,
-                    }
-
-                    impl<P: IPairingArithmetic, E: IEncoderAdapter> IChainFormsConsumer for InnerConsumer<'_, P, E> {
-                        type Output = CreateDeliveryProofReturn<()>;
-
-                        fn consume_chain_forms<F: IChainForms>(
-                            &self,
-                            _params: ConsumeChainFormsParams,
-                            _payload: ConsumeChainFormsPayload<F>,
-                        ) -> Self::Output {
-                            // Arrange
-                            let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                                &build_create_hash_to_scalar_deps(Default::default()),
-                                build_create_hash_to_scalar_params(Default::default()),
-                                build_create_hash_to_scalar_payload(Default::default()),
-                            )
-                            .expect(
-                                "the default selection constructs the hash-to-scalar mock concrete",
-                            )
-                            .adapter;
-                            let random = create_random_source(
-                                &CreateRandomSourceDeps,
-                                build_create_random_source_params(Default::default()),
-                                CreateRandomSourcePayload,
-                            )
-                            .expect(
-                                "the default selection constructs the random-source mock concrete",
-                            )
-                            .adapter;
-
-                            // Act
-                            create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
-                                &build_create_delivery_proof_deps(
-                                    self.pairing,
-                                    &*hash_to_scalar,
-                                    self.encoder,
-                                    &*random,
-                                    MockIDeliveryProofConsumer,
-                                    Default::default(),
-                                ),
-                                build_create_delivery_proof_params(
-                                    CreateDeliveryProofParamsOverrides {
-                                        concrete: Some(DeliveryProofConcrete::SchnorrFs),
-                                        ..Default::default()
-                                    },
-                                ),
-                                build_create_delivery_proof_payload(Default::default()),
-                            )
-                        }
-                    }
-
-                    create_chain_forms(
-                        &build_create_chain_forms_deps(
-                            InnerConsumer {
-                                pairing: self.pairing,
-                                encoder: &consumed.adapter,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_chain_forms_params(Default::default()),
-                        build_create_chain_forms_payload(Default::default()),
-                    )
-                }
-            }
-
-            create_encoding(
-                &build_create_encoding_deps(MiddleConsumer {
-                    pairing: &payload.adapter,
+            // Act
+            create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
+                &build_create_delivery_proof_deps(
+                    pairing,
+                    hash_to_scalar,
+                    encoder,
+                    random,
+                    MockIDeliveryProofConsumer,
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(CreateDeliveryProofParamsOverrides {
+                    concrete: Some(DeliveryProofConcrete::SchnorrFs),
+                    ..Default::default()
                 }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
             )
         }
     }
 
-    let result = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let result = run_create_delivery_proof_case(
+        &build_create_delivery_proof_case_deps(CaseConsumer, Default::default()),
+        build_create_delivery_proof_case_params(Default::default()),
+        build_create_delivery_proof_case_payload(Default::default()),
     )
-    .expect("the default selection constructs the pairing mock concrete")
-    .output
-    .expect("the default selection constructs the encoding mock concrete")
-    .output
-    .expect("the default selection constructs the chain-forms mock concrete")
-    .output;
+    .expect("the default selections construct");
 
     // Assert
-    assert!(result.is_ok());
+    assert!(result.output.is_ok());
 }
 
 /// Contract: `create_delivery_proof`, unsupported statement version: the
@@ -978,7 +904,7 @@ fn create_delivery_proof_returns_the_consumers_output_for_the_schnorr_fs_selecti
 ///   `DELIVERY_STATEMENT_VERSION_ONE + 1`, a version no entry of the
 ///   declaration's slice holds, the algebra and form at the defaults the
 ///   concrete's declaration lists.
-/// Act:     `create_delivery_proof`, called in the innermost consumer's
+/// Act:     `create_delivery_proof`, called in the case consumer's
 ///   method.
 /// Assert:  `assert_eq!(result.err(),
 ///   Some(CreateDeliveryProofErrorReturn::UnsupportedStatementVersion))`.
@@ -988,122 +914,57 @@ fn create_delivery_proof_returns_the_consumers_output_for_the_schnorr_fs_selecti
 ///   constant, before any construction, so no real concrete's function runs.
 #[test]
 fn create_delivery_proof_refuses_a_statement_version_the_schnorr_fs_concrete_does_not_declare() {
-    struct OuterConsumer;
+    struct CaseConsumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateEncodingReturn<CreateChainFormsReturn<CreateDeliveryProofReturn<()>>>;
+    impl ICreateDeliveryProofCaseConsumer for CaseConsumer {
+        type Output = CreateDeliveryProofReturn<()>;
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_delivery_proof_case<
+            P: IPairingArithmetic,
+            E: IEncoderAdapter,
+            F: IChainForms,
+            K: ICredentialKemAdapter<Pairing = P>,
+            A: IKeyAgreementAdapter<Pairing = P>,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _forms: &F,
+            _kem: &K,
+            _key_agreement: &A,
         ) -> Self::Output {
-            struct MiddleConsumer<'a, P: IPairingArithmetic> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic> IEncodingConsumer for MiddleConsumer<'_, P> {
-                type Output = CreateChainFormsReturn<CreateDeliveryProofReturn<()>>;
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    consumed: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    struct InnerConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter> {
-                        pairing: &'a P,
-                        encoder: &'a E,
-                    }
-
-                    impl<P: IPairingArithmetic, E: IEncoderAdapter> IChainFormsConsumer for InnerConsumer<'_, P, E> {
-                        type Output = CreateDeliveryProofReturn<()>;
-
-                        fn consume_chain_forms<F: IChainForms>(
-                            &self,
-                            _params: ConsumeChainFormsParams,
-                            _payload: ConsumeChainFormsPayload<F>,
-                        ) -> Self::Output {
-                            // Arrange
-                            let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                                &build_create_hash_to_scalar_deps(Default::default()),
-                                build_create_hash_to_scalar_params(Default::default()),
-                                build_create_hash_to_scalar_payload(Default::default()),
-                            )
-                            .expect(
-                                "the default selection constructs the hash-to-scalar mock concrete",
-                            )
-                            .adapter;
-                            let random = create_random_source(
-                                &CreateRandomSourceDeps,
-                                build_create_random_source_params(Default::default()),
-                                CreateRandomSourcePayload,
-                            )
-                            .expect(
-                                "the default selection constructs the random-source mock concrete",
-                            )
-                            .adapter;
-
-                            // Act
-                            create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
-                                &build_create_delivery_proof_deps(
-                                    self.pairing,
-                                    &*hash_to_scalar,
-                                    self.encoder,
-                                    &*random,
-                                    MockIDeliveryProofConsumer,
-                                    Default::default(),
-                                ),
-                                build_create_delivery_proof_params(
-                                    CreateDeliveryProofParamsOverrides {
-                                        concrete: Some(DeliveryProofConcrete::SchnorrFs),
-                                        statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE + 1),
-                                        ..Default::default()
-                                    },
-                                ),
-                                build_create_delivery_proof_payload(Default::default()),
-                            )
-                        }
-                    }
-
-                    create_chain_forms(
-                        &build_create_chain_forms_deps(
-                            InnerConsumer {
-                                pairing: self.pairing,
-                                encoder: &consumed.adapter,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_chain_forms_params(Default::default()),
-                        build_create_chain_forms_payload(Default::default()),
-                    )
-                }
-            }
-
-            create_encoding(
-                &build_create_encoding_deps(MiddleConsumer {
-                    pairing: &payload.adapter,
+            // Act
+            create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
+                &build_create_delivery_proof_deps(
+                    pairing,
+                    hash_to_scalar,
+                    encoder,
+                    random,
+                    MockIDeliveryProofConsumer,
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(CreateDeliveryProofParamsOverrides {
+                    concrete: Some(DeliveryProofConcrete::SchnorrFs),
+                    statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE + 1),
+                    ..Default::default()
                 }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
             )
         }
     }
 
-    let result = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let result = run_create_delivery_proof_case(
+        &build_create_delivery_proof_case_deps(CaseConsumer, Default::default()),
+        build_create_delivery_proof_case_params(Default::default()),
+        build_create_delivery_proof_case_payload(Default::default()),
     )
-    .expect("the default selection constructs the pairing mock concrete")
-    .output
-    .expect("the default selection constructs the encoding mock concrete")
-    .output
-    .expect("the default selection constructs the chain-forms mock concrete")
-    .output;
+    .expect("the default selections construct");
 
     // Assert
     assert_eq!(
-        result.err(),
+        result.output.err(),
         Some(CreateDeliveryProofErrorReturn::UnsupportedStatementVersion)
     );
 }
@@ -1115,7 +976,7 @@ fn create_delivery_proof_refuses_a_statement_version_the_schnorr_fs_concrete_doe
 ///   consumer's output.
 /// Arrange: params from `build_create_delivery_proof_params` at the
 ///   defaults, which select the mock concrete under `NoFailure` and admit it.
-/// Act:     `create_delivery_proof`, called in the innermost consumer's
+/// Act:     `create_delivery_proof`, called in the case consumer's
 ///   method.
 /// Assert:  `assert!(result.is_ok())`; the output, the unit value of
 ///   `MockIDeliveryProofConsumer`, is not asserted.
@@ -1125,115 +986,52 @@ fn create_delivery_proof_refuses_a_statement_version_the_schnorr_fs_concrete_doe
 ///   constructs.
 #[test]
 fn create_delivery_proof_returns_the_consumers_output_for_the_mock_selection() {
-    struct OuterConsumer;
+    struct CaseConsumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateEncodingReturn<CreateChainFormsReturn<CreateDeliveryProofReturn<()>>>;
+    impl ICreateDeliveryProofCaseConsumer for CaseConsumer {
+        type Output = CreateDeliveryProofReturn<()>;
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_delivery_proof_case<
+            P: IPairingArithmetic,
+            E: IEncoderAdapter,
+            F: IChainForms,
+            K: ICredentialKemAdapter<Pairing = P>,
+            A: IKeyAgreementAdapter<Pairing = P>,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _forms: &F,
+            _kem: &K,
+            _key_agreement: &A,
         ) -> Self::Output {
-            struct MiddleConsumer<'a, P: IPairingArithmetic> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic> IEncodingConsumer for MiddleConsumer<'_, P> {
-                type Output = CreateChainFormsReturn<CreateDeliveryProofReturn<()>>;
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    consumed: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    struct InnerConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter> {
-                        pairing: &'a P,
-                        encoder: &'a E,
-                    }
-
-                    impl<P: IPairingArithmetic, E: IEncoderAdapter> IChainFormsConsumer for InnerConsumer<'_, P, E> {
-                        type Output = CreateDeliveryProofReturn<()>;
-
-                        fn consume_chain_forms<F: IChainForms>(
-                            &self,
-                            _params: ConsumeChainFormsParams,
-                            _payload: ConsumeChainFormsPayload<F>,
-                        ) -> Self::Output {
-                            // Arrange
-                            let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                                &build_create_hash_to_scalar_deps(Default::default()),
-                                build_create_hash_to_scalar_params(Default::default()),
-                                build_create_hash_to_scalar_payload(Default::default()),
-                            )
-                            .expect(
-                                "the default selection constructs the hash-to-scalar mock concrete",
-                            )
-                            .adapter;
-                            let random = create_random_source(
-                                &CreateRandomSourceDeps,
-                                build_create_random_source_params(Default::default()),
-                                CreateRandomSourcePayload,
-                            )
-                            .expect(
-                                "the default selection constructs the random-source mock concrete",
-                            )
-                            .adapter;
-
-                            // Act
-                            create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
-                                &build_create_delivery_proof_deps(
-                                    self.pairing,
-                                    &*hash_to_scalar,
-                                    self.encoder,
-                                    &*random,
-                                    MockIDeliveryProofConsumer,
-                                    Default::default(),
-                                ),
-                                build_create_delivery_proof_params(Default::default()),
-                                build_create_delivery_proof_payload(Default::default()),
-                            )
-                        }
-                    }
-
-                    create_chain_forms(
-                        &build_create_chain_forms_deps(
-                            InnerConsumer {
-                                pairing: self.pairing,
-                                encoder: &consumed.adapter,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_chain_forms_params(Default::default()),
-                        build_create_chain_forms_payload(Default::default()),
-                    )
-                }
-            }
-
-            create_encoding(
-                &build_create_encoding_deps(MiddleConsumer {
-                    pairing: &payload.adapter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+            // Act
+            create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
+                &build_create_delivery_proof_deps(
+                    pairing,
+                    hash_to_scalar,
+                    encoder,
+                    random,
+                    MockIDeliveryProofConsumer,
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
             )
         }
     }
 
-    let result = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let result = run_create_delivery_proof_case(
+        &build_create_delivery_proof_case_deps(CaseConsumer, Default::default()),
+        build_create_delivery_proof_case_params(Default::default()),
+        build_create_delivery_proof_case_payload(Default::default()),
     )
-    .expect("the default selection constructs the pairing mock concrete")
-    .output
-    .expect("the default selection constructs the encoding mock concrete")
-    .output
-    .expect("the default selection constructs the chain-forms mock concrete")
-    .output;
+    .expect("the default selections construct");
 
     // Assert
-    assert!(result.is_ok());
+    assert!(result.output.is_ok());
 }
 
 /// Contract: `create_delivery_proof`, mock selection, unsupported statement
@@ -1243,7 +1041,7 @@ fn create_delivery_proof_returns_the_consumers_output_for_the_mock_selection() {
 ///   nothing constructed and the consumer not called.
 /// Arrange: params at the defaults with `statement_version` overridden to
 ///   `DELIVERY_STATEMENT_VERSION_ONE + 1`.
-/// Act:     `create_delivery_proof`, called in the innermost consumer's
+/// Act:     `create_delivery_proof`, called in the case consumer's
 ///   method.
 /// Assert:  `assert_eq!(result.err(),
 ///   Some(CreateDeliveryProofErrorReturn::UnsupportedStatementVersion))`.
@@ -1253,121 +1051,56 @@ fn create_delivery_proof_returns_the_consumers_output_for_the_mock_selection() {
 ///   before any construction.
 #[test]
 fn create_delivery_proof_refuses_a_statement_version_the_mock_concrete_does_not_declare() {
-    struct OuterConsumer;
+    struct CaseConsumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateEncodingReturn<CreateChainFormsReturn<CreateDeliveryProofReturn<()>>>;
+    impl ICreateDeliveryProofCaseConsumer for CaseConsumer {
+        type Output = CreateDeliveryProofReturn<()>;
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_delivery_proof_case<
+            P: IPairingArithmetic,
+            E: IEncoderAdapter,
+            F: IChainForms,
+            K: ICredentialKemAdapter<Pairing = P>,
+            A: IKeyAgreementAdapter<Pairing = P>,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+            encoder: &E,
+            random: &dyn IRandomSourceAdapter,
+            _forms: &F,
+            _kem: &K,
+            _key_agreement: &A,
         ) -> Self::Output {
-            struct MiddleConsumer<'a, P: IPairingArithmetic> {
-                pairing: &'a P,
-            }
-
-            impl<P: IPairingArithmetic> IEncodingConsumer for MiddleConsumer<'_, P> {
-                type Output = CreateChainFormsReturn<CreateDeliveryProofReturn<()>>;
-
-                fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-                    &self,
-                    _params: ConsumeEncodingParams,
-                    consumed: ConsumeEncodingPayload<E>,
-                ) -> Self::Output {
-                    struct InnerConsumer<'a, P: IPairingArithmetic, E: IEncoderAdapter> {
-                        pairing: &'a P,
-                        encoder: &'a E,
-                    }
-
-                    impl<P: IPairingArithmetic, E: IEncoderAdapter> IChainFormsConsumer for InnerConsumer<'_, P, E> {
-                        type Output = CreateDeliveryProofReturn<()>;
-
-                        fn consume_chain_forms<F: IChainForms>(
-                            &self,
-                            _params: ConsumeChainFormsParams,
-                            _payload: ConsumeChainFormsPayload<F>,
-                        ) -> Self::Output {
-                            // Arrange
-                            let hash_to_scalar = create_hash_to_scalar::<P::Scalar>(
-                                &build_create_hash_to_scalar_deps(Default::default()),
-                                build_create_hash_to_scalar_params(Default::default()),
-                                build_create_hash_to_scalar_payload(Default::default()),
-                            )
-                            .expect(
-                                "the default selection constructs the hash-to-scalar mock concrete",
-                            )
-                            .adapter;
-                            let random = create_random_source(
-                                &CreateRandomSourceDeps,
-                                build_create_random_source_params(Default::default()),
-                                CreateRandomSourcePayload,
-                            )
-                            .expect(
-                                "the default selection constructs the random-source mock concrete",
-                            )
-                            .adapter;
-
-                            // Act
-                            create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
-                                &build_create_delivery_proof_deps(
-                                    self.pairing,
-                                    &*hash_to_scalar,
-                                    self.encoder,
-                                    &*random,
-                                    MockIDeliveryProofConsumer,
-                                    Default::default(),
-                                ),
-                                build_create_delivery_proof_params(
-                                    CreateDeliveryProofParamsOverrides {
-                                        statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE + 1),
-                                        ..Default::default()
-                                    },
-                                ),
-                                build_create_delivery_proof_payload(Default::default()),
-                            )
-                        }
-                    }
-
-                    create_chain_forms(
-                        &build_create_chain_forms_deps(
-                            InnerConsumer {
-                                pairing: self.pairing,
-                                encoder: &consumed.adapter,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_chain_forms_params(Default::default()),
-                        build_create_chain_forms_payload(Default::default()),
-                    )
-                }
-            }
-
-            create_encoding(
-                &build_create_encoding_deps(MiddleConsumer {
-                    pairing: &payload.adapter,
+            // Act
+            create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
+                &build_create_delivery_proof_deps(
+                    pairing,
+                    hash_to_scalar,
+                    encoder,
+                    random,
+                    MockIDeliveryProofConsumer,
+                    Default::default(),
+                ),
+                build_create_delivery_proof_params(CreateDeliveryProofParamsOverrides {
+                    statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE + 1),
+                    ..Default::default()
                 }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
+                build_create_delivery_proof_payload(Default::default()),
             )
         }
     }
 
-    let result = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let result = run_create_delivery_proof_case(
+        &build_create_delivery_proof_case_deps(CaseConsumer, Default::default()),
+        build_create_delivery_proof_case_params(Default::default()),
+        build_create_delivery_proof_case_payload(Default::default()),
     )
-    .expect("the default selection constructs the pairing mock concrete")
-    .output
-    .expect("the default selection constructs the encoding mock concrete")
-    .output
-    .expect("the default selection constructs the chain-forms mock concrete")
-    .output;
+    .expect("the default selections construct");
 
     // Assert
     assert_eq!(
-        result.err(),
+        result.output.err(),
         Some(CreateDeliveryProofErrorReturn::UnsupportedStatementVersion)
     );
 }

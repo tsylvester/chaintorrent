@@ -8,6 +8,7 @@ publish.workspace = true
 encoding = { path = "../encoding" }
 chain = { path = "../chain" }
 domain = { path = "../../crates/domain" }
+hashing = { path = "../hashing" }
 hash-to-scalar = { path = "../hash-to-scalar" }
 pairing = { path = "../pairing" }
 envelope = { path = "../envelope" }
@@ -21,6 +22,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 encoding = { path = "../encoding", features = ["mocks"] }
 domain = { path = "../../crates/domain", features = ["mocks"] }
 chain = { path = "../chain", features = ["mocks"] }
+hashing = { path = "../hashing", features = ["mocks"] }
 hash-to-scalar = { path = "../hash-to-scalar", features = ["mocks"] }
 pairing = { path = "../pairing", features = ["mocks"] }
 envelope = { path = "../envelope", features = ["mocks"] }
@@ -29,7 +31,7 @@ random = { path = "../random", features = ["mocks"] }
 serde_json = "1.0.151"
 
 [features]
-mocks = ["domain/mocks", "encoding/mocks", "envelope/mocks", "kem/mocks", "dep:serde_json"]
+mocks = ["domain/mocks", "encoding/mocks", "envelope/mocks", "chain/mocks", "hashing/mocks", "hash-to-scalar/mocks", "pairing/mocks", "kem/mocks", "random/mocks", "dep:serde_json"]
 
 [lints]
 workspace = true

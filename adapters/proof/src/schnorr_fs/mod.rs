@@ -37,6 +37,7 @@ use envelope::{EnvelopeComponents, PublicKeysComponents};
 use hash_to_scalar::{
     DomainTag, DomainTagConstructorParams, HashToScalarParams, HashToScalarPayload,
 };
+use hashing::{Root, RootConstructorParams};
 use interface::{
     SCHNORR_FS_WEIGHT_TAG, SchnorrFsDeliveryProof, SchnorrFsDeliveryProofConstructorParams,
     SchnorrFsDeliveryProofTryNewErrorReturn, SchnorrFsDeliveryProofTryNewReturn, SchnorrFsProof,
@@ -211,11 +212,17 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms>
         statement: &AlgebraicMintStatement<F, P::G1, P::G2>,
         first_messages: MintFirstMessages<P::G1, P::G2>,
     ) -> MintStatement<P, F> {
+        let asset_root = match Root::try_new(RootConstructorParams {
+            bytes: *statement.context.asset_identity_hash.as_bytes(),
+        }) {
+            Ok(root) => root,
+            Err(_) => unreachable!("an asset identity hash is never all zero"),
+        };
         MintStatement {
             suite_identifier: statement.context.suite_identifier.clone(),
             chain: statement.context.chain.clone(),
             entitlement_contract: statement.context.entitlement_contract.clone(),
-            asset_identity_hash: statement.context.asset_identity_hash.clone(),
+            asset_root,
             parameter_set_identifier: statement.context.parameter_set_identifier.clone(),
             source_entitlement: statement.context.source_entitlement.clone(),
             target_entitlement: statement.context.target_entitlement.clone(),
@@ -244,11 +251,17 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms>
         statement: &AlgebraicTransferStatement<F, P::G1, P::G2>,
         first_messages: TransferFirstMessages<P::G1, P::G2>,
     ) -> TransferStatement<P, F> {
+        let asset_root = match Root::try_new(RootConstructorParams {
+            bytes: *statement.context.asset_identity_hash.as_bytes(),
+        }) {
+            Ok(root) => root,
+            Err(_) => unreachable!("an asset identity hash is never all zero"),
+        };
         TransferStatement {
             suite_identifier: statement.context.suite_identifier.clone(),
             chain: statement.context.chain.clone(),
             entitlement_contract: statement.context.entitlement_contract.clone(),
-            asset_identity_hash: statement.context.asset_identity_hash.clone(),
+            asset_root,
             parameter_set_identifier: statement.context.parameter_set_identifier.clone(),
             source_entitlement: statement.context.source_entitlement.clone(),
             target_entitlement: statement.context.target_entitlement.clone(),

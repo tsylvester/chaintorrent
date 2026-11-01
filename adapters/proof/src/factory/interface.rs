@@ -1,14 +1,28 @@
 use chain::IChainForms;
+#[cfg(any(test, feature = "mocks"))]
+use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams};
 use core::convert::Infallible;
 use domain::{AssetIdentityHash, ParameterSetIdentifier, Secret, SuiteIdentifier};
 use encoding::IEncoderAdapter;
+#[cfg(any(test, feature = "mocks"))]
+use encoding::{CreateEncodingErrorReturn, CreateEncodingParams};
+#[cfg(any(test, feature = "mocks"))]
+use envelope::{CreateKeyAgreementErrorReturn, CreateKeyAgreementParams, IKeyAgreementAdapter};
 use envelope::{
     EnvelopeAlgebra, EnvelopeCoins, EnvelopeComponents, KeyPairComponents, PublicKeysComponents,
 };
 use hash_to_scalar::IHashToScalarAdapter;
+#[cfg(any(test, feature = "mocks"))]
+use hash_to_scalar::{CreateHashToScalarErrorReturn, CreateHashToScalarParams};
 use kem::MasterScalarComponents;
+#[cfg(any(test, feature = "mocks"))]
+use kem::{CreateKemErrorReturn, CreateKemParams, ICredentialKemAdapter};
+#[cfg(any(test, feature = "mocks"))]
+use pairing::{CreatePairingErrorReturn, CreatePairingParams};
 use pairing::{IPairingAdapter, IPairingArithmetic, VerifierGroupArithmetic};
 use random::IRandomSourceAdapter;
+#[cfg(any(test, feature = "mocks"))]
+use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use serde::Serialize;
 use zeroize::Zeroize;
 
@@ -499,7 +513,6 @@ pub struct CreateDeliveryProofDeps<'a, P: IPairingArithmetic, E: IEncoderAdapter
 pub struct CreateDeliveryProofParams {
     pub concrete: DeliveryProofConcrete,
     pub algebra: EnvelopeAlgebra,
-    pub verifier_form: VerifierGroupArithmetic,
     pub statement_version: u16,
 }
 
@@ -512,7 +525,7 @@ pub struct CreateDeliveryProofSuccessReturn<O> {
 #[derive(Debug, PartialEq, Eq)]
 pub enum CreateDeliveryProofErrorReturn {
     UnsupportedEnvelopeAlgebra,
-    UnsupportedVerifierForm,
+    UnsupportedVerifierForm { form: VerifierGroupArithmetic },
     UnsupportedStatementVersion,
     SchnorrFs(SchnorrFsDeliveryProofTryNewErrorReturn),
 }
@@ -528,3 +541,73 @@ pub type CreateDeliveryProofFn<'a, P, E, F, C> =
     ) -> CreateDeliveryProofReturn<<C as IDeliveryProofConsumer<P, F>>::Output>;
 
 pub const DELIVERY_PROOF_CONCRETES: &[DeliveryProofConcrete] = &[DeliveryProofConcrete::SchnorrFs];
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait ICreateDeliveryProofCaseConsumer {
+    type Output;
+
+    fn consume_create_delivery_proof_case<
+        P: IPairingArithmetic,
+        E: IEncoderAdapter,
+        F: IChainForms,
+        K: ICredentialKemAdapter<Pairing = P>,
+        A: IKeyAgreementAdapter<Pairing = P>,
+    >(
+        &self,
+        pairing: &P,
+        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
+        encoder: &E,
+        random: &dyn IRandomSourceAdapter,
+        forms: &F,
+        kem: &K,
+        key_agreement: &A,
+    ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateDeliveryProofCaseDeps<C: ICreateDeliveryProofCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateDeliveryProofCaseParams {
+    pub pairing: CreatePairingParams,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub encoding: CreateEncodingParams,
+    pub chain_forms: CreateChainFormsParams,
+    pub kem: CreateKemParams,
+    pub key_agreement: CreateKeyAgreementParams,
+    pub random_source: CreateRandomSourceParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateDeliveryProofCasePayload;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateDeliveryProofCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum CreateDeliveryProofCaseErrorReturn {
+    Pairing(CreatePairingErrorReturn),
+    HashToScalar(CreateHashToScalarErrorReturn),
+    Encoding(CreateEncodingErrorReturn),
+    ChainForms(CreateChainFormsErrorReturn),
+    Kem(CreateKemErrorReturn),
+    KeyAgreement(CreateKeyAgreementErrorReturn),
+    RandomSource(CreateRandomSourceErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type CreateDeliveryProofCaseReturn<O> =
+    Result<CreateDeliveryProofCaseSuccessReturn<O>, CreateDeliveryProofCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunCreateDeliveryProofCaseFn<C> =
+    fn(
+        &CreateDeliveryProofCaseDeps<C>,
+        CreateDeliveryProofCaseParams,
+        CreateDeliveryProofCasePayload,
+    ) -> CreateDeliveryProofCaseReturn<<C as ICreateDeliveryProofCaseConsumer>::Output>;

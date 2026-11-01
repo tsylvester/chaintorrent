@@ -1,6 +1,10 @@
 #![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
-use chain::IChainForms;
+use chain::{
+    ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsParams, IChainForms,
+    IChainFormsConsumer, build_create_chain_forms_deps, build_create_chain_forms_params,
+    build_create_chain_forms_payload, create_chain_forms,
+};
 use core::convert::Infallible;
 use core::marker::PhantomData;
 use domain::{
@@ -9,26 +13,44 @@ use domain::{
     build_suite_identifier,
 };
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, ICanonicalField, IEncoderAdapter, ToFieldParams,
-    build_from_field_params,
+    CanonicalFieldKind, CanonicalFieldValue, ConsumeEncodingParams, ConsumeEncodingPayload,
+    CreateEncodingParams, ICanonicalField, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer,
+    ToFieldParams, build_create_encoding_deps, build_create_encoding_params,
+    build_create_encoding_payload, build_from_field_params, create_encoding,
 };
 use envelope::{
-    EnvelopeAlgebra, EnvelopeCoins, EnvelopeComponents, KeyPairComponents, PublicKeysComponents,
-    build_envelope_coins, build_key_pair_components, build_public_keys_components,
+    ConsumeKeyAgreementParams, ConsumeKeyAgreementPayload, CreateKeyAgreementParams,
+    EnvelopeAlgebra, EnvelopeCoins, EnvelopeComponents, IKeyAgreementAdapter,
+    IKeyAgreementConsumer, KeyPairComponents, PublicKeysComponents,
+    build_create_key_agreement_deps, build_create_key_agreement_params,
+    build_create_key_agreement_payload, build_envelope_coins, build_key_pair_components,
+    build_public_keys_components, create_key_agreement,
 };
-use hash_to_scalar::IHashToScalarAdapter;
-use kem::{MasterScalarComponents, build_master_scalar_components};
+use hash_to_scalar::{
+    CreateHashToScalarParams, IHashToScalarAdapter, build_create_hash_to_scalar_deps,
+    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload, create_hash_to_scalar,
+};
+use kem::{
+    ConsumeKemParams, ConsumeKemPayload, CreateKemParams, ICredentialKemAdapter, IKemConsumer,
+    MasterScalarComponents, build_create_kem_deps, build_create_kem_params,
+    build_create_kem_payload, build_master_scalar_components, create_kem,
+};
 use pairing::{
     AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, AddScalarParams, AddScalarPayload,
-    EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload, EncodeScalarParams,
-    EncodeScalarPayload, G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams,
-    G2GeneratorPayload, IPairingAdapter, IPairingArithmetic, ISampleUniformScalar, MsmG1Params,
+    ConsumePairingParams, ConsumePairingPayload, CreatePairingParams, EncodeG1Params,
+    EncodeG1Payload, EncodeG2Params, EncodeG2Payload, EncodeScalarParams, EncodeScalarPayload,
+    G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter,
+    IPairingArithmetic, IPairingConsumer, IPairingReference, ISampleUniformScalar, MsmG1Params,
     MsmG1Payload, MsmG1Term, MsmG2Params, MsmG2Payload, MsmG2Term, MulG1Params, MulG1Payload,
     MulG2Params, MulG2Payload, MulScalarParams, MulScalarPayload, NegG1Params, NegG1Payload,
     NegG2Params, NegG2Payload, NegScalarParams, NegScalarPayload, SampleUniformScalarParams,
-    SampleUniformScalarPayload, VerifierGroupArithmetic,
+    SampleUniformScalarPayload, VerifierGroupArithmetic, build_create_pairing_deps,
+    build_create_pairing_params, build_create_pairing_payload, create_pairing,
 };
-use random::IRandomSourceAdapter;
+use random::{
+    CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload,
+    IRandomSourceAdapter, build_create_random_source_params, create_random_source,
+};
 use serde_json::{Map, Value};
 use zeroize::Zeroize;
 
@@ -39,21 +61,25 @@ use crate::transfer_statement::provides::TransferFirstMessages;
 
 use super::interface::{
     AlgebraicMintStatement, AlgebraicStatement, AlgebraicTransferStatement,
-    ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload, CreateDeliveryProofDeps,
-    CreateDeliveryProofFn, CreateDeliveryProofParams, CreateDeliveryProofPayload,
-    CreateDeliveryProofReturn, CreateDeliveryProofSuccessReturn, DELIVERY_PROOF_INTERFACE_VERSION,
-    DeliveryContext, DeliveryProofComponents, DeliveryProofConcrete, DeliveryProofDeclaration,
-    DeliveryProofWireComponents, IDeliveryProofAdapter, IDeliveryProofConsumer, MintResponses,
-    MintSecondGroupFirstMessages, MockIDeliveryProofAdapterFailureMode,
-    MockIDeliveryProofAdapterProveMintErrorReturn,
+    ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload, CreateDeliveryProofCaseDeps,
+    CreateDeliveryProofCaseErrorReturn, CreateDeliveryProofCaseParams,
+    CreateDeliveryProofCasePayload, CreateDeliveryProofCaseReturn,
+    CreateDeliveryProofCaseSuccessReturn, CreateDeliveryProofDeps, CreateDeliveryProofFn,
+    CreateDeliveryProofParams, CreateDeliveryProofPayload, CreateDeliveryProofReturn,
+    CreateDeliveryProofSuccessReturn, DELIVERY_PROOF_INTERFACE_VERSION, DeliveryContext,
+    DeliveryProofComponents, DeliveryProofConcrete, DeliveryProofDeclaration,
+    DeliveryProofWireComponents, ICreateDeliveryProofCaseConsumer, IDeliveryProofAdapter,
+    IDeliveryProofConsumer, MintResponses, MintSecondGroupFirstMessages,
+    MockIDeliveryProofAdapterFailureMode, MockIDeliveryProofAdapterProveMintErrorReturn,
     MockIDeliveryProofAdapterProveTransferErrorReturn, ProofComponentsParams,
     ProofComponentsPayload, ProofComponentsReturn, ProofComponentsSuccessReturn,
     ProofFromComponentsErrorReturn, ProofFromComponentsParams, ProofFromComponentsPayload,
     ProofFromComponentsReturn, ProofFromComponentsSuccessReturn, ProveMintErrorReturn,
     ProveMintParams, ProveMintPayload, ProveMintReturn, ProveMintSuccessReturn,
     ProveTransferErrorReturn, ProveTransferParams, ProveTransferPayload, ProveTransferReturn,
-    ProveTransferSuccessReturn, TransferResponses, TransferSecondGroupFirstMessages, VerifyParams,
-    VerifyPayload, VerifyReturn, VerifySuccessReturn,
+    ProveTransferSuccessReturn, RunCreateDeliveryProofCaseFn, TransferResponses,
+    TransferSecondGroupFirstMessages, VerifyParams, VerifyPayload, VerifyReturn,
+    VerifySuccessReturn,
 };
 
 pub const MOCK_DELIVERY_PROOF_CHALLENGE_TAG: &[u8] = b"ChainTorrent-v1-mock-proof-challenge";
@@ -2529,7 +2555,6 @@ pub fn build_create_delivery_proof_deps<'a, P: IPairingArithmetic, E: IEncoderAd
 pub struct CreateDeliveryProofParamsOverrides {
     pub concrete: Option<DeliveryProofConcrete>,
     pub algebra: Option<EnvelopeAlgebra>,
-    pub verifier_form: Option<VerifierGroupArithmetic>,
     pub statement_version: Option<u16>,
 }
 
@@ -2541,9 +2566,6 @@ pub fn build_create_delivery_proof_params(
             MockIDeliveryProofAdapterFailureMode::NoFailure,
         )),
         algebra: overrides.algebra.unwrap_or(EnvelopeAlgebra::PairingElGamal),
-        verifier_form: overrides
-            .verifier_form
-            .unwrap_or(VerifierGroupArithmetic::BothGroups),
         statement_version: overrides
             .statement_version
             .unwrap_or(DELIVERY_STATEMENT_VERSION_ONE),
@@ -2554,7 +2576,6 @@ pub fn build_create_delivery_proof_params(
 pub struct CreateDeliveryProofParamsCorruptions {
     pub concrete: Option<Value>,
     pub algebra: Option<Value>,
-    pub verifier_form: Option<Value>,
     pub statement_version: Option<Value>,
 }
 
@@ -2577,13 +2598,6 @@ pub fn invalidate_create_delivery_proof_params(
         }),
     );
     fields.insert(
-        "verifier_form".to_string(),
-        Value::from(match params.verifier_form {
-            VerifierGroupArithmetic::BothGroups => "BothGroups",
-            VerifierGroupArithmetic::FirstGroupOnly => "FirstGroupOnly",
-        }),
-    );
-    fields.insert(
         "statement_version".to_string(),
         Value::from(params.statement_version),
     );
@@ -2592,9 +2606,6 @@ pub fn invalidate_create_delivery_proof_params(
     }
     if let Some(algebra) = corruptions.algebra {
         fields.insert("algebra".to_string(), algebra);
-    }
-    if let Some(verifier_form) = corruptions.verifier_form {
-        fields.insert("verifier_form".to_string(), verifier_form);
     }
     if let Some(statement_version) = corruptions.statement_version {
         fields.insert("statement_version".to_string(), statement_version);
@@ -2642,4 +2653,361 @@ pub fn mock_create_delivery_proof<
         output,
         Default::default(),
     ))
+}
+
+#[derive(Default)]
+pub struct CreateDeliveryProofCaseDepsOverrides;
+
+pub fn build_create_delivery_proof_case_deps<C: ICreateDeliveryProofCaseConsumer>(
+    consumer: C,
+    _overrides: CreateDeliveryProofCaseDepsOverrides,
+) -> CreateDeliveryProofCaseDeps<C> {
+    CreateDeliveryProofCaseDeps { consumer }
+}
+
+#[derive(Default)]
+pub struct CreateDeliveryProofCaseParamsOverrides {
+    pub pairing: Option<CreatePairingParams>,
+    pub hash_to_scalar: Option<CreateHashToScalarParams>,
+    pub encoding: Option<CreateEncodingParams>,
+    pub chain_forms: Option<CreateChainFormsParams>,
+    pub kem: Option<CreateKemParams>,
+    pub key_agreement: Option<CreateKeyAgreementParams>,
+    pub random_source: Option<CreateRandomSourceParams>,
+}
+
+pub fn build_create_delivery_proof_case_params(
+    overrides: CreateDeliveryProofCaseParamsOverrides,
+) -> CreateDeliveryProofCaseParams {
+    CreateDeliveryProofCaseParams {
+        pairing: overrides
+            .pairing
+            .unwrap_or_else(|| build_create_pairing_params(Default::default())),
+        hash_to_scalar: overrides
+            .hash_to_scalar
+            .unwrap_or_else(|| build_create_hash_to_scalar_params(Default::default())),
+        encoding: overrides
+            .encoding
+            .unwrap_or_else(|| build_create_encoding_params(Default::default())),
+        chain_forms: overrides
+            .chain_forms
+            .unwrap_or_else(|| build_create_chain_forms_params(Default::default())),
+        kem: overrides
+            .kem
+            .unwrap_or_else(|| build_create_kem_params(Default::default())),
+        key_agreement: overrides
+            .key_agreement
+            .unwrap_or_else(|| build_create_key_agreement_params(Default::default())),
+        random_source: overrides
+            .random_source
+            .unwrap_or_else(|| build_create_random_source_params(Default::default())),
+    }
+}
+
+#[derive(Default)]
+pub struct CreateDeliveryProofCasePayloadOverrides;
+
+pub fn build_create_delivery_proof_case_payload(
+    _overrides: CreateDeliveryProofCasePayloadOverrides,
+) -> CreateDeliveryProofCasePayload {
+    CreateDeliveryProofCasePayload
+}
+
+#[derive(Default)]
+pub struct CreateDeliveryProofCaseSuccessReturnOverrides;
+
+pub fn build_create_delivery_proof_case_success_return<O>(
+    output: O,
+    _overrides: CreateDeliveryProofCaseSuccessReturnOverrides,
+) -> CreateDeliveryProofCaseSuccessReturn<O> {
+    CreateDeliveryProofCaseSuccessReturn { output }
+}
+
+struct CaseAtPairing<'a, C: ICreateDeliveryProofCaseConsumer> {
+    consumer: &'a C,
+    hash_to_scalar: CreateHashToScalarParams,
+    encoding: CreateEncodingParams,
+    chain_forms: CreateChainFormsParams,
+    kem: CreateKemParams,
+    key_agreement: CreateKeyAgreementParams,
+    random_source: CreateRandomSourceParams,
+}
+
+impl<C: ICreateDeliveryProofCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
+    type Output = CreateDeliveryProofCaseReturn<C::Output>;
+
+    fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        &self,
+        _params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output {
+        let hashed = match create_hash_to_scalar::<P::Scalar>(
+            &build_create_hash_to_scalar_deps(Default::default()),
+            self.hash_to_scalar,
+            build_create_hash_to_scalar_payload(Default::default()),
+        ) {
+            Ok(hashed) => hashed,
+            Err(error) => {
+                return Err(CreateDeliveryProofCaseErrorReturn::HashToScalar(error));
+            }
+        };
+        let random = match create_random_source(
+            &CreateRandomSourceDeps,
+            CreateRandomSourceParams {
+                kind: self.random_source.kind,
+            },
+            CreateRandomSourcePayload,
+        ) {
+            Ok(random) => random,
+            Err(error) => {
+                return Err(CreateDeliveryProofCaseErrorReturn::RandomSource(error));
+            }
+        };
+        match create_encoding(
+            &build_create_encoding_deps(CaseAtEncoding {
+                consumer: self.consumer,
+                pairing: &payload.adapter,
+                hash_to_scalar: &*hashed.adapter,
+                random: &*random.adapter,
+                chain_forms: self.chain_forms,
+                kem: self.kem,
+                key_agreement: self.key_agreement,
+            }),
+            CreateEncodingParams {
+                concrete: self.encoding.concrete,
+                identifier: self.encoding.identifier,
+            },
+            build_create_encoding_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(CreateDeliveryProofCaseErrorReturn::Encoding(error)),
+        }
+    }
+}
+
+struct CaseAtEncoding<
+    'a,
+    C: ICreateDeliveryProofCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+> {
+    consumer: &'a C,
+    pairing: &'a P,
+    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    random: &'a dyn IRandomSourceAdapter,
+    chain_forms: CreateChainFormsParams,
+    kem: CreateKemParams,
+    key_agreement: CreateKeyAgreementParams,
+}
+
+impl<C: ICreateDeliveryProofCaseConsumer, P: IPairingArithmetic + IPairingReference>
+    IEncodingConsumer for CaseAtEncoding<'_, C, P>
+{
+    type Output = CreateDeliveryProofCaseReturn<C::Output>;
+
+    fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+        &self,
+        _params: ConsumeEncodingParams,
+        payload: ConsumeEncodingPayload<E>,
+    ) -> Self::Output {
+        match create_chain_forms(
+            &build_create_chain_forms_deps(
+                CaseAtChainForms {
+                    consumer: self.consumer,
+                    pairing: self.pairing,
+                    hash_to_scalar: self.hash_to_scalar,
+                    encoder: &payload.adapter,
+                    random: self.random,
+                    kem: self.kem,
+                    key_agreement: self.key_agreement,
+                },
+                &payload.adapter,
+                Default::default(),
+            ),
+            self.chain_forms,
+            build_create_chain_forms_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(CreateDeliveryProofCaseErrorReturn::ChainForms(error)),
+        }
+    }
+}
+
+struct CaseAtChainForms<
+    'a,
+    C: ICreateDeliveryProofCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter,
+> {
+    consumer: &'a C,
+    pairing: &'a P,
+    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    encoder: &'a E,
+    random: &'a dyn IRandomSourceAdapter,
+    kem: CreateKemParams,
+    key_agreement: CreateKeyAgreementParams,
+}
+
+impl<
+    C: ICreateDeliveryProofCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter,
+> IChainFormsConsumer for CaseAtChainForms<'_, C, P, E>
+{
+    type Output = CreateDeliveryProofCaseReturn<C::Output>;
+
+    fn consume_chain_forms<F: IChainForms>(
+        &self,
+        _params: ConsumeChainFormsParams,
+        payload: ConsumeChainFormsPayload<F>,
+    ) -> Self::Output {
+        match create_kem(
+            &build_create_kem_deps(
+                self.pairing,
+                self.hash_to_scalar,
+                CaseAtKem {
+                    consumer: self.consumer,
+                    pairing: self.pairing,
+                    hash_to_scalar: self.hash_to_scalar,
+                    encoder: self.encoder,
+                    random: self.random,
+                    forms: &payload.forms,
+                    key_agreement: self.key_agreement,
+                },
+                Default::default(),
+            ),
+            self.kem,
+            build_create_kem_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(CreateDeliveryProofCaseErrorReturn::Kem(error)),
+        }
+    }
+}
+
+struct CaseAtKem<
+    'a,
+    C: ICreateDeliveryProofCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter,
+    F: IChainForms,
+> {
+    consumer: &'a C,
+    pairing: &'a P,
+    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    encoder: &'a E,
+    random: &'a dyn IRandomSourceAdapter,
+    forms: &'a F,
+    key_agreement: CreateKeyAgreementParams,
+}
+
+impl<
+    C: ICreateDeliveryProofCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter,
+    F: IChainForms,
+> IKemConsumer<P> for CaseAtKem<'_, C, P, E, F>
+{
+    type Output = CreateDeliveryProofCaseReturn<C::Output>;
+
+    fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        &self,
+        _params: ConsumeKemParams,
+        payload: ConsumeKemPayload<K>,
+    ) -> Self::Output {
+        match create_key_agreement(
+            &build_create_key_agreement_deps(
+                self.pairing,
+                self.hash_to_scalar,
+                self.encoder,
+                self.random,
+                CaseAtKeyAgreement {
+                    consumer: self.consumer,
+                    pairing: self.pairing,
+                    hash_to_scalar: self.hash_to_scalar,
+                    encoder: self.encoder,
+                    random: self.random,
+                    forms: self.forms,
+                    kem: &payload.adapter,
+                },
+                Default::default(),
+            ),
+            self.key_agreement,
+            build_create_key_agreement_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(CreateDeliveryProofCaseErrorReturn::KeyAgreement(error)),
+        }
+    }
+}
+
+struct CaseAtKeyAgreement<
+    'a,
+    C: ICreateDeliveryProofCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter,
+    F: IChainForms,
+    K: ICredentialKemAdapter<Pairing = P>,
+> {
+    consumer: &'a C,
+    pairing: &'a P,
+    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    encoder: &'a E,
+    random: &'a dyn IRandomSourceAdapter,
+    forms: &'a F,
+    kem: &'a K,
+}
+
+impl<
+    C: ICreateDeliveryProofCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter,
+    F: IChainForms,
+    K: ICredentialKemAdapter<Pairing = P>,
+> IKeyAgreementConsumer<P> for CaseAtKeyAgreement<'_, C, P, E, F, K>
+{
+    type Output = CreateDeliveryProofCaseReturn<C::Output>;
+
+    fn consume_key_agreement<A: IKeyAgreementAdapter<Pairing = P>>(
+        &self,
+        _params: ConsumeKeyAgreementParams,
+        payload: ConsumeKeyAgreementPayload<A>,
+    ) -> Self::Output {
+        let output = self.consumer.consume_create_delivery_proof_case(
+            self.pairing,
+            self.hash_to_scalar,
+            self.encoder,
+            self.random,
+            self.forms,
+            self.kem,
+            &payload.adapter,
+        );
+        Ok(CreateDeliveryProofCaseSuccessReturn { output })
+    }
+}
+
+pub fn run_create_delivery_proof_case<C: ICreateDeliveryProofCaseConsumer>(
+    deps: &CreateDeliveryProofCaseDeps<C>,
+    params: CreateDeliveryProofCaseParams,
+    _payload: CreateDeliveryProofCasePayload,
+) -> CreateDeliveryProofCaseReturn<C::Output> {
+    let _: RunCreateDeliveryProofCaseFn<C> = run_create_delivery_proof_case;
+    match create_pairing(
+        &build_create_pairing_deps(
+            CaseAtPairing {
+                consumer: &deps.consumer,
+                hash_to_scalar: params.hash_to_scalar,
+                encoding: params.encoding,
+                chain_forms: params.chain_forms,
+                kem: params.kem,
+                key_agreement: params.key_agreement,
+                random_source: params.random_source,
+            },
+            Default::default(),
+        ),
+        params.pairing,
+        build_create_pairing_payload(Default::default()),
+    ) {
+        Ok(success) => success.output,
+        Err(error) => Err(CreateDeliveryProofCaseErrorReturn::Pairing(error)),
+    }
 }

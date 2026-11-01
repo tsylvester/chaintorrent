@@ -1,32 +1,43 @@
 #![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
-    TransferFirstMessages, TransferStatement, TransferStatementDescription,
-    TransferStatementDescriptionConstructorParams,
+    ITransferStatementCaseConsumer, TransferFirstMessages, TransferStatement,
+    TransferStatementCaseDeps, TransferStatementCaseErrorReturn, TransferStatementCaseParams,
+    TransferStatementCasePayload, TransferStatementCaseReturn, TransferStatementCaseSuccessReturn,
+    TransferStatementDescription, TransferStatementDescriptionConstructorParams,
 };
 use crate::mint_statement::provides::TransferPurpose;
-use chain::IChainForms;
+use chain::{
+    ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsParams, IChainForms,
+    IChainFormsConsumer, build_create_chain_forms_deps, build_create_chain_forms_params,
+    build_create_chain_forms_payload, create_chain_forms,
+};
 use domain::{
-    AssetIdentityHash, AssetIdentityHashConstructorParamsOverrides, ParameterSetIdentifier,
-    ParameterSetIdentifierConstructorParamsOverrides, SecretConstructorParamsOverrides,
-    SuiteIdentifier, SuiteIdentifierConstructorParamsOverrides, build_asset_identity_hash,
+    ParameterSetIdentifier, ParameterSetIdentifierConstructorParamsOverrides,
+    SecretConstructorParamsOverrides, SuiteIdentifier, SuiteIdentifierConstructorParamsOverrides,
     build_parameter_set_identifier, build_secret, build_suite_identifier,
 };
 use encoding::{
     CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, CanonicalFieldsOverrides,
-    ICanonicalField, ToFieldParamsOverrides, build_canonical_fields, build_from_field_params,
-    build_to_field_params,
+    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams,
+    CreateEncodingParamsOverrides, FromFieldParamsOverrides, ICanonicalField, IDecoderAdapter,
+    IEncoderAdapter, IEncodingConsumer, ToFieldParamsOverrides, build_canonical_fields,
+    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
+    build_from_field_params, build_to_field_params, create_encoding,
 };
 use envelope::{
     EnvelopeComponents, EnvelopeComponentsOverrides, PublicKeysComponents,
     PublicKeysComponentsOverrides, build_envelope_components, build_public_keys_components,
 };
+use hashing::{Root, RootConstructorParamsOverrides, build_root};
 use pairing::{
-    EncodeG1Params, EncodeG1PayloadOverrides, EncodeG2Params, EncodeG2PayloadOverrides,
-    G1GeneratorParams, G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter,
-    ISampleUniformScalar, MulG1Params, MulG1Payload, MulG2Params, MulG2Payload,
-    SampleUniformScalarParams, SampleUniformScalarPayload, build_encode_g1_payload,
-    build_encode_g2_payload,
+    ConsumePairingParams, ConsumePairingPayload, CreatePairingParams, EncodeG1Params,
+    EncodeG1PayloadOverrides, EncodeG2Params, EncodeG2PayloadOverrides, G1GeneratorParams,
+    G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingArithmetic,
+    IPairingConsumer, IPairingReference, ISampleUniformScalar, MulG1Params, MulG1Payload,
+    MulG2Params, MulG2Payload, SampleUniformScalarParams, SampleUniformScalarPayload,
+    build_create_pairing_deps, build_create_pairing_params, build_create_pairing_payload,
+    build_encode_g1_payload, build_encode_g2_payload, create_pairing,
 };
 
 pub struct TransferFirstMessagesOverrides<G1, G2> {
@@ -69,7 +80,7 @@ pub struct TransferStatementOverrides<P: IPairingAdapter, F: IChainForms> {
     pub suite_identifier: Option<SuiteIdentifier>,
     pub chain: Option<F::ChainIdentifier>,
     pub entitlement_contract: Option<F::Identity>,
-    pub asset_identity_hash: Option<AssetIdentityHash>,
+    pub asset_root: Option<Root>,
     pub parameter_set_identifier: Option<ParameterSetIdentifier>,
     pub source_entitlement: Option<F::Entitlement>,
     pub target_entitlement: Option<F::Entitlement>,
@@ -92,7 +103,7 @@ impl<P: IPairingAdapter, F: IChainForms> Default for TransferStatementOverrides<
             suite_identifier: None,
             chain: None,
             entitlement_contract: None,
-            asset_identity_hash: None,
+            asset_root: None,
             parameter_set_identifier: None,
             source_entitlement: None,
             target_entitlement: None,
@@ -125,9 +136,9 @@ pub fn build_transfer_statement<P: IPairingAdapter, F: IChainForms>(
         entitlement_contract: overrides
             .entitlement_contract
             .unwrap_or_else(|| form_from_seed::<F::Identity>(0x12)),
-        asset_identity_hash: overrides.asset_identity_hash.unwrap_or_else(|| {
-            build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides::default())
-        }),
+        asset_root: overrides
+            .asset_root
+            .unwrap_or_else(|| build_root(RootConstructorParamsOverrides::default())),
         parameter_set_identifier: overrides.parameter_set_identifier.unwrap_or_else(|| {
             build_parameter_set_identifier(
                 ParameterSetIdentifierConstructorParamsOverrides::default(),
@@ -204,7 +215,7 @@ pub struct TransferStatementCorruptions {
     pub suite_identifier: Option<Vec<CanonicalFieldValue>>,
     pub chain: Option<Vec<CanonicalFieldValue>>,
     pub entitlement_contract: Option<Vec<CanonicalFieldValue>>,
-    pub asset_identity_hash: Option<Vec<CanonicalFieldValue>>,
+    pub asset_root: Option<Vec<CanonicalFieldValue>>,
     pub parameter_set_identifier: Option<Vec<CanonicalFieldValue>>,
     pub source_entitlement: Option<Vec<CanonicalFieldValue>>,
     pub target_entitlement: Option<Vec<CanonicalFieldValue>>,
@@ -244,9 +255,9 @@ pub fn invalidate_transfer_statement<P: IPairingAdapter, F: IChainForms>(
             .entitlement_contract
             .unwrap_or_else(|| vec![render_form(&baseline.entitlement_contract)]),
     );
-    values.extend(corruptions.asset_identity_hash.unwrap_or_else(|| {
+    values.extend(corruptions.asset_root.unwrap_or_else(|| {
         vec![CanonicalFieldValue::FixedBytes32(
-            *baseline.asset_identity_hash.as_bytes(),
+            *baseline.asset_root.as_bytes(),
         )]
     }));
     values.extend(corruptions.parameter_set_identifier.unwrap_or_else(|| {
@@ -359,7 +370,7 @@ pub fn build_transfer_statement_description<'a, P: IPairingAdapter, F: IChainFor
 
 fn form_from_seed<T: ICanonicalField>(seed: u8) -> T {
     T::from_field(
-        build_from_field_params(Default::default()),
+        build_from_field_params(FromFieldParamsOverrides),
         seeded_field(T::KIND, seed),
     )
     .expect("a constant of the declared kind is admitted")
@@ -448,4 +459,189 @@ fn encode_g2_field<P: IPairingAdapter>(pairing: &P, point: &P::G2) -> CanonicalF
         ),
     );
     CanonicalFieldValue::Bytes(encoded.bytes.as_ref().to_vec())
+}
+
+#[derive(Default)]
+pub struct TransferStatementCaseDepsOverrides;
+
+pub fn build_transfer_statement_case_deps<C: ITransferStatementCaseConsumer>(
+    consumer: C,
+    _overrides: TransferStatementCaseDepsOverrides,
+) -> TransferStatementCaseDeps<C> {
+    TransferStatementCaseDeps { consumer }
+}
+
+#[derive(Default)]
+pub struct TransferStatementCaseParamsOverrides {
+    pub pairing: Option<CreatePairingParams>,
+    pub encoding: Option<CreateEncodingParams>,
+    pub chain_forms: Option<CreateChainFormsParams>,
+}
+
+pub fn build_transfer_statement_case_params(
+    overrides: TransferStatementCaseParamsOverrides,
+) -> TransferStatementCaseParams {
+    TransferStatementCaseParams {
+        pairing: overrides
+            .pairing
+            .unwrap_or_else(|| build_create_pairing_params(Default::default())),
+        encoding: overrides
+            .encoding
+            .unwrap_or_else(|| build_create_encoding_params(Default::default())),
+        chain_forms: overrides
+            .chain_forms
+            .unwrap_or_else(|| build_create_chain_forms_params(Default::default())),
+    }
+}
+
+#[derive(Default)]
+pub struct TransferStatementCasePayloadOverrides;
+
+pub fn build_transfer_statement_case_payload(
+    _overrides: TransferStatementCasePayloadOverrides,
+) -> TransferStatementCasePayload {
+    TransferStatementCasePayload
+}
+
+#[derive(Default)]
+pub struct TransferStatementCaseSuccessReturnOverrides;
+
+pub fn build_transfer_statement_case_success_return<O>(
+    output: O,
+    _overrides: TransferStatementCaseSuccessReturnOverrides,
+) -> TransferStatementCaseSuccessReturn<O> {
+    TransferStatementCaseSuccessReturn { output }
+}
+
+struct CaseAtPairing<'a, C: ITransferStatementCaseConsumer> {
+    pub consumer: &'a C,
+    pub encoding: CreateEncodingParams,
+    pub chain_forms: CreateChainFormsParams,
+}
+
+impl<C: ITransferStatementCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
+    type Output = TransferStatementCaseReturn<C::Output>;
+
+    fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        &self,
+        _params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output {
+        let encoding_deps = build_create_encoding_deps(CaseAtEncoding {
+            consumer: self.consumer,
+            pairing: &payload.adapter,
+            chain_forms: self.chain_forms,
+        });
+        match create_encoding(
+            &encoding_deps,
+            build_create_encoding_params(CreateEncodingParamsOverrides {
+                concrete: Some(self.encoding.concrete),
+                identifier: Some(self.encoding.identifier),
+            }),
+            build_create_encoding_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(TransferStatementCaseErrorReturn::CreateEncoding(error)),
+        }
+    }
+}
+
+struct CaseAtEncoding<
+    'a,
+    'p,
+    C: ITransferStatementCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+> {
+    pub consumer: &'a C,
+    pub pairing: &'p P,
+    pub chain_forms: CreateChainFormsParams,
+}
+
+impl<C: ITransferStatementCaseConsumer, P: IPairingArithmetic + IPairingReference> IEncodingConsumer
+    for CaseAtEncoding<'_, '_, C, P>
+{
+    type Output = TransferStatementCaseReturn<C::Output>;
+
+    fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
+        &self,
+        _params: ConsumeEncodingParams,
+        payload: ConsumeEncodingPayload<E>,
+    ) -> Self::Output {
+        let chain_forms_deps = build_create_chain_forms_deps(
+            CaseAtChainForms {
+                consumer: self.consumer,
+                pairing: self.pairing,
+                encoder: &payload.adapter,
+            },
+            &payload.adapter,
+            Default::default(),
+        );
+        match create_chain_forms(
+            &chain_forms_deps,
+            self.chain_forms,
+            build_create_chain_forms_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(TransferStatementCaseErrorReturn::CreateChainForms(error)),
+        }
+    }
+}
+
+struct CaseAtChainForms<
+    'a,
+    'p,
+    C: ITransferStatementCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+> {
+    pub consumer: &'a C,
+    pub pairing: &'p P,
+    pub encoder: &'a E,
+}
+
+impl<
+    C: ITransferStatementCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+> IChainFormsConsumer for CaseAtChainForms<'_, '_, C, P, E>
+{
+    type Output = TransferStatementCaseReturn<C::Output>;
+
+    fn consume_chain_forms<F: IChainForms>(
+        &self,
+        _params: ConsumeChainFormsParams,
+        payload: ConsumeChainFormsPayload<F>,
+    ) -> Self::Output {
+        Ok(TransferStatementCaseSuccessReturn {
+            output: self.consumer.consume_transfer_statement_case(
+                self.pairing,
+                self.encoder,
+                &payload.forms,
+                &TransferStatementCasePayload,
+            ),
+        })
+    }
+}
+
+pub fn run_transfer_statement_case<C: ITransferStatementCaseConsumer>(
+    deps: &TransferStatementCaseDeps<C>,
+    params: TransferStatementCaseParams,
+    _payload: TransferStatementCasePayload,
+) -> TransferStatementCaseReturn<C::Output> {
+    let pairing_deps = build_create_pairing_deps(
+        CaseAtPairing {
+            consumer: &deps.consumer,
+            encoding: params.encoding,
+            chain_forms: params.chain_forms,
+        },
+        Default::default(),
+    );
+    match create_pairing(
+        &pairing_deps,
+        params.pairing,
+        build_create_pairing_payload(Default::default()),
+    ) {
+        Ok(success) => success.output,
+        Err(error) => Err(TransferStatementCaseErrorReturn::CreatePairing(error)),
+    }
 }

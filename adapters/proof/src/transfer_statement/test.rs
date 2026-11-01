@@ -1,32 +1,28 @@
 #![allow(clippy::expect_used)]
 
 use super::provides::{
-    TRANSFER_STATEMENT_FIELD_COUNT, TransferStatementCorruptions, TransferStatementDescription,
+    ITransferStatementCaseConsumer, TRANSFER_STATEMENT_FIELD_COUNT,
+    TransferStatementCaseParamsOverrides, TransferStatementCasePayload,
+    TransferStatementCorruptions, TransferStatementDescription,
     TransferStatementFromFieldsErrorReturn, TransferStatementOverrides, build_transfer_statement,
-    build_transfer_statement_description, invalidate_transfer_statement,
+    build_transfer_statement_case_deps, build_transfer_statement_case_params,
+    build_transfer_statement_case_payload, build_transfer_statement_description,
+    invalidate_transfer_statement, run_transfer_statement_case,
 };
 use crate::mint_statement::provides::TransferPurpose;
-use chain::{
-    ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsReturn, IChainForms,
-    IChainFormsConsumer, build_create_chain_forms_deps, build_create_chain_forms_params,
-    build_create_chain_forms_payload, create_chain_forms,
-};
-use domain::{
-    AssetIdentityHashTryNewErrorReturn, ParameterSetIdentifierTryNewErrorReturn,
-    SuiteIdentifierTryNewErrorReturn,
-};
+use chain::IChainForms;
+use domain::{ParameterSetIdentifierTryNewErrorReturn, SuiteIdentifierTryNewErrorReturn};
 use encoding::{
     CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldErrorReturn,
-    ICanonicalField, IEncodingContract, build_from_fields_params, build_to_field_params,
-    build_to_fields_params,
+    ICanonicalField, IDecoderAdapter, IEncoderAdapter, IEncodingContract, build_from_fields_params,
+    build_to_field_params, build_to_fields_params,
 };
+use hashing::RootTryNewErrorReturn;
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
-    CreatePairingPayload, DecodeG1ErrorReturn, DecodeG2ErrorReturn, EncodeG1Params,
-    EncodeG1PayloadOverrides, EncodeG2Params, EncodeG2PayloadOverrides, IPairingAdapter,
-    IPairingArithmetic, IPairingConsumer, IPairingReference, MockIPairingAdapterFailureMode,
-    PairingConcrete, build_create_pairing_deps, build_create_pairing_params,
-    build_encode_g1_payload, build_encode_g2_payload, create_pairing,
+    CreatePairingParamsOverrides, DecodeG1ErrorReturn, DecodeG2ErrorReturn, EncodeG1Params,
+    EncodeG1PayloadOverrides, EncodeG2Params, EncodeG2PayloadOverrides, IPairingArithmetic,
+    IPairingReference, MockIPairingAdapterFailureMode, PairingConcrete,
+    build_create_pairing_params, build_encode_g1_payload, build_encode_g2_payload,
 };
 
 /// Contract: `FIELDS` is the kinds, in index order, `FixedBytes32`,
@@ -46,98 +42,75 @@ use pairing::{
 ///   ::FIELDS` inside the inner consumer's method.
 /// Assert:  in place, `assert_eq!` against the kinds stated in the contract
 ///   as a literal list, the form positions read as
-///   `<F::… as ICanonicalField>::KIND`; outside, both factories' `Ok` arms.
+///   `<F::… as ICanonicalField>::KIND`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn transfer_statement_description_declares_its_field_kinds_in_transcript_order() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
-
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
-
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    _ = self.adapter;
-                    assert_eq!(
-                        <TransferStatementDescription<'_, P, F> as IEncodingContract>::FIELDS,
-                        [
-                            CanonicalFieldKind::FixedBytes32,
-                            CanonicalFieldKind::Unsigned16,
-                            <F::ChainIdentifier as ICanonicalField>::KIND,
-                            <F::Identity as ICanonicalField>::KIND,
-                            CanonicalFieldKind::FixedBytes32,
-                            CanonicalFieldKind::FixedBytes32,
-                            <F::Entitlement as ICanonicalField>::KIND,
-                            <F::Entitlement as ICanonicalField>::KIND,
-                            <F::Interval as ICanonicalField>::KIND,
-                            <F::Interval as ICanonicalField>::KIND,
-                            CanonicalFieldKind::Unsigned16,
-                            <F::Identity as ICanonicalField>::KIND,
-                            <F::Identity as ICanonicalField>::KIND,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Unsigned64,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                            CanonicalFieldKind::Bytes,
-                        ]
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            _ = pairing;
+            assert_eq!(
+                <TransferStatementDescription<'_, P, F> as IEncodingContract>::FIELDS,
+                [
+                    CanonicalFieldKind::FixedBytes32,
+                    CanonicalFieldKind::Unsigned16,
+                    <F::ChainIdentifier as ICanonicalField>::KIND,
+                    <F::Identity as ICanonicalField>::KIND,
+                    CanonicalFieldKind::FixedBytes32,
+                    CanonicalFieldKind::FixedBytes32,
+                    <F::Entitlement as ICanonicalField>::KIND,
+                    <F::Entitlement as ICanonicalField>::KIND,
+                    <F::Interval as ICanonicalField>::KIND,
+                    <F::Interval as ICanonicalField>::KIND,
+                    CanonicalFieldKind::Unsigned16,
+                    <F::Identity as ICanonicalField>::KIND,
+                    <F::Identity as ICanonicalField>::KIND,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Unsigned64,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                ]
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `to_fields`, encoded: the non-group positions hold the suite
@@ -169,166 +142,139 @@ fn transfer_statement_description_declares_its_field_kinds_in_transcript_order()
 ///   params.
 #[test]
 fn to_fields_lists_the_non_group_fields_in_transcript_order() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let statement = build_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementOverrides {
+                    purpose: Some(TransferPurpose::Grant),
+                    ..Default::default()
+                },
+            );
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let fields = description
+                .to_fields(build_to_fields_params(Default::default()), &statement)
+                .expect("to_fields admits a statement")
+                .fields;
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let statement = build_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementOverrides {
-                            purpose: Some(TransferPurpose::Grant),
-                            ..Default::default()
-                        },
-                    );
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-
-                    let fields = description
-                        .to_fields(build_to_fields_params(Default::default()), &statement)
-                        .expect("to_fields admits a statement")
-                        .fields;
-
-                    assert_eq!(fields.values.len(), TRANSFER_STATEMENT_FIELD_COUNT);
-                    assert_eq!(
-                        fields.values[0],
-                        CanonicalFieldValue::FixedBytes32(*statement.suite_identifier.identifier())
-                    );
-                    assert_eq!(
-                        fields.values[1],
-                        CanonicalFieldValue::Unsigned16(statement.suite_identifier.version())
-                    );
-                    assert_eq!(
-                        fields.values[4],
-                        CanonicalFieldValue::FixedBytes32(
-                            *statement.asset_identity_hash.as_bytes()
-                        )
-                    );
-                    assert_eq!(
-                        fields.values[5],
-                        CanonicalFieldValue::FixedBytes32(
-                            *statement.parameter_set_identifier.as_bytes()
-                        )
-                    );
-                    assert_eq!(
-                        fields.values[25],
-                        CanonicalFieldValue::Unsigned64(statement.expiry)
-                    );
-                    assert_eq!(
-                        fields.values[2],
-                        <F::ChainIdentifier as ICanonicalField>::to_field(
-                            build_to_field_params(Default::default()),
-                            &statement.chain,
-                        )
-                        .expect("the chain form renders")
-                        .field
-                    );
-                    assert_eq!(
-                        fields.values[3],
-                        <F::Identity as ICanonicalField>::to_field(
-                            build_to_field_params(Default::default()),
-                            &statement.entitlement_contract,
-                        )
-                        .expect("the identity form renders")
-                        .field
-                    );
-                    assert_eq!(
-                        fields.values[6],
-                        <F::Entitlement as ICanonicalField>::to_field(
-                            build_to_field_params(Default::default()),
-                            &statement.source_entitlement,
-                        )
-                        .expect("the entitlement form renders")
-                        .field
-                    );
-                    assert_eq!(
-                        fields.values[7],
-                        <F::Entitlement as ICanonicalField>::to_field(
-                            build_to_field_params(Default::default()),
-                            &statement.target_entitlement,
-                        )
-                        .expect("the entitlement form renders")
-                        .field
-                    );
-                    assert_eq!(
-                        fields.values[8],
-                        <F::Interval as ICanonicalField>::to_field(
-                            build_to_field_params(Default::default()),
-                            &statement.old_interval,
-                        )
-                        .expect("the interval form renders")
-                        .field
-                    );
-                    assert_eq!(
-                        fields.values[9],
-                        <F::Interval as ICanonicalField>::to_field(
-                            build_to_field_params(Default::default()),
-                            &statement.new_interval,
-                        )
-                        .expect("the interval form renders")
-                        .field
-                    );
-                    assert_eq!(
-                        fields.values[11],
-                        <F::Identity as ICanonicalField>::to_field(
-                            build_to_field_params(Default::default()),
-                            &statement.seller,
-                        )
-                        .expect("the identity form renders")
-                        .field
-                    );
-                    assert_eq!(
-                        fields.values[12],
-                        <F::Identity as ICanonicalField>::to_field(
-                            build_to_field_params(Default::default()),
-                            &statement.buyer,
-                        )
-                        .expect("the identity form renders")
-                        .field
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(fields.values.len(), TRANSFER_STATEMENT_FIELD_COUNT);
+            assert_eq!(
+                fields.values[0],
+                CanonicalFieldValue::FixedBytes32(*statement.suite_identifier.identifier())
+            );
+            assert_eq!(
+                fields.values[1],
+                CanonicalFieldValue::Unsigned16(statement.suite_identifier.version())
+            );
+            assert_eq!(
+                fields.values[4],
+                CanonicalFieldValue::FixedBytes32(*statement.asset_root.as_bytes())
+            );
+            assert_eq!(
+                fields.values[5],
+                CanonicalFieldValue::FixedBytes32(*statement.parameter_set_identifier.as_bytes())
+            );
+            assert_eq!(
+                fields.values[25],
+                CanonicalFieldValue::Unsigned64(statement.expiry)
+            );
+            assert_eq!(
+                fields.values[2],
+                <F::ChainIdentifier as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.chain,
+                )
+                .expect("the chain form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[3],
+                <F::Identity as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.entitlement_contract,
+                )
+                .expect("the identity form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[6],
+                <F::Entitlement as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.source_entitlement,
+                )
+                .expect("the entitlement form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[7],
+                <F::Entitlement as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.target_entitlement,
+                )
+                .expect("the entitlement form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[8],
+                <F::Interval as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.old_interval,
+                )
+                .expect("the interval form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[9],
+                <F::Interval as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.new_interval,
+                )
+                .expect("the interval form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[11],
+                <F::Identity as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.seller,
+                )
+                .expect("the identity form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[12],
+                <F::Identity as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.buyer,
+                )
+                .expect("the identity form renders")
+                .field
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `to_fields`, encoded: each typed point is flattened to
@@ -349,168 +295,145 @@ fn to_fields_lists_the_non_group_fields_in_transcript_order() {
 ///   inner consumer's method.
 /// Assert:  in place, each of the positions above equals
 ///   `CanonicalFieldValue::Bytes` of the expected encoding of its point, by
-///   `assert_eq!`; outside, both factories' `Ok` arms.
+///   `assert_eq!`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn to_fields_flattens_each_group_field_through_the_pairing() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let statement = build_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementOverrides {
+                    purpose: Some(TransferPurpose::Grant),
+                    ..Default::default()
+                },
+            );
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let fields = description
+                .to_fields(build_to_fields_params(Default::default()), &statement)
+                .expect("to_fields admits a statement")
+                .fields;
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let statement = build_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementOverrides {
-                            purpose: Some(TransferPurpose::Grant),
-                            ..Default::default()
-                        },
-                    );
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
+            let encode_g1 = |point: P::G1| -> Vec<u8> {
+                let Ok(encoded) = pairing.encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides { point: Some(point) },
+                    ),
+                );
+                encoded.bytes.as_ref().to_vec()
+            };
+            let encode_g2 = |point: P::G2| -> Vec<u8> {
+                let Ok(encoded) = pairing.encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides { point: Some(point) },
+                    ),
+                );
+                encoded.bytes.as_ref().to_vec()
+            };
 
-                    let fields = description
-                        .to_fields(build_to_fields_params(Default::default()), &statement)
-                        .expect("to_fields admits a statement")
-                        .fields;
-
-                    let encode_g1 = |point: P::G1| -> Vec<u8> {
-                        let Ok(encoded) = self.adapter.encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                self.adapter,
-                                EncodeG1PayloadOverrides { point: Some(point) },
-                            ),
-                        );
-                        encoded.bytes.as_ref().to_vec()
-                    };
-                    let encode_g2 = |point: P::G2| -> Vec<u8> {
-                        let Ok(encoded) = self.adapter.encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                self.adapter,
-                                EncodeG2PayloadOverrides { point: Some(point) },
-                            ),
-                        );
-                        encoded.bytes.as_ref().to_vec()
-                    };
-
-                    assert_eq!(
-                        fields.values[13],
-                        CanonicalFieldValue::Bytes(encode_g1(statement.seller_keys.pk1))
-                    );
-                    assert_eq!(
-                        fields.values[14],
-                        CanonicalFieldValue::Bytes(encode_g2(statement.seller_keys.pk2))
-                    );
-                    assert_eq!(
-                        fields.values[15],
-                        CanonicalFieldValue::Bytes(encode_g1(statement.buyer_keys.pk1))
-                    );
-                    assert_eq!(
-                        fields.values[16],
-                        CanonicalFieldValue::Bytes(encode_g2(statement.buyer_keys.pk2))
-                    );
-                    assert_eq!(
-                        fields.values[17],
-                        CanonicalFieldValue::Bytes(encode_g1(statement.old_envelope.c1))
-                    );
-                    assert_eq!(
-                        fields.values[18],
-                        CanonicalFieldValue::Bytes(encode_g1(statement.old_envelope.c2))
-                    );
-                    assert_eq!(
-                        fields.values[19],
-                        CanonicalFieldValue::Bytes(encode_g2(statement.old_envelope.d1))
-                    );
-                    assert_eq!(
-                        fields.values[20],
-                        CanonicalFieldValue::Bytes(encode_g2(statement.old_envelope.d2))
-                    );
-                    assert_eq!(
-                        fields.values[21],
-                        CanonicalFieldValue::Bytes(encode_g1(statement.new_envelope.c1))
-                    );
-                    assert_eq!(
-                        fields.values[22],
-                        CanonicalFieldValue::Bytes(encode_g1(statement.new_envelope.c2))
-                    );
-                    assert_eq!(
-                        fields.values[23],
-                        CanonicalFieldValue::Bytes(encode_g2(statement.new_envelope.d1))
-                    );
-                    assert_eq!(
-                        fields.values[24],
-                        CanonicalFieldValue::Bytes(encode_g2(statement.new_envelope.d2))
-                    );
-                    assert_eq!(
-                        fields.values[26],
-                        CanonicalFieldValue::Bytes(encode_g1(statement.first_messages.pk1))
-                    );
-                    assert_eq!(
-                        fields.values[27],
-                        CanonicalFieldValue::Bytes(encode_g1(statement.first_messages.c1))
-                    );
-                    assert_eq!(
-                        fields.values[28],
-                        CanonicalFieldValue::Bytes(encode_g1(statement.first_messages.c2))
-                    );
-                    assert_eq!(
-                        fields.values[29],
-                        CanonicalFieldValue::Bytes(encode_g2(statement.first_messages.pk2))
-                    );
-                    assert_eq!(
-                        fields.values[30],
-                        CanonicalFieldValue::Bytes(encode_g2(statement.first_messages.d1))
-                    );
-                    assert_eq!(
-                        fields.values[31],
-                        CanonicalFieldValue::Bytes(encode_g2(statement.first_messages.d2))
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                fields.values[13],
+                CanonicalFieldValue::Bytes(encode_g1(statement.seller_keys.pk1))
+            );
+            assert_eq!(
+                fields.values[14],
+                CanonicalFieldValue::Bytes(encode_g2(statement.seller_keys.pk2))
+            );
+            assert_eq!(
+                fields.values[15],
+                CanonicalFieldValue::Bytes(encode_g1(statement.buyer_keys.pk1))
+            );
+            assert_eq!(
+                fields.values[16],
+                CanonicalFieldValue::Bytes(encode_g2(statement.buyer_keys.pk2))
+            );
+            assert_eq!(
+                fields.values[17],
+                CanonicalFieldValue::Bytes(encode_g1(statement.old_envelope.c1))
+            );
+            assert_eq!(
+                fields.values[18],
+                CanonicalFieldValue::Bytes(encode_g1(statement.old_envelope.c2))
+            );
+            assert_eq!(
+                fields.values[19],
+                CanonicalFieldValue::Bytes(encode_g2(statement.old_envelope.d1))
+            );
+            assert_eq!(
+                fields.values[20],
+                CanonicalFieldValue::Bytes(encode_g2(statement.old_envelope.d2))
+            );
+            assert_eq!(
+                fields.values[21],
+                CanonicalFieldValue::Bytes(encode_g1(statement.new_envelope.c1))
+            );
+            assert_eq!(
+                fields.values[22],
+                CanonicalFieldValue::Bytes(encode_g1(statement.new_envelope.c2))
+            );
+            assert_eq!(
+                fields.values[23],
+                CanonicalFieldValue::Bytes(encode_g2(statement.new_envelope.d1))
+            );
+            assert_eq!(
+                fields.values[24],
+                CanonicalFieldValue::Bytes(encode_g2(statement.new_envelope.d2))
+            );
+            assert_eq!(
+                fields.values[26],
+                CanonicalFieldValue::Bytes(encode_g1(statement.first_messages.pk1))
+            );
+            assert_eq!(
+                fields.values[27],
+                CanonicalFieldValue::Bytes(encode_g1(statement.first_messages.c1))
+            );
+            assert_eq!(
+                fields.values[28],
+                CanonicalFieldValue::Bytes(encode_g1(statement.first_messages.c2))
+            );
+            assert_eq!(
+                fields.values[29],
+                CanonicalFieldValue::Bytes(encode_g2(statement.first_messages.pk2))
+            );
+            assert_eq!(
+                fields.values[30],
+                CanonicalFieldValue::Bytes(encode_g2(statement.first_messages.d1))
+            );
+            assert_eq!(
+                fields.values[31],
+                CanonicalFieldValue::Bytes(encode_g2(statement.first_messages.d2))
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `to_fields`, encoded: `TransferPurpose::Transfer` is flattened
@@ -528,69 +451,46 @@ fn to_fields_flattens_each_group_field_through_the_pairing() {
 ///   params.
 #[test]
 fn to_fields_encodes_a_transfer_purpose_by_its_code() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<CanonicalFields>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = CanonicalFields;
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let statement = build_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementOverrides {
+                    purpose: Some(TransferPurpose::Transfer),
+                    ..Default::default()
+                },
+            );
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = CanonicalFields;
-
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let statement = build_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementOverrides {
-                            purpose: Some(TransferPurpose::Transfer),
-                            ..Default::default()
-                        },
-                    );
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-
-                    description
-                        .to_fields(build_to_fields_params(Default::default()), &statement)
-                        .expect("to_fields admits a statement")
-                        .fields
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            description
+                .to_fields(build_to_fields_params(Default::default()), &statement)
+                .expect("to_fields admits a statement")
+                .fields
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    let fields = created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer")
-        .output;
+    let fields = run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer")
+    .output;
     assert_eq!(fields.values[10], CanonicalFieldValue::Unsigned16(2));
 }
 
@@ -609,69 +509,46 @@ fn to_fields_encodes_a_transfer_purpose_by_its_code() {
 ///   params.
 #[test]
 fn to_fields_encodes_a_grant_purpose_by_its_code() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<CanonicalFields>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = CanonicalFields;
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let statement = build_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementOverrides {
+                    purpose: Some(TransferPurpose::Grant),
+                    ..Default::default()
+                },
+            );
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = CanonicalFields;
-
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let statement = build_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementOverrides {
-                            purpose: Some(TransferPurpose::Grant),
-                            ..Default::default()
-                        },
-                    );
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-
-                    description
-                        .to_fields(build_to_fields_params(Default::default()), &statement)
-                        .expect("to_fields admits a statement")
-                        .fields
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            description
+                .to_fields(build_to_fields_params(Default::default()), &statement)
+                .expect("to_fields admits a statement")
+                .fields
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    let fields = created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer")
-        .output;
+    let fields = run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer")
+    .output;
     assert_eq!(fields.values[10], CanonicalFieldValue::Unsigned16(3));
 }
 
@@ -687,80 +564,57 @@ fn to_fields_encodes_a_grant_purpose_by_its_code() {
 ///   type, so the assertion is in place.
 /// Assert:  `assert_eq!(result.err(), Some(TransferStatementFromFields
 ///   ErrorReturn::FieldCount { expected: TRANSFER_STATEMENT_FIELD_COUNT,
-///   actual: 31 }))`; outside, both factories' `Ok` arms.
+///   actual: 31 }))`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_field_list_one_short() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    expiry: Some(vec![]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            expiry: Some(vec![]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldCount {
-                            expected: TRANSFER_STATEMENT_FIELD_COUNT,
-                            actual: 31
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldCount {
+                    expected: TRANSFER_STATEMENT_FIELD_COUNT,
+                    actual: 31
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, wrong count: `payload.values` that does not
@@ -773,83 +627,60 @@ fn fields_to_value_rejects_a_field_list_one_short() {
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)` inside
 ///   the inner consumer's method.
 /// Assert:  `FieldCount { expected: TRANSFER_STATEMENT_FIELD_COUNT,
-///   actual: 33 }`; outside, both factories' `Ok` arms.
+///   actual: 33 }`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_field_list_one_long() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    expiry: Some(vec![
+                        CanonicalFieldValue::Unsigned64(1),
+                        CanonicalFieldValue::Unsigned64(2),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            expiry: Some(vec![
-                                CanonicalFieldValue::Unsigned64(1),
-                                CanonicalFieldValue::Unsigned64(2),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldCount {
-                            expected: TRANSFER_STATEMENT_FIELD_COUNT,
-                            actual: 33
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldCount {
+                    expected: TRANSFER_STATEMENT_FIELD_COUNT,
+                    actual: 33
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: ordering: the count precedes every field; a list of the wrong
@@ -859,80 +690,57 @@ fn fields_to_value_rejects_a_field_list_one_long() {
 ///   not `FixedBytes32`.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `FieldCount { expected: TRANSFER_STATEMENT_FIELD_COUNT,
-///   actual: 31 }`, not `FieldKind`; outside, both factories' `Ok` arms.
+///   actual: 31 }`, not `FieldKind`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_reports_a_wrong_count_before_any_field() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    suite_identifier: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            suite_identifier: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldCount {
-                            expected: TRANSFER_STATEMENT_FIELD_COUNT,
-                            actual: 31
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldCount {
+                    expected: TRANSFER_STATEMENT_FIELD_COUNT,
+                    actual: 31
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, wrong kind, directly mapped field: the
@@ -949,81 +757,58 @@ fn fields_to_value_reports_a_wrong_count_before_any_field() {
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_suite_identifier_field_of_the_wrong_kind() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions::default(),
+            );
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    suite_identifier: Some(vec![
+                        CanonicalFieldValue::Unsigned16(1),
+                        baseline.values[1].clone(),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions::default(),
-                    );
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            suite_identifier: Some(vec![
-                                CanonicalFieldValue::Unsigned16(1),
-                                baseline.values[1].clone(),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldKind {
-                            index: 0,
-                            expected: CanonicalFieldKind::FixedBytes32
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldKind {
+                    index: 0,
+                    expected: CanonicalFieldKind::FixedBytes32
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, wrong kind, directly mapped field: the
@@ -1041,87 +826,64 @@ fn fields_to_value_rejects_a_suite_identifier_field_of_the_wrong_kind() {
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_suite_version_field_of_the_wrong_kind() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions::default(),
+            );
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    suite_identifier: Some(vec![
+                        baseline.values[0].clone(),
+                        CanonicalFieldValue::FixedBytes32([1; 32]),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions::default(),
-                    );
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            suite_identifier: Some(vec![
-                                baseline.values[0].clone(),
-                                CanonicalFieldValue::FixedBytes32([1; 32]),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldKind {
-                            index: 1,
-                            expected: CanonicalFieldKind::Unsigned16
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldKind {
+                    index: 1,
+                    expected: CanonicalFieldKind::Unsigned16
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, wrong kind, directly mapped field: the
 ///   value at `4` that is not `FixedBytes32` is refused as `Err(FieldKind {
 ///   index: 4, expected: CanonicalFieldKind::FixedBytes32 })`.
-/// Arrange: corruption `asset_identity_hash: Some(vec![Unsigned16(1)])`,
+/// Arrange: corruption `asset_root: Some(vec![Unsigned16(1)])`,
 ///   the count intact.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `FieldKind { index: 4, expected: FixedBytes32 }`; outside, both
@@ -1130,75 +892,52 @@ fn fields_to_value_rejects_a_suite_version_field_of_the_wrong_kind() {
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
-fn fields_to_value_rejects_an_asset_identity_hash_field_of_the_wrong_kind() {
-    struct OuterConsumer;
+fn fields_to_value_rejects_an_asset_root_field_of_the_wrong_kind() {
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    asset_root: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            asset_identity_hash: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldKind {
-                            index: 4,
-                            expected: CanonicalFieldKind::FixedBytes32
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldKind {
+                    index: 4,
+                    expected: CanonicalFieldKind::FixedBytes32
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, wrong kind, directly mapped field: the
@@ -1214,76 +953,51 @@ fn fields_to_value_rejects_an_asset_identity_hash_field_of_the_wrong_kind() {
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_parameter_set_digest_field_of_the_wrong_kind() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    parameter_set_identifier: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            parameter_set_identifier: Some(vec![CanonicalFieldValue::Unsigned16(
-                                1,
-                            )]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldKind {
-                            index: 5,
-                            expected: CanonicalFieldKind::FixedBytes32
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldKind {
+                    index: 5,
+                    expected: CanonicalFieldKind::FixedBytes32
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, wrong kind, directly mapped field: the
@@ -1299,74 +1013,51 @@ fn fields_to_value_rejects_a_parameter_set_digest_field_of_the_wrong_kind() {
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_purpose_field_of_the_wrong_kind() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::FixedBytes32([1; 32])]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            purpose: Some(vec![CanonicalFieldValue::FixedBytes32([1; 32])]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldKind {
-                            index: 10,
-                            expected: CanonicalFieldKind::Unsigned16
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldKind {
+                    index: 10,
+                    expected: CanonicalFieldKind::Unsigned16
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, wrong kind, directly mapped field: the
@@ -1384,81 +1075,58 @@ fn fields_to_value_rejects_a_purpose_field_of_the_wrong_kind() {
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_seller_key_field_of_the_wrong_kind() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions::default(),
+            );
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    seller_keys: Some(vec![
+                        CanonicalFieldValue::Unsigned16(1),
+                        baseline.values[14].clone(),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions::default(),
-                    );
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            seller_keys: Some(vec![
-                                CanonicalFieldValue::Unsigned16(1),
-                                baseline.values[14].clone(),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldKind {
-                            index: 13,
-                            expected: CanonicalFieldKind::Bytes
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldKind {
+                    index: 13,
+                    expected: CanonicalFieldKind::Bytes
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, wrong kind, directly mapped field: the
@@ -1474,74 +1142,51 @@ fn fields_to_value_rejects_a_seller_key_field_of_the_wrong_kind() {
 ///   params.
 #[test]
 fn fields_to_value_rejects_an_expiry_field_of_the_wrong_kind() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    expiry: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            expiry: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldKind {
-                            index: 25,
-                            expected: CanonicalFieldKind::Unsigned64
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldKind {
+                    index: 25,
+                    expected: CanonicalFieldKind::Unsigned64
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, wrong kind, directly mapped field: the
@@ -1559,85 +1204,62 @@ fn fields_to_value_rejects_an_expiry_field_of_the_wrong_kind() {
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_first_message_field_of_the_wrong_kind() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions::default(),
+            );
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    first_messages: Some(vec![
+                        CanonicalFieldValue::Unsigned16(1),
+                        baseline.values[27].clone(),
+                        baseline.values[28].clone(),
+                        baseline.values[29].clone(),
+                        baseline.values[30].clone(),
+                        baseline.values[31].clone(),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions::default(),
-                    );
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            first_messages: Some(vec![
-                                CanonicalFieldValue::Unsigned16(1),
-                                baseline.values[27].clone(),
-                                baseline.values[28].clone(),
-                                baseline.values[29].clone(),
-                                baseline.values[30].clone(),
-                                baseline.values[31].clone(),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldKind {
-                            index: 26,
-                            expected: CanonicalFieldKind::Bytes
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldKind {
+                    index: 26,
+                    expected: CanonicalFieldKind::Bytes
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, suite identifier refused: fields `0` and
@@ -1650,86 +1272,63 @@ fn fields_to_value_rejects_a_first_message_field_of_the_wrong_kind() {
 ///   valid, against the zero-version block.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `SuiteIdentifier(SuiteIdentifierTryNewErrorReturn
-///   ::AllZeroIdentifier)`; outside, both factories' `Ok` arms.
+///   ::AllZeroIdentifier)`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_suite_identifiers_all_zero_identifier_refusal() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions::default(),
+            );
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    suite_identifier: Some(vec![
+                        CanonicalFieldValue::FixedBytes32([0; 32]),
+                        baseline.values[1].clone(),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions::default(),
-                    );
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            suite_identifier: Some(vec![
-                                CanonicalFieldValue::FixedBytes32([0; 32]),
-                                baseline.values[1].clone(),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::SuiteIdentifier(
-                            SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier
-                        ))
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::SuiteIdentifier(
+                    SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier
+                ))
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, suite identifier refused: fields `0` and
@@ -1742,172 +1341,124 @@ fn fields_to_value_carries_the_suite_identifiers_all_zero_identifier_refusal() {
 ///   against the all-zero-identifier block.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `SuiteIdentifier(SuiteIdentifierTryNewErrorReturn::ZeroVersion)`;
-///   outside, both factories' `Ok` arms.
+///   outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_suite_identifiers_zero_version_refusal() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions::default(),
+            );
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    suite_identifier: Some(vec![
+                        baseline.values[0].clone(),
+                        CanonicalFieldValue::Unsigned16(0),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions::default(),
-                    );
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            suite_identifier: Some(vec![
-                                baseline.values[0].clone(),
-                                CanonicalFieldValue::Unsigned16(0),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::SuiteIdentifier(
-                            SuiteIdentifierTryNewErrorReturn::ZeroVersion
-                        ))
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::SuiteIdentifier(
+                    SuiteIdentifierTryNewErrorReturn::ZeroVersion
+                ))
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, asset identity hash refused: field `4` a
-///   `FixedBytes32` whose `AssetIdentityHash::try_new` returns `Err(error)`
+///   `FixedBytes32` whose `Root::try_new` returns `Err(error)`
 ///   is refused as
 ///   `Err(TransferStatementFromFieldsErrorReturn::AssetIdentityHash
 ///   (error))`, the refusal unchanged.
-/// Arrange: corruption `asset_identity_hash: Some(vec![FixedBytes32(
+/// Arrange: corruption `asset_root: Some(vec![FixedBytes32(
 ///   [0; 32])])`.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
-/// Assert:  `AssetIdentityHash(AssetIdentityHashTryNewErrorReturn
-///   ::AllZero)`; outside, both factories' `Ok` arms.
+/// Assert:  `AssetIdentityHash(RootTryNewErrorReturn
+///   ::AllZero)`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
-fn fields_to_value_carries_the_asset_identity_hashs_refusal() {
-    struct OuterConsumer;
+fn fields_to_value_carries_the_asset_roots_refusal() {
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    asset_root: Some(vec![CanonicalFieldValue::FixedBytes32([0; 32])]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            asset_identity_hash: Some(vec![CanonicalFieldValue::FixedBytes32(
-                                [0; 32],
-                            )]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::AssetIdentityHash(
-                            AssetIdentityHashTryNewErrorReturn::AllZero
-                        ))
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::AssetRoot(
+                    RootTryNewErrorReturn::AllZero
+                ))
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, parameter-set digest refused: field `5` a
@@ -1919,83 +1470,60 @@ fn fields_to_value_carries_the_asset_identity_hashs_refusal() {
 ///   [0; 32])])`.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `ParameterSetIdentifier(ParameterSetIdentifierTryNewErrorReturn
-///   ::AllZero)`; outside, both factories' `Ok` arms.
+///   ::AllZero)`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_parameter_set_digests_refusal() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    parameter_set_identifier: Some(vec![CanonicalFieldValue::FixedBytes32(
+                        [0; 32],
+                    )]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            parameter_set_identifier: Some(vec![
-                                CanonicalFieldValue::FixedBytes32([0; 32]),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(
-                            TransferStatementFromFieldsErrorReturn::ParameterSetIdentifier(
-                                ParameterSetIdentifierTryNewErrorReturn::AllZero
-                            )
-                        )
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(
+                    TransferStatementFromFieldsErrorReturn::ParameterSetIdentifier(
+                        ParameterSetIdentifierTryNewErrorReturn::AllZero
+                    )
+                )
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, form refused: the chain-identifier form at
@@ -2007,82 +1535,59 @@ fn fields_to_value_carries_the_parameter_set_digests_refusal() {
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `ChainIdentifier { index: 2, error: FromFieldErrorReturn
 ///   ::WrongKind { expected: <F::ChainIdentifier as ICanonicalField>::KIND
-///   } }`, the whole error; outside, both factories' `Ok` arms.
+///   } }`, the whole error; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_chain_identifiers_refusal_with_its_index() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    chain: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            chain: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::ChainIdentifier {
-                            index: 2,
-                            error: FromFieldErrorReturn::WrongKind {
-                                expected: <F::ChainIdentifier as ICanonicalField>::KIND
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::ChainIdentifier {
+                    index: 2,
+                    error: FromFieldErrorReturn::WrongKind {
+                        expected: <F::ChainIdentifier as ICanonicalField>::KIND
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, form refused: the identity form at `3`
@@ -2094,82 +1599,59 @@ fn fields_to_value_carries_the_chain_identifiers_refusal_with_its_index() {
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `Identity { index: 3, error: FromFieldErrorReturn::WrongKind {
 ///   expected: <F::Identity as ICanonicalField>::KIND } }`, the whole
-///   error; outside, both factories' `Ok` arms.
+///   error; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_entitlement_contracts_refusal_with_its_index() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    entitlement_contract: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            entitlement_contract: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::Identity {
-                            index: 3,
-                            error: FromFieldErrorReturn::WrongKind {
-                                expected: <F::Identity as ICanonicalField>::KIND
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::Identity {
+                    index: 3,
+                    error: FromFieldErrorReturn::WrongKind {
+                        expected: <F::Identity as ICanonicalField>::KIND
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, form refused: the entitlement form at `6`
@@ -2181,82 +1663,59 @@ fn fields_to_value_carries_the_entitlement_contracts_refusal_with_its_index() {
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `Entitlement { index: 6, error: FromFieldErrorReturn::WrongKind
 ///   { expected: <F::Entitlement as ICanonicalField>::KIND } }`, the whole
-///   error; outside, both factories' `Ok` arms.
+///   error; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_source_entitlements_refusal_with_its_index() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    source_entitlement: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            source_entitlement: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::Entitlement {
-                            index: 6,
-                            error: FromFieldErrorReturn::WrongKind {
-                                expected: <F::Entitlement as ICanonicalField>::KIND
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::Entitlement {
+                    index: 6,
+                    error: FromFieldErrorReturn::WrongKind {
+                        expected: <F::Entitlement as ICanonicalField>::KIND
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, form refused: the entitlement form at `7`
@@ -2268,82 +1727,59 @@ fn fields_to_value_carries_the_source_entitlements_refusal_with_its_index() {
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `Entitlement { index: 7, error: FromFieldErrorReturn::WrongKind
 ///   { expected: <F::Entitlement as ICanonicalField>::KIND } }`, the whole
-///   error; outside, both factories' `Ok` arms.
+///   error; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_target_entitlements_refusal_with_its_index() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    target_entitlement: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            target_entitlement: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::Entitlement {
-                            index: 7,
-                            error: FromFieldErrorReturn::WrongKind {
-                                expected: <F::Entitlement as ICanonicalField>::KIND
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::Entitlement {
+                    index: 7,
+                    error: FromFieldErrorReturn::WrongKind {
+                        expected: <F::Entitlement as ICanonicalField>::KIND
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, form refused: the interval form at `8`
@@ -2355,82 +1791,59 @@ fn fields_to_value_carries_the_target_entitlements_refusal_with_its_index() {
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `Interval { index: 8, error: FromFieldErrorReturn::WrongKind {
 ///   expected: <F::Interval as ICanonicalField>::KIND } }`, the whole
-///   error; outside, both factories' `Ok` arms.
+///   error; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_old_intervals_refusal_with_its_index() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    old_interval: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            old_interval: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::Interval {
-                            index: 8,
-                            error: FromFieldErrorReturn::WrongKind {
-                                expected: <F::Interval as ICanonicalField>::KIND
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::Interval {
+                    index: 8,
+                    error: FromFieldErrorReturn::WrongKind {
+                        expected: <F::Interval as ICanonicalField>::KIND
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, form refused: the interval form at `9`
@@ -2442,82 +1855,59 @@ fn fields_to_value_carries_the_old_intervals_refusal_with_its_index() {
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `Interval { index: 9, error: FromFieldErrorReturn::WrongKind {
 ///   expected: <F::Interval as ICanonicalField>::KIND } }`, the whole
-///   error; outside, both factories' `Ok` arms.
+///   error; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_new_intervals_refusal_with_its_index() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    new_interval: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            new_interval: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::Interval {
-                            index: 9,
-                            error: FromFieldErrorReturn::WrongKind {
-                                expected: <F::Interval as ICanonicalField>::KIND
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::Interval {
+                    index: 9,
+                    error: FromFieldErrorReturn::WrongKind {
+                        expected: <F::Interval as ICanonicalField>::KIND
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, form refused: the identity form at `11`
@@ -2529,82 +1919,59 @@ fn fields_to_value_carries_the_new_intervals_refusal_with_its_index() {
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `Identity { index: 11, error: FromFieldErrorReturn::WrongKind {
 ///   expected: <F::Identity as ICanonicalField>::KIND } }`, the whole
-///   error; outside, both factories' `Ok` arms.
+///   error; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_sellers_refusal_with_its_index() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    seller: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            seller: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::Identity {
-                            index: 11,
-                            error: FromFieldErrorReturn::WrongKind {
-                                expected: <F::Identity as ICanonicalField>::KIND
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::Identity {
+                    index: 11,
+                    error: FromFieldErrorReturn::WrongKind {
+                        expected: <F::Identity as ICanonicalField>::KIND
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, form refused: the identity form at `12`
@@ -2616,82 +1983,59 @@ fn fields_to_value_carries_the_sellers_refusal_with_its_index() {
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `Identity { index: 12, error: FromFieldErrorReturn::WrongKind {
 ///   expected: <F::Identity as ICanonicalField>::KIND } }`, the whole
-///   error; outside, both factories' `Ok` arms.
+///   error; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_the_buyers_refusal_with_its_index() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    buyer: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            buyer: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::Identity {
-                            index: 12,
-                            error: FromFieldErrorReturn::WrongKind {
-                                expected: <F::Identity as ICanonicalField>::KIND
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::Identity {
+                    index: 12,
+                    error: FromFieldErrorReturn::WrongKind {
+                        expected: <F::Identity as ICanonicalField>::KIND
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, purpose refused:
@@ -2707,74 +2051,48 @@ fn fields_to_value_carries_the_buyers_refusal_with_its_index() {
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_mint_purpose_code() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            purpose: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::PurposeCode {
-                            index: 10,
-                            code: 1
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::PurposeCode { index: 10, code: 1 })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, purpose refused:
@@ -2790,74 +2108,48 @@ fn fields_to_value_rejects_a_mint_purpose_code() {
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_replacement_purpose_code() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(4)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            purpose: Some(vec![CanonicalFieldValue::Unsigned16(4)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::PurposeCode {
-                            index: 10,
-                            code: 4
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::PurposeCode { index: 10, code: 4 })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, purpose refused:
@@ -2873,74 +2165,48 @@ fn fields_to_value_rejects_a_replacement_purpose_code() {
 ///   params.
 #[test]
 fn fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(5)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            purpose: Some(vec![CanonicalFieldValue::Unsigned16(5)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::PurposeCode {
-                            index: 10,
-                            code: 5
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::PurposeCode { index: 10, code: 5 })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, purpose admitted: the code `2`
@@ -2949,77 +2215,54 @@ fn fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries() {
 ///   baseline's other values.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  in place, the success arm's `described.purpose` is
-///   `TransferPurpose::Transfer`; outside, both factories' `Ok` arms.
+///   `TransferPurpose::Transfer`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_admits_a_transfer_purpose() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(2)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            purpose: Some(vec![CanonicalFieldValue::Unsigned16(2)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    let described = result
-                        .expect("a transfer code is an admitted purpose")
-                        .described;
-                    assert_eq!(described.purpose, TransferPurpose::Transfer);
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            let described = result
+                .expect("a transfer code is an admitted purpose")
+                .described;
+            assert_eq!(described.purpose, TransferPurpose::Transfer);
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, purpose admitted: the code `3`
@@ -3029,77 +2272,54 @@ fn fields_to_value_admits_a_transfer_purpose() {
 ///   transfer purpose fails.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  in place, the success arm's `described.purpose` is
-///   `TransferPurpose::Grant`; outside, both factories' `Ok` arms.
+///   `TransferPurpose::Grant`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_admits_a_grant_purpose() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(3)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            purpose: Some(vec![CanonicalFieldValue::Unsigned16(3)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    let described = result
-                        .expect("a grant code is an admitted purpose")
-                        .described;
-                    assert_eq!(described.purpose, TransferPurpose::Grant);
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            let described = result
+                .expect("a grant code is an admitted purpose")
+                .described;
+            assert_eq!(described.purpose, TransferPurpose::Grant);
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, invalid group encoding: a first-group
@@ -3111,92 +2331,68 @@ fn fields_to_value_admits_a_grant_purpose() {
 ///   received pairing's own encoding of a first-group point.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `InvalidG1 { index: 15, error: DecodeG1ErrorReturn::WrongLength
-///   { expected, actual: 1 } }`; outside, both factories' `Ok` arms.
+///   { expected, actual: 1 } }`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_a_first_group_decoders_refusal_with_its_index() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(pairing, Default::default());
+            let CanonicalFieldValue::Bytes(encoded) = &baseline.values[15] else {
+                panic!("the baseline first-group field is Bytes")
+            };
+            let expected = encoded.len();
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    buyer_keys: Some(vec![
+                        CanonicalFieldValue::Bytes(vec![0; 1]),
+                        baseline.values[16].clone(),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline =
-                        invalidate_transfer_statement::<P, F>(self.adapter, Default::default());
-                    let CanonicalFieldValue::Bytes(encoded) = &baseline.values[15] else {
-                        panic!("the baseline first-group field is Bytes")
-                    };
-                    let expected = encoded.len();
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            buyer_keys: Some(vec![
-                                CanonicalFieldValue::Bytes(vec![0; 1]),
-                                baseline.values[16].clone(),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::InvalidG1 {
-                            index: 15,
-                            error: DecodeG1ErrorReturn::WrongLength {
-                                expected,
-                                actual: 1
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::InvalidG1 {
+                    index: 15,
+                    error: DecodeG1ErrorReturn::WrongLength {
+                        expected,
+                        actual: 1
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, invalid group encoding: a second-group
@@ -3209,94 +2405,70 @@ fn fields_to_value_carries_a_first_group_decoders_refusal_with_its_index() {
 ///   `baseline`.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `InvalidG2 { index: 23, error: DecodeG2ErrorReturn::WrongLength
-///   { expected, actual: 1 } }`; outside, both factories' `Ok` arms.
+///   { expected, actual: 1 } }`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_carries_a_second_group_decoders_refusal_with_its_index() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(pairing, Default::default());
+            let CanonicalFieldValue::Bytes(encoded) = &baseline.values[23] else {
+                panic!("the baseline second-group field is Bytes")
+            };
+            let expected = encoded.len();
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    new_envelope: Some(vec![
+                        baseline.values[21].clone(),
+                        baseline.values[22].clone(),
+                        CanonicalFieldValue::Bytes(vec![0; 1]),
+                        baseline.values[24].clone(),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline =
-                        invalidate_transfer_statement::<P, F>(self.adapter, Default::default());
-                    let CanonicalFieldValue::Bytes(encoded) = &baseline.values[23] else {
-                        panic!("the baseline second-group field is Bytes")
-                    };
-                    let expected = encoded.len();
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            new_envelope: Some(vec![
-                                baseline.values[21].clone(),
-                                baseline.values[22].clone(),
-                                CanonicalFieldValue::Bytes(vec![0; 1]),
-                                baseline.values[24].clone(),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::InvalidG2 {
-                            index: 23,
-                            error: DecodeG2ErrorReturn::WrongLength {
-                                expected,
-                                actual: 1
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::InvalidG2 {
+                    index: 23,
+                    error: DecodeG2ErrorReturn::WrongLength {
+                        expected,
+                        actual: 1
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: invalid group encoding: the group fields decode in ascending
@@ -3309,96 +2481,72 @@ fn fields_to_value_carries_a_second_group_decoders_refusal_with_its_index() {
 ///   index; `expected` the length of the `Bytes` at `14` in `baseline`.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `InvalidG2 { index: 14, error: DecodeG2ErrorReturn::WrongLength
-///   { expected, actual: 1 } }`; outside, both factories' `Ok` arms.
+///   { expected, actual: 1 } }`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_reports_the_lowest_refused_group_field() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(pairing, Default::default());
+            let CanonicalFieldValue::Bytes(encoded) = &baseline.values[14] else {
+                panic!("the baseline second-group field is Bytes")
+            };
+            let expected = encoded.len();
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    seller_keys: Some(vec![
+                        baseline.values[13].clone(),
+                        CanonicalFieldValue::Bytes(vec![0; 1]),
+                    ]),
+                    buyer_keys: Some(vec![
+                        CanonicalFieldValue::Bytes(vec![0; 1]),
+                        baseline.values[16].clone(),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline =
-                        invalidate_transfer_statement::<P, F>(self.adapter, Default::default());
-                    let CanonicalFieldValue::Bytes(encoded) = &baseline.values[14] else {
-                        panic!("the baseline second-group field is Bytes")
-                    };
-                    let expected = encoded.len();
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            seller_keys: Some(vec![
-                                baseline.values[13].clone(),
-                                CanonicalFieldValue::Bytes(vec![0; 1]),
-                            ]),
-                            buyer_keys: Some(vec![
-                                CanonicalFieldValue::Bytes(vec![0; 1]),
-                                baseline.values[16].clone(),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::InvalidG2 {
-                            index: 14,
-                            error: DecodeG2ErrorReturn::WrongLength {
-                                expected,
-                                actual: 1
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::InvalidG2 {
+                    index: 14,
+                    error: DecodeG2ErrorReturn::WrongLength {
+                        expected,
+                        actual: 1
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: invalid group encoding: the first-group field at `13` decodes
@@ -3410,80 +2558,59 @@ fn fields_to_value_reports_the_lowest_refused_group_field() {
 ///   refuse.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `InvalidG1 { index: 13, error: DecodeG1ErrorReturn::NotOnCurve
-///   }`; outside, both factories' `Ok` arms.
+///   }`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's mock concrete under a
 ///   `CreatePairingParamsOverrides` failure mode and the chain family's
 ///   mock concrete through `create_chain_forms` under the default params.
 #[test]
 fn fields_to_value_decodes_through_the_pairing_the_description_was_built_over() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(pairing, Default::default());
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload =
-                        invalidate_transfer_statement::<P, F>(self.adapter, Default::default());
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::InvalidG1 {
-                            index: 13,
-                            error: DecodeG1ErrorReturn::NotOnCurve
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::InvalidG1 {
+                    index: 13,
+                    error: DecodeG1ErrorReturn::NotOnCurve
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(PairingConcrete::Mock(
-                MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
-            )),
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(TransferStatementCaseParamsOverrides {
+            pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                concrete: Some(PairingConcrete::Mock(
+                    MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
+                )),
+                ..Default::default()
+            })),
             ..Default::default()
         }),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: ordering: group decoding begins only after the count, kind,
@@ -3495,180 +2622,133 @@ fn fields_to_value_decodes_through_the_pairing_the_description_was_built_over() 
 ///   `26`.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `FieldKind { index: 26, expected: CanonicalFieldKind::Bytes }`,
-///   not `InvalidG1`; outside, both factories' `Ok` arms.
+///   not `InvalidG1`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_decodes_the_group_fields_only_after_every_other_check() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    seller_keys: Some(vec![
+                        CanonicalFieldValue::Bytes(vec![0; 1]),
+                        baseline.values[14].clone(),
+                    ]),
+                    first_messages: Some(vec![
+                        CanonicalFieldValue::Unsigned16(1),
+                        baseline.values[27].clone(),
+                        baseline.values[28].clone(),
+                        baseline.values[29].clone(),
+                        baseline.values[30].clone(),
+                        baseline.values[31].clone(),
+                    ]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline =
-                        invalidate_transfer_statement::<P, F>(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            seller_keys: Some(vec![
-                                CanonicalFieldValue::Bytes(vec![0; 1]),
-                                baseline.values[14].clone(),
-                            ]),
-                            first_messages: Some(vec![
-                                CanonicalFieldValue::Unsigned16(1),
-                                baseline.values[27].clone(),
-                                baseline.values[28].clone(),
-                                baseline.values[29].clone(),
-                                baseline.values[30].clone(),
-                                baseline.values[31].clone(),
-                            ]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldKind {
-                            index: 26,
-                            expected: CanonicalFieldKind::Bytes
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldKind {
+                    index: 26,
+                    expected: CanonicalFieldKind::Bytes
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: ordering: the fields are read in ascending index and the
 ///   lowest failing index decides; a form refusal at `2` precedes a kind
 ///   failure at `4`.
 /// Arrange: corruptions `chain: Some(vec![Unsigned16(1)])` and
-///   `asset_identity_hash: Some(vec![Unsigned16(1)])`.
+///   `asset_root: Some(vec![Unsigned16(1)])`.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `ChainIdentifier { index: 2, error:
 ///   FromFieldErrorReturn::WrongKind { expected: <F::ChainIdentifier as
-///   ICanonicalField>::KIND } }`; outside, both factories' `Ok` arms.
+///   ICanonicalField>::KIND } }`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_reports_the_lowest_failing_field_when_a_form_refusal_comes_first() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    chain: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    asset_root: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            chain: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            asset_identity_hash: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::ChainIdentifier {
-                            index: 2,
-                            error: FromFieldErrorReturn::WrongKind {
-                                expected: <F::ChainIdentifier as ICanonicalField>::KIND
-                            }
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::ChainIdentifier {
+                    index: 2,
+                    error: FromFieldErrorReturn::WrongKind {
+                        expected: <F::ChainIdentifier as ICanonicalField>::KIND
+                    }
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: ordering: the fields are read in ascending index and the
@@ -3686,80 +2766,56 @@ fn fields_to_value_reports_the_lowest_failing_field_when_a_form_refusal_comes_fi
 ///   params.
 #[test]
 fn fields_to_value_reports_the_lowest_failing_field_when_a_kind_failure_comes_first() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    suite_identifier: Some(vec![
+                        baseline.values[0].clone(),
+                        CanonicalFieldValue::FixedBytes32([1; 32]),
+                    ]),
+                    entitlement_contract: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline =
-                        invalidate_transfer_statement::<P, F>(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            suite_identifier: Some(vec![
-                                baseline.values[0].clone(),
-                                CanonicalFieldValue::FixedBytes32([1; 32]),
-                            ]),
-                            entitlement_contract: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::FieldKind {
-                            index: 1,
-                            expected: CanonicalFieldKind::Unsigned16
-                        })
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::FieldKind {
+                    index: 1,
+                    expected: CanonicalFieldKind::Unsigned16
+                })
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: ordering: the suite identifier is constructed once field `1`
@@ -3770,85 +2826,61 @@ fn fields_to_value_reports_the_lowest_failing_field_when_a_kind_failure_comes_fi
 ///   chain-identifier form refusal.
 /// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
 /// Assert:  `SuiteIdentifier(SuiteIdentifierTryNewErrorReturn::
-///   AllZeroIdentifier)`; outside, both factories' `Ok` arms.
+///   AllZeroIdentifier)`; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_constructs_the_suite_identifier_before_reading_a_later_form() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let baseline = invalidate_transfer_statement::<P, F>(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    suite_identifier: Some(vec![
+                        CanonicalFieldValue::FixedBytes32([0; 32]),
+                        baseline.values[1].clone(),
+                    ]),
+                    chain: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let baseline =
-                        invalidate_transfer_statement::<P, F>(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            suite_identifier: Some(vec![
-                                CanonicalFieldValue::FixedBytes32([0; 32]),
-                                baseline.values[1].clone(),
-                            ]),
-                            chain: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    assert_eq!(
-                        result.err(),
-                        Some(TransferStatementFromFieldsErrorReturn::SuiteIdentifier(
-                            SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier
-                        ))
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            assert_eq!(
+                result.err(),
+                Some(TransferStatementFromFieldsErrorReturn::SuiteIdentifier(
+                    SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier
+                ))
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
 
 /// Contract: `fields_to_value`, admitted: every check passes and the
@@ -3868,192 +2900,169 @@ fn fields_to_value_constructs_the_suite_identifier_before_reading_a_later_form()
 ///   and every point of the seller and buyer keys, the old and new
 ///   envelopes, and the first messages encoding through the received
 ///   pairing's `encode_g1` or `encode_g2` to the encoding of `expected`'s
-///   point at that position; outside, both factories' `Ok` arms.
+///   point at that position; outside, the case runner's `Ok` arm.
 /// Collaborators: the pairing family's and the chain family's mock concretes
 ///   through `create_pairing` and `create_chain_forms` under the default
 ///   params.
 #[test]
 fn fields_to_value_returns_the_transcript_the_reference_fields_describe() {
-    struct OuterConsumer;
+    struct Consumer;
 
-    impl IPairingConsumer for OuterConsumer {
-        type Output = CreateChainFormsReturn<()>;
+    impl ITransferStatementCaseConsumer for Consumer {
+        type Output = ();
 
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        fn consume_transfer_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
             &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &TransferStatementCasePayload,
         ) -> Self::Output {
-            struct InnerConsumer<'a, P: IPairingAdapter> {
-                adapter: &'a P,
-            }
+            let description: TransferStatementDescription<'_, P, F> =
+                build_transfer_statement_description(pairing, Default::default());
+            let payload = invalidate_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(3)]),
+                    ..Default::default()
+                },
+            );
+            let expected = build_transfer_statement::<P, F>(
+                pairing,
+                TransferStatementOverrides {
+                    purpose: Some(TransferPurpose::Grant),
+                    ..Default::default()
+                },
+            );
 
-            impl<'a, P: IPairingAdapter> IChainFormsConsumer for InnerConsumer<'a, P> {
-                type Output = ();
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
 
-                fn consume_chain_forms<F: IChainForms>(
-                    &self,
-                    _params: ConsumeChainFormsParams,
-                    _payload: ConsumeChainFormsPayload<F>,
-                ) -> Self::Output {
-                    let description: TransferStatementDescription<'_, P, F> =
-                        build_transfer_statement_description(self.adapter, Default::default());
-                    let payload = invalidate_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementCorruptions {
-                            purpose: Some(vec![CanonicalFieldValue::Unsigned16(3)]),
-                            ..Default::default()
-                        },
-                    );
-                    let expected = build_transfer_statement::<P, F>(
-                        self.adapter,
-                        TransferStatementOverrides {
-                            purpose: Some(TransferPurpose::Grant),
-                            ..Default::default()
-                        },
-                    );
-
-                    let result = description
-                        .fields_to_value(build_from_fields_params(Default::default()), payload);
-
-                    let described = result
-                        .expect("the reference fields describe a statement")
-                        .described;
-                    assert_eq!(described.suite_identifier, expected.suite_identifier);
-                    assert_eq!(described.chain, expected.chain);
-                    assert_eq!(
-                        described.entitlement_contract,
-                        expected.entitlement_contract
-                    );
-                    assert_eq!(described.asset_identity_hash, expected.asset_identity_hash);
-                    assert_eq!(
-                        described.parameter_set_identifier,
-                        expected.parameter_set_identifier
-                    );
-                    assert_eq!(described.source_entitlement, expected.source_entitlement);
-                    assert_eq!(described.target_entitlement, expected.target_entitlement);
-                    assert_eq!(described.old_interval, expected.old_interval);
-                    assert_eq!(described.new_interval, expected.new_interval);
-                    assert_eq!(described.purpose, TransferPurpose::Grant);
-                    assert_eq!(described.seller, expected.seller);
-                    assert_eq!(described.buyer, expected.buyer);
-                    assert_eq!(described.expiry, expected.expiry);
-                    let encode_g1 = |point: P::G1| -> Vec<u8> {
-                        let Ok(encoded) = self.adapter.encode_g1(
-                            EncodeG1Params,
-                            build_encode_g1_payload(
-                                self.adapter,
-                                EncodeG1PayloadOverrides { point: Some(point) },
-                            ),
-                        );
-                        encoded.bytes.as_ref().to_vec()
-                    };
-                    let encode_g2 = |point: P::G2| -> Vec<u8> {
-                        let Ok(encoded) = self.adapter.encode_g2(
-                            EncodeG2Params,
-                            build_encode_g2_payload(
-                                self.adapter,
-                                EncodeG2PayloadOverrides { point: Some(point) },
-                            ),
-                        );
-                        encoded.bytes.as_ref().to_vec()
-                    };
-                    assert_eq!(
-                        encode_g1(described.seller_keys.pk1),
-                        encode_g1(expected.seller_keys.pk1)
-                    );
-                    assert_eq!(
-                        encode_g2(described.seller_keys.pk2),
-                        encode_g2(expected.seller_keys.pk2)
-                    );
-                    assert_eq!(
-                        encode_g1(described.buyer_keys.pk1),
-                        encode_g1(expected.buyer_keys.pk1)
-                    );
-                    assert_eq!(
-                        encode_g2(described.buyer_keys.pk2),
-                        encode_g2(expected.buyer_keys.pk2)
-                    );
-                    assert_eq!(
-                        encode_g1(described.old_envelope.c1),
-                        encode_g1(expected.old_envelope.c1)
-                    );
-                    assert_eq!(
-                        encode_g1(described.old_envelope.c2),
-                        encode_g1(expected.old_envelope.c2)
-                    );
-                    assert_eq!(
-                        encode_g2(described.old_envelope.d1),
-                        encode_g2(expected.old_envelope.d1)
-                    );
-                    assert_eq!(
-                        encode_g2(described.old_envelope.d2),
-                        encode_g2(expected.old_envelope.d2)
-                    );
-                    assert_eq!(
-                        encode_g1(described.new_envelope.c1),
-                        encode_g1(expected.new_envelope.c1)
-                    );
-                    assert_eq!(
-                        encode_g1(described.new_envelope.c2),
-                        encode_g1(expected.new_envelope.c2)
-                    );
-                    assert_eq!(
-                        encode_g2(described.new_envelope.d1),
-                        encode_g2(expected.new_envelope.d1)
-                    );
-                    assert_eq!(
-                        encode_g2(described.new_envelope.d2),
-                        encode_g2(expected.new_envelope.d2)
-                    );
-                    assert_eq!(
-                        encode_g1(described.first_messages.pk1),
-                        encode_g1(expected.first_messages.pk1)
-                    );
-                    assert_eq!(
-                        encode_g1(described.first_messages.c1),
-                        encode_g1(expected.first_messages.c1)
-                    );
-                    assert_eq!(
-                        encode_g1(described.first_messages.c2),
-                        encode_g1(expected.first_messages.c2)
-                    );
-                    assert_eq!(
-                        encode_g2(described.first_messages.pk2),
-                        encode_g2(expected.first_messages.pk2)
-                    );
-                    assert_eq!(
-                        encode_g2(described.first_messages.d1),
-                        encode_g2(expected.first_messages.d1)
-                    );
-                    assert_eq!(
-                        encode_g2(described.first_messages.d2),
-                        encode_g2(expected.first_messages.d2)
-                    );
-                }
-            }
-
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    InnerConsumer {
-                        adapter: &payload.adapter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
+            let described = result
+                .expect("the reference fields describe a statement")
+                .described;
+            assert_eq!(described.suite_identifier, expected.suite_identifier);
+            assert_eq!(described.chain, expected.chain);
+            assert_eq!(
+                described.entitlement_contract,
+                expected.entitlement_contract
+            );
+            assert_eq!(described.asset_root, expected.asset_root);
+            assert_eq!(
+                described.parameter_set_identifier,
+                expected.parameter_set_identifier
+            );
+            assert_eq!(described.source_entitlement, expected.source_entitlement);
+            assert_eq!(described.target_entitlement, expected.target_entitlement);
+            assert_eq!(described.old_interval, expected.old_interval);
+            assert_eq!(described.new_interval, expected.new_interval);
+            assert_eq!(described.purpose, TransferPurpose::Grant);
+            assert_eq!(described.seller, expected.seller);
+            assert_eq!(described.buyer, expected.buyer);
+            assert_eq!(described.expiry, expected.expiry);
+            let encode_g1 = |point: P::G1| -> Vec<u8> {
+                let Ok(encoded) = pairing.encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides { point: Some(point) },
+                    ),
+                );
+                encoded.bytes.as_ref().to_vec()
+            };
+            let encode_g2 = |point: P::G2| -> Vec<u8> {
+                let Ok(encoded) = pairing.encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides { point: Some(point) },
+                    ),
+                );
+                encoded.bytes.as_ref().to_vec()
+            };
+            assert_eq!(
+                encode_g1(described.seller_keys.pk1),
+                encode_g1(expected.seller_keys.pk1)
+            );
+            assert_eq!(
+                encode_g2(described.seller_keys.pk2),
+                encode_g2(expected.seller_keys.pk2)
+            );
+            assert_eq!(
+                encode_g1(described.buyer_keys.pk1),
+                encode_g1(expected.buyer_keys.pk1)
+            );
+            assert_eq!(
+                encode_g2(described.buyer_keys.pk2),
+                encode_g2(expected.buyer_keys.pk2)
+            );
+            assert_eq!(
+                encode_g1(described.old_envelope.c1),
+                encode_g1(expected.old_envelope.c1)
+            );
+            assert_eq!(
+                encode_g1(described.old_envelope.c2),
+                encode_g1(expected.old_envelope.c2)
+            );
+            assert_eq!(
+                encode_g2(described.old_envelope.d1),
+                encode_g2(expected.old_envelope.d1)
+            );
+            assert_eq!(
+                encode_g2(described.old_envelope.d2),
+                encode_g2(expected.old_envelope.d2)
+            );
+            assert_eq!(
+                encode_g1(described.new_envelope.c1),
+                encode_g1(expected.new_envelope.c1)
+            );
+            assert_eq!(
+                encode_g1(described.new_envelope.c2),
+                encode_g1(expected.new_envelope.c2)
+            );
+            assert_eq!(
+                encode_g2(described.new_envelope.d1),
+                encode_g2(expected.new_envelope.d1)
+            );
+            assert_eq!(
+                encode_g2(described.new_envelope.d2),
+                encode_g2(expected.new_envelope.d2)
+            );
+            assert_eq!(
+                encode_g1(described.first_messages.pk1),
+                encode_g1(expected.first_messages.pk1)
+            );
+            assert_eq!(
+                encode_g1(described.first_messages.c1),
+                encode_g1(expected.first_messages.c1)
+            );
+            assert_eq!(
+                encode_g1(described.first_messages.c2),
+                encode_g1(expected.first_messages.c2)
+            );
+            assert_eq!(
+                encode_g2(described.first_messages.pk2),
+                encode_g2(expected.first_messages.pk2)
+            );
+            assert_eq!(
+                encode_g2(described.first_messages.d1),
+                encode_g2(expected.first_messages.d1)
+            );
+            assert_eq!(
+                encode_g2(described.first_messages.d2),
+                encode_g2(expected.first_messages.d2)
+            );
         }
     }
 
-    let created = create_pairing(
-        &build_create_pairing_deps(OuterConsumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
-    );
-
-    created
-        .expect("the pairing factory ran the consumer")
-        .output
-        .expect("the chain-forms factory ran the consumer");
+    run_transfer_statement_case(
+        &build_transfer_statement_case_deps(Consumer, Default::default()),
+        build_transfer_statement_case_params(Default::default()),
+        build_transfer_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
 }
