@@ -1,17 +1,18 @@
 #![allow(clippy::expect_used)]
 
 use chain::IChainForms;
-use domain::{Secret, SecretConstructorParams, build_asset_identity_hash};
+use domain::{Secret, SecretConstructorParams};
 use envelope::{
     EnvelopeComponentsParams, EnvelopeComponentsPayload, GenerateKeysParams, GenerateKeysPayload,
     IKeyAgreementAdapter, KeyPairPublicKeysParams, KeyPairPublicKeysPayload,
 };
+use hashing::build_root;
 use kem::{
     CreateKemParamsOverrides, CredentialComponentsParams, CredentialComponentsPayload,
     DeriveIdentityParams, DeriveIdentityPayload, ICredentialKemAdapter,
     IdentityElementComponentsParams, IdentityElementComponentsPayload, IdentityScope, IssueParams,
-    IssuePayload, KemIdentity, ParameterSetComponentsParams, ParameterSetComponentsPayload,
-    ParameterSetScopeComponents, SetupParams, SetupPayload, SetupScope, build_create_kem_params,
+    IssuePayload, ParameterSetComponentsParams, ParameterSetComponentsPayload,
+    ParameterSetScopeComponents, SetupParams, SetupPayload, build_create_kem_params,
 };
 use pairing::{
     EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload, G1GeneratorParams,
@@ -21,12 +22,11 @@ use pairing::{
 use proof::{IDeliveryProofAdapter, MintPurpose, build_delivery_context};
 use random::IRandomSourceAdapter;
 
-use super::interface::AdmittedKemIdentity;
+use super::interface::{AdmittedKemIdentity, IMintCaseConsumer};
 use super::mint;
 use super::mock::{
-    AdmittedKemIdentityOverrides, IMintCaseConsumer, MintCaseParamsOverrides,
-    MintPayloadOverrides, build_admitted_kem_identity, build_mint_case_params, build_mint_deps,
-    build_mint_params, build_mint_payload, run_mint_case,
+    MintCaseParamsOverrides, MintPayloadOverrides, build_mint_case_deps, build_mint_case_params,
+    build_mint_case_payload, build_mint_deps, build_mint_params, build_mint_payload, run_mint_case,
 };
 
 /// Contract: Computed → `Ok(MintSuccessReturn { delivery })`, the statement's
@@ -50,14 +50,9 @@ use super::mock::{
 ///   mock concrete at the default selection.
 #[test]
 fn mint_returns_a_statement_over_the_payloads_context_and_the_recipients_keys() {
-    // Arrange
-    let identity = build_admitted_kem_identity(Default::default());
+    struct Consumer;
 
-    struct CaseConsumer<'a> {
-        identity: AdmittedKemIdentity<'a>,
-    }
-
-    impl IMintCaseConsumer for CaseConsumer<'_> {
+    impl IMintCaseConsumer for Consumer {
         type Output = ();
 
         fn consume_mint_case<P, F, K, A, D>(
@@ -67,6 +62,7 @@ fn mint_returns_a_statement_over_the_payloads_context_and_the_recipients_keys() 
             key_agreement: &A,
             delivery_proof: &D,
             random: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -91,7 +87,7 @@ fn mint_returns_a_statement_over_the_payloads_context_and_the_recipients_keys() 
                 build_mint_payload(
                     &context,
                     MintPayloadOverrides {
-                        identity: Some(self.identity),
+                        identity: Some(identity),
                     },
                 ),
             );
@@ -266,9 +262,17 @@ fn mint_returns_a_statement_over_the_payloads_context_and_the_recipients_keys() 
         }
     }
 
-    run_mint_case(
-        build_mint_case_params(Default::default()),
-        CaseConsumer { identity },
+    assert!(
+        run_mint_case(
+            &build_mint_case_deps(Consumer, Default::default()),
+            build_mint_case_params(Default::default()),
+            build_mint_case_payload(
+                b"pkg@1.0.0#1",
+                &build_root(Default::default()),
+                Default::default(),
+            ),
+        )
+        .is_ok()
     );
     // mint_returns_a_statement_over_the_payloads_context_and_the_recipients_keys
 }
@@ -295,14 +299,9 @@ fn mint_returns_a_statement_over_the_payloads_context_and_the_recipients_keys() 
 ///   mock concrete at the default selection.
 #[test]
 fn mint_draws_six_uniforms_in_order() {
-    // Arrange
-    let identity = build_admitted_kem_identity(Default::default());
+    struct Consumer;
 
-    struct CaseConsumer<'a> {
-        identity: AdmittedKemIdentity<'a>,
-    }
-
-    impl IMintCaseConsumer for CaseConsumer<'_> {
+    impl IMintCaseConsumer for Consumer {
         type Output = ();
 
         fn consume_mint_case<P, F, K, A, D>(
@@ -312,6 +311,7 @@ fn mint_draws_six_uniforms_in_order() {
             key_agreement: &A,
             delivery_proof: &D,
             random: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -336,7 +336,7 @@ fn mint_draws_six_uniforms_in_order() {
                 build_mint_payload(
                     &context,
                     MintPayloadOverrides {
-                        identity: Some(self.identity),
+                        identity: Some(identity),
                     },
                 ),
             );
@@ -354,7 +354,7 @@ fn mint_draws_six_uniforms_in_order() {
             let replayed_setup = kem
                 .setup(
                     SetupParams {
-                        scope: self.identity.setup_scope,
+                        scope: identity.setup_scope,
                     },
                     SetupPayload {
                         master_uniform: uniform(0),
@@ -541,21 +541,28 @@ fn mint_draws_six_uniforms_in_order() {
         }
     }
 
-    run_mint_case(
-        build_mint_case_params(Default::default()),
-        CaseConsumer { identity },
+    assert!(
+        run_mint_case(
+            &build_mint_case_deps(Consumer, Default::default()),
+            build_mint_case_params(Default::default()),
+            build_mint_case_payload(
+                b"pkg@1.0.0#1",
+                &build_root(Default::default()),
+                Default::default(),
+            ),
+        )
+        .is_ok()
     );
     // mint_draws_six_uniforms_in_order
 }
 
 /// Contract: Setup and Derivation → `setup` receives the identity's setup
 ///   scope and `derive_identity` its identity.
-/// Arrange: an asset identity hash from `build_asset_identity_hash`;
-///   `build_admitted_kem_identity` overriding `setup_scope` with
-///   `SetupScope::Asset` and `identity` with `KemIdentity::Asset`, each over
-///   that hash, against the builder's default entitlement scope; the KEM
-///   selection under `IdentityScope::Asset` through
-///   `CreateKemParamsOverrides`.
+/// Arrange: an asset root from `build_root(Default::default())` handed to
+///   `build_mint_case_payload` as `identity_hash`; the KEM selection under
+///   `IdentityScope::Asset` through `CreateKemParamsOverrides`, so the runner
+///   produces the identity `SetupScope::Asset` and `KemIdentity::Asset` form,
+///   each over that hash.
 /// Act:     `mint`, then `derive_identity` on the handed KEM over
 ///   `&delivery.parameter_set` and `KemIdentity::Asset` of that hash.
 /// Assert:  `parameter_set_components` over `delivery.parameter_set` holds a
@@ -567,22 +574,9 @@ fn mint_draws_six_uniforms_in_order() {
 ///   mock concrete at the default selection.
 #[test]
 fn mint_hands_the_admitted_identity_to_setup_and_derivation() {
-    // Arrange
-    let hash = build_asset_identity_hash(Default::default());
-    let identity = build_admitted_kem_identity(AdmittedKemIdentityOverrides {
-        setup_scope: Some(SetupScope::Asset {
-            identity_hash: &hash,
-        }),
-        identity: Some(KemIdentity::Asset {
-            identity_hash: &hash,
-        }),
-    });
+    struct Consumer;
 
-    struct CaseConsumer<'a> {
-        identity: AdmittedKemIdentity<'a>,
-    }
-
-    impl IMintCaseConsumer for CaseConsumer<'_> {
+    impl IMintCaseConsumer for Consumer {
         type Output = ();
 
         fn consume_mint_case<P, F, K, A, D>(
@@ -592,6 +586,7 @@ fn mint_hands_the_admitted_identity_to_setup_and_derivation() {
             key_agreement: &A,
             delivery_proof: &D,
             random: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -616,7 +611,7 @@ fn mint_hands_the_admitted_identity_to_setup_and_derivation() {
                 build_mint_payload(
                     &context,
                     MintPayloadOverrides {
-                        identity: Some(self.identity),
+                        identity: Some(identity),
                     },
                 ),
             );
@@ -627,7 +622,7 @@ fn mint_hands_the_admitted_identity_to_setup_and_derivation() {
                     DeriveIdentityParams,
                     DeriveIdentityPayload {
                         parameter_set: &delivery.parameter_set,
-                        identity: self.identity.identity,
+                        identity: identity.identity,
                     },
                 )
                 .expect("the admitted asset identity derives");
@@ -673,15 +668,23 @@ fn mint_hands_the_admitted_identity_to_setup_and_derivation() {
         }
     }
 
-    run_mint_case(
-        build_mint_case_params(MintCaseParamsOverrides {
-            kem: Some(build_create_kem_params(CreateKemParamsOverrides {
-                scope: Some(IdentityScope::Asset),
+    assert!(
+        run_mint_case(
+            &build_mint_case_deps(Consumer, Default::default()),
+            build_mint_case_params(MintCaseParamsOverrides {
+                kem: Some(build_create_kem_params(CreateKemParamsOverrides {
+                    scope: Some(IdentityScope::Asset),
+                    ..Default::default()
+                })),
                 ..Default::default()
-            })),
-            ..Default::default()
-        }),
-        CaseConsumer { identity },
+            }),
+            build_mint_case_payload(
+                b"pkg@1.0.0#1",
+                &build_root(Default::default()),
+                Default::default(),
+            ),
+        )
+        .is_ok()
     );
     // mint_hands_the_admitted_identity_to_setup_and_derivation
 }
@@ -708,14 +711,9 @@ fn mint_hands_the_admitted_identity_to_setup_and_derivation() {
 ///   mock concrete at the default selection.
 #[test]
 fn mint_returns_the_witnesses_the_objects_were_formed_with() {
-    // Arrange
-    let identity = build_admitted_kem_identity(Default::default());
+    struct Consumer;
 
-    struct CaseConsumer<'a> {
-        identity: AdmittedKemIdentity<'a>,
-    }
-
-    impl IMintCaseConsumer for CaseConsumer<'_> {
+    impl IMintCaseConsumer for Consumer {
         type Output = ();
 
         fn consume_mint_case<P, F, K, A, D>(
@@ -725,6 +723,7 @@ fn mint_returns_the_witnesses_the_objects_were_formed_with() {
             key_agreement: &A,
             delivery_proof: &D,
             random: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -749,7 +748,7 @@ fn mint_returns_the_witnesses_the_objects_were_formed_with() {
                 build_mint_payload(
                     &context,
                     MintPayloadOverrides {
-                        identity: Some(self.identity),
+                        identity: Some(identity),
                     },
                 ),
             );
@@ -783,10 +782,7 @@ fn mint_returns_the_witnesses_the_objects_were_formed_with() {
                     point: witnessed_hpub.product,
                 },
             );
-            assert_eq!(
-                delivered_hpub.bytes.as_ref(),
-                witnessed_hpub.bytes.as_ref()
-            );
+            assert_eq!(delivered_hpub.bytes.as_ref(), witnessed_hpub.bytes.as_ref());
             let Ok(credential) = kem.credential_components(
                 CredentialComponentsParams,
                 CredentialComponentsPayload {
@@ -862,9 +858,17 @@ fn mint_returns_the_witnesses_the_objects_were_formed_with() {
         }
     }
 
-    run_mint_case(
-        build_mint_case_params(Default::default()),
-        CaseConsumer { identity },
+    assert!(
+        run_mint_case(
+            &build_mint_case_deps(Consumer, Default::default()),
+            build_mint_case_params(Default::default()),
+            build_mint_case_payload(
+                b"pkg@1.0.0#1",
+                &build_root(Default::default()),
+                Default::default(),
+            ),
+        )
+        .is_ok()
     );
     // mint_returns_the_witnesses_the_objects_were_formed_with
 }

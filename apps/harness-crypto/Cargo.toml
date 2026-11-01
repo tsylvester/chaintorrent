@@ -12,6 +12,7 @@ domain = { path = "../../crates/domain" }
 encoding = { path = "../../adapters/encoding" }
 envelope = { path = "../../adapters/envelope" }
 hash-to-scalar = { path = "../../adapters/hash-to-scalar" }
+hashing = { path = "../../adapters/hashing" }
 kem = { path = "../../adapters/kem" }
 pairing = { path = "../../adapters/pairing" }
 proof = { path = "../../adapters/proof" }
@@ -28,6 +29,7 @@ domain = { path = "../../crates/domain", features = ["mocks"] }
 encoding = { path = "../../adapters/encoding", features = ["mocks"] }
 envelope = { path = "../../adapters/envelope", features = ["mocks"] }
 hash-to-scalar = { path = "../../adapters/hash-to-scalar", features = ["mocks"] }
+hashing = { path = "../../adapters/hashing", features = ["mocks"] }
 kem = { path = "../../adapters/kem", features = ["mocks"] }
 pairing = { path = "../../adapters/pairing", features = ["mocks"] }
 proof = { path = "../../adapters/proof", features = ["mocks"] }
@@ -35,7 +37,7 @@ random = { path = "../../adapters/random", features = ["mocks"] }
 serde_json = { version = "1.0.151", features = ["raw_value"] }
 
 [features]
-mocks = ["chain/mocks", "domain/mocks", "encoding/mocks", "envelope/mocks", "hash-to-scalar/mocks", "kem/mocks", "pairing/mocks", "proof/mocks", "random/mocks", "dep:serde_json"]
+mocks = ["chain/mocks", "domain/mocks", "encoding/mocks", "envelope/mocks", "hash-to-scalar/mocks", "hashing/mocks", "kem/mocks", "pairing/mocks", "proof/mocks", "random/mocks", "dep:serde_json"]
 
 [lints]
 workspace = true

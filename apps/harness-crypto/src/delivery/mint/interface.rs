@@ -1,18 +1,38 @@
 use chain::IChainForms;
+#[cfg(any(test, feature = "mocks"))]
+use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams};
 use domain::Secret;
+#[cfg(any(test, feature = "mocks"))]
+use encoding::{CreateEncodingErrorReturn, CreateEncodingParams};
+#[cfg(any(test, feature = "mocks"))]
+use envelope::{CreateKeyAgreementErrorReturn, CreateKeyAgreementParams};
 use envelope::{
     EnvelopeCoins, GenerateKeysErrorReturn, IKeyAgreementAdapter,
     PublicKeysFromComponentsErrorReturn, WrapToErrorReturn,
 };
+#[cfg(any(test, feature = "mocks"))]
+use hash_to_scalar::{CreateHashToScalarErrorReturn, CreateHashToScalarParams};
+#[cfg(any(test, feature = "mocks"))]
+use hashing::Root;
+#[cfg(any(test, feature = "mocks"))]
+use kem::{CreateKemErrorReturn, CreateKemParams};
 use kem::{
     DeriveIdentityErrorReturn, ICredentialKemAdapter, IssueErrorReturn, KemIdentity,
     MasterScalarComponents, SetupErrorReturn, SetupScope,
 };
 use pairing::IPairingAdapter;
+#[cfg(any(test, feature = "mocks"))]
+use pairing::{
+    CreatePairingErrorReturn, CreatePairingParams, IPairingArithmetic, IPairingReference,
+};
 use proof::{
     AlgebraicMintStatement, DeliveryContext, IDeliveryProofAdapter, MintPurpose,
     ProveMintErrorReturn,
 };
+#[cfg(any(test, feature = "mocks"))]
+use proof::{CreateDeliveryProofErrorReturn, CreateDeliveryProofParams};
+#[cfg(any(test, feature = "mocks"))]
+use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
 #[derive(Clone, Copy)]
@@ -96,3 +116,75 @@ pub type MintFn<'a, P, K, A, D> = fn(
     MintParams,
     MintPayload<'_, <D as IDeliveryProofAdapter>::Forms>,
 ) -> MintReturn<P, K, A, D>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait IMintCaseConsumer {
+    type Output;
+
+    fn consume_mint_case<P, F, K, A, D>(
+        &self,
+        pairing: &P,
+        kem: &K,
+        key_agreement: &A,
+        delivery_proof: &D,
+        random: &dyn IRandomSourceAdapter,
+        identity: AdmittedKemIdentity<'_>,
+    ) -> Self::Output
+    where
+        P: IPairingArithmetic + IPairingReference,
+        F: IChainForms,
+        K: ICredentialKemAdapter<Pairing = P>,
+        A: IKeyAgreementAdapter<Pairing = P>,
+        D: IDeliveryProofAdapter<Pairing = P, Forms = F>;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct MintCaseDeps<C: IMintCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct MintCaseParams {
+    pub pairing: CreatePairingParams,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub encoding: CreateEncodingParams,
+    pub chain_forms: CreateChainFormsParams,
+    pub kem: CreateKemParams,
+    pub key_agreement: CreateKeyAgreementParams,
+    pub delivery_proof: CreateDeliveryProofParams,
+    pub random_source: CreateRandomSourceParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct MintCasePayload<'a> {
+    pub canonical: &'a [u8],
+    pub identity_hash: &'a Root,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct MintCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum MintCaseErrorReturn {
+    CreatePairing(CreatePairingErrorReturn),
+    CreateHashToScalar(CreateHashToScalarErrorReturn),
+    CreateEncoding(CreateEncodingErrorReturn),
+    CreateChainForms(CreateChainFormsErrorReturn),
+    CreateKem(CreateKemErrorReturn),
+    CreateKeyAgreement(CreateKeyAgreementErrorReturn),
+    CreateDeliveryProof(CreateDeliveryProofErrorReturn),
+    CreateRandomSource(CreateRandomSourceErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type MintCaseReturn<O> = Result<MintCaseSuccessReturn<O>, MintCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunMintCaseFn<C> = fn(
+    &MintCaseDeps<C>,
+    MintCaseParams,
+    MintCasePayload<'_>,
+) -> MintCaseReturn<<C as IMintCaseConsumer>::Output>;

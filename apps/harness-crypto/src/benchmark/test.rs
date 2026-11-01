@@ -182,14 +182,12 @@ fn consume_pairing_returns_the_sampling_error_unchanged() {
     // Arrange
     let deps = build_pairing_benchmark_case_deps(Consumer, Default::default());
     let params = build_pairing_benchmark_case_params(PairingBenchmarkCaseParamsOverrides {
-        pairing: Some(build_create_pairing_params(
-            CreatePairingParamsOverrides {
-                concrete: Some(PairingConcrete::Mock(
-                    MockIPairingAdapterFailureMode::SampleScalarWrongLength,
-                )),
-                ..Default::default()
-            },
-        )),
+        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+            concrete: Some(PairingConcrete::Mock(
+                MockIPairingAdapterFailureMode::SampleScalarWrongLength,
+            )),
+            ..Default::default()
+        })),
         ..Default::default()
     });
 

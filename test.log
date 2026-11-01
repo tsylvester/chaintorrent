@@ -35,35 +35,34 @@ warning: type alias `RunSchnorrFsCaseFn` is never used
 
 warning: `proof` (lib) generated 2 warnings
 warning: `proof` (lib test) generated 4 warnings (2 duplicates)
-   Compiling proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.13s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
      Running unittests src\lib.rs (target\debug\deps\proof-e15ff35f600d846a.exe)
 
 running 186 tests
-test factory::test::create_delivery_proof_returns_the_consumers_output_for_the_mock_selection ... ok
-test factory::test::wire_components_of_the_mint_relation_in_the_both_groups_form_convert_to_the_matching_variant ... ok
 test factory::test::create_delivery_proof_refuses_a_statement_version_the_mock_concrete_does_not_declare ... ok
-test factory::test::create_delivery_proof_returns_the_consumers_output_for_the_schnorr_fs_selection ... ok
+test factory::test::wire_components_of_the_mint_relation_in_the_first_group_only_form_convert_to_the_matching_variant ... ok
+test factory::test::wire_components_of_the_mint_relation_in_the_both_groups_form_convert_to_the_matching_variant ... ok
 test factory::test::create_delivery_proof_refuses_a_statement_version_the_schnorr_fs_concrete_does_not_declare ... ok
 test factory::test::wire_components_check_the_response_count_before_the_first_message_count ... ok
-test factory::test::wire_components_of_the_mint_relation_in_the_first_group_only_form_convert_to_the_matching_variant ... ok
+test factory::test::create_delivery_proof_returns_the_consumers_output_for_the_schnorr_fs_selection ... ok
+test factory::test::create_delivery_proof_returns_the_consumers_output_for_the_mock_selection ... ok
 test factory::test::wire_components_of_the_transfer_relation_in_the_both_groups_form_convert_to_the_matching_variant ... ok
 test factory::test::wire_components_refuse_a_response_count_other_than_the_relations ... ok
 test factory::test::wire_components_refuse_first_messages_the_both_groups_form_does_not_carry ... ok
-test factory::test::wire_components_refuse_a_transfer_response_count_other_than_the_relations ... ok
-test factory::test::wire_components_refuse_missing_first_messages_in_the_first_group_only_form ... ok
 test factory::test::wire_components_of_the_transfer_relation_in_the_first_group_only_form_convert_to_the_matching_variant ... ok
 test factory::integration_test::an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_version ... ok
 test mint_statement::test::delivery_purpose_derives_the_grant_code ... ok
+test factory::test::wire_components_refuse_missing_first_messages_in_the_first_group_only_form ... ok
+test factory::test::wire_components_refuse_a_transfer_response_count_other_than_the_relations ... ok
 test mint_statement::test::delivery_purpose_derives_the_mint_code ... ok
-test mint_statement::test::delivery_purpose_derives_the_transfer_code ... ok
 test mint_statement::test::delivery_purpose_derives_the_replacement_code ... ok
+test mint_statement::test::delivery_purpose_derives_the_transfer_code ... ok
 test mint_statement::test::delivery_purpose_grant_proves_the_transfer_relation ... ok
 test mint_statement::test::delivery_purpose_mint_proves_the_mint_relation ... ok
 test mint_statement::test::delivery_purpose_replacement_proves_the_mint_relation ... ok
 test mint_statement::test::delivery_purpose_transfer_proves_the_transfer_relation ... ok
-test mint_statement::test::fields_to_value_admits_a_replacement_purpose ... ok
 test mint_statement::test::fields_to_value_admits_a_mint_purpose ... ok
+test mint_statement::test::fields_to_value_admits_a_replacement_purpose ... ok
 test mint_statement::test::fields_to_value_carries_a_first_group_decoders_refusal_with_its_index ... ok
 test mint_statement::test::fields_to_value_carries_a_second_group_decoders_refusal_with_its_index ... ok
 test mint_statement::test::fields_to_value_carries_the_asset_roots_refusal ... ok
@@ -94,8 +93,8 @@ test mint_statement::test::fields_to_value_rejects_a_suite_version_field_of_the_
 test mint_statement::test::fields_to_value_rejects_a_transfer_purpose_code ... ok
 test mint_statement::test::fields_to_value_rejects_an_asset_root_field_of_the_wrong_kind ... ok
 test mint_statement::test::fields_to_value_rejects_an_expiry_field_of_the_wrong_kind ... ok
-test mint_statement::test::fields_to_value_reports_a_wrong_count_before_any_field ... ok
 test mint_statement::test::fields_to_value_reports_the_lowest_failing_field_when_a_form_refusal_comes_first ... ok
+test mint_statement::test::fields_to_value_reports_a_wrong_count_before_any_field ... ok
 test mint_statement::test::fields_to_value_reports_the_lowest_failing_field_when_a_kind_failure_comes_first ... ok
 test mint_statement::test::fields_to_value_reports_the_lowest_refused_group_field ... ok
 test mint_statement::test::fields_to_value_returns_the_transcript_the_reference_fields_describe ... ok
@@ -119,9 +118,9 @@ test schnorr_fs::test::proof_components_returns_the_mint_first_group_only_compon
 test schnorr_fs::test::proof_from_components_moves_the_mint_both_groups_components_into_the_proof ... ok
 test schnorr_fs::test::proof_components_returns_the_transfer_first_group_only_components ... ok
 test schnorr_fs::test::proof_components_returns_the_transfer_both_groups_components ... ok
+test schnorr_fs::test::proof_from_components_moves_the_transfer_both_groups_components_into_the_proof ... ok
 test schnorr_fs::test::proof_from_components_moves_the_mint_first_group_only_components_into_the_proof ... ok
 test schnorr_fs::test::proof_from_components_moves_the_transfer_first_group_only_components_into_the_proof ... ok
-test schnorr_fs::test::proof_from_components_moves_the_transfer_both_groups_components_into_the_proof ... ok
 test schnorr_fs::test::proof_from_components_refuses_both_groups_components_under_a_first_group_only_adapter ... ok
 test schnorr_fs::test::proof_from_components_refuses_first_group_only_components_under_a_both_groups_adapter ... ok
 test schnorr_fs::test::prove_mint_carries_no_first_messages_in_the_both_groups_form ... ok
@@ -133,13 +132,13 @@ test schnorr_fs::test::prove_mint_returns_the_nonce_sampling_refusal_unchanged .
 test schnorr_fs::test::prove_mint_returns_the_responses_the_nonces_and_witnesses_define ... ok
 test schnorr_fs::test::prove_transfer_carries_no_first_messages_in_the_both_groups_form ... ok
 test schnorr_fs::test::prove_transfer_carries_the_second_group_first_messages_in_the_first_group_only_form ... ok
-test schnorr_fs::test::prove_transfer_returns_the_nonce_draw_refusal_unchanged ... ok
 test schnorr_fs::test::prove_transfer_returns_the_challenge_refusal_unchanged ... ok
+test schnorr_fs::test::prove_transfer_returns_the_nonce_draw_refusal_unchanged ... ok
 test schnorr_fs::test::prove_transfer_returns_the_challenge_over_the_transcript_of_the_relations_first_messages ... ok
 test schnorr_fs::test::prove_transfer_returns_the_nonce_sampling_refusal_unchanged ... ok
 test schnorr_fs::test::the_declaration_lists_both_verifier_forms ... ok
-test schnorr_fs::test::the_declaration_lists_the_delivery_statement_version_one ... ok
 test schnorr_fs::test::prove_transfer_returns_the_responses_the_nonces_and_witnesses_define ... ok
+test schnorr_fs::test::the_declaration_lists_the_delivery_statement_version_one ... ok
 test schnorr_fs::test::the_declaration_lists_the_pairing_elgamal_algebra ... ok
 test schnorr_fs::test::the_declaration_names_its_adapter_and_interface_versions ... ok
 test schnorr_fs::test::the_declaration_names_the_challenge_and_weight_tags ... ok
@@ -151,59 +150,59 @@ test schnorr_fs::test::try_new_holds_the_weight_tag ... ok
 test schnorr_fs::test::verify_accepts_a_both_groups_mint_proof ... ok
 test schnorr_fs::test::verify_accepts_a_both_groups_transfer_proof ... ok
 test schnorr_fs::test::verify_accepts_a_first_group_only_mint_proof ... ok
-test schnorr_fs::test::verify_accepts_a_first_group_only_transfer_proof ... ok
-test schnorr_fs::test::verify_rejects_a_first_group_only_mint_proof_with_a_changed_challenge ... ok
-test schnorr_fs::test::verify_rejects_a_both_groups_transfer_proof_with_a_changed_response ... ok
 test schnorr_fs::test::verify_rejects_a_both_groups_mint_proof_with_a_changed_response ... ok
+test schnorr_fs::test::verify_accepts_a_first_group_only_transfer_proof ... ok
+test schnorr_fs::test::verify_rejects_a_both_groups_transfer_proof_with_a_changed_response ... ok
+test schnorr_fs::test::verify_rejects_a_first_group_only_mint_proof_with_a_changed_challenge ... ok
 test schnorr_fs::test::verify_rejects_a_first_group_only_mint_proof_with_a_changed_second_group_first_message ... ok
 test schnorr_fs::test::verify_rejects_a_first_group_only_transfer_proof_with_a_changed_challenge ... ok
-test schnorr_fs::test::verify_returns_false_for_a_proof_of_the_other_form ... ok
 test schnorr_fs::test::verify_rejects_a_first_group_only_transfer_proof_with_a_changed_second_group_first_message ... ok
+test schnorr_fs::test::verify_returns_false_for_a_proof_of_the_other_form ... ok
 test schnorr_fs::test::verify_returns_false_for_a_proof_of_the_other_relation ... ok
 test schnorr_fs::test::verify_returns_the_challenge_refusal_unchanged_in_the_both_groups_form ... ok
 test schnorr_fs::test::verify_returns_the_challenge_refusal_unchanged_in_the_first_group_only_form ... ok
-test transfer_statement::test::fields_to_value_admits_a_transfer_purpose ... ok
 test transfer_statement::test::fields_to_value_admits_a_grant_purpose ... ok
+test transfer_statement::test::fields_to_value_admits_a_transfer_purpose ... ok
 test transfer_statement::test::fields_to_value_carries_a_first_group_decoders_refusal_with_its_index ... ok
 test transfer_statement::test::fields_to_value_carries_a_second_group_decoders_refusal_with_its_index ... ok
 test transfer_statement::test::fields_to_value_carries_the_asset_roots_refusal ... ok
 test transfer_statement::test::fields_to_value_carries_the_buyers_refusal_with_its_index ... ok
 test transfer_statement::test::fields_to_value_carries_the_chain_identifiers_refusal_with_its_index ... ok
 test transfer_statement::test::fields_to_value_carries_the_entitlement_contracts_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_old_intervals_refusal_with_its_index ... ok
 test transfer_statement::test::fields_to_value_carries_the_new_intervals_refusal_with_its_index ... ok
+test transfer_statement::test::fields_to_value_carries_the_old_intervals_refusal_with_its_index ... ok
 test transfer_statement::test::fields_to_value_carries_the_parameter_set_digests_refusal ... ok
-test transfer_statement::test::fields_to_value_carries_the_sellers_refusal_with_its_index ... ok
 test transfer_statement::test::fields_to_value_carries_the_source_entitlements_refusal_with_its_index ... ok
+test transfer_statement::test::fields_to_value_carries_the_sellers_refusal_with_its_index ... ok
 test transfer_statement::test::fields_to_value_carries_the_suite_identifiers_all_zero_identifier_refusal ... ok
 test transfer_statement::test::fields_to_value_carries_the_target_entitlements_refusal_with_its_index ... ok
 test transfer_statement::test::fields_to_value_carries_the_suite_identifiers_zero_version_refusal ... ok
-test transfer_statement::test::fields_to_value_decodes_the_group_fields_only_after_every_other_check ... ok
+test transfer_statement::test::fields_to_value_constructs_the_suite_identifier_before_reading_a_later_form ... ok
 test transfer_statement::test::fields_to_value_decodes_through_the_pairing_the_description_was_built_over ... ok
-test transfer_statement::test::fields_to_value_rejects_a_purpose_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_rejects_a_replacement_purpose_code ... ok
+test transfer_statement::test::fields_to_value_decodes_the_group_fields_only_after_every_other_check ... ok
 test transfer_statement::test::fields_to_value_rejects_a_field_list_one_long ... ok
 test transfer_statement::test::fields_to_value_rejects_a_field_list_one_short ... ok
 test transfer_statement::test::fields_to_value_rejects_a_first_message_field_of_the_wrong_kind ... ok
 test transfer_statement::test::fields_to_value_rejects_a_mint_purpose_code ... ok
-test transfer_statement::test::fields_to_value_constructs_the_suite_identifier_before_reading_a_later_form ... ok
 test transfer_statement::test::fields_to_value_rejects_a_parameter_set_digest_field_of_the_wrong_kind ... ok
 test transfer_statement::test::fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries ... ok
+test transfer_statement::test::fields_to_value_rejects_a_purpose_field_of_the_wrong_kind ... ok
+test transfer_statement::test::fields_to_value_rejects_a_replacement_purpose_code ... ok
 test transfer_statement::test::fields_to_value_rejects_a_seller_key_field_of_the_wrong_kind ... ok
 test transfer_statement::test::fields_to_value_rejects_a_suite_identifier_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_rejects_an_asset_root_field_of_the_wrong_kind ... ok
 test transfer_statement::test::fields_to_value_rejects_a_suite_version_field_of_the_wrong_kind ... ok
+test transfer_statement::test::fields_to_value_rejects_an_asset_root_field_of_the_wrong_kind ... ok
 test transfer_statement::test::fields_to_value_rejects_an_expiry_field_of_the_wrong_kind ... ok
-test transfer_statement::test::to_fields_encodes_a_transfer_purpose_by_its_code ... ok
-test transfer_statement::test::fields_to_value_reports_the_lowest_failing_field_when_a_form_refusal_comes_first ... ok
-test transfer_statement::test::fields_to_value_returns_the_transcript_the_reference_fields_describe ... ok
-test transfer_statement::test::to_fields_encodes_a_grant_purpose_by_its_code ... ok
 test transfer_statement::test::fields_to_value_reports_a_wrong_count_before_any_field ... ok
-test transfer_statement::test::to_fields_flattens_each_group_field_through_the_pairing ... ok
+test transfer_statement::test::fields_to_value_reports_the_lowest_failing_field_when_a_form_refusal_comes_first ... ok
 test transfer_statement::test::fields_to_value_reports_the_lowest_failing_field_when_a_kind_failure_comes_first ... ok
+test transfer_statement::test::to_fields_encodes_a_grant_purpose_by_its_code ... ok
 test transfer_statement::test::fields_to_value_reports_the_lowest_refused_group_field ... ok
-test transfer_statement::test::transfer_statement_description_declares_its_field_kinds_in_transcript_order ... ok
+test transfer_statement::test::fields_to_value_returns_the_transcript_the_reference_fields_describe ... ok
+test transfer_statement::test::to_fields_encodes_a_transfer_purpose_by_its_code ... ok
+test transfer_statement::test::to_fields_flattens_each_group_field_through_the_pairing ... ok
 test transfer_statement::test::to_fields_lists_the_non_group_fields_in_transcript_order ... ok
+test transfer_statement::test::transfer_statement_description_declares_its_field_kinds_in_transcript_order ... ok
 test factory::integration_test::components_of_the_other_verifier_form_are_refused_by_the_adapter ... ok
 test factory::integration_test::a_refused_nonce_draw_is_returned_by_each_prover ... ok
 test schnorr_fs::challenge::integration_test::the_mint_challenge_is_the_tagged_hash_of_the_mint_transcripts_encoding ... ok
@@ -214,8 +213,8 @@ test schnorr_fs::integration_test::a_mint_proof_verifies_in_both_forms ... ok
 test schnorr_fs::integration_test::a_transfer_proof_verifies_in_both_forms ... ok
 test factory::integration_test::a_mint_proof_the_adapter_returns_verifies ... ok
 test schnorr_fs::integration_test::a_proof_whose_second_group_errors_cancel_unweighted_fails_the_weighted_product ... ok
-test schnorr_fs::integration_test::a_proof_rebuilt_from_its_components_verifies ... ok
 test factory::integration_test::a_transfer_proof_the_adapter_returns_verifies ... ok
+test schnorr_fs::integration_test::a_proof_rebuilt_from_its_components_verifies ... ok
 test schnorr_fs::integration_test::a_first_group_only_proof_with_a_changed_second_group_first_message_fails ... ok
 test factory::integration_test::a_proof_the_adapter_rebuilds_from_its_components_verifies ... ok
 test factory::integration_test::a_proof_of_another_relation_is_refused_by_verify ... ok
@@ -229,7 +228,7 @@ test schnorr_fs::integration_test::a_proof_fails_against_a_statement_differing_i
 test schnorr_fs::integration_test::a_proof_fails_against_a_statement_differing_in_one_field ... ok
 test factory::integration_test::a_proof_against_a_statement_differing_in_one_field_is_refused ... ok
 
-test result: ok. 186 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 159.80s
+test result: ok. 186 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 160.16s
 
      Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-2f82de5461273b3f.exe)
 
@@ -239,7 +238,7 @@ test a_credential_issued_and_wrapped_through_the_families_is_proved_by_a_mint_pr
 test a_credential_rerandomized_and_wrapped_to_the_buyer_is_proved_by_a_transfer_proof_that_verifies_and_opens ... ok
 test a_transfer_proof_fails_against_a_statement_with_another_expiry ... ok
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.26s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.27s
 
      Running tests\mint_statement_integration_test.rs (target\debug\deps\mint_statement_integration_test-2e91e4d4d8e501b2.exe)
 
@@ -257,15 +256,15 @@ test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
      Running tests\transfer_statement_integration_test.rs (target\debug\deps\transfer_statement_integration_test-655895e7aab30e85.exe)
 
 running 7 tests
-test chain_forms_interval_survives_its_field_round_trip ... ok
-test chain_forms_entitlement_survives_its_field_round_trip ... ok
 test chain_forms_identity_survives_its_field_round_trip ... ok
+test chain_forms_entitlement_survives_its_field_round_trip ... ok
 test chain_forms_chain_identifier_survives_its_field_round_trip ... ok
+test chain_forms_interval_survives_its_field_round_trip ... ok
 test each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists ... ok
 test each_second_group_decoder_refuses_the_second_group_reference_encoding ... ok
 test a_transfer_statement_survives_the_encoding_round_trip ... ok
 
-test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.12s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.10s
 
    Doc-tests proof
 

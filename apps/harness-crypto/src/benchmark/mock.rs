@@ -163,9 +163,7 @@ impl<C: IPairingBenchmarkCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C>
         ) {
             Ok(created) => created,
             Err(error) => {
-                return Err(PairingBenchmarkCaseErrorReturn::CreateRandomSource(
-                    error,
-                ));
+                return Err(PairingBenchmarkCaseErrorReturn::CreateRandomSource(error));
             }
         };
         let output = self

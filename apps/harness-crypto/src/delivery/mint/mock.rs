@@ -9,27 +9,27 @@ use core::marker::PhantomData;
 use domain::{Secret, SecretConstructorParams};
 use encoding::{
     ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams, IDecoderAdapter,
-    IEncoderAdapter, IEncodingConsumer, build_create_encoding_deps,
-    build_create_encoding_params, build_create_encoding_payload, create_encoding,
+    IEncoderAdapter, IEncodingConsumer, build_create_encoding_deps, build_create_encoding_params,
+    build_create_encoding_payload, create_encoding,
 };
 use envelope::{
-    ConsumeKeyAgreementParams, ConsumeKeyAgreementPayload, CreateKeyAgreementParams,
-    EnvelopeCoins, EnvelopeComponentsParams, EnvelopeComponentsPayload, GenerateKeysParams,
-    GenerateKeysPayload, IKeyAgreementAdapter, IKeyAgreementConsumer, KeyPairPublicKeysParams,
-    KeyPairPublicKeysPayload, PublicKeysFromComponentsParams, PublicKeysFromComponentsPayload,
-    WrapToParams, WrapToPayload, build_create_key_agreement_deps,
-    build_create_key_agreement_params, build_create_key_agreement_payload, create_key_agreement,
+    ConsumeKeyAgreementParams, ConsumeKeyAgreementPayload, CreateKeyAgreementParams, EnvelopeCoins,
+    EnvelopeComponentsParams, EnvelopeComponentsPayload, GenerateKeysParams, GenerateKeysPayload,
+    IKeyAgreementAdapter, IKeyAgreementConsumer, KeyPairPublicKeysParams, KeyPairPublicKeysPayload,
+    PublicKeysFromComponentsParams, PublicKeysFromComponentsPayload, WrapToParams, WrapToPayload,
+    build_create_key_agreement_deps, build_create_key_agreement_params,
+    build_create_key_agreement_payload, create_key_agreement,
 };
 use hash_to_scalar::{
     CreateHashToScalarParams, IHashToScalarAdapter, build_create_hash_to_scalar_deps,
-    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload,
-    create_hash_to_scalar,
+    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload, create_hash_to_scalar,
 };
+use hashing::Root;
 use kem::{
     ConsumeKemParams, ConsumeKemPayload, CreateKemParams, CredentialComponentsParams,
     CredentialComponentsPayload, DeriveIdentityParams, DeriveIdentityPayload,
     ICredentialKemAdapter, IKemConsumer, IdentityElementComponentsParams,
-    IdentityElementComponentsPayload, IssueParams, IssuePayload, KemIdentity,
+    IdentityElementComponentsPayload, IdentityScope, IssueParams, IssuePayload, KemIdentity,
     MasterScalarComponents, MasterScalarComponentsParams, MasterScalarComponentsPayload,
     ParameterSetComponentsParams, ParameterSetComponentsPayload, SetupParams, SetupPayload,
     SetupScope, build_create_kem_deps, build_create_kem_params, build_create_kem_payload,
@@ -45,8 +45,7 @@ use proof::{
     AlgebraicMintStatement, ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload,
     CreateDeliveryProofParams, DeliveryContext, IDeliveryProofAdapter, IDeliveryProofConsumer,
     MintPurpose, ProveMintParams, ProveMintPayload, build_create_delivery_proof_deps,
-    build_create_delivery_proof_params, build_create_delivery_proof_payload,
-    create_delivery_proof,
+    build_create_delivery_proof_params, build_create_delivery_proof_payload, create_delivery_proof,
 };
 use random::{
     CreateRandomSourceParams, IRandomSourceAdapter, build_create_random_source_deps,
@@ -54,8 +53,10 @@ use random::{
 };
 
 use super::interface::{
-    AdmittedKemIdentity, DeliveryHolder, MintDelivery, MintDeps, MintErrorReturn, MintFn,
-    MintParams, MintPayload, MintReturn, MintSuccessReturn, MintWitnesses,
+    AdmittedKemIdentity, DeliveryHolder, IMintCaseConsumer, MintCaseDeps, MintCaseErrorReturn,
+    MintCaseParams, MintCasePayload, MintCaseReturn, MintCaseSuccessReturn, MintDelivery, MintDeps,
+    MintErrorReturn, MintFn, MintParams, MintPayload, MintReturn, MintSuccessReturn, MintWitnesses,
+    RunMintCaseFn,
 };
 
 #[derive(Default)]
@@ -245,7 +246,7 @@ fn uniform<S: ISampleUniformScalar>(byte: u8) -> Secret<Vec<u8>> {
     uniform
 }
 
-fn copy_secret<S: Clone>(secret: &Secret<S>) -> Secret<S> {
+fn copy_secret<P: IPairingAdapter>(secret: &Secret<P::Scalar>) -> Secret<P::Scalar> {
     let Ok(copy) = Secret::try_new(SecretConstructorParams {
         value: secret.expose().clone(),
     });
@@ -384,9 +385,9 @@ pub fn mock_mint<
             master_scalar: &setup.master_scalar,
         },
     );
-    let credential_randomness = copy_secret(&issued.randomness);
-    let rho = copy_secret(&wrapped.coins.rho);
-    let sigma = copy_secret(&wrapped.coins.sigma);
+    let credential_randomness = copy_secret::<P>(&issued.randomness);
+    let rho = copy_secret::<P>(&wrapped.coins.rho);
+    let sigma = copy_secret::<P>(&wrapped.coins.sigma);
     let proved = match deps.delivery_proof.prove_mint(
         ProveMintParams,
         ProveMintPayload {
@@ -421,36 +422,6 @@ pub fn mock_mint<
         ),
         Default::default(),
     ))
-}
-
-pub trait IMintCaseConsumer {
-    type Output;
-
-    fn consume_mint_case<P, F, K, A, D>(
-        &self,
-        pairing: &P,
-        kem: &K,
-        key_agreement: &A,
-        delivery_proof: &D,
-        random: &dyn IRandomSourceAdapter,
-    ) -> Self::Output
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-        K: ICredentialKemAdapter<Pairing = P>,
-        A: IKeyAgreementAdapter<Pairing = P>,
-        D: IDeliveryProofAdapter<Pairing = P, Forms = F>;
-}
-
-pub struct MintCaseParams {
-    pub pairing: CreatePairingParams,
-    pub hash_to_scalar: CreateHashToScalarParams,
-    pub encoding: CreateEncodingParams,
-    pub chain_forms: CreateChainFormsParams,
-    pub kem: CreateKemParams,
-    pub key_agreement: CreateKeyAgreementParams,
-    pub delivery_proof: CreateDeliveryProofParams,
-    pub random_source: CreateRandomSourceParams,
 }
 
 #[derive(Default)]
@@ -494,18 +465,46 @@ pub fn build_mint_case_params(overrides: MintCaseParamsOverrides) -> MintCasePar
     }
 }
 
-struct CaseAtDeliveryProof<
-    'a,
-    P: IPairingArithmetic,
-    F: IChainForms,
-    K,
-    A,
-    C: IMintCaseConsumer,
-> {
+#[derive(Default)]
+pub struct MintCaseDepsOverrides;
+
+pub fn build_mint_case_deps<C: IMintCaseConsumer>(
+    consumer: C,
+    _overrides: MintCaseDepsOverrides,
+) -> MintCaseDeps<C> {
+    MintCaseDeps { consumer }
+}
+
+#[derive(Default)]
+pub struct MintCasePayloadOverrides;
+
+pub fn build_mint_case_payload<'a>(
+    canonical: &'a [u8],
+    identity_hash: &'a Root,
+    _overrides: MintCasePayloadOverrides,
+) -> MintCasePayload<'a> {
+    MintCasePayload {
+        canonical,
+        identity_hash,
+    }
+}
+
+#[derive(Default)]
+pub struct MintCaseSuccessReturnOverrides;
+
+pub fn build_mint_case_success_return<O>(
+    output: O,
+    _overrides: MintCaseSuccessReturnOverrides,
+) -> MintCaseSuccessReturn<O> {
+    MintCaseSuccessReturn { output }
+}
+
+struct CaseAtDeliveryProof<'a, P: IPairingArithmetic, F: IChainForms, K, A, C: IMintCaseConsumer> {
     pairing: &'a P,
     kem: &'a K,
     key_agreement: &'a A,
     source: &'a dyn IRandomSourceAdapter,
+    identity: AdmittedKemIdentity<'a>,
     consumer: &'a C,
     marker: PhantomData<F>,
 }
@@ -518,31 +517,34 @@ where
     A: IKeyAgreementAdapter<Pairing = P>,
     C: IMintCaseConsumer,
 {
-    type Output = C::Output;
+    type Output = MintCaseReturn<C::Output>;
 
     fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
         &self,
         _params: ConsumeDeliveryProofParams,
         payload: ConsumeDeliveryProofPayload<D>,
     ) -> Self::Output {
-        self.consumer.consume_mint_case(
-            self.pairing,
-            self.kem,
-            self.key_agreement,
-            &payload.adapter,
-            self.source,
-        )
+        Ok(MintCaseSuccessReturn {
+            output: self.consumer.consume_mint_case(
+                self.pairing,
+                self.kem,
+                self.key_agreement,
+                &payload.adapter,
+                self.source,
+                self.identity,
+            ),
+        })
     }
 }
 
-struct CaseAtKeyAgreement<'a, P: IPairingArithmetic, E, F: IChainForms, K, C: IMintCaseConsumer>
-{
+struct CaseAtKeyAgreement<'a, P: IPairingArithmetic, E, F: IChainForms, K, C: IMintCaseConsumer> {
     pairing: &'a P,
     hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
     encoder: &'a E,
     source: &'a dyn IRandomSourceAdapter,
     kem: &'a K,
     delivery_proof: &'a CreateDeliveryProofParams,
+    identity: AdmittedKemIdentity<'a>,
     consumer: &'a C,
     marker: PhantomData<F>,
 }
@@ -555,14 +557,14 @@ where
     K: ICredentialKemAdapter<Pairing = P>,
     C: IMintCaseConsumer,
 {
-    type Output = C::Output;
+    type Output = MintCaseReturn<C::Output>;
 
     fn consume_key_agreement<A: IKeyAgreementAdapter<Pairing = P>>(
         &self,
         _params: ConsumeKeyAgreementParams,
         payload: ConsumeKeyAgreementPayload<A>,
     ) -> Self::Output {
-        create_delivery_proof(
+        match create_delivery_proof(
             &build_create_delivery_proof_deps(
                 self.pairing,
                 self.hashing,
@@ -573,6 +575,7 @@ where
                     kem: self.kem,
                     key_agreement: &payload.adapter,
                     source: self.source,
+                    identity: self.identity,
                     consumer: self.consumer,
                     marker: PhantomData::<F>,
                 },
@@ -581,13 +584,13 @@ where
             CreateDeliveryProofParams {
                 concrete: self.delivery_proof.concrete,
                 algebra: self.delivery_proof.algebra,
-                verifier_form: self.delivery_proof.verifier_form,
                 statement_version: self.delivery_proof.statement_version,
             },
             build_create_delivery_proof_payload(Default::default()),
-        )
-        .expect("the delivery-proof factory's selection constructs")
-        .output
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(MintCaseErrorReturn::CreateDeliveryProof(error)),
+        }
     }
 }
 
@@ -598,6 +601,7 @@ struct CaseAtKem<'a, P: IPairingArithmetic, E, F: IChainForms, C: IMintCaseConsu
     source: &'a dyn IRandomSourceAdapter,
     key_agreement: &'a CreateKeyAgreementParams,
     delivery_proof: &'a CreateDeliveryProofParams,
+    payload: &'a MintCasePayload<'a>,
     consumer: &'a C,
     marker: PhantomData<F>,
 }
@@ -609,14 +613,30 @@ where
     F: IChainForms,
     C: IMintCaseConsumer,
 {
-    type Output = C::Output;
+    type Output = MintCaseReturn<C::Output>;
 
     fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
         &self,
         _params: ConsumeKemParams,
         payload: ConsumeKemPayload<K>,
     ) -> Self::Output {
-        create_key_agreement(
+        let identity = match payload.scope() {
+            IdentityScope::Entitlement => AdmittedKemIdentity {
+                setup_scope: SetupScope::Entitlement,
+                identity: KemIdentity::Entitlement {
+                    canonical: self.payload.canonical,
+                },
+            },
+            IdentityScope::Asset => AdmittedKemIdentity {
+                setup_scope: SetupScope::Asset {
+                    root: self.payload.identity_hash,
+                },
+                identity: KemIdentity::Asset {
+                    root: self.payload.identity_hash,
+                },
+            },
+        };
+        match create_key_agreement(
             &build_create_key_agreement_deps(
                 self.pairing,
                 self.hashing,
@@ -629,6 +649,7 @@ where
                     source: self.source,
                     kem: &payload.adapter,
                     delivery_proof: self.delivery_proof,
+                    identity,
                     consumer: self.consumer,
                     marker: PhantomData::<F>,
                 },
@@ -636,9 +657,10 @@ where
             ),
             *self.key_agreement,
             build_create_key_agreement_payload(Default::default()),
-        )
-        .expect("the key-agreement factory's selection constructs")
-        .output
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(MintCaseErrorReturn::CreateKeyAgreement(error)),
+        }
     }
 }
 
@@ -650,6 +672,7 @@ struct CaseAtChainForms<'a, P: IPairingArithmetic, E, C: IMintCaseConsumer> {
     kem: &'a CreateKemParams,
     key_agreement: &'a CreateKeyAgreementParams,
     delivery_proof: &'a CreateDeliveryProofParams,
+    payload: &'a MintCasePayload<'a>,
     consumer: &'a C,
 }
 
@@ -659,14 +682,14 @@ where
     E: IEncoderAdapter,
     C: IMintCaseConsumer,
 {
-    type Output = C::Output;
+    type Output = MintCaseReturn<C::Output>;
 
     fn consume_chain_forms<F: IChainForms>(
         &self,
         _params: ConsumeChainFormsParams,
         _payload: ConsumeChainFormsPayload<F>,
     ) -> Self::Output {
-        create_kem(
+        match create_kem(
             &build_create_kem_deps(
                 self.pairing,
                 self.hashing,
@@ -677,6 +700,7 @@ where
                     source: self.source,
                     key_agreement: self.key_agreement,
                     delivery_proof: self.delivery_proof,
+                    payload: self.payload,
                     consumer: self.consumer,
                     marker: PhantomData::<F>,
                 },
@@ -684,9 +708,10 @@ where
             ),
             *self.kem,
             build_create_kem_payload(Default::default()),
-        )
-        .expect("the kem factory's selection constructs")
-        .output
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(MintCaseErrorReturn::CreateKem(error)),
+        }
     }
 }
 
@@ -698,6 +723,7 @@ struct CaseAtEncoding<'a, P: IPairingArithmetic, C: IMintCaseConsumer> {
     kem: &'a CreateKemParams,
     key_agreement: &'a CreateKeyAgreementParams,
     delivery_proof: &'a CreateDeliveryProofParams,
+    payload: &'a MintCasePayload<'a>,
     consumer: &'a C,
 }
 
@@ -706,14 +732,14 @@ where
     P: IPairingArithmetic + IPairingReference,
     C: IMintCaseConsumer,
 {
-    type Output = C::Output;
+    type Output = MintCaseReturn<C::Output>;
 
     fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
         &self,
         _params: ConsumeEncodingParams,
         payload: ConsumeEncodingPayload<E>,
     ) -> Self::Output {
-        create_chain_forms(
+        match create_chain_forms(
             &build_create_chain_forms_deps(
                 CaseAtChainForms {
                     pairing: self.pairing,
@@ -723,18 +749,18 @@ where
                     kem: self.kem,
                     key_agreement: self.key_agreement,
                     delivery_proof: self.delivery_proof,
+                    payload: self.payload,
                     consumer: self.consumer,
                 },
+                &payload.adapter,
                 Default::default(),
             ),
-            CreateChainFormsParams {
-                concrete: self.chain_forms.concrete,
-                identifier: self.chain_forms.identifier,
-            },
+            *self.chain_forms,
             build_create_chain_forms_payload(Default::default()),
-        )
-        .expect("the chain-forms factory's selection constructs")
-        .output
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(MintCaseErrorReturn::CreateChainForms(error)),
+        }
     }
 }
 
@@ -746,32 +772,41 @@ struct CaseAtPairing<'a, C: IMintCaseConsumer> {
     kem: &'a CreateKemParams,
     key_agreement: &'a CreateKeyAgreementParams,
     delivery_proof: &'a CreateDeliveryProofParams,
+    payload: &'a MintCasePayload<'a>,
     consumer: &'a C,
 }
 
 impl<C: IMintCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
-    type Output = C::Output;
+    type Output = MintCaseReturn<C::Output>;
 
     fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
         &self,
         _params: ConsumePairingParams,
         payload: ConsumePairingPayload<P>,
     ) -> Self::Output {
-        let hashing = create_hash_to_scalar::<P::Scalar>(
+        let hashing = match create_hash_to_scalar::<P::Scalar>(
             &build_create_hash_to_scalar_deps(Default::default()),
             *self.hash_to_scalar,
             build_create_hash_to_scalar_payload(Default::default()),
-        )
-        .expect("the hash-to-scalar factory's selection constructs");
-        let source = create_random_source(
+        ) {
+            Ok(hashing) => hashing,
+            Err(error) => {
+                return Err(MintCaseErrorReturn::CreateHashToScalar(error));
+            }
+        };
+        let source = match create_random_source(
             &build_create_random_source_deps(Default::default()),
             CreateRandomSourceParams {
                 kind: self.random_source.kind,
             },
             build_create_random_source_payload(Default::default()),
-        )
-        .expect("the random-source factory's selection constructs");
-        create_encoding(
+        ) {
+            Ok(source) => source,
+            Err(error) => {
+                return Err(MintCaseErrorReturn::CreateRandomSource(error));
+            }
+        };
+        match create_encoding(
             &build_create_encoding_deps(CaseAtEncoding {
                 pairing: &payload.adapter,
                 hashing: &*hashing.adapter,
@@ -780,6 +815,7 @@ impl<C: IMintCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
                 kem: self.kem,
                 key_agreement: self.key_agreement,
                 delivery_proof: self.delivery_proof,
+                payload: self.payload,
                 consumer: self.consumer,
             }),
             CreateEncodingParams {
@@ -787,14 +823,20 @@ impl<C: IMintCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
                 identifier: self.encoding.identifier,
             },
             build_create_encoding_payload(Default::default()),
-        )
-        .expect("the encoding factory's selection constructs")
-        .output
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(MintCaseErrorReturn::CreateEncoding(error)),
+        }
     }
 }
 
-pub fn run_mint_case<C: IMintCaseConsumer>(params: MintCaseParams, consumer: C) -> C::Output {
-    create_pairing(
+pub fn run_mint_case<C: IMintCaseConsumer>(
+    deps: &MintCaseDeps<C>,
+    params: MintCaseParams,
+    payload: MintCasePayload<'_>,
+) -> MintCaseReturn<C::Output> {
+    let _: RunMintCaseFn<C> = run_mint_case;
+    match create_pairing(
         &build_create_pairing_deps(
             CaseAtPairing {
                 hash_to_scalar: &params.hash_to_scalar,
@@ -804,13 +846,15 @@ pub fn run_mint_case<C: IMintCaseConsumer>(params: MintCaseParams, consumer: C) 
                 kem: &params.kem,
                 key_agreement: &params.key_agreement,
                 delivery_proof: &params.delivery_proof,
-                consumer: &consumer,
+                payload: &payload,
+                consumer: &deps.consumer,
             },
             Default::default(),
         ),
         params.pairing,
         build_create_pairing_payload(Default::default()),
-    )
-    .expect("the pairing factory's selection constructs")
-    .output
+    ) {
+        Ok(success) => success.output,
+        Err(error) => Err(MintCaseErrorReturn::CreatePairing(error)),
+    }
 }
