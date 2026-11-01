@@ -19,256 +19,590 @@ warning: type alias `RunChallengeCaseFn` is never used
 105 | pub type RunChallengeCaseFn<C> = fn(
     |          ^^^^^^^^^^^^^^^^^^
 
-warning: field `output` is never read
-   --> adapters\proof\src\schnorr_fs\interface.rs:137:9
-    |
-136 | pub struct SchnorrFsCaseSuccessReturn<O> {
-    |            -------------------------- field in this struct
-137 |     pub output: O,
-    |         ^^^^^^
-
-warning: type alias `RunSchnorrFsCaseFn` is never used
-   --> adapters\proof\src\schnorr_fs\interface.rs:154:10
-    |
-154 | pub type RunSchnorrFsCaseFn<C> = fn(
-    |          ^^^^^^^^^^^^^^^^^^
-
 warning: `proof` (lib) generated 2 warnings
-warning: `proof` (lib test) generated 4 warnings (2 duplicates)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
-     Running unittests src\lib.rs (target\debug\deps\proof-e15ff35f600d846a.exe)
+   Compiling harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
+error[E0432]: unresolved import `crate::generate::provides`
+ --> apps\harness-crypto\src\config\admit_generate\interface.rs:2:22
+  |
+2 | use crate::generate::provides::{
+  |                      ^^^^^^^^ could not find `provides` in `generate`
 
-running 186 tests
-test factory::test::create_delivery_proof_refuses_a_statement_version_the_mock_concrete_does_not_declare ... ok
-test factory::test::wire_components_of_the_mint_relation_in_the_first_group_only_form_convert_to_the_matching_variant ... ok
-test factory::test::wire_components_of_the_mint_relation_in_the_both_groups_form_convert_to_the_matching_variant ... ok
-test factory::test::create_delivery_proof_refuses_a_statement_version_the_schnorr_fs_concrete_does_not_declare ... ok
-test factory::test::wire_components_check_the_response_count_before_the_first_message_count ... ok
-test factory::test::create_delivery_proof_returns_the_consumers_output_for_the_schnorr_fs_selection ... ok
-test factory::test::create_delivery_proof_returns_the_consumers_output_for_the_mock_selection ... ok
-test factory::test::wire_components_of_the_transfer_relation_in_the_both_groups_form_convert_to_the_matching_variant ... ok
-test factory::test::wire_components_refuse_a_response_count_other_than_the_relations ... ok
-test factory::test::wire_components_refuse_first_messages_the_both_groups_form_does_not_carry ... ok
-test factory::test::wire_components_of_the_transfer_relation_in_the_first_group_only_form_convert_to_the_matching_variant ... ok
-test factory::integration_test::an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_version ... ok
-test mint_statement::test::delivery_purpose_derives_the_grant_code ... ok
-test factory::test::wire_components_refuse_missing_first_messages_in_the_first_group_only_form ... ok
-test factory::test::wire_components_refuse_a_transfer_response_count_other_than_the_relations ... ok
-test mint_statement::test::delivery_purpose_derives_the_mint_code ... ok
-test mint_statement::test::delivery_purpose_derives_the_replacement_code ... ok
-test mint_statement::test::delivery_purpose_derives_the_transfer_code ... ok
-test mint_statement::test::delivery_purpose_grant_proves_the_transfer_relation ... ok
-test mint_statement::test::delivery_purpose_mint_proves_the_mint_relation ... ok
-test mint_statement::test::delivery_purpose_replacement_proves_the_mint_relation ... ok
-test mint_statement::test::delivery_purpose_transfer_proves_the_transfer_relation ... ok
-test mint_statement::test::fields_to_value_admits_a_mint_purpose ... ok
-test mint_statement::test::fields_to_value_admits_a_replacement_purpose ... ok
-test mint_statement::test::fields_to_value_carries_a_first_group_decoders_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_a_second_group_decoders_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_the_asset_roots_refusal ... ok
-test mint_statement::test::fields_to_value_carries_the_buyers_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_the_chain_identifiers_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_the_entitlement_contracts_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_the_new_intervals_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_the_old_intervals_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_the_parameter_set_digests_refusal ... ok
-test mint_statement::test::fields_to_value_carries_the_sellers_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_the_source_entitlements_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_carries_the_suite_identifiers_all_zero_identifier_refusal ... ok
-test mint_statement::test::fields_to_value_carries_the_suite_identifiers_zero_version_refusal ... ok
-test mint_statement::test::fields_to_value_carries_the_target_entitlements_refusal_with_its_index ... ok
-test mint_statement::test::fields_to_value_constructs_the_suite_identifier_before_reading_a_later_form ... ok
-test mint_statement::test::fields_to_value_decodes_the_group_fields_only_after_every_other_check ... ok
-test mint_statement::test::fields_to_value_decodes_through_the_pairing_the_description_was_built_over ... ok
-test mint_statement::test::fields_to_value_rejects_a_buyer_key_field_of_the_wrong_kind ... ok
-test mint_statement::test::fields_to_value_rejects_a_field_list_one_long ... ok
-test mint_statement::test::fields_to_value_rejects_a_field_list_one_short ... ok
-test mint_statement::test::fields_to_value_rejects_a_first_message_field_of_the_wrong_kind ... ok
-test mint_statement::test::fields_to_value_rejects_a_grant_purpose_code ... ok
-test mint_statement::test::fields_to_value_rejects_a_parameter_set_digest_field_of_the_wrong_kind ... ok
-test mint_statement::test::fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries ... ok
-test mint_statement::test::fields_to_value_rejects_a_purpose_field_of_the_wrong_kind ... ok
-test mint_statement::test::fields_to_value_rejects_a_suite_identifier_field_of_the_wrong_kind ... ok
-test mint_statement::test::fields_to_value_rejects_a_suite_version_field_of_the_wrong_kind ... ok
-test mint_statement::test::fields_to_value_rejects_a_transfer_purpose_code ... ok
-test mint_statement::test::fields_to_value_rejects_an_asset_root_field_of_the_wrong_kind ... ok
-test mint_statement::test::fields_to_value_rejects_an_expiry_field_of_the_wrong_kind ... ok
-test mint_statement::test::fields_to_value_reports_the_lowest_failing_field_when_a_form_refusal_comes_first ... ok
-test mint_statement::test::fields_to_value_reports_a_wrong_count_before_any_field ... ok
-test mint_statement::test::fields_to_value_reports_the_lowest_failing_field_when_a_kind_failure_comes_first ... ok
-test mint_statement::test::fields_to_value_reports_the_lowest_refused_group_field ... ok
-test mint_statement::test::fields_to_value_returns_the_transcript_the_reference_fields_describe ... ok
-test mint_statement::test::mint_statement_description_declares_its_field_kinds_in_transcript_order ... ok
-test mint_statement::test::to_fields_encodes_a_mint_purpose_by_its_code ... ok
-test mint_statement::test::to_fields_encodes_a_replacement_purpose_by_its_code ... ok
-test mint_statement::test::to_fields_flattens_each_group_field_through_the_pairing ... ok
-test mint_statement::test::to_fields_lists_the_non_group_fields_in_transcript_order ... ok
-test mint_statement::test::transfer_purpose_admits_the_grant_code ... ok
-test mint_statement::test::transfer_purpose_admits_the_transfer_code ... ok
-test mint_statement::test::transfer_purpose_derives_the_grant_code ... ok
-test mint_statement::test::transfer_purpose_derives_the_transfer_code ... ok
-test mint_statement::test::transfer_purpose_refuses_a_code_no_declared_purpose_carries ... ok
-test mint_statement::test::transfer_purpose_refuses_a_mint_relation_code ... ok
-test schnorr_fs::challenge::integration_test::the_challenge_tag_is_admitted_as_a_domain_tag ... ok
-test schnorr_fs::challenge::test::challenge_hashes_the_encoding_of_a_mint_transcript_under_the_tag ... ok
-test schnorr_fs::challenge::test::challenge_hashes_the_encoding_of_a_transfer_transcript_under_the_tag ... ok
-test schnorr_fs::challenge::test::challenge_returns_the_hash_to_scalar_refusal_unchanged ... ok
-test schnorr_fs::test::proof_components_returns_the_mint_both_groups_components ... ok
-test schnorr_fs::test::proof_components_returns_the_mint_first_group_only_components ... ok
-test schnorr_fs::test::proof_from_components_moves_the_mint_both_groups_components_into_the_proof ... ok
-test schnorr_fs::test::proof_components_returns_the_transfer_first_group_only_components ... ok
-test schnorr_fs::test::proof_components_returns_the_transfer_both_groups_components ... ok
-test schnorr_fs::test::proof_from_components_moves_the_transfer_both_groups_components_into_the_proof ... ok
-test schnorr_fs::test::proof_from_components_moves_the_mint_first_group_only_components_into_the_proof ... ok
-test schnorr_fs::test::proof_from_components_moves_the_transfer_first_group_only_components_into_the_proof ... ok
-test schnorr_fs::test::proof_from_components_refuses_both_groups_components_under_a_first_group_only_adapter ... ok
-test schnorr_fs::test::proof_from_components_refuses_first_group_only_components_under_a_both_groups_adapter ... ok
-test schnorr_fs::test::prove_mint_carries_no_first_messages_in_the_both_groups_form ... ok
-test schnorr_fs::test::prove_mint_carries_the_second_group_first_messages_in_the_first_group_only_form ... ok
-test schnorr_fs::test::prove_mint_returns_the_challenge_over_the_transcript_of_the_relations_first_messages ... ok
-test schnorr_fs::test::prove_mint_returns_the_challenge_refusal_unchanged ... ok
-test schnorr_fs::test::prove_mint_returns_the_nonce_draw_refusal_unchanged ... ok
-test schnorr_fs::test::prove_mint_returns_the_nonce_sampling_refusal_unchanged ... ok
-test schnorr_fs::test::prove_mint_returns_the_responses_the_nonces_and_witnesses_define ... ok
-test schnorr_fs::test::prove_transfer_carries_no_first_messages_in_the_both_groups_form ... ok
-test schnorr_fs::test::prove_transfer_carries_the_second_group_first_messages_in_the_first_group_only_form ... ok
-test schnorr_fs::test::prove_transfer_returns_the_challenge_refusal_unchanged ... ok
-test schnorr_fs::test::prove_transfer_returns_the_nonce_draw_refusal_unchanged ... ok
-test schnorr_fs::test::prove_transfer_returns_the_challenge_over_the_transcript_of_the_relations_first_messages ... ok
-test schnorr_fs::test::prove_transfer_returns_the_nonce_sampling_refusal_unchanged ... ok
-test schnorr_fs::test::the_declaration_lists_both_verifier_forms ... ok
-test schnorr_fs::test::prove_transfer_returns_the_responses_the_nonces_and_witnesses_define ... ok
-test schnorr_fs::test::the_declaration_lists_the_delivery_statement_version_one ... ok
-test schnorr_fs::test::the_declaration_lists_the_pairing_elgamal_algebra ... ok
-test schnorr_fs::test::the_declaration_names_its_adapter_and_interface_versions ... ok
-test schnorr_fs::test::the_declaration_names_the_challenge_and_weight_tags ... ok
-test schnorr_fs::test::try_new_holds_the_both_groups_form ... ok
-test schnorr_fs::test::try_new_holds_the_challenge_tag ... ok
-test schnorr_fs::test::try_new_holds_the_first_group_only_form ... ok
-test schnorr_fs::test::try_new_holds_the_params_borrows ... ok
-test schnorr_fs::test::try_new_holds_the_weight_tag ... ok
-test schnorr_fs::test::verify_accepts_a_both_groups_mint_proof ... ok
-test schnorr_fs::test::verify_accepts_a_both_groups_transfer_proof ... ok
-test schnorr_fs::test::verify_accepts_a_first_group_only_mint_proof ... ok
-test schnorr_fs::test::verify_rejects_a_both_groups_mint_proof_with_a_changed_response ... ok
-test schnorr_fs::test::verify_accepts_a_first_group_only_transfer_proof ... ok
-test schnorr_fs::test::verify_rejects_a_both_groups_transfer_proof_with_a_changed_response ... ok
-test schnorr_fs::test::verify_rejects_a_first_group_only_mint_proof_with_a_changed_challenge ... ok
-test schnorr_fs::test::verify_rejects_a_first_group_only_mint_proof_with_a_changed_second_group_first_message ... ok
-test schnorr_fs::test::verify_rejects_a_first_group_only_transfer_proof_with_a_changed_challenge ... ok
-test schnorr_fs::test::verify_rejects_a_first_group_only_transfer_proof_with_a_changed_second_group_first_message ... ok
-test schnorr_fs::test::verify_returns_false_for_a_proof_of_the_other_form ... ok
-test schnorr_fs::test::verify_returns_false_for_a_proof_of_the_other_relation ... ok
-test schnorr_fs::test::verify_returns_the_challenge_refusal_unchanged_in_the_both_groups_form ... ok
-test schnorr_fs::test::verify_returns_the_challenge_refusal_unchanged_in_the_first_group_only_form ... ok
-test transfer_statement::test::fields_to_value_admits_a_grant_purpose ... ok
-test transfer_statement::test::fields_to_value_admits_a_transfer_purpose ... ok
-test transfer_statement::test::fields_to_value_carries_a_first_group_decoders_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_a_second_group_decoders_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_asset_roots_refusal ... ok
-test transfer_statement::test::fields_to_value_carries_the_buyers_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_chain_identifiers_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_entitlement_contracts_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_new_intervals_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_old_intervals_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_parameter_set_digests_refusal ... ok
-test transfer_statement::test::fields_to_value_carries_the_source_entitlements_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_sellers_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_suite_identifiers_all_zero_identifier_refusal ... ok
-test transfer_statement::test::fields_to_value_carries_the_target_entitlements_refusal_with_its_index ... ok
-test transfer_statement::test::fields_to_value_carries_the_suite_identifiers_zero_version_refusal ... ok
-test transfer_statement::test::fields_to_value_constructs_the_suite_identifier_before_reading_a_later_form ... ok
-test transfer_statement::test::fields_to_value_decodes_through_the_pairing_the_description_was_built_over ... ok
-test transfer_statement::test::fields_to_value_decodes_the_group_fields_only_after_every_other_check ... ok
-test transfer_statement::test::fields_to_value_rejects_a_field_list_one_long ... ok
-test transfer_statement::test::fields_to_value_rejects_a_field_list_one_short ... ok
-test transfer_statement::test::fields_to_value_rejects_a_first_message_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_rejects_a_mint_purpose_code ... ok
-test transfer_statement::test::fields_to_value_rejects_a_parameter_set_digest_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries ... ok
-test transfer_statement::test::fields_to_value_rejects_a_purpose_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_rejects_a_replacement_purpose_code ... ok
-test transfer_statement::test::fields_to_value_rejects_a_seller_key_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_rejects_a_suite_identifier_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_rejects_a_suite_version_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_rejects_an_asset_root_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_rejects_an_expiry_field_of_the_wrong_kind ... ok
-test transfer_statement::test::fields_to_value_reports_a_wrong_count_before_any_field ... ok
-test transfer_statement::test::fields_to_value_reports_the_lowest_failing_field_when_a_form_refusal_comes_first ... ok
-test transfer_statement::test::fields_to_value_reports_the_lowest_failing_field_when_a_kind_failure_comes_first ... ok
-test transfer_statement::test::to_fields_encodes_a_grant_purpose_by_its_code ... ok
-test transfer_statement::test::fields_to_value_reports_the_lowest_refused_group_field ... ok
-test transfer_statement::test::fields_to_value_returns_the_transcript_the_reference_fields_describe ... ok
-test transfer_statement::test::to_fields_encodes_a_transfer_purpose_by_its_code ... ok
-test transfer_statement::test::to_fields_flattens_each_group_field_through_the_pairing ... ok
-test transfer_statement::test::to_fields_lists_the_non_group_fields_in_transcript_order ... ok
-test transfer_statement::test::transfer_statement_description_declares_its_field_kinds_in_transcript_order ... ok
-test factory::integration_test::components_of_the_other_verifier_form_are_refused_by_the_adapter ... ok
-test factory::integration_test::a_refused_nonce_draw_is_returned_by_each_prover ... ok
-test schnorr_fs::challenge::integration_test::the_mint_challenge_is_the_tagged_hash_of_the_mint_transcripts_encoding ... ok
-test schnorr_fs::challenge::integration_test::the_transfer_challenge_is_the_tagged_hash_of_the_transfer_transcripts_encoding ... ok
-test schnorr_fs::integration_test::a_mint_proofs_challenge_is_the_tagged_hash_of_its_transcripts_encoding ... ok
-test schnorr_fs::integration_test::a_transfer_proofs_challenge_is_the_tagged_hash_of_its_transcripts_encoding ... ok
-test schnorr_fs::integration_test::a_mint_proof_verifies_in_both_forms ... ok
-test schnorr_fs::integration_test::a_transfer_proof_verifies_in_both_forms ... ok
-test factory::integration_test::a_mint_proof_the_adapter_returns_verifies ... ok
-test schnorr_fs::integration_test::a_proof_whose_second_group_errors_cancel_unweighted_fails_the_weighted_product ... ok
-test factory::integration_test::a_transfer_proof_the_adapter_returns_verifies ... ok
-test schnorr_fs::integration_test::a_proof_rebuilt_from_its_components_verifies ... ok
-test schnorr_fs::integration_test::a_first_group_only_proof_with_a_changed_second_group_first_message_fails ... ok
-test factory::integration_test::a_proof_the_adapter_rebuilds_from_its_components_verifies ... ok
-test factory::integration_test::a_proof_of_another_relation_is_refused_by_verify ... ok
-test schnorr_fs::challenge::integration_test::a_transcript_differing_in_one_field_yields_another_challenge ... ok
-test factory::integration_test::a_proof_with_a_changed_response_or_challenge_is_refused ... ok
-test schnorr_fs::integration_test::a_proof_from_a_witness_the_statement_does_not_hold_fails ... ok
-test schnorr_fs::integration_test::a_proof_with_a_changed_response_or_challenge_fails ... ok
-test factory::integration_test::a_proof_from_a_witness_the_statement_does_not_hold_is_refused ... ok
-test factory::integration_test::a_proof_against_a_statement_differing_in_one_field_is_refused has been running for over 60 seconds
-test schnorr_fs::integration_test::a_proof_fails_against_a_statement_differing_in_one_field has been running for over 60 seconds
-test schnorr_fs::integration_test::a_proof_fails_against_a_statement_differing_in_one_field ... ok
-test factory::integration_test::a_proof_against_a_statement_differing_in_one_field_is_refused ... ok
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\config\admit_generate\mock.rs:14:22
+   |
+14 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-test result: ok. 186 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 160.16s
+error[E0432]: unresolved import `crate::generate::provides`
+ --> apps\harness-crypto\src\config\admit_generate\mod.rs:8:22
+  |
+8 | use crate::generate::provides::{
+  |                      ^^^^^^^^ could not find `provides` in `generate`
 
-     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-2f82de5461273b3f.exe)
+error[E0432]: unresolved import `crate::generate::provides`
+ --> apps\harness-crypto\src\config\admit_statements\interface.rs:9:22
+  |
+9 | use crate::generate::provides::CanonicalDeliveryContext;
+  |                      ^^^^^^^^ could not find `provides` in `generate`
 
-running 4 tests
-test an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_version ... ok
-test a_credential_issued_and_wrapped_through_the_families_is_proved_by_a_mint_proof_that_verifies ... ok
-test a_credential_rerandomized_and_wrapped_to_the_buyer_is_proved_by_a_transfer_proof_that_verifies_and_opens ... ok
-test a_transfer_proof_fails_against_a_statement_with_another_expiry ... ok
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\config\admit_statements\mock.rs:19:22
+   |
+19 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.27s
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\config\admit_statements\mod.rs:22:22
+   |
+22 | use crate::generate::provides::CanonicalDeliveryContext;
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-     Running tests\mint_statement_integration_test.rs (target\debug\deps\mint_statement_integration_test-2e91e4d4d8e501b2.exe)
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\config\interface.rs:13:22
+   |
+13 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-running 7 tests
-test chain_forms_entitlement_survives_its_field_round_trip ... ok
-test chain_forms_chain_identifier_survives_its_field_round_trip ... ok
-test chain_forms_identity_survives_its_field_round_trip ... ok
-test chain_forms_interval_survives_its_field_round_trip ... ok
-test a_mint_statement_survives_the_encoding_round_trip ... ok
-test each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists ... ok
-test each_second_group_decoder_refuses_the_second_group_reference_encoding ... ok
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\config\mock.rs:32:22
+   |
+32 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.62s
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\delivery_proof_consumer\interface.rs:10:22
+   |
+10 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-     Running tests\transfer_statement_integration_test.rs (target\debug\deps\transfer_statement_integration_test-655895e7aab30e85.exe)
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\delivery_proof_consumer\mock.rs:19:22
+   |
+19 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-running 7 tests
-test chain_forms_identity_survives_its_field_round_trip ... ok
-test chain_forms_entitlement_survives_its_field_round_trip ... ok
-test chain_forms_chain_identifier_survives_its_field_round_trip ... ok
-test chain_forms_interval_survives_its_field_round_trip ... ok
-test each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists ... ok
-test each_second_group_decoder_refuses_the_second_group_reference_encoding ... ok
-test a_transfer_statement_survives_the_encoding_round_trip ... ok
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\delivery_proof_consumer\mod.rs:21:22
+   |
+21 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.10s
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\generate_consumer\mod.rs:10:22
+   |
+10 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-   Doc-tests proof
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\kem_consumer\interface.rs:10:22
+   |
+10 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-running 0 tests
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\kem_consumer\mock.rs:20:22
+   |
+20 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\kem_consumer\mod.rs:24:22
+   |
+24 | use crate::generate::provides::{CreateGenerateReturn, EmitReturn};
+   |                      ^^^^^^^^ could not find `provides` in `generate`
 
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\key_agreement_consumer\interface.rs:11:22
+   |
+11 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\key_agreement_consumer\mock.rs:20:22
+   |
+20 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\key_agreement_consumer\mod.rs:27:22
+   |
+27 | use crate::generate::provides::{CreateGenerateReturn, EmitReturn};
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `generate::provides`
+  --> apps\harness-crypto\src\lib.rs:12:19
+   |
+12 | pub use generate::provides::*;
+   |                   ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::VectorCount`
+ --> apps\harness-crypto\src\vectors\cross_holder\interface.rs:8:5
+  |
+8 | use crate::VectorCount;
+  |     ^^^^^^^-----------
+  |            |
+  |            no `VectorCount` in the root
+  |
+help: consider importing this variant instead
+  |
+8 | use crate::AdmitGenerateErrorReturn::VectorCount;
+  |            ++++++++++++++++++++++++++
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\cross_holder\mock.rs:11:13
+   |
+11 | use crate::{VectorCount, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+11 - use crate::{VectorCount, build_vector_count};
+11 + use crate::{VectorCount, build_verify_cost};
+   |
+
+error[E0432]: unresolved import `crate::VectorCount`
+ --> apps\harness-crypto\src\vectors\malformed_capsules\interface.rs:5:5
+  |
+5 | use crate::VectorCount;
+  |     ^^^^^^^-----------
+  |            |
+  |            no `VectorCount` in the root
+  |
+help: consider importing this variant instead
+  |
+5 | use crate::AdmitGenerateErrorReturn::VectorCount;
+  |            ++++++++++++++++++++++++++
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\malformed_capsules\mock.rs:11:13
+   |
+11 | use crate::{VectorCount, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+11 - use crate::{VectorCount, build_vector_count};
+11 + use crate::{VectorCount, build_verify_cost};
+   |
+
+error[E0432]: unresolved import `crate::VectorCount`
+ --> apps\harness-crypto\src\vectors\non_convertibility\interface.rs:7:5
+  |
+7 | use crate::VectorCount;
+  |     ^^^^^^^-----------
+  |            |
+  |            no `VectorCount` in the root
+  |
+help: consider importing this variant instead
+  |
+7 | use crate::AdmitGenerateErrorReturn::VectorCount;
+  |            ++++++++++++++++++++++++++
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\non_convertibility\mock.rs:11:13
+   |
+11 | use crate::{VectorCount, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+11 - use crate::{VectorCount, build_vector_count};
+11 + use crate::{VectorCount, build_verify_cost};
+   |
+
+error[E0432]: unresolved import `crate::VectorCount`
+ --> apps\harness-crypto\src\vectors\rerandomization\interface.rs:8:5
+  |
+8 | use crate::VectorCount;
+  |     ^^^^^^^-----------
+  |            |
+  |            no `VectorCount` in the root
+  |
+help: consider importing this variant instead
+  |
+8 | use crate::AdmitGenerateErrorReturn::VectorCount;
+  |            ++++++++++++++++++++++++++
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\rerandomization\mock.rs:11:13
+   |
+11 | use crate::{VectorCount, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+11 - use crate::{VectorCount, build_vector_count};
+11 + use crate::{VectorCount, build_verify_cost};
+   |
+
+warning: unused import: `super::constants`
+ --> apps\harness-crypto\src\generate\solidity\constants\provides.rs:1:16
+  |
+1 | pub(crate) use super::constants;
+  |                ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `super::interface::*`
+ --> apps\harness-crypto\src\generate\solidity\constants\provides.rs:2:9
+  |
+2 | pub use super::interface::*;
+  |         ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::mock::*`
+ --> apps\harness-crypto\src\generate\solidity\constants\provides.rs:4:9
+  |
+4 | pub use super::mock::*;
+  |         ^^^^^^^^^^^^^^
+
+warning: unused import: `super::render`
+ --> apps\harness-crypto\src\generate\solidity\render\provides.rs:4:16
+  |
+4 | pub(crate) use super::render;
+  |                ^^^^^^^^^^^^^
+
+error[E0223]: ambiguous associated type
+  --> apps\harness-crypto\src\run\generate_consumer\mod.rs:35:10
+   |
+35 |     ) -> Self::Output {
+   |          ^^^^^^^^^^^^
+   |
+help: use fully-qualified syntax
+   |
+35 -     ) -> Self::Output {
+35 +     ) -> <generate_consumer::interface::GenerateConsumer<'_> as BitOr>::Output {
+   |
+35 -     ) -> Self::Output {
+35 +     ) -> <generate_consumer::interface::GenerateConsumer<'_> as IntoFuture>::Output {
+   |
+35 -     ) -> Self::Output {
+35 +     ) -> <generate_consumer::interface::GenerateConsumer<'_> as crypto_bigint::traits::Concat>::Output {
+   |
+35 -     ) -> Self::Output {
+35 +     ) -> <generate_consumer::interface::GenerateConsumer<'_> as elliptic_curve::ops::BatchInvert>::Output {
+   |
+   = and 27 other candidates
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\config\admit_generate\test.rs:14:22
+   |
+14 | use crate::generate::provides::*;
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\config\integration_test.rs:23:22
+   |
+23 | use crate::generate::provides::SpdxLicenseIdentifierTryNewErrorReturn;
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+Some errors have detailed explanations: E0223, E0432.
+For more information about an error, try `rustc --explain E0223`.
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\config\test.rs:44:22
+   |
+44 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\delivery_proof_consumer\integration_test.rs:51:22
+   |
+51 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\delivery_proof_consumer\test.rs:45:22
+   |
+45 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\generate_consumer\integration_test.rs:51:22
+   |
+51 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\generate_consumer\test.rs:46:22
+   |
+46 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\kem_consumer\test.rs:48:22
+   |
+48 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\key_agreement_consumer\integration_test.rs:49:22
+   |
+49 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+error[E0432]: unresolved import `crate::generate::provides`
+  --> apps\harness-crypto\src\run\key_agreement_consumer\test.rs:47:22
+   |
+47 | use crate::generate::provides::{
+   |                      ^^^^^^^^ could not find `provides` in `generate`
+
+warning: `harness-crypto` (lib) generated 4 warnings
+error: could not compile `harness-crypto` (lib) due to 28 previous errors; 4 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\cross_holder\integration_test.rs:53:13
+   |
+53 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |            |
+   |             |            no `VectorCountConstructorParamsOverrides` in the root
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+53 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+53 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
+   |
+help: a similar name exists in the module
+   |
+53 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+53 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\cross_holder\test_basic.rs:43:13
+   |
+43 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |            |
+   |             |            no `VectorCountConstructorParamsOverrides` in the root
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+43 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
+   |
+help: a similar name exists in the module
+   |
+43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+43 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\cross_holder\test_error.rs:36:13
+   |
+36 | use crate::{VectorCount, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+36 - use crate::{VectorCount, build_vector_count};
+36 + use crate::{VectorCount, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\malformed_capsules\integration_test.rs:43:13
+   |
+43 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |            |
+   |             |            no `VectorCountConstructorParamsOverrides` in the root
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+43 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
+   |
+help: a similar name exists in the module
+   |
+43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+43 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\malformed_capsules\test_basic.rs:37:13
+   |
+37 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |            |
+   |             |            no `VectorCountConstructorParamsOverrides` in the root
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+37 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+37 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
+   |
+help: a similar name exists in the module
+   |
+37 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+37 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\malformed_capsules\test_error.rs:32:13
+   |
+32 | use crate::{VectorCount, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+32 - use crate::{VectorCount, build_vector_count};
+32 + use crate::{VectorCount, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\non_convertibility\integration_test.rs:43:13
+   |
+43 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |            |
+   |             |            no `VectorCountConstructorParamsOverrides` in the root
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+43 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
+   |
+help: a similar name exists in the module
+   |
+43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+43 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\non_convertibility\test_basic.rs:33:13
+   |
+33 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |            |
+   |             |            no `VectorCountConstructorParamsOverrides` in the root
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+33 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+33 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
+   |
+help: a similar name exists in the module
+   |
+33 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+33 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\non_convertibility\test_error.rs:35:13
+   |
+35 | use crate::{VectorCount, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+35 - use crate::{VectorCount, build_vector_count};
+35 + use crate::{VectorCount, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\rerandomization\integration_test.rs:49:13
+   |
+49 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |            |
+   |             |            no `VectorCountConstructorParamsOverrides` in the root
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+49 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+49 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
+   |
+help: a similar name exists in the module
+   |
+49 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+49 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\rerandomization\test_basic.rs:41:13
+   |
+41 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |            |
+   |             |            no `VectorCountConstructorParamsOverrides` in the root
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+41 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+41 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
+   |
+help: a similar name exists in the module
+   |
+41 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
+41 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
+   |
+
+error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
+  --> apps\harness-crypto\src\vectors\rerandomization\test_error.rs:36:13
+   |
+36 | use crate::{VectorCount, build_vector_count};
+   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
+   |             |
+   |             no `VectorCount` in the root
+   |
+   = help: consider importing this variant instead:
+           crate::AdmitGenerateErrorReturn::VectorCount
+help: a similar name exists in the module
+   |
+36 - use crate::{VectorCount, build_vector_count};
+36 + use crate::{VectorCount, build_verify_cost};
+   |
+
+warning: `harness-crypto` (lib test) generated 2 warnings (2 duplicates)
+error: could not compile `harness-crypto` (lib test) due to 50 previous errors; 2 warnings emitted
