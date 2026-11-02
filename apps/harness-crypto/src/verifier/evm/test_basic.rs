@@ -1,45 +1,18 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-use core::marker::PhantomData;
-
 use alloy::primitives::Address;
 use alloy::transports::mock::Asserter;
-use chain::{
-    ConsumeChainFormsParams, ConsumeChainFormsPayload, IChainForms, IChainFormsConsumer,
-    build_create_chain_forms_deps, build_create_chain_forms_params,
-    build_create_chain_forms_payload, create_chain_forms,
-};
-use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, ConsumeEncodingParams, ConsumeEncodingPayload,
-    FromFieldErrorReturn, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer,
-    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
-    create_encoding,
-};
-use hash_to_scalar::{
-    IHashToScalarAdapter, build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
-    build_create_hash_to_scalar_payload, create_hash_to_scalar,
-};
-use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, IPairingArithmetic, IPairingConsumer,
-    IPairingReference, VerifierGroupArithmetic, build_create_pairing_deps,
-    build_create_pairing_params, build_create_pairing_payload, create_pairing,
-};
-use proof::{
-    ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload, DELIVERY_STATEMENT_VERSION_ONE,
-    IDeliveryProofAdapter, IDeliveryProofConsumer, build_create_delivery_proof_deps,
-    build_create_delivery_proof_params, build_create_delivery_proof_payload, create_delivery_proof,
-};
-use random::{
-    CreateRandomSourceDeps, CreateRandomSourcePayload, IRandomSourceAdapter,
-    build_create_random_source_params, create_random_source,
-};
+use chain::IChainForms;
+use encoding::{CanonicalFieldKind, CanonicalFieldValue, FromFieldErrorReturn};
+use pairing::{IPairingArithmetic, IPairingReference, VerifierGroupArithmetic};
+use proof::{DELIVERY_STATEMENT_VERSION_ONE, IDeliveryProofAdapter};
 use url::ParseError;
 
 use super::super::factory::provides::VERIFIER_INTERFACE_VERSION;
 use super::interface::{
     EVM_VERIFIER_DECLARATION, EvmVerifier, EvmVerifierEndpoint,
     EvmVerifierEndpointConstructorParams, EvmVerifierEndpointTryNewErrorReturn, EvmVerifierField,
-    EvmVerifierSettings, EvmVerifierTryNewErrorReturn,
+    EvmVerifierSettings, EvmVerifierTryNewErrorReturn, IEvmVerifierCaseConsumer,
 };
 use super::mock::*;
 
@@ -161,30 +134,30 @@ fn evm_verifier_try_new_holds_the_configured_addresses() {
     });
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         settings: &'a EvmVerifierSettings,
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Act
             let result = EvmVerifier::try_new_mocked(
                 build_evm_verifier_constructor_params(
-                    self.pairing,
-                    &payload.adapter,
+                    pairing,
+                    delivery_proof,
                     EvmVerifierConstructorParamsOverrides {
                         settings: Some(self.settings.clone()),
                     },
@@ -201,144 +174,22 @@ fn evm_verifier_try_new_holds_the_configured_addresses() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        settings: self.settings,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        settings: self.settings,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    settings: self.settings,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        settings: &settings,
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                settings: &settings,
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // evm_verifier_try_new_holds_the_configured_addresses
 }
@@ -367,30 +218,30 @@ fn evm_verifier_try_new_refuses_a_verifier_address_of_another_kind() {
     });
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         settings: &'a EvmVerifierSettings,
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Act
             let result = EvmVerifier::try_new_mocked(
                 build_evm_verifier_constructor_params(
-                    self.pairing,
-                    &payload.adapter,
+                    pairing,
+                    delivery_proof,
                     EvmVerifierConstructorParamsOverrides {
                         settings: Some(self.settings.clone()),
                     },
@@ -411,144 +262,22 @@ fn evm_verifier_try_new_refuses_a_verifier_address_of_another_kind() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        settings: self.settings,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        settings: self.settings,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    settings: self.settings,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        settings: &settings,
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                settings: &settings,
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // evm_verifier_try_new_refuses_a_verifier_address_of_another_kind
 }
@@ -573,30 +302,30 @@ fn evm_verifier_try_new_refuses_an_oracle_address_of_another_kind() {
     });
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         settings: &'a EvmVerifierSettings,
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Act
             let result = EvmVerifier::try_new_mocked(
                 build_evm_verifier_constructor_params(
-                    self.pairing,
-                    &payload.adapter,
+                    pairing,
+                    delivery_proof,
                     EvmVerifierConstructorParamsOverrides {
                         settings: Some(self.settings.clone()),
                     },
@@ -617,144 +346,22 @@ fn evm_verifier_try_new_refuses_an_oracle_address_of_another_kind() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        settings: self.settings,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        settings: self.settings,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    settings: self.settings,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        settings: &settings,
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                settings: &settings,
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // evm_verifier_try_new_refuses_an_oracle_address_of_another_kind
 }
@@ -778,30 +385,30 @@ fn evm_verifier_try_new_checks_the_verifier_address_before_the_oracle_address() 
     });
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         settings: &'a EvmVerifierSettings,
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Act
             let result = EvmVerifier::try_new_mocked(
                 build_evm_verifier_constructor_params(
-                    self.pairing,
-                    &payload.adapter,
+                    pairing,
+                    delivery_proof,
                     EvmVerifierConstructorParamsOverrides {
                         settings: Some(self.settings.clone()),
                     },
@@ -822,144 +429,22 @@ fn evm_verifier_try_new_checks_the_verifier_address_before_the_oracle_address() 
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        settings: self.settings,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        settings: self.settings,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    settings: self.settings,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        settings: &settings,
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                settings: &settings,
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // evm_verifier_try_new_checks_the_verifier_address_before_the_oracle_address
 }
@@ -988,28 +473,28 @@ fn evm_verifier_try_new_builds_the_http_provider_and_runtime_without_reading_the
         ..Default::default()
     });
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         settings: &'a EvmVerifierSettings,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Act
             let result = EvmVerifier::try_new(build_evm_verifier_constructor_params(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 EvmVerifierConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                 },
@@ -1024,137 +509,21 @@ fn evm_verifier_try_new_builds_the_http_provider_and_runtime_without_reading_the
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        settings: self.settings,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        settings: self.settings,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        settings: &'a EvmVerifierSettings,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    settings: self.settings,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        settings: &settings,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                settings: &settings,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // evm_verifier_try_new_builds_the_http_provider_and_runtime_without_reading_the_chain
 }
@@ -1180,28 +549,28 @@ fn evm_verifier_try_new_refuses_an_address_of_another_kind_as_try_new_mocked_doe
         ..Default::default()
     });
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         settings: &'a EvmVerifierSettings,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Act
             let result = EvmVerifier::try_new(build_evm_verifier_constructor_params(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 EvmVerifierConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                 },
@@ -1220,137 +589,21 @@ fn evm_verifier_try_new_refuses_an_address_of_another_kind_as_try_new_mocked_doe
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        settings: self.settings,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        settings: self.settings,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        settings: &'a EvmVerifierSettings,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    settings: self.settings,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        settings: &settings,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                settings: &settings,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // evm_verifier_try_new_refuses_an_address_of_another_kind_as_try_new_mocked_does
 }

@@ -1,5 +1,19 @@
+#[cfg(any(test, feature = "mocks"))]
+use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams, IChainForms};
+#[cfg(any(test, feature = "mocks"))]
+use encoding::{CreateEncodingErrorReturn, CreateEncodingParams};
+#[cfg(any(test, feature = "mocks"))]
+use hash_to_scalar::{CreateHashToScalarErrorReturn, CreateHashToScalarParams};
+#[cfg(any(test, feature = "mocks"))]
+use pairing::{
+    CreatePairingErrorReturn, CreatePairingParams, IPairingArithmetic, IPairingReference,
+};
 use pairing::{IPairingAdapter, VerifierGroupArithmetic};
+#[cfg(any(test, feature = "mocks"))]
+use proof::{CreateDeliveryProofErrorReturn, CreateDeliveryProofParams};
 use proof::{DeliveryRelation, IDeliveryProofAdapter, VerifyAdapterPayload};
+#[cfg(any(test, feature = "mocks"))]
+use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 
 use super::super::evm::provides::{
     EvmVerifierErrorReturn, EvmVerifierSettings, EvmVerifierTryNewErrorReturn,
@@ -140,3 +154,65 @@ pub type CreateVerifierFn<'a, P, D, C> =
         CreateVerifierParams,
         CreateVerifierPayload,
     ) -> CreateVerifierReturn<<C as IVerifierConsumer<D>>::Output>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait ICreateVerifierCaseConsumer {
+    type Output;
+
+    fn consume_create_verifier_case<P, F, D>(
+        &self,
+        pairing: &P,
+        forms: &F,
+        delivery_proof: &D,
+    ) -> Self::Output
+    where
+        P: IPairingArithmetic + IPairingReference,
+        F: IChainForms,
+        D: IDeliveryProofAdapter<Pairing = P, Forms = F>;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateVerifierCaseDeps<C: ICreateVerifierCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateVerifierCaseParams {
+    pub pairing: CreatePairingParams,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub encoding: CreateEncodingParams,
+    pub chain_forms: CreateChainFormsParams,
+    pub delivery_proof: CreateDeliveryProofParams,
+    pub random_source: CreateRandomSourceParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateVerifierCasePayload;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateVerifierCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum CreateVerifierCaseErrorReturn {
+    CreatePairing(CreatePairingErrorReturn),
+    CreateHashToScalar(CreateHashToScalarErrorReturn),
+    CreateEncoding(CreateEncodingErrorReturn),
+    CreateChainForms(CreateChainFormsErrorReturn),
+    CreateDeliveryProof(CreateDeliveryProofErrorReturn),
+    CreateRandomSource(CreateRandomSourceErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type CreateVerifierCaseReturn<O> =
+    Result<CreateVerifierCaseSuccessReturn<O>, CreateVerifierCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunCreateVerifierCaseFn<C> =
+    fn(
+        &CreateVerifierCaseDeps<C>,
+        CreateVerifierCaseParams,
+        CreateVerifierCasePayload,
+    ) -> CreateVerifierCaseReturn<<C as ICreateVerifierCaseConsumer>::Output>;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.37;
+pragma solidity ^0.8.38;
 
 interface IDeliveryVerifier {
     struct DeliveryContext {
@@ -7,7 +7,7 @@ interface IDeliveryVerifier {
         uint16 suiteVersion;
         uint256 chain;
         bytes20 entitlementContract;
-        bytes32 assetIdentityHash;
+        bytes32 assetRoot;
         bytes32 parameterSet;
         uint256 sourceEntitlement;
         uint256 targetEntitlement;
@@ -67,13 +67,13 @@ interface IDeliveryVerifier {
         bytes secondGroupFirstMessages;
     }
 
-    function verifyMint(
-        MintStatement calldata statement,
-        MintProof calldata proof
-    ) external view returns (bool accepted);
+    function verifyMint(MintStatement calldata statement, MintProof calldata proof)
+        external
+        view
+        returns (bool accepted);
 
-    function verifyTransfer(
-        TransferStatement calldata statement,
-        TransferProof calldata proof
-    ) external view returns (bool accepted);
+    function verifyTransfer(TransferStatement calldata statement, TransferProof calldata proof)
+        external
+        view
+        returns (bool accepted);
 }

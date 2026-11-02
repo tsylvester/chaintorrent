@@ -4,51 +4,42 @@
 use core::marker::PhantomData;
 
 use chain::{
-    CHAIN_FORMS_CONCRETES, ConsumeChainFormsParams, ConsumeChainFormsPayload,
-    CreateChainFormsParamsOverrides, IChainForms, IChainFormsConsumer,
-    build_create_chain_forms_deps, build_create_chain_forms_params,
-    build_create_chain_forms_payload, create_chain_forms,
+    CHAIN_FORMS_CONCRETES, CreateChainFormsParamsOverrides, IChainForms,
+    build_create_chain_forms_params,
 };
 use encoding::{
-    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParamsOverrides,
-    DECLARED_ENCODING_SELECTIONS, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer,
-    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
-    create_encoding,
+    CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, build_create_encoding_params,
 };
 use envelope::EnvelopeAlgebra;
 use hash_to_scalar::{
     CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarIdentifier,
-    build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
-    build_create_hash_to_scalar_payload, create_hash_to_scalar,
+    build_create_hash_to_scalar_params,
 };
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides, IPairingAdapter,
-    IPairingArithmetic, IPairingConsumer, IPairingReference, PAIRING_CONCRETES,
-    build_create_pairing_deps, build_create_pairing_params, build_create_pairing_payload,
-    create_pairing,
+    CreatePairingParamsOverrides, IPairingAdapter, IPairingArithmetic, IPairingReference,
+    PAIRING_CONCRETES, build_create_pairing_params,
 };
 use proof::{
-    AlgebraicStatement, ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload,
-    CreateDeliveryProofParamsOverrides, DELIVERY_PROOF_CONCRETES, DELIVERY_STATEMENT_VERSION_ONE,
-    DeliveryRelation, IDeliveryProofAdapter, IDeliveryProofConsumer, ProveMintParams,
+    AlgebraicStatement, CreateDeliveryProofParamsOverrides, DELIVERY_PROOF_CONCRETES,
+    DELIVERY_STATEMENT_VERSION_ONE, DeliveryRelation, IDeliveryProofAdapter, ProveMintParams,
     ProveTransferParams, build_algebraic_mint_statement, build_algebraic_transfer_statement,
-    build_create_delivery_proof_deps, build_create_delivery_proof_params,
-    build_create_delivery_proof_payload, build_prove_mint_payload, build_prove_transfer_payload,
-    build_verify_payload, create_delivery_proof,
+    build_create_delivery_proof_params, build_prove_mint_payload, build_prove_transfer_payload,
+    build_verify_payload,
 };
 use random::{
-    CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
-    RandomSourceKind, build_create_random_source_params, create_random_source,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 
 use harness_crypto::{
-    ConsumeVerifierParams, ConsumeVerifierPayload, CreateVerifierErrorReturn,
-    CreateVerifierParamsOverrides, CreateVerifierReturn, CreateVerifierSuccessReturn,
-    IVerifierAdapter, IVerifierConsumer, MockIVerifierConsumer, VERIFIER_CONCRETES,
-    VERIFIER_INTERFACE_VERSION, VerifierConcrete, VerifierConcreteOverrides,
-    VerifyOnChainErrorReturn, VerifyOnChainReturn, build_create_verifier_deps,
-    build_create_verifier_params, build_create_verifier_payload, build_verifier_concrete,
-    build_verify_on_chain_params, create_verifier,
+    ConsumeVerifierParams, ConsumeVerifierPayload, CreateVerifierCaseParamsOverrides,
+    CreateVerifierErrorReturn, CreateVerifierParamsOverrides, CreateVerifierReturn,
+    CreateVerifierSuccessReturn, ICreateVerifierCaseConsumer, IVerifierAdapter, IVerifierConsumer,
+    MockIVerifierConsumer, VERIFIER_CONCRETES, VERIFIER_INTERFACE_VERSION, VerifierConcrete,
+    VerifierConcreteOverrides, VerifyOnChainErrorReturn, VerifyOnChainReturn,
+    build_create_verifier_case_deps, build_create_verifier_case_params,
+    build_create_verifier_case_payload, build_create_verifier_deps, build_create_verifier_params,
+    build_create_verifier_payload, build_verifier_concrete, build_verify_on_chain_params,
+    create_verifier, run_create_verifier_case,
 };
 
 /// Contract: own entry
@@ -88,24 +79,24 @@ use harness_crypto::{
 /// Mocked:  nothing; the chain is unread.
 #[test]
 fn a_statement_version_no_concrete_declares_is_refused_and_the_declared_version_admitted() {
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct CaseConsumer<'a> {
         concrete: &'a VerifierConcrete,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl ICreateVerifierCaseConsumer for CaseConsumer<'_> {
         type Output = Vec<(u16, CreateVerifierReturn<()>)>;
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_create_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Act
             let mut results = Vec::new();
             for version in [2u16, DELIVERY_STATEMENT_VERSION_ONE] {
@@ -113,8 +104,8 @@ fn a_statement_version_no_concrete_declares_is_refused_and_the_declared_version_
                     version,
                     create_verifier(
                         &build_create_verifier_deps(
-                            self.pairing,
-                            &payload.adapter,
+                            pairing,
+                            delivery_proof,
                             MockIVerifierConsumer,
                             Default::default(),
                         ),
@@ -130,179 +121,82 @@ fn a_statement_version_no_concrete_declares_is_refused_and_the_declared_version_
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        concrete: &'a VerifierConcrete,
-        encoder: &'a E,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = Vec<(u16, CreateVerifierReturn<()>)>;
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let mut results = Vec::new();
-            for selection in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|selection| selection.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                let hashed = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(selection.identifier),
-                    }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                );
-                let Ok(hashed) = hashed else {
-                    panic!("the declared hash-to-scalar selection admits the concrete it names")
-                };
-                let random = create_random_source(
-                    &CreateRandomSourceDeps,
-                    build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                        kind: Some(RandomSourceKind::OperatingSystem),
-                    }),
-                    CreateRandomSourcePayload,
-                );
-                let Ok(random) = random;
-                for concrete in DELIVERY_PROOF_CONCRETES {
-                    let created = create_delivery_proof::<P, E, F, _>(
-                        &build_create_delivery_proof_deps(
-                            self.pairing,
-                            &*hashed.adapter,
-                            self.encoder,
-                            &*random.adapter,
-                            DeliveryProofConsumer {
-                                pairing: self.pairing,
-                                concrete: self.concrete,
-                                forms: PhantomData::<F>,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_delivery_proof_params(CreateDeliveryProofParamsOverrides {
-                            concrete: Some(*concrete),
-                            algebra: Some(EnvelopeAlgebra::PairingElGamal),
-                            verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
-                            statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE),
-                        }),
-                        build_create_delivery_proof_payload(Default::default()),
-                    );
-                    let Ok(success) = created else {
-                        panic!("the delivery-proof factory admits the pairing's declared form")
-                    };
-                    results.extend(success.output);
-                }
-            }
-            results
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        concrete: &'a VerifierConcrete,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = Vec<(u16, CreateVerifierReturn<()>)>;
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let mut results = Vec::new();
-            for concrete in CHAIN_FORMS_CONCRETES {
-                let created = create_chain_forms(
-                    &build_create_chain_forms_deps(
-                        ChainFormsConsumer {
-                            pairing: self.pairing,
-                            concrete: self.concrete,
-                            encoder: &payload.adapter,
-                        },
-                        Default::default(),
-                    ),
-                    build_create_chain_forms_params(CreateChainFormsParamsOverrides {
-                        concrete: Some(*concrete),
-                        ..Default::default()
-                    }),
-                    build_create_chain_forms_payload(Default::default()),
-                );
-                let Ok(success) = created else {
-                    panic!("the chain-forms factory admits the selection")
-                };
-                results.extend(success.output);
-            }
-            results
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        concrete: &'a VerifierConcrete,
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = Vec<(u16, CreateVerifierReturn<()>)>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let mut results = Vec::new();
-            for selection in DECLARED_ENCODING_SELECTIONS {
-                let created = create_encoding(
-                    &build_create_encoding_deps(EncodingConsumer {
-                        pairing: &payload.adapter,
-                        concrete: self.concrete,
-                    }),
-                    build_create_encoding_params(CreateEncodingParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(selection.identifier),
-                    }),
-                    build_create_encoding_payload(Default::default()),
-                );
-                let Ok(success) = created else {
-                    panic!("the encoding factory admits the selection")
-                };
-                results.extend(success.output);
-            }
-            results
-        }
-    }
-
     let mut results = Vec::new();
     for kind in VERIFIER_CONCRETES {
         // Arrange
         let concrete = build_verifier_concrete(*kind, VerifierConcreteOverrides);
         for pairing_concrete in PAIRING_CONCRETES {
-            // Act
-            let created = create_pairing(
-                &build_create_pairing_deps(
-                    PairingConsumer {
-                        concrete: &concrete,
-                    },
-                    Default::default(),
-                ),
-                build_create_pairing_params(CreatePairingParamsOverrides {
-                    concrete: Some(*pairing_concrete),
-                    ..Default::default()
-                }),
-                build_create_pairing_payload(Default::default()),
-            );
-            let Ok(success) = created else {
-                panic!("the pairing factory ran the consumer")
-            };
-            results.extend(success.output);
+            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
+                    for hash_to_scalar_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                        .iter()
+                        .filter(|selection| {
+                            selection.identifier == HashToScalarIdentifier::Keccak256V1
+                        })
+                    {
+                        for delivery_proof_concrete in DELIVERY_PROOF_CONCRETES {
+                            // Act
+                            let created = run_create_verifier_case(
+                                &build_create_verifier_case_deps(
+                                    CaseConsumer {
+                                        concrete: &concrete,
+                                    },
+                                    Default::default(),
+                                ),
+                                build_create_verifier_case_params(
+                                    CreateVerifierCaseParamsOverrides {
+                                        pairing: Some(build_create_pairing_params(
+                                            CreatePairingParamsOverrides {
+                                                concrete: Some(*pairing_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                            CreateHashToScalarParamsOverrides {
+                                                concrete: Some(hash_to_scalar_selection.concrete),
+                                                identifier: Some(
+                                                    hash_to_scalar_selection.identifier,
+                                                ),
+                                            },
+                                        )),
+                                        encoding: Some(build_create_encoding_params(
+                                            CreateEncodingParamsOverrides {
+                                                concrete: Some(encoding_selection.concrete),
+                                                identifier: Some(encoding_selection.identifier),
+                                            },
+                                        )),
+                                        chain_forms: Some(build_create_chain_forms_params(
+                                            CreateChainFormsParamsOverrides {
+                                                concrete: Some(*chain_forms_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        delivery_proof: Some(build_create_delivery_proof_params(
+                                            CreateDeliveryProofParamsOverrides {
+                                                concrete: Some(*delivery_proof_concrete),
+                                                algebra: Some(EnvelopeAlgebra::PairingElGamal),
+                                                statement_version: Some(
+                                                    DELIVERY_STATEMENT_VERSION_ONE,
+                                                ),
+                                            },
+                                        )),
+                                        random_source: Some(build_create_random_source_params(
+                                            CreateRandomSourceParamsOverrides {
+                                                kind: Some(RandomSourceKind::OperatingSystem),
+                                            },
+                                        )),
+                                    },
+                                ),
+                                build_create_verifier_case_payload(Default::default()),
+                            );
+                            let Ok(success) = created else {
+                                panic!("the case runner admits each case's selections")
+                            };
+                            results.extend(success.output);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -386,29 +280,29 @@ fn an_adapter_handed_to_the_consumer_declares_the_pairings_verifier_form_and_the
         }
     }
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct CaseConsumer<'a> {
         concrete: &'a VerifierConcrete,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
-        type Output = Vec<CreateVerifierReturn<()>>;
+    impl ICreateVerifierCaseConsumer for CaseConsumer<'_> {
+        type Output = CreateVerifierReturn<()>;
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_create_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Act
-            vec![create_verifier(
+            create_verifier(
                 &build_create_verifier_deps(
-                    self.pairing,
-                    &payload.adapter,
+                    pairing,
+                    delivery_proof,
                     DeclarationConsumer::<P>(PhantomData),
                     Default::default(),
                 ),
@@ -417,157 +311,7 @@ fn an_adapter_handed_to_the_consumer_declares_the_pairings_verifier_form_and_the
                     statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE),
                 }),
                 build_create_verifier_payload(Default::default()),
-            )]
-        }
-    }
-
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        concrete: &'a VerifierConcrete,
-        encoder: &'a E,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = Vec<CreateVerifierReturn<()>>;
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let mut results = Vec::new();
-            for selection in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|selection| selection.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                let hashed = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(selection.identifier),
-                    }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                );
-                let Ok(hashed) = hashed else {
-                    panic!("the declared hash-to-scalar selection admits the concrete it names")
-                };
-                let random = create_random_source(
-                    &CreateRandomSourceDeps,
-                    build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                        kind: Some(RandomSourceKind::OperatingSystem),
-                    }),
-                    CreateRandomSourcePayload,
-                );
-                let Ok(random) = random;
-                for concrete in DELIVERY_PROOF_CONCRETES {
-                    let created = create_delivery_proof::<P, E, F, _>(
-                        &build_create_delivery_proof_deps(
-                            self.pairing,
-                            &*hashed.adapter,
-                            self.encoder,
-                            &*random.adapter,
-                            DeliveryProofConsumer {
-                                pairing: self.pairing,
-                                concrete: self.concrete,
-                                forms: PhantomData::<F>,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_delivery_proof_params(CreateDeliveryProofParamsOverrides {
-                            concrete: Some(*concrete),
-                            algebra: Some(EnvelopeAlgebra::PairingElGamal),
-                            verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
-                            statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE),
-                        }),
-                        build_create_delivery_proof_payload(Default::default()),
-                    );
-                    let Ok(success) = created else {
-                        panic!("the delivery-proof factory admits the pairing's declared form")
-                    };
-                    results.extend(success.output);
-                }
-            }
-            results
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        concrete: &'a VerifierConcrete,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = Vec<CreateVerifierReturn<()>>;
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let mut results = Vec::new();
-            for concrete in CHAIN_FORMS_CONCRETES {
-                let created = create_chain_forms(
-                    &build_create_chain_forms_deps(
-                        ChainFormsConsumer {
-                            pairing: self.pairing,
-                            concrete: self.concrete,
-                            encoder: &payload.adapter,
-                        },
-                        Default::default(),
-                    ),
-                    build_create_chain_forms_params(CreateChainFormsParamsOverrides {
-                        concrete: Some(*concrete),
-                        ..Default::default()
-                    }),
-                    build_create_chain_forms_payload(Default::default()),
-                );
-                let Ok(success) = created else {
-                    panic!("the chain-forms factory admits the selection")
-                };
-                results.extend(success.output);
-            }
-            results
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        concrete: &'a VerifierConcrete,
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = Vec<CreateVerifierReturn<()>>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let mut results = Vec::new();
-            for selection in DECLARED_ENCODING_SELECTIONS {
-                let created = create_encoding(
-                    &build_create_encoding_deps(EncodingConsumer {
-                        pairing: &payload.adapter,
-                        concrete: self.concrete,
-                    }),
-                    build_create_encoding_params(CreateEncodingParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(selection.identifier),
-                    }),
-                    build_create_encoding_payload(Default::default()),
-                );
-                let Ok(success) = created else {
-                    panic!("the encoding factory admits the selection")
-                };
-                results.extend(success.output);
-            }
-            results
+            )
         }
     }
 
@@ -576,24 +320,77 @@ fn an_adapter_handed_to_the_consumer_declares_the_pairings_verifier_form_and_the
         // Arrange
         let concrete = build_verifier_concrete(*kind, VerifierConcreteOverrides);
         for pairing_concrete in PAIRING_CONCRETES {
-            // Act
-            let created = create_pairing(
-                &build_create_pairing_deps(
-                    PairingConsumer {
-                        concrete: &concrete,
-                    },
-                    Default::default(),
-                ),
-                build_create_pairing_params(CreatePairingParamsOverrides {
-                    concrete: Some(*pairing_concrete),
-                    ..Default::default()
-                }),
-                build_create_pairing_payload(Default::default()),
-            );
-            let Ok(success) = created else {
-                panic!("the pairing factory ran the consumer")
-            };
-            results.extend(success.output);
+            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
+                    for hash_to_scalar_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                        .iter()
+                        .filter(|selection| {
+                            selection.identifier == HashToScalarIdentifier::Keccak256V1
+                        })
+                    {
+                        for delivery_proof_concrete in DELIVERY_PROOF_CONCRETES {
+                            // Act
+                            let created = run_create_verifier_case(
+                                &build_create_verifier_case_deps(
+                                    CaseConsumer {
+                                        concrete: &concrete,
+                                    },
+                                    Default::default(),
+                                ),
+                                build_create_verifier_case_params(
+                                    CreateVerifierCaseParamsOverrides {
+                                        pairing: Some(build_create_pairing_params(
+                                            CreatePairingParamsOverrides {
+                                                concrete: Some(*pairing_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                            CreateHashToScalarParamsOverrides {
+                                                concrete: Some(hash_to_scalar_selection.concrete),
+                                                identifier: Some(
+                                                    hash_to_scalar_selection.identifier,
+                                                ),
+                                            },
+                                        )),
+                                        encoding: Some(build_create_encoding_params(
+                                            CreateEncodingParamsOverrides {
+                                                concrete: Some(encoding_selection.concrete),
+                                                identifier: Some(encoding_selection.identifier),
+                                            },
+                                        )),
+                                        chain_forms: Some(build_create_chain_forms_params(
+                                            CreateChainFormsParamsOverrides {
+                                                concrete: Some(*chain_forms_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        delivery_proof: Some(build_create_delivery_proof_params(
+                                            CreateDeliveryProofParamsOverrides {
+                                                concrete: Some(*delivery_proof_concrete),
+                                                algebra: Some(EnvelopeAlgebra::PairingElGamal),
+                                                statement_version: Some(
+                                                    DELIVERY_STATEMENT_VERSION_ONE,
+                                                ),
+                                            },
+                                        )),
+                                        random_source: Some(build_create_random_source_params(
+                                            CreateRandomSourceParamsOverrides {
+                                                kind: Some(RandomSourceKind::OperatingSystem),
+                                            },
+                                        )),
+                                    },
+                                ),
+                                build_create_verifier_case_payload(Default::default()),
+                            );
+                            let Ok(success) = created else {
+                                panic!("the case runner admits each case's selections")
+                            };
+                            results.push(success.output);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -680,38 +477,37 @@ fn every_concrete_refuses_a_proof_of_the_other_relation_before_any_chain_read() 
         }
     }
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct CaseConsumer<'a> {
         concrete: &'a VerifierConcrete,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl ICreateVerifierCaseConsumer for CaseConsumer<'_> {
         type Output = Vec<(DeliveryRelation, CreateVerifierReturn<VerifyOnChainReturn>)>;
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_create_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
-            let mint = build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
-            let transfer =
-                build_algebraic_transfer_statement::<P, F>(self.pairing, Default::default());
-            let mint_proof = payload.adapter.prove_mint(
+            let mint = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
+            let transfer = build_algebraic_transfer_statement::<P, F>(pairing, Default::default());
+            let mint_proof = delivery_proof.prove_mint(
                 ProveMintParams,
-                build_prove_mint_payload(self.pairing, &mint, Default::default()),
+                build_prove_mint_payload(pairing, &mint, Default::default()),
             );
             let Ok(mint_proof) = mint_proof else {
                 panic!("the real adapter proves the mint statement it is handed")
             };
-            let transfer_proof = payload.adapter.prove_transfer(
+            let transfer_proof = delivery_proof.prove_transfer(
                 ProveTransferParams,
-                build_prove_transfer_payload(self.pairing, &transfer, Default::default()),
+                build_prove_transfer_payload(pairing, &transfer, Default::default()),
             );
             let Ok(transfer_proof) = transfer_proof else {
                 panic!("the real adapter proves the transfer statement it is handed")
@@ -735,13 +531,13 @@ fn every_concrete_refuses_a_proof_of_the_other_relation_before_any_chain_read() 
                 ),
             ]
             .into_iter()
-            .map(|(statement, consumer)| {
+            .map(|(relation, consumer)| {
                 (
-                    statement,
+                    relation,
                     create_verifier(
                         &build_create_verifier_deps(
-                            self.pairing,
-                            &payload.adapter,
+                            pairing,
+                            delivery_proof,
                             consumer,
                             Default::default(),
                         ),
@@ -757,179 +553,82 @@ fn every_concrete_refuses_a_proof_of_the_other_relation_before_any_chain_read() 
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        concrete: &'a VerifierConcrete,
-        encoder: &'a E,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = Vec<(DeliveryRelation, CreateVerifierReturn<VerifyOnChainReturn>)>;
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let mut results = Vec::new();
-            for selection in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|selection| selection.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                let hashed = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(selection.identifier),
-                    }),
-                    build_create_hash_to_scalar_payload(Default::default()),
-                );
-                let Ok(hashed) = hashed else {
-                    panic!("the declared hash-to-scalar selection admits the concrete it names")
-                };
-                let random = create_random_source(
-                    &CreateRandomSourceDeps,
-                    build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                        kind: Some(RandomSourceKind::OperatingSystem),
-                    }),
-                    CreateRandomSourcePayload,
-                );
-                let Ok(random) = random;
-                for concrete in DELIVERY_PROOF_CONCRETES {
-                    let created = create_delivery_proof::<P, E, F, _>(
-                        &build_create_delivery_proof_deps(
-                            self.pairing,
-                            &*hashed.adapter,
-                            self.encoder,
-                            &*random.adapter,
-                            DeliveryProofConsumer {
-                                pairing: self.pairing,
-                                concrete: self.concrete,
-                                forms: PhantomData::<F>,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_delivery_proof_params(CreateDeliveryProofParamsOverrides {
-                            concrete: Some(*concrete),
-                            algebra: Some(EnvelopeAlgebra::PairingElGamal),
-                            verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
-                            statement_version: Some(DELIVERY_STATEMENT_VERSION_ONE),
-                        }),
-                        build_create_delivery_proof_payload(Default::default()),
-                    );
-                    let Ok(success) = created else {
-                        panic!("the delivery-proof factory admits the pairing's declared form")
-                    };
-                    results.extend(success.output);
-                }
-            }
-            results
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        concrete: &'a VerifierConcrete,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = Vec<(DeliveryRelation, CreateVerifierReturn<VerifyOnChainReturn>)>;
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let mut results = Vec::new();
-            for concrete in CHAIN_FORMS_CONCRETES {
-                let created = create_chain_forms(
-                    &build_create_chain_forms_deps(
-                        ChainFormsConsumer {
-                            pairing: self.pairing,
-                            concrete: self.concrete,
-                            encoder: &payload.adapter,
-                        },
-                        Default::default(),
-                    ),
-                    build_create_chain_forms_params(CreateChainFormsParamsOverrides {
-                        concrete: Some(*concrete),
-                        ..Default::default()
-                    }),
-                    build_create_chain_forms_payload(Default::default()),
-                );
-                let Ok(success) = created else {
-                    panic!("the chain-forms factory admits the selection")
-                };
-                results.extend(success.output);
-            }
-            results
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        concrete: &'a VerifierConcrete,
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = Vec<(DeliveryRelation, CreateVerifierReturn<VerifyOnChainReturn>)>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let mut results = Vec::new();
-            for selection in DECLARED_ENCODING_SELECTIONS {
-                let created = create_encoding(
-                    &build_create_encoding_deps(EncodingConsumer {
-                        pairing: &payload.adapter,
-                        concrete: self.concrete,
-                    }),
-                    build_create_encoding_params(CreateEncodingParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(selection.identifier),
-                    }),
-                    build_create_encoding_payload(Default::default()),
-                );
-                let Ok(success) = created else {
-                    panic!("the encoding factory admits the selection")
-                };
-                results.extend(success.output);
-            }
-            results
-        }
-    }
-
     let mut results = Vec::new();
     for kind in VERIFIER_CONCRETES {
         // Arrange
         let concrete = build_verifier_concrete(*kind, VerifierConcreteOverrides);
         for pairing_concrete in PAIRING_CONCRETES {
-            // Act
-            let created = create_pairing(
-                &build_create_pairing_deps(
-                    PairingConsumer {
-                        concrete: &concrete,
-                    },
-                    Default::default(),
-                ),
-                build_create_pairing_params(CreatePairingParamsOverrides {
-                    concrete: Some(*pairing_concrete),
-                    ..Default::default()
-                }),
-                build_create_pairing_payload(Default::default()),
-            );
-            let Ok(success) = created else {
-                panic!("the pairing factory ran the consumer")
-            };
-            results.extend(success.output);
+            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
+                    for hash_to_scalar_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                        .iter()
+                        .filter(|selection| {
+                            selection.identifier == HashToScalarIdentifier::Keccak256V1
+                        })
+                    {
+                        for delivery_proof_concrete in DELIVERY_PROOF_CONCRETES {
+                            // Act
+                            let created = run_create_verifier_case(
+                                &build_create_verifier_case_deps(
+                                    CaseConsumer {
+                                        concrete: &concrete,
+                                    },
+                                    Default::default(),
+                                ),
+                                build_create_verifier_case_params(
+                                    CreateVerifierCaseParamsOverrides {
+                                        pairing: Some(build_create_pairing_params(
+                                            CreatePairingParamsOverrides {
+                                                concrete: Some(*pairing_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                            CreateHashToScalarParamsOverrides {
+                                                concrete: Some(hash_to_scalar_selection.concrete),
+                                                identifier: Some(
+                                                    hash_to_scalar_selection.identifier,
+                                                ),
+                                            },
+                                        )),
+                                        encoding: Some(build_create_encoding_params(
+                                            CreateEncodingParamsOverrides {
+                                                concrete: Some(encoding_selection.concrete),
+                                                identifier: Some(encoding_selection.identifier),
+                                            },
+                                        )),
+                                        chain_forms: Some(build_create_chain_forms_params(
+                                            CreateChainFormsParamsOverrides {
+                                                concrete: Some(*chain_forms_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        delivery_proof: Some(build_create_delivery_proof_params(
+                                            CreateDeliveryProofParamsOverrides {
+                                                concrete: Some(*delivery_proof_concrete),
+                                                algebra: Some(EnvelopeAlgebra::PairingElGamal),
+                                                statement_version: Some(
+                                                    DELIVERY_STATEMENT_VERSION_ONE,
+                                                ),
+                                            },
+                                        )),
+                                        random_source: Some(build_create_random_source_params(
+                                            CreateRandomSourceParamsOverrides {
+                                                kind: Some(RandomSourceKind::OperatingSystem),
+                                            },
+                                        )),
+                                    },
+                                ),
+                                build_create_verifier_case_payload(Default::default()),
+                            );
+                            let Ok(success) = created else {
+                                panic!("the case runner admits each case's selections")
+                            };
+                            results.extend(success.output);
+                        }
+                    }
+                }
+            }
         }
     }
 

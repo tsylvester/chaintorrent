@@ -4,8 +4,8 @@ test = "test"
 out = "out"
 libs = ["lib"]
 remappings = ["forge-std/=lib/forge-std/src/"]
-solc_version = "0.8.37"
+solc = "0.8.38"
 evm_version = "prague"
 via_ir = true
 ffi = false
-fs_permissions = [{ access = "read", path = "generated" }]
+fs_permissions = [{ access = "read", path = "generated" }, { access = "read", path = "abi" }]

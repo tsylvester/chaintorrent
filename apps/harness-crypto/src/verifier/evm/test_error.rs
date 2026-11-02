@@ -1,50 +1,25 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-use core::marker::PhantomData;
-
 use alloy::primitives::{Bytes, U64, U256};
 use alloy::rpc::json_rpc::ErrorPayload;
 use alloy::sol_types::SolCall;
 use alloy::transports::mock::Asserter;
-use chain::{
-    ConsumeChainFormsParams, ConsumeChainFormsPayload, IChainForms, IChainFormsConsumer,
-    build_create_chain_forms_deps, build_create_chain_forms_params,
-    build_create_chain_forms_payload, create_chain_forms,
-};
-use encoding::{
-    CanonicalFieldValue, ConsumeEncodingParams, ConsumeEncodingPayload, IDecoderAdapter,
-    IEncoderAdapter, IEncodingConsumer, build_create_encoding_deps, build_create_encoding_params,
-    build_create_encoding_payload, create_encoding,
-};
-use hash_to_scalar::{
-    IHashToScalarAdapter, build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
-    build_create_hash_to_scalar_payload, create_hash_to_scalar,
-};
-use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, IPairingArithmetic, IPairingConsumer,
-    IPairingReference, VerifierGroupArithmetic, build_create_pairing_deps,
-    build_create_pairing_params, build_create_pairing_payload, create_pairing,
-};
+use chain::IChainForms;
+use encoding::CanonicalFieldValue;
+use pairing::{IPairingArithmetic, IPairingReference, VerifierGroupArithmetic};
 use proof::{
-    AlgebraicStatement, ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload,
-    DeliveryProofComponents, DeliveryProofWireComponentsOverrides, DeliveryRelation,
-    IDeliveryProofAdapter, IDeliveryProofConsumer, build_algebraic_mint_statement,
-    build_algebraic_transfer_statement, build_create_delivery_proof_deps,
-    build_create_delivery_proof_params, build_create_delivery_proof_payload,
-    build_delivery_proof_wire_components, build_proof_from_components_params,
-    build_proof_from_components_payload, build_transfer_responses, build_verify_payload,
-    create_delivery_proof,
-};
-use random::{
-    CreateRandomSourceDeps, CreateRandomSourcePayload, IRandomSourceAdapter,
-    build_create_random_source_params, create_random_source,
+    AlgebraicStatement, DeliveryProofComponents, DeliveryProofWireComponentsOverrides,
+    DeliveryRelation, IDeliveryProofAdapter, build_algebraic_mint_statement,
+    build_algebraic_transfer_statement, build_delivery_proof_wire_components,
+    build_proof_from_components_params, build_proof_from_components_payload,
+    build_transfer_responses, build_verify_payload,
 };
 use serde_json::value::RawValue;
 
 use super::super::factory::provides::{
     IVerifierAdapter, VerifyOnChainErrorReturn, build_verify_on_chain_params,
 };
-use super::interface::{EvmVerifierErrorReturn, EvmVerifierSettings};
+use super::interface::{EvmVerifierErrorReturn, EvmVerifierSettings, IEvmVerifierCaseConsumer};
 use super::mock::*;
 use super::{IDeliveryVerifier, IGasPriceOracle};
 
@@ -65,37 +40,36 @@ fn verify_on_chain_refuses_a_mint_statement_with_a_transfer_proof() {
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
-            let responses = build_transfer_responses(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
+            let responses = build_transfer_responses(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Transfer),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -111,7 +85,7 @@ fn verify_on_chain_refuses_a_mint_statement_with_a_transfer_proof() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -141,137 +115,21 @@ fn verify_on_chain_refuses_a_mint_statement_with_a_transfer_proof() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_refuses_a_mint_statement_with_a_transfer_proof
 }
@@ -290,36 +148,35 @@ fn verify_on_chain_refuses_a_transfer_statement_with_a_mint_proof() {
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_transfer_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_transfer_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -328,7 +185,7 @@ fn verify_on_chain_refuses_a_transfer_statement_with_a_mint_proof() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -358,137 +215,21 @@ fn verify_on_chain_refuses_a_transfer_statement_with_a_mint_proof() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_refuses_a_transfer_statement_with_a_mint_proof
 }
@@ -513,40 +254,39 @@ fn verify_on_chain_refuses_when_nothing_is_deployed_at_the_verifier_address() {
         ..Default::default()
     });
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         settings: &'a EvmVerifierSettings,
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::new());
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 EvmVerifierConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                 },
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -555,7 +295,7 @@ fn verify_on_chain_refuses_when_nothing_is_deployed_at_the_verifier_address() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -584,144 +324,22 @@ fn verify_on_chain_refuses_when_nothing_is_deployed_at_the_verifier_address() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        settings: self.settings,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        settings: self.settings,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        settings: &'a EvmVerifierSettings,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    settings: self.settings,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        settings: &settings,
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                settings: &settings,
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_refuses_when_nothing_is_deployed_at_the_verifier_address
 }
@@ -742,36 +360,35 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_code_read() {
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_failure_msg("code read refused");
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -780,7 +397,7 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_code_read() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -807,137 +424,21 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_code_read() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_returns_the_transports_refusal_of_the_code_read
 }
@@ -955,37 +456,36 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_verifying_call() {
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             self.asserter.push_failure_msg("call refused");
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -994,7 +494,7 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_verifying_call() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -1021,137 +521,21 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_verifying_call() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_returns_the_transports_refusal_of_the_verifying_call
 }
@@ -1171,37 +555,36 @@ fn verify_on_chain_returns_a_json_rpc_refusal_without_revert_data_as_an_rpc_erro
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             self.asserter.push_failure(ErrorPayload::method_not_found());
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -1210,7 +593,7 @@ fn verify_on_chain_returns_a_json_rpc_refusal_without_revert_data_as_an_rpc_erro
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -1238,137 +621,21 @@ fn verify_on_chain_returns_a_json_rpc_refusal_without_revert_data_as_an_rpc_erro
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_returns_a_json_rpc_refusal_without_revert_data_as_an_rpc_error
 }
@@ -1387,37 +654,36 @@ fn verify_on_chain_returns_the_refusal_of_a_result_that_does_not_decode() {
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             self.asserter.push_success(&Bytes::from(vec![0x01]));
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -1426,7 +692,7 @@ fn verify_on_chain_returns_the_refusal_of_a_result_that_does_not_decode() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -1454,137 +720,21 @@ fn verify_on_chain_returns_the_refusal_of_a_result_that_does_not_decode() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_returns_the_refusal_of_a_result_that_does_not_decode
 }
@@ -1603,24 +753,24 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_gas_estimate() {
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             self.asserter.push_success(&Bytes::from(
@@ -1628,15 +778,14 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_gas_estimate() {
             ));
             self.asserter.push_failure_msg("estimate refused");
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -1645,7 +794,7 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_gas_estimate() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -1672,137 +821,21 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_gas_estimate() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_returns_the_transports_refusal_of_the_gas_estimate
 }
@@ -1821,24 +854,24 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_oracle_code_read() {
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             self.asserter.push_success(&Bytes::from(
@@ -1847,15 +880,14 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_oracle_code_read() {
             self.asserter.push_success(&U64::from(73_421));
             self.asserter.push_failure_msg("oracle code refused");
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -1864,7 +896,7 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_oracle_code_read() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -1891,137 +923,21 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_oracle_code_read() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_returns_the_transports_refusal_of_the_oracle_code_read
 }
@@ -2041,24 +957,24 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier() {
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             self.asserter.push_success(&Bytes::from(
@@ -2068,15 +984,14 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier() {
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             self.asserter.push_failure_msg("chain identifier refused");
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -2085,7 +1000,7 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -2112,137 +1027,21 @@ fn verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier
 }
@@ -2263,24 +1062,24 @@ fn verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error()
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             self.asserter.push_success(&Bytes::from(
@@ -2295,15 +1094,14 @@ fn verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error()
                 data: Some(RawValue::from_string("\"0x08c379a0\"".to_string()).unwrap()),
             });
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -2312,7 +1110,7 @@ fn verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error()
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -2340,137 +1138,21 @@ fn verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error()
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error
 }
@@ -2489,24 +1171,24 @@ fn verify_on_chain_returns_the_refusal_of_a_fee_that_does_not_decode() {
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             self.asserter.push_success(&Bytes::from(
@@ -2517,15 +1199,14 @@ fn verify_on_chain_returns_the_refusal_of_a_fee_that_does_not_decode() {
             self.asserter.push_success(&U64::from(84_532));
             self.asserter.push_success(&Bytes::from(vec![0x01]));
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -2534,7 +1215,7 @@ fn verify_on_chain_returns_the_refusal_of_a_fee_that_does_not_decode() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -2562,137 +1243,21 @@ fn verify_on_chain_returns_the_refusal_of_a_fee_that_does_not_decode() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_returns_the_refusal_of_a_fee_that_does_not_decode
 }
@@ -2713,24 +1278,24 @@ fn verify_on_chain_refuses_a_fee_beyond_u128() {
     // Arrange
     let asserter = Asserter::default();
 
-    struct DeliveryProofConsumer<'a, P: IPairingArithmetic, F: IChainForms> {
-        pairing: &'a P,
+    struct Consumer<'a> {
         asserter: &'a Asserter,
-        forms: PhantomData<F>,
     }
 
-    impl<'a, P, F> IDeliveryProofConsumer<P, F> for DeliveryProofConsumer<'a, P, F>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-    {
+    impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+        fn consume_evm_verifier_case<P, F, D>(
             &self,
-            _params: ConsumeDeliveryProofParams,
-            payload: ConsumeDeliveryProofPayload<D>,
-        ) -> Self::Output {
+            pairing: &P,
+            _forms: &F,
+            delivery_proof: &D,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            F: IChainForms,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
             // Arrange
             self.asserter.push_success(&Bytes::from(vec![0x60]));
             self.asserter.push_success(&Bytes::from(
@@ -2744,15 +1309,14 @@ fn verify_on_chain_refuses_a_fee_beyond_u128() {
                 IGasPriceOracle::getL1FeeCall::abi_encode_returns(&refused_fee),
             ));
             let subject = build_evm_verifier(
-                self.pairing,
-                &payload.adapter,
+                pairing,
+                delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement =
-                build_algebraic_mint_statement::<P, F>(self.pairing, Default::default());
+            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
             let wire = build_delivery_proof_wire_components(
-                self.pairing,
+                pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
                     verifier_form: Some(VerifierGroupArithmetic::BothGroups),
@@ -2761,7 +1325,7 @@ fn verify_on_chain_refuses_a_fee_beyond_u128() {
             );
             let components = DeliveryProofComponents::try_from(wire)
                 .expect("the wire carries the relation's and the form's counts");
-            let built = payload.adapter.proof_from_components(
+            let built = delivery_proof.proof_from_components(
                 build_proof_from_components_params(Default::default()),
                 build_proof_from_components_payload(components, Default::default()),
             );
@@ -2789,137 +1353,21 @@ fn verify_on_chain_refuses_a_fee_beyond_u128() {
         }
     }
 
-    struct ChainFormsConsumer<'a, P: IPairingArithmetic, E> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &'a E,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P, E> IChainFormsConsumer for ChainFormsConsumer<'a, P, E>
-    where
-        P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
-    {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            let created = create_delivery_proof(
-                &build_create_delivery_proof_deps(
-                    self.pairing,
-                    self.hashing,
-                    self.encoder,
-                    self.random,
-                    DeliveryProofConsumer {
-                        pairing: self.pairing,
-                        asserter: self.asserter,
-                        forms: PhantomData::<F>,
-                    },
-                    Default::default(),
-                ),
-                build_create_delivery_proof_params(Default::default()),
-                build_create_delivery_proof_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the delivery-proof factory admits the selection")
-            };
-        }
-    }
-
-    struct EncodingConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        random: &'a dyn IRandomSourceAdapter,
-        asserter: &'a Asserter,
-    }
-
-    impl<'a, P> IEncodingConsumer for EncodingConsumer<'a, P>
-    where
-        P: IPairingArithmetic + IPairingReference,
-    {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            let created = create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        pairing: self.pairing,
-                        hashing: self.hashing,
-                        encoder: &payload.adapter,
-                        random: self.random,
-                        asserter: self.asserter,
-                    },
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the chain-forms factory admits the selection")
-            };
-        }
-    }
-
-    struct PairingConsumer<'a> {
-        asserter: &'a Asserter,
-    }
-
-    impl<'a> IPairingConsumer for PairingConsumer<'a> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            );
-            let Ok(hashing) = hashing else {
-                panic!("the hash-to-scalar factory admits the selection")
-            };
-            let Ok(source) = create_random_source(
-                &CreateRandomSourceDeps,
-                build_create_random_source_params(Default::default()),
-                CreateRandomSourcePayload,
-            );
-            let created = create_encoding(
-                &build_create_encoding_deps(EncodingConsumer {
-                    pairing: &payload.adapter,
-                    hashing: &*hashing.adapter,
-                    random: &*source.adapter,
-                    asserter: self.asserter,
-                }),
-                build_create_encoding_params(Default::default()),
-                build_create_encoding_payload(Default::default()),
-            );
-            let Ok(_success) = created else {
-                panic!("the encoding factory admits the selection")
-            };
-        }
-    }
-
-    let consumer = PairingConsumer {
-        asserter: &asserter,
-    };
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    // Act
+    let result = run_evm_verifier_case(
+        &build_evm_verifier_case_deps(
+            Consumer {
+                asserter: &asserter,
+            },
+            Default::default(),
+        ),
+        build_evm_verifier_case_params(Default::default()),
+        build_evm_verifier_case_payload(Default::default()),
     );
-    let Ok(_success) = created else {
-        panic!("the pairing factory ran the consumer")
+
+    // Assert
+    let Ok(_success) = result else {
+        panic!("the case chain admits every selection")
     };
     // verify_on_chain_refuses_a_fee_beyond_u128
 }

@@ -50,7 +50,13 @@ use super::factory::provides::{
     VerifyOnChainParams, VerifyOnChainReturn, VerifyOnChainSuccessReturn,
 };
 
-sol!("../../contracts/evm/src/IDeliveryVerifier.sol");
+sol!(
+    IDeliveryVerifier,
+    concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../contracts/evm/abi/IDeliveryVerifier.json"
+    )
+);
 
 sol! {
     interface IGasPriceOracle {
@@ -343,7 +349,7 @@ where
             suiteVersion: context.suite_identifier.version(),
             chain,
             entitlementContract: entitlement_contract,
-            assetIdentityHash: FixedBytes::from(*context.asset_identity_hash.as_bytes()),
+            assetRoot: FixedBytes::from(*context.asset_identity_hash.as_bytes()),
             parameterSet: FixedBytes::from(*context.parameter_set_identifier.as_bytes()),
             sourceEntitlement: source_entitlement,
             targetEntitlement: target_entitlement,

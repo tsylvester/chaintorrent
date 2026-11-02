@@ -2716,7 +2716,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `a_mint_statement_survives_the_encoding_round_trip`, `each_second_group_decoder_refuses_the_second_group_reference_encoding`, `each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists`, `chain_forms_identity_survives_its_field_round_trip`, `chain_forms_entitlement_survives_its_field_round_trip`, `chain_forms_interval_survives_its_field_round_trip`, and `chain_forms_chain_identifier_survives_its_field_round_trip` pass in `adapters/proof/tests/mint_statement_integration_test.rs`
     * `[✅]`   Every test in `adapters/encoding` passes unchanged
 
-* `[✅]`   `proof/transfer_statement` **Transfer transcript under delivery-statement version one, serving sale and grant: the mint transcript's context, the seller's and buyer's identities and envelope keys, the old and new envelopes, the expiry, and the transfer relation's first messages, with its canonical description for the encoding contract**
+* `[ ]`   `proof/transfer_statement` **Transfer transcript under delivery-statement version one, serving sale and grant: the mint transcript's context, the seller's and buyer's identities and envelope keys, the old and new envelopes, the expiry, and the transfer relation's first messages, with its canonical description for the encoding contract**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: the transfer proof shows, against the previous interval's envelope and the seller's registered keys, knowledge of `(x_s, y_s, s, ρ, σ)` with `pk1_s = g1^x_s`, `C1_n = g1^ρ`, `C2_n / C2_o = C1_o^(−x_s) · F_I^s · pk1_b^ρ`, `pk2_s = g2^y_s`, `D1_n = g2^σ`, and `D2_n / D2_o = D1_o^(−y_s) · g2^s · pk2_b^σ`, and its challenge is the hash-to-scalar mapping of the transcript, canonically encoded under the delivery-statement version the hash-card names, which the contract recomputes, so a proof is valid for exactly one settlement; the transfer transcript carries the mint transcript's context, the suite identifier, the chain, the entitlement contract, the asset root, the parameter-set digest, the source and target entitlements, the old and new interval counters, and the purpose, then the seller's and buyer's identities, the seller's and buyer's envelope keys, the old and new envelopes, the expiry, and the transfer relation's first messages, each group element as its precompile encoding; transfer and grant prove the transfer relation; in a sale the source and target entitlements are the same token, and in a grant the source is the author's entitlement, the old counter the author's current interval, and the new counter zero; so the transcript is a value with one canonical field sequence the encoding factory encodes, generic over the chain's forms (CR-09; CD-05; `docs/research/cryptography.md`'s Delivery Proof statement and its transcript per delivery-statement version; the dependency map's `proof/transfer_statement` row; the Delivery proof and on-chain verifier milestone)
@@ -3064,7 +3064,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `adapters/proof/src/transfer_statement/provides.rs`
     * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, the case runner reaching the tests through the `mocks` feature
 
-  * `[✅]`   `adapters/proof/tests/transfer_statement_integration_test.rs`
+  * `[ ]`   `adapters/proof/tests/transfer_statement_integration_test.rs`
     * `[✅]`   Imports only the crate's public surface, `proof`, and the pairing family's, the encoding family's, and the chain family's names through their public surfaces and official mocks under the `mocks` feature: `ITransferStatementCaseConsumer`, `build_transfer_statement_case_deps`, `build_transfer_statement_case_params`, `TransferStatementCaseParamsOverrides`, `build_transfer_statement_case_payload`, and `run_transfer_statement_case` among them; contains only imports, contract headers, blocks, and assertions
     * `[✅]`   Every block: written once, run once per member of `PAIRING_CONCRETES`, and names no concrete; the block declares one `Consumer` implementing `ITransferStatementCaseConsumer`, holding the block's arrangement, with `type Output = ()`, and calls `run_transfer_statement_case` with the case deps from `build_transfer_statement_case_deps(Consumer { … }, Default::default())` and the case params from `build_transfer_statement_case_params` with `pairing` overridden to `build_create_pairing_params` naming the member, `encoding` overridden to the declared selection's params where the block runs `DECLARED_ENCODING_SELECTIONS`, and `chain_forms` overridden to `build_create_chain_forms_params` naming the member of `CHAIN_FORMS_CONCRETES`; the consumer's method builds the description as `build_transfer_statement_description(pairing, Default::default())` and makes the block's single call, asserting in place; `baseline` names `invalidate_transfer_statement(pairing, Default::default())`; the `Ok` arm of each runner call is the sole success outcome; nothing is mocked and the operating system is not reached
     * `[✅]`   `a_transfer_statement_survives_the_encoding_round_trip`
@@ -3088,32 +3088,32 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[✅]`   Assert: where the encoding holds bytes, `assert_eq!(result.err(), Some(TransferStatementFromFieldsErrorReturn::InvalidG1 { index: 13, error: DecodeG1ErrorReturn::NotInSubgroup }))`
       * `[✅]`   Boundary: the public call `run_transfer_statement_case` and the route `create_pairing`, `consume_pairing`, `g1_outside_subgroup_encoding`, `create_chain_forms`, `consume_chain_forms`, the description's `try_new`, `fields_to_value`, and `decode_g1`
       * `[✅]`   Mocked: nothing
-    * `[✅]`   `chain_forms_identity_survives_its_field_round_trip`
+    * `[ ]`   `chain_forms_identity_survives_its_field_round_trip`
       * `[✅]`   Contract: entry `chain_forms_identity_survives_its_field_round_trip`; the identity forms at positions `3`, `11`, and `12` that `to_fields` yields are rebuilt by `fields_to_value` into forms equal to the originals
       * `[✅]`   Arrange: for each member of `CHAIN_FORMS_CONCRETES`, the default statement, whose entitlement contract, seller, and buyer are distinct
       * `[✅]`   Act: `run_transfer_statement_case` per case, the consumer's method calling `description.to_fields(ToFieldsParams, &statement)` and `description.fields_to_value(FromFieldsParams, fields)` over the fields it returned
-      * `[✅]`   Assert: the values at `3`, `11`, and `12` are each the variant `<F::Identity as ICanonicalField>::KIND` names, and `described.entitlement_contract`, `described.seller`, and `described.buyer` equal the originals by `assert_eq!`
+      * `[ ]`   Assert: the `kind()` of the values at `3`, `11`, and `12` each equals `<F::Identity as ICanonicalField>::KIND`, and `described.entitlement_contract`, `described.seller`, and `described.buyer` equal the originals by `assert_eq!`
       * `[✅]`   Boundary: the public call `run_transfer_statement_case` and the route `create_pairing`, `consume_pairing`, `create_chain_forms`, `consume_chain_forms`, the description's `try_new`, `to_fields`, and `fields_to_value`, and the identity form's `to_field` and `from_field`
       * `[✅]`   Mocked: nothing
-    * `[✅]`   `chain_forms_entitlement_survives_its_field_round_trip`
+    * `[ ]`   `chain_forms_entitlement_survives_its_field_round_trip`
       * `[✅]`   Contract: entry `chain_forms_entitlement_survives_its_field_round_trip`; the entitlement forms at positions `6` and `7` that `to_fields` yields are rebuilt by `fields_to_value` into forms equal to the originals
       * `[✅]`   Arrange: for each member of `CHAIN_FORMS_CONCRETES`, the default statement, whose source and target entitlements are distinct
       * `[✅]`   Act: `run_transfer_statement_case` per case, the consumer's method calling `description.to_fields(ToFieldsParams, &statement)` and `description.fields_to_value(FromFieldsParams, fields)` over the fields it returned
-      * `[✅]`   Assert: the values at `6` and `7` are each the variant `<F::Entitlement as ICanonicalField>::KIND` names, and `described.source_entitlement` and `described.target_entitlement` equal the originals by `assert_eq!`
+      * `[ ]`   Assert: the `kind()` of the values at `6` and `7` each equals `<F::Entitlement as ICanonicalField>::KIND`, and `described.source_entitlement` and `described.target_entitlement` equal the originals by `assert_eq!`
       * `[✅]`   Boundary: the public call `run_transfer_statement_case` and the route `create_pairing`, `consume_pairing`, `create_chain_forms`, `consume_chain_forms`, the description's `try_new`, `to_fields`, and `fields_to_value`, and the entitlement form's `to_field` and `from_field`
       * `[✅]`   Mocked: nothing
-    * `[✅]`   `chain_forms_interval_survives_its_field_round_trip`
+    * `[ ]`   `chain_forms_interval_survives_its_field_round_trip`
       * `[✅]`   Contract: entry `chain_forms_interval_survives_its_field_round_trip`; the interval forms at positions `8` and `9` that `to_fields` yields are rebuilt by `fields_to_value` into forms equal to the originals
       * `[✅]`   Arrange: for each member of `CHAIN_FORMS_CONCRETES`, the default statement, whose old and new intervals are distinct
       * `[✅]`   Act: `run_transfer_statement_case` per case, the consumer's method calling `description.to_fields(ToFieldsParams, &statement)` and `description.fields_to_value(FromFieldsParams, fields)` over the fields it returned
-      * `[✅]`   Assert: the values at `8` and `9` are each the variant `<F::Interval as ICanonicalField>::KIND` names, and `described.old_interval` and `described.new_interval` equal the originals by `assert_eq!`
+      * `[ ]`   Assert: the `kind()` of the values at `8` and `9` each equals `<F::Interval as ICanonicalField>::KIND`, and `described.old_interval` and `described.new_interval` equal the originals by `assert_eq!`
       * `[✅]`   Boundary: the public call `run_transfer_statement_case` and the route `create_pairing`, `consume_pairing`, `create_chain_forms`, `consume_chain_forms`, the description's `try_new`, `to_fields`, and `fields_to_value`, and the interval form's `to_field` and `from_field`
       * `[✅]`   Mocked: nothing
-    * `[✅]`   `chain_forms_chain_identifier_survives_its_field_round_trip`
+    * `[ ]`   `chain_forms_chain_identifier_survives_its_field_round_trip`
       * `[✅]`   Contract: entry `chain_forms_chain_identifier_survives_its_field_round_trip`; the chain-identifier form at position `2` that `to_fields` yields is rebuilt by `fields_to_value` into a form equal to the original
       * `[✅]`   Arrange: for each member of `CHAIN_FORMS_CONCRETES`, the default statement
       * `[✅]`   Act: `run_transfer_statement_case` per case, the consumer's method calling `description.to_fields(ToFieldsParams, &statement)` and `description.fields_to_value(FromFieldsParams, fields)` over the fields it returned
-      * `[✅]`   Assert: the value at `2` is the variant `<F::ChainIdentifier as ICanonicalField>::KIND` names, and `described.chain` equals the original by `assert_eq!`
+      * `[ ]`   Assert: the `kind()` of the value at `2` equals `<F::ChainIdentifier as ICanonicalField>::KIND`, and `described.chain` equals the original by `assert_eq!`
       * `[✅]`   Boundary: the public call `run_transfer_statement_case` and the route `create_pairing`, `consume_pairing`, `create_chain_forms`, `consume_chain_forms`, the description's `try_new`, `to_fields`, and `fields_to_value`, and the chain-identifier form's `to_field` and `from_field`
       * `[✅]`   Mocked: nothing
 
