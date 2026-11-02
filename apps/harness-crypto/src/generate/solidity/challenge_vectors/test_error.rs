@@ -137,10 +137,10 @@ fn challenge_vectors_refuse_a_statement_version_no_description_serves() {
     impl IChallengeVectorsCaseConsumer for Consumer {
         type Output = ChallengeVectorsReturn;
 
-        fn consume_challenge_vectors_case<P, H, E, F>(
+        fn consume_challenge_vectors_case<P, E, F>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
             random: &dyn IRandomSourceAdapter,
             _forms: &F,
@@ -148,7 +148,6 @@ fn challenge_vectors_refuse_a_statement_version_no_description_serves() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
         {
@@ -237,10 +236,10 @@ fn challenge_vectors_return_the_domain_tag_refusal_whole() {
     impl IChallengeVectorsCaseConsumer for Consumer {
         type Output = ChallengeVectorsReturn;
 
-        fn consume_challenge_vectors_case<P, H, E, F>(
+        fn consume_challenge_vectors_case<P, E, F>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
             random: &dyn IRandomSourceAdapter,
             _forms: &F,
@@ -248,7 +247,6 @@ fn challenge_vectors_return_the_domain_tag_refusal_whole() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
         {
@@ -335,10 +333,10 @@ fn challenge_vectors_return_the_draw_refusal_whole() {
     impl IChallengeVectorsCaseConsumer for Consumer {
         type Output = ChallengeVectorsReturn;
 
-        fn consume_challenge_vectors_case<P, H, E, F>(
+        fn consume_challenge_vectors_case<P, E, F>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
             random: &dyn IRandomSourceAdapter,
             _forms: &F,
@@ -346,7 +344,6 @@ fn challenge_vectors_return_the_draw_refusal_whole() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
         {
@@ -426,10 +423,10 @@ fn challenge_vectors_return_the_sampling_refusal_whole() {
     impl IChallengeVectorsCaseConsumer for Consumer {
         type Output = ChallengeVectorsReturn;
 
-        fn consume_challenge_vectors_case<P, H, E, F>(
+        fn consume_challenge_vectors_case<P, E, F>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
             random: &dyn IRandomSourceAdapter,
             _forms: &F,
@@ -437,7 +434,6 @@ fn challenge_vectors_return_the_sampling_refusal_whole() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
         {

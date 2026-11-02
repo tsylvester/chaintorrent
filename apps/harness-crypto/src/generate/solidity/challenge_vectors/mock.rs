@@ -526,7 +526,7 @@ pub fn build_challenge_vectors_case_success_return<O>(
     ChallengeVectorsCaseSuccessReturn { output }
 }
 
-struct CaseAtChainForms<'a, P: IPairingAdapter, E, C: IChallengeVectorsCaseConsumer> {
+struct CaseAtChainForms<'a, P: IPairingArithmetic, E, C: IChallengeVectorsCaseConsumer> {
     pairing: &'a P,
     hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
     encoder: &'a E,
@@ -537,7 +537,7 @@ struct CaseAtChainForms<'a, P: IPairingAdapter, E, C: IChallengeVectorsCaseConsu
 
 impl<P, E, C> IChainFormsConsumer for CaseAtChainForms<'_, P, E, C>
 where
-    P: IPairingAdapter,
+    P: IPairingArithmetic + IPairingReference,
     E: IEncoderAdapter + IDecoderAdapter,
     C: IChallengeVectorsCaseConsumer,
 {
@@ -561,7 +561,7 @@ where
     }
 }
 
-struct CaseAtEncoding<'a, P: IPairingAdapter, C: IChallengeVectorsCaseConsumer> {
+struct CaseAtEncoding<'a, P: IPairingArithmetic, C: IChallengeVectorsCaseConsumer> {
     pairing: &'a P,
     hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
     source: &'a dyn IRandomSourceAdapter,
@@ -572,7 +572,7 @@ struct CaseAtEncoding<'a, P: IPairingAdapter, C: IChallengeVectorsCaseConsumer> 
 
 impl<P, C> IEncodingConsumer for CaseAtEncoding<'_, P, C>
 where
-    P: IPairingAdapter,
+    P: IPairingArithmetic + IPairingReference,
     C: IChallengeVectorsCaseConsumer,
 {
     type Output = ChallengeVectorsCaseReturn<C::Output>;

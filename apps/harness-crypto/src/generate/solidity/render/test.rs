@@ -25,7 +25,7 @@ use super::mock::{
     SpdxLicenseIdentifierConstructorParamsOverrides, build_render_deps, build_render_params,
     build_render_payload, build_render_success_return, build_solidity_abi_type_constructor_params,
     build_solidity_compiler_version, build_solidity_constant_name,
-    build_solidity_constant_name_constructor_params,
+    build_solidity_constant_name_constructor_params, build_solidity_library_entries,
     build_solidity_library_entries_constructor_params, build_solidity_library_entry,
     build_solidity_library_name, build_solidity_library_name_constructor_params,
     build_solidity_member_name, build_solidity_member_name_constructor_params,
@@ -848,9 +848,7 @@ fn solidity_uint256_holds_the_array_moved_from_the_params() {
     let result = SolidityUint256::try_new(params);
 
     // Assert
-    let Ok(value) = result else {
-        panic!("the params admit")
-    };
+    let value = result.expect("the params admit");
     assert_eq!(
         value.big_endian,
         core::array::from_fn::<u8, 32, _>(|index| {
@@ -1983,9 +1981,7 @@ fn render_opens_with_the_license_line_the_exact_pragma_and_an_empty_line() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(success.source.as_str().starts_with(
         "// SPDX-License-Identifier: GPL-3.0+\npragma solidity 7.28.315;\n\nlibrary "
     ));
@@ -2037,9 +2033,7 @@ fn render_declares_the_library_by_name() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(success.source.as_str().contains("library ReferenceLib {\n"));
 }
 // render_declares_the_library_by_name
@@ -2073,9 +2067,7 @@ fn render_closes_the_library_with_one_final_newline() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     let text = success.source.as_str();
     assert!(text.ends_with("}\n"));
     assert!(!text.ends_with("}\n\n"));
@@ -2130,9 +2122,7 @@ fn render_produces_the_exact_source_of_a_reference_library() {
                 u8::try_from(index).expect("a 32-element index fits a u8")
             })),
         });
-    let Ok(word) = SolidityUint256::try_new(word) else {
-        panic!("the params admit")
-    };
+    let word = SolidityUint256::try_new(word).expect("the params admit");
     let entries = vec![
         build_solidity_library_entry(SolidityLibraryEntryOverrides {
             name: Some(name("BYTES_VALUE")),
@@ -2248,9 +2238,7 @@ fn render_writes_a_byte_string_as_a_lowercase_hex_literal() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(
         success
             .source
@@ -2302,9 +2290,7 @@ fn render_writes_an_empty_byte_string_as_an_empty_hex_literal() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(
         success
             .source
@@ -2338,9 +2324,7 @@ fn render_writes_a_256_bit_value_as_big_endian_hex_digits() {
                 u8::try_from(index).expect("a 32-element index fits a u8")
             })),
         });
-    let Ok(word) = SolidityUint256::try_new(word) else {
-        panic!("the params admit")
-    };
+    let word = SolidityUint256::try_new(word).expect("the params admit");
     let entries = vec![build_solidity_library_entry(
         SolidityLibraryEntryOverrides {
             name: Some(build_solidity_constant_name(
@@ -2368,9 +2352,7 @@ fn render_writes_a_256_bit_value_as_big_endian_hex_digits() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(success.source.as_str().contains(
         "    uint256 internal constant WORD_VALUE = \
          0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f;\n"
@@ -2421,9 +2403,7 @@ fn render_writes_a_64_bit_value_in_decimal() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(
         success
             .source
@@ -2476,9 +2456,7 @@ fn render_writes_a_16_bit_value_in_decimal() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(
         success
             .source
@@ -2532,9 +2510,7 @@ fn render_writes_booleans_as_true_and_false() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(
         success
             .source
@@ -2598,9 +2574,7 @@ fn render_writes_a_string_between_double_quotes() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(
         success
             .source
@@ -2687,3 +2661,44 @@ fn render_writes_entries_in_payload_order() {
     assert_eq!(result, Ok(expected));
 }
 // render_writes_entries_in_payload_order
+
+/// Contract: `as_str` on each name type returns the text its constructor held.
+/// Arrange: each name built by its builder with `text` overridden to a value
+///   its character set admits.
+/// Act:    `as_str` on each.
+/// Assert: each returned text equals the constructor's text by `assert_eq!`.
+#[test]
+fn as_str_returns_each_name_type_its_text() {
+    // Arrange
+    let library_name = build_solidity_library_name(SolidityLibraryNameConstructorParamsOverrides {
+        text: Some("SampleLibrary".to_string()),
+    });
+    let constant_name =
+        build_solidity_constant_name(SolidityConstantNameConstructorParamsOverrides {
+            text: Some("SAMPLE_CONSTANT".to_string()),
+        });
+    let license = build_spdx_license_identifier(SpdxLicenseIdentifierConstructorParamsOverrides {
+        text: Some("MIT".to_string()),
+    });
+    let type_name = build_solidity_type_name(SolidityTypeNameConstructorParamsOverrides {
+        text: Some("SampleRecord".to_string()),
+    });
+    let member_name = build_solidity_member_name(SolidityMemberNameConstructorParamsOverrides {
+        text: Some("sampleMember".to_string()),
+    });
+
+    // Act
+    let library_text = library_name.as_str();
+    let constant_text = constant_name.as_str();
+    let license_text = license.as_str();
+    let type_text = type_name.as_str();
+    let member_text = member_name.as_str();
+
+    // Assert
+    assert_eq!(library_text, "SampleLibrary");
+    assert_eq!(constant_text, "SAMPLE_CONSTANT");
+    assert_eq!(license_text, "MIT");
+    assert_eq!(type_text, "SampleRecord");
+    assert_eq!(member_text, "sampleMember");
+}
+// as_str_returns_each_name_type_its_text

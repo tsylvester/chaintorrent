@@ -201,8 +201,9 @@ fn group_operation_vector_description_rebuilds_the_record_from_its_fields() {
 ///   VECTOR_RECORD_FIELD_COUNT, actual })`.
 /// Arrange: `build_canonical_fields` with `values` two `Bytes` values.
 /// Act:    `fields_to_value`.
-/// Assert: `error` equals `GroupOperationVectorFromFieldsErrorReturn::FieldCount
-///   { expected: 3, actual: 2 }`.
+/// Assert: `result.err()` equals
+///   `Some(GroupOperationVectorFromFieldsErrorReturn::FieldCount { expected: 3,
+///   actual: 2 })`.
 #[test]
 fn group_operation_vector_description_refuses_a_wrong_field_count() {
     // Arrange
@@ -219,8 +220,8 @@ fn group_operation_vector_description_refuses_a_wrong_field_count() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(GroupOperationVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(GroupOperationVectorFromFieldsErrorReturn::FieldCount {
             expected: 3,
             actual: 2,
         })
@@ -235,8 +236,9 @@ fn group_operation_vector_description_refuses_a_wrong_field_count() {
 ///   `FixedBytes32([0x0B; 32])`, and `FixedBytes32([0x0C; 32])`, so the indexes `1`
 ///   and `2` both hold a wrong kind.
 /// Act:    `fields_to_value`.
-/// Assert: `error` equals `GroupOperationVectorFromFieldsErrorReturn::FieldKind
-///   { index: 1, expected: CanonicalFieldKind::Bytes }`.
+/// Assert: `result.err()` equals
+///   `Some(GroupOperationVectorFromFieldsErrorReturn::FieldKind { index: 1,
+///   expected: CanonicalFieldKind::Bytes })`.
 #[test]
 fn group_operation_vector_description_refuses_the_lowest_index_of_the_wrong_kind() {
     // Arrange
@@ -254,8 +256,8 @@ fn group_operation_vector_description_refuses_the_lowest_index_of_the_wrong_kind
 
     // Assert
     assert_eq!(
-        result,
-        Err(GroupOperationVectorFromFieldsErrorReturn::FieldKind {
+        result.err(),
+        Some(GroupOperationVectorFromFieldsErrorReturn::FieldKind {
             index: 1,
             expected: CanonicalFieldKind::Bytes,
         })
@@ -347,8 +349,9 @@ fn pairing_check_vector_description_rebuilds_the_record_from_its_fields() {
 ///   VECTOR_RECORD_FIELD_COUNT, actual })`.
 /// Arrange: `build_canonical_fields` with `values` two `Bytes` values.
 /// Act:    `fields_to_value`.
-/// Assert: `error` equals `PairingCheckVectorFromFieldsErrorReturn::FieldCount
-///   { expected: 3, actual: 2 }`.
+/// Assert: `result.err()` equals
+///   `Some(PairingCheckVectorFromFieldsErrorReturn::FieldCount { expected: 3,
+///   actual: 2 })`.
 #[test]
 fn pairing_check_vector_description_refuses_a_wrong_field_count() {
     // Arrange
@@ -365,8 +368,8 @@ fn pairing_check_vector_description_refuses_a_wrong_field_count() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(PairingCheckVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(PairingCheckVectorFromFieldsErrorReturn::FieldCount {
             expected: 3,
             actual: 2,
         })
@@ -381,8 +384,9 @@ fn pairing_check_vector_description_refuses_a_wrong_field_count() {
 /// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])`,
 ///   `Bytes(vec![0x0B])`, and `Bytes(vec![0x0C])`.
 /// Act:    `fields_to_value`.
-/// Assert: `error` equals `PairingCheckVectorFromFieldsErrorReturn::FieldKind
-///   { index: 2, expected: CanonicalFieldKind::FixedBytes32 }`.
+/// Assert: `result.err()` equals
+///   `Some(PairingCheckVectorFromFieldsErrorReturn::FieldKind { index: 2,
+///   expected: CanonicalFieldKind::FixedBytes32 })`.
 #[test]
 fn pairing_check_vector_description_refuses_a_byte_string_output() {
     // Arrange
@@ -400,8 +404,8 @@ fn pairing_check_vector_description_refuses_a_byte_string_output() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(PairingCheckVectorFromFieldsErrorReturn::FieldKind {
+        result.err(),
+        Some(PairingCheckVectorFromFieldsErrorReturn::FieldKind {
             index: 2,
             expected: CanonicalFieldKind::FixedBytes32,
         })
@@ -417,8 +421,9 @@ fn pairing_check_vector_description_refuses_a_byte_string_output() {
 ///   `FixedBytes32([0x0B; 32])`, and `Bytes(vec![0x0C])`, so the indexes `1` and `2`
 ///   both hold a wrong kind.
 /// Act:    `fields_to_value`.
-/// Assert: `error` equals `PairingCheckVectorFromFieldsErrorReturn::FieldKind
-///   { index: 1, expected: CanonicalFieldKind::Bytes }`.
+/// Assert: `result.err()` equals
+///   `Some(PairingCheckVectorFromFieldsErrorReturn::FieldKind { index: 1,
+///   expected: CanonicalFieldKind::Bytes })`.
 #[test]
 fn pairing_check_vector_description_refuses_the_lowest_index_of_the_wrong_kind() {
     // Arrange
@@ -436,8 +441,8 @@ fn pairing_check_vector_description_refuses_the_lowest_index_of_the_wrong_kind()
 
     // Assert
     assert_eq!(
-        result,
-        Err(PairingCheckVectorFromFieldsErrorReturn::FieldKind {
+        result.err(),
+        Some(PairingCheckVectorFromFieldsErrorReturn::FieldKind {
             index: 1,
             expected: CanonicalFieldKind::Bytes,
         })

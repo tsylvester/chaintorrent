@@ -50,6 +50,10 @@ impl SolidityLibraryName {
         }
         Ok(SolidityLibraryName { text: params.text })
     }
+
+    pub fn as_str(&self) -> &str {
+        &self.text
+    }
 }
 
 impl SolidityConstantName {
@@ -73,6 +77,10 @@ impl SolidityConstantName {
         }
         Ok(SolidityConstantName { text: params.text })
     }
+
+    pub fn as_str(&self) -> &str {
+        &self.text
+    }
 }
 
 impl SpdxLicenseIdentifier {
@@ -93,6 +101,10 @@ impl SpdxLicenseIdentifier {
             }
         }
         Ok(SpdxLicenseIdentifier { text: params.text })
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.text
     }
 }
 
@@ -159,6 +171,10 @@ impl SolidityTypeName {
         }
         Ok(SolidityTypeName { text: params.text })
     }
+
+    pub fn as_str(&self) -> &str {
+        &self.text
+    }
 }
 
 impl SolidityMemberName {
@@ -176,6 +192,10 @@ impl SolidityMemberName {
             }
         }
         Ok(SolidityMemberName { text: params.text })
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.text
     }
 }
 

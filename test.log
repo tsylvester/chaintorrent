@@ -3,842 +3,3014 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-warning: field `output` is never read
-  --> adapters\proof\src\schnorr_fs\challenge\interface.rs:89:9
-   |
-88 | pub struct ChallengeCaseSuccessReturn<O> {
-   |            -------------------------- field in this struct
-89 |     pub output: O,
-   |         ^^^^^^
-   |
-   = note: requested on the command line with `-W dead-code`
-
-warning: type alias `RunChallengeCaseFn` is never used
-   --> adapters\proof\src\schnorr_fs\challenge\interface.rs:105:10
-    |
-105 | pub type RunChallengeCaseFn<C> = fn(
-    |          ^^^^^^^^^^^^^^^^^^
-
-warning: `proof` (lib) generated 2 warnings
+   Compiling proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
    Compiling harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
-error[E0432]: unresolved import `crate::generate::provides`
- --> apps\harness-crypto\src\config\admit_generate\interface.rs:2:22
-  |
-2 | use crate::generate::provides::{
-  |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\config\admit_generate\mock.rs:14:22
+error[E0432]: unresolved imports `crate::generate::provides::EvmGenerateSettingsOverrides`, `crate::generate::provides::build_evm_generate_settings`, `crate::generate::provides::build_evm_vector_kind_settings`
+  --> apps\harness-crypto\src\config\admit_generate\mock.rs:15:5
    |
-14 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
- --> apps\harness-crypto\src\config\admit_generate\mod.rs:8:22
-  |
-8 | use crate::generate::provides::{
-  |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
- --> apps\harness-crypto\src\config\admit_statements\interface.rs:9:22
-  |
-9 | use crate::generate::provides::CanonicalDeliveryContext;
-  |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\config\admit_statements\mock.rs:19:22
+15 |     EvmGenerateSettingsOverrides, GenerateConcrete, SolidityCompilerVersionOverrides,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `EvmGenerateSettingsOverrides` in `generate::provides`
+16 |     SpdxLicenseIdentifierConstructorParamsOverrides, VectorKindConfiguration,
+17 |     build_evm_generate_settings, build_evm_vector_kind_settings, build_solidity_compiler_version,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `build_evm_vector_kind_settings` in `generate::provides`
+   |     |
+   |     no `build_evm_generate_settings` in `generate::provides`
    |
-19 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\config\admit_statements\mod.rs:22:22
-   |
-22 | use crate::generate::provides::CanonicalDeliveryContext;
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\config\interface.rs:13:22
-   |
-13 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\config\mock.rs:32:22
-   |
-32 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\delivery_proof_consumer\interface.rs:10:22
-   |
-10 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\delivery_proof_consumer\mock.rs:19:22
-   |
-19 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\delivery_proof_consumer\mod.rs:21:22
-   |
-21 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\generate_consumer\mod.rs:10:22
-   |
-10 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\kem_consumer\interface.rs:10:22
-   |
-10 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\kem_consumer\mock.rs:20:22
-   |
-20 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\kem_consumer\mod.rs:24:22
-   |
-24 | use crate::generate::provides::{CreateGenerateReturn, EmitReturn};
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\key_agreement_consumer\interface.rs:11:22
-   |
-11 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\key_agreement_consumer\mock.rs:20:22
-   |
-20 | use crate::generate::provides::{GenerateConcrete, VectorKindConfiguration};
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\key_agreement_consumer\mod.rs:27:22
-   |
-27 | use crate::generate::provides::{CreateGenerateReturn, EmitReturn};
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `generate::provides`
-  --> apps\harness-crypto\src\lib.rs:12:19
-   |
-12 | pub use generate::provides::*;
-   |                   ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::VectorCount`
-  --> apps\harness-crypto\src\vectors\cross_holder\interface.rs:8:5
-   |
- 8 | use crate::VectorCount;
-   |     ^^^^^^^-----------
-   |            |
-   |            no `VectorCount` in the root
-   |
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: consider importing this variant instead
-   |
- 8 | use crate::AdmitGenerateErrorReturn::VectorCount;
-   |            ++++++++++++++++++++++++++
-
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\cross_holder\mock.rs:11:13
-   |
-11 | use crate::{VectorCount, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
-11 - use crate::{VectorCount, build_vector_count};
-11 + use crate::{VectorCount, build_verify_cost};
+15 -     EvmGenerateSettingsOverrides, GenerateConcrete, SolidityCompilerVersionOverrides,
+15 +     SolidityGenerateSettingsOverrides, GenerateConcrete, SolidityCompilerVersionOverrides,
    |
-
-error[E0432]: unresolved import `crate::VectorCount`
-  --> apps\harness-crypto\src\vectors\malformed_capsules\interface.rs:5:5
-   |
- 5 | use crate::VectorCount;
-   |     ^^^^^^^-----------
-   |            |
-   |            no `VectorCount` in the root
-   |
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: consider importing this variant instead
-   |
- 5 | use crate::AdmitGenerateErrorReturn::VectorCount;
-   |            ++++++++++++++++++++++++++
-
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\malformed_capsules\mock.rs:11:13
-   |
-11 | use crate::{VectorCount, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
-11 - use crate::{VectorCount, build_vector_count};
-11 + use crate::{VectorCount, build_verify_cost};
+17 -     build_evm_generate_settings, build_evm_vector_kind_settings, build_solidity_compiler_version,
+17 +     build_solidity_generate_settings, build_evm_vector_kind_settings, build_solidity_compiler_version,
    |
-
-error[E0432]: unresolved import `crate::VectorCount`
-  --> apps\harness-crypto\src\vectors\non_convertibility\interface.rs:7:5
-   |
- 7 | use crate::VectorCount;
-   |     ^^^^^^^-----------
-   |            |
-   |            no `VectorCount` in the root
-   |
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: consider importing this variant instead
-   |
- 7 | use crate::AdmitGenerateErrorReturn::VectorCount;
-   |            ++++++++++++++++++++++++++
-
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\non_convertibility\mock.rs:11:13
-   |
-11 | use crate::{VectorCount, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
-11 - use crate::{VectorCount, build_vector_count};
-11 + use crate::{VectorCount, build_verify_cost};
+17 -     build_evm_generate_settings, build_evm_vector_kind_settings, build_solidity_compiler_version,
+17 +     build_evm_generate_settings, build_vector_kind_settings, build_solidity_compiler_version,
    |
 
-error[E0432]: unresolved import `crate::VectorCount`
-  --> apps\harness-crypto\src\vectors\rerandomization\interface.rs:8:5
+error[E0432]: unresolved imports `crate::generate::provides::EvmCurveDirectories`, `crate::generate::provides::EvmGenerateSettings`, `crate::generate::provides::EvmLibraryNames`, `crate::generate::provides::EvmVectorKindNames`, `crate::generate::provides::EvmVectorKindSettings`
+  --> apps\harness-crypto\src\config\admit_generate\mod.rs:9:5
    |
- 8 | use crate::VectorCount;
-   |     ^^^^^^^-----------
-   |            |
-   |            no `VectorCount` in the root
+ 9 |     EvmCurveDirectories, EvmGenerateSettings, EvmLibraryNames, EvmVectorKindNames,
+   |     ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `EvmVectorKindNames` in `generate::provides`
+   |     |                    |                    |
+   |     |                    |                    no `EvmLibraryNames` in `generate::provides`
+   |     |                    no `EvmGenerateSettings` in `generate::provides`
+   |     no `EvmCurveDirectories` in `generate::provides`
+10 |     EvmVectorKindSettings, GenerateConcrete, GeneratedDirectory,
+   |     ^^^^^^^^^^^^^^^^^^^^^ no `EvmVectorKindSettings` in `generate::provides`
    |
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: consider importing this variant instead
-   |
- 8 | use crate::AdmitGenerateErrorReturn::VectorCount;
-   |            ++++++++++++++++++++++++++
-
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\rerandomization\mock.rs:11:13
-   |
-11 | use crate::{VectorCount, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
 help: a similar name exists in the module
    |
-11 - use crate::{VectorCount, build_vector_count};
-11 + use crate::{VectorCount, build_verify_cost};
+10 -     EvmVectorKindSettings, GenerateConcrete, GeneratedDirectory,
+10 +     VectorKindSettings, GenerateConcrete, GeneratedDirectory,
    |
 
-warning: unused import: `super::challenge_vectors`
- --> apps\harness-crypto\src\generate\solidity\challenge_vectors\provides.rs:1:16
-  |
-1 | pub(crate) use super::challenge_vectors;
-  |                ^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
-
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\solidity\challenge_vectors\provides.rs:2:9
-  |
-2 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\solidity\challenge_vectors\provides.rs:4:9
-  |
-4 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
-
-warning: unused import: `super::constants`
- --> apps\harness-crypto\src\generate\solidity\constants\provides.rs:1:16
-  |
-1 | pub(crate) use super::constants;
-  |                ^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\solidity\constants\provides.rs:2:9
-  |
-2 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\solidity\constants\provides.rs:4:9
-  |
-4 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
-
-warning: unused import: `super::group_vectors`
- --> apps\harness-crypto\src\generate\solidity\group_vectors\provides.rs:1:16
-  |
-1 | pub(crate) use super::group_vectors;
-  |                ^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\solidity\mapping_vectors\provides.rs:1:9
-  |
-1 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mapping_vectors`
- --> apps\harness-crypto\src\generate\solidity\mapping_vectors\provides.rs:2:16
-  |
-2 | pub(crate) use super::mapping_vectors;
-  |                ^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\solidity\mapping_vectors\provides.rs:4:9
-  |
-4 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
-
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\solidity\possession_vectors\provides.rs:1:9
-  |
-1 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\solidity\possession_vectors\provides.rs:3:9
-  |
-3 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
-
-warning: unused import: `super::possession_vectors`
- --> apps\harness-crypto\src\generate\solidity\possession_vectors\provides.rs:4:16
-  |
-4 | pub(crate) use super::possession_vectors;
-  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\solidity\proof_vectors\provides.rs:1:9
-  |
-1 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\solidity\proof_vectors\provides.rs:3:9
-  |
-3 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
-
-warning: unused import: `super::proof_vectors`
- --> apps\harness-crypto\src\generate\solidity\proof_vectors\provides.rs:4:16
-  |
-4 | pub(crate) use super::proof_vectors;
-  |                ^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::interface::*`
- --> apps\harness-crypto\src\generate\solidity\rejection_vectors\provides.rs:1:9
-  |
-1 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> apps\harness-crypto\src\generate\solidity\rejection_vectors\provides.rs:3:9
-  |
-3 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
-
-warning: unused import: `super::rejection_vectors`
- --> apps\harness-crypto\src\generate\solidity\rejection_vectors\provides.rs:4:16
-  |
-4 | pub(crate) use super::rejection_vectors;
-  |                ^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::render`
- --> apps\harness-crypto\src\generate\solidity\render\provides.rs:4:16
-  |
-4 | pub(crate) use super::render;
-  |                ^^^^^^^^^^^^^
-
-error[E0223]: ambiguous associated type
-  --> apps\harness-crypto\src\run\generate_consumer\mod.rs:35:10
+error[E0432]: unresolved import `crate::generate::provides::create_generate`
+  --> apps\harness-crypto\src\run\delivery_proof_consumer\mod.rs:23:17
    |
-35 |     ) -> Self::Output {
-   |          ^^^^^^^^^^^^
+23 |     EmitReturn, create_generate,
+   |                 ^^^^^^^^^^^^^^^ no `create_generate` in `generate::provides`
    |
-help: use fully-qualified syntax
+help: a similar name exists in the module
    |
-35 -     ) -> Self::Output {
-35 +     ) -> <generate_consumer::interface::GenerateConsumer<'_> as BitOr>::Output {
+23 -     EmitReturn, create_generate,
+23 +     EmitReturn, CreateGenerateFn,
    |
-35 -     ) -> Self::Output {
-35 +     ) -> <generate_consumer::interface::GenerateConsumer<'_> as IntoFuture>::Output {
-   |
-35 -     ) -> Self::Output {
-35 +     ) -> <generate_consumer::interface::GenerateConsumer<'_> as crypto_bigint::traits::Concat>::Output {
-   |
-35 -     ) -> Self::Output {
-35 +     ) -> <generate_consumer::interface::GenerateConsumer<'_> as elliptic_curve::ops::BatchInvert>::Output {
-   |
-   = and 27 other candidates
 
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\config\admit_generate\test.rs:14:22
-   |
-14 | use crate::generate::provides::*;
-   |                      ^^^^^^^^ could not find `provides` in `generate`
+error[E0107]: missing generics for trait `generate::factory::interface::IGenerateConsumer`
+   --> apps\harness-crypto\src\run\generate_consumer\mod.rs:28:6
+    |
+ 28 | impl IGenerateConsumer for GenerateConsumer<'_> {
+    |      ^^^^^^^^^^^^^^^^^ expected 1 generic argument
+    |
+note: trait defined here, with 1 generic parameter: `F`
+   --> apps\harness-crypto\src\generate\factory\interface.rs:187:11
+    |
+187 | pub trait IGenerateConsumer<F: IChainForms> {
+    |           ^^^^^^^^^^^^^^^^^ -
+help: add missing generic argument
+    |
+ 28 | impl IGenerateConsumer<F> for GenerateConsumer<'_> {
+    |                       +++
 
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\config\integration_test.rs:23:22
-   |
-23 | use crate::generate::provides::SpdxLicenseIdentifierTryNewErrorReturn;
-   |                      ^^^^^^^^ could not find `provides` in `generate`
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\mock.rs:59:31
+    |
+ 59 |             GenerateConcrete::Evm {
+    |                               ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\config\test.rs:44:22
-   |
-44 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\mod.rs:188:45
+    |
+188 |                 concrete: GenerateConcrete::Evm {
+    |                                             ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\delivery_proof_consumer\integration_test.rs:51:22
+error[E0277]: `EncodingConcrete` doesn't implement `Debug`
+  --> apps\harness-crypto\src\config\admit_selections\interface.rs:18:5
    |
-51 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
+16 | #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+   |                       ----- in this derive macro expansion
+17 | pub struct EncodingSelection {
+18 |     pub concrete: EncodingConcrete,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Debug` is not implemented for `EncodingConcrete`
 
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\delivery_proof_consumer\test.rs:45:22
+error[E0369]: binary operation `==` cannot be applied to type `EncodingConcrete`
+   --> apps\harness-crypto\src\config\admit_selections\interface.rs:18:5
+    |
+ 16 | #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+    |                              --------- in this derive macro expansion
+ 17 | pub struct EncodingSelection {
+ 18 |     pub concrete: EncodingConcrete,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: `EncodingConcrete` does not implement `PartialEq`
+   --> adapters\encoding\src\factory\interface.rs:193:1
+    |
+193 | pub enum EncodingConcrete {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^ `EncodingConcrete` is defined in another crate
+
+error[E0277]: the trait bound `EncodingConcrete: Eq` is not satisfied
+   --> apps\harness-crypto\src\config\admit_selections\interface.rs:18:5
+    |
+ 16 | #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+    |                                         -- in this derive macro expansion
+ 17 | pub struct EncodingSelection {
+ 18 |     pub concrete: EncodingConcrete,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Eq` is not implemented for `EncodingConcrete`
+    |
+note: required by a bound in `std::cmp::AssertParamIsEq`
+   --> C:\Users\Tim\.rustup\toolchains\1.98.1-x86_64-pc-windows-msvc\lib/rustlib/src/rust\library\core\src\cmp.rs:380:31
+    |
+380 | pub struct AssertParamIsEq<T: Eq + PointeeSized> {
+    |                               ^^ required by this bound in `AssertParamIsEq`
+
+error[E0277]: the trait bound `EncodingConcrete: serde::Serialize` is not satisfied
+    --> apps\harness-crypto\src\config\admit_selections\interface.rs:16:45
+     |
+  16 | #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+     |                                             ^^^^^^^^^ the trait `Serialize` is not implemented for `EncodingConcrete`
+  17 | pub struct EncodingSelection {
+  18 |     pub concrete: EncodingConcrete,
+     |     --- required by a bound introduced by this call
+     |
+     = note: for local types consider adding `#[derive(serde::Serialize)]` to your `EncodingConcrete` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `Serialize`:
+               &'a T
+               &'a mut T
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+               (T0, T1, T2, T3)
+               (T0, T1, T2, T3, T4)
+             and 414 others
+note: required by a bound in `admit_selections::interface::_::_serde::ser::SerializeStruct::serialize_field`
+    --> C:\Users\Tim\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_core-1.0.229\src\ser\mod.rs:1917:21
+     |
+1915 |     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+     |        --------------- required by a bound in this associated function
+1916 |     where
+1917 |         T: ?Sized + Serialize;
+     |                     ^^^^^^^^^ required by this bound in `SerializeStruct::serialize_field`
+     = note: this error originates in the derive macro `Serialize` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `EncodingIdentifier: serde::Serialize` is not satisfied
+    --> apps\harness-crypto\src\config\admit_selections\interface.rs:16:45
+     |
+  16 | #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+     |                                             ^^^^^^^^^ the trait `Serialize` is not implemented for `EncodingIdentifier`
+...
+  19 |     pub identifier: EncodingIdentifier,
+     |     --- required by a bound introduced by this call
+     |
+     = note: for local types consider adding `#[derive(serde::Serialize)]` to your `EncodingIdentifier` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `Serialize`:
+               &'a T
+               &'a mut T
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+               (T0, T1, T2, T3)
+               (T0, T1, T2, T3, T4)
+             and 414 others
+note: required by a bound in `admit_selections::interface::_::_serde::ser::SerializeStruct::serialize_field`
+    --> C:\Users\Tim\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_core-1.0.229\src\ser\mod.rs:1917:21
+     |
+1915 |     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+     |        --------------- required by a bound in this associated function
+1916 |     where
+1917 |         T: ?Sized + Serialize;
+     |                     ^^^^^^^^^ required by this bound in `SerializeStruct::serialize_field`
+     = note: this error originates in the derive macro `Serialize` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ChainFormsConcrete: serde::Serialize` is not satisfied
+    --> apps\harness-crypto\src\config\admit_selections\interface.rs:28:45
+     |
+  28 | #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+     |                                             ^^^^^^^^^ the trait `Serialize` is not implemented for `ChainFormsConcrete`
+  29 | pub struct ChainFormsSelection {
+  30 |     pub concrete: ChainFormsConcrete,
+     |     --- required by a bound introduced by this call
+     |
+     = note: for local types consider adding `#[derive(serde::Serialize)]` to your `ChainFormsConcrete` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `Serialize`:
+               &'a T
+               &'a mut T
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+               (T0, T1, T2, T3)
+               (T0, T1, T2, T3, T4)
+             and 414 others
+note: required by a bound in `admit_selections::interface::_::_serde::ser::SerializeStruct::serialize_field`
+    --> C:\Users\Tim\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_core-1.0.229\src\ser\mod.rs:1917:21
+     |
+1915 |     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+     |        --------------- required by a bound in this associated function
+1916 |     where
+1917 |         T: ?Sized + Serialize;
+     |                     ^^^^^^^^^ required by this bound in `SerializeStruct::serialize_field`
+     = note: this error originates in the derive macro `Serialize` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ChainFormsIdentifier: serde::Serialize` is not satisfied
+    --> apps\harness-crypto\src\config\admit_selections\interface.rs:28:45
+     |
+  28 | #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+     |                                             ^^^^^^^^^ the trait `Serialize` is not implemented for `ChainFormsIdentifier`
+...
+  31 |     pub identifier: ChainFormsIdentifier,
+     |     --- required by a bound introduced by this call
+     |
+     = note: for local types consider adding `#[derive(serde::Serialize)]` to your `ChainFormsIdentifier` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `Serialize`:
+               &'a T
+               &'a mut T
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+               (T0, T1, T2, T3)
+               (T0, T1, T2, T3, T4)
+             and 414 others
+note: required by a bound in `admit_selections::interface::_::_serde::ser::SerializeStruct::serialize_field`
+    --> C:\Users\Tim\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde_core-1.0.229\src\ser\mod.rs:1917:21
+     |
+1915 |     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+     |        --------------- required by a bound in this associated function
+1916 |     where
+1917 |         T: ?Sized + Serialize;
+     |                     ^^^^^^^^^ required by this bound in `SerializeStruct::serialize_field`
+     = note: this error originates in the derive macro `Serialize` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `challenge_vectors::interface::CanonicalDeliveryContext` has no field named `asset_identity_hash`
+   --> apps\harness-crypto\src\config\admit_statements\mod.rs:319:13
+    |
+319 |             asset_identity_hash,
+    |             ^^^^^^^^^^^^^^^^^^^ `challenge_vectors::interface::CanonicalDeliveryContext` does not have this field
+    |
+    = note: available fields are: `asset_root`
+
+error[E0560]: struct `generate::factory::interface::CreateGenerateParams` has no field named `scope`
+  --> apps\harness-crypto\src\run\delivery_proof_consumer\mod.rs:88:17
    |
-45 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\generate_consumer\integration_test.rs:51:22
+88 |                 scope: self.scope,
+   |                 ^^^^^ `generate::factory::interface::CreateGenerateParams` does not have this field
    |
-51 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
+   = note: all struct fields are already assigned
 
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\generate_consumer\test.rs:46:22
+error[E0308]: mismatched types
+  --> apps\harness-crypto\src\run\generate_consumer\mod.rs:39:23
    |
-46 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\kem_consumer\test.rs:48:22
+39 |                 mint: &self.statements.mint,
+   |                       ^^^^^^^^^^^^^^^^^^^^^ expected `&DeliveryContext<..., ...>`, found `&CanonicalDeliveryContext`
    |
-48 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
+   = note: expected reference `&proof::DeliveryContext<<G as generate::factory::interface::IGenerateAdapter>::Forms, MintPurpose>`
+              found reference `&challenge_vectors::interface::CanonicalDeliveryContext`
 
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\key_agreement_consumer\integration_test.rs:49:22
+error[E0560]: struct `generate::factory::interface::EmitPayload<'_, <G as generate::factory::interface::IGenerateAdapter>::Forms>` has no field named `mint_purpose`
+  --> apps\harness-crypto\src\run\generate_consumer\mod.rs:40:17
    |
-49 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
-
-error[E0432]: unresolved import `crate::generate::provides`
-  --> apps\harness-crypto\src\run\key_agreement_consumer\test.rs:47:22
+40 |                 mint_purpose: self.statements.mint_purpose,
+   |                 ^^^^^^^^^^^^ `generate::factory::interface::EmitPayload<'_, _>` does not have this field
    |
-47 | use crate::generate::provides::{
-   |                      ^^^^^^^^ could not find `provides` in `generate`
+   = note: all struct fields are already assigned
 
-Some errors have detailed explanations: E0223, E0432.
-For more information about an error, try `rustc --explain E0223`.
-warning: `harness-crypto` (lib) generated 20 warnings
-error: could not compile `harness-crypto` (lib) due to 28 previous errors; 20 warnings emitted
+error[E0308]: mismatched types
+  --> apps\harness-crypto\src\run\generate_consumer\mod.rs:41:27
+   |
+41 |                 transfer: &self.statements.transfer,
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&DeliveryContext<..., ...>`, found `&CanonicalDeliveryContext`
+   |
+   = note: expected reference `&proof::DeliveryContext<<G as generate::factory::interface::IGenerateAdapter>::Forms, TransferPurpose>`
+              found reference `&challenge_vectors::interface::CanonicalDeliveryContext`
+
+error[E0560]: struct `generate::factory::interface::EmitPayload<'_, <G as generate::factory::interface::IGenerateAdapter>::Forms>` has no field named `transfer_purpose`
+  --> apps\harness-crypto\src\run\generate_consumer\mod.rs:42:17
+   |
+42 |                 transfer_purpose: self.statements.transfer_purpose,
+   |                 ^^^^^^^^^^^^^^^^ `generate::factory::interface::EmitPayload<'_, _>` does not have this field
+   |
+   = note: all struct fields are already assigned
+
+error[E0308]: mismatched types
+  --> apps\harness-crypto\src\run\generate_consumer\mod.rs:43:29
+   |
+43 |                 identities: &self.statements.identities,
+   |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&[AdmittedKemIdentity<'_>]`, found `&Vec<Vec<u8>>`
+   |
+   = note: expected reference `&[delivery::mint::interface::AdmittedKemIdentity<'_>]`
+              found reference `&Vec<Vec<u8>>`
+
+error[E0308]: mismatched types
+  --> apps\harness-crypto\src\run\generate_consumer\mod.rs:44:33
+   |
+44 |                 proof_identity: &self.statements.proof_identity,
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `AdmittedKemIdentity<'_>`, found `&Vec<u8>`
+   |
+   = note: expected struct `delivery::mint::interface::AdmittedKemIdentity<'_>`
+           found reference `&Vec<u8>`
+
+error[E0560]: struct `CreateDeliveryProofParams` has no field named `verifier_form`
+  --> apps\harness-crypto\src\run\key_agreement_consumer\mod.rs:96:17
+   |
+96 |                 verifier_form: P::DECLARATION.verifier_group_arithmetic,
+   |                 ^^^^^^^^^^^^^ `CreateDeliveryProofParams` does not have this field
+   |
+   = note: all struct fields are already assigned
+
+error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\cross_holder\mod.rs:166:25
+    |
+166 |                         identity_hash: &hash,
+    |                         ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\cross_holder\mod.rs:169:25
+    |
+169 |                         identity_hash: &hash,
+    |                         ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\malformed_capsules\mod.rs:148:25
+    |
+148 |                         identity_hash: &hash,
+    |                         ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\rerandomization\mod.rs:153:25
+    |
+153 |                         identity_hash: &hash,
+    |                         ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\rerandomization\mod.rs:156:25
+    |
+156 |                         identity_hash: &hash,
+    |                         ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0432]: unresolved imports `crate::generate::provides::EvmGenerateSettingsOverrides`, `crate::generate::provides::build_evm_generate_settings`
+  --> apps\harness-crypto\src\config\test.rs:45:5
+   |
+45 |     EvmGenerateSettingsOverrides, GenerateConcrete, SpdxLicenseIdentifierTryNewErrorReturn,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `EvmGenerateSettingsOverrides` in `generate::provides`
+46 |     VectorKind, VectorKindConfigurationOverrides, build_evm_generate_settings,
+   |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `build_evm_generate_settings` in `generate::provides`
+   |
+help: a similar name exists in the module
+   |
+45 -     EvmGenerateSettingsOverrides, GenerateConcrete, SpdxLicenseIdentifierTryNewErrorReturn,
+45 +     SolidityGenerateSettingsOverrides, GenerateConcrete, SpdxLicenseIdentifierTryNewErrorReturn,
+   |
+help: a similar name exists in the module
+   |
+46 -     VectorKind, VectorKindConfigurationOverrides, build_evm_generate_settings,
+46 +     VectorKind, VectorKindConfigurationOverrides, build_solidity_generate_settings,
+   |
+
+error[E0432]: unresolved import `crate::generate::provides::create_generate`
+  --> apps\harness-crypto\src\run\generate_consumer\integration_test.rs:59:35
+   |
+59 |     build_vector_kind_quantities, create_generate,
+   |                                   ^^^^^^^^^^^^^^^ no `create_generate` in `generate::provides`
+   |
+help: a similar name exists in the module
+   |
+59 -     build_vector_kind_quantities, create_generate,
+59 +     build_vector_kind_quantities, CreateGenerateFn,
+   |
+
+error[E0432]: unresolved import `crate::generate::provides::create_generate`
+  --> apps\harness-crypto\src\run\generate_consumer\test.rs:51:5
+   |
+51 |     create_generate,
+   |     ^^^^^^^^^^^^^^^ no `create_generate` in `generate::provides`
+   |
+help: a similar name exists in the module
+   |
+51 -     create_generate,
+51 +     CreateGenerateFn,
+   |
+
+Some errors have detailed explanations: E0107, E0277, E0308, E0369, E0432, E0559, E0560, E0599.
+For more information about an error, try `rustc --explain E0107`.
+error: could not compile `harness-crypto` (lib) due to 27 previous errors
 warning: build failed, waiting for other jobs to finish...
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\cross_holder\integration_test.rs:53:13
-   |
-53 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |            |
-   |             |            no `VectorCountConstructorParamsOverrides` in the root
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
-   |
-33 | pub struct VectorCountConstructorParamsOverrides {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-53 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-53 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
-   |
-help: a similar name exists in the module
-   |
-53 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-53 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:74:35
+    |
+ 74 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\cross_holder\test_basic.rs:43:13
-   |
-43 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |            |
-   |             |            no `VectorCountConstructorParamsOverrides` in the root
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
-   |
-33 | pub struct VectorCountConstructorParamsOverrides {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-43 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
-   |
-help: a similar name exists in the module
-   |
-43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-43 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:136:35
+    |
+136 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\cross_holder\test_error.rs:36:13
-   |
-36 | use crate::{VectorCount, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-36 - use crate::{VectorCount, build_vector_count};
-36 + use crate::{VectorCount, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:172:35
+    |
+172 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\malformed_capsules\integration_test.rs:43:13
-   |
-43 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |            |
-   |             |            no `VectorCountConstructorParamsOverrides` in the root
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
-   |
-33 | pub struct VectorCountConstructorParamsOverrides {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-43 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
-   |
-help: a similar name exists in the module
-   |
-43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-43 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:215:35
+    |
+215 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\malformed_capsules\test_basic.rs:37:13
-   |
-37 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |            |
-   |             |            no `VectorCountConstructorParamsOverrides` in the root
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
-   |
-33 | pub struct VectorCountConstructorParamsOverrides {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-37 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-37 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
-   |
-help: a similar name exists in the module
-   |
-37 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-37 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:625:35
+    |
+625 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\malformed_capsules\test_error.rs:32:13
-   |
-32 | use crate::{VectorCount, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-32 - use crate::{VectorCount, build_vector_count};
-32 + use crate::{VectorCount, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:672:35
+    |
+672 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\non_convertibility\integration_test.rs:43:13
-   |
-43 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |            |
-   |             |            no `VectorCountConstructorParamsOverrides` in the root
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
-   |
-33 | pub struct VectorCountConstructorParamsOverrides {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-43 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
-   |
-help: a similar name exists in the module
-   |
-43 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-43 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:720:35
+    |
+720 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\non_convertibility\test_basic.rs:33:13
-   |
-33 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |            |
-   |             |            no `VectorCountConstructorParamsOverrides` in the root
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
-   |
-33 | pub struct VectorCountConstructorParamsOverrides {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-33 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-33 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
-   |
-help: a similar name exists in the module
-   |
-33 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-33 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:768:35
+    |
+768 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\non_convertibility\test_error.rs:35:13
-   |
-35 | use crate::{VectorCount, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-35 - use crate::{VectorCount, build_vector_count};
-35 + use crate::{VectorCount, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:812:35
+    |
+812 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\rerandomization\integration_test.rs:49:13
-   |
-49 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |            |
-   |             |            no `VectorCountConstructorParamsOverrides` in the root
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
-   |
-33 | pub struct VectorCountConstructorParamsOverrides {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-49 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-49 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
-   |
-help: a similar name exists in the module
-   |
-49 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-49 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:852:35
+    |
+852 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::VectorCountConstructorParamsOverrides`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\rerandomization\test_basic.rs:41:13
-   |
-41 | use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |            |
-   |             |            no `VectorCountConstructorParamsOverrides` in the root
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCountConstructorParamsOverrides` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\mock.rs:33:1
-   |
-33 | pub struct VectorCountConstructorParamsOverrides {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-41 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-41 + use crate::{VectorCount, EvmVerifierConstructorParamsOverrides, build_vector_count};
-   |
-help: a similar name exists in the module
-   |
-41 - use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
-41 + use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:892:35
+    |
+892 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-error[E0432]: unresolved imports `crate::VectorCount`, `crate::build_vector_count`
-  --> apps\harness-crypto\src\vectors\rerandomization\test_error.rs:36:13
-   |
-36 | use crate::{VectorCount, build_vector_count};
-   |             ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `build_vector_count` in the root
-   |             |
-   |             no `VectorCount` in the root
-   |
-   = help: consider importing this variant instead:
-           crate::AdmitGenerateErrorReturn::VectorCount
-note: struct `crate::generate::solidity::group_vectors::provides::VectorCount` exists but is inaccessible
-  --> apps\harness-crypto\src\generate\solidity\group_vectors\interface.rs:14:1
-   |
-14 | pub struct VectorCount {
-   | ^^^^^^^^^^^^^^^^^^^^^^ not accessible
-help: a similar name exists in the module
-   |
-36 - use crate::{VectorCount, build_vector_count};
-36 + use crate::{VectorCount, build_verify_cost};
-   |
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:932:35
+    |
+932 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
 
-warning: `harness-crypto` (lib test) generated 18 warnings (18 duplicates)
-error: could not compile `harness-crypto` (lib test) due to 50 previous errors; 18 warnings emitted
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\admit_generate\test.rs:964:35
+    |
+964 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+    |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
+
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+    --> apps\harness-crypto\src\config\admit_generate\test.rs:1009:35
+     |
+1009 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+     |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+     |
+    ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+     |
+ 173 | pub enum GenerateConcrete {
+     | ------------------------- variant `Evm` not found here
+
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+    --> apps\harness-crypto\src\config\admit_generate\test.rs:1051:35
+     |
+1051 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+     |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+     |
+    ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+     |
+ 173 | pub enum GenerateConcrete {
+     | ------------------------- variant `Evm` not found here
+
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+    --> apps\harness-crypto\src\config\admit_generate\test.rs:1093:35
+     |
+1093 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+     |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+     |
+    ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+     |
+ 173 | pub enum GenerateConcrete {
+     | ------------------------- variant `Evm` not found here
+
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+    --> apps\harness-crypto\src\config\admit_generate\test.rs:1139:35
+     |
+1139 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+     |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+     |
+    ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+     |
+ 173 | pub enum GenerateConcrete {
+     | ------------------------- variant `Evm` not found here
+
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+    --> apps\harness-crypto\src\config\admit_generate\test.rs:1176:35
+     |
+1176 |             let GenerateConcrete::Evm { settings } = success.concrete else {
+     |                                   ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+     |
+    ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+     |
+ 173 | pub enum GenerateConcrete {
+     | ------------------------- variant `Evm` not found here
+
+error[E0609]: no field `asset_identity_hash` on type `challenge_vectors::interface::CanonicalDeliveryContext`
+   --> apps\harness-crypto\src\config\admit_statements\test_basic.rs:517:33
+    |
+517 |         success.statements.mint.asset_identity_hash,
+    |                                 ^^^^^^^^^^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `suite_identifier`, `chain`, `entitlement_contract`, `asset_root`, `parameter_set_identifier` ... and 7 others
+
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\test.rs:446:27
+    |
+446 |     let GenerateConcrete::Evm { settings } = &configuration.generate else {
+    |                           ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
+
+error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
+   --> apps\harness-crypto\src\config\test.rs:388:50
+    |
+388 |                 concrete: Some(GenerateConcrete::Evm {
+    |                                                  ^^^ variant not found in `generate::factory::interface::GenerateConcrete`
+    |
+   ::: apps\harness-crypto\src\generate\factory\interface.rs:173:1
+    |
+173 | pub enum GenerateConcrete {
+    | ------------------------- variant `Evm` not found here
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+   --> apps\harness-crypto\src\run\delivery_proof_consumer\integration_test.rs:160:25
+    |
+160 |                         verifier_form: Some(self.verifier_form),
+    |                         ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+    |
+    = note: available fields are: `algebra`, `statement_version`
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\delivery_proof_consumer\integration_test.rs:320:22
+    |
+320 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+321 | |                         ChainFormsConsumer {
+322 | |                             pairing: self.pairing,
+323 | |                             hashing: self.hashing,
+...   |
+331 | |                         Default::default(),
+332 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+320 |                     &build_create_chain_forms_deps(
+...
+331 |                         Default::default(),
+332 ~                         /* CreateChainFormsDepsOverrides */,
+333 ~                     ),
+    |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+   --> apps\harness-crypto\src\run\delivery_proof_consumer\integration_test.rs:567:29
+    |
+567 | ...                   verifier_form: Some(self.verifier_form),
+    |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+    |
+    = note: available fields are: `algebra`, `statement_version`
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\delivery_proof_consumer\integration_test.rs:718:22
+    |
+718 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+719 | |                         ChainFormsConsumer {
+720 | |                             pairing: self.pairing,
+721 | |                             hashing: self.hashing,
+...   |
+727 | |                         Default::default(),
+728 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+718 |                     &build_create_chain_forms_deps(
+...
+727 |                         Default::default(),
+728 ~                         /* CreateChainFormsDepsOverrides */,
+729 ~                     ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\delivery_proof_consumer\test.rs:266:18
+    |
+266 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+267 | |                     ChainFormsConsumer {
+268 | |                         pairing: self.pairing,
+269 | |                         hashing: self.hashing,
+...   |
+276 | |                     Default::default(),
+277 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+266 |                 &build_create_chain_forms_deps(
+...
+276 |                     Default::default(),
+277 ~                     /* CreateChainFormsDepsOverrides */,
+278 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\delivery_proof_consumer\test.rs:593:18
+    |
+593 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+594 | |                     ChainFormsConsumer {
+595 | |                         pairing: self.pairing,
+596 | |                         hashing: self.hashing,
+...   |
+603 | |                     Default::default(),
+604 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+593 |                 &build_create_chain_forms_deps(
+...
+603 |                     Default::default(),
+604 ~                     /* CreateChainFormsDepsOverrides */,
+605 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\delivery_proof_consumer\test.rs:904:18
+    |
+904 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+905 | |                     ChainFormsConsumer {
+906 | |                         pairing: self.pairing,
+907 | |                         hashing: self.hashing,
+...   |
+914 | |                     Default::default(),
+915 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+904 |                 &build_create_chain_forms_deps(
+...
+914 |                     Default::default(),
+915 ~                     /* CreateChainFormsDepsOverrides */,
+916 ~                 ),
+    |
+
+error[E0560]: struct `generate::factory::mock::CreateGenerateParamsOverrides` has no field named `scope`
+   --> apps\harness-crypto\src\run\generate_consumer\integration_test.rs:139:21
+    |
+139 |                     scope: Some(self.scope),
+    |                     ^^^^^ `generate::factory::mock::CreateGenerateParamsOverrides` does not have this field
+    |
+    = note: available fields are: `kinds`, `statement_version`
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+   --> apps\harness-crypto\src\run\generate_consumer\integration_test.rs:202:25
+    |
+202 |                         verifier_form: Some(self.verifier_form),
+    |                         ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\generate_consumer\integration_test.rs:352:22
+    |
+352 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+353 | |                         ChainFormsConsumer {
+354 | |                             pairing: self.pairing,
+355 | |                             hashing: self.hashing,
+...   |
+361 | |                         Default::default(),
+362 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+352 |                     &build_create_chain_forms_deps(
+...
+361 |                         Default::default(),
+362 ~                         /* CreateChainFormsDepsOverrides */,
+363 ~                     ),
+    |
+
+error[E0560]: struct `generate::factory::mock::CreateGenerateParamsOverrides` has no field named `scope`
+   --> apps\harness-crypto\src\run\generate_consumer\integration_test.rs:587:25
+    |
+587 |                         scope: Some(self.scope),
+    |                         ^^^^^ `generate::factory::mock::CreateGenerateParamsOverrides` does not have this field
+    |
+    = note: available fields are: `statement_version`
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+   --> apps\harness-crypto\src\run\generate_consumer\integration_test.rs:654:25
+    |
+654 |                         verifier_form: Some(self.verifier_form),
+    |                         ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\generate_consumer\integration_test.rs:804:22
+    |
+804 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+805 | |                         ChainFormsConsumer {
+806 | |                             pairing: self.pairing,
+807 | |                             hashing: self.hashing,
+...   |
+813 | |                         Default::default(),
+814 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+804 |                     &build_create_chain_forms_deps(
+...
+813 |                         Default::default(),
+814 ~                         /* CreateChainFormsDepsOverrides */,
+815 ~                     ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\generate_consumer\test.rs:297:18
+    |
+297 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+298 | |                     ChainFormsConsumer {
+299 | |                         pairing: self.pairing,
+300 | |                         hashing: self.hashing,
+...   |
+306 | |                     Default::default(),
+307 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+297 |                 &build_create_chain_forms_deps(
+...
+306 |                     Default::default(),
+307 ~                     /* CreateChainFormsDepsOverrides */,
+308 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\generate_consumer\test.rs:654:18
+    |
+654 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+655 | |                     ChainFormsConsumer {
+656 | |                         pairing: self.pairing,
+657 | |                         hashing: self.hashing,
+...   |
+663 | |                     Default::default(),
+664 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+654 |                 &build_create_chain_forms_deps(
+...
+663 |                     Default::default(),
+664 ~                     /* CreateChainFormsDepsOverrides */,
+665 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\kem_consumer\test.rs:196:18
+    |
+196 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+197 | |                     ChainFormsConsumer {
+198 | |                         pairing: self.pairing,
+199 | |                         hash_to_scalar: self.hash_to_scalar,
+...   |
+209 | |                     Default::default(),
+210 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+196 |                 &build_create_chain_forms_deps(
+...
+209 |                     Default::default(),
+210 ~                     /* CreateChainFormsDepsOverrides */,
+211 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\kem_consumer\test.rs:459:18
+    |
+459 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+460 | |                     ChainFormsConsumer {
+461 | |                         pairing: self.pairing,
+462 | |                         hash_to_scalar: self.hash_to_scalar,
+...   |
+472 | |                     Default::default(),
+473 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+459 |                 &build_create_chain_forms_deps(
+...
+472 |                     Default::default(),
+473 ~                     /* CreateChainFormsDepsOverrides */,
+474 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\kem_consumer\test.rs:703:18
+    |
+703 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+704 | |                     ChainFormsConsumer {
+705 | |                         pairing: self.pairing,
+706 | |                         hash_to_scalar: self.hash_to_scalar,
+...   |
+716 | |                     Default::default(),
+717 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+703 |                 &build_create_chain_forms_deps(
+...
+716 |                     Default::default(),
+717 ~                     /* CreateChainFormsDepsOverrides */,
+718 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\kem_consumer\test.rs:939:18
+    |
+939 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+940 | |                     ChainFormsConsumer {
+941 | |                         pairing: self.pairing,
+942 | |                         hash_to_scalar: self.hash_to_scalar,
+...   |
+952 | |                     Default::default(),
+953 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+939 |                 &build_create_chain_forms_deps(
+...
+952 |                     Default::default(),
+953 ~                     /* CreateChainFormsDepsOverrides */,
+954 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\run\kem_consumer\test.rs:1166:18
+     |
+1166 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1167 | |                     ChainFormsConsumer {
+1168 | |                         pairing: self.pairing,
+1169 | |                         hash_to_scalar: self.hash_to_scalar,
+...    |
+1179 | |                     Default::default(),
+1180 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1166 |                 &build_create_chain_forms_deps(
+ ...
+1179 |                     Default::default(),
+1180 ~                     /* CreateChainFormsDepsOverrides */,
+1181 ~                 ),
+     |
+
+error[E0599]: no variant named `AssetIdentityLength` found for enum `generate::factory::interface::EmitErrorReturn`
+    --> apps\harness-crypto\src\run\kem_consumer\test.rs:1510:54
+     |
+1510 |                         output: Err(EmitErrorReturn::AssetIdentityLength { index, actual }),
+     |                                                      ^^^^^^^^^^^^^^^^^^^ variant not found in `generate::factory::interface::EmitErrorReturn`
+     |
+    ::: apps\harness-crypto\src\generate\factory\interface.rs:136:1
+     |
+ 136 | pub enum EmitErrorReturn {
+     | ------------------------ variant `AssetIdentityLength` not found here
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\run\kem_consumer\test.rs:1408:18
+     |
+1408 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1409 | |                     ChainFormsConsumer {
+1410 | |                         pairing: self.pairing,
+1411 | |                         hash_to_scalar: self.hash_to_scalar,
+...    |
+1421 | |                     Default::default(),
+1422 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1408 |                 &build_create_chain_forms_deps(
+ ...
+1421 |                     Default::default(),
+1422 ~                     /* CreateChainFormsDepsOverrides */,
+1423 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\run\kem_consumer\test.rs:1653:18
+     |
+1653 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1654 | |                     ChainFormsConsumer {
+1655 | |                         pairing: self.pairing,
+1656 | |                         hash_to_scalar: self.hash_to_scalar,
+...    |
+1666 | |                     Default::default(),
+1667 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1653 |                 &build_create_chain_forms_deps(
+ ...
+1666 |                     Default::default(),
+1667 ~                     /* CreateChainFormsDepsOverrides */,
+1668 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\key_agreement_consumer\integration_test.rs:263:22
+    |
+263 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+264 | |                         ChainFormsConsumer {
+265 | |                             pairing: self.pairing,
+266 | |                             hash_to_scalar: self.hash_to_scalar,
+...   |
+271 | |                         Default::default(),
+272 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+263 |                     &build_create_chain_forms_deps(
+...
+271 |                         Default::default(),
+272 ~                         /* CreateChainFormsDepsOverrides */,
+273 ~                     ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\key_agreement_consumer\test.rs:224:18
+    |
+224 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+225 | |                     ChainFormsConsumer {
+226 | |                         pairing: self.pairing,
+227 | |                         hash_to_scalar: self.hash_to_scalar,
+...   |
+235 | |                     Default::default(),
+236 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+224 |                 &build_create_chain_forms_deps(
+...
+235 |                     Default::default(),
+236 ~                     /* CreateChainFormsDepsOverrides */,
+237 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\key_agreement_consumer\test.rs:510:18
+    |
+510 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+511 | |                     ChainFormsConsumer {
+512 | |                         pairing: self.pairing,
+513 | |                         hash_to_scalar: self.hash_to_scalar,
+...   |
+521 | |                     Default::default(),
+522 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+510 |                 &build_create_chain_forms_deps(
+...
+521 |                     Default::default(),
+522 ~                     /* CreateChainFormsDepsOverrides */,
+523 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\run\key_agreement_consumer\test.rs:779:18
+    |
+779 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+780 | |                     ChainFormsConsumer {
+781 | |                         pairing: self.pairing,
+782 | |                         hash_to_scalar: self.hash_to_scalar,
+...   |
+790 | |                     Default::default(),
+791 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+779 |                 &build_create_chain_forms_deps(
+...
+790 |                     Default::default(),
+791 ~                     /* CreateChainFormsDepsOverrides */,
+792 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\run\key_agreement_consumer\test.rs:1039:18
+     |
+1039 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1040 | |                     ChainFormsConsumer {
+1041 | |                         pairing: self.pairing,
+1042 | |                         hash_to_scalar: self.hash_to_scalar,
+...    |
+1050 | |                     Default::default(),
+1051 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1039 |                 &build_create_chain_forms_deps(
+ ...
+1050 |                     Default::default(),
+1051 ~                     /* CreateChainFormsDepsOverrides */,
+1052 ~                 ),
+     |
+
+error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\cross_holder\integration_test.rs:301:29
+    |
+301 | ...                   identity_hash: &hash,
+    |                       ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\cross_holder\integration_test.rs:304:29
+    |
+304 | ...                   identity_hash: &hash,
+    |                       ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\cross_holder\test_basic.rs:909:29
+    |
+909 | ...                   identity_hash: self.identity_hash,
+    |                       ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\cross_holder\test_basic.rs:927:33
+    |
+927 | ...                   identity_hash: self.identity_hash,
+    |                       ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\malformed_capsules\integration_test.rs:261:25
+    |
+261 |                         identity_hash: &hash,
+    |                         ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\malformed_capsules\test_basic.rs:750:29
+    |
+750 | ...                   identity_hash: self.identity_hash,
+    |                       ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\rerandomization\integration_test.rs:315:29
+    |
+315 | ...                   identity_hash: &hash,
+    |                       ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\rerandomization\integration_test.rs:318:29
+    |
+318 | ...                   identity_hash: &hash,
+    |                       ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\rerandomization\test_basic.rs:807:29
+    |
+807 | ...                   identity_hash: self.identity_hash,
+    |                       ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
+   --> apps\harness-crypto\src\vectors\rerandomization\test_basic.rs:825:33
+    |
+825 | ...                   identity_hash: self.identity_hash,
+    |                       ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
+    |
+    = note: available fields are: `root`
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+   --> apps\harness-crypto\src\verifier\evm\integration_test.rs:401:29
+    |
+401 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+    |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\integration_test.rs:431:22
+    |
+431 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+432 | |                         ChainFormsConsumer {
+433 | |                             pairing: self.pairing,
+434 | |                             encoder: &payload.adapter,
+435 | |                         },
+436 | |                         Default::default(),
+437 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+431 |                     &build_create_chain_forms_deps(
+...
+436 |                         Default::default(),
+437 ~                         /* CreateChainFormsDepsOverrides */,
+438 ~                     ),
+    |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+   --> apps\harness-crypto\src\verifier\evm\integration_test.rs:740:29
+    |
+740 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+    |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\integration_test.rs:770:22
+    |
+770 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+771 | |                         ChainFormsConsumer {
+772 | |                             pairing: self.pairing,
+773 | |                             encoder: &payload.adapter,
+774 | |                         },
+775 | |                         Default::default(),
+776 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+770 |                     &build_create_chain_forms_deps(
+...
+775 |                         Default::default(),
+776 ~                         /* CreateChainFormsDepsOverrides */,
+777 ~                     ),
+    |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:1002:29
+     |
+1002 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+     |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:1032:22
+     |
+1032 |                       &build_create_chain_forms_deps(
+     |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1033 | |                         ChainFormsConsumer {
+1034 | |                             pairing: self.pairing,
+1035 | |                             encoder: &payload.adapter,
+1036 | |                         },
+1037 | |                         Default::default(),
+1038 | |                     ),
+     | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1032 |                     &build_create_chain_forms_deps(
+ ...
+1037 |                         Default::default(),
+1038 ~                         /* CreateChainFormsDepsOverrides */,
+1039 ~                     ),
+     |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:1282:29
+     |
+1282 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+     |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:1312:22
+     |
+1312 |                       &build_create_chain_forms_deps(
+     |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1313 | |                         ChainFormsConsumer {
+1314 | |                             pairing: self.pairing,
+1315 | |                             encoder: &payload.adapter,
+1316 | |                         },
+1317 | |                         Default::default(),
+1318 | |                     ),
+     | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1312 |                     &build_create_chain_forms_deps(
+ ...
+1317 |                         Default::default(),
+1318 ~                         /* CreateChainFormsDepsOverrides */,
+1319 ~                     ),
+     |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:1542:29
+     |
+1542 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+     |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:1572:22
+     |
+1572 |                       &build_create_chain_forms_deps(
+     |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1573 | |                         ChainFormsConsumer {
+1574 | |                             pairing: self.pairing,
+1575 | |                             encoder: &payload.adapter,
+1576 | |                         },
+1577 | |                         Default::default(),
+1578 | |                     ),
+     | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1572 |                     &build_create_chain_forms_deps(
+ ...
+1577 |                         Default::default(),
+1578 ~                         /* CreateChainFormsDepsOverrides */,
+1579 ~                     ),
+     |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:1879:29
+     |
+1879 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+     |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:1909:22
+     |
+1909 |                       &build_create_chain_forms_deps(
+     |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1910 | |                         ChainFormsConsumer {
+1911 | |                             pairing: self.pairing,
+1912 | |                             encoder: &payload.adapter,
+1913 | |                         },
+1914 | |                         Default::default(),
+1915 | |                     ),
+     | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1909 |                     &build_create_chain_forms_deps(
+ ...
+1914 |                         Default::default(),
+1915 ~                         /* CreateChainFormsDepsOverrides */,
+1916 ~                     ),
+     |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:2193:29
+     |
+2193 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+     |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:2223:22
+     |
+2223 |                       &build_create_chain_forms_deps(
+     |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2224 | |                         ChainFormsConsumer {
+2225 | |                             pairing: self.pairing,
+2226 | |                             encoder: &payload.adapter,
+2227 | |                         },
+2228 | |                         Default::default(),
+2229 | |                     ),
+     | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2223 |                     &build_create_chain_forms_deps(
+ ...
+2228 |                         Default::default(),
+2229 ~                         /* CreateChainFormsDepsOverrides */,
+2230 ~                     ),
+     |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:2495:29
+     |
+2495 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+     |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:2525:22
+     |
+2525 |                       &build_create_chain_forms_deps(
+     |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2526 | |                         ChainFormsConsumer {
+2527 | |                             pairing: self.pairing,
+2528 | |                             encoder: &payload.adapter,
+2529 | |                         },
+2530 | |                         Default::default(),
+2531 | |                     ),
+     | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2525 |                     &build_create_chain_forms_deps(
+ ...
+2530 |                         Default::default(),
+2531 ~                         /* CreateChainFormsDepsOverrides */,
+2532 ~                     ),
+     |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:2781:29
+     |
+2781 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+     |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:2811:22
+     |
+2811 |                       &build_create_chain_forms_deps(
+     |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2812 | |                         ChainFormsConsumer {
+2813 | |                             pairing: self.pairing,
+2814 | |                             encoder: &payload.adapter,
+2815 | |                         },
+2816 | |                         Default::default(),
+2817 | |                     ),
+     | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2811 |                     &build_create_chain_forms_deps(
+ ...
+2816 |                         Default::default(),
+2817 ~                         /* CreateChainFormsDepsOverrides */,
+2818 ~                     ),
+     |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:3158:29
+     |
+3158 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+     |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:3188:22
+     |
+3188 |                       &build_create_chain_forms_deps(
+     |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+3189 | |                         ChainFormsConsumer {
+3190 | |                             pairing: self.pairing,
+3191 | |                             encoder: &payload.adapter,
+3192 | |                         },
+3193 | |                         Default::default(),
+3194 | |                     ),
+     | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+3188 |                     &build_create_chain_forms_deps(
+ ...
+3193 |                         Default::default(),
+3194 ~                         /* CreateChainFormsDepsOverrides */,
+3195 ~                     ),
+     |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:3416:29
+     |
+3416 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+     |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:3446:22
+     |
+3446 |                       &build_create_chain_forms_deps(
+     |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+3447 | |                         ChainFormsConsumer {
+3448 | |                             pairing: self.pairing,
+3449 | |                             encoder: &payload.adapter,
+3450 | |                         },
+3451 | |                         Default::default(),
+3452 | |                     ),
+     | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+3446 |                     &build_create_chain_forms_deps(
+ ...
+3451 |                         Default::default(),
+3452 ~                         /* CreateChainFormsDepsOverrides */,
+3453 ~                     ),
+     |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:3673:29
+     |
+3673 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+     |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+     |
+     = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\integration_test.rs:3703:22
+     |
+3703 |                       &build_create_chain_forms_deps(
+     |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+3704 | |                         ChainFormsConsumer {
+3705 | |                             pairing: self.pairing,
+3706 | |                             encoder: &payload.adapter,
+3707 | |                         },
+3708 | |                         Default::default(),
+3709 | |                     ),
+     | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+3703 |                     &build_create_chain_forms_deps(
+ ...
+3708 |                         Default::default(),
+3709 ~                         /* CreateChainFormsDepsOverrides */,
+3710 ~                     ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_basic.rs:268:18
+    |
+268 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+269 | |                     ChainFormsConsumer {
+270 | |                         pairing: self.pairing,
+271 | |                         hashing: self.hashing,
+...   |
+277 | |                     Default::default(),
+278 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+268 |                 &build_create_chain_forms_deps(
+...
+277 |                     Default::default(),
+278 ~                     /* CreateChainFormsDepsOverrides */,
+279 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_basic.rs:478:18
+    |
+478 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+479 | |                     ChainFormsConsumer {
+480 | |                         pairing: self.pairing,
+481 | |                         hashing: self.hashing,
+...   |
+487 | |                     Default::default(),
+488 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+478 |                 &build_create_chain_forms_deps(
+...
+487 |                     Default::default(),
+488 ~                     /* CreateChainFormsDepsOverrides */,
+489 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_basic.rs:684:18
+    |
+684 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+685 | |                     ChainFormsConsumer {
+686 | |                         pairing: self.pairing,
+687 | |                         hashing: self.hashing,
+...   |
+693 | |                     Default::default(),
+694 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+684 |                 &build_create_chain_forms_deps(
+...
+693 |                     Default::default(),
+694 ~                     /* CreateChainFormsDepsOverrides */,
+695 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_basic.rs:889:18
+    |
+889 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+890 | |                     ChainFormsConsumer {
+891 | |                         pairing: self.pairing,
+892 | |                         hashing: self.hashing,
+...   |
+898 | |                     Default::default(),
+899 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+889 |                 &build_create_chain_forms_deps(
+...
+898 |                     Default::default(),
+899 ~                     /* CreateChainFormsDepsOverrides */,
+900 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_basic.rs:1088:18
+     |
+1088 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1089 | |                     ChainFormsConsumer {
+1090 | |                         pairing: self.pairing,
+1091 | |                         hashing: self.hashing,
+...    |
+1096 | |                     Default::default(),
+1097 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1088 |                 &build_create_chain_forms_deps(
+ ...
+1096 |                     Default::default(),
+1097 ~                     /* CreateChainFormsDepsOverrides */,
+1098 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_basic.rs:1284:18
+     |
+1284 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1285 | |                     ChainFormsConsumer {
+1286 | |                         pairing: self.pairing,
+1287 | |                         hashing: self.hashing,
+...    |
+1292 | |                     Default::default(),
+1293 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1284 |                 &build_create_chain_forms_deps(
+ ...
+1292 |                     Default::default(),
+1293 ~                     /* CreateChainFormsDepsOverrides */,
+1294 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:176:18
+    |
+176 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+177 | |                     ChainFormsConsumer {
+178 | |                         pairing: self.pairing,
+179 | |                         hashing: self.hashing,
+...   |
+184 | |                     Default::default(),
+185 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+176 |                 &build_create_chain_forms_deps(
+...
+184 |                     Default::default(),
+185 ~                     /* CreateChainFormsDepsOverrides */,
+186 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:377:18
+    |
+377 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+378 | |                     ChainFormsConsumer {
+379 | |                         pairing: self.pairing,
+380 | |                         hashing: self.hashing,
+...   |
+385 | |                     Default::default(),
+386 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+377 |                 &build_create_chain_forms_deps(
+...
+385 |                     Default::default(),
+386 ~                     /* CreateChainFormsDepsOverrides */,
+387 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:671:18
+    |
+671 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+672 | |                     ChainFormsConsumer {
+673 | |                         pairing: self.pairing,
+674 | |                         hashing: self.hashing,
+...   |
+679 | |                     Default::default(),
+680 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+671 |                 &build_create_chain_forms_deps(
+...
+679 |                     Default::default(),
+680 ~                     /* CreateChainFormsDepsOverrides */,
+681 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:900:18
+    |
+900 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+901 | |                     ChainFormsConsumer {
+902 | |                         pairing: self.pairing,
+903 | |                         hashing: self.hashing,
+...   |
+908 | |                     Default::default(),
+909 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+900 |                 &build_create_chain_forms_deps(
+...
+908 |                     Default::default(),
+909 ~                     /* CreateChainFormsDepsOverrides */,
+910 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:1172:18
+     |
+1172 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1173 | |                     ChainFormsConsumer {
+1174 | |                         pairing: self.pairing,
+1175 | |                         hashing: self.hashing,
+...    |
+1180 | |                     Default::default(),
+1181 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1172 |                 &build_create_chain_forms_deps(
+ ...
+1180 |                     Default::default(),
+1181 ~                     /* CreateChainFormsDepsOverrides */,
+1182 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:1402:18
+     |
+1402 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1403 | |                     ChainFormsConsumer {
+1404 | |                         pairing: self.pairing,
+1405 | |                         hashing: self.hashing,
+...    |
+1410 | |                     Default::default(),
+1411 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1402 |                 &build_create_chain_forms_deps(
+ ...
+1410 |                     Default::default(),
+1411 ~                     /* CreateChainFormsDepsOverrides */,
+1412 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:1596:18
+     |
+1596 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1597 | |                     ChainFormsConsumer {
+1598 | |                         pairing: self.pairing,
+1599 | |                         hashing: self.hashing,
+...    |
+1604 | |                     Default::default(),
+1605 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1596 |                 &build_create_chain_forms_deps(
+ ...
+1604 |                     Default::default(),
+1605 ~                     /* CreateChainFormsDepsOverrides */,
+1606 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:1827:18
+     |
+1827 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1828 | |                     ChainFormsConsumer {
+1829 | |                         pairing: self.pairing,
+1830 | |                         hashing: self.hashing,
+...    |
+1835 | |                     Default::default(),
+1836 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1827 |                 &build_create_chain_forms_deps(
+ ...
+1835 |                     Default::default(),
+1836 ~                     /* CreateChainFormsDepsOverrides */,
+1837 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:2106:18
+     |
+2106 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2107 | |                     ChainFormsConsumer {
+2108 | |                         pairing: self.pairing,
+2109 | |                         hashing: self.hashing,
+...    |
+2114 | |                     Default::default(),
+2115 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2106 |                 &build_create_chain_forms_deps(
+ ...
+2114 |                     Default::default(),
+2115 ~                     /* CreateChainFormsDepsOverrides */,
+2116 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:2313:18
+     |
+2313 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2314 | |                     ChainFormsConsumer {
+2315 | |                         pairing: self.pairing,
+2316 | |                         hashing: self.hashing,
+...    |
+2321 | |                     Default::default(),
+2322 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2313 |                 &build_create_chain_forms_deps(
+ ...
+2321 |                     Default::default(),
+2322 ~                     /* CreateChainFormsDepsOverrides */,
+2323 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:2628:18
+     |
+2628 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2629 | |                     ChainFormsConsumer {
+2630 | |                         pairing: self.pairing,
+2631 | |                         hashing: self.hashing,
+...    |
+2636 | |                     Default::default(),
+2637 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2628 |                 &build_create_chain_forms_deps(
+ ...
+2636 |                     Default::default(),
+2637 ~                     /* CreateChainFormsDepsOverrides */,
+2638 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:2859:18
+     |
+2859 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2860 | |                     ChainFormsConsumer {
+2861 | |                         pairing: self.pairing,
+2862 | |                         hashing: self.hashing,
+...    |
+2867 | |                     Default::default(),
+2868 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2859 |                 &build_create_chain_forms_deps(
+ ...
+2867 |                     Default::default(),
+2868 ~                     /* CreateChainFormsDepsOverrides */,
+2869 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:3054:18
+     |
+3054 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+3055 | |                     ChainFormsConsumer {
+3056 | |                         pairing: self.pairing,
+3057 | |                         hashing: self.hashing,
+...    |
+3062 | |                     Default::default(),
+3063 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+3054 |                 &build_create_chain_forms_deps(
+ ...
+3062 |                     Default::default(),
+3063 ~                     /* CreateChainFormsDepsOverrides */,
+3064 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:3284:18
+     |
+3284 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+3285 | |                     ChainFormsConsumer {
+3286 | |                         pairing: self.pairing,
+3287 | |                         hashing: self.hashing,
+...    |
+3292 | |                     Default::default(),
+3293 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+3284 |                 &build_create_chain_forms_deps(
+ ...
+3292 |                     Default::default(),
+3293 ~                     /* CreateChainFormsDepsOverrides */,
+3294 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:3466:18
+     |
+3466 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+3467 | |                     ChainFormsConsumer {
+3468 | |                         pairing: self.pairing,
+3469 | |                         hashing: self.hashing,
+...    |
+3473 | |                     Default::default(),
+3474 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+3466 |                 &build_create_chain_forms_deps(
+ ...
+3473 |                     Default::default(),
+3474 ~                     /* CreateChainFormsDepsOverrides */,
+3475 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:3666:18
+     |
+3666 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+3667 | |                     ChainFormsConsumer {
+3668 | |                         pairing: self.pairing,
+3669 | |                         hashing: self.hashing,
+...    |
+3676 | |                     Default::default(),
+3677 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+3666 |                 &build_create_chain_forms_deps(
+ ...
+3676 |                     Default::default(),
+3677 ~                     /* CreateChainFormsDepsOverrides */,
+3678 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_calldata.rs:3890:18
+     |
+3890 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+3891 | |                     ChainFormsConsumer {
+3892 | |                         pairing: self.pairing,
+3893 | |                         hashing: self.hashing,
+...    |
+3900 | |                     Default::default(),
+3901 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+3890 |                 &build_create_chain_forms_deps(
+ ...
+3900 |                     Default::default(),
+3901 ~                     /* CreateChainFormsDepsOverrides */,
+3902 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_error.rs:205:18
+    |
+205 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+206 | |                     ChainFormsConsumer {
+207 | |                         pairing: self.pairing,
+208 | |                         hashing: self.hashing,
+...   |
+213 | |                     Default::default(),
+214 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+205 |                 &build_create_chain_forms_deps(
+...
+213 |                     Default::default(),
+214 ~                     /* CreateChainFormsDepsOverrides */,
+215 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_error.rs:422:18
+    |
+422 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+423 | |                     ChainFormsConsumer {
+424 | |                         pairing: self.pairing,
+425 | |                         hashing: self.hashing,
+...   |
+430 | |                     Default::default(),
+431 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+422 |                 &build_create_chain_forms_deps(
+...
+430 |                     Default::default(),
+431 ~                     /* CreateChainFormsDepsOverrides */,
+432 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_error.rs:651:18
+    |
+651 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+652 | |                     ChainFormsConsumer {
+653 | |                         pairing: self.pairing,
+654 | |                         hashing: self.hashing,
+...   |
+660 | |                     Default::default(),
+661 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+651 |                 &build_create_chain_forms_deps(
+...
+660 |                     Default::default(),
+661 ~                     /* CreateChainFormsDepsOverrides */,
+662 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_error.rs:871:18
+    |
+871 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+872 | |                     ChainFormsConsumer {
+873 | |                         pairing: self.pairing,
+874 | |                         hashing: self.hashing,
+...   |
+879 | |                     Default::default(),
+880 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+871 |                 &build_create_chain_forms_deps(
+...
+879 |                     Default::default(),
+880 ~                     /* CreateChainFormsDepsOverrides */,
+881 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_error.rs:1085:18
+     |
+1085 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1086 | |                     ChainFormsConsumer {
+1087 | |                         pairing: self.pairing,
+1088 | |                         hashing: self.hashing,
+...    |
+1093 | |                     Default::default(),
+1094 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1085 |                 &build_create_chain_forms_deps(
+ ...
+1093 |                     Default::default(),
+1094 ~                     /* CreateChainFormsDepsOverrides */,
+1095 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_error.rs:1302:18
+     |
+1302 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1303 | |                     ChainFormsConsumer {
+1304 | |                         pairing: self.pairing,
+1305 | |                         hashing: self.hashing,
+...    |
+1310 | |                     Default::default(),
+1311 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1302 |                 &build_create_chain_forms_deps(
+ ...
+1310 |                     Default::default(),
+1311 ~                     /* CreateChainFormsDepsOverrides */,
+1312 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_error.rs:1518:18
+     |
+1518 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1519 | |                     ChainFormsConsumer {
+1520 | |                         pairing: self.pairing,
+1521 | |                         hashing: self.hashing,
+...    |
+1526 | |                     Default::default(),
+1527 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1518 |                 &build_create_chain_forms_deps(
+ ...
+1526 |                     Default::default(),
+1527 ~                     /* CreateChainFormsDepsOverrides */,
+1528 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_error.rs:1736:18
+     |
+1736 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1737 | |                     ChainFormsConsumer {
+1738 | |                         pairing: self.pairing,
+1739 | |                         hashing: self.hashing,
+...    |
+1744 | |                     Default::default(),
+1745 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1736 |                 &build_create_chain_forms_deps(
+ ...
+1744 |                     Default::default(),
+1745 ~                     /* CreateChainFormsDepsOverrides */,
+1746 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_error.rs:1955:18
+     |
+1955 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1956 | |                     ChainFormsConsumer {
+1957 | |                         pairing: self.pairing,
+1958 | |                         hashing: self.hashing,
+...    |
+1963 | |                     Default::default(),
+1964 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1955 |                 &build_create_chain_forms_deps(
+ ...
+1963 |                     Default::default(),
+1964 ~                     /* CreateChainFormsDepsOverrides */,
+1965 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_error.rs:2176:18
+     |
+2176 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2177 | |                     ChainFormsConsumer {
+2178 | |                         pairing: self.pairing,
+2179 | |                         hashing: self.hashing,
+...    |
+2184 | |                     Default::default(),
+2185 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2176 |                 &build_create_chain_forms_deps(
+ ...
+2184 |                     Default::default(),
+2185 ~                     /* CreateChainFormsDepsOverrides */,
+2186 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_error.rs:2404:18
+     |
+2404 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2405 | |                     ChainFormsConsumer {
+2406 | |                         pairing: self.pairing,
+2407 | |                         hashing: self.hashing,
+...    |
+2412 | |                     Default::default(),
+2413 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2404 |                 &build_create_chain_forms_deps(
+ ...
+2412 |                     Default::default(),
+2413 ~                     /* CreateChainFormsDepsOverrides */,
+2414 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_error.rs:2626:18
+     |
+2626 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2627 | |                     ChainFormsConsumer {
+2628 | |                         pairing: self.pairing,
+2629 | |                         hashing: self.hashing,
+...    |
+2634 | |                     Default::default(),
+2635 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2626 |                 &build_create_chain_forms_deps(
+ ...
+2634 |                     Default::default(),
+2635 ~                     /* CreateChainFormsDepsOverrides */,
+2636 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_error.rs:2853:18
+     |
+2853 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+2854 | |                     ChainFormsConsumer {
+2855 | |                         pairing: self.pairing,
+2856 | |                         hashing: self.hashing,
+...    |
+2861 | |                     Default::default(),
+2862 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+2853 |                 &build_create_chain_forms_deps(
+ ...
+2861 |                     Default::default(),
+2862 ~                     /* CreateChainFormsDepsOverrides */,
+2863 ~                 ),
+     |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_verdict.rs:206:18
+    |
+206 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+207 | |                     ChainFormsConsumer {
+208 | |                         pairing: self.pairing,
+209 | |                         hashing: self.hashing,
+...   |
+214 | |                     Default::default(),
+215 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+206 |                 &build_create_chain_forms_deps(
+...
+214 |                     Default::default(),
+215 ~                     /* CreateChainFormsDepsOverrides */,
+216 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_verdict.rs:445:18
+    |
+445 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+446 | |                     ChainFormsConsumer {
+447 | |                         pairing: self.pairing,
+448 | |                         hashing: self.hashing,
+...   |
+453 | |                     Default::default(),
+454 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+445 |                 &build_create_chain_forms_deps(
+...
+453 |                     Default::default(),
+454 ~                     /* CreateChainFormsDepsOverrides */,
+455 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_verdict.rs:675:18
+    |
+675 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+676 | |                     ChainFormsConsumer {
+677 | |                         pairing: self.pairing,
+678 | |                         hashing: self.hashing,
+...   |
+683 | |                     Default::default(),
+684 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+675 |                 &build_create_chain_forms_deps(
+...
+683 |                     Default::default(),
+684 ~                     /* CreateChainFormsDepsOverrides */,
+685 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\evm\test_verdict.rs:891:18
+    |
+891 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+892 | |                     ChainFormsConsumer {
+893 | |                         pairing: self.pairing,
+894 | |                         hashing: self.hashing,
+...   |
+899 | |                     Default::default(),
+900 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+891 |                 &build_create_chain_forms_deps(
+...
+899 |                     Default::default(),
+900 ~                     /* CreateChainFormsDepsOverrides */,
+901 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+    --> apps\harness-crypto\src\verifier\evm\test_verdict.rs:1115:18
+     |
+1115 |                   &build_create_chain_forms_deps(
+     |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+1116 | |                     ChainFormsConsumer {
+1117 | |                         pairing: self.pairing,
+1118 | |                         hashing: self.hashing,
+...    |
+1123 | |                     Default::default(),
+1124 | |                 ),
+     | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+     |
+note: function defined here
+    --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+     |
+  67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+     |
+1115 |                 &build_create_chain_forms_deps(
+ ...
+1123 |                     Default::default(),
+1124 ~                     /* CreateChainFormsDepsOverrides */,
+1125 ~                 ),
+     |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+   --> apps\harness-crypto\src\verifier\factory\integration_test.rs:281:29
+    |
+281 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+    |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\factory\integration_test.rs:314:22
+    |
+314 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+315 | |                         ChainFormsConsumer {
+316 | |                             pairing: self.pairing,
+317 | |                             encoder: &payload.adapter,
+318 | |                         },
+319 | |                         Default::default(),
+320 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+314 |                     &build_create_chain_forms_deps(
+...
+319 |                         Default::default(),
+320 ~                         /* CreateChainFormsDepsOverrides */,
+321 ~                     ),
+    |
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+   --> apps\harness-crypto\src\verifier\factory\integration_test.rs:591:29
+    |
+591 | ...                   verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+    |                       ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\factory\integration_test.rs:624:22
+    |
+624 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+625 | |                         ChainFormsConsumer {
+626 | |                             pairing: self.pairing,
+627 | |                             encoder: &payload.adapter,
+628 | |                         },
+629 | |                         Default::default(),
+630 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+624 |                     &build_create_chain_forms_deps(
+...
+629 |                         Default::default(),
+630 ~                         /* CreateChainFormsDepsOverrides */,
+631 ~                     ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\factory\test.rs:156:18
+    |
+156 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+157 | |                     ChainFormsConsumer {
+158 | |                         pairing: self.pairing,
+159 | |                         hashing: self.hashing,
+...   |
+164 | |                     Default::default(),
+165 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+156 |                 &build_create_chain_forms_deps(
+...
+164 |                     Default::default(),
+165 ~                     /* CreateChainFormsDepsOverrides */,
+166 ~                 ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\src\verifier\factory\test.rs:353:18
+    |
+353 |                   &build_create_chain_forms_deps(
+    |  __________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+354 | |                     ChainFormsConsumer {
+355 | |                         pairing: self.pairing,
+356 | |                         hashing: self.hashing,
+...   |
+361 | |                     Default::default(),
+362 | |                 ),
+    | |_________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+353 |                 &build_create_chain_forms_deps(
+...
+361 |                     Default::default(),
+362 ~                     /* CreateChainFormsDepsOverrides */,
+363 ~                 ),
+    |
+
+Some errors have detailed explanations: E0061, E0107, E0277, E0308, E0369, E0432, E0559, E0560, E0599...
+For more information about an error, try `rustc --explain E0061`.
+error: could not compile `harness-crypto` (lib test) due to 160 previous errors

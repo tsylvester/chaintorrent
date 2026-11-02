@@ -4,9 +4,9 @@ use super::challenge::provides::{
     ChallengeDeps, ChallengeParams, ChallengePayload, ChallengeTranscript, challenge,
 };
 use super::interface::{
-    ISchnorrFsCaseConsumer, SchnorrFsCaseDeps, SchnorrFsCaseErrorReturn, SchnorrFsCaseParams,
-    SchnorrFsCasePayload, SchnorrFsCaseReturn, SchnorrFsCaseSuccessReturn, SchnorrFsDeliveryProof,
-    SchnorrFsDeliveryProofConstructorParams, SchnorrFsProof,
+    ISchnorrFsCaseConsumer, RunSchnorrFsCaseFn, SchnorrFsCaseDeps, SchnorrFsCaseErrorReturn,
+    SchnorrFsCaseParams, SchnorrFsCasePayload, SchnorrFsCaseReturn, SchnorrFsCaseSuccessReturn,
+    SchnorrFsDeliveryProof, SchnorrFsDeliveryProofConstructorParams, SchnorrFsProof,
 };
 use crate::factory::provides::{
     MintResponses, MintSecondGroupFirstMessages, ProveMintPayload, ProveTransferPayload,
@@ -697,6 +697,7 @@ pub fn run_schnorr_fs_case<C: ISchnorrFsCaseConsumer>(
     params: SchnorrFsCaseParams,
     _payload: SchnorrFsCasePayload,
 ) -> SchnorrFsCaseReturn<C::Output> {
+    let _: RunSchnorrFsCaseFn<C> = run_schnorr_fs_case::<C>;
     let pairing_deps = build_create_pairing_deps(
         CaseAtPairing {
             consumer: &deps.consumer,
@@ -712,7 +713,10 @@ pub fn run_schnorr_fs_case<C: ISchnorrFsCaseConsumer>(
         params.pairing,
         build_create_pairing_payload(Default::default()),
     ) {
-        Ok(success) => success.output,
+        Ok(success) => match success.output {
+            Ok(SchnorrFsCaseSuccessReturn { output }) => Ok(SchnorrFsCaseSuccessReturn { output }),
+            Err(error) => Err(error),
+        },
         Err(error) => Err(SchnorrFsCaseErrorReturn::CreatePairing(error)),
     }
 }

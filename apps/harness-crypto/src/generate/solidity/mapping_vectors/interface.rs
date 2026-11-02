@@ -148,17 +148,16 @@ pub type MappingVectorsFn<'a, P, K> = fn(
 pub trait IMappingVectorsCaseConsumer {
     type Output;
 
-    fn consume_mapping_vectors_case<P, H, K>(
+    fn consume_mapping_vectors_case<P, K>(
         &self,
         pairing: &P,
-        hash_to_scalar: &H,
+        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
         kem: &K,
         random: &dyn IRandomSourceAdapter,
         identities: Vec<AdmittedKemIdentity<'_>>,
     ) -> Self::Output
     where
         P: IPairingArithmetic + IPairingReference,
-        H: ?Sized + IHashToScalarAdapter<P::Scalar>,
         K: ICredentialKemAdapter<Pairing = P>;
 }
 

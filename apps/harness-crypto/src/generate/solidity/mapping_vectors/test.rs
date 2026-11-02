@@ -132,7 +132,9 @@ fn hash_to_scalar_vector_description_rebuilds_the_record_from_its_fields() {
 /// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])` and
 ///   `Bytes(vec![0x0B])`.
 /// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldCount { expected: 3, actual: 2 }`.
+/// Assert: `result.err()` equals
+///   `Some(HashToScalarVectorFromFieldsErrorReturn::FieldCount { expected: 3,
+///   actual: 2 })`.
 #[test]
 fn hash_to_scalar_vector_description_refuses_a_wrong_field_count() {
     // Arrange
@@ -149,8 +151,8 @@ fn hash_to_scalar_vector_description_refuses_a_wrong_field_count() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(HashToScalarVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(HashToScalarVectorFromFieldsErrorReturn::FieldCount {
             expected: 3,
             actual: 2,
         })
@@ -165,7 +167,9 @@ fn hash_to_scalar_vector_description_refuses_a_wrong_field_count() {
 ///   `Bytes(vec![0x0C])`, and `Bytes(vec![0x0D])`, so the indexes `0` and `2` both
 ///   hold a wrong kind.
 /// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldKind { index: 0, expected: CanonicalFieldKind::Bytes }`.
+/// Assert: `result.err()` equals
+///   `Some(HashToScalarVectorFromFieldsErrorReturn::FieldKind { index: 0,
+///   expected: CanonicalFieldKind::Bytes })`.
 #[test]
 fn hash_to_scalar_vector_description_refuses_the_lowest_index_of_the_wrong_kind() {
     // Arrange
@@ -183,8 +187,8 @@ fn hash_to_scalar_vector_description_refuses_the_lowest_index_of_the_wrong_kind(
 
     // Assert
     assert_eq!(
-        result,
-        Err(HashToScalarVectorFromFieldsErrorReturn::FieldKind {
+        result.err(),
+        Some(HashToScalarVectorFromFieldsErrorReturn::FieldKind {
             index: 0,
             expected: CanonicalFieldKind::Bytes,
         })
@@ -198,8 +202,9 @@ fn hash_to_scalar_vector_description_refuses_the_lowest_index_of_the_wrong_kind(
 /// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])`,
 ///   `Bytes(vec![0x0B])`, and `Bytes(vec![0x0D])`.
 /// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldKind { index: 2, expected:
-///   CanonicalFieldKind::Unsigned256 }`.
+/// Assert: `result.err()` equals
+///   `Some(HashToScalarVectorFromFieldsErrorReturn::FieldKind { index: 2,
+///   expected: CanonicalFieldKind::Unsigned256 })`.
 #[test]
 fn hash_to_scalar_vector_description_refuses_a_byte_string_scalar() {
     // Arrange
@@ -217,8 +222,8 @@ fn hash_to_scalar_vector_description_refuses_a_byte_string_scalar() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(HashToScalarVectorFromFieldsErrorReturn::FieldKind {
+        result.err(),
+        Some(HashToScalarVectorFromFieldsErrorReturn::FieldKind {
             index: 2,
             expected: CanonicalFieldKind::Unsigned256,
         })
@@ -304,7 +309,9 @@ fn identity_mapping_vector_description_rebuilds_the_record_from_its_fields() {
 ///   `Err(IdentityMappingVectorFromFieldsErrorReturn::FieldCount { expected, actual })`.
 /// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0E])`.
 /// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldCount { expected: 2, actual: 1 }`.
+/// Assert: `result.err()` equals
+///   `Some(IdentityMappingVectorFromFieldsErrorReturn::FieldCount { expected: 2,
+///   actual: 1 })`.
 #[test]
 fn identity_mapping_vector_description_refuses_a_wrong_field_count() {
     // Arrange
@@ -318,8 +325,8 @@ fn identity_mapping_vector_description_refuses_a_wrong_field_count() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(IdentityMappingVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(IdentityMappingVectorFromFieldsErrorReturn::FieldCount {
             expected: 2,
             actual: 1,
         })
@@ -333,7 +340,9 @@ fn identity_mapping_vector_description_refuses_a_wrong_field_count() {
 /// Arrange: `build_canonical_fields` with `values` `Unsigned256([0x0E; 32])` and
 ///   `Bytes(vec![0x0F])`, so the indexes `0` and `1` both hold a wrong kind.
 /// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldKind { index: 0, expected: CanonicalFieldKind::Bytes }`.
+/// Assert: `result.err()` equals
+///   `Some(IdentityMappingVectorFromFieldsErrorReturn::FieldKind { index: 0,
+///   expected: CanonicalFieldKind::Bytes })`.
 #[test]
 fn identity_mapping_vector_description_refuses_the_lowest_index_of_the_wrong_kind() {
     // Arrange
@@ -350,8 +359,8 @@ fn identity_mapping_vector_description_refuses_the_lowest_index_of_the_wrong_kin
 
     // Assert
     assert_eq!(
-        result,
-        Err(IdentityMappingVectorFromFieldsErrorReturn::FieldKind {
+        result.err(),
+        Some(IdentityMappingVectorFromFieldsErrorReturn::FieldKind {
             index: 0,
             expected: CanonicalFieldKind::Bytes,
         })
@@ -365,8 +374,9 @@ fn identity_mapping_vector_description_refuses_the_lowest_index_of_the_wrong_kin
 /// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0E])` and
 ///   `Bytes(vec![0x0F])`.
 /// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldKind { index: 1, expected:
-///   CanonicalFieldKind::Unsigned256 }`.
+/// Assert: `result.err()` equals
+///   `Some(IdentityMappingVectorFromFieldsErrorReturn::FieldKind { index: 1,
+///   expected: CanonicalFieldKind::Unsigned256 })`.
 #[test]
 fn identity_mapping_vector_description_refuses_a_byte_string_scalar() {
     // Arrange
@@ -383,8 +393,8 @@ fn identity_mapping_vector_description_refuses_a_byte_string_scalar() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(IdentityMappingVectorFromFieldsErrorReturn::FieldKind {
+        result.err(),
+        Some(IdentityMappingVectorFromFieldsErrorReturn::FieldKind {
             index: 1,
             expected: CanonicalFieldKind::Unsigned256,
         })
@@ -486,17 +496,16 @@ fn mapping_vectors_emit_one_record_per_declared_tag_for_each_message_in_tag_orde
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -595,17 +604,16 @@ fn mapping_vectors_draw_each_message_at_the_configured_length() {
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -690,17 +698,16 @@ fn mapping_vectors_share_one_message_across_the_tags_of_a_draw_and_draw_a_new_on
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -795,17 +802,16 @@ fn mapping_vectors_record_scalars_that_follow_their_tag_and_their_message() {
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -901,17 +907,16 @@ fn mapping_vectors_emit_one_identity_record_per_identity_in_payload_order_under_
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -1010,17 +1015,16 @@ fn mapping_vectors_emit_one_identity_record_per_identity_in_payload_order_under_
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -1107,17 +1111,16 @@ fn mapping_vectors_record_one_scalar_per_identity_bytes_whatever_the_setup_draws
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -1207,17 +1210,16 @@ fn mapping_vectors_return_the_refusal_of_a_declared_tag_unchanged() {
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -1298,17 +1300,16 @@ fn mapping_vectors_refuse_a_declared_tag_before_any_draw() {
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -1399,17 +1400,16 @@ fn mapping_vectors_return_the_fill_refusal_unchanged() {
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -1500,17 +1500,16 @@ fn mapping_vectors_return_the_hash_refusal_unchanged() {
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -1611,17 +1610,16 @@ fn mapping_vectors_return_the_setup_refusal_unchanged_under_the_asset_scope() {
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -1726,17 +1724,16 @@ fn mapping_vectors_return_the_derivation_refusal_unchanged_under_the_entitlement
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(
@@ -1844,17 +1841,16 @@ fn mapping_vectors_return_the_hash_refusal_before_mapping_any_identity() {
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = MappingVectorsReturn;
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             mapping_vectors::<P, K>(

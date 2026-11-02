@@ -240,9 +240,7 @@ fn render_declares_the_struct_with_one_member_line_per_member_in_order() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(success.source.as_str().contains(
         "    struct Reading {\n\
          \x20       string zeta;\n\
@@ -309,9 +307,7 @@ fn render_writes_the_path_constant_as_a_string_internal_constant() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(
         success
             .source
@@ -374,9 +370,7 @@ fn render_declares_the_decode_function_over_a_bytes_memory_line() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(success.source.as_str().contains(
         "    function decodeReading(bytes memory line) internal pure returns (Reading memory) {\n"
     ));
@@ -458,9 +452,7 @@ fn render_marks_only_bytes_and_string_locals_as_memory() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(success.source.as_str().contains(
         "(string memory zeta, bytes32 alpha, uint64 mid, bytes memory omega, uint16 beta, bytes20 gamma, uint32 delta, uint256 epsilon)"
     ));
@@ -544,9 +536,7 @@ fn render_decodes_the_line_over_the_members_abi_types_in_member_order() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(success.source.as_str().contains(
         ") = abi.decode(line, (string, bytes32, uint64, bytes, uint16, bytes20, uint32, uint256));\n"
     ));
@@ -622,9 +612,7 @@ fn render_returns_the_struct_built_with_named_arguments() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(
         success
             .source
@@ -671,9 +659,7 @@ fn render_writes_the_first_record_block_without_a_leading_separator() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(
         success
             .source
@@ -752,9 +738,7 @@ fn render_separates_record_declarations_by_one_empty_line() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     assert!(
         success
             .source
@@ -826,9 +810,7 @@ fn render_writes_record_declarations_in_payload_order() {
     let result = render(&deps, params, payload);
 
     // Assert
-    let Ok(success) = result else {
-        panic!("the payload renders")
-    };
+    let success = result.expect("the payload renders");
     let text = success.source.as_str();
     let Some(beta_offset) = text.find("struct Beta") else {
         panic!("the first block is written")

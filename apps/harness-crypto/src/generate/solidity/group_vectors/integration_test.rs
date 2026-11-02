@@ -386,7 +386,12 @@ fn a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts
     // Act — over the declared set
     for pairing_concrete in PAIRING_CONCRETES {
         run_group_vectors_case(
-            &build_group_vectors_case_deps(consumer, Default::default()),
+            &build_group_vectors_case_deps(
+                Consumer {
+                    settings: consumer.settings,
+                },
+                Default::default(),
+            ),
             case_params(pairing_concrete),
             build_group_vectors_case_payload(Default::default()),
         )
@@ -523,7 +528,13 @@ fn each_first_group_output_is_the_references_result_for_its_drawn_operands() {
     // Act — over the declared set
     for pairing_concrete in PAIRING_CONCRETES {
         run_group_vectors_case(
-            &build_group_vectors_case_deps(consumer, Default::default()),
+            &build_group_vectors_case_deps(
+                Consumer {
+                    first_group: consumer.first_group,
+                    settings: consumer.settings,
+                },
+                Default::default(),
+            ),
             case_params(pairing_concrete),
             build_group_vectors_case_payload(Default::default()),
         )
@@ -733,7 +744,12 @@ fn each_second_group_output_is_the_references_result_for_its_drawn_operands() {
     // Act — over the declared set
     for pairing_concrete in PAIRING_CONCRETES {
         run_group_vectors_case(
-            &build_group_vectors_case_deps(consumer, Default::default()),
+            &build_group_vectors_case_deps(
+                Consumer {
+                    settings: consumer.settings,
+                },
+                Default::default(),
+            ),
             case_params(pairing_concrete),
             build_group_vectors_case_payload(Default::default()),
         )
@@ -874,7 +890,12 @@ fn each_msm_term_carries_its_multiplier_in_its_input() {
     // Act — over the declared set
     for pairing_concrete in PAIRING_CONCRETES {
         run_group_vectors_case(
-            &build_group_vectors_case_deps(consumer, Default::default()),
+            &build_group_vectors_case_deps(
+                Consumer {
+                    settings: consumer.settings,
+                },
+                Default::default(),
+            ),
             case_params(pairing_concrete),
             build_group_vectors_case_payload(Default::default()),
         )

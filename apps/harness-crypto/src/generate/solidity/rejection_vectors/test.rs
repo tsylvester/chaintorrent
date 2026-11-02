@@ -267,8 +267,8 @@ fn rejection_vector_description_refuses_too_few_fields() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(RejectionVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(RejectionVectorFromFieldsErrorReturn::FieldCount {
             expected: 2,
             actual: 1,
         })
@@ -299,8 +299,8 @@ fn rejection_vector_description_refuses_too_many_fields() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(RejectionVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(RejectionVectorFromFieldsErrorReturn::FieldCount {
             expected: 2,
             actual: 3,
         })
@@ -329,8 +329,8 @@ fn rejection_vector_description_refuses_a_field_of_the_wrong_kind() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(RejectionVectorFromFieldsErrorReturn::FieldKind {
+        result.err(),
+        Some(RejectionVectorFromFieldsErrorReturn::FieldKind {
             index: 1,
             expected: CanonicalFieldKind::Bytes,
         })
@@ -359,8 +359,8 @@ fn rejection_vector_description_reports_the_lowest_index_of_a_wrong_kind() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(RejectionVectorFromFieldsErrorReturn::FieldKind {
+        result.err(),
+        Some(RejectionVectorFromFieldsErrorReturn::FieldKind {
             index: 0,
             expected: CanonicalFieldKind::Text,
         })
@@ -392,8 +392,8 @@ fn rejection_vector_description_reports_the_count_before_the_kind() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(RejectionVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(RejectionVectorFromFieldsErrorReturn::FieldCount {
             expected: 2,
             actual: 3,
         })
@@ -422,8 +422,8 @@ fn rejection_vector_description_refuses_an_unknown_target() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(RejectionVectorFromFieldsErrorReturn::Target(
+        result.err(),
+        Some(RejectionVectorFromFieldsErrorReturn::Target(
             DecodeTargetTryNewErrorReturn::Unknown { text: "G3".into() }
         ))
     );

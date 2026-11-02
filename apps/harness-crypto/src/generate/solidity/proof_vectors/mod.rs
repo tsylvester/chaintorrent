@@ -25,8 +25,8 @@ use pairing::{
     EncodeScalarPayload, IPairingAdapter,
 };
 use proof::{
-    DeliveryContext, DeliveryProofComponents, IDeliveryProofAdapter, ProofComponentsParams,
-    ProofComponentsPayload,
+    DeliveryContext, DeliveryProofComponents, DeliveryRelation, IDeliveryProofAdapter,
+    ProofComponentsParams, ProofComponentsPayload,
 };
 
 use super::render::provides::{SolidityMemberName, SolidityMemberNameConstructorParams};
@@ -37,11 +37,11 @@ use crate::delivery::provides::{
 use interface::{
     MintProofVector, MintProofVectorDescription, MintProofVectorDescriptionConstructorParams,
     MintProofVectorDescriptionTryNewReturn, MintProofVectorFromFieldsErrorReturn,
-    ProofVectorContext, ProofVectorMemberNamesReturn, ProofVectorsDeps, ProofVectorsErrorReturn,
-    ProofVectorsParams, ProofVectorsPayload, ProofVectorsReturn, ProofVectorsSuccessReturn,
-    TransferProofVector, TransferProofVectorDescription,
-    TransferProofVectorDescriptionConstructorParams, TransferProofVectorDescriptionTryNewReturn,
-    TransferProofVectorFromFieldsErrorReturn,
+    ProofVectorContext, ProofVectorMemberNamesErrorReturn, ProofVectorMemberNamesReturn,
+    ProofVectorsDeps, ProofVectorsErrorReturn, ProofVectorsParams, ProofVectorsPayload,
+    ProofVectorsReturn, ProofVectorsSuccessReturn, TransferProofVector,
+    TransferProofVectorDescription, TransferProofVectorDescriptionConstructorParams,
+    TransferProofVectorDescriptionTryNewReturn, TransferProofVectorFromFieldsErrorReturn,
 };
 
 impl<F: IChainForms> MintProofVectorDescription<F> {
@@ -84,9 +84,12 @@ impl<F: IChainForms> MintProofVectorDescription<F> {
             "sigma",
             "secondGroupFirstMessages",
         ] {
-            names.push(SolidityMemberName::try_new(
-                SolidityMemberNameConstructorParams { text },
-            )?);
+            names.push(
+                SolidityMemberName::try_new(SolidityMemberNameConstructorParams {
+                    text: text.to_string(),
+                })
+                .map_err(ProofVectorMemberNamesErrorReturn::MemberName)?,
+            );
         }
         Ok(names)
     }
@@ -132,20 +135,20 @@ impl<F: IChainForms> IEncodingContract for MintProofVectorDescription<F> {
             fields: CanonicalFields {
                 values: vec![
                     CanonicalFieldValue::Bytes(payload.draws.clone()),
-                    payload.context.suite_identifier.clone(),
-                    payload.context.suite_version.clone(),
+                    CanonicalFieldValue::FixedBytes32(payload.context.suite_identifier),
+                    CanonicalFieldValue::Unsigned16(payload.context.suite_version),
                     payload.context.chain.clone(),
                     payload.context.entitlement_contract.clone(),
-                    payload.context.asset_root.clone(),
-                    payload.context.parameter_set.clone(),
+                    CanonicalFieldValue::FixedBytes32(payload.context.asset_root),
+                    CanonicalFieldValue::FixedBytes32(payload.context.parameter_set),
                     payload.context.source_entitlement.clone(),
                     payload.context.target_entitlement.clone(),
                     payload.context.old_interval.clone(),
                     payload.context.new_interval.clone(),
-                    payload.context.purpose.clone(),
+                    CanonicalFieldValue::Unsigned16(payload.context.purpose),
                     payload.context.seller.clone(),
                     payload.context.buyer.clone(),
-                    payload.context.expiry.clone(),
+                    CanonicalFieldValue::Unsigned64(payload.context.expiry),
                     CanonicalFieldValue::Bytes(payload.hpub.clone()),
                     CanonicalFieldValue::Bytes(payload.identity_element.clone()),
                     CanonicalFieldValue::Bytes(payload.buyer_pk1.clone()),
@@ -180,7 +183,7 @@ impl<F: IChainForms> IEncodingContract for MintProofVectorDescription<F> {
             }
         };
         for (index, (value, kind)) in fields.iter().zip(Self::FIELDS.iter()).enumerate() {
-            if value.kind() != *kind {
+            if canonical_field_kind(value) != *kind {
                 return Err(MintProofVectorFromFieldsErrorReturn::FieldKind {
                     index,
                     expected: *kind,
@@ -222,6 +225,42 @@ impl<F: IChainForms> IEncodingContract for MintProofVectorDescription<F> {
             return Err(MintProofVectorFromFieldsErrorReturn::FieldKind {
                 index: 0,
                 expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::FixedBytes32(suite_identifier) = suite_identifier else {
+            return Err(MintProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 1,
+                expected: CanonicalFieldKind::FixedBytes32,
+            });
+        };
+        let CanonicalFieldValue::Unsigned16(suite_version) = suite_version else {
+            return Err(MintProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 2,
+                expected: CanonicalFieldKind::Unsigned16,
+            });
+        };
+        let CanonicalFieldValue::FixedBytes32(asset_root) = asset_root else {
+            return Err(MintProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 5,
+                expected: CanonicalFieldKind::FixedBytes32,
+            });
+        };
+        let CanonicalFieldValue::FixedBytes32(parameter_set) = parameter_set else {
+            return Err(MintProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 6,
+                expected: CanonicalFieldKind::FixedBytes32,
+            });
+        };
+        let CanonicalFieldValue::Unsigned16(purpose) = purpose else {
+            return Err(MintProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 11,
+                expected: CanonicalFieldKind::Unsigned16,
+            });
+        };
+        let CanonicalFieldValue::Unsigned64(expiry) = expiry else {
+            return Err(MintProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 14,
+                expected: CanonicalFieldKind::Unsigned64,
             });
         };
         let CanonicalFieldValue::Bytes(hpub) = hpub else {
@@ -393,9 +432,12 @@ impl<F: IChainForms> TransferProofVectorDescription<F> {
             "sigma",
             "secondGroupFirstMessages",
         ] {
-            names.push(SolidityMemberName::try_new(
-                SolidityMemberNameConstructorParams { text },
-            )?);
+            names.push(
+                SolidityMemberName::try_new(SolidityMemberNameConstructorParams {
+                    text: text.to_string(),
+                })
+                .map_err(ProofVectorMemberNamesErrorReturn::MemberName)?,
+            );
         }
         Ok(names)
     }
@@ -447,20 +489,20 @@ impl<F: IChainForms> IEncodingContract for TransferProofVectorDescription<F> {
             fields: CanonicalFields {
                 values: vec![
                     CanonicalFieldValue::Bytes(payload.draws.clone()),
-                    payload.context.suite_identifier.clone(),
-                    payload.context.suite_version.clone(),
+                    CanonicalFieldValue::FixedBytes32(payload.context.suite_identifier),
+                    CanonicalFieldValue::Unsigned16(payload.context.suite_version),
                     payload.context.chain.clone(),
                     payload.context.entitlement_contract.clone(),
-                    payload.context.asset_root.clone(),
-                    payload.context.parameter_set.clone(),
+                    CanonicalFieldValue::FixedBytes32(payload.context.asset_root),
+                    CanonicalFieldValue::FixedBytes32(payload.context.parameter_set),
                     payload.context.source_entitlement.clone(),
                     payload.context.target_entitlement.clone(),
                     payload.context.old_interval.clone(),
                     payload.context.new_interval.clone(),
-                    payload.context.purpose.clone(),
+                    CanonicalFieldValue::Unsigned16(payload.context.purpose),
                     payload.context.seller.clone(),
                     payload.context.buyer.clone(),
-                    payload.context.expiry.clone(),
+                    CanonicalFieldValue::Unsigned64(payload.context.expiry),
                     CanonicalFieldValue::Bytes(payload.identity_element.clone()),
                     CanonicalFieldValue::Bytes(payload.seller_pk1.clone()),
                     CanonicalFieldValue::Bytes(payload.seller_pk2.clone()),
@@ -501,7 +543,7 @@ impl<F: IChainForms> IEncodingContract for TransferProofVectorDescription<F> {
             }
         };
         for (index, (value, kind)) in fields.iter().zip(Self::FIELDS.iter()).enumerate() {
-            if value.kind() != *kind {
+            if canonical_field_kind(value) != *kind {
                 return Err(TransferProofVectorFromFieldsErrorReturn::FieldKind {
                     index,
                     expected: *kind,
@@ -549,6 +591,42 @@ impl<F: IChainForms> IEncodingContract for TransferProofVectorDescription<F> {
             return Err(TransferProofVectorFromFieldsErrorReturn::FieldKind {
                 index: 0,
                 expected: CanonicalFieldKind::Bytes,
+            });
+        };
+        let CanonicalFieldValue::FixedBytes32(suite_identifier) = suite_identifier else {
+            return Err(TransferProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 1,
+                expected: CanonicalFieldKind::FixedBytes32,
+            });
+        };
+        let CanonicalFieldValue::Unsigned16(suite_version) = suite_version else {
+            return Err(TransferProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 2,
+                expected: CanonicalFieldKind::Unsigned16,
+            });
+        };
+        let CanonicalFieldValue::FixedBytes32(asset_root) = asset_root else {
+            return Err(TransferProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 5,
+                expected: CanonicalFieldKind::FixedBytes32,
+            });
+        };
+        let CanonicalFieldValue::FixedBytes32(parameter_set) = parameter_set else {
+            return Err(TransferProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 6,
+                expected: CanonicalFieldKind::FixedBytes32,
+            });
+        };
+        let CanonicalFieldValue::Unsigned16(purpose) = purpose else {
+            return Err(TransferProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 11,
+                expected: CanonicalFieldKind::Unsigned16,
+            });
+        };
+        let CanonicalFieldValue::Unsigned64(expiry) = expiry else {
+            return Err(TransferProofVectorFromFieldsErrorReturn::FieldKind {
+                index: 14,
+                expected: CanonicalFieldKind::Unsigned64,
             });
         };
         let CanonicalFieldValue::Bytes(identity_element) = identity_element else {
@@ -716,6 +794,19 @@ impl<F: IChainForms> IEncodingContract for TransferProofVectorDescription<F> {
     }
 }
 
+fn canonical_field_kind(value: &CanonicalFieldValue) -> CanonicalFieldKind {
+    match value {
+        CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
+        CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
+        CanonicalFieldValue::Unsigned32(_) => CanonicalFieldKind::Unsigned32,
+        CanonicalFieldValue::Unsigned64(_) => CanonicalFieldKind::Unsigned64,
+        CanonicalFieldValue::Text(_) => CanonicalFieldKind::Text,
+        CanonicalFieldValue::Bytes(_) => CanonicalFieldKind::Bytes,
+        CanonicalFieldValue::FixedBytes20(_) => CanonicalFieldKind::FixedBytes20,
+        CanonicalFieldValue::Unsigned256(_) => CanonicalFieldKind::Unsigned256,
+    }
+}
+
 fn canonical_field<T: ICanonicalField>(form: &T) -> CanonicalFieldValue {
     let Ok(field) = T::to_field(ToFieldParams, form);
     field.field
@@ -726,8 +817,8 @@ fn record_context<F: IChainForms, Purpose>(
     purpose: u16,
 ) -> ProofVectorContext {
     ProofVectorContext {
-        suite_identifier: CanonicalFieldValue::FixedBytes32(*context.suite_identifier.identifier()),
-        suite_version: CanonicalFieldValue::Unsigned16(context.suite_identifier.version()),
+        suite_identifier: *context.suite_identifier.identifier(),
+        suite_version: context.suite_identifier.version(),
         chain: canonical_field(&context.chain),
         entitlement_contract: canonical_field(&context.entitlement_contract),
         asset_root: *context.asset_identity_hash.as_bytes(),
@@ -750,7 +841,7 @@ fn g1_bytes<P: IPairingAdapter>(pairing: &P, point: &P::G1) -> Vec<u8> {
             point: point.clone(),
         },
     );
-    encoded.bytes
+    encoded.bytes.as_ref().to_vec()
 }
 
 fn g2_bytes<P: IPairingAdapter>(pairing: &P, point: &P::G2) -> Vec<u8> {
@@ -760,7 +851,7 @@ fn g2_bytes<P: IPairingAdapter>(pairing: &P, point: &P::G2) -> Vec<u8> {
             point: point.clone(),
         },
     );
-    encoded.bytes
+    encoded.bytes.as_ref().to_vec()
 }
 
 fn scalar_bytes<P: IPairingAdapter>(
@@ -827,7 +918,11 @@ where
                 responses,
                 first_messages,
             } => (challenge, responses, Some(first_messages)),
-            _ => return Err(ProofVectorsErrorReturn::KindMismatch),
+            _ => {
+                return Err(ProofVectorsErrorReturn::ProofComponents {
+                    relation: DeliveryRelation::Mint,
+                });
+            }
         };
         let statement = &minted.delivery.statement;
         mint_records.push(MintProofVector {
@@ -909,7 +1004,11 @@ where
                 responses,
                 first_messages,
             } => (challenge, responses, Some(first_messages)),
-            _ => return Err(ProofVectorsErrorReturn::KindMismatch),
+            _ => {
+                return Err(ProofVectorsErrorReturn::ProofComponents {
+                    relation: DeliveryRelation::Transfer,
+                });
+            }
         };
         let mut draws = minted.delivery.draws.clone();
         draws.extend_from_slice(&transferred.delivery.draws);

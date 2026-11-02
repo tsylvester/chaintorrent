@@ -1055,10 +1055,10 @@ fn every_record_carries_second_group_first_messages_exactly_in_the_first_group_o
                 }
                 VerifierGroupArithmetic::BothGroups => {
                     for record in &success.mint {
-                        assert_eq!(record.second_group_first_messages, Vec::new());
+                        assert!(record.second_group_first_messages.is_empty());
                     }
                     for record in &success.transfer {
-                        assert_eq!(record.second_group_first_messages, Vec::new());
+                        assert!(record.second_group_first_messages.is_empty());
                     }
                 }
             }

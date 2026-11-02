@@ -144,10 +144,10 @@ pub type ChallengeVectorsFn<'a, P, E, F> = fn(
 pub trait IChallengeVectorsCaseConsumer {
     type Output;
 
-    fn consume_challenge_vectors_case<P, H, E, F>(
+    fn consume_challenge_vectors_case<P, E, F>(
         &self,
         pairing: &P,
-        hash_to_scalar: &H,
+        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
         encoder: &E,
         random: &dyn IRandomSourceAdapter,
         forms: &F,
@@ -155,7 +155,6 @@ pub trait IChallengeVectorsCaseConsumer {
     ) -> Self::Output
     where
         P: IPairingArithmetic + IPairingReference,
-        H: ?Sized + IHashToScalarAdapter<P::Scalar>,
         E: IEncoderAdapter + IDecoderAdapter,
         F: IChainForms;
 }

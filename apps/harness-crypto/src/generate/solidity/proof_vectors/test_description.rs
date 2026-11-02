@@ -391,8 +391,8 @@ fn mint_proof_vector_description_refuses_a_field_list_shorter_than_its_field_cou
 
     // Assert
     assert_eq!(
-        result,
-        Err(MintProofVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(MintProofVectorFromFieldsErrorReturn::FieldCount {
             expected: 29,
             actual: 28,
         })
@@ -506,8 +506,8 @@ fn mint_proof_vector_description_refuses_a_field_list_longer_than_its_field_coun
 
     // Assert
     assert_eq!(
-        result,
-        Err(MintProofVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(MintProofVectorFromFieldsErrorReturn::FieldCount {
             expected: 29,
             actual: 30,
         })
@@ -552,8 +552,8 @@ fn mint_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind() {
 
             // Assert
             assert_eq!(
-                result,
-                Err(MintProofVectorFromFieldsErrorReturn::FieldKind {
+                result.err(),
+                Some(MintProofVectorFromFieldsErrorReturn::FieldKind {
                     index: 4,
                     expected: <F::Identity as ICanonicalField>::KIND,
                 })
@@ -736,8 +736,8 @@ fn mint_proof_vector_description_reports_the_count_before_a_wrong_kind() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(MintProofVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(MintProofVectorFromFieldsErrorReturn::FieldCount {
             expected: 29,
             actual: 28,
         })
@@ -1290,8 +1290,8 @@ fn transfer_proof_vector_description_refuses_a_field_list_shorter_than_its_field
 
     // Assert
     assert_eq!(
-        result,
-        Err(TransferProofVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(TransferProofVectorFromFieldsErrorReturn::FieldCount {
             expected: 35,
             actual: 34,
         })
@@ -1413,8 +1413,8 @@ fn transfer_proof_vector_description_refuses_a_field_list_longer_than_its_field_
 
     // Assert
     assert_eq!(
-        result,
-        Err(TransferProofVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(TransferProofVectorFromFieldsErrorReturn::FieldCount {
             expected: 35,
             actual: 36,
         })
@@ -1459,8 +1459,8 @@ fn transfer_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind(
 
             // Assert
             assert_eq!(
-                result,
-                Err(TransferProofVectorFromFieldsErrorReturn::FieldKind {
+                result.err(),
+                Some(TransferProofVectorFromFieldsErrorReturn::FieldKind {
                     index: 4,
                     expected: <F::Identity as ICanonicalField>::KIND,
                 })
@@ -1657,8 +1657,8 @@ fn transfer_proof_vector_description_reports_the_count_before_a_wrong_kind() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(TransferProofVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(TransferProofVectorFromFieldsErrorReturn::FieldCount {
             expected: 35,
             actual: 34,
         })

@@ -737,8 +737,8 @@ fn possession_vector_description_refuses_a_list_one_field_short() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(PossessionVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(PossessionVectorFromFieldsErrorReturn::FieldCount {
             expected: 8,
             actual: 7,
         })
@@ -777,8 +777,8 @@ fn possession_vector_description_refuses_a_list_one_field_long() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(PossessionVectorFromFieldsErrorReturn::FieldCount {
+        result.err(),
+        Some(PossessionVectorFromFieldsErrorReturn::FieldCount {
             expected: 8,
             actual: 9,
         })
@@ -819,8 +819,8 @@ fn possession_vector_description_refuses_the_lowest_field_of_the_wrong_kind() {
 
     // Assert
     assert_eq!(
-        result,
-        Err(PossessionVectorFromFieldsErrorReturn::FieldKind {
+        result.err(),
+        Some(PossessionVectorFromFieldsErrorReturn::FieldKind {
             index: 2,
             expected: CanonicalFieldKind::Bytes,
         })

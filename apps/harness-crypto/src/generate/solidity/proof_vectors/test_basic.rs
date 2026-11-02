@@ -434,14 +434,16 @@ fn proof_vectors_place_each_contexts_configured_values_in_its_records() {
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::Unsigned256([0x23; 32]),
                         )
-                        .expect("the value is the chain identifier's kind"),
+                        .expect("the value is the chain identifier's kind")
+                        .value,
                     ),
                     entitlement_contract: Some(
                         <F::Identity as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::FixedBytes20([0x33; 20]),
                         )
-                        .expect("the value is the identity's kind"),
+                        .expect("the value is the identity's kind")
+                        .value,
                     ),
                     asset_identity_hash: Some(build_asset_identity_hash(
                         AssetIdentityHashConstructorParamsOverrides {
@@ -458,42 +460,48 @@ fn proof_vectors_place_each_contexts_configured_values_in_its_records() {
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::Unsigned256([0x43; 32]),
                         )
-                        .expect("the value is the entitlement's kind"),
+                        .expect("the value is the entitlement's kind")
+                        .value,
                     ),
                     target_entitlement: Some(
                         <F::Entitlement as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::Unsigned256([0x44; 32]),
                         )
-                        .expect("the value is the entitlement's kind"),
+                        .expect("the value is the entitlement's kind")
+                        .value,
                     ),
                     old_interval: Some(
                         <F::Interval as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::Unsigned64(5),
                         )
-                        .expect("the value is the interval's kind"),
+                        .expect("the value is the interval's kind")
+                        .value,
                     ),
                     new_interval: Some(
                         <F::Interval as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::Unsigned64(6),
                         )
-                        .expect("the value is the interval's kind"),
+                        .expect("the value is the interval's kind")
+                        .value,
                     ),
                     seller: Some(
                         <F::Identity as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::FixedBytes20([0x63; 20]),
                         )
-                        .expect("the value is the identity's kind"),
+                        .expect("the value is the identity's kind")
+                        .value,
                     ),
                     buyer: Some(
                         <F::Identity as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::FixedBytes20([0x64; 20]),
                         )
-                        .expect("the value is the identity's kind"),
+                        .expect("the value is the identity's kind")
+                        .value,
                     ),
                     expiry: Some(1_800_000_001),
                 },
@@ -512,14 +520,16 @@ fn proof_vectors_place_each_contexts_configured_values_in_its_records() {
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::Unsigned256([0x24; 32]),
                         )
-                        .expect("the value is the chain identifier's kind"),
+                        .expect("the value is the chain identifier's kind")
+                        .value,
                     ),
                     entitlement_contract: Some(
                         <F::Identity as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::FixedBytes20([0x32; 20]),
                         )
-                        .expect("the value is the identity's kind"),
+                        .expect("the value is the identity's kind")
+                        .value,
                     ),
                     asset_identity_hash: Some(build_asset_identity_hash(
                         AssetIdentityHashConstructorParamsOverrides {
@@ -536,42 +546,48 @@ fn proof_vectors_place_each_contexts_configured_values_in_its_records() {
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::Unsigned256([0x45; 32]),
                         )
-                        .expect("the value is the entitlement's kind"),
+                        .expect("the value is the entitlement's kind")
+                        .value,
                     ),
                     target_entitlement: Some(
                         <F::Entitlement as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::Unsigned256([0x46; 32]),
                         )
-                        .expect("the value is the entitlement's kind"),
+                        .expect("the value is the entitlement's kind")
+                        .value,
                     ),
                     old_interval: Some(
                         <F::Interval as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::Unsigned64(6),
                         )
-                        .expect("the value is the interval's kind"),
+                        .expect("the value is the interval's kind")
+                        .value,
                     ),
                     new_interval: Some(
                         <F::Interval as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::Unsigned64(7),
                         )
-                        .expect("the value is the interval's kind"),
+                        .expect("the value is the interval's kind")
+                        .value,
                     ),
                     seller: Some(
                         <F::Identity as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::FixedBytes20([0x65; 20]),
                         )
-                        .expect("the value is the identity's kind"),
+                        .expect("the value is the identity's kind")
+                        .value,
                     ),
                     buyer: Some(
                         <F::Identity as ICanonicalField>::from_field(
                             build_from_field_params(Default::default()),
                             CanonicalFieldValue::FixedBytes20([0x66; 20]),
                         )
-                        .expect("the value is the identity's kind"),
+                        .expect("the value is the identity's kind")
+                        .value,
                     ),
                     expiry: Some(1_900_000_000),
                 },
@@ -1291,7 +1307,10 @@ fn proof_vectors_carry_no_second_group_first_messages_in_the_both_groups_form_fo
 
             // Assert
             if P::DECLARATION.verifier_group_arithmetic == VerifierGroupArithmetic::BothGroups {
-                assert_eq!(success.mint[0].second_group_first_messages, Vec::new());
+                assert_eq!(
+                    success.mint[0].second_group_first_messages,
+                    Vec::<u8>::new()
+                );
             }
         }
     }
@@ -1394,7 +1413,10 @@ fn proof_vectors_carry_no_second_group_first_messages_in_the_both_groups_form_fo
 
             // Assert
             if P::DECLARATION.verifier_group_arithmetic == VerifierGroupArithmetic::BothGroups {
-                assert_eq!(success.transfer[0].second_group_first_messages, Vec::new());
+                assert_eq!(
+                    success.transfer[0].second_group_first_messages,
+                    Vec::<u8>::new()
+                );
             }
         }
     }

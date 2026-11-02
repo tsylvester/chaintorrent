@@ -84,17 +84,16 @@ fn each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             // Arrange
@@ -144,6 +143,8 @@ fn each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its
                         uniform: Some(secret),
                     }),
                 )
+                .expect("the reference scalar samples")
+                .scalar
                 .expose()
                 .clone();
                 let encoded = pairing
@@ -184,7 +185,19 @@ fn each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its
             for kem_selection in DECLARED_KEM_SELECTIONS {
                 let kem: CreateKemParams = *kem_selection;
                 let result = run_mapping_vectors_case(
-                    &build_mapping_vectors_case_deps(consumer, Default::default()),
+                    &build_mapping_vectors_case_deps(
+                        Consumer {
+                            key_agreement: consumer.key_agreement,
+                            delivery_proof: consumer.delivery_proof,
+                            params_overrides: MappingVectorsParamsOverrides {
+                                hash_to_scalar_count: consumer
+                                    .params_overrides
+                                    .hash_to_scalar_count,
+                                message_length: consumer.params_overrides.message_length,
+                            },
+                        },
+                        Default::default(),
+                    ),
                     build_mapping_vectors_case_params(MappingVectorsCaseParamsOverrides {
                         pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
                             concrete: Some(*pairing_concrete),
@@ -266,17 +279,16 @@ fn each_identity_record_is_the_references_mapping_of_its_identity_under_the_iden
     impl IMappingVectorsCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_mapping_vectors_case<P, H, K>(
+        fn consume_mapping_vectors_case<P, K>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             kem: &K,
             random: &dyn IRandomSourceAdapter,
             identities: Vec<AdmittedKemIdentity<'_>>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             K: ICredentialKemAdapter<Pairing = P>,
         {
             // Arrange
@@ -326,6 +338,8 @@ fn each_identity_record_is_the_references_mapping_of_its_identity_under_the_iden
                         uniform: Some(secret),
                     }),
                 )
+                .expect("the reference scalar samples")
+                .scalar
                 .expose()
                 .clone();
                 let encoded = pairing
@@ -361,7 +375,19 @@ fn each_identity_record_is_the_references_mapping_of_its_identity_under_the_iden
             for kem_selection in DECLARED_KEM_SELECTIONS {
                 let kem: CreateKemParams = *kem_selection;
                 let result = run_mapping_vectors_case(
-                    &build_mapping_vectors_case_deps(consumer, Default::default()),
+                    &build_mapping_vectors_case_deps(
+                        Consumer {
+                            key_agreement: consumer.key_agreement,
+                            delivery_proof: consumer.delivery_proof,
+                            params_overrides: MappingVectorsParamsOverrides {
+                                hash_to_scalar_count: consumer
+                                    .params_overrides
+                                    .hash_to_scalar_count,
+                                message_length: consumer.params_overrides.message_length,
+                            },
+                        },
+                        Default::default(),
+                    ),
                     build_mapping_vectors_case_params(MappingVectorsCaseParamsOverrides {
                         pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
                             concrete: Some(*pairing_concrete),

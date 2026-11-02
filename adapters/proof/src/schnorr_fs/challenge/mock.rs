@@ -4,7 +4,7 @@ use super::interface::{
     ChallengeCaseDeps, ChallengeCaseErrorReturn, ChallengeCaseParams, ChallengeCasePayload,
     ChallengeCaseReturn, ChallengeCaseSuccessReturn, ChallengeDeps, ChallengeFn, ChallengeParams,
     ChallengePayload, ChallengeReturn, ChallengeSuccessReturn, ChallengeTranscript,
-    IChallengeCaseConsumer,
+    IChallengeCaseConsumer, RunChallengeCaseFn,
 };
 use chain::{
     ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsParams, IChainForms,
@@ -277,6 +277,7 @@ pub fn run_challenge_case<C: IChallengeCaseConsumer>(
     params: ChallengeCaseParams,
     _payload: ChallengeCasePayload,
 ) -> ChallengeCaseReturn<C::Output> {
+    let _: RunChallengeCaseFn<C> = run_challenge_case::<C>;
     let pairing_deps = build_create_pairing_deps(
         CaseAtPairing {
             consumer: &deps.consumer,
@@ -291,7 +292,10 @@ pub fn run_challenge_case<C: IChallengeCaseConsumer>(
         params.pairing,
         build_create_pairing_payload(Default::default()),
     ) {
-        Ok(success) => success.output,
+        Ok(success) => match success.output {
+            Ok(ChallengeCaseSuccessReturn { output }) => Ok(ChallengeCaseSuccessReturn { output }),
+            Err(error) => Err(error),
+        },
         Err(error) => Err(ChallengeCaseErrorReturn::CreatePairing(error)),
     }
 }

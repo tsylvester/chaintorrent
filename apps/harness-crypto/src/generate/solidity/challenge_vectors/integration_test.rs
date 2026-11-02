@@ -164,10 +164,10 @@ fn challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order() {
     impl IChallengeVectorsCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_challenge_vectors_case<P, H, E, F>(
+        fn consume_challenge_vectors_case<P, E, F>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
             random: &dyn IRandomSourceAdapter,
             _forms: &F,
@@ -175,7 +175,6 @@ fn challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference + IPairingAdapter,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
         {
@@ -269,7 +268,7 @@ fn challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order() {
                         case_params,
                         build_challenge_vectors_case_payload(
                             ChallengeVectorsCasePayloadOverrides {
-                                delivery_proof: Some(case_payload.delivery_proof),
+                                delivery_proof: None,
                                 mint: Some(case_payload.mint.clone()),
                                 mint_purpose: Some(case_payload.mint_purpose),
                                 transfer: Some(case_payload.transfer.clone()),
@@ -332,10 +331,10 @@ fn challenge_vectors_place_each_contexts_configured_values_in_its_transcript() {
     impl IChallengeVectorsCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_challenge_vectors_case<P, H, E, F>(
+        fn consume_challenge_vectors_case<P, E, F>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
             random: &dyn IRandomSourceAdapter,
             _forms: &F,
@@ -343,7 +342,6 @@ fn challenge_vectors_place_each_contexts_configured_values_in_its_transcript() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference + IPairingAdapter,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
         {
@@ -584,10 +582,10 @@ fn challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar() {
     impl IChallengeVectorsCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_challenge_vectors_case<P, H, E, F>(
+        fn consume_challenge_vectors_case<P, E, F>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
             random: &dyn IRandomSourceAdapter,
             _forms: &F,
@@ -595,7 +593,6 @@ fn challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference + IPairingAdapter,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
         {
@@ -801,10 +798,10 @@ fn challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to
     impl IChallengeVectorsCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_challenge_vectors_case<P, H, E, F>(
+        fn consume_challenge_vectors_case<P, E, F>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
             random: &dyn IRandomSourceAdapter,
             _forms: &F,
@@ -812,7 +809,6 @@ fn challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference + IPairingAdapter,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
         {
@@ -841,11 +837,14 @@ fn challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to
                 bytes: Some(CHALLENGE_TAG.to_vec()),
             });
             for record in &records {
-                let uniform: Secret<Vec<u8>> = build_secret(expected_uniform_bytes(
-                    &tag,
-                    &record.encoding,
-                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH,
-                ));
+                let uniform: Secret<Vec<u8>> = build_secret(
+                    expected_uniform_bytes(
+                        &tag,
+                        &record.encoding,
+                        <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH,
+                    ),
+                    Default::default(),
+                );
                 let sampled = <P::Scalar as ISampleUniformScalar>::sample_from_uniform_bytes(
                     SampleUniformScalarParams,
                     SampleUniformScalarPayload { uniform },
@@ -926,7 +925,12 @@ fn challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to
                         case_params,
                         build_challenge_vectors_case_payload(
                             ChallengeVectorsCasePayloadOverrides {
-                                delivery_proof: Some(case_payload.delivery_proof),
+                                delivery_proof: Some(build_delivery_proof_declaration(
+                                    DeliveryProofDeclarationOverrides {
+                                        challenge_tag: Some(CHALLENGE_TAG),
+                                        ..Default::default()
+                                    },
+                                )),
                                 mint: Some(case_payload.mint.clone()),
                                 mint_purpose: Some(case_payload.mint_purpose),
                                 transfer: Some(case_payload.transfer.clone()),
@@ -968,10 +972,10 @@ fn challenge_vectors_return_the_hash_to_scalar_refusal_whole() {
     impl IChallengeVectorsCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_challenge_vectors_case<P, H, E, F>(
+        fn consume_challenge_vectors_case<P, E, F>(
             &self,
             pairing: &P,
-            hash_to_scalar: &H,
+            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
             random: &dyn IRandomSourceAdapter,
             _forms: &F,
@@ -979,7 +983,6 @@ fn challenge_vectors_return_the_hash_to_scalar_refusal_whole() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference + IPairingAdapter,
-            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
             E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
         {
