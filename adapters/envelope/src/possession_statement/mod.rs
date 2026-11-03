@@ -10,13 +10,13 @@ mod test_error_decode;
 mod test_error_shape;
 
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldsParams, FromFieldsReturn,
-    FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams, ToFieldsReturn,
-    ToFieldsSuccessReturn,
+    CanonicalFieldKind, CanonicalFieldReader, CanonicalFieldValue, CanonicalFields,
+    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams,
+    ToFieldsReturn, ToFieldsSuccessReturn,
 };
 use interface::{
-    POSSESSION_STATEMENT_FIELD_COUNT, POSSESSION_STATEMENT_FIELD_KINDS, PossessionG1Statement,
-    PossessionG1StatementDescription, PossessionG1StatementDescriptionConstructorParams,
+    POSSESSION_STATEMENT_FIELD_KINDS, PossessionG1Statement, PossessionG1StatementDescription,
+    PossessionG1StatementDescriptionConstructorParams,
     PossessionG1StatementDescriptionTryNewReturn, PossessionG2Statement,
     PossessionG2StatementDescription, PossessionG2StatementDescriptionConstructorParams,
     PossessionG2StatementDescriptionTryNewReturn, PossessionStatementFromFieldsErrorReturn,
@@ -79,28 +79,17 @@ impl<P: IPairingAdapter> IEncodingContract for PossessionG1StatementDescription<
         _params: FromFieldsParams,
         payload: CanonicalFields,
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn> {
-        let fields: [CanonicalFieldValue; POSSESSION_STATEMENT_FIELD_COUNT] =
-            match payload.values.try_into() {
-                Ok(fields) => fields,
-                Err(values) => {
-                    return Err(PossessionStatementFromFieldsErrorReturn::FieldCount {
-                        expected: POSSESSION_STATEMENT_FIELD_COUNT,
-                        actual: values.len(),
-                    });
-                }
-            };
-        let [key_value, commitment_value] = fields;
-        let CanonicalFieldValue::Bytes(key_bytes) = key_value else {
-            return Err(PossessionStatementFromFieldsErrorReturn::FieldKind {
-                index: 0,
-                expected: CanonicalFieldKind::Bytes,
-            });
+        let mut reader = match CanonicalFieldReader::try_new(payload, Self::FIELDS) {
+            Err(error) => return Err(PossessionStatementFromFieldsErrorReturn::Fields(error)),
+            Ok(reader) => reader,
         };
-        let CanonicalFieldValue::Bytes(commitment_bytes) = commitment_value else {
-            return Err(PossessionStatementFromFieldsErrorReturn::FieldKind {
-                index: 1,
-                expected: CanonicalFieldKind::Bytes,
-            });
+        let key_bytes = match reader.read_bytes() {
+            Err(error) => return Err(PossessionStatementFromFieldsErrorReturn::Fields(error)),
+            Ok(bytes) => bytes,
+        };
+        let commitment_bytes = match reader.read_bytes() {
+            Err(error) => return Err(PossessionStatementFromFieldsErrorReturn::Fields(error)),
+            Ok(bytes) => bytes,
         };
         let key = match self.pairing.decode_g1(DecodeG1Params, &key_bytes) {
             Ok(success) => success.point,
@@ -159,28 +148,17 @@ impl<P: IPairingAdapter> IEncodingContract for PossessionG2StatementDescription<
         _params: FromFieldsParams,
         payload: CanonicalFields,
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn> {
-        let fields: [CanonicalFieldValue; POSSESSION_STATEMENT_FIELD_COUNT] =
-            match payload.values.try_into() {
-                Ok(fields) => fields,
-                Err(values) => {
-                    return Err(PossessionStatementFromFieldsErrorReturn::FieldCount {
-                        expected: POSSESSION_STATEMENT_FIELD_COUNT,
-                        actual: values.len(),
-                    });
-                }
-            };
-        let [key_value, commitment_value] = fields;
-        let CanonicalFieldValue::Bytes(key_bytes) = key_value else {
-            return Err(PossessionStatementFromFieldsErrorReturn::FieldKind {
-                index: 0,
-                expected: CanonicalFieldKind::Bytes,
-            });
+        let mut reader = match CanonicalFieldReader::try_new(payload, Self::FIELDS) {
+            Err(error) => return Err(PossessionStatementFromFieldsErrorReturn::Fields(error)),
+            Ok(reader) => reader,
         };
-        let CanonicalFieldValue::Bytes(commitment_bytes) = commitment_value else {
-            return Err(PossessionStatementFromFieldsErrorReturn::FieldKind {
-                index: 1,
-                expected: CanonicalFieldKind::Bytes,
-            });
+        let key_bytes = match reader.read_bytes() {
+            Err(error) => return Err(PossessionStatementFromFieldsErrorReturn::Fields(error)),
+            Ok(bytes) => bytes,
+        };
+        let commitment_bytes = match reader.read_bytes() {
+            Err(error) => return Err(PossessionStatementFromFieldsErrorReturn::Fields(error)),
+            Ok(bytes) => bytes,
         };
         let key = match self.pairing.decode_g2(DecodeG2Params, &key_bytes) {
             Ok(success) => success.point,

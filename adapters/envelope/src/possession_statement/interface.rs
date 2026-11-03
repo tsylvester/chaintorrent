@@ -1,10 +1,8 @@
 use core::convert::Infallible;
-use encoding::CanonicalFieldKind;
+use encoding::{CanonicalFieldKind, CanonicalFieldReaderErrorReturn};
 use pairing::{DecodeG1ErrorReturn, DecodeG2ErrorReturn, IPairingAdapter};
 
-pub const POSSESSION_STATEMENT_FIELD_COUNT: usize = 2;
-
-pub const POSSESSION_STATEMENT_FIELD_KINDS: [CanonicalFieldKind; POSSESSION_STATEMENT_FIELD_COUNT] =
+pub const POSSESSION_STATEMENT_FIELD_KINDS: [CanonicalFieldKind; 2] =
     [CanonicalFieldKind::Bytes, CanonicalFieldKind::Bytes];
 
 pub struct PossessionG1Statement<P: IPairingAdapter> {
@@ -41,14 +39,7 @@ pub type PossessionG2StatementDescriptionTryNewReturn<'a, P> =
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PossessionStatementFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
     InvalidG1 {
         index: usize,
         error: DecodeG1ErrorReturn,

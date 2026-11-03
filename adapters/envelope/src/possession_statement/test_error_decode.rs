@@ -5,7 +5,8 @@ use super::provides::{
     invalidate_possession_g2_statement,
 };
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, IEncodingContract, build_from_fields_params,
+    CanonicalFieldKind, CanonicalFieldReaderErrorReturn, CanonicalFieldValue, IEncodingContract,
+    build_from_fields_params,
 };
 use pairing::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingPayload, DecodeG1ErrorReturn,
@@ -13,17 +14,18 @@ use pairing::{
     build_create_pairing_deps, build_create_pairing_params, create_pairing,
 };
 
-/// Contract: ordering: the kinds are checked in index order before any group
-///   element decodes.
+/// Contract: ordering: both reads precede any group element's decoding.
 /// Arrange: `invalidate_possession_g1_statement` with `key` corrupted to
 ///   `CanonicalFieldValue::Bytes` of seven bytes, a length the pairing
 ///   refuses, and `commitment` corrupted to `CanonicalFieldValue::Text`, so a
-///   decode ahead of the kind check reports the key's refusal.
+///   decode ahead of the commitment's read reports the key's refusal.
 /// Act:     `description.fields_to_value(build_from_fields_params(
 ///   Default::default()), fields)` inside the consumer's method.
 /// Assert:  in place, `assert_eq!(result.err(), Some(
-///   PossessionStatementFromFieldsErrorReturn::FieldKind { index: 1,
-///   expected: CanonicalFieldKind::Bytes }))`; outside, `created.is_ok()`.
+///   PossessionStatementFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Kind { index: 1, expected:
+///   CanonicalFieldKind::Bytes, actual: CanonicalFieldKind::Text })))`;
+///   outside, `created.is_ok()`.
 /// Collaborators: the pairing family's mock concrete through `create_pairing`
 ///   under the default params.
 #[test]
@@ -51,10 +53,13 @@ fn g1_fields_to_value_checks_the_kinds_before_decoding_any_group_element() {
                 description.fields_to_value(build_from_fields_params(Default::default()), fields);
             assert_eq!(
                 result.err(),
-                Some(PossessionStatementFromFieldsErrorReturn::FieldKind {
-                    index: 1,
-                    expected: CanonicalFieldKind::Bytes
-                })
+                Some(PossessionStatementFromFieldsErrorReturn::Fields(
+                    CanonicalFieldReaderErrorReturn::Kind {
+                        index: 1,
+                        expected: CanonicalFieldKind::Bytes,
+                        actual: CanonicalFieldKind::Text
+                    }
+                ))
             );
         }
     }
@@ -68,17 +73,18 @@ fn g1_fields_to_value_checks_the_kinds_before_decoding_any_group_element() {
     assert!(created.is_ok());
 }
 
-/// Contract: ordering: the kinds are checked in index order before any group
-///   element decodes.
+/// Contract: ordering: both reads precede any group element's decoding.
 /// Arrange: `invalidate_possession_g2_statement` with `key` corrupted to
 ///   `CanonicalFieldValue::Bytes` of seven bytes, a length the pairing
 ///   refuses, and `commitment` corrupted to `CanonicalFieldValue::Text`, so a
-///   decode ahead of the kind check reports the key's refusal.
+///   decode ahead of the commitment's read reports the key's refusal.
 /// Act:     `description.fields_to_value(build_from_fields_params(
 ///   Default::default()), fields)` inside the consumer's method.
 /// Assert:  in place, `assert_eq!(result.err(), Some(
-///   PossessionStatementFromFieldsErrorReturn::FieldKind { index: 1,
-///   expected: CanonicalFieldKind::Bytes }))`; outside, `created.is_ok()`.
+///   PossessionStatementFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Kind { index: 1, expected:
+///   CanonicalFieldKind::Bytes, actual: CanonicalFieldKind::Text })))`;
+///   outside, `created.is_ok()`.
 /// Collaborators: the pairing family's mock concrete through `create_pairing`
 ///   under the default params.
 #[test]
@@ -106,10 +112,13 @@ fn g2_fields_to_value_checks_the_kinds_before_decoding_any_group_element() {
                 description.fields_to_value(build_from_fields_params(Default::default()), fields);
             assert_eq!(
                 result.err(),
-                Some(PossessionStatementFromFieldsErrorReturn::FieldKind {
-                    index: 1,
-                    expected: CanonicalFieldKind::Bytes
-                })
+                Some(PossessionStatementFromFieldsErrorReturn::Fields(
+                    CanonicalFieldReaderErrorReturn::Kind {
+                        index: 1,
+                        expected: CanonicalFieldKind::Bytes,
+                        actual: CanonicalFieldKind::Text
+                    }
+                ))
             );
         }
     }

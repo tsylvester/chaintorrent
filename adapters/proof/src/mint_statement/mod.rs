@@ -12,15 +12,15 @@ use domain::{
     SuiteIdentifierConstructorParams,
 };
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldParams, FromFieldsParams,
-    FromFieldsReturn, FromFieldsSuccessReturn, ICanonicalField, IEncodingContract, ToFieldParams,
-    ToFieldsParams, ToFieldsReturn, ToFieldsSuccessReturn,
+    CanonicalFieldKind, CanonicalFieldReader, CanonicalFieldValue, CanonicalFields,
+    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, ICanonicalField,
+    IEncodingContract, ToFieldParams, ToFieldsParams, ToFieldsReturn, ToFieldsSuccessReturn,
 };
 use hashing::{Root, RootConstructorParams};
 use interface::{
-    MINT_STATEMENT_FIELD_COUNT, MintFirstMessages, MintPurpose, MintStatement,
-    MintStatementDescription, MintStatementDescriptionConstructorParams,
-    MintStatementDescriptionTryNewReturn, MintStatementFromFieldsErrorReturn,
+    MintFirstMessages, MintPurpose, MintStatement, MintStatementDescription,
+    MintStatementDescriptionConstructorParams, MintStatementDescriptionTryNewReturn,
+    MintStatementFromFieldsErrorReturn,
 };
 use pairing::{
     DecodeG1Params, DecodeG2Params, EncodeG1Params, EncodeG1Payload, EncodeG2Params,
@@ -157,151 +157,55 @@ impl<P: IPairingAdapter, F: IChainForms> IEncodingContract for MintStatementDesc
         _params: FromFieldsParams,
         payload: CanonicalFields,
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn> {
-        let fields: [CanonicalFieldValue; MINT_STATEMENT_FIELD_COUNT] =
-            match payload.values.try_into() {
-                Ok(fields) => fields,
-                Err(values) => {
-                    return Err(MintStatementFromFieldsErrorReturn::FieldCount {
-                        expected: MINT_STATEMENT_FIELD_COUNT,
-                        actual: values.len(),
-                    });
-                }
-            };
-        let [
-            suite_identifier_value,
-            suite_version_value,
-            chain_value,
-            entitlement_contract_value,
-            asset_root_value,
-            parameter_set_identifier_value,
-            source_entitlement_value,
-            target_entitlement_value,
-            old_interval_value,
-            new_interval_value,
-            purpose_value,
-            seller_value,
-            buyer_value,
-            pk1_value,
-            pk2_value,
-            envelope_c1_value,
-            envelope_c2_value,
-            envelope_d1_value,
-            envelope_d2_value,
-            expiry_value,
-            hpub_value,
-            message_c1_value,
-            message_c2_value,
-            message_d1_value,
-            message_d2_value,
-        ] = fields;
-        let CanonicalFieldValue::FixedBytes32(identifier) = suite_identifier_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 0,
-                expected: CanonicalFieldKind::FixedBytes32,
-            });
-        };
-        let CanonicalFieldValue::Unsigned16(version) = suite_version_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 1,
-                expected: CanonicalFieldKind::Unsigned16,
-            });
-        };
-        let suite_identifier = match SuiteIdentifier::try_new(SuiteIdentifierConstructorParams {
+        let mut reader = CanonicalFieldReader::try_new(payload, Self::FIELDS)
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let identifier = reader
+            .read_fixed_bytes32()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let version = reader
+            .read_unsigned16()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let suite_identifier = SuiteIdentifier::try_new(SuiteIdentifierConstructorParams {
             identifier,
             version,
-        }) {
-            Ok(value) => value,
-            Err(error) => {
-                return Err(MintStatementFromFieldsErrorReturn::SuiteIdentifier(error));
-            }
-        };
-        let chain = match F::ChainIdentifier::from_field(FromFieldParams, chain_value) {
-            Ok(success) => success.value,
-            Err(error) => {
-                return Err(MintStatementFromFieldsErrorReturn::ChainIdentifier {
-                    index: 2,
-                    error,
-                });
-            }
-        };
-        let entitlement_contract =
-            match F::Identity::from_field(FromFieldParams, entitlement_contract_value) {
-                Ok(success) => success.value,
-                Err(error) => {
-                    return Err(MintStatementFromFieldsErrorReturn::Identity { index: 3, error });
-                }
-            };
-        let CanonicalFieldValue::FixedBytes32(asset_root_bytes) = asset_root_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 4,
-                expected: CanonicalFieldKind::FixedBytes32,
-            });
-        };
-        let asset_root = match Root::try_new(RootConstructorParams {
+        })
+        .map_err(MintStatementFromFieldsErrorReturn::SuiteIdentifier)?;
+        let chain = reader
+            .read_form::<F::ChainIdentifier>()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let entitlement_contract = reader
+            .read_form::<F::Identity>()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let asset_root_bytes = reader
+            .read_fixed_bytes32()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let asset_root = Root::try_new(RootConstructorParams {
             bytes: asset_root_bytes,
-        }) {
-            Ok(value) => value,
-            Err(error) => {
-                return Err(MintStatementFromFieldsErrorReturn::AssetRoot(error));
-            }
-        };
-        let CanonicalFieldValue::FixedBytes32(parameter_set_identifier_bytes) =
-            parameter_set_identifier_value
-        else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 5,
-                expected: CanonicalFieldKind::FixedBytes32,
-            });
-        };
+        })
+        .map_err(MintStatementFromFieldsErrorReturn::AssetRoot)?;
+        let parameter_set_identifier_bytes = reader
+            .read_fixed_bytes32()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
         let parameter_set_identifier =
-            match ParameterSetIdentifier::try_new(ParameterSetIdentifierConstructorParams {
+            ParameterSetIdentifier::try_new(ParameterSetIdentifierConstructorParams {
                 bytes: parameter_set_identifier_bytes,
-            }) {
-                Ok(value) => value,
-                Err(error) => {
-                    return Err(MintStatementFromFieldsErrorReturn::ParameterSetIdentifier(
-                        error,
-                    ));
-                }
-            };
-        let source_entitlement =
-            match F::Entitlement::from_field(FromFieldParams, source_entitlement_value) {
-                Ok(success) => success.value,
-                Err(error) => {
-                    return Err(MintStatementFromFieldsErrorReturn::Entitlement {
-                        index: 6,
-                        error,
-                    });
-                }
-            };
-        let target_entitlement =
-            match F::Entitlement::from_field(FromFieldParams, target_entitlement_value) {
-                Ok(success) => success.value,
-                Err(error) => {
-                    return Err(MintStatementFromFieldsErrorReturn::Entitlement {
-                        index: 7,
-                        error,
-                    });
-                }
-            };
-        let old_interval = match F::Interval::from_field(FromFieldParams, old_interval_value) {
-            Ok(success) => success.value,
-            Err(error) => {
-                return Err(MintStatementFromFieldsErrorReturn::Interval { index: 8, error });
-            }
-        };
-        let new_interval = match F::Interval::from_field(FromFieldParams, new_interval_value) {
-            Ok(success) => success.value,
-            Err(error) => {
-                return Err(MintStatementFromFieldsErrorReturn::Interval { index: 9, error });
-            }
-        };
-        let CanonicalFieldValue::Unsigned16(code) = purpose_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 10,
-                expected: CanonicalFieldKind::Unsigned16,
-            });
-        };
+            })
+            .map_err(MintStatementFromFieldsErrorReturn::ParameterSetIdentifier)?;
+        let source_entitlement = reader
+            .read_form::<F::Entitlement>()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let target_entitlement = reader
+            .read_form::<F::Entitlement>()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let old_interval = reader
+            .read_form::<F::Interval>()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let new_interval = reader
+            .read_form::<F::Interval>()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let code = reader
+            .read_unsigned16()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
         let purpose = match MintPurpose::try_from(code) {
             Ok(purpose) => purpose,
             Err(refusal) => {
@@ -311,90 +215,48 @@ impl<P: IPairingAdapter, F: IChainForms> IEncodingContract for MintStatementDesc
                 });
             }
         };
-        let seller = match F::Identity::from_field(FromFieldParams, seller_value) {
-            Ok(success) => success.value,
-            Err(error) => {
-                return Err(MintStatementFromFieldsErrorReturn::Identity { index: 11, error });
-            }
-        };
-        let buyer = match F::Identity::from_field(FromFieldParams, buyer_value) {
-            Ok(success) => success.value,
-            Err(error) => {
-                return Err(MintStatementFromFieldsErrorReturn::Identity { index: 12, error });
-            }
-        };
-        let CanonicalFieldValue::Bytes(pk1_bytes) = pk1_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 13,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(pk2_bytes) = pk2_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 14,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(envelope_c1_bytes) = envelope_c1_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 15,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(envelope_c2_bytes) = envelope_c2_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 16,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(envelope_d1_bytes) = envelope_d1_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 17,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(envelope_d2_bytes) = envelope_d2_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 18,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Unsigned64(expiry) = expiry_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 19,
-                expected: CanonicalFieldKind::Unsigned64,
-            });
-        };
-        let CanonicalFieldValue::Bytes(hpub_bytes) = hpub_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 20,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(message_c1_bytes) = message_c1_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 21,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(message_c2_bytes) = message_c2_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 22,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(message_d1_bytes) = message_d1_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 23,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(message_d2_bytes) = message_d2_value else {
-            return Err(MintStatementFromFieldsErrorReturn::FieldKind {
-                index: 24,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
+        let seller = reader
+            .read_form::<F::Identity>()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let buyer = reader
+            .read_form::<F::Identity>()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let pk1_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let pk2_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let envelope_c1_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let envelope_c2_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let envelope_d1_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let envelope_d2_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let expiry = reader
+            .read_unsigned64()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let hpub_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let message_c1_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let message_c2_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let message_d1_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
+        let message_d2_bytes = reader
+            .read_bytes()
+            .map_err(MintStatementFromFieldsErrorReturn::Fields)?;
         let pk1 = self.decode_g1(13, pk1_bytes)?;
         let pk2 = self.decode_g2(14, pk2_bytes)?;
         let envelope_c1 = self.decode_g1(15, envelope_c1_bytes)?;

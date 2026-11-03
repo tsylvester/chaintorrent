@@ -7,7 +7,7 @@ use domain::{
     ParameterSetIdentifier, ParameterSetIdentifierTryNewErrorReturn, SuiteIdentifier,
     SuiteIdentifierTryNewErrorReturn,
 };
-use encoding::{CanonicalFieldKind, FromFieldErrorReturn};
+use encoding::CanonicalFieldReaderErrorReturn;
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter, IEncoderAdapter};
 use envelope::{EnvelopeComponents, PublicKeysComponents};
@@ -166,14 +166,7 @@ pub type MintStatementDescriptionTryNewReturn<'a, P, F> =
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum MintStatementFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
     SuiteIdentifier(SuiteIdentifierTryNewErrorReturn),
     AssetRoot(RootTryNewErrorReturn),
     ParameterSetIdentifier(ParameterSetIdentifierTryNewErrorReturn),
@@ -188,22 +181,6 @@ pub enum MintStatementFromFieldsErrorReturn {
     InvalidG2 {
         index: usize,
         error: DecodeG2ErrorReturn,
-    },
-    ChainIdentifier {
-        index: usize,
-        error: FromFieldErrorReturn,
-    },
-    Identity {
-        index: usize,
-        error: FromFieldErrorReturn,
-    },
-    Entitlement {
-        index: usize,
-        error: FromFieldErrorReturn,
-    },
-    Interval {
-        index: usize,
-        error: FromFieldErrorReturn,
     },
 }
 

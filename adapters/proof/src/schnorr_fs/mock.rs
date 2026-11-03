@@ -245,7 +245,9 @@ fn transfer_first_messages_from_nonces<P: IPairingArithmetic, F: IChainForms>(
 }
 
 #[derive(Default)]
-pub struct SchnorrFsDeliveryProofConstructorParamsOverrides;
+pub struct SchnorrFsDeliveryProofConstructorParamsOverrides {
+    pub verifier_form: Option<VerifierGroupArithmetic>,
+}
 
 pub fn build_schnorr_fs_delivery_proof_constructor_params<
     'a,
@@ -256,14 +258,16 @@ pub fn build_schnorr_fs_delivery_proof_constructor_params<
     hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
     encoder: &'a E,
     random: &'a dyn IRandomSourceAdapter,
-    _overrides: SchnorrFsDeliveryProofConstructorParamsOverrides,
+    overrides: SchnorrFsDeliveryProofConstructorParamsOverrides,
 ) -> SchnorrFsDeliveryProofConstructorParams<'a, P, E> {
     SchnorrFsDeliveryProofConstructorParams {
         pairing,
         hash_to_scalar,
         encoder,
         random,
-        verifier_form: P::DECLARATION.verifier_group_arithmetic,
+        verifier_form: overrides
+            .verifier_form
+            .unwrap_or(VerifierGroupArithmetic::BothGroups),
     }
 }
 

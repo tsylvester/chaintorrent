@@ -1207,7 +1207,7 @@ fn a_proof_against_a_statement_differing_in_one_field_is_refused() {
                         build_algebraic_mint_statement::<P, F>(
                             pairing,
                             AlgebraicMintStatementOverrides {
-                                hpub: Some(mint_statement.buyer_keys.pk2.clone()),
+                                hpub: Some(mint_statement.envelope.d2.clone()),
                                 ..Default::default()
                             },
                         ),

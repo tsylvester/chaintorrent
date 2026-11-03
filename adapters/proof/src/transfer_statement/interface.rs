@@ -8,7 +8,7 @@ use domain::{
     ParameterSetIdentifier, ParameterSetIdentifierTryNewErrorReturn, SuiteIdentifier,
     SuiteIdentifierTryNewErrorReturn,
 };
-use encoding::{CanonicalFieldKind, FromFieldErrorReturn};
+use encoding::CanonicalFieldReaderErrorReturn;
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter, IEncoderAdapter};
 use envelope::{EnvelopeComponents, PublicKeysComponents};
@@ -18,8 +18,6 @@ use pairing::{
     CreatePairingErrorReturn, CreatePairingParams, IPairingArithmetic, IPairingReference,
 };
 use pairing::{DecodeG1ErrorReturn, DecodeG2ErrorReturn, IPairingAdapter};
-
-pub const TRANSFER_STATEMENT_FIELD_COUNT: usize = 32;
 
 pub struct TransferFirstMessages<G1, G2> {
     pub pk1: G1,
@@ -65,14 +63,7 @@ pub type TransferStatementDescriptionTryNewReturn<'a, P, F> =
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TransferStatementFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
     SuiteIdentifier(SuiteIdentifierTryNewErrorReturn),
     AssetRoot(RootTryNewErrorReturn),
     ParameterSetIdentifier(ParameterSetIdentifierTryNewErrorReturn),
@@ -87,22 +78,6 @@ pub enum TransferStatementFromFieldsErrorReturn {
     InvalidG2 {
         index: usize,
         error: DecodeG2ErrorReturn,
-    },
-    ChainIdentifier {
-        index: usize,
-        error: FromFieldErrorReturn,
-    },
-    Identity {
-        index: usize,
-        error: FromFieldErrorReturn,
-    },
-    Entitlement {
-        index: usize,
-        error: FromFieldErrorReturn,
-    },
-    Interval {
-        index: usize,
-        error: FromFieldErrorReturn,
     },
 }
 

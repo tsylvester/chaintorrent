@@ -313,8 +313,8 @@ fn g2_to_fields_lists_the_key_then_the_commitment() {
     );
 }
 
-/// Contract: `fields_to_value`, admitted: after the count and kind checks, the
-///   key then the commitment decode through the selected pairing's `decode_g1`
+/// Contract: `fields_to_value`, admitted: after the reader's reads, the key
+///   then the commitment decode through the selected pairing's `decode_g1`
 ///   and move into the trusted statement.
 /// Arrange: the description; the fields from
 ///   `invalidate_possession_g1_statement(&payload.adapter, Default::default())`,
@@ -380,8 +380,8 @@ fn g1_fields_to_value_returns_the_statement_the_fields_describe() {
     assert!(created.is_ok());
 }
 
-/// Contract: `fields_to_value`, admitted: after the count and kind checks, the
-///   key then the commitment decode through the selected pairing's `decode_g2`
+/// Contract: `fields_to_value`, admitted: after the reader's reads, the key
+///   then the commitment decode through the selected pairing's `decode_g2`
 ///   and move into the trusted statement.
 /// Arrange: the description; the fields from
 ///   `invalidate_possession_g2_statement(&payload.adapter, Default::default())`,

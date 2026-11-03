@@ -3,75 +3,197 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling kdf v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kdf)
-   Compiling encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
-   Compiling workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.06s
-     Running unittests src\lib.rs (target\debug\deps\workflows-a01e7c76b6c36ae9.exe)
+   Compiling proof v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\proof)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.15s
+     Running unittests src\lib.rs (target\debug\deps\proof-e15ff35f600d846a.exe)
 
-running 26 tests
-test sidecar::derivation_context::test_basic::description_try_new_returns_the_description ... ok
-test sidecar::derivation_context::test_basic::fields_declares_the_nine_canonical_kinds ... ok
-test sidecar::derivation_context::test_basic::try_new_admits_the_last_group_of_the_geometry ... ok
-test sidecar::derivation_context::test_basic::fields_to_value_returns_the_context_the_fields_describe ... ok
-test sidecar::derivation_context::test_basic::to_fields_lists_the_context_in_canonical_order ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_context_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_deployment_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_geometry_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_parameter_set_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_readers_refusal ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_root_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_reports_the_first_component_refusal ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_suite_refusal_whole ... ok
-test sidecar::derivation_context::test_error::try_new_refuses_a_group_index_equal_to_the_group_count ... ok
-test sidecar::wrap::test::piece_group_key_try_new_refuses_a_secret_longer_than_the_key_length ... ok
-test sidecar::wrap::test::piece_group_key_try_new_holds_the_bytes_of_an_admitted_secret ... ok
-test sidecar::wrap::test::piece_group_key_try_new_refuses_a_secret_shorter_than_the_key_length ... ok
-test sidecar::unwrap::test::unwrap_returns_the_key_derivation_refusal_unchanged ... ok
-test sidecar::unwrap::test::unwrap_returns_the_complement_of_the_wrapping_key_when_the_wrapped_key_is_all_ones ... ok
-test sidecar::unwrap::test::unwrap_returns_a_zero_key_when_the_wrapped_key_equals_the_wrapping_key ... ok
-test sidecar::wrap::test::wrap_returns_a_zero_wrapped_key_when_the_piece_group_key_equals_the_wrapping_key ... ok
-test sidecar::wrap::test::wrap_returns_the_complement_of_the_wrapping_key_when_the_piece_group_key_is_all_ones ... ok
-test sidecar::wrap::test::wrap_returns_the_key_derivation_refusal_unchanged ... ok
-test sidecar::wrap::test::wrapped_piece_group_key_try_new_holds_the_admitted_bytes ... ok
-test sidecar::wrap::test::wrapped_piece_group_key_try_new_refuses_bytes_longer_than_the_key_length ... ok
-test sidecar::wrap::test::wrapped_piece_group_key_try_new_refuses_bytes_shorter_than_the_key_length ... ok
+running 146 tests
+test mint_statement::test::delivery_purpose_derives_the_transfer_code ... ok
+test mint_statement::test::delivery_purpose_derives_the_mint_code ... ok
+test mint_statement::test::delivery_purpose_derives_the_grant_code ... ok
+test mint_statement::test::delivery_purpose_mint_proves_the_mint_relation ... ok
+test mint_statement::test::delivery_purpose_grant_proves_the_transfer_relation ... ok
+test mint_statement::test::delivery_purpose_derives_the_replacement_code ... ok
+test mint_statement::test::delivery_purpose_replacement_proves_the_mint_relation ... ok
+test mint_statement::test::delivery_purpose_transfer_proves_the_transfer_relation ... ok
+test factory::test::wire_components_refuse_a_transfer_response_count_other_than_the_relations ... ok
+test factory::test::wire_components_refuse_a_response_count_other_than_the_relations ... ok
+test factory::test::wire_components_refuse_missing_first_messages_in_the_first_group_only_form ... ok
+test factory::test::wire_components_refuse_first_messages_the_both_groups_form_does_not_carry ... ok
+test factory::test::wire_components_of_the_mint_relation_in_the_both_groups_form_convert_to_the_matching_variant ... ok
+test factory::test::wire_components_check_the_response_count_before_the_first_message_count ... ok
+test factory::test::wire_components_of_the_transfer_relation_in_the_both_groups_form_convert_to_the_matching_variant ... ok
+test factory::test::wire_components_of_the_mint_relation_in_the_first_group_only_form_convert_to_the_matching_variant ... ok
+test factory::test::wire_components_of_the_transfer_relation_in_the_first_group_only_form_convert_to_the_matching_variant ... ok
+test factory::test::create_delivery_proof_returns_the_consumers_output_for_the_schnorr_fs_selection ... ok
+test factory::test::create_delivery_proof_returns_the_consumers_output_for_the_mock_selection ... ok
+test factory::test::create_delivery_proof_refuses_a_statement_version_the_schnorr_fs_concrete_does_not_declare ... ok
+test factory::test::create_delivery_proof_refuses_a_statement_version_the_mock_concrete_does_not_declare ... ok
+test mint_statement::test::fields_to_value_admits_a_mint_purpose ... ok
+test mint_statement::test::fields_to_value_admits_a_replacement_purpose ... ok
+test mint_statement::test::fields_to_value_carries_a_first_group_decoders_refusal_with_its_index ... ok
+test factory::integration_test::an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_version ... ok
+test mint_statement::test::fields_to_value_carries_a_second_group_decoders_refusal_with_its_index ... ok
+test mint_statement::test::fields_to_value_carries_the_asset_roots_refusal ... ok
+test mint_statement::test::fields_to_value_carries_the_parameter_set_digests_refusal ... ok
+test mint_statement::test::fields_to_value_carries_the_readers_refusal ... ok
+test mint_statement::test::fields_to_value_carries_the_suite_identifiers_all_zero_identifier_refusal ... ok
+test mint_statement::test::fields_to_value_carries_the_suite_identifiers_zero_version_refusal ... ok
+test mint_statement::test::fields_to_value_constructs_the_suite_identifier_before_reading_a_later_form ... ok
+test mint_statement::test::fields_to_value_decodes_the_group_fields_only_after_every_other_check ... ok
+test mint_statement::test::fields_to_value_decodes_through_the_pairing_the_description_was_built_over ... ok
+test mint_statement::test::fields_to_value_rejects_a_grant_purpose_code ... ok
+test mint_statement::test::fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries ... ok
+test mint_statement::test::fields_to_value_rejects_a_transfer_purpose_code ... ok
+test mint_statement::test::fields_to_value_reports_the_lowest_refused_group_field ... ok
+test mint_statement::test::fields_to_value_returns_the_transcript_the_reference_fields_describe ... ok
+test mint_statement::test::mint_statement_description_declares_its_field_kinds_in_transcript_order ... ok
+test mint_statement::test::to_fields_encodes_a_mint_purpose_by_its_code ... ok
+test mint_statement::test::to_fields_encodes_a_replacement_purpose_by_its_code ... ok
+test mint_statement::test::to_fields_flattens_each_group_field_through_the_pairing ... ok
+test mint_statement::test::to_fields_lists_the_non_group_fields_in_transcript_order ... ok
+test mint_statement::test::transfer_purpose_admits_the_grant_code ... ok
+test mint_statement::test::transfer_purpose_admits_the_transfer_code ... ok
+test mint_statement::test::transfer_purpose_derives_the_grant_code ... ok
+test mint_statement::test::transfer_purpose_derives_the_transfer_code ... ok
+test mint_statement::test::transfer_purpose_refuses_a_code_no_declared_purpose_carries ... ok
+test mint_statement::test::transfer_purpose_refuses_a_mint_relation_code ... ok
+test schnorr_fs::challenge::integration_test::the_challenge_tag_is_admitted_as_a_domain_tag ... ok
+test schnorr_fs::challenge::test::challenge_hashes_the_encoding_of_a_mint_transcript_under_the_tag ... ok
+test schnorr_fs::challenge::test::challenge_hashes_the_encoding_of_a_transfer_transcript_under_the_tag ... ok
+test schnorr_fs::challenge::test::challenge_returns_the_hash_to_scalar_refusal_unchanged ... ok
+test schnorr_fs::test::proof_components_returns_the_mint_first_group_only_components ... ok
+test schnorr_fs::test::proof_components_returns_the_transfer_both_groups_components ... ok
+test schnorr_fs::test::proof_components_returns_the_transfer_first_group_only_components ... ok
+test schnorr_fs::test::proof_components_returns_the_mint_both_groups_components ... ok
+test schnorr_fs::test::proof_from_components_moves_the_mint_both_groups_components_into_the_proof ... ok
+test schnorr_fs::test::proof_from_components_moves_the_mint_first_group_only_components_into_the_proof ... ok
+test schnorr_fs::test::proof_from_components_moves_the_transfer_both_groups_components_into_the_proof ... ok
+test schnorr_fs::test::proof_from_components_moves_the_transfer_first_group_only_components_into_the_proof ... ok
+test schnorr_fs::test::proof_from_components_refuses_both_groups_components_under_a_first_group_only_adapter ... ok
+test schnorr_fs::test::proof_from_components_refuses_first_group_only_components_under_a_both_groups_adapter ... ok
+test schnorr_fs::test::prove_mint_carries_no_first_messages_in_the_both_groups_form ... ok
+test schnorr_fs::test::prove_mint_carries_the_second_group_first_messages_in_the_first_group_only_form ... ok
+test schnorr_fs::test::prove_mint_returns_the_nonce_draw_refusal_unchanged ... ok
+test schnorr_fs::test::prove_mint_returns_the_challenge_over_the_transcript_of_the_relations_first_messages ... ok
+test schnorr_fs::test::prove_mint_returns_the_challenge_refusal_unchanged ... ok
+test schnorr_fs::test::prove_mint_returns_the_nonce_sampling_refusal_unchanged ... ok
+test schnorr_fs::test::prove_mint_returns_the_responses_the_nonces_and_witnesses_define ... ok
+test schnorr_fs::test::prove_transfer_carries_no_first_messages_in_the_both_groups_form ... ok
+test schnorr_fs::test::prove_transfer_carries_the_second_group_first_messages_in_the_first_group_only_form ... ok
+test schnorr_fs::test::prove_transfer_returns_the_nonce_draw_refusal_unchanged ... ok
+test schnorr_fs::test::prove_transfer_returns_the_challenge_refusal_unchanged ... ok
+test schnorr_fs::test::prove_transfer_returns_the_challenge_over_the_transcript_of_the_relations_first_messages ... ok
+test schnorr_fs::test::prove_transfer_returns_the_nonce_sampling_refusal_unchanged ... ok
+test schnorr_fs::test::the_declaration_lists_both_verifier_forms ... ok
+test schnorr_fs::test::the_declaration_lists_the_delivery_statement_version_one ... ok
+test schnorr_fs::test::prove_transfer_returns_the_responses_the_nonces_and_witnesses_define ... ok
+test schnorr_fs::test::the_declaration_lists_the_pairing_elgamal_algebra ... ok
+test schnorr_fs::test::the_declaration_names_its_adapter_and_interface_versions ... ok
+test schnorr_fs::test::the_declaration_names_the_challenge_and_weight_tags ... ok
+test schnorr_fs::test::try_new_holds_the_both_groups_form ... ok
+test schnorr_fs::test::try_new_holds_the_challenge_tag ... ok
+test schnorr_fs::test::try_new_holds_the_first_group_only_form ... ok
+test schnorr_fs::test::try_new_holds_the_params_borrows ... ok
+test schnorr_fs::test::try_new_holds_the_weight_tag ... ok
+test schnorr_fs::test::verify_accepts_a_both_groups_mint_proof ... ok
+test schnorr_fs::test::verify_accepts_a_first_group_only_mint_proof ... ok
+test schnorr_fs::test::verify_accepts_a_both_groups_transfer_proof ... ok
+test schnorr_fs::test::verify_accepts_a_first_group_only_transfer_proof ... ok
+test schnorr_fs::test::verify_rejects_a_both_groups_mint_proof_with_a_changed_response ... ok
+test schnorr_fs::test::verify_rejects_a_both_groups_transfer_proof_with_a_changed_response ... ok
+test schnorr_fs::test::verify_rejects_a_first_group_only_mint_proof_with_a_changed_challenge ... ok
+test schnorr_fs::test::verify_rejects_a_first_group_only_transfer_proof_with_a_changed_challenge ... ok
+test schnorr_fs::test::verify_rejects_a_first_group_only_mint_proof_with_a_changed_second_group_first_message ... ok
+test schnorr_fs::test::verify_rejects_a_first_group_only_transfer_proof_with_a_changed_second_group_first_message ... ok
+test schnorr_fs::test::verify_returns_false_for_a_proof_of_the_other_form ... ok
+test schnorr_fs::test::verify_returns_false_for_a_proof_of_the_other_relation ... ok
+test schnorr_fs::test::verify_returns_the_challenge_refusal_unchanged_in_the_both_groups_form ... ok
+test schnorr_fs::test::verify_returns_the_challenge_refusal_unchanged_in_the_first_group_only_form ... ok
+test transfer_statement::test::fields_to_value_admits_a_transfer_purpose ... ok
+test transfer_statement::test::fields_to_value_admits_a_grant_purpose ... ok
+test transfer_statement::test::fields_to_value_carries_a_first_group_decoders_refusal_with_its_index ... ok
+test transfer_statement::test::fields_to_value_carries_the_asset_roots_refusal ... ok
+test transfer_statement::test::fields_to_value_carries_a_second_group_decoders_refusal_with_its_index ... ok
+test transfer_statement::test::fields_to_value_carries_the_parameter_set_digests_refusal ... ok
+test transfer_statement::test::fields_to_value_carries_the_readers_refusal ... ok
+test transfer_statement::test::fields_to_value_carries_the_suite_identifiers_all_zero_identifier_refusal ... ok
+test transfer_statement::test::fields_to_value_carries_the_suite_identifiers_zero_version_refusal ... ok
+test transfer_statement::test::fields_to_value_decodes_the_group_fields_only_after_every_other_check ... ok
+test transfer_statement::test::fields_to_value_decodes_through_the_pairing_the_description_was_built_over ... ok
+test transfer_statement::test::fields_to_value_constructs_the_suite_identifier_before_reading_a_later_form ... ok
+test transfer_statement::test::fields_to_value_rejects_a_mint_purpose_code ... ok
+test transfer_statement::test::fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries ... ok
+test transfer_statement::test::fields_to_value_rejects_a_replacement_purpose_code ... ok
+test transfer_statement::test::fields_to_value_reports_the_lowest_refused_group_field ... ok
+test transfer_statement::test::to_fields_encodes_a_grant_purpose_by_its_code ... ok
+test transfer_statement::test::fields_to_value_returns_the_transcript_the_reference_fields_describe ... ok
+test transfer_statement::test::to_fields_encodes_a_transfer_purpose_by_its_code ... ok
+test transfer_statement::test::to_fields_flattens_each_group_field_through_the_pairing ... ok
+test transfer_statement::test::to_fields_lists_the_non_group_fields_in_transcript_order ... ok
+test transfer_statement::test::transfer_statement_description_declares_its_field_kinds_in_transcript_order ... ok
+test factory::integration_test::components_of_the_other_verifier_form_are_refused_by_the_adapter ... ok
+test schnorr_fs::challenge::integration_test::the_mint_challenge_is_the_tagged_hash_of_the_mint_transcripts_encoding ... ok
+test factory::integration_test::a_refused_nonce_draw_is_returned_by_each_prover ... ok
+test schnorr_fs::challenge::integration_test::the_transfer_challenge_is_the_tagged_hash_of_the_transfer_transcripts_encoding ... ok
+test factory::integration_test::a_proof_of_another_relation_is_refused_by_verify ... ok
+test schnorr_fs::integration_test::a_mint_proofs_challenge_is_the_tagged_hash_of_its_transcripts_encoding ... ok
+test schnorr_fs::integration_test::a_proof_whose_second_group_errors_cancel_unweighted_fails_the_weighted_product ... ok
+test factory::integration_test::a_mint_proof_the_adapter_returns_verifies ... ok
+test schnorr_fs::integration_test::a_mint_proof_verifies_in_both_forms ... ok
+test schnorr_fs::integration_test::a_transfer_proofs_challenge_is_the_tagged_hash_of_its_transcripts_encoding ... ok
+test factory::integration_test::a_proof_the_adapter_rebuilds_from_its_components_verifies ... ok
+test schnorr_fs::integration_test::a_proof_rebuilt_from_its_components_verifies ... ok
+test factory::integration_test::a_transfer_proof_the_adapter_returns_verifies ... ok
+test schnorr_fs::integration_test::a_transfer_proof_verifies_in_both_forms ... ok
+test factory::integration_test::a_proof_with_a_changed_response_or_challenge_is_refused ... ok
+test schnorr_fs::integration_test::a_first_group_only_proof_with_a_changed_second_group_first_message_fails ... ok
+test factory::integration_test::a_proof_from_a_witness_the_statement_does_not_hold_is_refused ... ok
+test schnorr_fs::integration_test::a_proof_with_a_changed_response_or_challenge_fails ... ok
+test schnorr_fs::challenge::integration_test::a_transcript_differing_in_one_field_yields_another_challenge ... ok
+test schnorr_fs::integration_test::a_proof_from_a_witness_the_statement_does_not_hold_fails ... ok
+test schnorr_fs::integration_test::a_proof_fails_against_a_statement_differing_in_one_field ... ok
+test factory::integration_test::a_proof_against_a_statement_differing_in_one_field_is_refused ... ok
 
-test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 146 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 44.41s
 
-     Running tests\derivation_context_integration_test.rs (target\debug\deps\derivation_context_integration_test-2ee17791218d3696.exe)
+     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-2f82de5461273b3f.exe)
 
-running 5 tests
-test the_crate_root_refuses_a_group_index_outside_the_geometry_whole ... ok
-test every_concrete_decodes_the_derivation_context_it_encodes ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_context ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_returns_the_context_refusal_whole ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_context_to_the_reference_vector ... ok
+running 4 tests
+test an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_version ... ok
+test a_credential_issued_and_wrapped_through_the_families_is_proved_by_a_mint_proof_that_verifies ... ok
+test a_credential_rerandomized_and_wrapped_to_the_buyer_is_proved_by_a_transfer_proof_that_verifies_and_opens ... ok
+test a_transfer_proof_fails_against_a_statement_with_another_expiry ... ok
 
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.14s
 
-     Running tests\unwrap_integration_test.rs (target\debug\deps\unwrap_integration_test-2a9cccf44cc7688a.exe)
+     Running tests\mint_statement_integration_test.rs (target\debug\deps\mint_statement_integration_test-2e91e4d4d8e501b2.exe)
 
-running 6 tests
-test unwrapping_returns_a_key_derivation_refusal_whole ... ok
-test unwrapping_what_the_wrap_produced_returns_the_piece_group_key ... ok
-test unwrapping_a_wrapped_key_equal_to_the_wrapping_key_the_oracle_states_yields_a_zero_piece_group_key ... ok
-test unwrapping_an_all_ones_wrapped_key_yields_the_complement_of_the_wrapping_key_the_oracle_states ... ok
-test an_escrow_set_and_a_claimants_set_unwrap_one_piece_group_key ... ok
-test two_independently_generated_entitlement_scope_sets_unwrap_one_piece_group_key ... ok
+running 7 tests
+test chain_forms_interval_survives_its_field_round_trip ... ok
+test chain_forms_identity_survives_its_field_round_trip ... ok
+test chain_forms_chain_identifier_survives_its_field_round_trip ... ok
+test chain_forms_entitlement_survives_its_field_round_trip ... ok
+test a_mint_statement_survives_the_encoding_round_trip ... ok
+test each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists ... ok
+test each_second_group_decoder_refuses_the_second_group_reference_encoding ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.99s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.63s
 
-     Running tests\wrap_integration_test.rs (target\debug\deps\wrap_integration_test-1de2d999c8d47bf0.exe)
+     Running tests\transfer_statement_integration_test.rs (target\debug\deps\transfer_statement_integration_test-655895e7aab30e85.exe)
 
-running 3 tests
-test a_key_derivation_refusal_reaches_the_caller_whole ... ok
-test wrapping_a_zero_piece_group_key_yields_the_wrapping_key_the_oracle_states ... ok
-test wrapping_an_all_ones_piece_group_key_yields_the_complement_of_the_wrapping_key_the_oracle_states ... ok
+running 7 tests
+test chain_forms_interval_survives_its_field_round_trip ... ok
+test chain_forms_chain_identifier_survives_its_field_round_trip ... ok
+test chain_forms_identity_survives_its_field_round_trip ... ok
+test chain_forms_entitlement_survives_its_field_round_trip ... ok
+test each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists ... ok
+test each_second_group_decoder_refuses_the_second_group_reference_encoding ... ok
+test a_transfer_statement_survives_the_encoding_round_trip ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.12s
 
-   Doc-tests workflows
+   Doc-tests proof
 
 running 0 tests
 

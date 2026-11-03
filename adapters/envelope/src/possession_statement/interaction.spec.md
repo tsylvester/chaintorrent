@@ -26,17 +26,16 @@ The `encode_g1`/`encode_g2` returns are `Result<_, Infallible>`; the error arm h
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| wrong count | `payload.values` does not convert into `[CanonicalFieldValue; POSSESSION_STATEMENT_FIELD_COUNT]` | `TryFrom<Vec<CanonicalFieldValue>>` for the array, which returns the vector on failure | none | `Err(PossessionStatementFromFieldsErrorReturn::FieldCount { expected: POSSESSION_STATEMENT_FIELD_COUNT, actual })`, `actual` the returned vector's length |
-| wrong kind | the count matches and the value at some index is not `CanonicalFieldValue::Bytes` | the array is destructured into its fields and each is matched against `CanonicalFieldValue::Bytes`, index `0` then index `1` | none | `Err(PossessionStatementFromFieldsErrorReturn::FieldKind { index, expected: CanonicalFieldKind::Bytes })` for the lowest such index |
-| invalid key encoding | count and kinds pass; the key's bytes refuse to decode | `decode_g1`/`decode_g2` on the key's bytes | `self.pairing.decode_g1(DecodeG1Params, &bytes)` | `Err(PossessionStatementFromFieldsErrorReturn::InvalidG1 { index: 0, error })`, `error` the decoder's refusal unchanged |
-| invalid commitment encoding | count and kinds pass; the key decodes and the commitment's bytes refuse to decode | `decode_g1`/`decode_g2` on the commitment's bytes | `self.pairing.decode_g1(DecodeG1Params, &bytes)` | `Err(PossessionStatementFromFieldsErrorReturn::InvalidG1 { index: 1, error })`, `error` the decoder's refusal unchanged |
-| admitted | every check passes and both elements decode | none further | as above | `Ok(FromFieldsSuccessReturn { described })`, the decoded `P::G1` key and commitment moved into `PossessionG1Statement<P>` |
+| fields refused | the canonical field reader refuses the field list against `Self::FIELDS` — `try_new`'s count check, or a `read_bytes` kind check at its index | the reader's result | `CanonicalFieldReader::try_new(payload, Self::FIELDS)` once, then `read_bytes` once for the key and once for the commitment, in index order | `Err(PossessionStatementFromFieldsErrorReturn::Fields(error))`, `error` the reader's refusal unchanged |
+| invalid key encoding | both reads return their bytes; the key's bytes refuse to decode | `decode_g1`/`decode_g2` on the key's bytes | `self.pairing.decode_g1(DecodeG1Params, &bytes)` | `Err(PossessionStatementFromFieldsErrorReturn::InvalidG1 { index: 0, error })`, `error` the decoder's refusal unchanged |
+| invalid commitment encoding | both reads return their bytes; the key decodes and the commitment's bytes refuse to decode | `decode_g1`/`decode_g2` on the commitment's bytes | `self.pairing.decode_g1(DecodeG1Params, &bytes)` | `Err(PossessionStatementFromFieldsErrorReturn::InvalidG1 { index: 1, error })`, `error` the decoder's refusal unchanged |
+| admitted | both reads return their bytes and both elements decode | none further | as above | `Ok(FromFieldsSuccessReturn { described })`, the decoded `P::G1` key and commitment moved into `PossessionG1Statement<P>` |
 
 The G2 member calls `decode_g2` throughout and wraps decoder refusals in `InvalidG2` at the same indices.
 
 ## Ordering and invariants
 
-- `fields_to_value` decides in the stated order: count, then kinds in index order, then group decoding in index order. No kind check is skipped by an earlier one passing; no decode runs before every kind check.
+- `fields_to_value` decides in the stated order: the reader's construction, the key's read, and the commitment's read, then the key's decoding and then the commitment's. Every count and kind check completes inside the reader before any group element decodes.
 - `params` carries no control and is not read in either method.
 - Only a pair of successfully decoded group elements of the selected pairing, in the same group the description describes, can enter a trusted `PossessionG1Statement<P>` or `PossessionG2Statement<P>`; no path admits raw bytes into a statement.
 
