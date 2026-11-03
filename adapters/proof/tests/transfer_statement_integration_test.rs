@@ -6,10 +6,9 @@ use chain::{
     build_create_chain_forms_params,
 };
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CreateEncodingParamsOverrides,
-    DECLARED_ENCODING_SELECTIONS, DecodeParams, EncodeParams, ICanonicalField, IDecoderAdapter,
-    IEncoderAdapter, IEncodingContract, build_create_encoding_params, build_from_fields_params,
-    build_to_fields_params,
+    CanonicalFieldValue, CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, DecodeParams,
+    EncodeParams, ICanonicalField, IDecoderAdapter, IEncoderAdapter, IEncodingContract,
+    build_create_encoding_params, build_from_fields_params, build_to_fields_params,
 };
 use pairing::{
     CreatePairingParamsOverrides, DecodeG1ErrorReturn, DecodeG2ErrorReturn, EncodeG1Params,
@@ -510,10 +509,10 @@ fn each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one
 ///   concrete, the innermost consumer calling
 ///   `description.to_fields(ToFieldsParams, &statement)` and handing its
 ///   fields to `description.fields_to_value(FromFieldsParams, fields)`.
-/// Assert:   both calls return `Ok`; the values at `3`, `11`, and `12` are
-///   each the variant `<F::Identity as ICanonicalField>::KIND` names; and
-///   the rebuilt statement's `entitlement_contract`, `seller`, and `buyer`
-///   equal the originals' by `assert_eq!`, each in place.
+/// Assert:   both calls return `Ok`; the `kind()` of the values at `3`,
+///   `11`, and `12` each equals `<F::Identity as ICanonicalField>::KIND`,
+///   and the rebuilt statement's `entitlement_contract`, `seller`, and
+///   `buyer` equal the originals' by `assert_eq!`, each in place.
 #[test]
 fn chain_forms_identity_survives_its_field_round_trip() {
     // Arrange
@@ -547,28 +546,16 @@ fn chain_forms_identity_survives_its_field_round_trip() {
                 .expect("the description admits its own rendering")
                 .described;
 
-            let kind_of = |value: &CanonicalFieldValue| -> CanonicalFieldKind {
-                match value {
-                    CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
-                    CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
-                    CanonicalFieldValue::Unsigned32(_) => CanonicalFieldKind::Unsigned32,
-                    CanonicalFieldValue::Unsigned64(_) => CanonicalFieldKind::Unsigned64,
-                    CanonicalFieldValue::Text(_) => CanonicalFieldKind::Text,
-                    CanonicalFieldValue::Bytes(_) => CanonicalFieldKind::Bytes,
-                    CanonicalFieldValue::FixedBytes20(_) => CanonicalFieldKind::FixedBytes20,
-                    CanonicalFieldValue::Unsigned256(_) => CanonicalFieldKind::Unsigned256,
-                }
-            };
             assert_eq!(
-                kind_of(&flattened.fields.values[3]),
+                flattened.fields.values[3].kind(),
                 <F::Identity as ICanonicalField>::KIND
             );
             assert_eq!(
-                kind_of(&flattened.fields.values[11]),
+                flattened.fields.values[11].kind(),
                 <F::Identity as ICanonicalField>::KIND
             );
             assert_eq!(
-                kind_of(&flattened.fields.values[12]),
+                flattened.fields.values[12].kind(),
                 <F::Identity as ICanonicalField>::KIND
             );
             assert_eq!(rebuilt.entitlement_contract, statement.entitlement_contract);
@@ -629,8 +616,8 @@ fn chain_forms_identity_survives_its_field_round_trip() {
 ///   concrete, the innermost consumer calling
 ///   `description.to_fields(ToFieldsParams, &statement)` and handing its
 ///   fields to `description.fields_to_value(FromFieldsParams, fields)`.
-/// Assert:   both calls return `Ok`; the values at `6` and `7` are each the
-///   variant `<F::Entitlement as ICanonicalField>::KIND` names; and the
+/// Assert:   both calls return `Ok`; the `kind()` of the values at `6` and
+///   `7` each equals `<F::Entitlement as ICanonicalField>::KIND`, and the
 ///   rebuilt statement's `source_entitlement` and `target_entitlement`
 ///   equal the originals' by `assert_eq!`, each in place.
 #[test]
@@ -666,24 +653,12 @@ fn chain_forms_entitlement_survives_its_field_round_trip() {
                 .expect("the description admits its own rendering")
                 .described;
 
-            let kind_of = |value: &CanonicalFieldValue| -> CanonicalFieldKind {
-                match value {
-                    CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
-                    CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
-                    CanonicalFieldValue::Unsigned32(_) => CanonicalFieldKind::Unsigned32,
-                    CanonicalFieldValue::Unsigned64(_) => CanonicalFieldKind::Unsigned64,
-                    CanonicalFieldValue::Text(_) => CanonicalFieldKind::Text,
-                    CanonicalFieldValue::Bytes(_) => CanonicalFieldKind::Bytes,
-                    CanonicalFieldValue::FixedBytes20(_) => CanonicalFieldKind::FixedBytes20,
-                    CanonicalFieldValue::Unsigned256(_) => CanonicalFieldKind::Unsigned256,
-                }
-            };
             assert_eq!(
-                kind_of(&flattened.fields.values[6]),
+                flattened.fields.values[6].kind(),
                 <F::Entitlement as ICanonicalField>::KIND
             );
             assert_eq!(
-                kind_of(&flattened.fields.values[7]),
+                flattened.fields.values[7].kind(),
                 <F::Entitlement as ICanonicalField>::KIND
             );
             assert_eq!(rebuilt.source_entitlement, statement.source_entitlement);
@@ -742,8 +717,8 @@ fn chain_forms_entitlement_survives_its_field_round_trip() {
 ///   concrete, the innermost consumer calling
 ///   `description.to_fields(ToFieldsParams, &statement)` and handing its
 ///   fields to `description.fields_to_value(FromFieldsParams, fields)`.
-/// Assert:   both calls return `Ok`; the values at `8` and `9` are each the
-///   variant `<F::Interval as ICanonicalField>::KIND` names; and the
+/// Assert:   both calls return `Ok`; the `kind()` of the values at `8` and
+///   `9` each equals `<F::Interval as ICanonicalField>::KIND`, and the
 ///   rebuilt statement's `old_interval` and `new_interval` equal the
 ///   originals' by `assert_eq!`, each in place.
 #[test]
@@ -779,24 +754,12 @@ fn chain_forms_interval_survives_its_field_round_trip() {
                 .expect("the description admits its own rendering")
                 .described;
 
-            let kind_of = |value: &CanonicalFieldValue| -> CanonicalFieldKind {
-                match value {
-                    CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
-                    CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
-                    CanonicalFieldValue::Unsigned32(_) => CanonicalFieldKind::Unsigned32,
-                    CanonicalFieldValue::Unsigned64(_) => CanonicalFieldKind::Unsigned64,
-                    CanonicalFieldValue::Text(_) => CanonicalFieldKind::Text,
-                    CanonicalFieldValue::Bytes(_) => CanonicalFieldKind::Bytes,
-                    CanonicalFieldValue::FixedBytes20(_) => CanonicalFieldKind::FixedBytes20,
-                    CanonicalFieldValue::Unsigned256(_) => CanonicalFieldKind::Unsigned256,
-                }
-            };
             assert_eq!(
-                kind_of(&flattened.fields.values[8]),
+                flattened.fields.values[8].kind(),
                 <F::Interval as ICanonicalField>::KIND
             );
             assert_eq!(
-                kind_of(&flattened.fields.values[9]),
+                flattened.fields.values[9].kind(),
                 <F::Interval as ICanonicalField>::KIND
             );
             assert_eq!(rebuilt.old_interval, statement.old_interval);
@@ -854,8 +817,8 @@ fn chain_forms_interval_survives_its_field_round_trip() {
 ///   concrete, the innermost consumer calling
 ///   `description.to_fields(ToFieldsParams, &statement)` and handing its
 ///   fields to `description.fields_to_value(FromFieldsParams, fields)`.
-/// Assert:   both calls return `Ok`; the value at `2` is the variant
-///   `<F::ChainIdentifier as ICanonicalField>::KIND` names; and the rebuilt
+/// Assert:   both calls return `Ok`; the `kind()` of the value at `2`
+///   equals `<F::ChainIdentifier as ICanonicalField>::KIND`, and the rebuilt
 ///   statement's `chain` equals the original's by `assert_eq!`.
 #[test]
 fn chain_forms_chain_identifier_survives_its_field_round_trip() {
@@ -890,20 +853,8 @@ fn chain_forms_chain_identifier_survives_its_field_round_trip() {
                 .expect("the description admits its own rendering")
                 .described;
 
-            let kind_of = |value: &CanonicalFieldValue| -> CanonicalFieldKind {
-                match value {
-                    CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
-                    CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
-                    CanonicalFieldValue::Unsigned32(_) => CanonicalFieldKind::Unsigned32,
-                    CanonicalFieldValue::Unsigned64(_) => CanonicalFieldKind::Unsigned64,
-                    CanonicalFieldValue::Text(_) => CanonicalFieldKind::Text,
-                    CanonicalFieldValue::Bytes(_) => CanonicalFieldKind::Bytes,
-                    CanonicalFieldValue::FixedBytes20(_) => CanonicalFieldKind::FixedBytes20,
-                    CanonicalFieldValue::Unsigned256(_) => CanonicalFieldKind::Unsigned256,
-                }
-            };
             assert_eq!(
-                kind_of(&flattened.fields.values[2]),
+                flattened.fields.values[2].kind(),
                 <F::ChainIdentifier as ICanonicalField>::KIND
             );
             assert_eq!(rebuilt.chain, statement.chain);

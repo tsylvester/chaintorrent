@@ -16,6 +16,12 @@ Branch contract for the `abi` module of the `encoding` crate: `AbiEncoding`, the
 | non-alphanumeric name | `params.name` holds a character other than an ASCII letter or digit | the character check, decided after the empty check | none | `Err(EncodingTypeNameErrorReturn::NotAlphanumeric)` |
 | admitted name | `params.name` is non-empty and holds only ASCII letters and digits | both checks pass | none | `Ok(EncodingTypeName)` holding the text |
 
+## `CanonicalFieldValue::kind(&self) -> CanonicalFieldKind`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| kind stated | any `CanonicalFieldValue` | a `match` on `self`, exhaustive with no wildcard arm, so a variant with no arm fails to compile | none | the like-named `CanonicalFieldKind` variant, `FixedBytes32(_)` to `FixedBytes32`, `Unsigned16(_)` to `Unsigned16`, `Unsigned32(_)` to `Unsigned32`, `Unsigned64(_)` to `Unsigned64`, `Text(_)` to `Text`, `Bytes(_)` to `Bytes`, `FixedBytes20(_)` to `FixedBytes20`, and `Unsigned256(_)` to `Unsigned256`; the function has no error arm |
+
 ## `AbiEncoding::try_new(params: AbiEncodingConstructorParams) -> AbiEncodingTryNewReturn`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
@@ -31,7 +37,7 @@ The inherent constant `EncodingDeclaration { identifier: EncodingIdentifier::Eth
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
 | wrong field count | the count `params.description.to_fields` emits differs from `D::FIELDS.len()` | the count comparison, before ABI encoding | `params.description.to_fields(ToFieldsParams, payload)` once, its infallible result unpacked | `Err(EncodeErrorReturn::FieldCount { expected, actual })` |
-| wrong field kind | the count passes and an emitted value's variant differs from the `D::FIELDS` kind at its index | the per-index kind comparison, before ABI encoding | none further | `Err(EncodeErrorReturn::FieldKind { index, expected, actual })` for the lowest mismatching index |
+| wrong field kind | the count passes and an emitted value's `kind()` differs from the `D::FIELDS` kind at its index | the per-index comparison of each emitted value's `kind()` with the `D::FIELDS` kind in index order, before ABI encoding | none further | `Err(EncodeErrorReturn::FieldKind { index, expected, actual })` for the lowest mismatch, `actual` being that value's `kind()` |
 | admitted fields | every emitted value matches `D::FIELDS` in count and kind | all checks pass | `DynSolValue::abi_encode_params` once over the `DynSolValue::Tuple` collecting, in order, `FixedBytes32(bytes)` to `DynSolValue::FixedBytes(B256::from(bytes), 32)`, `Unsigned16(value)`, `Unsigned32(value)`, `Unsigned64(value)` to `DynSolValue::Uint(U256::from(value), 16)`, `32`, `64`, `Text(text)` to `DynSolValue::String(text)`, `Bytes(bytes)` to `DynSolValue::Bytes(bytes)`, `FixedBytes20(bytes)` to `DynSolValue::FixedBytes(B256::right_padding_from(&bytes), 20)`, `Unsigned256(bytes)` to `DynSolValue::Uint(U256::from_be_bytes(bytes), 256)` | `Ok(EncodeSuccessReturn { bytes })`, the parameter encoding |
 
 ## `IDecoderAdapter::decode<D: IEncodingContract>(&self, params: DecodeParams<'_, D>, payload: &[u8]) -> DecodeReturn<D::Described, D::FromFieldsErrorReturn>`

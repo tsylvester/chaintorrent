@@ -52,16 +52,7 @@ impl IEncoderAdapter for AbiEncoding {
             .zip(D::FIELDS.iter())
             .enumerate()
         {
-            let actual = match value {
-                CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
-                CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
-                CanonicalFieldValue::Unsigned32(_) => CanonicalFieldKind::Unsigned32,
-                CanonicalFieldValue::Unsigned64(_) => CanonicalFieldKind::Unsigned64,
-                CanonicalFieldValue::Text(_) => CanonicalFieldKind::Text,
-                CanonicalFieldValue::Bytes(_) => CanonicalFieldKind::Bytes,
-                CanonicalFieldValue::FixedBytes20(_) => CanonicalFieldKind::FixedBytes20,
-                CanonicalFieldValue::Unsigned256(_) => CanonicalFieldKind::Unsigned256,
-            };
+            let actual = value.kind();
             if actual != *expected {
                 return Err(EncodeErrorReturn::FieldKind {
                     index,

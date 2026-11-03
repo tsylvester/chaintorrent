@@ -48,6 +48,7 @@ fn try_new_returns_the_adapter() {
     // Assert
     assert!(result.is_ok());
 }
+// try_new_returns_the_adapter
 
 /// Contract: `encode`, admitted fields: every emitted value matches
 ///   `D::FIELDS` in count and kind → `Ok(EncodeSuccessReturn { bytes })`
@@ -79,6 +80,7 @@ fn encode_writes_every_kind_as_its_abi_parameter_encoding() {
         Some(reference_vector())
     );
 }
+// encode_writes_every_kind_as_its_abi_parameter_encoding
 
 /// Contract: `encode`, wrong field count: the emitted count differs from
 ///   `D::FIELDS.len()` → `Err(EncodeErrorReturn::FieldCount { expected,
@@ -116,6 +118,7 @@ fn encode_rejects_a_description_emitting_one_value_short() {
         })
     );
 }
+// encode_rejects_a_description_emitting_one_value_short
 
 /// Contract: `encode`, wrong field count: the emitted count differs from
 ///   `D::FIELDS.len()` → `Err(EncodeErrorReturn::FieldCount { expected,
@@ -153,6 +156,7 @@ fn encode_rejects_a_description_emitting_one_value_long() {
         })
     );
 }
+// encode_rejects_a_description_emitting_one_value_long
 
 /// Contract: `encode`, ordering: the count check precedes the kind check.
 /// Arrange: the adapter and `build_canonical_fields` overriding `values`
@@ -189,9 +193,10 @@ fn encode_checks_the_count_before_any_kind() {
         })
     );
 }
+// encode_checks_the_count_before_any_kind
 
 /// Contract: `encode`, wrong field kind: the count matches and an emitted
-///   value's variant differs from the `D::FIELDS` kind at its index →
+///   value's `kind()` differs from the `D::FIELDS` kind at its index →
 ///   `Err(EncodeErrorReturn::FieldKind { index, expected, actual })` before
 ///   ABI encoding.
 /// Arrange: the adapter and `build_canonical_fields` overriding `values`
@@ -228,6 +233,7 @@ fn encode_rejects_a_description_emitting_the_wrong_kind() {
         })
     );
 }
+// encode_rejects_a_description_emitting_the_wrong_kind
 
 /// Contract: `encode`, wrong field kind: more than one emitted value differs
 ///   from its `D::FIELDS` kind → `Err(EncodeErrorReturn::FieldKind { index,
@@ -268,6 +274,7 @@ fn encode_reports_the_lowest_field_of_the_wrong_kind() {
         })
     );
 }
+// encode_reports_the_lowest_field_of_the_wrong_kind
 
 /// Contract: `decode`, admitted: the re-encoding equals the payload →
 ///   `Ok(DecodeSuccessReturn { described })`.
@@ -295,6 +302,7 @@ fn decode_reads_the_vector_as_its_value() {
         Some(build_canonical_fields(Default::default()))
     );
 }
+// decode_reads_the_vector_as_its_value
 
 /// Contract: `decode`, malformed: `DynSolType::Tuple` over the description's
 ///   `FIELDS` refuses the payload through `abi_decode_params` →
@@ -341,6 +349,7 @@ fn decode_rejects_input_truncated_to_the_head() {
         )))
     );
 }
+// decode_rejects_input_truncated_to_the_head
 
 /// Contract: `decode`, non-canonical: the description admits the value and
 ///   re-encoding succeeds with bytes other than the payload →
@@ -365,6 +374,7 @@ fn decode_rejects_trailing_bytes() {
     // Assert
     assert_eq!(result.err(), Some(DecodeErrorReturn::NonCanonical));
 }
+// decode_rejects_trailing_bytes
 
 /// Contract: `decode`, non-canonical: the description admits the value and
 ///   re-encoding succeeds with bytes other than the payload →
@@ -390,6 +400,7 @@ fn decode_rejects_nonzero_string_padding() {
     // Assert
     assert_eq!(result.err(), Some(DecodeErrorReturn::NonCanonical));
 }
+// decode_rejects_nonzero_string_padding
 
 /// Contract: `decode`, non-canonical: the description admits the value and
 ///   re-encoding succeeds with bytes other than the payload →
@@ -415,6 +426,7 @@ fn decode_rejects_nonzero_byte_string_padding() {
     // Assert
     assert_eq!(result.err(), Some(DecodeErrorReturn::NonCanonical));
 }
+// decode_rejects_nonzero_byte_string_padding
 
 /// Contract: `decode`, non-canonical: the description admits the value and
 ///   re-encoding succeeds with bytes other than the payload →
@@ -440,6 +452,7 @@ fn decode_rejects_nonzero_fixed_bytes20_padding() {
     // Assert
     assert_eq!(result.err(), Some(DecodeErrorReturn::NonCanonical));
 }
+// decode_rejects_nonzero_fixed_bytes20_padding
 
 /// Contract: `decode`, non-canonical: the description admits the value and
 ///   re-encoding succeeds with bytes other than the payload →
@@ -471,6 +484,7 @@ fn decode_rejects_a_non_canonical_offset() {
     // Assert
     assert_eq!(result.err(), Some(DecodeErrorReturn::NonCanonical));
 }
+// decode_rejects_a_non_canonical_offset
 
 /// Contract: `decode`, non-canonical: the description admits the value and
 ///   re-encoding succeeds with bytes other than the payload →
@@ -502,6 +516,7 @@ fn decode_rejects_the_encoding_of_one_field_too_many() {
     // Assert
     assert_eq!(result.err(), Some(DecodeErrorReturn::NonCanonical));
 }
+// decode_rejects_the_encoding_of_one_field_too_many
 
 /// Contract: `decode`, integer out of range: an integer item's value does
 ///   not convert into the field's `u16` through `try_from` →
@@ -537,6 +552,7 @@ fn decode_rejects_a_uint16_word_wider_than_sixteen_bits() {
         ))
     );
 }
+// decode_rejects_a_uint16_word_wider_than_sixteen_bits
 
 /// Contract: `decode`, integer out of range: an integer item's value does
 ///   not convert into the field's `u32` through `try_from` →
@@ -572,6 +588,7 @@ fn decode_rejects_a_uint32_word_wider_than_thirty_two_bits() {
         ))
     );
 }
+// decode_rejects_a_uint32_word_wider_than_thirty_two_bits
 
 /// Contract: `decode`, integer out of range: an integer item's value does
 ///   not convert into the field's `u64` through `try_from` →
@@ -607,6 +624,7 @@ fn decode_rejects_a_uint64_word_wider_than_sixty_four_bits() {
         ))
     );
 }
+// decode_rejects_a_uint64_word_wider_than_sixty_four_bits
 
 /// Contract: `type_name`, one total branch: every `CanonicalFieldKind` →
 ///   `Ok(TypeNameSuccessReturn { name })` with the ABI type name the table
@@ -785,3 +803,65 @@ fn encoding_type_name_try_new_refuses_a_name_with_a_character_beyond_letters_and
     );
 }
 // encoding_type_name_try_new_refuses_a_name_with_a_character_beyond_letters_and_digits
+
+/// Contract: `CanonicalFieldValue::kind`, one total branch: every
+///   `CanonicalFieldValue` variant → the like-named `CanonicalFieldKind`
+///   variant.
+/// Arrange: one value of each of the eight variants with the expected kinds
+///   written from the enums' declarations and not read back from the
+///   arrangement: `FixedBytes32([0x11; 32])` `FixedBytes32`, `Unsigned16(1)`
+///   `Unsigned16`, `Unsigned32(1)` `Unsigned32`, `Unsigned64(1)` `Unsigned64`,
+///   `Text("x".to_owned())` `Text`, `Bytes(vec![0x01])` `Bytes`,
+///   `FixedBytes20([0x22; 20])` `FixedBytes20`, and `Unsigned256([0x01; 32])`
+///   `Unsigned256`.
+/// Act:     `value.kind()` for each value.
+/// Assert:  the result equals the expected kind for each value by
+///   `assert_eq!`, each compared apart, so a variant taken to a sibling kind
+///   fails.
+#[test]
+fn canonical_field_value_kind_returns_the_like_named_kind() {
+    // Arrange
+    let cases = [
+        (
+            CanonicalFieldValue::FixedBytes32([0x11; 32]),
+            CanonicalFieldKind::FixedBytes32,
+        ),
+        (
+            CanonicalFieldValue::Unsigned16(1),
+            CanonicalFieldKind::Unsigned16,
+        ),
+        (
+            CanonicalFieldValue::Unsigned32(1),
+            CanonicalFieldKind::Unsigned32,
+        ),
+        (
+            CanonicalFieldValue::Unsigned64(1),
+            CanonicalFieldKind::Unsigned64,
+        ),
+        (
+            CanonicalFieldValue::Text("x".to_owned()),
+            CanonicalFieldKind::Text,
+        ),
+        (
+            CanonicalFieldValue::Bytes(vec![0x01]),
+            CanonicalFieldKind::Bytes,
+        ),
+        (
+            CanonicalFieldValue::FixedBytes20([0x22; 20]),
+            CanonicalFieldKind::FixedBytes20,
+        ),
+        (
+            CanonicalFieldValue::Unsigned256([0x01; 32]),
+            CanonicalFieldKind::Unsigned256,
+        ),
+    ];
+
+    for (value, expected) in cases {
+        // Act
+        let result = value.kind();
+
+        // Assert
+        assert_eq!(result, expected);
+    }
+}
+// canonical_field_value_kind_returns_the_like_named_kind

@@ -248,19 +248,6 @@ pub fn build_decode_success_return<T>(described: T) -> DecodeSuccessReturn<T> {
     DecodeSuccessReturn { described }
 }
 
-fn mock_field_kind(value: &CanonicalFieldValue) -> CanonicalFieldKind {
-    match value {
-        CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
-        CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
-        CanonicalFieldValue::Unsigned32(_) => CanonicalFieldKind::Unsigned32,
-        CanonicalFieldValue::Unsigned64(_) => CanonicalFieldKind::Unsigned64,
-        CanonicalFieldValue::Text(_) => CanonicalFieldKind::Text,
-        CanonicalFieldValue::Bytes(_) => CanonicalFieldKind::Bytes,
-        CanonicalFieldValue::FixedBytes20(_) => CanonicalFieldKind::FixedBytes20,
-        CanonicalFieldValue::Unsigned256(_) => CanonicalFieldKind::Unsigned256,
-    }
-}
-
 fn mock_take<'a>(payload: &'a [u8], cursor: &mut usize, length: usize) -> Option<&'a [u8]> {
     let end = cursor.checked_add(length)?;
     let bytes = payload.get(*cursor..end)?;
@@ -298,7 +285,7 @@ impl IEncoderAdapter for MockIEncoderAdapter {
             .zip(D::FIELDS.iter())
             .enumerate()
         {
-            let actual = mock_field_kind(value);
+            let actual = value.kind();
             if actual != *expected {
                 return Err(EncodeErrorReturn::FieldKind {
                     index,

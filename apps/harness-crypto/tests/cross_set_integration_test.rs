@@ -4,8 +4,8 @@
 use domain::build_secret;
 use encoding::{
     CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, EncodingIdentifier, IEncoderAdapter,
-    build_create_encoding_deps,
-    build_create_encoding_payload, build_mock_i_encoding_consumer, create_encoding,
+    build_create_encoding_deps, build_create_encoding_payload, build_mock_i_encoding_consumer,
+    create_encoding,
 };
 use hash_to_scalar::{
     DECLARED_HASH_TO_SCALAR_SELECTIONS, DomainTagConstructorParamsOverrides, HashToScalarConcrete,
@@ -1225,9 +1225,9 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
                                     hash_to_scalar: Some(*h2s_selection),
                                     kem: Some(*kem_selection),
                                     encoding: Some(CreateEncodingParams {
-                                    concrete: encoding_selection.concrete,
-                                    identifier: encoding_selection.identifier,
-                                }),
+                                        concrete: encoding_selection.concrete,
+                                        identifier: encoding_selection.identifier,
+                                    }),
                                     key_derivation: Some(*kdf_selection),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides {

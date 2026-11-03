@@ -11,10 +11,11 @@ use crate::abi::provides::{AbiEncoding, AbiEncodingConstructorParams};
 #[cfg(any(test, feature = "mocks"))]
 use interface::IEncoderAdapter;
 use interface::{
-    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingDeps, CreateEncodingErrorReturn,
-    CreateEncodingParams, CreateEncodingPayload, CreateEncodingReturn, CreateEncodingSuccessReturn,
-    EncodingConcrete, EncodingTypeName, EncodingTypeNameConstructorParams,
-    EncodingTypeNameErrorReturn, EncodingTypeNameTryNewReturn, IEncodingConsumer,
+    CanonicalFieldKind, CanonicalFieldValue, ConsumeEncodingParams, ConsumeEncodingPayload,
+    CreateEncodingDeps, CreateEncodingErrorReturn, CreateEncodingParams, CreateEncodingPayload,
+    CreateEncodingReturn, CreateEncodingSuccessReturn, EncodingConcrete, EncodingTypeName,
+    EncodingTypeNameConstructorParams, EncodingTypeNameErrorReturn, EncodingTypeNameTryNewReturn,
+    IEncodingConsumer,
 };
 #[cfg(any(test, feature = "mocks"))]
 use mock::MockIEncoderAdapter;
@@ -36,6 +37,21 @@ impl EncodingTypeName {
 
     pub fn as_str(&self) -> &str {
         self.name.as_str()
+    }
+}
+
+impl CanonicalFieldValue {
+    pub fn kind(&self) -> CanonicalFieldKind {
+        match self {
+            CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
+            CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
+            CanonicalFieldValue::Unsigned32(_) => CanonicalFieldKind::Unsigned32,
+            CanonicalFieldValue::Unsigned64(_) => CanonicalFieldKind::Unsigned64,
+            CanonicalFieldValue::Text(_) => CanonicalFieldKind::Text,
+            CanonicalFieldValue::Bytes(_) => CanonicalFieldKind::Bytes,
+            CanonicalFieldValue::FixedBytes20(_) => CanonicalFieldKind::FixedBytes20,
+            CanonicalFieldValue::Unsigned256(_) => CanonicalFieldKind::Unsigned256,
+        }
     }
 }
 
