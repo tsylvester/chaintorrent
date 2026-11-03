@@ -6,13 +6,14 @@ use super::interface::{
     CreateEncodingReturn, CreateEncodingSuccessReturn, DecodeErrorReturn, DecodeParams,
     DecodeReturn, DecodeSuccessReturn, ENCODING_INTERFACE_VERSION, EncodeErrorReturn, EncodeParams,
     EncodeReturn, EncodeSuccessReturn, EncodingConcrete, EncodingDeclaration, EncodingIdentifier,
-    EncodingTypeName, EncodingTypeNameConstructorParams, FromFieldParams, FromFieldSuccessReturn,
-    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IDecoderAdapter, IEncoderAdapter,
-    IEncodingConsumer, IEncodingContract, MockIEncodingConsumerOutput,
-    MockIEncodingContractFromFieldsErrorReturn, ToFieldParams, ToFieldSuccessReturn,
-    ToFieldsParams, ToFieldsReturn, ToFieldsSuccessReturn, TypeNameParams, TypeNameReturn,
-    TypeNameSuccessReturn,
+    EncodingTypeName, EncodingTypeNameConstructorParams, FromFieldErrorReturn, FromFieldParams,
+    FromFieldReturn, FromFieldSuccessReturn, FromFieldsParams, FromFieldsReturn,
+    FromFieldsSuccessReturn, ICanonicalField, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer,
+    IEncodingContract, MockIEncodingConsumerOutput, MockIEncodingContractFromFieldsErrorReturn,
+    ToFieldParams, ToFieldReturn, ToFieldSuccessReturn, ToFieldsParams, ToFieldsReturn,
+    ToFieldsSuccessReturn, TypeNameParams, TypeNameReturn, TypeNameSuccessReturn,
 };
+use crate::canonical_field_reader::provides::CanonicalFieldReader;
 
 #[derive(Default)]
 pub struct CanonicalFieldsOverrides {
@@ -162,6 +163,45 @@ pub fn build_from_field_success_return<T>(
     FromFieldSuccessReturn { value }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MockICanonicalField {
+    pub bytes: [u8; 32],
+}
+
+impl ICanonicalField for MockICanonicalField {
+    const KIND: CanonicalFieldKind = CanonicalFieldKind::FixedBytes32;
+
+    fn to_field(_params: ToFieldParams, payload: &Self) -> ToFieldReturn {
+        Ok(ToFieldSuccessReturn {
+            field: CanonicalFieldValue::FixedBytes32(payload.bytes),
+        })
+    }
+
+    fn from_field(_params: FromFieldParams, payload: CanonicalFieldValue) -> FromFieldReturn<Self> {
+        match payload {
+            CanonicalFieldValue::FixedBytes32(bytes) => Ok(FromFieldSuccessReturn {
+                value: MockICanonicalField { bytes },
+            }),
+            _ => Err(FromFieldErrorReturn::WrongKind {
+                expected: CanonicalFieldKind::FixedBytes32,
+            }),
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct MockICanonicalFieldOverrides {
+    pub bytes: Option<[u8; 32]>,
+}
+
+pub fn build_mock_i_canonical_field(
+    overrides: MockICanonicalFieldOverrides,
+) -> MockICanonicalField {
+    MockICanonicalField {
+        bytes: overrides.bytes.unwrap_or([0x33; 32]),
+    }
+}
+
 #[derive(Default)]
 pub struct EncodingDeclarationOverrides {
     pub identifier: Option<EncodingIdentifier>,
@@ -272,32 +312,18 @@ impl IEncoderAdapter for MockIEncoderAdapter {
         payload: &D::Described,
     ) -> EncodeReturn {
         let Ok(emitted) = params.description.to_fields(ToFieldsParams, payload);
-        if emitted.fields.values.len() != D::FIELDS.len() {
-            return Err(EncodeErrorReturn::FieldCount {
-                expected: D::FIELDS.len(),
-                actual: emitted.fields.values.len(),
-            });
-        }
-        for (index, (value, expected)) in emitted
-            .fields
-            .values
-            .iter()
-            .zip(D::FIELDS.iter())
-            .enumerate()
-        {
-            let actual = value.kind();
-            if actual != *expected {
-                return Err(EncodeErrorReturn::FieldKind {
-                    index,
-                    expected: *expected,
-                    actual,
-                });
-            }
-        }
+        let mut reader = match CanonicalFieldReader::try_new(emitted.fields, D::FIELDS) {
+            Err(error) => return Err(EncodeErrorReturn::Fields(error)),
+            Ok(reader) => reader,
+        };
         let mut bytes = Vec::new();
-        for value in &emitted.fields.values {
+        for _ in D::FIELDS {
+            let value = match reader.read_value() {
+                Err(error) => return Err(EncodeErrorReturn::Fields(error)),
+                Ok(value) => value,
+            };
             match value {
-                CanonicalFieldValue::FixedBytes32(word) => bytes.extend_from_slice(word),
+                CanonicalFieldValue::FixedBytes32(word) => bytes.extend_from_slice(&word),
                 CanonicalFieldValue::Unsigned16(value) => {
                     bytes.extend_from_slice(&value.to_be_bytes());
                 }
@@ -317,10 +343,10 @@ impl IEncoderAdapter for MockIEncoderAdapter {
                     let length =
                         u32::try_from(blob.len()).expect("a byte string's length fits a u32");
                     bytes.extend_from_slice(&length.to_be_bytes());
-                    bytes.extend_from_slice(blob);
+                    bytes.extend_from_slice(&blob);
                 }
-                CanonicalFieldValue::FixedBytes20(word) => bytes.extend_from_slice(word),
-                CanonicalFieldValue::Unsigned256(word) => bytes.extend_from_slice(word),
+                CanonicalFieldValue::FixedBytes20(word) => bytes.extend_from_slice(&word),
+                CanonicalFieldValue::Unsigned256(word) => bytes.extend_from_slice(&word),
             }
         }
         Ok(EncodeSuccessReturn { bytes })

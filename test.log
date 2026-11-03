@@ -3,130 +3,75 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling domain v0.0.0 (C:\Users\Tim\ChainTorrent\crates\domain)
+   Compiling kdf v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kdf)
    Compiling encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
-   Compiling pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
-   Compiling hashing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hashing)
-   Compiling random v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\random)
-   Compiling hash-to-scalar v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hash-to-scalar)
-   Compiling kem v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kem)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.24s
-     Running unittests src\lib.rs (target\debug\deps\kem-a36a7161f1c81055.exe)
+   Compiling workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.06s
+     Running unittests src\lib.rs (target\debug\deps\workflows-a01e7c76b6c36ae9.exe)
 
-running 97 tests
-test bb1_depth_one::test::capsule_from_components_maps_the_asset_components_to_the_asset_capsule ... ok
-test bb1_depth_one::test::decapsulate_recovers_the_pairing_of_g1_and_hpub_from_an_asset_capsule_for_unit_randomness ... ok
-test bb1_depth_one::test::derive_identity_refuses_an_asset_identity_under_an_entitlement_set_before_hashing ... ok
-test bb1_depth_one::test::decapsulate_recovers_the_pairing_of_g1_and_hpub_from_an_entitlement_capsule_for_unit_randomness ... ok
-test bb1_depth_one::test::capsule_components_returns_the_entitlement_elements_in_their_slots ... ok
-test bb1_depth_one::test::capsule_from_components_moves_the_entitlement_elements_into_their_slots ... ok
-test bb1_depth_one::test::derive_identity_refuses_a_trivial_identity_element ... ok
-test bb1_depth_one::test::derive_identity_derives_the_element_under_the_asset_scope ... ok
-test bb1_depth_one::test::credential_from_components_moves_the_components_into_the_credential ... ok
-test bb1_depth_one::test::capsule_components_maps_the_asset_capsule_to_the_asset_components ... ok
-test bb1_depth_one::test::credential_components_returns_the_a_and_b_of_the_credential ... ok
-test bb1_depth_one::test::capsule_components_maps_the_entitlement_capsule_to_the_entitlement_components ... ok
-test bb1_depth_one::test::capsule_from_components_maps_the_entitlement_components_to_the_entitlement_capsule ... ok
-test bb1_depth_one::test::derive_identity_derives_the_element_under_the_entitlement_scope ... ok
-test bb1_depth_one::test::derive_identity_refuses_an_element_outside_the_asset_scope ... ok
-test bb1_depth_one::test::derive_identity_refuses_an_entitlement_identity_under_an_asset_set_before_hashing ... ok
-test bb1_depth_one::test::encapsulate_returns_the_pairing_of_g1_and_hpub_as_the_encapsulated_value_for_unit_randomness ... ok
-test bb1_depth_one::test::encapsulate_returns_the_sampling_refusal_whole ... ok
-test bb1_depth_one::test::encapsulate_returns_v_as_the_fixed_element_for_unit_randomness_under_the_asset_scope ... ok
-test bb1_depth_one::test::encapsulate_returns_u_as_g2_for_unit_randomness ... ok
-test bb1_depth_one::test::encapsulate_returns_v_as_u0_for_unit_randomness_under_the_entitlement_scope ... ok
-test bb1_depth_one::test::derive_identity_returns_the_hash_refusal_whole ... ok
-test bb1_depth_one::test::encapsulate_returns_w_as_u1_for_unit_randomness_under_the_entitlement_scope ... ok
-test bb1_depth_one::test::identity_element_components_returns_the_scalar_and_the_element ... ok
-test bb1_depth_one::test::is_valid_accepts_a_credential_that_satisfies_the_check ... ok
-test bb1_depth_one::test::is_valid_rejects_a_credential_with_another_a ... ok
-test bb1_depth_one::test::is_well_formed_accepts_an_asset_capsule_of_the_set ... ok
-test bb1_depth_one::test::is_well_formed_accepts_an_entitlement_capsule_of_the_set ... ok
-test bb1_depth_one::test::is_well_formed_rejects_an_asset_capsule_under_an_entitlement_set ... ok
-test bb1_depth_one::test::is_well_formed_rejects_an_asset_capsule_with_another_v ... ok
-test bb1_depth_one::test::is_well_formed_rejects_an_entitlement_capsule_under_an_asset_set ... ok
-test bb1_depth_one::test::is_well_formed_rejects_an_entitlement_capsule_with_another_v ... ok
-test bb1_depth_one::test::is_well_formed_rejects_an_entitlement_capsule_with_another_w ... ok
-test bb1_depth_one::test::issue_derives_b_as_the_identity_element_for_zero_randomness ... ok
-test bb1_depth_one::test::issue_returns_the_default_credential_for_unit_randomness ... ok
-test bb1_depth_one::test::issue_returns_the_sampled_randomness ... ok
-test bb1_depth_one::test::issue_returns_the_sampling_refusal_whole ... ok
-test bb1_depth_one::test::master_scalar_components_returns_a_secret_of_the_value ... ok
-test bb1_depth_one::test::master_scalar_from_components_moves_the_secret_into_the_master_scalar ... ok
-test bb1_depth_one::test::parameter_set_components_maps_the_asset_scope_to_the_asset_components ... ok
-test bb1_depth_one::test::parameter_set_components_maps_the_entitlement_scope_to_the_entitlement_components ... ok
-test bb1_depth_one::test::parameter_set_components_returns_the_fields_of_the_parameter_set ... ok
-test bb1_depth_one::test::parameter_set_from_components_maps_the_asset_components_back ... ok
-test bb1_depth_one::test::parameter_set_from_components_maps_the_entitlement_components_back ... ok
-test bb1_depth_one::test::parameter_set_from_components_moves_the_components_into_the_parameter_set ... ok
-test bb1_depth_one::test::rerandomize_leaves_a_unchanged_for_a_zero_offset ... ok
-test bb1_depth_one::test::rerandomize_leaves_b_unchanged_for_a_zero_offset ... ok
-test bb1_depth_one::test::rerandomize_returns_the_sampled_offset ... ok
-test bb1_depth_one::test::rerandomize_returns_the_sampling_refusal_whole ... ok
-test bb1_depth_one::test::setup_fixes_an_asset_scope_set_to_its_identity_element ... ok
-test bb1_depth_one::test::setup_fixes_an_entitlement_scope_set_to_no_identity ... ok
-test bb1_depth_one::test::setup_refuses_a_trivial_identity_element_under_the_asset_scope ... ok
-test bb1_depth_one::test::setup_returns_the_hash_refusal_whole_under_the_asset_scope ... ok
-test bb1_depth_one::test::setup_returns_the_master_refusal_when_the_master_and_u0_bytes_are_both_refused ... ok
-test bb1_depth_one::test::setup_returns_the_master_sampling_refusal_whole ... ok
-test bb1_depth_one::test::setup_returns_the_u0_sampling_refusal_whole ... ok
-test bb1_depth_one::test::setup_returns_the_u1_sampling_refusal_whole ... ok
-test bb1_depth_one::test::try_new_holds_the_tag_the_declaration_names ... ok
-test factory::integration_test::every_concrete_is_constructed_under_the_identifier_and_scope_it_declares ... ok
-test factory::integration_test::every_concrete_is_refused_under_an_identifier_it_does_not_declare ... ok
-test bb1_depth_one::integration_test::derive_identity_derives_under_the_asset_scope_only_the_identity_the_set_fixes ... ok
-test bb1_depth_one::integration_test::derive_identity_refuses_a_trivial_identity_element ... ok
-test factory::test::create_kem_admits_the_mock_selection_under_the_asset_scope ... ok
-test factory::test::create_kem_admits_the_mock_selection_under_the_entitlement_scope ... ok
-test factory::test::create_kem_refuses_each_declared_concrete_under_an_identifier_it_does_not_declare ... ok
-test factory::test::create_kem_refuses_the_mock_selection_under_an_identifier_it_does_not_declare ... ok
-test factory::integration_test::every_concrete_derives_under_the_asset_scope_only_the_identity_the_set_fixes ... ok
-test factory::integration_test::every_concrete_refuses_a_trivial_identity_element_at_asset_setup ... ok
-test factory::integration_test::every_concrete_refuses_a_trivial_identity_element ... ok
-test factory::integration_test::every_concrete_maps_an_identity_under_its_declared_tag ... ok
-test bb1_depth_one::integration_test::every_credential_issued_under_a_setup_parameter_set_is_valid_for_its_identity ... ok
-test factory::integration_test::every_concrete_binds_the_public_value_to_the_master_scalar ... ok
-test factory::integration_test::every_concrete_refuses_an_identity_of_the_other_scope ... ok
-test bb1_depth_one::integration_test::a_capsule_with_exchanged_identity_base_elements_is_ill_formed ... ok
-test bb1_depth_one::integration_test::credentials_of_different_entitlements_under_one_parameter_set_recover_the_same_bytes ... ok
-test bb1_depth_one::integration_test::a_capsule_of_the_other_scope_is_ill_formed ... ok
-test bb1_depth_one::integration_test::a_credential_is_invalid_for_another_identity_and_under_another_parameter_set ... ok
-test bb1_depth_one::integration_test::a_rerandomized_credential_is_valid_for_its_identity ... ok
-test factory::integration_test::every_concrete_returns_the_randomness_its_credential_was_formed_with ... ok
-test factory::integration_test::every_concrete_returns_the_offset_it_applied_under_rerandomization ... ok
-test factory::integration_test::every_concrete_accepts_a_credential_issued_under_a_rebuilt_parameter_set_and_master_scalar ... ok
-test factory::integration_test::every_concrete_issues_a_credential_valid_for_its_identity ... ok
-test bb1_depth_one::integration_test::a_capsule_is_ill_formed_under_another_parameter_set ... ok
-test factory::integration_test::every_concrete_returns_a_hash_to_scalar_refusal_whole ... ok
-test factory::integration_test::every_concrete_rejects_a_capsule_with_exchanged_identity_base_elements ... ok
-test factory::integration_test::every_concrete_recovers_one_value_from_the_credentials_of_different_entitlements ... ok
-test bb1_depth_one::integration_test::every_valid_credential_decapsulates_a_well_formed_capsule_to_the_encapsulated_bytes ... ok
-test factory::integration_test::every_concrete_returns_a_sampling_refusal_whole ... ok
-test factory::integration_test::every_concrete_accepts_a_rebuilt_capsule_as_well_formed ... ok
-test bb1_depth_one::integration_test::every_value_rebuilt_from_its_components_behaves_as_the_value_it_was_read_from ... ok
-test factory::integration_test::every_concrete_exposes_the_target_group_encoding_of_the_encapsulated_value ... ok
-test factory::integration_test::every_concrete_rerandomizes_a_credential_to_one_valid_for_its_identity ... ok
-test factory::integration_test::every_concrete_decapsulates_a_rebuilt_credential_and_capsule_to_the_encapsulated_bytes ... ok
-test factory::integration_test::every_concrete_rejects_a_credential_for_another_identity_and_under_another_parameter_set ... ok
-test factory::integration_test::every_concrete_rejects_a_capsule_under_another_parameter_set ... ok
-test factory::integration_test::every_concrete_rejects_a_capsule_of_the_other_scope ... ok
-test factory::integration_test::every_concrete_decapsulates_a_well_formed_capsule_to_the_encapsulated_bytes ... ok
+running 26 tests
+test sidecar::derivation_context::test_basic::description_try_new_returns_the_description ... ok
+test sidecar::derivation_context::test_basic::fields_declares_the_nine_canonical_kinds ... ok
+test sidecar::derivation_context::test_basic::try_new_admits_the_last_group_of_the_geometry ... ok
+test sidecar::derivation_context::test_basic::fields_to_value_returns_the_context_the_fields_describe ... ok
+test sidecar::derivation_context::test_basic::to_fields_lists_the_context_in_canonical_order ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_context_refusal_whole ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_deployment_refusal_whole ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_geometry_refusal_whole ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_parameter_set_refusal_whole ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_readers_refusal ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_root_refusal_whole ... ok
+test sidecar::derivation_context::test_error::fields_to_value_reports_the_first_component_refusal ... ok
+test sidecar::derivation_context::test_error::fields_to_value_carries_the_suite_refusal_whole ... ok
+test sidecar::derivation_context::test_error::try_new_refuses_a_group_index_equal_to_the_group_count ... ok
+test sidecar::wrap::test::piece_group_key_try_new_refuses_a_secret_longer_than_the_key_length ... ok
+test sidecar::wrap::test::piece_group_key_try_new_holds_the_bytes_of_an_admitted_secret ... ok
+test sidecar::wrap::test::piece_group_key_try_new_refuses_a_secret_shorter_than_the_key_length ... ok
+test sidecar::unwrap::test::unwrap_returns_the_key_derivation_refusal_unchanged ... ok
+test sidecar::unwrap::test::unwrap_returns_the_complement_of_the_wrapping_key_when_the_wrapped_key_is_all_ones ... ok
+test sidecar::unwrap::test::unwrap_returns_a_zero_key_when_the_wrapped_key_equals_the_wrapping_key ... ok
+test sidecar::wrap::test::wrap_returns_a_zero_wrapped_key_when_the_piece_group_key_equals_the_wrapping_key ... ok
+test sidecar::wrap::test::wrap_returns_the_complement_of_the_wrapping_key_when_the_piece_group_key_is_all_ones ... ok
+test sidecar::wrap::test::wrap_returns_the_key_derivation_refusal_unchanged ... ok
+test sidecar::wrap::test::wrapped_piece_group_key_try_new_holds_the_admitted_bytes ... ok
+test sidecar::wrap::test::wrapped_piece_group_key_try_new_refuses_bytes_longer_than_the_key_length ... ok
+test sidecar::wrap::test::wrapped_piece_group_key_try_new_refuses_bytes_shorter_than_the_key_length ... ok
 
-test result: ok. 97 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.28s
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-d41839e079513e50.exe)
+     Running tests\derivation_context_integration_test.rs (target\debug\deps\derivation_context_integration_test-2ee17791218d3696.exe)
+
+running 5 tests
+test the_crate_root_refuses_a_group_index_outside_the_geometry_whole ... ok
+test every_concrete_decodes_the_derivation_context_it_encodes ... ok
+test every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_context ... ok
+test every_concrete_declaring_the_ethereum_abi_identifier_returns_the_context_refusal_whole ... ok
+test every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_context_to_the_reference_vector ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\unwrap_integration_test.rs (target\debug\deps\unwrap_integration_test-2a9cccf44cc7688a.exe)
 
 running 6 tests
-test every_concrete_is_constructed_under_the_identifier_and_scope_it_declares ... ok
-test every_concrete_is_refused_under_an_identifier_it_does_not_declare ... ok
-test every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_encoding_factory_encodes_to_the_oracle ... ok
-test the_consumer_receives_the_concrete_the_params_name ... ok
-test libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes ... ok
-test a_kem_from_the_factory_round_trips_from_operating_system_draws ... ok
+test unwrapping_returns_a_key_derivation_refusal_whole ... ok
+test unwrapping_what_the_wrap_produced_returns_the_piece_group_key ... ok
+test unwrapping_a_wrapped_key_equal_to_the_wrapping_key_the_oracle_states_yields_a_zero_piece_group_key ... ok
+test unwrapping_an_all_ones_wrapped_key_yields_the_complement_of_the_wrapping_key_the_oracle_states ... ok
+test an_escrow_set_and_a_claimants_set_unwrap_one_piece_group_key ... ok
+test two_independently_generated_entitlement_scope_sets_unwrap_one_piece_group_key ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.41s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.99s
 
-   Doc-tests kem
+     Running tests\wrap_integration_test.rs (target\debug\deps\wrap_integration_test-1de2d999c8d47bf0.exe)
+
+running 3 tests
+test a_key_derivation_refusal_reaches_the_caller_whole ... ok
+test wrapping_a_zero_piece_group_key_yields_the_wrapping_key_the_oracle_states ... ok
+test wrapping_an_all_ones_piece_group_key_yields_the_complement_of_the_wrapping_key_the_oracle_states ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests workflows
 
 running 0 tests
 

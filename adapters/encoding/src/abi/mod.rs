@@ -6,11 +6,12 @@ pub(crate) mod provides;
 mod test;
 
 use crate::factory::provides::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, DecodeErrorReturn, DecodeParams,
-    DecodeReturn, DecodeSuccessReturn, ENCODING_INTERFACE_VERSION, EncodeErrorReturn, EncodeParams,
-    EncodeReturn, EncodeSuccessReturn, EncodingDeclaration, EncodingIdentifier, EncodingTypeName,
-    EncodingTypeNameConstructorParams, FromFieldsParams, IDecoderAdapter, IEncoderAdapter,
-    IEncodingContract, ToFieldsParams, TypeNameParams, TypeNameReturn, TypeNameSuccessReturn,
+    CanonicalFieldKind, CanonicalFieldReader, CanonicalFieldValue, CanonicalFields,
+    DecodeErrorReturn, DecodeParams, DecodeReturn, DecodeSuccessReturn, ENCODING_INTERFACE_VERSION,
+    EncodeErrorReturn, EncodeParams, EncodeReturn, EncodeSuccessReturn, EncodingDeclaration,
+    EncodingIdentifier, EncodingTypeName, EncodingTypeNameConstructorParams, FromFieldsParams,
+    IDecoderAdapter, IEncoderAdapter, IEncodingContract, ToFieldsParams, TypeNameParams,
+    TypeNameReturn, TypeNameSuccessReturn,
 };
 use alloy::dyn_abi::{DynSolType, DynSolValue};
 use alloy::primitives::{B256, U256};
@@ -39,57 +40,34 @@ impl IEncoderAdapter for AbiEncoding {
         payload: &D::Described,
     ) -> EncodeReturn {
         let Ok(emitted) = params.description.to_fields(ToFieldsParams, payload);
-        if emitted.fields.values.len() != D::FIELDS.len() {
-            return Err(EncodeErrorReturn::FieldCount {
-                expected: D::FIELDS.len(),
-                actual: emitted.fields.values.len(),
+        let mut reader = match CanonicalFieldReader::try_new(emitted.fields, D::FIELDS) {
+            Err(error) => return Err(EncodeErrorReturn::Fields(error)),
+            Ok(reader) => reader,
+        };
+        let mut values = Vec::with_capacity(D::FIELDS.len());
+        for _ in D::FIELDS {
+            let value = match reader.read_value() {
+                Err(error) => return Err(EncodeErrorReturn::Fields(error)),
+                Ok(value) => value,
+            };
+            values.push(match value {
+                CanonicalFieldValue::FixedBytes32(bytes) => {
+                    DynSolValue::FixedBytes(B256::from(bytes), 32)
+                }
+                CanonicalFieldValue::Unsigned16(value) => DynSolValue::Uint(U256::from(value), 16),
+                CanonicalFieldValue::Unsigned32(value) => DynSolValue::Uint(U256::from(value), 32),
+                CanonicalFieldValue::Unsigned64(value) => DynSolValue::Uint(U256::from(value), 64),
+                CanonicalFieldValue::Text(text) => DynSolValue::String(text),
+                CanonicalFieldValue::Bytes(bytes) => DynSolValue::Bytes(bytes),
+                CanonicalFieldValue::FixedBytes20(bytes) => {
+                    DynSolValue::FixedBytes(B256::right_padding_from(&bytes), 20)
+                }
+                CanonicalFieldValue::Unsigned256(bytes) => {
+                    DynSolValue::Uint(U256::from_be_bytes(bytes), 256)
+                }
             });
         }
-        for (index, (value, expected)) in emitted
-            .fields
-            .values
-            .iter()
-            .zip(D::FIELDS.iter())
-            .enumerate()
-        {
-            let actual = value.kind();
-            if actual != *expected {
-                return Err(EncodeErrorReturn::FieldKind {
-                    index,
-                    expected: *expected,
-                    actual,
-                });
-            }
-        }
-        let tuple = DynSolValue::Tuple(
-            emitted
-                .fields
-                .values
-                .into_iter()
-                .map(|value| match value {
-                    CanonicalFieldValue::FixedBytes32(bytes) => {
-                        DynSolValue::FixedBytes(B256::from(bytes), 32)
-                    }
-                    CanonicalFieldValue::Unsigned16(value) => {
-                        DynSolValue::Uint(U256::from(value), 16)
-                    }
-                    CanonicalFieldValue::Unsigned32(value) => {
-                        DynSolValue::Uint(U256::from(value), 32)
-                    }
-                    CanonicalFieldValue::Unsigned64(value) => {
-                        DynSolValue::Uint(U256::from(value), 64)
-                    }
-                    CanonicalFieldValue::Text(text) => DynSolValue::String(text),
-                    CanonicalFieldValue::Bytes(bytes) => DynSolValue::Bytes(bytes),
-                    CanonicalFieldValue::FixedBytes20(bytes) => {
-                        DynSolValue::FixedBytes(B256::right_padding_from(&bytes), 20)
-                    }
-                    CanonicalFieldValue::Unsigned256(bytes) => {
-                        DynSolValue::Uint(U256::from_be_bytes(bytes), 256)
-                    }
-                })
-                .collect(),
-        );
+        let tuple = DynSolValue::Tuple(values);
         Ok(EncodeSuccessReturn {
             bytes: tuple.abi_encode_params(),
         })

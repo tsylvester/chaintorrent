@@ -14,17 +14,16 @@ use domain::{
     SuiteIdentifierConstructorParams,
 };
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldsParams, FromFieldsReturn,
-    FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams, ToFieldsReturn,
-    ToFieldsSuccessReturn,
+    CanonicalFieldKind, CanonicalFieldReader, CanonicalFieldValue, CanonicalFields,
+    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams,
+    ToFieldsReturn, ToFieldsSuccessReturn,
 };
 use hashing::{Root, RootConstructorParams};
 use interface::{
-    DERIVATION_CONTEXT_FIELD_COUNT, DERIVATION_CONTEXT_FIELD_KINDS, DerivationContext,
-    DerivationContextConstructorParams, DerivationContextDescription,
-    DerivationContextDescriptionConstructorParams, DerivationContextDescriptionTryNewReturn,
-    DerivationContextFromFieldsErrorReturn, DerivationContextTryNewErrorReturn,
-    DerivationContextTryNewReturn,
+    DERIVATION_CONTEXT_FIELD_KINDS, DerivationContext, DerivationContextConstructorParams,
+    DerivationContextDescription, DerivationContextDescriptionConstructorParams,
+    DerivationContextDescriptionTryNewReturn, DerivationContextFromFieldsErrorReturn,
+    DerivationContextTryNewErrorReturn, DerivationContextTryNewReturn,
 };
 
 impl DerivationContext {
@@ -85,78 +84,45 @@ impl IEncodingContract for DerivationContextDescription {
         _params: FromFieldsParams,
         payload: CanonicalFields,
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn> {
-        let values =
-            <[CanonicalFieldValue; DERIVATION_CONTEXT_FIELD_COUNT]>::try_from(payload.values)
-                .map_err(
-                    |values| DerivationContextFromFieldsErrorReturn::FieldCount {
-                        expected: DERIVATION_CONTEXT_FIELD_COUNT,
-                        actual: values.len(),
-                    },
-                )?;
-        let [
-            asset_value,
-            deployment_value,
-            suite_identifier_value,
-            suite_version_value,
-            parameter_set_value,
-            group_index_value,
-            piece_size_value,
-            piece_group_size_value,
-            total_extent_value,
-        ] = values;
-        let CanonicalFieldValue::FixedBytes32(asset_bytes) = asset_value else {
-            return Err(DerivationContextFromFieldsErrorReturn::FieldKind {
-                index: 0,
-                expected: CanonicalFieldKind::FixedBytes32,
-            });
+        let mut reader = match CanonicalFieldReader::try_new(payload, Self::FIELDS) {
+            Ok(reader) => reader,
+            Err(error) => return Err(DerivationContextFromFieldsErrorReturn::Fields(error)),
         };
-        let CanonicalFieldValue::FixedBytes32(deployment_bytes) = deployment_value else {
-            return Err(DerivationContextFromFieldsErrorReturn::FieldKind {
-                index: 1,
-                expected: CanonicalFieldKind::FixedBytes32,
-            });
+        let asset_bytes = match reader.read_fixed_bytes32() {
+            Ok(bytes) => bytes,
+            Err(error) => return Err(DerivationContextFromFieldsErrorReturn::Fields(error)),
         };
-        let CanonicalFieldValue::FixedBytes32(suite_identifier) = suite_identifier_value else {
-            return Err(DerivationContextFromFieldsErrorReturn::FieldKind {
-                index: 2,
-                expected: CanonicalFieldKind::FixedBytes32,
-            });
+        let deployment_bytes = match reader.read_fixed_bytes32() {
+            Ok(bytes) => bytes,
+            Err(error) => return Err(DerivationContextFromFieldsErrorReturn::Fields(error)),
         };
-        let CanonicalFieldValue::Unsigned16(version) = suite_version_value else {
-            return Err(DerivationContextFromFieldsErrorReturn::FieldKind {
-                index: 3,
-                expected: CanonicalFieldKind::Unsigned16,
-            });
+        let suite_identifier = match reader.read_fixed_bytes32() {
+            Ok(bytes) => bytes,
+            Err(error) => return Err(DerivationContextFromFieldsErrorReturn::Fields(error)),
         };
-        let CanonicalFieldValue::FixedBytes32(parameter_set_bytes) = parameter_set_value else {
-            return Err(DerivationContextFromFieldsErrorReturn::FieldKind {
-                index: 4,
-                expected: CanonicalFieldKind::FixedBytes32,
-            });
+        let version = match reader.read_unsigned16() {
+            Ok(version) => version,
+            Err(error) => return Err(DerivationContextFromFieldsErrorReturn::Fields(error)),
         };
-        let CanonicalFieldValue::Unsigned64(index_value) = group_index_value else {
-            return Err(DerivationContextFromFieldsErrorReturn::FieldKind {
-                index: 5,
-                expected: CanonicalFieldKind::Unsigned64,
-            });
+        let parameter_set_bytes = match reader.read_fixed_bytes32() {
+            Ok(bytes) => bytes,
+            Err(error) => return Err(DerivationContextFromFieldsErrorReturn::Fields(error)),
         };
-        let CanonicalFieldValue::Unsigned32(piece_size) = piece_size_value else {
-            return Err(DerivationContextFromFieldsErrorReturn::FieldKind {
-                index: 6,
-                expected: CanonicalFieldKind::Unsigned32,
-            });
+        let index_value = match reader.read_unsigned64() {
+            Ok(value) => value,
+            Err(error) => return Err(DerivationContextFromFieldsErrorReturn::Fields(error)),
         };
-        let CanonicalFieldValue::Unsigned32(piece_group_size) = piece_group_size_value else {
-            return Err(DerivationContextFromFieldsErrorReturn::FieldKind {
-                index: 7,
-                expected: CanonicalFieldKind::Unsigned32,
-            });
+        let piece_size = match reader.read_unsigned32() {
+            Ok(size) => size,
+            Err(error) => return Err(DerivationContextFromFieldsErrorReturn::Fields(error)),
         };
-        let CanonicalFieldValue::Unsigned64(total_extent) = total_extent_value else {
-            return Err(DerivationContextFromFieldsErrorReturn::FieldKind {
-                index: 8,
-                expected: CanonicalFieldKind::Unsigned64,
-            });
+        let piece_group_size = match reader.read_unsigned32() {
+            Ok(size) => size,
+            Err(error) => return Err(DerivationContextFromFieldsErrorReturn::Fields(error)),
+        };
+        let total_extent = match reader.read_unsigned64() {
+            Ok(extent) => extent,
+            Err(error) => return Err(DerivationContextFromFieldsErrorReturn::Fields(error)),
         };
         let asset = match Root::try_new(RootConstructorParams { bytes: asset_bytes }) {
             Ok(asset) => asset,

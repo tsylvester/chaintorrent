@@ -4,7 +4,7 @@ use domain::{
     ParameterSetIdentifierTryNewErrorReturn, PieceGeometry, PieceGeometryTryNewErrorReturn,
     SuiteIdentifier, SuiteIdentifierTryNewErrorReturn,
 };
-use encoding::CanonicalFieldKind;
+use encoding::{CanonicalFieldKind, CanonicalFieldReaderErrorReturn};
 use hashing::{Root, RootTryNewErrorReturn};
 
 pub const DERIVATION_CONTEXT_FIELD_COUNT: usize = 9;
@@ -57,14 +57,7 @@ pub type DerivationContextDescriptionTryNewReturn =
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum DerivationContextFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
     Asset(RootTryNewErrorReturn),
     Deployment(DeploymentIdentityTryNewErrorReturn),
     Suite(SuiteIdentifierTryNewErrorReturn),

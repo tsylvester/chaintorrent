@@ -39,9 +39,8 @@ Ordering: a single comparison decides the outcome; the same params always yield 
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| wrong count | `payload.values` does not convert into `[CanonicalFieldValue; DERIVATION_CONTEXT_FIELD_COUNT]` | `TryFrom<Vec<CanonicalFieldValue>>` for the array, which returns the vector on failure | none | `Err(DerivationContextFromFieldsErrorReturn::FieldCount { expected: DERIVATION_CONTEXT_FIELD_COUNT, actual })`, `actual` the returned vector's length |
-| wrong kind | the count matches and the value at some index is not of the kind `DERIVATION_CONTEXT_FIELD_KINDS` names there | the array is destructured into its nine values and each is matched against its kind in index order | none | `Err(DerivationContextFromFieldsErrorReturn::FieldKind { index, expected })` for the lowest such index, `expected` the kind named there |
-| asset refused | every kind matches and `Root::try_new` over the asset's bytes returns `Err(error)` | none — the refusal is the branch | `Root::try_new` once | `Err(DerivationContextFromFieldsErrorReturn::Asset(error))`, the refusal whole |
+| fields refused | `CanonicalFieldReader::try_new` or a read returns `Err(error)` | the reader's own checks — the count at construction, then each value's kind at its index | `CanonicalFieldReader::try_new(payload, Self::FIELDS)`, then, in index order, `read_fixed_bytes32` for the root, the deployment identity, and the suite identifier, `read_unsigned16` for the suite version, `read_fixed_bytes32` for the parameter-set identifier, `read_unsigned64` for the group index, `read_unsigned32` for the piece size and the piece-group size, and `read_unsigned64` for the total extent | `Err(DerivationContextFromFieldsErrorReturn::Fields(error))`, `error` unchanged |
+| asset refused | every read returns its value and `Root::try_new` over the asset's bytes returns `Err(error)` | none — the refusal is the branch | `Root::try_new` once | `Err(DerivationContextFromFieldsErrorReturn::Asset(error))`, the refusal whole |
 | deployment refused | the asset is admitted and `DeploymentIdentity::try_new` returns `Err(error)` | none — the refusal is the branch | `DeploymentIdentity::try_new` once | `Err(DerivationContextFromFieldsErrorReturn::Deployment(error))`, the refusal whole |
 | suite refused | the components before it are admitted and `SuiteIdentifier::try_new` over the identifier and the version returns `Err(error)` | none — the refusal is the branch | `SuiteIdentifier::try_new` once | `Err(DerivationContextFromFieldsErrorReturn::Suite(error))`, the refusal whole |
 | parameter set refused | the components before it are admitted and `ParameterSetIdentifier::try_new` returns `Err(error)` | none — the refusal is the branch | `ParameterSetIdentifier::try_new` once | `Err(DerivationContextFromFieldsErrorReturn::ParameterSet(error))`, the refusal whole |
@@ -50,7 +49,7 @@ Ordering: a single comparison decides the outcome; the same params always yield 
 | context refused | every component is admitted and `DerivationContext::try_new` returns `Err(error)` | none — the refusal is the branch | `DerivationContext::try_new` once | `Err(DerivationContextFromFieldsErrorReturn::Context(error))`, the refusal whole |
 | admitted | `DerivationContext::try_new` returns `Ok(described)` | none | `DerivationContext::try_new` once | `Ok(FromFieldsSuccessReturn { described })` |
 
-Ordering: the count, then every kind in index order, then the components in field order — asset, deployment, suite, parameter set, group index, geometry — then the context's own check; the first refusal is returned; `params` carries no control and is not read.
+Ordering: the reader's construction and every read in index order, then the components in field order — asset, deployment, suite, parameter set, group index, geometry — built from the values the reader returned, then the context's own check; the first refusal is returned; `params` carries no control and is not read.
 
 ## Invariants
 

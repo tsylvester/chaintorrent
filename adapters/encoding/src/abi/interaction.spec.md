@@ -36,9 +36,8 @@ The inherent constant `EncodingDeclaration { identifier: EncodingIdentifier::Eth
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| wrong field count | the count `params.description.to_fields` emits differs from `D::FIELDS.len()` | the count comparison, before ABI encoding | `params.description.to_fields(ToFieldsParams, payload)` once, its infallible result unpacked | `Err(EncodeErrorReturn::FieldCount { expected, actual })` |
-| wrong field kind | the count passes and an emitted value's `kind()` differs from the `D::FIELDS` kind at its index | the per-index comparison of each emitted value's `kind()` with the `D::FIELDS` kind in index order, before ABI encoding | none further | `Err(EncodeErrorReturn::FieldKind { index, expected, actual })` for the lowest mismatch, `actual` being that value's `kind()` |
-| admitted fields | every emitted value matches `D::FIELDS` in count and kind | all checks pass | `DynSolValue::abi_encode_params` once over the `DynSolValue::Tuple` collecting, in order, `FixedBytes32(bytes)` to `DynSolValue::FixedBytes(B256::from(bytes), 32)`, `Unsigned16(value)`, `Unsigned32(value)`, `Unsigned64(value)` to `DynSolValue::Uint(U256::from(value), 16)`, `32`, `64`, `Text(text)` to `DynSolValue::String(text)`, `Bytes(bytes)` to `DynSolValue::Bytes(bytes)`, `FixedBytes20(bytes)` to `DynSolValue::FixedBytes(B256::right_padding_from(&bytes), 20)`, `Unsigned256(bytes)` to `DynSolValue::Uint(U256::from_be_bytes(bytes), 256)` | `Ok(EncodeSuccessReturn { bytes })`, the parameter encoding |
+| fields refused | the canonical field reader refuses the field list `to_fields` emits against `D::FIELDS` — `try_new`'s count check, or a `read_value` kind check at its index | the reader's result, before ABI encoding | `params.description.to_fields(ToFieldsParams, payload)` once, its infallible result unpacked; `CanonicalFieldReader::try_new` once over the emitted list and `D::FIELDS`, then `read_value` once per field in index order | `Err(EncodeErrorReturn::Fields(error))`, `error` unchanged |
+| admitted fields | the reader admits the list and every `read_value` returns its value | all reads pass | `DynSolValue::abi_encode_params` once over the `DynSolValue::Tuple` collecting, in order, each value the reader returns mapped `FixedBytes32(bytes)` to `DynSolValue::FixedBytes(B256::from(bytes), 32)`, `Unsigned16(value)`, `Unsigned32(value)`, `Unsigned64(value)` to `DynSolValue::Uint(U256::from(value), 16)`, `32`, `64`, `Text(text)` to `DynSolValue::String(text)`, `Bytes(bytes)` to `DynSolValue::Bytes(bytes)`, `FixedBytes20(bytes)` to `DynSolValue::FixedBytes(B256::right_padding_from(&bytes), 20)`, `Unsigned256(bytes)` to `DynSolValue::Uint(U256::from_be_bytes(bytes), 256)` | `Ok(EncodeSuccessReturn { bytes })`, the parameter encoding |
 
 ## `IDecoderAdapter::decode<D: IEncodingContract>(&self, params: DecodeParams<'_, D>, payload: &[u8]) -> DecodeReturn<D::Described, D::FromFieldsErrorReturn>`
 
@@ -58,4 +57,4 @@ The ABI decode precedes the item pass, the item pass precedes the description, a
 
 ## Integration: own entries and callee dispositions
 
-No callee entry and no own entry: the concrete's callees are `alloy`, a vendor library, and the contract methods of the description its caller hands it.
+No callee entry and no own entry: the concrete's callees are `alloy`, a vendor library, the canonical field reader, whose spec declares no entry, and the contract methods of the description its caller hands it.

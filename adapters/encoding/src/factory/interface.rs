@@ -1,4 +1,5 @@
 use crate::abi::provides::AbiDecoderErrorReturn;
+use crate::canonical_field_reader::provides::CanonicalFieldReaderErrorReturn;
 use core::convert::Infallible;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -113,15 +114,7 @@ pub struct EncodeSuccessReturn {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum EncodeErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-        actual: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
 }
 
 pub type EncodeReturn = Result<EncodeSuccessReturn, EncodeErrorReturn>;

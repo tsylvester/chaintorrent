@@ -2,12 +2,13 @@
 #![allow(clippy::expect_used)]
 
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, CreateEncodingErrorReturn,
-    CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, DecodeErrorReturn,
-    ENCODING_INTERFACE_VERSION, EncodeErrorReturn, EncodingIdentifier, IEncodingContract,
-    MockIEncodingContract, MockIEncodingContractFromFieldsErrorReturn, build_canonical_fields,
-    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
-    build_mock_i_encoding_consumer, create_encoding,
+    CanonicalFieldKind, CanonicalFieldReaderErrorReturn, CanonicalFieldValue,
+    CanonicalFieldsOverrides, CreateEncodingErrorReturn, CreateEncodingParamsOverrides,
+    DECLARED_ENCODING_SELECTIONS, DecodeErrorReturn, ENCODING_INTERFACE_VERSION, EncodeErrorReturn,
+    EncodingIdentifier, IEncodingContract, MockIEncodingContract,
+    MockIEncodingContractFromFieldsErrorReturn, build_canonical_fields, build_create_encoding_deps,
+    build_create_encoding_params, build_create_encoding_payload, build_mock_i_encoding_consumer,
+    create_encoding,
 };
 use std::collections::BTreeSet;
 
@@ -230,12 +231,13 @@ fn every_concrete_decodes_what_it_encodes() {
 }
 // every_concrete_decodes_what_it_encodes
 
-/// Contract: the own entry, every concrete refuses a description that emits
-///   the wrong count: `create_encoding` called with a concrete's selection
-///   and the identifier it declares, the consumer encoding a field list one
-///   value short of the description's `FIELDS` →
-///   `Ok(CreateEncodingSuccessReturn { output })` with `output.encoded` equal
-///   to `Err(EncodeErrorReturn::FieldCount { expected, actual })`.
+/// Contract: the own entry, every concrete carries the reader's refusal of
+///   a field list one value short: `create_encoding` called with a
+///   concrete's selection and the identifier it declares, the consumer
+///   encoding a field list one value short of the description's `FIELDS` →
+///   `Ok(CreateEncodingSuccessReturn { output })` with `output.encoded`
+///   equal to `Err(EncodeErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Count { expected, actual }))`.
 /// Arrange: for each case, `build_create_encoding_deps` over
 ///   `build_mock_i_encoding_consumer` taking `&MockIEncodingContract`,
 ///   `build_canonical_fields` overriding `values` with `Text("short")`,
@@ -245,20 +247,22 @@ fn every_concrete_decodes_what_it_encodes() {
 ///   overriding `concrete` and `identifier` with the case's selection and
 ///   identifier, and `build_create_encoding_payload`, all from the crate's
 ///   public surface under the `mocks` feature; the field list is one value
-///   short, so a concrete that encodes a field list of the wrong count returns
-///   bytes instead.
+///   short, so a concrete that encodes a field list the reader refuses
+///   returns bytes instead.
 /// Act:     `create_encoding(&deps, params, payload)` for the case.
 /// Assert:  the `encoded` of the `output` of the `Ok` arm, by `.err()`, equals
-///   `Some(EncodeErrorReturn::FieldCount { expected: <MockIEncodingContract as
-///   IEncodingContract>::FIELDS.len(), actual: 7 })` by `assert_eq!`.
+///   `Some(EncodeErrorReturn::Fields(CanonicalFieldReaderErrorReturn::Count {
+///   expected: <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
+///   actual: 7 }))` by `assert_eq!`.
 /// Boundary: the public call `create_encoding`; the route `create_encoding`,
-///   the selected concrete's constructor where it has one, and the concrete's
-///   `encode` as the consumer calls it.
+///   the selected concrete's constructor where it has one, the concrete's
+///   `encode` as the consumer calls it, and the canonical field reader it
+///   constructs.
 /// Mocked:  the consumer, replaced by the official `MockIEncodingConsumer`,
 ///   and the description it carries, replaced by the official
 ///   `MockIEncodingContract`.
 #[test]
-fn every_concrete_refuses_a_description_emitting_the_wrong_count() {
+fn every_concrete_carries_the_readers_refusal_of_a_field_list_one_value_short() {
     // Arrange
     for case in DECLARED_ENCODING_SELECTIONS {
         let consumer = build_mock_i_encoding_consumer(
@@ -290,91 +294,16 @@ fn every_concrete_refuses_a_description_emitting_the_wrong_count() {
         let success = result.expect("the selection is admitted under the identifier it declares");
         assert_eq!(
             success.output.encoded.err(),
-            Some(EncodeErrorReturn::FieldCount {
-                expected: <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
-                actual: 7,
-            })
+            Some(EncodeErrorReturn::Fields(
+                CanonicalFieldReaderErrorReturn::Count {
+                    expected: <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
+                    actual: 7,
+                }
+            ))
         );
     }
 }
-// every_concrete_refuses_a_description_emitting_the_wrong_count
-
-/// Contract: the own entry, every concrete refuses a description that emits
-///   the wrong kind: `create_encoding` called with a concrete's selection and
-///   the identifier it declares, the consumer encoding a field list whose
-///   value at index `0` is not the kind the description's `FIELDS` names there
-///   → `Ok(CreateEncodingSuccessReturn { output })` with `output.encoded`
-///   equal to `Err(EncodeErrorReturn::FieldKind { index, expected, actual })`.
-/// Arrange: for each case, `build_create_encoding_deps` over
-///   `build_mock_i_encoding_consumer` taking `&MockIEncodingContract`,
-///   `build_canonical_fields` overriding `values` with `Unsigned16(1)`,
-///   `Bytes` of the byte `0xc1`, `FixedBytes32` of bytes each `0x55`,
-///   `Unsigned16(5)`, `Unsigned32(6)`, `Unsigned64(7)`, `FixedBytes20` of bytes
-///   each `0x66`, and `Unsigned256` of a last byte `0x08` and every other byte
-///   `0x00`, and no bytes, `build_create_encoding_params` overriding `concrete`
-///   and `identifier` with the case's selection and identifier, and
-///   `build_create_encoding_payload`, all from the crate's public surface
-///   under the `mocks` feature; the value at index `0` is of another kind, so
-///   a concrete that encodes a field list of the wrong kind returns bytes
-///   instead.
-/// Act:     `create_encoding(&deps, params, payload)` for the case.
-/// Assert:  the `encoded` of the `output` of the `Ok` arm, by `.err()`, equals
-///   `Some(EncodeErrorReturn::FieldKind { index: 0, expected:
-///   CanonicalFieldKind::Text, actual: CanonicalFieldKind::Unsigned16 })` by
-///   `assert_eq!`.
-/// Boundary: the public call `create_encoding`; the route `create_encoding`,
-///   the selected concrete's constructor where it has one, and the concrete's
-///   `encode` as the consumer calls it.
-/// Mocked:  the consumer, replaced by the official `MockIEncodingConsumer`,
-///   and the description it carries, replaced by the official
-///   `MockIEncodingContract`.
-#[test]
-fn every_concrete_refuses_a_description_emitting_the_wrong_kind() {
-    // Arrange
-    for case in DECLARED_ENCODING_SELECTIONS {
-        let consumer = build_mock_i_encoding_consumer(
-            &MockIEncodingContract,
-            build_canonical_fields(CanonicalFieldsOverrides {
-                values: Some(vec![
-                    CanonicalFieldValue::Unsigned16(1),
-                    CanonicalFieldValue::Bytes(vec![0xc1]),
-                    CanonicalFieldValue::FixedBytes32([0x55; 32]),
-                    CanonicalFieldValue::Unsigned16(5),
-                    CanonicalFieldValue::Unsigned32(6),
-                    CanonicalFieldValue::Unsigned64(7),
-                    CanonicalFieldValue::FixedBytes20([0x66; 20]),
-                    CanonicalFieldValue::Unsigned256({
-                        let mut word = [0x00; 32];
-                        word[31] = 0x08;
-                        word
-                    }),
-                ]),
-            }),
-            Vec::new(),
-        );
-        let deps = build_create_encoding_deps(consumer);
-        let params = build_create_encoding_params(CreateEncodingParamsOverrides {
-            concrete: Some(case.concrete),
-            identifier: Some(case.identifier),
-        });
-        let payload = build_create_encoding_payload(Default::default());
-
-        // Act
-        let result = create_encoding(&deps, params, payload);
-
-        // Assert
-        let success = result.expect("the selection is admitted under the identifier it declares");
-        assert_eq!(
-            success.output.encoded.err(),
-            Some(EncodeErrorReturn::FieldKind {
-                index: 0,
-                expected: CanonicalFieldKind::Text,
-                actual: CanonicalFieldKind::Unsigned16,
-            })
-        );
-    }
-}
-// every_concrete_refuses_a_description_emitting_the_wrong_kind
+// every_concrete_carries_the_readers_refusal_of_a_field_list_one_value_short
 
 /// Contract: the own entry, every concrete refuses bytes past a complete
 ///   encoding: `create_encoding` called with a concrete's selection and the

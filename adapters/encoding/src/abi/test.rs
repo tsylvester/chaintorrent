@@ -4,11 +4,12 @@ use super::provides::{
     AbiDecoderErrorReturn, AbiEncoding, build_abi_encoding, build_abi_encoding_constructor_params,
 };
 use crate::factory::provides::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, DecodeErrorReturn,
-    EncodeErrorReturn, EncodingTypeName, EncodingTypeNameConstructorParamsOverrides,
-    EncodingTypeNameErrorReturn, IDecoderAdapter, IEncoderAdapter, IEncodingContract,
-    MockIEncodingContract, build_canonical_fields, build_decode_params, build_encode_params,
-    build_encoding_type_name_constructor_params, build_type_name_params,
+    CanonicalFieldKind, CanonicalFieldReaderErrorReturn, CanonicalFieldValue,
+    CanonicalFieldsOverrides, DecodeErrorReturn, EncodeErrorReturn, EncodingTypeName,
+    EncodingTypeNameConstructorParamsOverrides, EncodingTypeNameErrorReturn, IDecoderAdapter,
+    IEncoderAdapter, IEncodingContract, MockIEncodingContract, build_canonical_fields,
+    build_decode_params, build_encode_params, build_encoding_type_name_constructor_params,
+    build_type_name_params,
 };
 use alloy::dyn_abi::DynSolType;
 use std::collections::BTreeSet;
@@ -82,20 +83,21 @@ fn encode_writes_every_kind_as_its_abi_parameter_encoding() {
 }
 // encode_writes_every_kind_as_its_abi_parameter_encoding
 
-/// Contract: `encode`, wrong field count: the emitted count differs from
-///   `D::FIELDS.len()` → `Err(EncodeErrorReturn::FieldCount { expected,
-///   actual })` before ABI encoding.
-/// Arrange: the adapter and `build_canonical_fields` overriding `values`
-///   with the reference values without index `7` as the payload, which the
-///   mock description emits as its fields, every value present of its
-///   declared kind, so only the count differs.
+/// Contract: `encode`, fields refused: the canonical field reader refuses
+///   the emitted field list against `D::FIELDS` →
+///   `Err(EncodeErrorReturn::Fields(error))`, `error` unchanged, before ABI
+///   encoding.
+/// Arrange: the adapter, the `MockIEncodingContract` description, and
+///   `build_canonical_fields` overriding `values` with the reference values
+///   without index `7` as the payload, which the mock description emits as
+///   its fields, so the reader refuses the count.
 /// Act:     `adapter.encode(params, &fields)`.
 /// Assert:  `result.err()` equals
-///   `Some(EncodeErrorReturn::FieldCount { expected:
-///   <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
-///   actual: 7 })` by `assert_eq!`.
+///   `Some(EncodeErrorReturn::Fields(CanonicalFieldReaderErrorReturn::Count
+///   { expected: <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
+///   actual: 7 }))` by `assert_eq!`.
 #[test]
-fn encode_rejects_a_description_emitting_one_value_short() {
+fn encode_carries_the_readers_refusal() {
     // Arrange
     let adapter = build_abi_encoding(Default::default());
     let description = MockIEncodingContract;
@@ -112,169 +114,15 @@ fn encode_rejects_a_description_emitting_one_value_short() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(EncodeErrorReturn::FieldCount {
-            expected: <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
-            actual: 7,
-        })
+        Some(EncodeErrorReturn::Fields(
+            CanonicalFieldReaderErrorReturn::Count {
+                expected: <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
+                actual: 7,
+            }
+        ))
     );
 }
-// encode_rejects_a_description_emitting_one_value_short
-
-/// Contract: `encode`, wrong field count: the emitted count differs from
-///   `D::FIELDS.len()` → `Err(EncodeErrorReturn::FieldCount { expected,
-///   actual })` before ABI encoding.
-/// Arrange: the adapter and `build_canonical_fields` overriding `values`
-///   with the reference values followed by `Unsigned64(0)` as the payload,
-///   every value at indexes `0` through `7` of its declared kind, so only
-///   the count differs.
-/// Act:     `adapter.encode(params, &fields)`.
-/// Assert:  `result.err()` equals
-///   `Some(EncodeErrorReturn::FieldCount { expected:
-///   <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
-///   actual: 9 })` by `assert_eq!`.
-#[test]
-fn encode_rejects_a_description_emitting_one_value_long() {
-    // Arrange
-    let adapter = build_abi_encoding(Default::default());
-    let description = MockIEncodingContract;
-    let params = build_encode_params(&description);
-    let mut values = build_canonical_fields(Default::default()).values;
-    values.push(CanonicalFieldValue::Unsigned64(0));
-    let fields = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(values),
-    });
-
-    // Act
-    let result = adapter.encode(params, &fields);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(EncodeErrorReturn::FieldCount {
-            expected: <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
-            actual: 9,
-        })
-    );
-}
-// encode_rejects_a_description_emitting_one_value_long
-
-/// Contract: `encode`, ordering: the count check precedes the kind check.
-/// Arrange: the adapter and `build_canonical_fields` overriding `values`
-///   with the reference values without index `7` and with the value at index
-///   `0` replaced by `Unsigned16(1)`, a payload both short and holding a
-///   wrong kind, so a kind check ahead of the count reports the kind.
-/// Act:     `adapter.encode(params, &fields)`.
-/// Assert:  `result.err()` equals
-///   `Some(EncodeErrorReturn::FieldCount { expected:
-///   <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
-///   actual: 7 })` by `assert_eq!`.
-#[test]
-fn encode_checks_the_count_before_any_kind() {
-    // Arrange
-    let adapter = build_abi_encoding(Default::default());
-    let description = MockIEncodingContract;
-    let params = build_encode_params(&description);
-    let mut values = build_canonical_fields(Default::default()).values;
-    values.truncate(7);
-    values[0] = CanonicalFieldValue::Unsigned16(1);
-    let fields = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(values),
-    });
-
-    // Act
-    let result = adapter.encode(params, &fields);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(EncodeErrorReturn::FieldCount {
-            expected: <MockIEncodingContract as IEncodingContract>::FIELDS.len(),
-            actual: 7,
-        })
-    );
-}
-// encode_checks_the_count_before_any_kind
-
-/// Contract: `encode`, wrong field kind: the count matches and an emitted
-///   value's `kind()` differs from the `D::FIELDS` kind at its index →
-///   `Err(EncodeErrorReturn::FieldKind { index, expected, actual })` before
-///   ABI encoding.
-/// Arrange: the adapter and `build_canonical_fields` overriding `values`
-///   with the reference values and the value at index `1` replaced by
-///   `Text("x")` as the payload, every other value of its declared kind, so
-///   only the kind at index `1` differs.
-/// Act:     `adapter.encode(params, &fields)`.
-/// Assert:  `result.err()` equals
-///   `Some(EncodeErrorReturn::FieldKind { index: 1,
-///   expected: CanonicalFieldKind::Bytes,
-///   actual: CanonicalFieldKind::Text })` by `assert_eq!`.
-#[test]
-fn encode_rejects_a_description_emitting_the_wrong_kind() {
-    // Arrange
-    let adapter = build_abi_encoding(Default::default());
-    let description = MockIEncodingContract;
-    let params = build_encode_params(&description);
-    let mut values = build_canonical_fields(Default::default()).values;
-    values[1] = CanonicalFieldValue::Text("x".to_string());
-    let fields = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(values),
-    });
-
-    // Act
-    let result = adapter.encode(params, &fields);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(EncodeErrorReturn::FieldKind {
-            index: 1,
-            expected: CanonicalFieldKind::Bytes,
-            actual: CanonicalFieldKind::Text,
-        })
-    );
-}
-// encode_rejects_a_description_emitting_the_wrong_kind
-
-/// Contract: `encode`, wrong field kind: more than one emitted value differs
-///   from its `D::FIELDS` kind → `Err(EncodeErrorReturn::FieldKind { index,
-///   expected, actual })` for the lowest such index.
-/// Arrange: the adapter and `build_canonical_fields` overriding `values`
-///   with the reference values, the value at index `2` replaced by
-///   `Unsigned16(1)` and the value at index `6` replaced by `Unsigned256` of
-///   bytes each `0x00`, so a check that runs from the highest index reports
-///   index `6`.
-/// Act:     `adapter.encode(params, &fields)`.
-/// Assert:  `result.err()` equals
-///   `Some(EncodeErrorReturn::FieldKind { index: 2,
-///   expected: CanonicalFieldKind::FixedBytes32,
-///   actual: CanonicalFieldKind::Unsigned16 })` by `assert_eq!`.
-#[test]
-fn encode_reports_the_lowest_field_of_the_wrong_kind() {
-    // Arrange
-    let adapter = build_abi_encoding(Default::default());
-    let description = MockIEncodingContract;
-    let params = build_encode_params(&description);
-    let mut values = build_canonical_fields(Default::default()).values;
-    values[2] = CanonicalFieldValue::Unsigned16(1);
-    values[6] = CanonicalFieldValue::Unsigned256([0x00; 32]);
-    let fields = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(values),
-    });
-
-    // Act
-    let result = adapter.encode(params, &fields);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(EncodeErrorReturn::FieldKind {
-            index: 2,
-            expected: CanonicalFieldKind::FixedBytes32,
-            actual: CanonicalFieldKind::Unsigned16,
-        })
-    );
-}
-// encode_reports_the_lowest_field_of_the_wrong_kind
+// encode_carries_the_readers_refusal
 
 /// Contract: `decode`, admitted: the re-encoding equals the payload →
 ///   `Ok(DecodeSuccessReturn { described })`.
