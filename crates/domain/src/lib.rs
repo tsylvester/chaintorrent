@@ -1,5 +1,3 @@
-mod asset_identity;
-mod asset_identity_hash;
 mod deployment_identity;
 mod derivation_context;
 mod group_index;
@@ -9,8 +7,6 @@ mod secret;
 mod signature_scheme_identifier;
 mod suite_identifier;
 
-pub use asset_identity::provides::*;
-pub use asset_identity_hash::provides::*;
 pub use deployment_identity::provides::*;
 pub use derivation_context::provides::*;
 pub use group_index::provides::*;
