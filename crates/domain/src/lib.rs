@@ -1,5 +1,4 @@
 mod deployment_identity;
-mod derivation_context;
 mod group_index;
 mod parameter_set_identifier;
 mod piece_geometry;
@@ -8,7 +7,6 @@ mod signature_scheme_identifier;
 mod suite_identifier;
 
 pub use deployment_identity::provides::*;
-pub use derivation_context::provides::*;
 pub use group_index::provides::*;
 pub use parameter_set_identifier::provides::*;
 pub use piece_geometry::provides::*;
