@@ -9,12 +9,10 @@ mod test_basic;
 #[cfg(test)]
 mod test_error;
 
-use domain::{ASSET_IDENTITY_HASH_LENGTH, AssetIdentityHash, AssetIdentityHashConstructorParams};
 use kem::{
     DecapsulateParams, DecapsulatePayload, DeriveIdentityParams, DeriveIdentityPayload,
-    EncapsulateParams, EncapsulatePayload, ICredentialKemAdapter, IdentityScope, IssueParams,
-    IssuePayload, KemIdentity, RerandomizeParams, RerandomizePayload, SetupParams, SetupPayload,
-    SetupScope,
+    EncapsulateParams, EncapsulatePayload, ICredentialKemAdapter, IssueParams, IssuePayload,
+    RerandomizeParams, RerandomizePayload, SetupParams, SetupPayload,
 };
 use pairing::{IPairingAdapter, ISampleUniformScalar};
 use random::{FillBytesParams, FillBytesPayload};
@@ -29,10 +27,7 @@ pub fn cross_holder<'a, K: ICredentialKemAdapter>(
     params: CrossHolderParams,
     payload: CrossHolderPayload<'_>,
 ) -> CrossHolderReturn<K> {
-    let record = |vectors: &mut Vec<CrossHolderVector<K>>,
-                  identity: KemIdentity<'_>,
-                  scope: SetupScope<'_>|
-     -> Result<(), CrossHolderErrorReturn> {
+    let record = |vectors: &mut Vec<CrossHolderVector<K>>| -> Result<(), CrossHolderErrorReturn> {
         let mut draws = Vec::new();
         let draw = |draws: &mut Vec<u8>| {
             deps.random
@@ -52,7 +47,9 @@ pub fn cross_holder<'a, K: ICredentialKemAdapter>(
         let setup = deps
             .kem
             .setup(
-                SetupParams { scope },
+                SetupParams {
+                    scope: payload.identity.setup_scope,
+                },
                 SetupPayload {
                     master_uniform: draw(&mut draws)?,
                     u0_uniform: draw(&mut draws)?,
@@ -66,7 +63,7 @@ pub fn cross_holder<'a, K: ICredentialKemAdapter>(
                 DeriveIdentityParams,
                 DeriveIdentityPayload {
                     parameter_set: &setup.parameter_set,
-                    identity,
+                    identity: payload.identity.identity,
                 },
             )
             .map_err(CrossHolderErrorReturn::DeriveIdentity)?;
@@ -134,43 +131,8 @@ pub fn cross_holder<'a, K: ICredentialKemAdapter>(
         Ok(())
     };
     let mut vectors = Vec::new();
-    match params.scope {
-        IdentityScope::Entitlement => {
-            for _ in 0..params.count.get() {
-                record(
-                    &mut vectors,
-                    KemIdentity::Entitlement {
-                        canonical: payload.identity,
-                    },
-                    SetupScope::Entitlement,
-                )?;
-            }
-        }
-        IdentityScope::Asset => {
-            let Ok(bytes) = <[u8; ASSET_IDENTITY_HASH_LENGTH]>::try_from(payload.identity) else {
-                return Err(CrossHolderErrorReturn::AssetIdentityLength {
-                    actual: payload.identity.len(),
-                });
-            };
-            let hash =
-                match AssetIdentityHash::try_new(AssetIdentityHashConstructorParams { bytes }) {
-                    Ok(hash) => hash,
-                    Err(error) => {
-                        return Err(CrossHolderErrorReturn::AssetIdentityHash(error));
-                    }
-                };
-            for _ in 0..params.count.get() {
-                record(
-                    &mut vectors,
-                    KemIdentity::Asset {
-                        identity_hash: &hash,
-                    },
-                    SetupScope::Asset {
-                        identity_hash: &hash,
-                    },
-                )?;
-            }
-        }
+    for _ in 0..params.count.get() {
+        record(&mut vectors)?;
     }
     Ok(CrossHolderSuccessReturn { vectors })
 }

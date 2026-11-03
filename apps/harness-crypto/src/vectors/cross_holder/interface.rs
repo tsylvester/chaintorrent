@@ -1,11 +1,25 @@
-use domain::AssetIdentityHashTryNewErrorReturn;
+#[cfg(any(test, feature = "mocks"))]
+use hash_to_scalar::{
+    CreateHashToScalarErrorReturn, CreateHashToScalarParams, IHashToScalarAdapter,
+};
+#[cfg(any(test, feature = "mocks"))]
+use hashing::Root;
+#[cfg(any(test, feature = "mocks"))]
+use kem::{CreateKemErrorReturn, CreateKemParams};
 use kem::{
     DeriveIdentityErrorReturn, EncapsulateErrorReturn, EncapsulatedValue, ICredentialKemAdapter,
-    IdentityScope, IssueErrorReturn, RerandomizeErrorReturn, SetupErrorReturn,
+    IssueErrorReturn, RerandomizeErrorReturn, SetupErrorReturn,
 };
+#[cfg(any(test, feature = "mocks"))]
+use pairing::{
+    CreatePairingErrorReturn, CreatePairingParams, IPairingArithmetic, IPairingReference,
+};
+#[cfg(any(test, feature = "mocks"))]
+use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
 use crate::VectorCount;
+use crate::delivery::provides::AdmittedKemIdentity;
 
 pub struct CrossHolderVector<K: ICredentialKemAdapter> {
     pub draws: Vec<u8>,
@@ -27,11 +41,10 @@ pub struct CrossHolderDeps<'a, K: ICredentialKemAdapter> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CrossHolderParams {
     pub count: VectorCount,
-    pub scope: IdentityScope,
 }
 
 pub struct CrossHolderPayload<'a> {
-    pub identity: &'a [u8],
+    pub identity: AdmittedKemIdentity<'a>,
 }
 
 pub struct CrossHolderSuccessReturn<K: ICredentialKemAdapter> {
@@ -40,8 +53,6 @@ pub struct CrossHolderSuccessReturn<K: ICredentialKemAdapter> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum CrossHolderErrorReturn {
-    AssetIdentityLength { actual: usize },
-    AssetIdentityHash(AssetIdentityHashTryNewErrorReturn),
     FillBytes(FillBytesErrorReturn),
     Setup(SetupErrorReturn),
     DeriveIdentity(DeriveIdentityErrorReturn),
@@ -54,3 +65,67 @@ pub type CrossHolderReturn<K> = Result<CrossHolderSuccessReturn<K>, CrossHolderE
 
 pub type CrossHolderFn<'a, K> =
     fn(&CrossHolderDeps<'a, K>, CrossHolderParams, CrossHolderPayload<'_>) -> CrossHolderReturn<K>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait ICrossHolderCaseConsumer {
+    type Output;
+
+    fn consume_cross_holder_case<P, H, K>(
+        &self,
+        pairing: &P,
+        hash_to_scalar: &H,
+        kem: &K,
+        random: &dyn IRandomSourceAdapter,
+        independent: &dyn IRandomSourceAdapter,
+        identity: AdmittedKemIdentity<'_>,
+    ) -> Self::Output
+    where
+        P: IPairingArithmetic + IPairingReference,
+        H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+        K: ICredentialKemAdapter<Pairing = P>;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CrossHolderCaseDeps<C: ICrossHolderCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CrossHolderCaseParams {
+    pub pairing: CreatePairingParams,
+    pub hash_to_scalar: CreateHashToScalarParams,
+    pub kem: CreateKemParams,
+    pub random_source: CreateRandomSourceParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CrossHolderCasePayload {
+    pub canonical: Vec<u8>,
+    pub root: Root,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CrossHolderCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum CrossHolderCaseErrorReturn {
+    CreatePairing(CreatePairingErrorReturn),
+    CreateHashToScalar(CreateHashToScalarErrorReturn),
+    CreateKem(CreateKemErrorReturn),
+    CreateRandomSource(CreateRandomSourceErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type CrossHolderCaseReturn<O> =
+    Result<CrossHolderCaseSuccessReturn<O>, CrossHolderCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunCrossHolderCaseFn<C> =
+    fn(
+        &CrossHolderCaseDeps<C>,
+        CrossHolderCaseParams,
+        CrossHolderCasePayload,
+    ) -> CrossHolderCaseReturn<<C as ICrossHolderCaseConsumer>::Output>;

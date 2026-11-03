@@ -2,216 +2,151 @@
 
 use hash_to_scalar::{
     CreateHashToScalarParamsOverrides, HashToScalarConcrete, IHashToScalarAdapter,
-    MockIHashToScalarAdapterFailureMode, build_create_hash_to_scalar_deps,
-    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload,
-    build_hash_to_scalar_params, build_hash_to_scalar_payload, create_hash_to_scalar,
+    MockIHashToScalarAdapterFailureMode, build_create_hash_to_scalar_params,
+    build_hash_to_scalar_params, build_hash_to_scalar_payload,
 };
 use kem::{
-    ConsumeKemParams, ConsumeKemPayload, CreateKemParamsOverrides, CreateKemReturn,
-    DeriveIdentityErrorReturn, ICredentialKemAdapter, IKemConsumer, IdentityScope,
-    SetupErrorReturn, build_create_kem_deps, build_create_kem_params, build_create_kem_payload,
-    create_kem,
+    CreateKemParamsOverrides, DeriveIdentityErrorReturn, ICredentialKemAdapter, IdentityScope,
+    SetupErrorReturn, build_create_kem_params,
 };
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides, IPairingArithmetic,
-    IPairingConsumer, IPairingReference, ISampleUniformScalar, MockIPairingAdapterFailureMode,
-    PairingConcrete, SampleUniformScalarParams, SampleUniformScalarPayload,
-    build_create_pairing_deps, build_create_pairing_params, build_create_pairing_payload,
-    create_pairing,
+    CreatePairingParamsOverrides, IPairingArithmetic, IPairingReference, ISampleUniformScalar,
+    MockIPairingAdapterFailureMode, PairingConcrete, SampleUniformScalarParams,
+    SampleUniformScalarPayload, build_create_pairing_params,
 };
 use random::{
     CreateRandomSourceParamsOverrides, FillBytesParams, FillBytesPayloadOverrides,
     IRandomSourceAdapter, MockIRandomSourceAdapterFailureMode, RandomSourceKind,
-    build_create_random_source_deps, build_create_random_source_params,
-    build_create_random_source_payload, build_fill_bytes_payload, create_random_source,
+    build_create_random_source_params, build_fill_bytes_payload,
 };
 
-use super::interface::NonConvertibilityErrorReturn;
+use super::interface::{INonConvertibilityCaseConsumer, NonConvertibilityErrorReturn};
 use super::mock::{
-    NonConvertibilityParamsOverrides, build_non_convertibility_deps,
-    build_non_convertibility_params, build_non_convertibility_payload,
+    NonConvertibilityCaseParamsOverrides, NonConvertibilityPayloadOverrides,
+    build_non_convertibility_case_deps, build_non_convertibility_case_params,
+    build_non_convertibility_case_payload, build_non_convertibility_deps,
+    build_non_convertibility_params, build_non_convertibility_payload, run_non_convertibility_case,
 };
 use super::non_convertibility;
-use crate::{VectorCount, build_vector_count};
+use crate::delivery::provides::AdmittedKemIdentity;
 
-/// Contract: Scope under `Asset` → no draw is made, so a refusing source is
-///   not reached.
-/// Arrange: the scope `IdentityScope::Asset`, the identity
-///   `b"pkg@1.0.0#1"`, the other identity `b"pkg@2.0.0#7"`, and the count by
-///   `build_vector_count` at its default; the subject's source from
-///   `build_create_random_source_params` overriding `kind` with
-///   `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::
-///   FillBytesRefused)`, so a draw under the asset scope reports the draw's
-///   refusal instead of the empty set.
-/// Act:     `non_convertibility`, once, in the KEM consumer's method.
-/// Assert:  the result `is_ok()` and its `vectors` is empty by `assert!`;
-///   the outermost `Result` `is_ok()`, proving the consumers ran.
-/// Collaborators: the pairing's, hash-to-scalar's, and kem's mock concretes
-///   in their default modes through their factories; the subject's
-///   randomness source, the family's mock concrete under `FillBytesRefused`.
+/// Contract: Scope under `SetupScope::Asset` → no draw is made, so a
+///   refusing source is not reached.
+/// Arrange: `scope` `IdentityScope::Asset`, so the KEM level composes both
+///   admitted identities under `SetupScope::Asset`, and the subject's
+///   source from `build_create_random_source_params` overriding `kind`
+///   with `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::
+///   FillBytesRefused)`.
+/// Act:     `non_convertibility`, once, in the case consumer's method.
+/// Assert:  the result `is_ok()` and its `vectors` is empty; the outermost
+///   `Result` `is_ok()`, proving the runner's levels ran.
+/// Collaborators: every family's mock concrete at the default selection,
+///   except the KEM's `scope` and the randomness family's mock concrete
+///   under `FillBytesRefused`, named through the selecting params.
 #[test]
 fn non_convertibility_makes_no_draw_under_the_asset_scope() {
     // Arrange
-    let count = build_vector_count(Default::default());
-    let scope = IdentityScope::Asset;
-    let identity: &[u8] = b"pkg@1.0.0#1";
-    let other_identity: &[u8] = b"pkg@2.0.0#7";
-    let subject_kind =
-        RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused);
+    struct CaseConsumer;
 
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
-        count: VectorCount,
-        identity: &'a [u8],
-        other_identity: &'a [u8],
-    }
-
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl INonConvertibilityCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_non_convertibility_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            _independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+            other_identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Act
             let returned = non_convertibility::<K>(
-                &build_non_convertibility_deps(&payload.adapter, self.subject, Default::default()),
-                build_non_convertibility_params(NonConvertibilityParamsOverrides {
-                    count: Some(self.count),
-                    scope: Some(payload.scope()),
+                &build_non_convertibility_deps(kem, random, Default::default()),
+                build_non_convertibility_params(Default::default()),
+                build_non_convertibility_payload(NonConvertibilityPayloadOverrides {
+                    identity: Some(identity),
+                    other_identity: Some(other_identity),
                 }),
-                build_non_convertibility_payload(
-                    self.identity,
-                    self.other_identity,
-                    Default::default(),
-                ),
             );
+            let success = returned.expect("the subject's calls succeed");
             // Assert
-            let success = returned.expect("no draw is made, so the refusing source is not reached");
             assert!(success.vectors.is_empty());
         }
     }
 
-    struct PairingConsumer<'a> {
-        count: VectorCount,
-        scope: IdentityScope,
-        identity: &'a [u8],
-        other_identity: &'a [u8],
-        subject_kind: RandomSourceKind,
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = CreateKemReturn<()>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            )
-            .expect("the hash-to-scalar factory's default selection constructs");
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                    kind: Some(self.subject_kind),
-                }),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's configured selection constructs");
-            create_kem(
-                &build_create_kem_deps(
-                    &payload.adapter,
-                    &*hashing.adapter,
-                    KemConsumer {
-                        subject: &*subject_source.adapter,
-                        count: self.count,
-                        identity: self.identity,
-                        other_identity: self.other_identity,
-                    },
-                    Default::default(),
-                ),
-                build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(self.scope),
-                    ..Default::default()
-                }),
-                build_create_kem_payload(Default::default()),
-            )
-        }
-    }
-
-    let consumer = PairingConsumer {
-        count,
-        scope,
-        identity,
-        other_identity,
-        subject_kind,
-    };
-
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    let returned = run_non_convertibility_case(
+        &build_non_convertibility_case_deps(CaseConsumer, Default::default()),
+        build_non_convertibility_case_params(NonConvertibilityCaseParamsOverrides {
+            kem: Some(build_create_kem_params(CreateKemParamsOverrides {
+                scope: Some(IdentityScope::Asset),
+                ..Default::default()
+            })),
+            random_source: Some(build_create_random_source_params(
+                CreateRandomSourceParamsOverrides {
+                    kind: Some(RandomSourceKind::Mock(
+                        MockIRandomSourceAdapterFailureMode::FillBytesRefused,
+                    )),
+                },
+            )),
+            ..Default::default()
+        }),
+        build_non_convertibility_case_payload(Default::default()),
     );
-    let outcome = created.expect("the pairing factory's default selection constructs");
 
     // Assert
-    assert!(outcome.output.is_ok());
+    assert!(returned.is_ok());
     // non_convertibility_makes_no_draw_under_the_asset_scope
 }
 
 /// Contract: Draw, `deps.random.fill_bytes` fails →
 ///   `Err(NonConvertibilityErrorReturn::FillBytes(error))`, `error`
 ///   unchanged.
-/// Arrange: the scope `IdentityScope::Entitlement`, the identity
-///   `b"pkg@1.0.0#1"`, the other identity `b"pkg@2.0.0#7"`, and the count by
-///   `build_vector_count` at its default; the subject's source and the
-///   independent source from `build_create_random_source_params` overriding
-///   `kind` with `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::
-///   FillBytesRefused)`; the expected `error` the refusal of the independent
-///   source's `fill_bytes` under the declared uniform length.
-/// Act:     `non_convertibility`, once, in the KEM consumer's method.
+/// Arrange: the subject's source and the independent source from
+///   `build_create_random_source_params` overriding `kind` with
+///   `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::
+///   FillBytesRefused)`; the expected `error` the refusal of the
+///   independent source's `fill_bytes`.
+/// Act:     `non_convertibility`, once, in the case consumer's method.
 /// Assert:  the result's `Err` equals
 ///   `Some(NonConvertibilityErrorReturn::FillBytes(error))` whole by
-///   `assert_eq!`, `error` the expected refusal; the outermost `Result`
-///   `is_ok()`, proving the consumers ran.
-/// Collaborators: the pairing's, hash-to-scalar's, and kem's mock concretes
-///   in their default modes through their factories; the subject's
-///   randomness source and the independent source, each the family's mock
+///   `assert_eq!`; the outermost `Result` `is_ok()`, proving the runner's
+///   levels ran.
+/// Collaborators: every family's mock concrete at the default selection;
+///   the subject's and independent randomness sources, the family's mock
 ///   concrete under `FillBytesRefused`.
 #[test]
 fn non_convertibility_returns_the_draw_refusal_whole() {
     // Arrange
-    let count = build_vector_count(Default::default());
-    let scope = IdentityScope::Entitlement;
-    let identity: &[u8] = b"pkg@1.0.0#1";
-    let other_identity: &[u8] = b"pkg@2.0.0#7";
-    let source_kind = RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused);
+    struct CaseConsumer;
 
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
-        independent: &'a dyn IRandomSourceAdapter,
-        count: VectorCount,
-        identity: &'a [u8],
-        other_identity: &'a [u8],
-    }
-
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl INonConvertibilityCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_non_convertibility_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+            other_identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Arrange
-            let expected = self
-                .independent
+            let error = independent
                 .fill_bytes(
                     FillBytesParams,
                     build_fill_bytes_payload(FillBytesPayloadOverrides {
@@ -219,108 +154,42 @@ fn non_convertibility_returns_the_draw_refusal_whole() {
                     }),
                 )
                 .err()
-                .expect("the independent source refuses under its named mode");
+                .expect("the refusing source refuses");
             // Act
             let returned = non_convertibility::<K>(
-                &build_non_convertibility_deps(&payload.adapter, self.subject, Default::default()),
-                build_non_convertibility_params(NonConvertibilityParamsOverrides {
-                    count: Some(self.count),
-                    scope: Some(payload.scope()),
+                &build_non_convertibility_deps(kem, random, Default::default()),
+                build_non_convertibility_params(Default::default()),
+                build_non_convertibility_payload(NonConvertibilityPayloadOverrides {
+                    identity: Some(identity),
+                    other_identity: Some(other_identity),
                 }),
-                build_non_convertibility_payload(
-                    self.identity,
-                    self.other_identity,
-                    Default::default(),
-                ),
             );
             // Assert
             assert_eq!(
                 returned.err(),
-                Some(NonConvertibilityErrorReturn::FillBytes(expected))
+                Some(NonConvertibilityErrorReturn::FillBytes(error))
             );
         }
     }
 
-    struct PairingConsumer<'a> {
-        count: VectorCount,
-        scope: IdentityScope,
-        identity: &'a [u8],
-        other_identity: &'a [u8],
-        subject_kind: RandomSourceKind,
-        independent_kind: RandomSourceKind,
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = CreateKemReturn<()>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            )
-            .expect("the hash-to-scalar factory's default selection constructs");
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                    kind: Some(self.subject_kind),
-                }),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's configured selection constructs");
-            let independent_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                    kind: Some(self.independent_kind),
-                }),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's configured selection constructs");
-            create_kem(
-                &build_create_kem_deps(
-                    &payload.adapter,
-                    &*hashing.adapter,
-                    KemConsumer {
-                        subject: &*subject_source.adapter,
-                        independent: &*independent_source.adapter,
-                        count: self.count,
-                        identity: self.identity,
-                        other_identity: self.other_identity,
-                    },
-                    Default::default(),
-                ),
-                build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(self.scope),
-                    ..Default::default()
-                }),
-                build_create_kem_payload(Default::default()),
-            )
-        }
-    }
-
-    let consumer = PairingConsumer {
-        count,
-        scope,
-        identity,
-        other_identity,
-        subject_kind: source_kind,
-        independent_kind: source_kind,
-    };
-
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    let returned = run_non_convertibility_case(
+        &build_non_convertibility_case_deps(CaseConsumer, Default::default()),
+        build_non_convertibility_case_params(NonConvertibilityCaseParamsOverrides {
+            random_source: Some(build_create_random_source_params(
+                CreateRandomSourceParamsOverrides {
+                    kind: Some(RandomSourceKind::Mock(
+                        MockIRandomSourceAdapterFailureMode::FillBytesRefused,
+                    )),
+                },
+            )),
+            ..Default::default()
+        }),
+        build_non_convertibility_case_payload(Default::default()),
     );
-    let outcome = created.expect("the pairing factory's default selection constructs");
 
     // Assert
-    assert!(outcome.output.is_ok());
+    assert!(returned.is_ok());
     // non_convertibility_returns_the_draw_refusal_whole
 }
 
@@ -328,50 +197,43 @@ fn non_convertibility_returns_the_draw_refusal_whole() {
 ///   `Err(NonConvertibilityErrorReturn::Setup(error))`, `error` unchanged.
 /// Arrange: `build_create_pairing_params` overriding `concrete` with
 ///   `PairingConcrete::Mock(MockIPairingAdapterFailureMode::
-///   SampleScalarWrongLength)`; the scope `IdentityScope::Entitlement`, the
-///   identity `b"pkg@1.0.0#1"`, the other identity `b"pkg@2.0.0#7"`, and
-///   the count by `build_vector_count` at its default; the expected `error`
-///   the `Err` of `<P::Scalar as ISampleUniformScalar>::
-///   sample_from_uniform_bytes` over the independent source's first draw at
-///   the declared uniform length.
-/// Act:     `non_convertibility`, once, in the KEM consumer's method.
-/// Assert:  the result's `Err` equals
-///   `Some(NonConvertibilityErrorReturn::Setup(SetupErrorReturn::
-///   MasterScalarSampling(error)))` whole by `assert_eq!`, `error` the
-///   expected refusal; the outermost `Result` `is_ok()`, proving the
-///   consumers ran.
-/// Collaborators: the hash-to-scalar's and kem's mock concretes in their
-///   default modes through their factories; the pairing's mock concrete
-///   under `SampleScalarWrongLength`; the subject's randomness source and
-///   the independent source, each the randomness family's mock concrete at
-///   the default selection.
+///   SampleScalarWrongLength)`; the expected `error` the `Err` of
+///   `<P::Scalar as ISampleUniformScalar>::sample_from_uniform_bytes` over
+///   the independent source's first draw.
+/// Act:     `non_convertibility`, once, in the case consumer's method.
+/// Assert:  the result's `Err` equals `Some(NonConvertibilityErrorReturn::
+///   Setup(SetupErrorReturn::MasterScalarSampling(error)))` whole by
+///   `assert_eq!`; the outermost `Result` `is_ok()`, proving the runner's
+///   levels ran.
+/// Collaborators: the pairing family's mock concrete under
+///   `SampleScalarWrongLength`; every other family's mock concrete at the
+///   default selection; the independent source, a separate adapter at the
+///   same defaults as the subject's.
 #[test]
 fn non_convertibility_returns_the_sampling_refusal_of_setup_whole() {
     // Arrange
-    let count = build_vector_count(Default::default());
-    let scope = IdentityScope::Entitlement;
-    let identity: &[u8] = b"pkg@1.0.0#1";
-    let other_identity: &[u8] = b"pkg@2.0.0#7";
+    struct CaseConsumer;
 
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
-        independent: &'a dyn IRandomSourceAdapter,
-        count: VectorCount,
-        identity: &'a [u8],
-        other_identity: &'a [u8],
-    }
-
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl INonConvertibilityCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_non_convertibility_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+            other_identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Arrange
-            let uniform = self
-                .independent
+            let uniform = independent
                 .fill_bytes(
                     FillBytesParams,
                     build_fill_bytes_payload(FillBytesPayloadOverrides {
@@ -380,265 +242,135 @@ fn non_convertibility_returns_the_sampling_refusal_of_setup_whole() {
                 )
                 .expect("the independent source fills")
                 .bytes;
-            let sampled = <P::Scalar as ISampleUniformScalar>::sample_from_uniform_bytes(
+            let error = <P::Scalar as ISampleUniformScalar>::sample_from_uniform_bytes(
                 SampleUniformScalarParams,
                 SampleUniformScalarPayload { uniform },
-            );
-            let expected = sampled
-                .err()
-                .expect("the pairing's scalar sampling refuses under its named mode");
+            )
+            .err()
+            .expect("the refusing scalar refuses the sampling");
             // Act
             let returned = non_convertibility::<K>(
-                &build_non_convertibility_deps(&payload.adapter, self.subject, Default::default()),
-                build_non_convertibility_params(NonConvertibilityParamsOverrides {
-                    count: Some(self.count),
-                    scope: Some(payload.scope()),
+                &build_non_convertibility_deps(kem, random, Default::default()),
+                build_non_convertibility_params(Default::default()),
+                build_non_convertibility_payload(NonConvertibilityPayloadOverrides {
+                    identity: Some(identity),
+                    other_identity: Some(other_identity),
                 }),
-                build_non_convertibility_payload(
-                    self.identity,
-                    self.other_identity,
-                    Default::default(),
-                ),
             );
             // Assert
             assert_eq!(
                 returned.err(),
                 Some(NonConvertibilityErrorReturn::Setup(
-                    SetupErrorReturn::MasterScalarSampling(expected)
+                    SetupErrorReturn::MasterScalarSampling(error)
                 ))
             );
         }
     }
 
-    struct PairingConsumer<'a> {
-        count: VectorCount,
-        scope: IdentityScope,
-        identity: &'a [u8],
-        other_identity: &'a [u8],
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = CreateKemReturn<()>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            )
-            .expect("the hash-to-scalar factory's default selection constructs");
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            let independent_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            create_kem(
-                &build_create_kem_deps(
-                    &payload.adapter,
-                    &*hashing.adapter,
-                    KemConsumer {
-                        subject: &*subject_source.adapter,
-                        independent: &*independent_source.adapter,
-                        count: self.count,
-                        identity: self.identity,
-                        other_identity: self.other_identity,
-                    },
-                    Default::default(),
-                ),
-                build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(self.scope),
-                    ..Default::default()
-                }),
-                build_create_kem_payload(Default::default()),
-            )
-        }
-    }
-
-    let consumer = PairingConsumer {
-        count,
-        scope,
-        identity,
-        other_identity,
-    };
-
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(PairingConcrete::Mock(
-                MockIPairingAdapterFailureMode::SampleScalarWrongLength,
-            )),
+    let returned = run_non_convertibility_case(
+        &build_non_convertibility_case_deps(CaseConsumer, Default::default()),
+        build_non_convertibility_case_params(NonConvertibilityCaseParamsOverrides {
+            pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                concrete: Some(PairingConcrete::Mock(
+                    MockIPairingAdapterFailureMode::SampleScalarWrongLength,
+                )),
+                ..Default::default()
+            })),
             ..Default::default()
         }),
-        build_create_pairing_payload(Default::default()),
+        build_non_convertibility_case_payload(Default::default()),
     );
-    let outcome = created.expect("the pairing factory's configured selection constructs");
 
     // Assert
-    assert!(outcome.output.is_ok());
+    assert!(returned.is_ok());
     // non_convertibility_returns_the_sampling_refusal_of_setup_whole
 }
 
 /// Contract: Record, `deps.kem.derive_identity` fails →
 ///   `Err(NonConvertibilityErrorReturn::DeriveIdentity(error))`, `error`
 ///   unchanged.
-/// Arrange: the scope `IdentityScope::Entitlement`, the identity
-///   `b"pkg@1.0.0#1"`, the other identity `b"pkg@2.0.0#7"`, the count by
-///   `build_vector_count` at its default, and
-///   `build_create_hash_to_scalar_params` overriding `concrete` with
-///   `HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::
+/// Arrange: `build_create_hash_to_scalar_params` overriding `concrete`
+///   with `HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::
 ///   SamplingRefused)`; the expected refusal the `Err` of `hash_to_scalar`
 ///   over `build_hash_to_scalar_params` and `build_hash_to_scalar_payload`
-///   at their defaults on the adapter built under the same mode.
-/// Act:     `non_convertibility`, once, in the KEM consumer's method.
-/// Assert:  the result's `Err` equals
-///   `Some(NonConvertibilityErrorReturn::DeriveIdentity(
-///   DeriveIdentityErrorReturn::HashToScalar(error)))` whole by
-///   `assert_eq!`, `error` the expected refusal; the outermost `Result`
-///   `is_ok()`, proving the consumers ran.
-/// Collaborators: the pairing's and kem's mock concretes in their default
-///   modes through their factories; the hash-to-scalar family's mock
-///   concrete under `SamplingRefused`; the subject's randomness source, the
-///   randomness family's mock concrete at the default selection.
+///   at their defaults on an adapter built under the same mode.
+/// Act:     `non_convertibility`, once, in the case consumer's method.
+/// Assert:  the result's `Err` equals `Some(NonConvertibilityErrorReturn::
+///   DeriveIdentity(DeriveIdentityErrorReturn::HashToScalar(error)))`
+///   whole by `assert_eq!`, `error` the expected refusal; the outermost
+///   `Result` `is_ok()`, proving the runner's levels ran.
+/// Collaborators: the hash-to-scalar family's mock concrete under
+///   `SamplingRefused`; every other family's mock concrete at the default
+///   selection.
 #[test]
 fn non_convertibility_returns_the_hash_to_scalar_refusal_of_identity_derivation_whole() {
     // Arrange
-    let count = build_vector_count(Default::default());
-    let scope = IdentityScope::Entitlement;
-    let identity: &[u8] = b"pkg@1.0.0#1";
-    let other_identity: &[u8] = b"pkg@2.0.0#7";
-    let hash_concrete =
-        HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::SamplingRefused);
+    struct CaseConsumer;
 
-    struct KemConsumer<'a, P: IPairingArithmetic> {
-        subject: &'a dyn IRandomSourceAdapter,
-        hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
-        count: VectorCount,
-        identity: &'a [u8],
-        other_identity: &'a [u8],
-    }
-
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_, P> {
+    impl INonConvertibilityCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_non_convertibility_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            _independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+            other_identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Arrange
-            let expected = self
-                .hashing
+            let error = hash_to_scalar
                 .hash_to_scalar(
                     build_hash_to_scalar_params(Default::default()),
                     build_hash_to_scalar_payload(Default::default()),
                 )
                 .err()
-                .expect("the hash-to-scalar adapter refuses under its named mode");
+                .expect("the refusing adapter refuses the hash");
             // Act
             let returned = non_convertibility::<K>(
-                &build_non_convertibility_deps(&payload.adapter, self.subject, Default::default()),
-                build_non_convertibility_params(NonConvertibilityParamsOverrides {
-                    count: Some(self.count),
-                    scope: Some(payload.scope()),
+                &build_non_convertibility_deps(kem, random, Default::default()),
+                build_non_convertibility_params(Default::default()),
+                build_non_convertibility_payload(NonConvertibilityPayloadOverrides {
+                    identity: Some(identity),
+                    other_identity: Some(other_identity),
                 }),
-                build_non_convertibility_payload(
-                    self.identity,
-                    self.other_identity,
-                    Default::default(),
-                ),
             );
             // Assert
             assert_eq!(
                 returned.err(),
                 Some(NonConvertibilityErrorReturn::DeriveIdentity(
-                    DeriveIdentityErrorReturn::HashToScalar(expected)
+                    DeriveIdentityErrorReturn::HashToScalar(error)
                 ))
             );
         }
     }
 
-    struct PairingConsumer<'a> {
-        count: VectorCount,
-        scope: IdentityScope,
-        identity: &'a [u8],
-        other_identity: &'a [u8],
-        hash_concrete: HashToScalarConcrete,
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = CreateKemReturn<()>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                    concrete: Some(self.hash_concrete),
-                    ..Default::default()
-                }),
-                build_create_hash_to_scalar_payload(Default::default()),
-            )
-            .expect("the hash-to-scalar factory's configured selection constructs");
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            create_kem(
-                &build_create_kem_deps(
-                    &payload.adapter,
-                    &*hashing.adapter,
-                    KemConsumer {
-                        subject: &*subject_source.adapter,
-                        hashing: &*hashing.adapter,
-                        count: self.count,
-                        identity: self.identity,
-                        other_identity: self.other_identity,
-                    },
-                    Default::default(),
-                ),
-                build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(self.scope),
-                    ..Default::default()
-                }),
-                build_create_kem_payload(Default::default()),
-            )
-        }
-    }
-
-    let consumer = PairingConsumer {
-        count,
-        scope,
-        identity,
-        other_identity,
-        hash_concrete,
-    };
-
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    let returned = run_non_convertibility_case(
+        &build_non_convertibility_case_deps(CaseConsumer, Default::default()),
+        build_non_convertibility_case_params(NonConvertibilityCaseParamsOverrides {
+            hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                CreateHashToScalarParamsOverrides {
+                    concrete: Some(HashToScalarConcrete::Mock(
+                        MockIHashToScalarAdapterFailureMode::SamplingRefused,
+                    )),
+                    ..Default::default()
+                },
+            )),
+            ..Default::default()
+        }),
+        build_non_convertibility_case_payload(Default::default()),
     );
-    let outcome = created.expect("the pairing factory's default selection constructs");
 
     // Assert
-    assert!(outcome.output.is_ok());
+    assert!(returned.is_ok());
     // non_convertibility_returns_the_hash_to_scalar_refusal_of_identity_derivation_whole
 }

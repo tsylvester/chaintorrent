@@ -1,88 +1,84 @@
 #![allow(clippy::expect_used)]
 
-use domain::{
-    ASSET_IDENTITY_HASH_LENGTH, AssetIdentityHash, AssetIdentityHashConstructorParamsOverrides,
-    build_asset_identity_hash,
-};
-use hash_to_scalar::{
-    build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
-    build_create_hash_to_scalar_payload, create_hash_to_scalar,
-};
+use hash_to_scalar::IHashToScalarAdapter;
+use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::{
-    ConsumeKemParams, ConsumeKemPayload, CreateKemParamsOverrides, CreateKemReturn,
-    DeriveIdentityPayloadOverrides, ICredentialKemAdapter, IKemConsumer, IdentityScope,
+    CreateKemParamsOverrides, DeriveIdentityPayloadOverrides, ICredentialKemAdapter, IdentityScope,
     IssuePayloadOverrides, KemIdentity, RerandomizePayloadOverrides, SetupParamsOverrides,
-    SetupPayloadOverrides, SetupScope, build_create_kem_deps, build_create_kem_params,
-    build_create_kem_payload, build_credential_components_params,
+    SetupPayloadOverrides, SetupScope, build_create_kem_params, build_credential_components_params,
     build_credential_components_payload, build_derive_identity_params,
     build_derive_identity_payload, build_identity_element_components_params,
     build_identity_element_components_payload, build_issue_params, build_issue_payload,
     build_parameter_set_components_params, build_parameter_set_components_payload,
     build_rerandomize_params, build_rerandomize_payload, build_setup_params, build_setup_payload,
-    create_kem,
 };
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, EncodeG1Params, EncodeG1Payload, EncodeG2Params,
-    EncodeG2Payload, EncodeScalarParams, EncodeScalarPayload, IPairingArithmetic, IPairingConsumer,
-    IPairingReference, ISampleUniformScalar, build_create_pairing_deps,
-    build_create_pairing_params, build_create_pairing_payload, create_pairing,
+    EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload, EncodeScalarParams,
+    EncodeScalarPayload, IPairingArithmetic, IPairingReference, ISampleUniformScalar,
 };
 use random::{
-    FillBytesParams, FillBytesPayloadOverrides, IRandomSourceAdapter,
-    build_create_random_source_deps, build_create_random_source_params,
-    build_create_random_source_payload, build_fill_bytes_payload, create_random_source,
+    FillBytesParams, FillBytesPayloadOverrides, IRandomSourceAdapter, build_fill_bytes_payload,
 };
 
+use super::interface::IRerandomizationCaseConsumer;
 use super::mock::{
-    RerandomizationParamsOverrides, build_rerandomization_deps, build_rerandomization_params,
-    build_rerandomization_payload,
+    RerandomizationCaseParamsOverrides, RerandomizationParamsOverrides,
+    RerandomizationPayloadOverrides, build_rerandomization_case_deps,
+    build_rerandomization_case_params, build_rerandomization_case_payload,
+    build_rerandomization_deps, build_rerandomization_params, build_rerandomization_payload,
+    run_rerandomization_case,
 };
 use super::rerandomization;
+use crate::delivery::provides::{
+    AdmittedKemIdentity, AdmittedKemIdentityOverrides, build_admitted_kem_identity,
+};
 use crate::{VectorCount, VectorCountConstructorParamsOverrides, build_vector_count};
 
 /// Contract: Computed → `Ok(RerandomizationSuccessReturn { vectors })`, a
 ///   record for each index from `0` below `params.count.get()`.
-/// Arrange: `count` of `3` through `build_vector_count`, a count other than
-///   the params builder's default `2`, so a list sized from the default
-///   reports otherwise; the scope `IdentityScope::Entitlement` and the
-///   identity `b"pkg@1.0.0#1"`, the defaults.
-/// Act:     `rerandomization`, once, in the KEM consumer's method.
+/// Arrange: `count` of `3`, a count other than the params builder's default,
+///   so a list sized from the default reports otherwise; the case's defaults.
+/// Act:     `rerandomization`, once, in the case consumer's method.
 /// Assert:  `vectors` holds `3` records by `assert_eq!`, so a list of
 ///   another length fails; the outermost `Result` `is_ok()`, proving the
-///   consumers ran.
-/// Collaborators: the pairing's, hash-to-scalar's, kem's, and randomness
-///   family's mock concretes in their default modes through their factories;
-///   the subject's randomness source, the family's mock concrete at the
-///   default selection.
+///   runner's levels ran.
+/// Collaborators: every family's mock concrete, reached through its factory
+///   at the defaults of its params builder.
 #[test]
 fn rerandomization_emits_the_configured_count_of_records() {
     // Arrange
     let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(3) });
-    let scope = IdentityScope::Entitlement;
-    let identity: &[u8] = b"pkg@1.0.0#1";
 
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
+    struct CaseConsumer {
         count: VectorCount,
-        identity: &'a [u8],
     }
 
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl IRerandomizationCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_rerandomization_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            _independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Act
             let returned = rerandomization::<K>(
-                &build_rerandomization_deps(&payload.adapter, self.subject, Default::default()),
+                &build_rerandomization_deps(kem, random, Default::default()),
                 build_rerandomization_params(RerandomizationParamsOverrides {
                     count: Some(self.count),
-                    scope: Some(payload.scope()),
                 }),
-                build_rerandomization_payload(self.identity, Default::default()),
+                build_rerandomization_payload(RerandomizationPayloadOverrides {
+                    identity: Some(identity),
+                }),
             );
             let success = returned.expect("the subject's calls succeed");
             // Assert
@@ -90,385 +86,226 @@ fn rerandomization_emits_the_configured_count_of_records() {
         }
     }
 
-    struct PairingConsumer<'a> {
-        count: VectorCount,
-        scope: IdentityScope,
-        identity: &'a [u8],
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = CreateKemReturn<()>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            )
-            .expect("the hash-to-scalar factory's default selection constructs");
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            create_kem(
-                &build_create_kem_deps(
-                    &payload.adapter,
-                    &*hashing.adapter,
-                    KemConsumer {
-                        subject: &*subject_source.adapter,
-                        count: self.count,
-                        identity: self.identity,
-                    },
-                    Default::default(),
-                ),
-                build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(self.scope),
-                    ..Default::default()
-                }),
-                build_create_kem_payload(Default::default()),
-            )
-        }
-    }
-
-    let consumer = PairingConsumer {
-        count,
-        scope,
-        identity,
-    };
-
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    let returned = run_rerandomization_case(
+        &build_rerandomization_case_deps(CaseConsumer { count }, Default::default()),
+        build_rerandomization_case_params(Default::default()),
+        build_rerandomization_case_payload(Default::default()),
     );
-    let outcome = created.expect("the pairing factory's default selection constructs");
 
     // Assert
-    assert!(outcome.output.is_ok());
+    assert!(returned.is_ok());
     // rerandomization_emits_the_configured_count_of_records
 }
 
 /// Contract: Draw → every uniform has the length the pairing's scalar
 ///   sampling bound declares, and a record's `draws` are the master, `u0`,
 ///   `u1`, issuance, and rerandomization uniforms concatenated.
-/// Arrange: `count` of `1`; the scope `IdentityScope::Entitlement` and the
-///   identity `b"pkg@1.0.0#1"`, the defaults.
-/// Act:     `rerandomization`, once, in the KEM consumer's method.
+/// Arrange: `count` of `1`.
+/// Act:     `rerandomization`, once, in the case consumer's method.
 /// Assert:  the record's `draws` hold `5` times
 ///   `<P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH` bytes by
-///   `assert_eq!`, so a draw of another length or count fails; the outermost
-///   `Result` `is_ok()`, proving the consumers ran.
-/// Collaborators: the pairing's, hash-to-scalar's, kem's, and randomness
-///   family's mock concretes in their default modes through their factories;
-///   the subject's randomness source, the family's mock concrete at the
-///   default selection.
+///   `assert_eq!`; the outermost `Result` `is_ok()`, proving the runner's
+///   levels ran.
+/// Collaborators: every family's mock concrete, reached through its factory
+///   at the defaults of its params builder.
 #[test]
 fn rerandomization_draws_each_record_the_uniforms_of_its_calls_at_the_declared_length() {
     // Arrange
     let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(1) });
-    let scope = IdentityScope::Entitlement;
-    let identity: &[u8] = b"pkg@1.0.0#1";
 
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
+    struct CaseConsumer {
         count: VectorCount,
-        identity: &'a [u8],
     }
 
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl IRerandomizationCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_rerandomization_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            _independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Act
             let returned = rerandomization::<K>(
-                &build_rerandomization_deps(&payload.adapter, self.subject, Default::default()),
+                &build_rerandomization_deps(kem, random, Default::default()),
                 build_rerandomization_params(RerandomizationParamsOverrides {
                     count: Some(self.count),
-                    scope: Some(payload.scope()),
                 }),
-                build_rerandomization_payload(self.identity, Default::default()),
+                build_rerandomization_payload(RerandomizationPayloadOverrides {
+                    identity: Some(identity),
+                }),
             );
             let success = returned.expect("the subject's calls succeed");
+            let record = success.vectors.first().expect("the one record");
             // Assert
             assert_eq!(
-                success.vectors.first().expect("the one record").draws.len(),
+                record.draws.len(),
                 5 * <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH
             );
         }
     }
 
-    struct PairingConsumer<'a> {
-        count: VectorCount,
-        scope: IdentityScope,
-        identity: &'a [u8],
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = CreateKemReturn<()>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            )
-            .expect("the hash-to-scalar factory's default selection constructs");
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            create_kem(
-                &build_create_kem_deps(
-                    &payload.adapter,
-                    &*hashing.adapter,
-                    KemConsumer {
-                        subject: &*subject_source.adapter,
-                        count: self.count,
-                        identity: self.identity,
-                    },
-                    Default::default(),
-                ),
-                build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(self.scope),
-                    ..Default::default()
-                }),
-                build_create_kem_payload(Default::default()),
-            )
-        }
-    }
-
-    let consumer = PairingConsumer {
-        count,
-        scope,
-        identity,
-    };
-
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    let returned = run_rerandomization_case(
+        &build_rerandomization_case_deps(CaseConsumer { count }, Default::default()),
+        build_rerandomization_case_params(Default::default()),
+        build_rerandomization_case_payload(Default::default()),
     );
-    let outcome = created.expect("the pairing factory's default selection constructs");
 
     // Assert
-    assert!(outcome.output.is_ok());
+    assert!(returned.is_ok());
     // rerandomization_draws_each_record_the_uniforms_of_its_calls_at_the_declared_length
 }
 
 /// Contract: Ordering → the records in index order, within a record its
 ///   draws in the order master, `u0`, `u1`, issuance, and rerandomization.
-/// Arrange: `count` of `2`; the expected draws five consecutive
-///   `fill_bytes` calls of the independent source — a separate adapter of
-///   the family's mock concrete at the same defaults as the subject's, whose
-///   `fill_bytes` yields, call by call, the bytes the subject's source
-///   yields — grouped for each record in turn, so a transposed record or
-///   draw reports otherwise; the scope `IdentityScope::Entitlement` and the
-///   identity `b"pkg@1.0.0#1"`, the defaults.
-/// Act:     `rerandomization`, once, in the KEM consumer's method.
+/// Arrange: `count` of `2`; the expected draws from the independent source,
+///   five consecutive calls grouped for each record in turn, so a transposed
+///   record or draw reports otherwise.
+/// Act:     `rerandomization`, once, in the case consumer's method.
 /// Assert:  each record's `draws` equal its expected draws by `assert_eq!`;
-///   the outermost `Result` `is_ok()`, proving the consumers ran.
-/// Collaborators: the pairing's, hash-to-scalar's, kem's, and randomness
-///   family's mock concretes in their default modes through their factories;
-///   the subject's randomness source and the independent source, each the
-///   family's mock concrete at the default selection.
+///   the outermost `Result` `is_ok()`, proving the runner's levels ran.
+/// Collaborators: every family's mock concrete, reached through its factory
+///   at the defaults of its params builder; the independent source, a
+///   separate adapter at the same defaults as the subject's.
 #[test]
 fn rerandomization_records_the_draws_in_the_sequence_the_source_yields() {
     // Arrange
     let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(2) });
-    let scope = IdentityScope::Entitlement;
-    let identity: &[u8] = b"pkg@1.0.0#1";
 
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
-        independent: &'a dyn IRandomSourceAdapter,
+    struct CaseConsumer {
         count: VectorCount,
-        identity: &'a [u8],
     }
 
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl IRerandomizationCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_rerandomization_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Arrange
+            let draw = || {
+                independent
+                    .fill_bytes(
+                        FillBytesParams,
+                        build_fill_bytes_payload(FillBytesPayloadOverrides {
+                            length: Some(<P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH),
+                        }),
+                    )
+                    .expect("the independent source fills")
+                    .bytes
+            };
             let mut expected: Vec<Vec<u8>> = Vec::new();
             for _ in 0..self.count.get() {
                 let mut draws = Vec::new();
                 for _ in 0..5 {
-                    let filled = self
-                        .independent
-                        .fill_bytes(
-                            FillBytesParams,
-                            build_fill_bytes_payload(FillBytesPayloadOverrides {
-                                length: Some(
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH,
-                                ),
-                            }),
-                        )
-                        .expect("the independent source fills");
-                    draws.extend_from_slice(filled.bytes.expose());
+                    draws.extend_from_slice(draw().expose());
                 }
                 expected.push(draws);
             }
             // Act
             let returned = rerandomization::<K>(
-                &build_rerandomization_deps(&payload.adapter, self.subject, Default::default()),
+                &build_rerandomization_deps(kem, random, Default::default()),
                 build_rerandomization_params(RerandomizationParamsOverrides {
                     count: Some(self.count),
-                    scope: Some(payload.scope()),
                 }),
-                build_rerandomization_payload(self.identity, Default::default()),
+                build_rerandomization_payload(RerandomizationPayloadOverrides {
+                    identity: Some(identity),
+                }),
             );
             let success = returned.expect("the subject's calls succeed");
             // Assert
-            for (record, expected_draws) in success.vectors.iter().zip(expected.iter()) {
-                assert_eq!(&record.draws, expected_draws);
+            assert_eq!(success.vectors.len(), expected.len());
+            for (record, draws) in success.vectors.iter().zip(expected.iter()) {
+                assert_eq!(&record.draws, draws);
             }
         }
     }
 
-    struct PairingConsumer<'a> {
-        count: VectorCount,
-        scope: IdentityScope,
-        identity: &'a [u8],
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = CreateKemReturn<()>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            )
-            .expect("the hash-to-scalar factory's default selection constructs");
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            let independent_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            create_kem(
-                &build_create_kem_deps(
-                    &payload.adapter,
-                    &*hashing.adapter,
-                    KemConsumer {
-                        subject: &*subject_source.adapter,
-                        independent: &*independent_source.adapter,
-                        count: self.count,
-                        identity: self.identity,
-                    },
-                    Default::default(),
-                ),
-                build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(self.scope),
-                    ..Default::default()
-                }),
-                build_create_kem_payload(Default::default()),
-            )
-        }
-    }
-
-    let consumer = PairingConsumer {
-        count,
-        scope,
-        identity,
-    };
-
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    let returned = run_rerandomization_case(
+        &build_rerandomization_case_deps(CaseConsumer { count }, Default::default()),
+        build_rerandomization_case_params(Default::default()),
+        build_rerandomization_case_payload(Default::default()),
     );
-    let outcome = created.expect("the pairing factory's default selection constructs");
 
     // Assert
-    assert!(outcome.output.is_ok());
+    assert!(returned.is_ok());
     // rerandomization_records_the_draws_in_the_sequence_the_source_yields
 }
 
-/// Contract: Identity under `Entitlement`, Record, and Record outcome → the
-///   identity is `KemIdentity::Entitlement { canonical: payload.identity }`
-///   and the setup scope `SetupScope::Entitlement`; the record holds the
+/// Contract: Record under an entitlement identity → setup takes
+///   `payload.identity.setup_scope`, `SetupScope::Entitlement`, and
+///   derivation `payload.identity.identity`,
+///   `KemIdentity::Entitlement { canonical }`; the record holds the
 ///   parameter set, identity element, issued credential, and rerandomized
 ///   credential its calls returned over its draws, and a `true` verdict for
 ///   each credential.
-/// Arrange: `count` of `1`; the scope `IdentityScope::Entitlement` and the
-///   identity `b"pkg@1.0.0#1"`, the defaults; the replay over the
-///   independent source's first five draws under `SetupScope::Entitlement`
-///   and `KemIdentity::Entitlement { canonical: &identity }`, each replayed
-///   call through the family's params and payload builders over the received
-///   KEM and each replayed value read through its components method.
-/// Act:     `rerandomization`, once, in the KEM consumer's method.
+/// Arrange: `count` of `1`; the admitted entitlement identity over
+///   `b"pkg@1.0.0#1"`; the replay over the independent source's first five
+///   draws under that identity's `setup_scope` and `identity`.
+/// Act:     `rerandomization`, once, in the case consumer's method.
 /// Assert:  the encoded `hpub` of the record's parameter set, the encoded
 ///   `scalar` and `element` of its identity element, and the encoded `a` and
 ///   `b` of `issued` and of `rerandomized` each equal the replay's by
 ///   `assert_eq!`, and `issued_is_valid` and `rerandomized_is_valid` are
-///   each `true`; the outermost `Result` `is_ok()`, proving the consumers
-///   ran.
-/// Collaborators: the pairing's, hash-to-scalar's, kem's, and randomness
-///   family's mock concretes in their default modes through their factories;
-///   the subject's randomness source and the independent source, each the
-///   family's mock concrete at the default selection.
+///   each `true`; the outermost `Result` `is_ok()`, proving the runner's
+///   levels ran.
+/// Collaborators: every family's mock concrete, reached through its factory
+///   at the defaults of its params builder; the independent source, a
+///   separate adapter at the same defaults as the subject's.
 #[test]
 fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_entitlement_scope() {
     // Arrange
     let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(1) });
-    let scope = IdentityScope::Entitlement;
-    let identity: &[u8] = b"pkg@1.0.0#1";
+    let expected_identity = build_admitted_kem_identity(Default::default());
 
-    struct KemConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        subject: &'a dyn IRandomSourceAdapter,
-        independent: &'a dyn IRandomSourceAdapter,
+    struct CaseConsumer<'a> {
         count: VectorCount,
-        identity: &'a [u8],
+        expected_identity: AdmittedKemIdentity<'a>,
     }
 
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_, P> {
+    impl IRerandomizationCaseConsumer for CaseConsumer<'_> {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_rerandomization_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Arrange
             let draw = || {
-                self.independent
+                independent
                     .fill_bytes(
                         FillBytesParams,
                         build_fill_bytes_payload(FillBytesPayloadOverrides {
@@ -478,11 +315,10 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                     .expect("the independent source fills")
                     .bytes
             };
-            let setup = payload
-                .adapter
+            let setup = kem
                 .setup(
                     build_setup_params(SetupParamsOverrides {
-                        scope: Some(SetupScope::Entitlement),
+                        scope: Some(self.expected_identity.setup_scope),
                     }),
                     build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
                         master_uniform: Some(draw()),
@@ -491,22 +327,18 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                     }),
                 )
                 .expect("the replay's setup succeeds");
-            let derived = payload
-                .adapter
+            let derived = kem
                 .derive_identity(
                     build_derive_identity_params(Default::default()),
                     build_derive_identity_payload(
                         &setup.parameter_set,
                         DeriveIdentityPayloadOverrides {
-                            identity: Some(KemIdentity::Entitlement {
-                                canonical: self.identity,
-                            }),
+                            identity: Some(self.expected_identity.identity),
                         },
                     ),
                 )
                 .expect("the replay's identity derivation succeeds");
-            let issued = payload
-                .adapter
+            let issued = kem
                 .issue(
                     build_issue_params(Default::default()),
                     build_issue_payload::<P::Scalar, _, _, _>(
@@ -519,8 +351,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                     ),
                 )
                 .expect("the replay's issuance succeeds");
-            let rerandomized = payload
-                .adapter
+            let rerandomized = kem
                 .rerandomize(
                     build_rerandomize_params(Default::default()),
                     build_rerandomize_payload::<P::Scalar, _, _, _>(
@@ -535,18 +366,19 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                 .expect("the replay's rerandomization succeeds");
             // Act
             let returned = rerandomization::<K>(
-                &build_rerandomization_deps(&payload.adapter, self.subject, Default::default()),
+                &build_rerandomization_deps(kem, random, Default::default()),
                 build_rerandomization_params(RerandomizationParamsOverrides {
                     count: Some(self.count),
-                    scope: Some(payload.scope()),
                 }),
-                build_rerandomization_payload(self.identity, Default::default()),
+                build_rerandomization_payload(RerandomizationPayloadOverrides {
+                    identity: Some(identity),
+                }),
             );
             let success = returned.expect("the subject's calls succeed");
             let record = success.vectors.first().expect("the one record");
             // Assert
             let encode_g1 = |point: &P::G1| -> Vec<u8> {
-                self.pairing
+                pairing
                     .encode_g1(
                         EncodeG1Params,
                         EncodeG1Payload {
@@ -559,7 +391,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                     .to_vec()
             };
             let encode_g2 = |point: &P::G2| -> Vec<u8> {
-                self.pairing
+                pairing
                     .encode_g2(
                         EncodeG2Params,
                         EncodeG2Payload {
@@ -572,7 +404,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                     .to_vec()
             };
             let encode_scalar = |scalar: &P::Scalar| -> Vec<u8> {
-                self.pairing
+                pairing
                     .encode_scalar(
                         EncodeScalarParams,
                         EncodeScalarPayload {
@@ -585,8 +417,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                     .as_ref()
                     .to_vec()
             };
-            let expected_parameter_set = payload
-                .adapter
+            let expected_parameter_set = kem
                 .parameter_set_components(
                     build_parameter_set_components_params(Default::default()),
                     build_parameter_set_components_payload(
@@ -596,8 +427,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                 )
                 .expect("the parameter set's components are infallible")
                 .components;
-            let actual_parameter_set = payload
-                .adapter
+            let actual_parameter_set = kem
                 .parameter_set_components(
                     build_parameter_set_components_params(Default::default()),
                     build_parameter_set_components_payload(
@@ -605,14 +435,13 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                         Default::default(),
                     ),
                 )
-                .expect("the record's parameter set's components are infallible")
+                .expect("the parameter set's components are infallible")
                 .components;
             assert_eq!(
                 encode_g2(&actual_parameter_set.hpub),
                 encode_g2(&expected_parameter_set.hpub)
             );
-            let expected_identity_element = payload
-                .adapter
+            let expected_identity_element = kem
                 .identity_element_components(
                     build_identity_element_components_params(Default::default()),
                     build_identity_element_components_payload(
@@ -622,8 +451,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                 )
                 .expect("the identity element's components are infallible")
                 .components;
-            let actual_identity_element = payload
-                .adapter
+            let actual_identity_element = kem
                 .identity_element_components(
                     build_identity_element_components_params(Default::default()),
                     build_identity_element_components_payload(
@@ -631,7 +459,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                         Default::default(),
                     ),
                 )
-                .expect("the record's identity element's components are infallible")
+                .expect("the identity element's components are infallible")
                 .components;
             assert_eq!(
                 encode_scalar(&actual_identity_element.scalar),
@@ -641,22 +469,39 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
                 encode_g1(&actual_identity_element.element),
                 encode_g1(&expected_identity_element.element)
             );
-            let components_of = |credential: &K::Credential| {
-                payload
-                    .adapter
-                    .credential_components(
-                        build_credential_components_params(Default::default()),
-                        build_credential_components_payload(credential, Default::default()),
-                    )
-                    .expect("a credential's components are infallible")
-                    .components
-            };
-            let expected_issued = components_of(&issued.credential);
-            let actual_issued = components_of(&record.issued);
+            let expected_issued = kem
+                .credential_components(
+                    build_credential_components_params(Default::default()),
+                    build_credential_components_payload(&issued.credential, Default::default()),
+                )
+                .expect("the credential's components are infallible")
+                .components;
+            let actual_issued = kem
+                .credential_components(
+                    build_credential_components_params(Default::default()),
+                    build_credential_components_payload(&record.issued, Default::default()),
+                )
+                .expect("the credential's components are infallible")
+                .components;
             assert_eq!(encode_g1(&actual_issued.a), encode_g1(&expected_issued.a));
             assert_eq!(encode_g2(&actual_issued.b), encode_g2(&expected_issued.b));
-            let expected_rerandomized = components_of(&rerandomized.credential);
-            let actual_rerandomized = components_of(&record.rerandomized);
+            let expected_rerandomized = kem
+                .credential_components(
+                    build_credential_components_params(Default::default()),
+                    build_credential_components_payload(
+                        &rerandomized.credential,
+                        Default::default(),
+                    ),
+                )
+                .expect("the credential's components are infallible")
+                .components;
+            let actual_rerandomized = kem
+                .credential_components(
+                    build_credential_components_params(Default::default()),
+                    build_credential_components_payload(&record.rerandomized, Default::default()),
+                )
+                .expect("the credential's components are infallible")
+                .components;
             assert_eq!(
                 encode_g1(&actual_rerandomized.a),
                 encode_g1(&expected_rerandomized.a)
@@ -670,126 +515,76 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_e
         }
     }
 
-    struct PairingConsumer<'a> {
-        count: VectorCount,
-        scope: IdentityScope,
-        identity: &'a [u8],
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = CreateKemReturn<()>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            )
-            .expect("the hash-to-scalar factory's default selection constructs");
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            let independent_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            create_kem(
-                &build_create_kem_deps(
-                    &payload.adapter,
-                    &*hashing.adapter,
-                    KemConsumer {
-                        pairing: &payload.adapter,
-                        subject: &*subject_source.adapter,
-                        independent: &*independent_source.adapter,
-                        count: self.count,
-                        identity: self.identity,
-                    },
-                    Default::default(),
-                ),
-                build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(self.scope),
-                    ..Default::default()
-                }),
-                build_create_kem_payload(Default::default()),
-            )
-        }
-    }
-
-    let consumer = PairingConsumer {
-        count,
-        scope,
-        identity,
-    };
-
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    let returned = run_rerandomization_case(
+        &build_rerandomization_case_deps(
+            CaseConsumer {
+                count,
+                expected_identity,
+            },
+            Default::default(),
+        ),
+        build_rerandomization_case_params(Default::default()),
+        build_rerandomization_case_payload(Default::default()),
     );
-    let outcome = created.expect("the pairing factory's default selection constructs");
 
     // Assert
-    assert!(outcome.output.is_ok());
+    assert!(returned.is_ok());
     // rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_entitlement_scope
 }
 
-/// Contract: Identity under `Asset`, Record, and Record outcome →
-///   `AssetIdentityHash::try_new` admits the 32 bytes, the identity is
-///   `KemIdentity::Asset { identity_hash: &hash }` and the setup scope
-///   `SetupScope::Asset { identity_hash: &hash }`; the record holds the
-///   values its calls returned over its draws and a `true` verdict for each
-///   credential.
-/// Arrange: the scope `IdentityScope::Asset`, the identity
-///   `vec![0x44; 32]`, `count` of `1`; the replay as the entitlement block
-///   builds it, over the hash `build_asset_identity_hash` builds from the
-///   bytes `[0x44; 32]`, `SetupScope::Asset`, and `KemIdentity::Asset`.
-/// Act:     `rerandomization`, once, in the KEM consumer's method.
+/// Contract: Record under an asset identity → setup takes
+///   `payload.identity.setup_scope`, `SetupScope::Asset { root }`, and
+///   derivation `payload.identity.identity`, `KemIdentity::Asset { root }`;
+///   the record holds the values its calls returned over its draws and a
+///   `true` verdict for each credential.
+/// Arrange: the KEM's `scope` `IdentityScope::Asset`, `count` of `1`; the
+///   admitted asset identity over the root `build_root` builds from
+///   `[0x44; 32]`; the replay as the entitlement block builds it, under that
+///   identity's `setup_scope` and `identity`.
+/// Act:     `rerandomization`, once, in the case consumer's method.
 /// Assert:  as the entitlement block, against this replay; the outermost
-///   `Result` `is_ok()`, proving the consumers ran.
-/// Collaborators: the pairing's, hash-to-scalar's, kem's, and randomness
-///   family's mock concretes in their default modes through their factories;
-///   the subject's randomness source and the independent source, each the
-///   family's mock concrete at the default selection.
+///   `Result` `is_ok()`, proving the runner's levels ran.
+/// Collaborators: every family's mock concrete, reached through its factory
+///   at the defaults of its params builder; the independent source, a
+///   separate adapter at the same defaults as the subject's.
 #[test]
 fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_asset_scope() {
     // Arrange
     let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(1) });
-    let scope = IdentityScope::Asset;
-    let identity: Vec<u8> = vec![0x44; ASSET_IDENTITY_HASH_LENGTH];
-    let hash = build_asset_identity_hash(AssetIdentityHashConstructorParamsOverrides {
-        bytes: Some([0x44; ASSET_IDENTITY_HASH_LENGTH]),
+    let root = build_root(RootConstructorParamsOverrides {
+        bytes: Some([0x44; 32]),
+    });
+    let expected_identity = build_admitted_kem_identity(AdmittedKemIdentityOverrides {
+        setup_scope: Some(SetupScope::Asset { root: &root }),
+        identity: Some(KemIdentity::Asset { root: &root }),
     });
 
-    struct KemConsumer<'a, P: IPairingArithmetic> {
-        pairing: &'a P,
-        subject: &'a dyn IRandomSourceAdapter,
-        independent: &'a dyn IRandomSourceAdapter,
+    struct CaseConsumer<'a> {
         count: VectorCount,
-        identity: &'a [u8],
-        identity_hash: &'a AssetIdentityHash,
+        expected_identity: AdmittedKemIdentity<'a>,
     }
 
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_, P> {
+    impl IRerandomizationCaseConsumer for CaseConsumer<'_> {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_rerandomization_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Arrange
             let draw = || {
-                self.independent
+                independent
                     .fill_bytes(
                         FillBytesParams,
                         build_fill_bytes_payload(FillBytesPayloadOverrides {
@@ -799,13 +594,10 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                     .expect("the independent source fills")
                     .bytes
             };
-            let setup = payload
-                .adapter
+            let setup = kem
                 .setup(
                     build_setup_params(SetupParamsOverrides {
-                        scope: Some(SetupScope::Asset {
-                            identity_hash: self.identity_hash,
-                        }),
+                        scope: Some(self.expected_identity.setup_scope),
                     }),
                     build_setup_payload::<P::Scalar>(SetupPayloadOverrides {
                         master_uniform: Some(draw()),
@@ -814,22 +606,18 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                     }),
                 )
                 .expect("the replay's setup succeeds");
-            let derived = payload
-                .adapter
+            let derived = kem
                 .derive_identity(
                     build_derive_identity_params(Default::default()),
                     build_derive_identity_payload(
                         &setup.parameter_set,
                         DeriveIdentityPayloadOverrides {
-                            identity: Some(KemIdentity::Asset {
-                                identity_hash: self.identity_hash,
-                            }),
+                            identity: Some(self.expected_identity.identity),
                         },
                     ),
                 )
                 .expect("the replay's identity derivation succeeds");
-            let issued = payload
-                .adapter
+            let issued = kem
                 .issue(
                     build_issue_params(Default::default()),
                     build_issue_payload::<P::Scalar, _, _, _>(
@@ -842,8 +630,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                     ),
                 )
                 .expect("the replay's issuance succeeds");
-            let rerandomized = payload
-                .adapter
+            let rerandomized = kem
                 .rerandomize(
                     build_rerandomize_params(Default::default()),
                     build_rerandomize_payload::<P::Scalar, _, _, _>(
@@ -858,18 +645,19 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                 .expect("the replay's rerandomization succeeds");
             // Act
             let returned = rerandomization::<K>(
-                &build_rerandomization_deps(&payload.adapter, self.subject, Default::default()),
+                &build_rerandomization_deps(kem, random, Default::default()),
                 build_rerandomization_params(RerandomizationParamsOverrides {
                     count: Some(self.count),
-                    scope: Some(payload.scope()),
                 }),
-                build_rerandomization_payload(self.identity, Default::default()),
+                build_rerandomization_payload(RerandomizationPayloadOverrides {
+                    identity: Some(identity),
+                }),
             );
             let success = returned.expect("the subject's calls succeed");
             let record = success.vectors.first().expect("the one record");
             // Assert
             let encode_g1 = |point: &P::G1| -> Vec<u8> {
-                self.pairing
+                pairing
                     .encode_g1(
                         EncodeG1Params,
                         EncodeG1Payload {
@@ -882,7 +670,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                     .to_vec()
             };
             let encode_g2 = |point: &P::G2| -> Vec<u8> {
-                self.pairing
+                pairing
                     .encode_g2(
                         EncodeG2Params,
                         EncodeG2Payload {
@@ -895,7 +683,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                     .to_vec()
             };
             let encode_scalar = |scalar: &P::Scalar| -> Vec<u8> {
-                self.pairing
+                pairing
                     .encode_scalar(
                         EncodeScalarParams,
                         EncodeScalarPayload {
@@ -908,8 +696,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                     .as_ref()
                     .to_vec()
             };
-            let expected_parameter_set = payload
-                .adapter
+            let expected_parameter_set = kem
                 .parameter_set_components(
                     build_parameter_set_components_params(Default::default()),
                     build_parameter_set_components_payload(
@@ -919,8 +706,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                 )
                 .expect("the parameter set's components are infallible")
                 .components;
-            let actual_parameter_set = payload
-                .adapter
+            let actual_parameter_set = kem
                 .parameter_set_components(
                     build_parameter_set_components_params(Default::default()),
                     build_parameter_set_components_payload(
@@ -928,14 +714,13 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                         Default::default(),
                     ),
                 )
-                .expect("the record's parameter set's components are infallible")
+                .expect("the parameter set's components are infallible")
                 .components;
             assert_eq!(
                 encode_g2(&actual_parameter_set.hpub),
                 encode_g2(&expected_parameter_set.hpub)
             );
-            let expected_identity_element = payload
-                .adapter
+            let expected_identity_element = kem
                 .identity_element_components(
                     build_identity_element_components_params(Default::default()),
                     build_identity_element_components_payload(
@@ -945,8 +730,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                 )
                 .expect("the identity element's components are infallible")
                 .components;
-            let actual_identity_element = payload
-                .adapter
+            let actual_identity_element = kem
                 .identity_element_components(
                     build_identity_element_components_params(Default::default()),
                     build_identity_element_components_payload(
@@ -954,7 +738,7 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                         Default::default(),
                     ),
                 )
-                .expect("the record's identity element's components are infallible")
+                .expect("the identity element's components are infallible")
                 .components;
             assert_eq!(
                 encode_scalar(&actual_identity_element.scalar),
@@ -964,22 +748,39 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
                 encode_g1(&actual_identity_element.element),
                 encode_g1(&expected_identity_element.element)
             );
-            let components_of = |credential: &K::Credential| {
-                payload
-                    .adapter
-                    .credential_components(
-                        build_credential_components_params(Default::default()),
-                        build_credential_components_payload(credential, Default::default()),
-                    )
-                    .expect("a credential's components are infallible")
-                    .components
-            };
-            let expected_issued = components_of(&issued.credential);
-            let actual_issued = components_of(&record.issued);
+            let expected_issued = kem
+                .credential_components(
+                    build_credential_components_params(Default::default()),
+                    build_credential_components_payload(&issued.credential, Default::default()),
+                )
+                .expect("the credential's components are infallible")
+                .components;
+            let actual_issued = kem
+                .credential_components(
+                    build_credential_components_params(Default::default()),
+                    build_credential_components_payload(&record.issued, Default::default()),
+                )
+                .expect("the credential's components are infallible")
+                .components;
             assert_eq!(encode_g1(&actual_issued.a), encode_g1(&expected_issued.a));
             assert_eq!(encode_g2(&actual_issued.b), encode_g2(&expected_issued.b));
-            let expected_rerandomized = components_of(&rerandomized.credential);
-            let actual_rerandomized = components_of(&record.rerandomized);
+            let expected_rerandomized = kem
+                .credential_components(
+                    build_credential_components_params(Default::default()),
+                    build_credential_components_payload(
+                        &rerandomized.credential,
+                        Default::default(),
+                    ),
+                )
+                .expect("the credential's components are infallible")
+                .components;
+            let actual_rerandomized = kem
+                .credential_components(
+                    build_credential_components_params(Default::default()),
+                    build_credential_components_payload(&record.rerandomized, Default::default()),
+                )
+                .expect("the credential's components are infallible")
+                .components;
             assert_eq!(
                 encode_g1(&actual_rerandomized.a),
                 encode_g1(&expected_rerandomized.a)
@@ -993,78 +794,26 @@ fn rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_a
         }
     }
 
-    struct PairingConsumer<'a> {
-        count: VectorCount,
-        scope: IdentityScope,
-        identity: &'a [u8],
-        identity_hash: &'a AssetIdentityHash,
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = CreateKemReturn<()>;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(Default::default()),
-                build_create_hash_to_scalar_payload(Default::default()),
-            )
-            .expect("the hash-to-scalar factory's default selection constructs");
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            let independent_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(Default::default()),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the random-source factory's default selection constructs");
-            create_kem(
-                &build_create_kem_deps(
-                    &payload.adapter,
-                    &*hashing.adapter,
-                    KemConsumer {
-                        pairing: &payload.adapter,
-                        subject: &*subject_source.adapter,
-                        independent: &*independent_source.adapter,
-                        count: self.count,
-                        identity: self.identity,
-                        identity_hash: self.identity_hash,
-                    },
-                    Default::default(),
-                ),
-                build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(self.scope),
-                    ..Default::default()
-                }),
-                build_create_kem_payload(Default::default()),
-            )
-        }
-    }
-
-    let consumer = PairingConsumer {
-        count,
-        scope,
-        identity: &identity,
-        identity_hash: &hash,
-    };
-
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        build_create_pairing_payload(Default::default()),
+    let returned = run_rerandomization_case(
+        &build_rerandomization_case_deps(
+            CaseConsumer {
+                count,
+                expected_identity,
+            },
+            Default::default(),
+        ),
+        build_rerandomization_case_params(RerandomizationCaseParamsOverrides {
+            kem: Some(build_create_kem_params(CreateKemParamsOverrides {
+                scope: Some(IdentityScope::Asset),
+                ..Default::default()
+            })),
+            ..Default::default()
+        }),
+        build_rerandomization_case_payload(Default::default()),
     );
-    let outcome = created.expect("the pairing factory's default selection constructs");
 
     // Assert
-    assert!(outcome.output.is_ok());
+    assert!(returned.is_ok());
     // rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_asset_scope
 }

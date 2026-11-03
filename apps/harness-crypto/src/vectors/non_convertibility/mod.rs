@@ -10,9 +10,8 @@ mod test_basic;
 mod test_error;
 
 use kem::{
-    DeriveIdentityParams, DeriveIdentityPayload, ICredentialKemAdapter, IdentityScope,
-    IsValidParams, IsValidPayload, IssueParams, IssuePayload, KemIdentity, SetupParams,
-    SetupPayload, SetupScope,
+    DeriveIdentityParams, DeriveIdentityPayload, ICredentialKemAdapter, IsValidParams,
+    IsValidPayload, IssueParams, IssuePayload, SetupParams, SetupPayload, SetupScope,
 };
 use pairing::{IPairingAdapter, ISampleUniformScalar};
 use random::{FillBytesParams, FillBytesPayload};
@@ -51,7 +50,7 @@ pub fn non_convertibility<'a, K: ICredentialKemAdapter>(
                 .kem
                 .setup(
                     SetupParams {
-                        scope: SetupScope::Entitlement,
+                        scope: payload.identity.setup_scope,
                     },
                     SetupPayload {
                         master_uniform: draw(&mut draws)?,
@@ -66,9 +65,7 @@ pub fn non_convertibility<'a, K: ICredentialKemAdapter>(
                     DeriveIdentityParams,
                     DeriveIdentityPayload {
                         parameter_set: &setup.parameter_set,
-                        identity: KemIdentity::Entitlement {
-                            canonical: payload.identity,
-                        },
+                        identity: payload.identity.identity,
                     },
                 )
                 .map_err(NonConvertibilityErrorReturn::DeriveIdentity)?;
@@ -78,9 +75,7 @@ pub fn non_convertibility<'a, K: ICredentialKemAdapter>(
                     DeriveIdentityParams,
                     DeriveIdentityPayload {
                         parameter_set: &setup.parameter_set,
-                        identity: KemIdentity::Entitlement {
-                            canonical: payload.other_identity,
-                        },
+                        identity: payload.other_identity.identity,
                     },
                 )
                 .map_err(NonConvertibilityErrorReturn::DeriveOtherIdentity)?;
@@ -121,13 +116,13 @@ pub fn non_convertibility<'a, K: ICredentialKemAdapter>(
             Ok(())
         };
     let mut vectors = Vec::new();
-    match params.scope {
-        IdentityScope::Entitlement => {
+    match payload.identity.setup_scope {
+        SetupScope::Entitlement => {
             for _ in 0..params.count.get() {
                 record(&mut vectors)?;
             }
         }
-        IdentityScope::Asset => {}
+        SetupScope::Asset { .. } => {}
     }
     Ok(NonConvertibilitySuccessReturn { vectors })
 }

@@ -1,34 +1,33 @@
 #![cfg(feature = "mocks")]
 #![allow(clippy::expect_used)]
 
-use domain::{ASSET_IDENTITY_HASH_LENGTH, AssetIdentityHashTryNewErrorReturn};
 use hash_to_scalar::{
     CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarConcrete,
-    HashToScalarErrorReturn, MockIHashToScalarAdapterFailureMode, build_create_hash_to_scalar_deps,
-    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload, create_hash_to_scalar,
+    HashToScalarErrorReturn, IHashToScalarAdapter, MockIHashToScalarAdapterFailureMode,
+    build_create_hash_to_scalar_params,
 };
 use kem::{
-    ConsumeKemParams, ConsumeKemPayload, DECLARED_KEM_SELECTIONS, ICredentialKemAdapter,
-    IKemConsumer, IdentityScope, SetupErrorReturn, build_create_kem_deps, build_create_kem_payload,
-    build_is_well_formed_params, build_is_well_formed_payload, create_kem,
+    DECLARED_KEM_SELECTIONS, ICredentialKemAdapter, SetupErrorReturn, SetupScope,
+    build_is_well_formed_params, build_is_well_formed_payload,
 };
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides, IPairingArithmetic,
-    IPairingConsumer, IPairingReference, ISampleUniformScalar, MockIPairingAdapterFailureMode,
-    PAIRING_CONCRETES, PairingConcrete, SampleUniformScalarErrorReturn, build_create_pairing_deps,
-    build_create_pairing_params, build_create_pairing_payload, create_pairing,
+    CreatePairingParamsOverrides, IPairingArithmetic, IPairingReference, ISampleUniformScalar,
+    MockIPairingAdapterFailureMode, PAIRING_CONCRETES, PairingConcrete,
+    SampleUniformScalarErrorReturn, build_create_pairing_params,
 };
 use random::{
     CreateRandomSourceParamsOverrides, FillBytesErrorReturn, IRandomSourceAdapter,
-    MockIRandomSourceAdapterFailureMode, RandomSourceKind, build_create_random_source_deps,
-    build_create_random_source_params, build_create_random_source_payload, create_random_source,
+    MockIRandomSourceAdapterFailureMode, RandomSourceKind, build_create_random_source_params,
 };
 
 use harness_crypto::{
-    MalformedCapsulesErrorReturn, MalformedCapsulesParamsOverrides, VectorCount,
-    VectorCountConstructorParamsOverrides, build_malformed_capsules_deps,
+    AdmittedKemIdentity, IMalformedCapsulesCaseConsumer, MalformedCapsulesCaseParamsOverrides,
+    MalformedCapsulesErrorReturn, MalformedCapsulesParamsOverrides,
+    MalformedCapsulesPayloadOverrides, VectorCount, VectorCountConstructorParamsOverrides,
+    build_malformed_capsules_case_deps, build_malformed_capsules_case_params,
+    build_malformed_capsules_case_payload, build_malformed_capsules_deps,
     build_malformed_capsules_params, build_malformed_capsules_payload, build_vector_count,
-    malformed_capsules,
+    malformed_capsules, run_malformed_capsules_case,
 };
 
 /// Contract: own entry
@@ -41,9 +40,10 @@ use harness_crypto::{
 ///   `VectorCountConstructorParamsOverrides`; every case — every member of
 ///   `PAIRING_CONCRETES` crossed with every selection of
 ///   `DECLARED_HASH_TO_SCALAR_SELECTIONS` and every selection and scope of
-///   `DECLARED_KEM_SELECTIONS` — the identity `b"pkg@1.0.0#1"` under the
-///   entitlement scope and `vec![0x44; 32]` under the asset scope.
-/// Act:     `malformed_capsules`, once per case, in the KEM consumer's
+///   `DECLARED_KEM_SELECTIONS`, the identity bytes `b"pkg@1.0.0#1"` under
+///   the entitlement scope and `[0x44; 32]` under the asset scope, the case
+///   payload's defaults.
+/// Act:     `malformed_capsules`, once per case, in the case consumer's
 ///   method.
 /// Assert:  as the private integration test element's block of the same
 ///   name asserts — `vectors` holds `2` records, each with `is_well_formed`
@@ -62,28 +62,39 @@ use harness_crypto::{
 /// Mocked:  nothing; the operating-system generator runs real.
 #[test]
 fn every_record_holds_a_well_formed_capsule_and_an_ill_formed_displacement() {
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
+    // Arrange
+    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(2) });
+
+    struct CaseConsumer {
         count: VectorCount,
-        identity: &'a [u8],
     }
 
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl IMalformedCapsulesCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_malformed_capsules_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            _independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Act
             let returned = malformed_capsules::<K>(
-                &build_malformed_capsules_deps(&payload.adapter, self.subject, Default::default()),
+                &build_malformed_capsules_deps(kem, random, Default::default()),
                 build_malformed_capsules_params(MalformedCapsulesParamsOverrides {
                     count: Some(self.count),
-                    scope: Some(payload.scope()),
                 }),
-                build_malformed_capsules_payload(self.identity, Default::default()),
+                build_malformed_capsules_payload(MalformedCapsulesPayloadOverrides {
+                    identity: Some(identity),
+                }),
             );
             let success = returned.expect("the subject's calls succeed");
             // Assert
@@ -91,7 +102,7 @@ fn every_record_holds_a_well_formed_capsule_and_an_ill_formed_displacement() {
             for record in &success.vectors {
                 assert!(record.is_well_formed);
                 assert!(!record.displaced_is_well_formed);
-                let Ok(capsule_verdict) = payload.adapter.is_well_formed(
+                let Ok(capsule_verdict) = kem.is_well_formed(
                     build_is_well_formed_params(Default::default()),
                     build_is_well_formed_payload(
                         &record.parameter_set,
@@ -100,7 +111,7 @@ fn every_record_holds_a_well_formed_capsule_and_an_ill_formed_displacement() {
                     ),
                 );
                 assert!(capsule_verdict.is_well_formed);
-                let Ok(displaced_verdict) = payload.adapter.is_well_formed(
+                let Ok(displaced_verdict) = kem.is_well_formed(
                     build_is_well_formed_params(Default::default()),
                     build_is_well_formed_payload(
                         &record.parameter_set,
@@ -113,72 +124,31 @@ fn every_record_holds_a_well_formed_capsule_and_an_ill_formed_displacement() {
         }
     }
 
-    struct PairingConsumer {
-        count: VectorCount,
-    }
-
-    impl IPairingConsumer for PairingConsumer {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                    kind: Some(RandomSourceKind::OperatingSystem),
-                }),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the operating-system source constructs");
-            for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                let hashing = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_selection,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection constructs");
-                for kem_selection in DECLARED_KEM_SELECTIONS {
-                    let identity: Vec<u8> = match kem_selection.scope {
-                        IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
-                        IdentityScope::Asset => vec![0x44; ASSET_IDENTITY_HASH_LENGTH],
-                    };
-                    let created = create_kem(
-                        &build_create_kem_deps(
-                            &payload.adapter,
-                            &*hashing.adapter,
-                            KemConsumer {
-                                subject: &*subject_source.adapter,
-                                count: self.count,
-                                identity: identity.as_slice(),
+    for pairing_concrete in PAIRING_CONCRETES {
+        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            for kem_selection in DECLARED_KEM_SELECTIONS {
+                // Act
+                let returned = run_malformed_capsules_case(
+                    &build_malformed_capsules_case_deps(CaseConsumer { count }, Default::default()),
+                    build_malformed_capsules_case_params(MalformedCapsulesCaseParamsOverrides {
+                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                            concrete: Some(*pairing_concrete),
+                            ..Default::default()
+                        })),
+                        hash_to_scalar: Some(*h2s_selection),
+                        kem: Some(*kem_selection),
+                        random_source: Some(build_create_random_source_params(
+                            CreateRandomSourceParamsOverrides {
+                                kind: Some(RandomSourceKind::OperatingSystem),
                             },
-                            Default::default(),
-                        ),
-                        *kem_selection,
-                        build_create_kem_payload(Default::default()),
-                    );
-                    created.expect("the declared selection constructs");
-                }
+                        )),
+                    }),
+                    build_malformed_capsules_case_payload(Default::default()),
+                );
+                // Assert
+                assert!(returned.is_ok());
             }
         }
-    }
-
-    // Arrange
-    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(2) });
-    for pairing_concrete in PAIRING_CONCRETES {
-        // Act
-        let created = create_pairing(
-            &build_create_pairing_deps(PairingConsumer { count }, Default::default()),
-            build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*pairing_concrete),
-                ..Default::default()
-            }),
-            build_create_pairing_payload(Default::default()),
-        );
-        // Assert
-        assert!(created.is_ok());
     }
     // every_record_holds_a_well_formed_capsule_and_an_ill_formed_displacement
 }
@@ -192,8 +162,8 @@ fn every_record_holds_a_well_formed_capsule_and_an_ill_formed_displacement() {
 ///   `PAIRING_CONCRETES` with each selection and scope of
 ///   `DECLARED_KEM_SELECTIONS` and every selection of
 ///   `DECLARED_HASH_TO_SCALAR_SELECTIONS`, the identity of each selection's
-///   scope.
-/// Act:     `malformed_capsules`, once per case, in the KEM consumer's
+///   scope, the case payload's defaults.
+/// Act:     `malformed_capsules`, once per case, in the case consumer's
 ///   method.
 /// Assert:  `vectors` holds `3` records whose `draws` each hold `4` times
 ///   `<P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH` bytes, and
@@ -205,28 +175,39 @@ fn every_record_holds_a_well_formed_capsule_and_an_ill_formed_displacement() {
 /// Mocked:  nothing; the operating-system generator runs real.
 #[test]
 fn every_run_emits_the_configured_count_of_records_with_distinct_draws() {
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
+    // Arrange
+    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(3) });
+
+    struct CaseConsumer {
         count: VectorCount,
-        identity: &'a [u8],
     }
 
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl IMalformedCapsulesCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_malformed_capsules_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            _independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Act
             let returned = malformed_capsules::<K>(
-                &build_malformed_capsules_deps(&payload.adapter, self.subject, Default::default()),
+                &build_malformed_capsules_deps(kem, random, Default::default()),
                 build_malformed_capsules_params(MalformedCapsulesParamsOverrides {
                     count: Some(self.count),
-                    scope: Some(payload.scope()),
                 }),
-                build_malformed_capsules_payload(self.identity, Default::default()),
+                build_malformed_capsules_payload(MalformedCapsulesPayloadOverrides {
+                    identity: Some(identity),
+                }),
             );
             let success = returned.expect("the subject's calls succeed");
             // Assert
@@ -247,222 +228,33 @@ fn every_run_emits_the_configured_count_of_records_with_distinct_draws() {
         }
     }
 
-    struct PairingConsumer {
-        count: VectorCount,
-    }
-
-    impl IPairingConsumer for PairingConsumer {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                    kind: Some(RandomSourceKind::OperatingSystem),
-                }),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the operating-system source constructs");
-            for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                let hashing = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_selection,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection constructs");
-                for kem_selection in DECLARED_KEM_SELECTIONS {
-                    let identity: Vec<u8> = match kem_selection.scope {
-                        IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
-                        IdentityScope::Asset => vec![0x44; ASSET_IDENTITY_HASH_LENGTH],
-                    };
-                    let created = create_kem(
-                        &build_create_kem_deps(
-                            &payload.adapter,
-                            &*hashing.adapter,
-                            KemConsumer {
-                                subject: &*subject_source.adapter,
-                                count: self.count,
-                                identity: identity.as_slice(),
+    for pairing_concrete in PAIRING_CONCRETES {
+        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            for kem_selection in DECLARED_KEM_SELECTIONS {
+                // Act
+                let returned = run_malformed_capsules_case(
+                    &build_malformed_capsules_case_deps(CaseConsumer { count }, Default::default()),
+                    build_malformed_capsules_case_params(MalformedCapsulesCaseParamsOverrides {
+                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                            concrete: Some(*pairing_concrete),
+                            ..Default::default()
+                        })),
+                        hash_to_scalar: Some(*h2s_selection),
+                        kem: Some(*kem_selection),
+                        random_source: Some(build_create_random_source_params(
+                            CreateRandomSourceParamsOverrides {
+                                kind: Some(RandomSourceKind::OperatingSystem),
                             },
-                            Default::default(),
-                        ),
-                        *kem_selection,
-                        build_create_kem_payload(Default::default()),
-                    );
-                    created.expect("the declared selection constructs");
-                }
+                        )),
+                    }),
+                    build_malformed_capsules_case_payload(Default::default()),
+                );
+                // Assert
+                assert!(returned.is_ok());
             }
         }
-    }
-
-    // Arrange
-    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(3) });
-    for pairing_concrete in PAIRING_CONCRETES {
-        // Act
-        let created = create_pairing(
-            &build_create_pairing_deps(PairingConsumer { count }, Default::default()),
-            build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*pairing_concrete),
-                ..Default::default()
-            }),
-            build_create_pairing_payload(Default::default()),
-        );
-        // Assert
-        assert!(created.is_ok());
     }
     // every_run_emits_the_configured_count_of_records_with_distinct_draws
-}
-
-/// Contract: own entry
-///   `an_identity_that_is_not_an_asset_identity_hash_is_refused_whole_under_the_asset_scope`,
-///   as an outside caller observes it — an identity that is not a 32-byte
-///   array is refused in the function's `AssetIdentityLength` variant with
-///   the identity's length, and an all-zero 32-byte identity is refused in
-///   its `AssetIdentityHash` variant carrying the domain constructor's
-///   `AllZero` unchanged, while a well-formed identity is admitted and the
-///   entitlement scope reads no identity at all.
-/// Arrange: each asset-scope selection of `DECLARED_KEM_SELECTIONS` over
-///   every member of `PAIRING_CONCRETES` and every selection of
-///   `DECLARED_HASH_TO_SCALAR_SELECTIONS`; the identities `vec![0x44; 31]`,
-///   `vec![0x00; 32]`, and `vec![0x44; 32]` in turn, each with the `Err` it
-///   must equal or `None` for the admitted identity; and each
-///   entitlement-scope selection over `vec![0x44; 31]`.
-/// Act:     `malformed_capsules`, once per selection and identity, in the
-///   KEM consumer's method.
-/// Assert:  under the asset scope the results equal
-///   `Err(MalformedCapsulesErrorReturn::AssetIdentityLength { actual: 31 })`
-///   and `Err(MalformedCapsulesErrorReturn::AssetIdentityHash(
-///   AssetIdentityHashTryNewErrorReturn::AllZero))` whole, and the third
-///   `is_ok()`; under the entitlement scope the result `is_ok()`; each
-///   factory's result is unpacked by `expect` naming the declared selection
-///   and the outermost `Result` `is_ok()`, proving the consumers ran.
-/// Boundary: the public call `malformed_capsules`, with the route of the
-///   blocks above.
-/// Mocked:  nothing; the operating-system generator runs real.
-#[test]
-fn an_identity_that_is_not_an_asset_identity_hash_is_refused_whole_under_the_asset_scope() {
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
-        count: VectorCount,
-        identity: &'a [u8],
-        expected: &'a Option<MalformedCapsulesErrorReturn>,
-    }
-
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
-        type Output = ();
-
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
-            &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
-            // Act
-            let returned = malformed_capsules::<K>(
-                &build_malformed_capsules_deps(&payload.adapter, self.subject, Default::default()),
-                build_malformed_capsules_params(MalformedCapsulesParamsOverrides {
-                    count: Some(self.count),
-                    scope: Some(payload.scope()),
-                }),
-                build_malformed_capsules_payload(self.identity, Default::default()),
-            );
-            // Assert
-            assert_eq!(returned.err(), *self.expected);
-        }
-    }
-
-    struct PairingConsumer {
-        count: VectorCount,
-    }
-
-    impl IPairingConsumer for PairingConsumer {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                    kind: Some(RandomSourceKind::OperatingSystem),
-                }),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the operating-system source constructs");
-            let asset_cases: [(Vec<u8>, Option<MalformedCapsulesErrorReturn>); 3] = [
-                (
-                    vec![0x44; ASSET_IDENTITY_HASH_LENGTH - 1],
-                    Some(MalformedCapsulesErrorReturn::AssetIdentityLength {
-                        actual: ASSET_IDENTITY_HASH_LENGTH - 1,
-                    }),
-                ),
-                (
-                    vec![0x00; ASSET_IDENTITY_HASH_LENGTH],
-                    Some(MalformedCapsulesErrorReturn::AssetIdentityHash(
-                        AssetIdentityHashTryNewErrorReturn::AllZero,
-                    )),
-                ),
-                (vec![0x44; ASSET_IDENTITY_HASH_LENGTH], None),
-            ];
-            let entitlement_cases: [(Vec<u8>, Option<MalformedCapsulesErrorReturn>); 1] =
-                [(vec![0x44; ASSET_IDENTITY_HASH_LENGTH - 1], None)];
-            for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                let hashing = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_selection,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection constructs");
-                for kem_selection in DECLARED_KEM_SELECTIONS {
-                    let cases: &[(Vec<u8>, Option<MalformedCapsulesErrorReturn>)] =
-                        match kem_selection.scope {
-                            IdentityScope::Entitlement => &entitlement_cases,
-                            IdentityScope::Asset => &asset_cases,
-                        };
-                    for (identity, expected) in cases {
-                        let created = create_kem(
-                            &build_create_kem_deps(
-                                &payload.adapter,
-                                &*hashing.adapter,
-                                KemConsumer {
-                                    subject: &*subject_source.adapter,
-                                    count: self.count,
-                                    identity: identity.as_slice(),
-                                    expected,
-                                },
-                                Default::default(),
-                            ),
-                            *kem_selection,
-                            build_create_kem_payload(Default::default()),
-                        );
-                        created.expect("the declared selection constructs");
-                    }
-                }
-            }
-        }
-    }
-
-    // Arrange
-    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(1) });
-    for pairing_concrete in PAIRING_CONCRETES {
-        // Act
-        let created = create_pairing(
-            &build_create_pairing_deps(PairingConsumer { count }, Default::default()),
-            build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*pairing_concrete),
-                ..Default::default()
-            }),
-            build_create_pairing_payload(Default::default()),
-        );
-        // Assert
-        assert!(created.is_ok());
-    }
-    // an_identity_that_is_not_an_asset_identity_hash_is_refused_whole_under_the_asset_scope
 }
 
 /// Contract: own entry `a_draw_refusal_reaches_the_caller_whole`, as an
@@ -477,7 +269,7 @@ fn an_identity_that_is_not_an_asset_identity_hash_is_refused_whole_under_the_ass
 ///   `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::
 ///   FillBytesRefused)`, and, as the counterfactual, the source for
 ///   `RandomSourceKind::OperatingSystem`.
-/// Act:     `malformed_capsules`, once per source, in the KEM consumer's
+/// Act:     `malformed_capsules`, once per source, in the case consumer's
 ///   method.
 /// Assert:  the result under the refusing source equals
 ///   `Err(MalformedCapsulesErrorReturn::FillBytes(FillBytesErrorReturn::
@@ -491,128 +283,90 @@ fn an_identity_that_is_not_an_asset_identity_hash_is_refused_whole_under_the_ass
 ///   family's mock concrete selected by configuration.
 #[test]
 fn a_draw_refusal_reaches_the_caller_whole() {
-    struct KemConsumer<'a> {
-        refusing: &'a dyn IRandomSourceAdapter,
-        subject: &'a dyn IRandomSourceAdapter,
+    // Arrange
+    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(1) });
+
+    struct CaseConsumer<'a> {
         count: VectorCount,
-        identity: &'a [u8],
+        expected: &'a Option<MalformedCapsulesErrorReturn>,
     }
 
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl IMalformedCapsulesCaseConsumer for CaseConsumer<'_> {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_malformed_capsules_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            _independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Act
-            let refused = malformed_capsules::<K>(
-                &build_malformed_capsules_deps(&payload.adapter, self.refusing, Default::default()),
+            let returned = malformed_capsules::<K>(
+                &build_malformed_capsules_deps(kem, random, Default::default()),
                 build_malformed_capsules_params(MalformedCapsulesParamsOverrides {
                     count: Some(self.count),
-                    scope: Some(payload.scope()),
                 }),
-                build_malformed_capsules_payload(self.identity, Default::default()),
+                build_malformed_capsules_payload(MalformedCapsulesPayloadOverrides {
+                    identity: Some(identity),
+                }),
             );
             // Assert
-            assert_eq!(
-                refused.err(),
-                Some(MalformedCapsulesErrorReturn::FillBytes(
-                    FillBytesErrorReturn::MockIRandomSourceAdapter
-                ))
-            );
-            // Act
-            let admitted = malformed_capsules::<K>(
-                &build_malformed_capsules_deps(&payload.adapter, self.subject, Default::default()),
-                build_malformed_capsules_params(MalformedCapsulesParamsOverrides {
-                    count: Some(self.count),
-                    scope: Some(payload.scope()),
-                }),
-                build_malformed_capsules_payload(self.identity, Default::default()),
-            );
-            // Assert
-            assert!(admitted.is_ok());
+            assert_eq!(returned.err(), *self.expected);
         }
     }
 
-    struct PairingConsumer {
-        count: VectorCount,
-    }
-
-    impl IPairingConsumer for PairingConsumer {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let refusing_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                    kind: Some(RandomSourceKind::Mock(
-                        MockIRandomSourceAdapterFailureMode::FillBytesRefused,
-                    )),
-                }),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the configured selection constructs");
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                    kind: Some(RandomSourceKind::OperatingSystem),
-                }),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the operating-system source constructs");
-            for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                let hashing = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_selection,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection constructs");
-                for kem_selection in DECLARED_KEM_SELECTIONS {
-                    let identity: Vec<u8> = match kem_selection.scope {
-                        IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
-                        IdentityScope::Asset => vec![0x44; ASSET_IDENTITY_HASH_LENGTH],
-                    };
-                    let created = create_kem(
-                        &build_create_kem_deps(
-                            &payload.adapter,
-                            &*hashing.adapter,
-                            KemConsumer {
-                                refusing: &*refusing_source.adapter,
-                                subject: &*subject_source.adapter,
-                                count: self.count,
-                                identity: identity.as_slice(),
-                            },
+    let refused_expected = Some(MalformedCapsulesErrorReturn::FillBytes(
+        FillBytesErrorReturn::MockIRandomSourceAdapter,
+    ));
+    let admitted_expected: Option<MalformedCapsulesErrorReturn> = None;
+    for pairing_concrete in PAIRING_CONCRETES {
+        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            for kem_selection in DECLARED_KEM_SELECTIONS {
+                for (kind, expected) in [
+                    (
+                        RandomSourceKind::Mock(
+                            MockIRandomSourceAdapterFailureMode::FillBytesRefused,
+                        ),
+                        &refused_expected,
+                    ),
+                    (RandomSourceKind::OperatingSystem, &admitted_expected),
+                ] {
+                    // Act
+                    let returned = run_malformed_capsules_case(
+                        &build_malformed_capsules_case_deps(
+                            CaseConsumer { count, expected },
                             Default::default(),
                         ),
-                        *kem_selection,
-                        build_create_kem_payload(Default::default()),
+                        build_malformed_capsules_case_params(
+                            MalformedCapsulesCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                hash_to_scalar: Some(*h2s_selection),
+                                kem: Some(*kem_selection),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(kind) },
+                                )),
+                            },
+                        ),
+                        build_malformed_capsules_case_payload(Default::default()),
                     );
-                    created.expect("the declared selection constructs");
+                    // Assert
+                    assert!(returned.is_ok());
                 }
             }
         }
-    }
-
-    // Arrange
-    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(1) });
-    for pairing_concrete in PAIRING_CONCRETES {
-        // Act
-        let created = create_pairing(
-            &build_create_pairing_deps(PairingConsumer { count }, Default::default()),
-            build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*pairing_concrete),
-                ..Default::default()
-            }),
-            build_create_pairing_payload(Default::default()),
-        );
-        // Assert
-        assert!(created.is_ok());
     }
     // a_draw_refusal_reaches_the_caller_whole
 }
@@ -630,7 +384,7 @@ fn a_draw_refusal_reaches_the_caller_whole() {
 ///   member of `PAIRING_CONCRETES`; the expected `error` the literal
 ///   `SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual:
 ///   16 }`.
-/// Act:     `malformed_capsules`, once per pairing selection, in the KEM
+/// Act:     `malformed_capsules`, once per pairing selection, in the case
 ///   consumer's method.
 /// Assert:  the result under the refusing selection equals
 ///   `Err(MalformedCapsulesErrorReturn::Setup(SetupErrorReturn::
@@ -645,29 +399,40 @@ fn a_draw_refusal_reaches_the_caller_whole() {
 ///   the operating-system generator runs real.
 #[test]
 fn a_setup_sampling_refusal_reaches_the_caller_whole() {
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
+    // Arrange
+    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(1) });
+
+    struct CaseConsumer<'a> {
         count: VectorCount,
-        identity: &'a [u8],
         expected: &'a Option<SampleUniformScalarErrorReturn>,
     }
 
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl IMalformedCapsulesCaseConsumer for CaseConsumer<'_> {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_malformed_capsules_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            _independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Act
             let returned = malformed_capsules::<K>(
-                &build_malformed_capsules_deps(&payload.adapter, self.subject, Default::default()),
+                &build_malformed_capsules_deps(kem, random, Default::default()),
                 build_malformed_capsules_params(MalformedCapsulesParamsOverrides {
                     count: Some(self.count),
-                    scope: Some(payload.scope()),
                 }),
-                build_malformed_capsules_payload(self.identity, Default::default()),
+                build_malformed_capsules_payload(MalformedCapsulesPayloadOverrides {
+                    identity: Some(identity),
+                }),
             );
             // Assert
             assert_eq!(
@@ -686,104 +451,74 @@ fn a_setup_sampling_refusal_reaches_the_caller_whole() {
         }
     }
 
-    struct PairingConsumer<'a> {
-        count: VectorCount,
-        expected: &'a Option<SampleUniformScalarErrorReturn>,
-    }
-
-    impl IPairingConsumer for PairingConsumer<'_> {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                    kind: Some(RandomSourceKind::OperatingSystem),
-                }),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the operating-system source constructs");
-            for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                let hashing = create_hash_to_scalar::<P::Scalar>(
-                    &build_create_hash_to_scalar_deps(Default::default()),
-                    *h2s_selection,
-                    build_create_hash_to_scalar_payload(Default::default()),
-                )
-                .expect("the declared selection constructs");
-                for kem_selection in DECLARED_KEM_SELECTIONS {
-                    let identity: Vec<u8> = match kem_selection.scope {
-                        IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
-                        IdentityScope::Asset => vec![0x44; ASSET_IDENTITY_HASH_LENGTH],
-                    };
-                    let created = create_kem(
-                        &build_create_kem_deps(
-                            &payload.adapter,
-                            &*hashing.adapter,
-                            KemConsumer {
-                                subject: &*subject_source.adapter,
-                                count: self.count,
-                                identity: identity.as_slice(),
-                                expected: self.expected,
-                            },
-                            Default::default(),
-                        ),
-                        *kem_selection,
-                        build_create_kem_payload(Default::default()),
-                    );
-                    created.expect("the declared selection constructs");
-                }
-            }
-        }
-    }
-
-    // Arrange
-    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(1) });
     let refused_expected = Some(SampleUniformScalarErrorReturn::WrongLength {
         expected: 16,
         actual: 16,
     });
+    for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for kem_selection in DECLARED_KEM_SELECTIONS {
+            // Act
+            let returned = run_malformed_capsules_case(
+                &build_malformed_capsules_case_deps(
+                    CaseConsumer {
+                        count,
+                        expected: &refused_expected,
+                    },
+                    Default::default(),
+                ),
+                build_malformed_capsules_case_params(MalformedCapsulesCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(PairingConcrete::Mock(
+                            MockIPairingAdapterFailureMode::SampleScalarWrongLength,
+                        )),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(*h2s_selection),
+                    kem: Some(*kem_selection),
+                    random_source: Some(build_create_random_source_params(
+                        CreateRandomSourceParamsOverrides {
+                            kind: Some(RandomSourceKind::OperatingSystem),
+                        },
+                    )),
+                }),
+                build_malformed_capsules_case_payload(Default::default()),
+            );
+            // Assert
+            assert!(returned.is_ok());
+        }
+    }
     let admitted_expected: Option<SampleUniformScalarErrorReturn> = None;
-    // Act
-    let refused = create_pairing(
-        &build_create_pairing_deps(
-            PairingConsumer {
-                count,
-                expected: &refused_expected,
-            },
-            Default::default(),
-        ),
-        build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(PairingConcrete::Mock(
-                MockIPairingAdapterFailureMode::SampleScalarWrongLength,
-            )),
-            ..Default::default()
-        }),
-        build_create_pairing_payload(Default::default()),
-    );
-    // Assert
-    assert!(refused.is_ok());
     for pairing_concrete in PAIRING_CONCRETES {
-        // Act
-        let created = create_pairing(
-            &build_create_pairing_deps(
-                PairingConsumer {
-                    count,
-                    expected: &admitted_expected,
-                },
-                Default::default(),
-            ),
-            build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*pairing_concrete),
-                ..Default::default()
-            }),
-            build_create_pairing_payload(Default::default()),
-        );
-        // Assert
-        assert!(created.is_ok());
+        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            for kem_selection in DECLARED_KEM_SELECTIONS {
+                // Act
+                let returned = run_malformed_capsules_case(
+                    &build_malformed_capsules_case_deps(
+                        CaseConsumer {
+                            count,
+                            expected: &admitted_expected,
+                        },
+                        Default::default(),
+                    ),
+                    build_malformed_capsules_case_params(MalformedCapsulesCaseParamsOverrides {
+                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                            concrete: Some(*pairing_concrete),
+                            ..Default::default()
+                        })),
+                        hash_to_scalar: Some(*h2s_selection),
+                        kem: Some(*kem_selection),
+                        random_source: Some(build_create_random_source_params(
+                            CreateRandomSourceParamsOverrides {
+                                kind: Some(RandomSourceKind::OperatingSystem),
+                            },
+                        )),
+                    }),
+                    build_malformed_capsules_case_payload(Default::default()),
+                );
+                // Assert
+                assert!(returned.is_ok());
+            }
+        }
     }
     // a_setup_sampling_refusal_reaches_the_caller_whole
 }
@@ -798,15 +533,16 @@ fn a_setup_sampling_refusal_reaches_the_caller_whole() {
 ///   `create_hash_to_scalar` over `build_create_hash_to_scalar_params`
 ///   overriding `concrete` with `HashToScalarConcrete::Mock(
 ///   MockIHashToScalarAdapterFailureMode::SamplingRefused)`, the identity
-///   `vec![0x44; 32]` under the asset scope and `b"pkg@1.0.0#1"` under the
-///   entitlement scope; the expected `error` the literal
-///   `HashToScalarErrorReturn::Sampling(SampleUniformScalarErrorReturn::
-///   WrongLength { expected: <P::Scalar as ISampleUniformScalar>::
-///   UNIFORM_BYTES_LENGTH, actual: 0 })`.
-/// Act:     `malformed_capsules`, once per selection and scope, in the KEM
+///   bytes `[0x44; 32]` under the asset scope and `b"pkg@1.0.0#1"` under
+///   the entitlement scope, the case payload's defaults; the expected
+///   `error` the literal `HashToScalarErrorReturn::Sampling(
+///   SampleUniformScalarErrorReturn::WrongLength
+///   { expected: <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH,
+///   actual: 0 })`.
+/// Act:     `malformed_capsules`, once per selection and scope, in the case
 ///   consumer's method.
-/// Assert:  under the asset scope the result's `Err` equals
-///   `Some(MalformedCapsulesErrorReturn::Setup(SetupErrorReturn::
+/// Assert:  under the asset scope the result equals
+///   `Err(MalformedCapsulesErrorReturn::Setup(SetupErrorReturn::
 ///   HashToScalar(error)))` whole, `error` the expected literal; under the
 ///   entitlement scope the result `is_ok()`; each factory's result is
 ///   unpacked by `expect` naming the declared selection and the outermost
@@ -817,20 +553,36 @@ fn a_setup_sampling_refusal_reaches_the_caller_whole() {
 ///   configuration; the operating-system generator runs real.
 #[test]
 fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
-    struct KemConsumer<'a> {
-        subject: &'a dyn IRandomSourceAdapter,
+    // Arrange
+    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(1) });
+    let hash_to_scalar = build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
+        concrete: Some(HashToScalarConcrete::Mock(
+            MockIHashToScalarAdapterFailureMode::SamplingRefused,
+        )),
+        ..Default::default()
+    });
+
+    struct CaseConsumer {
         count: VectorCount,
-        identity: &'a [u8],
     }
 
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'_> {
+    impl IMalformedCapsulesCaseConsumer for CaseConsumer {
         type Output = ();
 
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
+        fn consume_malformed_capsules_case<P, H, K>(
             &self,
-            _params: ConsumeKemParams,
-            payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
+            _pairing: &P,
+            _hash_to_scalar: &H,
+            kem: &K,
+            random: &dyn IRandomSourceAdapter,
+            _independent: &dyn IRandomSourceAdapter,
+            identity: AdmittedKemIdentity<'_>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+            K: ICredentialKemAdapter<Pairing = P>,
+        {
             // Arrange
             let expected =
                 HashToScalarErrorReturn::Sampling(SampleUniformScalarErrorReturn::WrongLength {
@@ -839,17 +591,18 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
                 });
             // Act
             let returned = malformed_capsules::<K>(
-                &build_malformed_capsules_deps(&payload.adapter, self.subject, Default::default()),
+                &build_malformed_capsules_deps(kem, random, Default::default()),
                 build_malformed_capsules_params(MalformedCapsulesParamsOverrides {
                     count: Some(self.count),
-                    scope: Some(payload.scope()),
                 }),
-                build_malformed_capsules_payload(self.identity, Default::default()),
+                build_malformed_capsules_payload(MalformedCapsulesPayloadOverrides {
+                    identity: Some(identity),
+                }),
             );
             // Assert
-            match payload.scope() {
-                IdentityScope::Entitlement => assert!(returned.is_ok()),
-                IdentityScope::Asset => assert_eq!(
+            match identity.setup_scope {
+                SetupScope::Entitlement => assert!(returned.is_ok()),
+                SetupScope::Asset { .. } => assert_eq!(
                     returned.err(),
                     Some(MalformedCapsulesErrorReturn::Setup(
                         SetupErrorReturn::HashToScalar(expected)
@@ -859,75 +612,29 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
         }
     }
 
-    struct PairingConsumer {
-        count: VectorCount,
-    }
-
-    impl IPairingConsumer for PairingConsumer {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let subject_source = create_random_source(
-                &build_create_random_source_deps(Default::default()),
-                build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                    kind: Some(RandomSourceKind::OperatingSystem),
-                }),
-                build_create_random_source_payload(Default::default()),
-            )
-            .expect("the operating-system source constructs");
-            let hashing = create_hash_to_scalar::<P::Scalar>(
-                &build_create_hash_to_scalar_deps(Default::default()),
-                build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
-                    concrete: Some(HashToScalarConcrete::Mock(
-                        MockIHashToScalarAdapterFailureMode::SamplingRefused,
-                    )),
-                    ..Default::default()
-                }),
-                build_create_hash_to_scalar_payload(Default::default()),
-            )
-            .expect("the configured selection constructs");
-            for kem_selection in DECLARED_KEM_SELECTIONS {
-                let identity: Vec<u8> = match kem_selection.scope {
-                    IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
-                    IdentityScope::Asset => vec![0x44; ASSET_IDENTITY_HASH_LENGTH],
-                };
-                let created = create_kem(
-                    &build_create_kem_deps(
-                        &payload.adapter,
-                        &*hashing.adapter,
-                        KemConsumer {
-                            subject: &*subject_source.adapter,
-                            count: self.count,
-                            identity: identity.as_slice(),
-                        },
-                        Default::default(),
-                    ),
-                    *kem_selection,
-                    build_create_kem_payload(Default::default()),
-                );
-                created.expect("the declared selection constructs");
-            }
-        }
-    }
-
-    // Arrange
-    let count = build_vector_count(VectorCountConstructorParamsOverrides { count: Some(1) });
     for pairing_concrete in PAIRING_CONCRETES {
-        // Act
-        let created = create_pairing(
-            &build_create_pairing_deps(PairingConsumer { count }, Default::default()),
-            build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*pairing_concrete),
-                ..Default::default()
-            }),
-            build_create_pairing_payload(Default::default()),
-        );
-        // Assert
-        assert!(created.is_ok());
+        for kem_selection in DECLARED_KEM_SELECTIONS {
+            // Act
+            let returned = run_malformed_capsules_case(
+                &build_malformed_capsules_case_deps(CaseConsumer { count }, Default::default()),
+                build_malformed_capsules_case_params(MalformedCapsulesCaseParamsOverrides {
+                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                        concrete: Some(*pairing_concrete),
+                        ..Default::default()
+                    })),
+                    hash_to_scalar: Some(hash_to_scalar),
+                    kem: Some(*kem_selection),
+                    random_source: Some(build_create_random_source_params(
+                        CreateRandomSourceParamsOverrides {
+                            kind: Some(RandomSourceKind::OperatingSystem),
+                        },
+                    )),
+                }),
+                build_malformed_capsules_case_payload(Default::default()),
+            );
+            // Assert
+            assert!(returned.is_ok());
+        }
     }
     // a_hash_to_scalar_refusal_reaches_the_caller_whole
 }

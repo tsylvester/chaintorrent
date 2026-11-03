@@ -231,25 +231,6 @@ note: required by a bound in `admit_selections::interface::_::_serde::ser::Seria
      |                     ^^^^^^^^^ required by this bound in `SerializeStruct::serialize_field`
      = note: this error originates in the derive macro `Serialize` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0432]: unresolved imports `crate::generate::provides::EvmGenerateSettingsOverrides`, `crate::generate::provides::build_evm_generate_settings`
-  --> apps\harness-crypto\src\config\test.rs:45:5
-   |
-45 |     EvmGenerateSettingsOverrides, GenerateConcrete, SpdxLicenseIdentifierTryNewErrorReturn,
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `EvmGenerateSettingsOverrides` in `generate::provides`
-46 |     VectorKind, VectorKindConfigurationOverrides, build_evm_generate_settings,
-   |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `build_evm_generate_settings` in `generate::provides`
-   |
-help: a similar name exists in the module
-   |
-45 -     EvmGenerateSettingsOverrides, GenerateConcrete, SpdxLicenseIdentifierTryNewErrorReturn,
-45 +     SolidityGenerateSettingsOverrides, GenerateConcrete, SpdxLicenseIdentifierTryNewErrorReturn,
-   |
-help: a similar name exists in the module
-   |
-46 -     VectorKind, VectorKindConfigurationOverrides, build_evm_generate_settings,
-46 +     VectorKind, VectorKindConfigurationOverrides, build_solidity_generate_settings,
-   |
-
 error[E0277]: the trait bound `ChainFormsIdentifier: serde::Serialize` is not satisfied
     --> apps\harness-crypto\src\config\admit_selections\interface.rs:28:45
      |
@@ -281,6 +262,33 @@ note: required by a bound in `admit_selections::interface::_::_serde::ser::Seria
      |                     ^^^^^^^^^ required by this bound in `SerializeStruct::serialize_field`
      = note: this error originates in the derive macro `Serialize` (in Nightly builds, run with -Z macro-backtrace for more info)
 
+error[E0560]: struct `challenge_vectors::interface::CanonicalDeliveryContext` has no field named `asset_identity_hash`
+   --> apps\harness-crypto\src\config\admit_statements\mod.rs:319:13
+    |
+319 |             asset_identity_hash,
+    |             ^^^^^^^^^^^^^^^^^^^ `challenge_vectors::interface::CanonicalDeliveryContext` does not have this field
+    |
+    = note: available fields are: `asset_root`
+
+error[E0432]: unresolved imports `crate::generate::provides::EvmGenerateSettingsOverrides`, `crate::generate::provides::build_evm_generate_settings`
+  --> apps\harness-crypto\src\config\test.rs:45:5
+   |
+45 |     EvmGenerateSettingsOverrides, GenerateConcrete, SpdxLicenseIdentifierTryNewErrorReturn,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `EvmGenerateSettingsOverrides` in `generate::provides`
+46 |     VectorKind, VectorKindConfigurationOverrides, build_evm_generate_settings,
+   |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `build_evm_generate_settings` in `generate::provides`
+   |
+help: a similar name exists in the module
+   |
+45 -     EvmGenerateSettingsOverrides, GenerateConcrete, SpdxLicenseIdentifierTryNewErrorReturn,
+45 +     SolidityGenerateSettingsOverrides, GenerateConcrete, SpdxLicenseIdentifierTryNewErrorReturn,
+   |
+help: a similar name exists in the module
+   |
+46 -     VectorKind, VectorKindConfigurationOverrides, build_evm_generate_settings,
+46 +     VectorKind, VectorKindConfigurationOverrides, build_solidity_generate_settings,
+   |
+
 error[E0432]: unresolved import `crate::generate::provides::create_generate`
   --> apps\harness-crypto\src\run\generate_consumer\integration_test.rs:59:35
    |
@@ -304,14 +312,6 @@ help: a similar name exists in the module
 51 -     create_generate,
 51 +     CreateGenerateFn,
    |
-
-error[E0560]: struct `challenge_vectors::interface::CanonicalDeliveryContext` has no field named `asset_identity_hash`
-   --> apps\harness-crypto\src\config\admit_statements\mod.rs:319:13
-    |
-319 |             asset_identity_hash,
-    |             ^^^^^^^^^^^^^^^^^^^ `challenge_vectors::interface::CanonicalDeliveryContext` does not have this field
-    |
-    = note: available fields are: `asset_root`
 
 error[E0560]: struct `generate::factory::interface::CreateGenerateParams` has no field named `scope`
   --> apps\harness-crypto\src\run\delivery_proof_consumer\mod.rs:88:17
@@ -380,46 +380,6 @@ error[E0560]: struct `CreateDeliveryProofParams` has no field named `verifier_fo
    |                 ^^^^^^^^^^^^^ `CreateDeliveryProofParams` does not have this field
    |
    = note: all struct fields are already assigned
-
-error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\cross_holder\mod.rs:166:25
-    |
-166 |                         identity_hash: &hash,
-    |                         ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\cross_holder\mod.rs:169:25
-    |
-169 |                         identity_hash: &hash,
-    |                         ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\malformed_capsules\mod.rs:148:25
-    |
-148 |                         identity_hash: &hash,
-    |                         ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\rerandomization\mod.rs:153:25
-    |
-153 |                         identity_hash: &hash,
-    |                         ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\rerandomization\mod.rs:156:25
-    |
-156 |                         identity_hash: &hash,
-    |                         ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
 
 error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
    --> apps\harness-crypto\src\config\admit_generate\test.rs:74:35
@@ -627,6 +587,10 @@ error[E0609]: no field `asset_identity_hash` on type `challenge_vectors::interfa
     |
     = note: available fields are: `suite_identifier`, `chain`, `entitlement_contract`, `asset_root`, `parameter_set_identifier` ... and 7 others
 
+Some errors have detailed explanations: E0107, E0277, E0308, E0369, E0432, E0560, E0599.
+For more information about an error, try `rustc --explain E0107`.
+error: could not compile `harness-crypto` (lib) due to 22 previous errors
+warning: build failed, waiting for other jobs to finish...
 error[E0599]: no variant named `Evm` found for enum `generate::factory::interface::GenerateConcrete`
    --> apps\harness-crypto\src\config\test.rs:446:27
     |
@@ -649,10 +613,6 @@ error[E0599]: no variant named `Evm` found for enum `generate::factory::interfac
 173 | pub enum GenerateConcrete {
     | ------------------------- variant `Evm` not found here
 
-Some errors have detailed explanations: E0107, E0277, E0308, E0369, E0432, E0559, E0560, E0599.
-For more information about an error, try `rustc --explain E0107`.
-error: could not compile `harness-crypto` (lib) due to 27 previous errors
-warning: build failed, waiting for other jobs to finish...
 error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
    --> apps\harness-crypto\src\run\delivery_proof_consumer\integration_test.rs:160:25
     |
@@ -1279,86 +1239,6 @@ help: provide the argument
 1052 ~                 ),
      |
 
-error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\cross_holder\integration_test.rs:301:29
-    |
-301 | ...                   identity_hash: &hash,
-    |                       ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\cross_holder\integration_test.rs:304:29
-    |
-304 | ...                   identity_hash: &hash,
-    |                       ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\cross_holder\test_basic.rs:909:29
-    |
-909 | ...                   identity_hash: self.identity_hash,
-    |                       ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\cross_holder\test_basic.rs:927:33
-    |
-927 | ...                   identity_hash: self.identity_hash,
-    |                       ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\malformed_capsules\integration_test.rs:261:25
-    |
-261 |                         identity_hash: &hash,
-    |                         ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\malformed_capsules\test_basic.rs:750:29
-    |
-750 | ...                   identity_hash: self.identity_hash,
-    |                       ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\rerandomization\integration_test.rs:315:29
-    |
-315 | ...                   identity_hash: &hash,
-    |                       ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\rerandomization\integration_test.rs:318:29
-    |
-318 | ...                   identity_hash: &hash,
-    |                       ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `SetupScope<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\rerandomization\test_basic.rs:807:29
-    |
-807 | ...                   identity_hash: self.identity_hash,
-    |                       ^^^^^^^^^^^^^ `SetupScope<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-error[E0559]: variant `KemIdentity<'_>::Asset` has no field named `identity_hash`
-   --> apps\harness-crypto\src\vectors\rerandomization\test_basic.rs:825:33
-    |
-825 | ...                   identity_hash: self.identity_hash,
-    |                       ^^^^^^^^^^^^^ `KemIdentity<'_>::Asset` does not have this field
-    |
-    = note: available fields are: `root`
-
-Some errors have detailed explanations: E0061, E0107, E0277, E0308, E0369, E0432, E0559, E0560, E0599...
+Some errors have detailed explanations: E0061, E0107, E0277, E0308, E0369, E0432, E0560, E0599, E0609.
 For more information about an error, try `rustc --explain E0061`.
-error: could not compile `harness-crypto` (lib test) due to 89 previous errors
+error: could not compile `harness-crypto` (lib test) due to 74 previous errors
