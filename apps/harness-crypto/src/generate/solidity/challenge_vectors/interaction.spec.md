@@ -16,9 +16,8 @@ Branch contract for the `challenge_vectors` module of the `solidity` module of t
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| count | `payload.values` does not convert into `[CanonicalFieldValue; CHALLENGE_VECTOR_FIELD_COUNT]` | the conversion's return | none | `Err(ChallengeVectorFromFieldsErrorReturn::FieldCount { expected: CHALLENGE_VECTOR_FIELD_COUNT, actual })`, `actual` the vector's length |
-| kind | the lowest index `i` whose value is not the kind `CHALLENGE_VECTOR_FIELD_KINDS` holds at `i` | that index's kind against the kinds constant | none | `Err(ChallengeVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`, `expected` the kind `CHALLENGE_VECTOR_FIELD_KINDS` holds at `i` |
-| rebuilt | the count converts and every value holds the kind its index declares | none | none | `Ok(FromFieldsSuccessReturn { described: ChallengeVector { purpose, draws, encoding, challenge } })`, each moved from its field |
+| fields refused | `CanonicalFieldReader::try_new`, the `read_unsigned16`, a `read_bytes`, or the `read_unsigned256` returns `Err(error)` | the call's return | `CanonicalFieldReader::try_new(payload, Self::FIELDS)`, then `read_unsigned16` for `purpose`, `read_bytes` for `draws` and `encoding`, and `read_unsigned256` for `challenge`, in that order | `Err(ChallengeVectorFromFieldsErrorReturn::Fields(error))`, the refusal unchanged |
+| rebuilt | the reader's construction and every read return `Ok` | none | the same calls | `Ok(FromFieldsSuccessReturn { described: ChallengeVector { purpose, draws, encoding, challenge } })`, each the value its read returned |
 
 ## `member_names`
 

@@ -3,7 +3,7 @@ use chain::IChainForms;
 use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams};
 use core::convert::Infallible;
 use core::marker::PhantomData;
-use encoding::{CanonicalFieldKind, CanonicalFieldValue};
+use encoding::{CanonicalFieldReaderErrorReturn, CanonicalFieldValue};
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
@@ -194,26 +194,12 @@ pub type TransferProofVectorDescriptionTryNewReturn<F> =
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MintProofVectorFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TransferProofVectorFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

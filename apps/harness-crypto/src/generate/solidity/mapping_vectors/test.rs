@@ -1,8 +1,8 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, IEncodingContract,
-    build_canonical_fields, build_from_fields_params, build_to_fields_params,
+    CanonicalFieldReaderErrorReturn, CanonicalFieldValue, CanonicalFieldsOverrides,
+    IEncodingContract, build_canonical_fields, build_from_fields_params, build_to_fields_params,
 };
 use envelope::{
     KeyAgreementDeclaration, KeyAgreementDeclarationOverrides, build_key_agreement_declaration,
@@ -87,10 +87,9 @@ fn hash_to_scalar_vector_description_maps_tag_message_and_scalar_in_order() {
 }
 // hash_to_scalar_vector_description_maps_tag_message_and_scalar_in_order
 
-/// Contract: `payload.values` converts into the field array and each value is the kind
-///   `HASH_TO_SCALAR_VECTOR_FIELD_KINDS` holds at its index →
-///   `Ok(FromFieldsSuccessReturn { described: HashToScalarVector { tag, message,
-///   scalar } })`.
+/// Contract: the reader admits every field → `Ok(FromFieldsSuccessReturn {
+///   described: HashToScalarVector { tag, message, scalar } })`, each the value its
+///   read returned.
 /// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])`,
 ///   `Bytes(vec![0x0B, 0x0C])`, and `Unsigned256([0x0D; 32])`, and
 ///   `build_hash_to_scalar_vector_description(Default::default())`.
@@ -127,16 +126,19 @@ fn hash_to_scalar_vector_description_rebuilds_the_record_from_its_fields() {
 }
 // hash_to_scalar_vector_description_rebuilds_the_record_from_its_fields
 
-/// Contract: `payload.values` does not convert into the field array →
-///   `Err(HashToScalarVectorFromFieldsErrorReturn::FieldCount { expected, actual })`.
+/// Contract: a refusal of `CanonicalFieldReader::try_new` or of any read →
+///   `Err(HashToScalarVectorFromFieldsErrorReturn::Fields(error))`, the error
+///   unchanged.
 /// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])` and
-///   `Bytes(vec![0x0B])`.
+///   `Bytes(vec![0x0B])`, the description from
+///   `build_hash_to_scalar_vector_description(Default::default())`, and
+///   `build_from_fields_params(Default::default())`.
 /// Act:    `fields_to_value`.
 /// Assert: `result.err()` equals
-///   `Some(HashToScalarVectorFromFieldsErrorReturn::FieldCount { expected: 3,
-///   actual: 2 })`.
+///   `Some(HashToScalarVectorFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Count { expected: 3, actual: 2 }))`.
 #[test]
-fn hash_to_scalar_vector_description_refuses_a_wrong_field_count() {
+fn hash_to_scalar_vector_description_carries_the_readers_refusal() {
     // Arrange
     let payload = build_canonical_fields(CanonicalFieldsOverrides {
         values: Some(vec![
@@ -152,84 +154,15 @@ fn hash_to_scalar_vector_description_refuses_a_wrong_field_count() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(HashToScalarVectorFromFieldsErrorReturn::FieldCount {
-            expected: 3,
-            actual: 2,
-        })
+        Some(HashToScalarVectorFromFieldsErrorReturn::Fields(
+            CanonicalFieldReaderErrorReturn::Count {
+                expected: 3,
+                actual: 2,
+            }
+        ))
     );
 }
-// hash_to_scalar_vector_description_refuses_a_wrong_field_count
-
-/// Contract: the lowest index `i` whose value is not the kind
-///   `HASH_TO_SCALAR_VECTOR_FIELD_KINDS` holds at `i` →
-///   `Err(HashToScalarVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`.
-/// Arrange: `build_canonical_fields` with `values` `Unsigned256([0x0B; 32])`,
-///   `Bytes(vec![0x0C])`, and `Bytes(vec![0x0D])`, so the indexes `0` and `2` both
-///   hold a wrong kind.
-/// Act:    `fields_to_value`.
-/// Assert: `result.err()` equals
-///   `Some(HashToScalarVectorFromFieldsErrorReturn::FieldKind { index: 0,
-///   expected: CanonicalFieldKind::Bytes })`.
-#[test]
-fn hash_to_scalar_vector_description_refuses_the_lowest_index_of_the_wrong_kind() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Unsigned256([0x0B; 32]),
-            CanonicalFieldValue::Bytes(vec![0x0C]),
-            CanonicalFieldValue::Bytes(vec![0x0D]),
-        ]),
-    });
-    let description = build_hash_to_scalar_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(HashToScalarVectorFromFieldsErrorReturn::FieldKind {
-            index: 0,
-            expected: CanonicalFieldKind::Bytes,
-        })
-    );
-}
-// hash_to_scalar_vector_description_refuses_the_lowest_index_of_the_wrong_kind
-
-/// Contract: the lowest index `i` whose value is not the kind
-///   `HASH_TO_SCALAR_VECTOR_FIELD_KINDS` holds at `i` →
-///   `Err(HashToScalarVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`.
-/// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])`,
-///   `Bytes(vec![0x0B])`, and `Bytes(vec![0x0D])`.
-/// Act:    `fields_to_value`.
-/// Assert: `result.err()` equals
-///   `Some(HashToScalarVectorFromFieldsErrorReturn::FieldKind { index: 2,
-///   expected: CanonicalFieldKind::Unsigned256 })`.
-#[test]
-fn hash_to_scalar_vector_description_refuses_a_byte_string_scalar() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x0A]),
-            CanonicalFieldValue::Bytes(vec![0x0B]),
-            CanonicalFieldValue::Bytes(vec![0x0D]),
-        ]),
-    });
-    let description = build_hash_to_scalar_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(HashToScalarVectorFromFieldsErrorReturn::FieldKind {
-            index: 2,
-            expected: CanonicalFieldKind::Unsigned256,
-        })
-    );
-}
-// hash_to_scalar_vector_description_refuses_a_byte_string_scalar
+// hash_to_scalar_vector_description_carries_the_readers_refusal
 
 /// Contract: `to_fields` → `Ok(ToFieldsSuccessReturn { fields })` whose `values` are
 ///   `CanonicalFieldValue::Bytes` of a clone of `identity` and
@@ -267,10 +200,9 @@ fn identity_mapping_vector_description_maps_identity_and_scalar_in_order() {
 }
 // identity_mapping_vector_description_maps_identity_and_scalar_in_order
 
-/// Contract: `payload.values` converts into the field array and each value is the kind
-///   `IDENTITY_MAPPING_VECTOR_FIELD_KINDS` holds at its index →
-///   `Ok(FromFieldsSuccessReturn { described: IdentityMappingVector { identity,
-///   scalar } })`.
+/// Contract: the reader admits every field → `Ok(FromFieldsSuccessReturn {
+///   described: IdentityMappingVector { identity, scalar } })`, each the value its
+///   read returned.
 /// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0E])` and
 ///   `Unsigned256([0x0F; 32])`, and
 ///   `build_identity_mapping_vector_description(Default::default())`.
@@ -305,15 +237,19 @@ fn identity_mapping_vector_description_rebuilds_the_record_from_its_fields() {
 }
 // identity_mapping_vector_description_rebuilds_the_record_from_its_fields
 
-/// Contract: `payload.values` does not convert into the field array →
-///   `Err(IdentityMappingVectorFromFieldsErrorReturn::FieldCount { expected, actual })`.
-/// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0E])`.
+/// Contract: a refusal of `CanonicalFieldReader::try_new` or of any read →
+///   `Err(IdentityMappingVectorFromFieldsErrorReturn::Fields(error))`, the error
+///   unchanged.
+/// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0E])`, the
+///   description from
+///   `build_identity_mapping_vector_description(Default::default())`, and
+///   `build_from_fields_params(Default::default())`.
 /// Act:    `fields_to_value`.
 /// Assert: `result.err()` equals
-///   `Some(IdentityMappingVectorFromFieldsErrorReturn::FieldCount { expected: 2,
-///   actual: 1 })`.
+///   `Some(IdentityMappingVectorFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Count { expected: 2, actual: 1 }))`.
 #[test]
-fn identity_mapping_vector_description_refuses_a_wrong_field_count() {
+fn identity_mapping_vector_description_carries_the_readers_refusal() {
     // Arrange
     let payload = build_canonical_fields(CanonicalFieldsOverrides {
         values: Some(vec![CanonicalFieldValue::Bytes(vec![0x0E])]),
@@ -326,81 +262,15 @@ fn identity_mapping_vector_description_refuses_a_wrong_field_count() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(IdentityMappingVectorFromFieldsErrorReturn::FieldCount {
-            expected: 2,
-            actual: 1,
-        })
+        Some(IdentityMappingVectorFromFieldsErrorReturn::Fields(
+            CanonicalFieldReaderErrorReturn::Count {
+                expected: 2,
+                actual: 1,
+            }
+        ))
     );
 }
-// identity_mapping_vector_description_refuses_a_wrong_field_count
-
-/// Contract: the lowest index `i` whose value is not the kind
-///   `IDENTITY_MAPPING_VECTOR_FIELD_KINDS` holds at `i` →
-///   `Err(IdentityMappingVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`.
-/// Arrange: `build_canonical_fields` with `values` `Unsigned256([0x0E; 32])` and
-///   `Bytes(vec![0x0F])`, so the indexes `0` and `1` both hold a wrong kind.
-/// Act:    `fields_to_value`.
-/// Assert: `result.err()` equals
-///   `Some(IdentityMappingVectorFromFieldsErrorReturn::FieldKind { index: 0,
-///   expected: CanonicalFieldKind::Bytes })`.
-#[test]
-fn identity_mapping_vector_description_refuses_the_lowest_index_of_the_wrong_kind() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Unsigned256([0x0E; 32]),
-            CanonicalFieldValue::Bytes(vec![0x0F]),
-        ]),
-    });
-    let description = build_identity_mapping_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(IdentityMappingVectorFromFieldsErrorReturn::FieldKind {
-            index: 0,
-            expected: CanonicalFieldKind::Bytes,
-        })
-    );
-}
-// identity_mapping_vector_description_refuses_the_lowest_index_of_the_wrong_kind
-
-/// Contract: the lowest index `i` whose value is not the kind
-///   `IDENTITY_MAPPING_VECTOR_FIELD_KINDS` holds at `i` →
-///   `Err(IdentityMappingVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`.
-/// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0E])` and
-///   `Bytes(vec![0x0F])`.
-/// Act:    `fields_to_value`.
-/// Assert: `result.err()` equals
-///   `Some(IdentityMappingVectorFromFieldsErrorReturn::FieldKind { index: 1,
-///   expected: CanonicalFieldKind::Unsigned256 })`.
-#[test]
-fn identity_mapping_vector_description_refuses_a_byte_string_scalar() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x0E]),
-            CanonicalFieldValue::Bytes(vec![0x0F]),
-        ]),
-    });
-    let description = build_identity_mapping_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(IdentityMappingVectorFromFieldsErrorReturn::FieldKind {
-            index: 1,
-            expected: CanonicalFieldKind::Unsigned256,
-        })
-    );
-}
-// identity_mapping_vector_description_refuses_a_byte_string_scalar
+// identity_mapping_vector_description_carries_the_readers_refusal
 
 /// Contract: each name in `HASH_TO_SCALAR_VECTOR_MEMBER_NAMES` that
 ///   `SolidityMemberName::try_new` admits → `Ok` of the names in order.

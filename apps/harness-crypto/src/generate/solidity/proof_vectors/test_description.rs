@@ -6,11 +6,11 @@ use chain::{
     build_create_chain_forms_payload, create_chain_forms,
 };
 use encoding::{
-    CanonicalFieldValue, CanonicalFields, CanonicalFieldsOverrides, ConsumeEncodingParams,
-    ConsumeEncodingPayload, FromFieldsReturn, ICanonicalField, IDecoderAdapter, IEncoderAdapter,
-    IEncodingConsumer, IEncodingContract, build_canonical_fields, build_create_encoding_deps,
-    build_create_encoding_params, build_create_encoding_payload, build_from_fields_params,
-    build_to_fields_params, create_encoding,
+    CanonicalFieldReaderErrorReturn, CanonicalFieldValue, CanonicalFields,
+    CanonicalFieldsOverrides, ConsumeEncodingParams, ConsumeEncodingPayload, FromFieldsReturn,
+    IDecoderAdapter, IEncoderAdapter, IEncodingConsumer, IEncodingContract, build_canonical_fields,
+    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
+    build_from_fields_params, build_to_fields_params, create_encoding,
 };
 
 use super::super::render::provides::{
@@ -154,10 +154,9 @@ fn mint_proof_vector_description_maps_the_record_in_member_order() {
 }
 // mint_proof_vector_description_maps_the_record_in_member_order
 
-/// Contract: `fields_to_value`, rebuilt: the values convert into the array of
-///   the field count and each is the kind `FIELDS` holds at its index → `Ok`
-///   of `FromFieldsSuccessReturn { described }`, each field moved into its
-///   member.
+/// Contract: `fields_to_value`, rebuilt: the reader admits every field → `Ok`
+///   of `FromFieldsSuccessReturn { described }`, each read value moved into
+///   its member.
 /// Arrange: `build_canonical_fields` overriding `values` with the mint
 ///   reference values.
 /// Act:    `fields_to_value` on the description over the fields with
@@ -286,19 +285,19 @@ fn mint_proof_vector_description_rebuilds_the_record_from_its_fields() {
 }
 // mint_proof_vector_description_rebuilds_the_record_from_its_fields
 
-/// Contract: `fields_to_value`, count: `payload.values` does not convert into
-///   the array of the field count → `Err(MintProofVectorFromFieldsErrorReturn::FieldCount
-///   { expected, actual })`, `expected` the field count and `actual` the
-///   list's length.
+/// Contract: `fields_to_value`, fields refused: a refusal of
+///   `CanonicalFieldReader::try_new` or of any read →
+///   `Err(MintProofVectorFromFieldsErrorReturn::Fields(error))`, `error`
+///   unchanged.
 /// Arrange: `build_canonical_fields` overriding `values` with the mint
-///   reference values without the last value, every value present of its
-///   declared kind, so only the count refuses.
+///   reference values without the last value.
 /// Act:    `fields_to_value` on the description over the fields, inside the
 ///   consumer.
-/// Assert: the result equals `Err(MintProofVectorFromFieldsErrorReturn::FieldCount
-///   { expected: 29, actual: 28 })` whole.
+/// Assert: the result equals `Err(MintProofVectorFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Count { expected: 29, actual: 28 }))`
+///   whole.
 #[test]
-fn mint_proof_vector_description_refuses_a_field_list_shorter_than_its_field_count() {
+fn mint_proof_vector_description_carries_the_readers_refusal() {
     // Arrange
     struct ChainFormsConsumer {
         fields: CanonicalFields,
@@ -392,358 +391,15 @@ fn mint_proof_vector_description_refuses_a_field_list_shorter_than_its_field_cou
     // Assert
     assert_eq!(
         result.err(),
-        Some(MintProofVectorFromFieldsErrorReturn::FieldCount {
-            expected: 29,
-            actual: 28,
-        })
+        Some(MintProofVectorFromFieldsErrorReturn::Fields(
+            CanonicalFieldReaderErrorReturn::Count {
+                expected: 29,
+                actual: 28,
+            }
+        ))
     );
 }
-// mint_proof_vector_description_refuses_a_field_list_shorter_than_its_field_count
-
-/// Contract: `fields_to_value`, count: `payload.values` does not convert into
-///   the array of the field count → `Err(MintProofVectorFromFieldsErrorReturn::FieldCount
-///   { expected, actual })`.
-/// Arrange: `build_canonical_fields` overriding `values` with the mint
-///   reference values followed by `Bytes(Vec::new())`, every value at indexes
-///   `0` through `28` of its declared kind, so only the count refuses.
-/// Act:    `fields_to_value` on the description over the fields, inside the
-///   consumer.
-/// Assert: the result equals `Err(MintProofVectorFromFieldsErrorReturn::FieldCount
-///   { expected: 29, actual: 30 })` whole.
-#[test]
-fn mint_proof_vector_description_refuses_a_field_list_longer_than_its_field_count() {
-    // Arrange
-    struct ChainFormsConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IChainFormsConsumer for ChainFormsConsumer {
-        type Output = FromFieldsReturn<MintProofVector, MintProofVectorFromFieldsErrorReturn>;
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            build_mint_proof_vector_description::<F>(Default::default()).fields_to_value(
-                build_from_fields_params(Default::default()),
-                self.fields.clone(),
-            )
-        }
-    }
-
-    struct EncodingConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IEncodingConsumer for EncodingConsumer {
-        type Output = FromFieldsReturn<MintProofVector, MintProofVectorFromFieldsErrorReturn>;
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        fields: self.fields.clone(),
-                    },
-                    &payload.adapter,
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
-            .expect("the default selection constructs the chain forms")
-            .output
-        }
-    }
-
-    let fields = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x01; 64]),
-            CanonicalFieldValue::FixedBytes32([0x22; 32]),
-            CanonicalFieldValue::Unsigned16(1),
-            CanonicalFieldValue::Unsigned256([0x2A; 32]),
-            CanonicalFieldValue::FixedBytes20([0x31; 20]),
-            CanonicalFieldValue::FixedBytes32([0x01; 32]),
-            CanonicalFieldValue::FixedBytes32([0x33; 32]),
-            CanonicalFieldValue::Unsigned256([0x41; 32]),
-            CanonicalFieldValue::Unsigned256([0x42; 32]),
-            CanonicalFieldValue::Unsigned64(1),
-            CanonicalFieldValue::Unsigned64(2),
-            CanonicalFieldValue::Unsigned16(3),
-            CanonicalFieldValue::FixedBytes20([0x61; 20]),
-            CanonicalFieldValue::FixedBytes20([0x62; 20]),
-            CanonicalFieldValue::Unsigned64(1_800_000_000),
-            CanonicalFieldValue::Bytes(vec![0x10; 128]),
-            CanonicalFieldValue::Bytes(vec![0x11; 64]),
-            CanonicalFieldValue::Bytes(vec![0x12; 64]),
-            CanonicalFieldValue::Bytes(vec![0x13; 128]),
-            CanonicalFieldValue::Bytes(vec![0x14; 64]),
-            CanonicalFieldValue::Bytes(vec![0x15; 64]),
-            CanonicalFieldValue::Bytes(vec![0x16; 128]),
-            CanonicalFieldValue::Bytes(vec![0x17; 128]),
-            CanonicalFieldValue::Unsigned256([0x20; 32]),
-            CanonicalFieldValue::Unsigned256([0x21; 32]),
-            CanonicalFieldValue::Unsigned256([0x22; 32]),
-            CanonicalFieldValue::Unsigned256([0x23; 32]),
-            CanonicalFieldValue::Unsigned256([0x24; 32]),
-            CanonicalFieldValue::Bytes(Vec::new()),
-            CanonicalFieldValue::Bytes(Vec::new()),
-        ]),
-    });
-
-    // Act
-    let result = create_encoding(
-        &build_create_encoding_deps(EncodingConsumer { fields }),
-        build_create_encoding_params(Default::default()),
-        build_create_encoding_payload(Default::default()),
-    )
-    .expect("the default selection constructs the encoder")
-    .output;
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(MintProofVectorFromFieldsErrorReturn::FieldCount {
-            expected: 29,
-            actual: 30,
-        })
-    );
-}
-// mint_proof_vector_description_refuses_a_field_list_longer_than_its_field_count
-
-/// Contract: `fields_to_value`, kind: the lowest index `i` whose value is not
-///   the kind `FIELDS` holds at `i` → `Err(MintProofVectorFromFieldsErrorReturn::FieldKind
-///   { index: i, expected })`.
-/// Arrange: `build_canonical_fields` overriding `values` with the mint
-///   reference values with the value at index `4` replaced by
-///   `Unsigned256([0x31; 32])` and the value at index `12` replaced by
-///   `Unsigned256([0x61; 32])`, two values of a kind the identity form does not
-///   declare, so the lower index is the one reported.
-/// Act:    `fields_to_value` on the description over the fields, inside the
-///   consumer.
-/// Assert: the result equals `Err(MintProofVectorFromFieldsErrorReturn::FieldKind
-///   { index: 4, expected: <F::Identity as ICanonicalField>::KIND })` whole,
-///   asserted in place.
-#[test]
-fn mint_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind() {
-    // Arrange
-    struct ChainFormsConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IChainFormsConsumer for ChainFormsConsumer {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            // Act
-            let result = build_mint_proof_vector_description::<F>(Default::default())
-                .fields_to_value(
-                    build_from_fields_params(Default::default()),
-                    self.fields.clone(),
-                );
-
-            // Assert
-            assert_eq!(
-                result.err(),
-                Some(MintProofVectorFromFieldsErrorReturn::FieldKind {
-                    index: 4,
-                    expected: <F::Identity as ICanonicalField>::KIND,
-                })
-            );
-        }
-    }
-
-    struct EncodingConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IEncodingConsumer for EncodingConsumer {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        fields: self.fields.clone(),
-                    },
-                    &payload.adapter,
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
-            .expect("the default selection constructs the chain forms");
-        }
-    }
-
-    let fields = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x01; 64]),
-            CanonicalFieldValue::FixedBytes32([0x22; 32]),
-            CanonicalFieldValue::Unsigned16(1),
-            CanonicalFieldValue::Unsigned256([0x2A; 32]),
-            CanonicalFieldValue::Unsigned256([0x31; 32]),
-            CanonicalFieldValue::FixedBytes32([0x01; 32]),
-            CanonicalFieldValue::FixedBytes32([0x33; 32]),
-            CanonicalFieldValue::Unsigned256([0x41; 32]),
-            CanonicalFieldValue::Unsigned256([0x42; 32]),
-            CanonicalFieldValue::Unsigned64(1),
-            CanonicalFieldValue::Unsigned64(2),
-            CanonicalFieldValue::Unsigned16(3),
-            CanonicalFieldValue::Unsigned256([0x61; 32]),
-            CanonicalFieldValue::FixedBytes20([0x62; 20]),
-            CanonicalFieldValue::Unsigned64(1_800_000_000),
-            CanonicalFieldValue::Bytes(vec![0x10; 128]),
-            CanonicalFieldValue::Bytes(vec![0x11; 64]),
-            CanonicalFieldValue::Bytes(vec![0x12; 64]),
-            CanonicalFieldValue::Bytes(vec![0x13; 128]),
-            CanonicalFieldValue::Bytes(vec![0x14; 64]),
-            CanonicalFieldValue::Bytes(vec![0x15; 64]),
-            CanonicalFieldValue::Bytes(vec![0x16; 128]),
-            CanonicalFieldValue::Bytes(vec![0x17; 128]),
-            CanonicalFieldValue::Unsigned256([0x20; 32]),
-            CanonicalFieldValue::Unsigned256([0x21; 32]),
-            CanonicalFieldValue::Unsigned256([0x22; 32]),
-            CanonicalFieldValue::Unsigned256([0x23; 32]),
-            CanonicalFieldValue::Unsigned256([0x24; 32]),
-            CanonicalFieldValue::Bytes(Vec::new()),
-        ]),
-    });
-
-    // Act
-    create_encoding(
-        &build_create_encoding_deps(EncodingConsumer { fields }),
-        build_create_encoding_params(Default::default()),
-        build_create_encoding_payload(Default::default()),
-    )
-    .expect("the default selection constructs the encoder");
-}
-// mint_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind
-
-/// Contract: `fields_to_value`, count then kind: a list of the wrong count is
-///   refused by the count branch before any kind is read.
-/// Arrange: `build_canonical_fields` overriding `values` with the mint
-///   reference values without the last value and with the value at index `3`
-///   replaced by `FixedBytes20([0x21; 20])`, a list both short and holding a
-///   wrong kind.
-/// Act:    `fields_to_value` on the description over the fields, inside the
-///   consumer.
-/// Assert: the result equals `Err(MintProofVectorFromFieldsErrorReturn::FieldCount
-///   { expected: 29, actual: 28 })` whole.
-#[test]
-fn mint_proof_vector_description_reports_the_count_before_a_wrong_kind() {
-    // Arrange
-    struct ChainFormsConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IChainFormsConsumer for ChainFormsConsumer {
-        type Output = FromFieldsReturn<MintProofVector, MintProofVectorFromFieldsErrorReturn>;
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            build_mint_proof_vector_description::<F>(Default::default()).fields_to_value(
-                build_from_fields_params(Default::default()),
-                self.fields.clone(),
-            )
-        }
-    }
-
-    struct EncodingConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IEncodingConsumer for EncodingConsumer {
-        type Output = FromFieldsReturn<MintProofVector, MintProofVectorFromFieldsErrorReturn>;
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        fields: self.fields.clone(),
-                    },
-                    &payload.adapter,
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
-            .expect("the default selection constructs the chain forms")
-            .output
-        }
-    }
-
-    let fields = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x01; 64]),
-            CanonicalFieldValue::FixedBytes32([0x22; 32]),
-            CanonicalFieldValue::Unsigned16(1),
-            CanonicalFieldValue::FixedBytes20([0x21; 20]),
-            CanonicalFieldValue::FixedBytes20([0x31; 20]),
-            CanonicalFieldValue::FixedBytes32([0x01; 32]),
-            CanonicalFieldValue::FixedBytes32([0x33; 32]),
-            CanonicalFieldValue::Unsigned256([0x41; 32]),
-            CanonicalFieldValue::Unsigned256([0x42; 32]),
-            CanonicalFieldValue::Unsigned64(1),
-            CanonicalFieldValue::Unsigned64(2),
-            CanonicalFieldValue::Unsigned16(3),
-            CanonicalFieldValue::FixedBytes20([0x61; 20]),
-            CanonicalFieldValue::FixedBytes20([0x62; 20]),
-            CanonicalFieldValue::Unsigned64(1_800_000_000),
-            CanonicalFieldValue::Bytes(vec![0x10; 128]),
-            CanonicalFieldValue::Bytes(vec![0x11; 64]),
-            CanonicalFieldValue::Bytes(vec![0x12; 64]),
-            CanonicalFieldValue::Bytes(vec![0x13; 128]),
-            CanonicalFieldValue::Bytes(vec![0x14; 64]),
-            CanonicalFieldValue::Bytes(vec![0x15; 64]),
-            CanonicalFieldValue::Bytes(vec![0x16; 128]),
-            CanonicalFieldValue::Bytes(vec![0x17; 128]),
-            CanonicalFieldValue::Unsigned256([0x20; 32]),
-            CanonicalFieldValue::Unsigned256([0x21; 32]),
-            CanonicalFieldValue::Unsigned256([0x22; 32]),
-            CanonicalFieldValue::Unsigned256([0x23; 32]),
-            CanonicalFieldValue::Unsigned256([0x24; 32]),
-        ]),
-    });
-
-    // Act
-    let result = create_encoding(
-        &build_create_encoding_deps(EncodingConsumer { fields }),
-        build_create_encoding_params(Default::default()),
-        build_create_encoding_payload(Default::default()),
-    )
-    .expect("the default selection constructs the encoder")
-    .output;
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(MintProofVectorFromFieldsErrorReturn::FieldCount {
-            expected: 29,
-            actual: 28,
-        })
-    );
-}
-// mint_proof_vector_description_reports_the_count_before_a_wrong_kind
+// mint_proof_vector_description_carries_the_readers_refusal
 
 /// Contract: `member_names`, every name admitted → `Ok` of the admitted names
 ///   in order, one for each index of `FIELDS`.
@@ -1040,10 +696,9 @@ fn transfer_proof_vector_description_maps_the_record_in_member_order() {
 }
 // transfer_proof_vector_description_maps_the_record_in_member_order
 
-/// Contract: `fields_to_value`, rebuilt: the values convert into the array of
-///   the field count and each is the kind `FIELDS` holds at its index → `Ok`
-///   of `FromFieldsSuccessReturn { described }`, each field moved into its
-///   member.
+/// Contract: `fields_to_value`, rebuilt: the reader admits every field → `Ok`
+///   of `FromFieldsSuccessReturn { described }`, each read value moved into
+///   its member.
 /// Arrange: `build_canonical_fields` overriding `values` with the transfer
 ///   reference values.
 /// Act:    `fields_to_value` on the description over the fields with
@@ -1178,18 +833,19 @@ fn transfer_proof_vector_description_rebuilds_the_record_from_its_fields() {
 }
 // transfer_proof_vector_description_rebuilds_the_record_from_its_fields
 
-/// Contract: `fields_to_value`, count: `payload.values` does not convert into
-///   the array of the field count → `Err(TransferProofVectorFromFieldsErrorReturn::FieldCount
-///   { expected, actual })`.
+/// Contract: `fields_to_value`, fields refused: a refusal of
+///   `CanonicalFieldReader::try_new` or of any read →
+///   `Err(TransferProofVectorFromFieldsErrorReturn::Fields(error))`, `error`
+///   unchanged.
 /// Arrange: `build_canonical_fields` overriding `values` with the transfer
-///   reference values without the last value, every value present of its
-///   declared kind, so only the count refuses.
+///   reference values without the last value.
 /// Act:    `fields_to_value` on the description over the fields, inside the
 ///   consumer.
-/// Assert: the result equals `Err(TransferProofVectorFromFieldsErrorReturn::FieldCount
-///   { expected: 35, actual: 34 })` whole.
+/// Assert: the result equals `Err(TransferProofVectorFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Count { expected: 35, actual: 34 }))`
+///   whole.
 #[test]
-fn transfer_proof_vector_description_refuses_a_field_list_shorter_than_its_field_count() {
+fn transfer_proof_vector_description_carries_the_readers_refusal() {
     // Arrange
     struct ChainFormsConsumer {
         fields: CanonicalFields,
@@ -1291,380 +947,15 @@ fn transfer_proof_vector_description_refuses_a_field_list_shorter_than_its_field
     // Assert
     assert_eq!(
         result.err(),
-        Some(TransferProofVectorFromFieldsErrorReturn::FieldCount {
-            expected: 35,
-            actual: 34,
-        })
+        Some(TransferProofVectorFromFieldsErrorReturn::Fields(
+            CanonicalFieldReaderErrorReturn::Count {
+                expected: 35,
+                actual: 34,
+            }
+        ))
     );
 }
-// transfer_proof_vector_description_refuses_a_field_list_shorter_than_its_field_count
-
-/// Contract: `fields_to_value`, count: `payload.values` does not convert into
-///   the array of the field count → `Err(TransferProofVectorFromFieldsErrorReturn::FieldCount
-///   { expected, actual })`.
-/// Arrange: `build_canonical_fields` overriding `values` with the transfer
-///   reference values followed by `Bytes(Vec::new())`, every value at indexes
-///   `0` through `34` of its declared kind, so only the count refuses.
-/// Act:    `fields_to_value` on the description over the fields, inside the
-///   consumer.
-/// Assert: the result equals `Err(TransferProofVectorFromFieldsErrorReturn::FieldCount
-///   { expected: 35, actual: 36 })` whole.
-#[test]
-fn transfer_proof_vector_description_refuses_a_field_list_longer_than_its_field_count() {
-    // Arrange
-    struct ChainFormsConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IChainFormsConsumer for ChainFormsConsumer {
-        type Output =
-            FromFieldsReturn<TransferProofVector, TransferProofVectorFromFieldsErrorReturn>;
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            build_transfer_proof_vector_description::<F>(Default::default()).fields_to_value(
-                build_from_fields_params(Default::default()),
-                self.fields.clone(),
-            )
-        }
-    }
-
-    struct EncodingConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IEncodingConsumer for EncodingConsumer {
-        type Output =
-            FromFieldsReturn<TransferProofVector, TransferProofVectorFromFieldsErrorReturn>;
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        fields: self.fields.clone(),
-                    },
-                    &payload.adapter,
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
-            .expect("the default selection constructs the chain forms")
-            .output
-        }
-    }
-
-    let fields = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x01; 64]),
-            CanonicalFieldValue::FixedBytes32([0x22; 32]),
-            CanonicalFieldValue::Unsigned16(1),
-            CanonicalFieldValue::Unsigned256([0x2A; 32]),
-            CanonicalFieldValue::FixedBytes20([0x31; 20]),
-            CanonicalFieldValue::FixedBytes32([0x01; 32]),
-            CanonicalFieldValue::FixedBytes32([0x33; 32]),
-            CanonicalFieldValue::Unsigned256([0x41; 32]),
-            CanonicalFieldValue::Unsigned256([0x42; 32]),
-            CanonicalFieldValue::Unsigned64(1),
-            CanonicalFieldValue::Unsigned64(2),
-            CanonicalFieldValue::Unsigned16(3),
-            CanonicalFieldValue::FixedBytes20([0x61; 20]),
-            CanonicalFieldValue::FixedBytes20([0x62; 20]),
-            CanonicalFieldValue::Unsigned64(1_800_000_000),
-            CanonicalFieldValue::Bytes(vec![0x11; 64]),
-            CanonicalFieldValue::Bytes(vec![0x12; 64]),
-            CanonicalFieldValue::Bytes(vec![0x13; 128]),
-            CanonicalFieldValue::Bytes(vec![0x18; 64]),
-            CanonicalFieldValue::Bytes(vec![0x19; 128]),
-            CanonicalFieldValue::Bytes(vec![0x14; 64]),
-            CanonicalFieldValue::Bytes(vec![0x15; 64]),
-            CanonicalFieldValue::Bytes(vec![0x16; 128]),
-            CanonicalFieldValue::Bytes(vec![0x17; 128]),
-            CanonicalFieldValue::Bytes(vec![0x1A; 64]),
-            CanonicalFieldValue::Bytes(vec![0x1B; 64]),
-            CanonicalFieldValue::Bytes(vec![0x1C; 128]),
-            CanonicalFieldValue::Bytes(vec![0x1D; 128]),
-            CanonicalFieldValue::Unsigned256([0x20; 32]),
-            CanonicalFieldValue::Unsigned256([0x25; 32]),
-            CanonicalFieldValue::Unsigned256([0x26; 32]),
-            CanonicalFieldValue::Unsigned256([0x27; 32]),
-            CanonicalFieldValue::Unsigned256([0x23; 32]),
-            CanonicalFieldValue::Unsigned256([0x24; 32]),
-            CanonicalFieldValue::Bytes(Vec::new()),
-            CanonicalFieldValue::Bytes(Vec::new()),
-        ]),
-    });
-
-    // Act
-    let result = create_encoding(
-        &build_create_encoding_deps(EncodingConsumer { fields }),
-        build_create_encoding_params(Default::default()),
-        build_create_encoding_payload(Default::default()),
-    )
-    .expect("the default selection constructs the encoder")
-    .output;
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(TransferProofVectorFromFieldsErrorReturn::FieldCount {
-            expected: 35,
-            actual: 36,
-        })
-    );
-}
-// transfer_proof_vector_description_refuses_a_field_list_longer_than_its_field_count
-
-/// Contract: `fields_to_value`, kind: the lowest index `i` whose value is not
-///   the kind `FIELDS` holds at `i` → `Err(TransferProofVectorFromFieldsErrorReturn::FieldKind
-///   { index: i, expected })`.
-/// Arrange: `build_canonical_fields` overriding `values` with the transfer
-///   reference values with the value at index `4` replaced by
-///   `Unsigned256([0x31; 32])` and the value at index `12` replaced by
-///   `Unsigned256([0x61; 32])`, two values of a kind the identity form does not
-///   declare, so the lower index is the one reported.
-/// Act:    `fields_to_value` on the description over the fields, inside the
-///   consumer.
-/// Assert: the result equals `Err(TransferProofVectorFromFieldsErrorReturn::FieldKind
-///   { index: 4, expected: <F::Identity as ICanonicalField>::KIND })` whole,
-///   asserted in place.
-#[test]
-fn transfer_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind() {
-    // Arrange
-    struct ChainFormsConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IChainFormsConsumer for ChainFormsConsumer {
-        type Output = ();
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            // Act
-            let result = build_transfer_proof_vector_description::<F>(Default::default())
-                .fields_to_value(
-                    build_from_fields_params(Default::default()),
-                    self.fields.clone(),
-                );
-
-            // Assert
-            assert_eq!(
-                result.err(),
-                Some(TransferProofVectorFromFieldsErrorReturn::FieldKind {
-                    index: 4,
-                    expected: <F::Identity as ICanonicalField>::KIND,
-                })
-            );
-        }
-    }
-
-    struct EncodingConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IEncodingConsumer for EncodingConsumer {
-        type Output = ();
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        fields: self.fields.clone(),
-                    },
-                    &payload.adapter,
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
-            .expect("the default selection constructs the chain forms");
-        }
-    }
-
-    let fields = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x01; 64]),
-            CanonicalFieldValue::FixedBytes32([0x22; 32]),
-            CanonicalFieldValue::Unsigned16(1),
-            CanonicalFieldValue::Unsigned256([0x2A; 32]),
-            CanonicalFieldValue::Unsigned256([0x31; 32]),
-            CanonicalFieldValue::FixedBytes32([0x01; 32]),
-            CanonicalFieldValue::FixedBytes32([0x33; 32]),
-            CanonicalFieldValue::Unsigned256([0x41; 32]),
-            CanonicalFieldValue::Unsigned256([0x42; 32]),
-            CanonicalFieldValue::Unsigned64(1),
-            CanonicalFieldValue::Unsigned64(2),
-            CanonicalFieldValue::Unsigned16(3),
-            CanonicalFieldValue::Unsigned256([0x61; 32]),
-            CanonicalFieldValue::FixedBytes20([0x62; 20]),
-            CanonicalFieldValue::Unsigned64(1_800_000_000),
-            CanonicalFieldValue::Bytes(vec![0x11; 64]),
-            CanonicalFieldValue::Bytes(vec![0x12; 64]),
-            CanonicalFieldValue::Bytes(vec![0x13; 128]),
-            CanonicalFieldValue::Bytes(vec![0x18; 64]),
-            CanonicalFieldValue::Bytes(vec![0x19; 128]),
-            CanonicalFieldValue::Bytes(vec![0x14; 64]),
-            CanonicalFieldValue::Bytes(vec![0x15; 64]),
-            CanonicalFieldValue::Bytes(vec![0x16; 128]),
-            CanonicalFieldValue::Bytes(vec![0x17; 128]),
-            CanonicalFieldValue::Bytes(vec![0x1A; 64]),
-            CanonicalFieldValue::Bytes(vec![0x1B; 64]),
-            CanonicalFieldValue::Bytes(vec![0x1C; 128]),
-            CanonicalFieldValue::Bytes(vec![0x1D; 128]),
-            CanonicalFieldValue::Unsigned256([0x20; 32]),
-            CanonicalFieldValue::Unsigned256([0x25; 32]),
-            CanonicalFieldValue::Unsigned256([0x26; 32]),
-            CanonicalFieldValue::Unsigned256([0x27; 32]),
-            CanonicalFieldValue::Unsigned256([0x23; 32]),
-            CanonicalFieldValue::Unsigned256([0x24; 32]),
-            CanonicalFieldValue::Bytes(Vec::new()),
-        ]),
-    });
-
-    // Act
-    create_encoding(
-        &build_create_encoding_deps(EncodingConsumer { fields }),
-        build_create_encoding_params(Default::default()),
-        build_create_encoding_payload(Default::default()),
-    )
-    .expect("the default selection constructs the encoder");
-}
-// transfer_proof_vector_description_refuses_the_lowest_field_of_the_wrong_kind
-
-/// Contract: `fields_to_value`, count then kind: a list of the wrong count is
-///   refused by the count branch before any kind is read.
-/// Arrange: `build_canonical_fields` overriding `values` with the transfer
-///   reference values without the last value and with the value at index `3`
-///   replaced by `FixedBytes20([0x21; 20])`, a list both short and holding a
-///   wrong kind.
-/// Act:    `fields_to_value` on the description over the fields, inside the
-///   consumer.
-/// Assert: the result equals `Err(TransferProofVectorFromFieldsErrorReturn::FieldCount
-///   { expected: 35, actual: 34 })` whole.
-#[test]
-fn transfer_proof_vector_description_reports_the_count_before_a_wrong_kind() {
-    // Arrange
-    struct ChainFormsConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IChainFormsConsumer for ChainFormsConsumer {
-        type Output =
-            FromFieldsReturn<TransferProofVector, TransferProofVectorFromFieldsErrorReturn>;
-
-        fn consume_chain_forms<F: IChainForms>(
-            &self,
-            _params: ConsumeChainFormsParams,
-            _payload: ConsumeChainFormsPayload<F>,
-        ) -> Self::Output {
-            build_transfer_proof_vector_description::<F>(Default::default()).fields_to_value(
-                build_from_fields_params(Default::default()),
-                self.fields.clone(),
-            )
-        }
-    }
-
-    struct EncodingConsumer {
-        fields: CanonicalFields,
-    }
-
-    impl IEncodingConsumer for EncodingConsumer {
-        type Output =
-            FromFieldsReturn<TransferProofVector, TransferProofVectorFromFieldsErrorReturn>;
-
-        fn consume_encoding<E: IEncoderAdapter + IDecoderAdapter>(
-            &self,
-            _params: ConsumeEncodingParams,
-            payload: ConsumeEncodingPayload<E>,
-        ) -> Self::Output {
-            create_chain_forms(
-                &build_create_chain_forms_deps(
-                    ChainFormsConsumer {
-                        fields: self.fields.clone(),
-                    },
-                    &payload.adapter,
-                    Default::default(),
-                ),
-                build_create_chain_forms_params(Default::default()),
-                build_create_chain_forms_payload(Default::default()),
-            )
-            .expect("the default selection constructs the chain forms")
-            .output
-        }
-    }
-
-    let fields = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x01; 64]),
-            CanonicalFieldValue::FixedBytes32([0x22; 32]),
-            CanonicalFieldValue::Unsigned16(1),
-            CanonicalFieldValue::FixedBytes20([0x21; 20]),
-            CanonicalFieldValue::FixedBytes20([0x31; 20]),
-            CanonicalFieldValue::FixedBytes32([0x01; 32]),
-            CanonicalFieldValue::FixedBytes32([0x33; 32]),
-            CanonicalFieldValue::Unsigned256([0x41; 32]),
-            CanonicalFieldValue::Unsigned256([0x42; 32]),
-            CanonicalFieldValue::Unsigned64(1),
-            CanonicalFieldValue::Unsigned64(2),
-            CanonicalFieldValue::Unsigned16(3),
-            CanonicalFieldValue::FixedBytes20([0x61; 20]),
-            CanonicalFieldValue::FixedBytes20([0x62; 20]),
-            CanonicalFieldValue::Unsigned64(1_800_000_000),
-            CanonicalFieldValue::Bytes(vec![0x11; 64]),
-            CanonicalFieldValue::Bytes(vec![0x12; 64]),
-            CanonicalFieldValue::Bytes(vec![0x13; 128]),
-            CanonicalFieldValue::Bytes(vec![0x18; 64]),
-            CanonicalFieldValue::Bytes(vec![0x19; 128]),
-            CanonicalFieldValue::Bytes(vec![0x14; 64]),
-            CanonicalFieldValue::Bytes(vec![0x15; 64]),
-            CanonicalFieldValue::Bytes(vec![0x16; 128]),
-            CanonicalFieldValue::Bytes(vec![0x17; 128]),
-            CanonicalFieldValue::Bytes(vec![0x1A; 64]),
-            CanonicalFieldValue::Bytes(vec![0x1B; 64]),
-            CanonicalFieldValue::Bytes(vec![0x1C; 128]),
-            CanonicalFieldValue::Bytes(vec![0x1D; 128]),
-            CanonicalFieldValue::Unsigned256([0x20; 32]),
-            CanonicalFieldValue::Unsigned256([0x25; 32]),
-            CanonicalFieldValue::Unsigned256([0x26; 32]),
-            CanonicalFieldValue::Unsigned256([0x27; 32]),
-            CanonicalFieldValue::Unsigned256([0x23; 32]),
-            CanonicalFieldValue::Unsigned256([0x24; 32]),
-        ]),
-    });
-
-    // Act
-    let result = create_encoding(
-        &build_create_encoding_deps(EncodingConsumer { fields }),
-        build_create_encoding_params(Default::default()),
-        build_create_encoding_payload(Default::default()),
-    )
-    .expect("the default selection constructs the encoder")
-    .output;
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(TransferProofVectorFromFieldsErrorReturn::FieldCount {
-            expected: 35,
-            actual: 34,
-        })
-    );
-}
-// transfer_proof_vector_description_reports_the_count_before_a_wrong_kind
+// transfer_proof_vector_description_carries_the_readers_refusal
 
 /// Contract: `member_names`, every name admitted → `Ok` of the admitted names
 ///   in order, one for each index of `FIELDS`.

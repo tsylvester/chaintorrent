@@ -27,10 +27,9 @@ Branch contract for the `rejection_vectors` module of the `solidity` module of t
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| count | `payload.values` does not convert into `[CanonicalFieldValue; REJECTION_VECTOR_FIELD_COUNT]` | the conversion's return | none | `Err(RejectionVectorFromFieldsErrorReturn::FieldCount { expected: REJECTION_VECTOR_FIELD_COUNT, actual })`, `actual` the vector's length |
-| kind | the lowest index `i` whose value is not the kind `REJECTION_VECTOR_FIELD_KINDS` holds at `i` | that index's kind against the kinds constant | none | `Err(RejectionVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`, `expected` the kind `REJECTION_VECTOR_FIELD_KINDS` holds at `i` |
-| target | the first field's `CanonicalFieldValue::Text` names no variant | the constructor's return | `DecodeTarget::try_new` over the first field's text | `Err(RejectionVectorFromFieldsErrorReturn::Target(error))`, the refusal unchanged |
-| rebuilt | the count converts, every value holds the kind its index declares, and the text names a variant | none | `DecodeTarget::try_new` | `Ok(FromFieldsSuccessReturn { described: RejectionVector { target, input } })`, each moved from its field |
+| fields refused | `CanonicalFieldReader::try_new`, the `read_text`, or the `read_bytes` returns `Err(error)` | the call's return | `CanonicalFieldReader::try_new(payload, Self::FIELDS)`, then `read_text` for `target` and `read_bytes` for `input`, in that order | `Err(RejectionVectorFromFieldsErrorReturn::Fields(error))`, the refusal unchanged |
+| target | `DecodeTarget::try_new` over the text `read_text` returned returns `Err(error)` | the constructor's return | `DecodeTarget::try_new`, after `target` is read and before `input` is read | `Err(RejectionVectorFromFieldsErrorReturn::Target(error))`, the refusal unchanged |
+| rebuilt | the reader's construction, both reads, and the constructor return `Ok` | none | the same calls | `Ok(FromFieldsSuccessReturn { described: RejectionVector { target, input } })`, `target` the variant the constructor admitted and `input` the bytes `read_bytes` returned |
 
 ## `member_names`
 

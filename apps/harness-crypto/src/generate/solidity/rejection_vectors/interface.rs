@@ -1,5 +1,5 @@
 use core::convert::Infallible;
-use encoding::CanonicalFieldKind;
+use encoding::{CanonicalFieldKind, CanonicalFieldReaderErrorReturn};
 use pairing::{
     G1OutsideSubgroupEncodingErrorReturn, G2OutsideSubgroupEncodingErrorReturn, IPairingReference,
 };
@@ -45,14 +45,7 @@ pub type RejectionVectorDescriptionTryNewReturn = Result<RejectionVectorDescript
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RejectionVectorFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
     Target(DecodeTargetTryNewErrorReturn),
 }
 

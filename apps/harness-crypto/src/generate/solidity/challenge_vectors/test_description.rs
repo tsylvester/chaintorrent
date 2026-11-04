@@ -1,8 +1,8 @@
 #![allow(clippy::expect_used)]
 
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, IEncodingContract,
-    build_canonical_fields, build_from_fields_params, build_to_fields_params,
+    CanonicalFieldReaderErrorReturn, CanonicalFieldValue, CanonicalFieldsOverrides,
+    IEncodingContract, build_canonical_fields, build_from_fields_params, build_to_fields_params,
 };
 
 use super::super::render::provides::{
@@ -79,7 +79,7 @@ fn challenge_vector_description_maps_purpose_draws_encoding_and_challenge_in_mem
 }
 // challenge_vector_description_maps_purpose_draws_encoding_and_challenge_in_member_order
 
-/// Contract: `fields_to_value` over fields of the declared kinds returns `Ok`
+/// Contract: `fields_to_value` over fields the reader admits returns `Ok`
 ///   holding a `ChallengeVector` whose members are the fields' values, each
 ///   moved from its field.
 /// Arrange: `build_canonical_fields` with `values`
@@ -123,19 +123,18 @@ fn challenge_vector_description_rebuilds_the_record_from_its_fields() {
 }
 // challenge_vector_description_rebuilds_the_record_from_its_fields
 
-/// Contract: `fields_to_value` over a field list whose length is not the
-///   declared count returns
-///   `Err(ChallengeVectorFromFieldsErrorReturn::FieldCount { expected, actual })`,
-///   `actual` the list's length.
+/// Contract: a refusal of `CanonicalFieldReader::try_new` or of any read
+///   returns `Err(ChallengeVectorFromFieldsErrorReturn::Fields(error))`,
+///   `error` unchanged.
 /// Arrange: `build_canonical_fields` with the first three values of the
-///   previous block, one short of the declared count, and
+///   previous block, one short of the description's `FIELDS`, and
 ///   `build_challenge_vector_description(Default::default())`.
 /// Act:    `fields_to_value` over `build_from_fields_params` at its defaults.
 /// Assert: `result.err()` equals
-///   `Some(ChallengeVectorFromFieldsErrorReturn::FieldCount { expected: 4,
-///   actual: 3 })`.
+///   `Some(ChallengeVectorFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Count { expected: 4, actual: 3 }))`.
 #[test]
-fn challenge_vector_description_refuses_a_wrong_field_count() {
+fn challenge_vector_description_carries_the_readers_refusal() {
     // Arrange
     let payload = build_canonical_fields(CanonicalFieldsOverrides {
         values: Some(vec![
@@ -152,53 +151,15 @@ fn challenge_vector_description_refuses_a_wrong_field_count() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(ChallengeVectorFromFieldsErrorReturn::FieldCount {
-            expected: 4,
-            actual: 3,
-        })
+        Some(ChallengeVectorFromFieldsErrorReturn::Fields(
+            CanonicalFieldReaderErrorReturn::Count {
+                expected: 4,
+                actual: 3,
+            }
+        ))
     );
 }
-// challenge_vector_description_refuses_a_wrong_field_count
-
-/// Contract: `fields_to_value` over a field list whose value at the lowest
-///   index `i` is not the kind declared at `i` returns
-///   `Err(ChallengeVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`.
-/// Arrange: `build_canonical_fields` with the four values of the previous
-///   block, the value at index `0` replaced by
-///   `CanonicalFieldValue::Unsigned64(2)` and the value at index `3` by
-///   `CanonicalFieldValue::Bytes(vec![0x0D])`, so two indices are of the wrong
-///   kind and only the lowest is reported, and
-///   `build_challenge_vector_description(Default::default())`.
-/// Act:    `fields_to_value` over `build_from_fields_params` at its defaults.
-/// Assert: `result.err()` equals
-///   `Some(ChallengeVectorFromFieldsErrorReturn::FieldKind { index: 0,
-///   expected: CanonicalFieldKind::Unsigned16 })`.
-#[test]
-fn challenge_vector_description_refuses_a_field_of_the_wrong_kind() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Unsigned64(2),
-            CanonicalFieldValue::Bytes(vec![0x0A]),
-            CanonicalFieldValue::Bytes(vec![0x0B, 0x0C]),
-            CanonicalFieldValue::Bytes(vec![0x0D]),
-        ]),
-    });
-    let description = build_challenge_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(ChallengeVectorFromFieldsErrorReturn::FieldKind {
-            index: 0,
-            expected: CanonicalFieldKind::Unsigned16,
-        })
-    );
-}
-// challenge_vector_description_refuses_a_field_of_the_wrong_kind
+// challenge_vector_description_carries_the_readers_refusal
 
 /// Contract: `member_names()` returns `Ok` holding the names `purpose`,
 ///   `draws`, `encoding`, and `challenge`, in that order.

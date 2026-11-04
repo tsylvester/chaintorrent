@@ -1,5 +1,5 @@
 use core::convert::Infallible;
-use encoding::CanonicalFieldKind;
+use encoding::{CanonicalFieldKind, CanonicalFieldReaderErrorReturn};
 use envelope::KeyAgreementDeclaration;
 #[cfg(any(test, feature = "mocks"))]
 use hash_to_scalar::{CreateHashToScalarErrorReturn, CreateHashToScalarParams};
@@ -71,26 +71,12 @@ pub type IdentityMappingVectorDescriptionTryNewReturn =
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HashToScalarVectorFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IdentityMappingVectorFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

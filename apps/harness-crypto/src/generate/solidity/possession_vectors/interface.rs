@@ -1,5 +1,5 @@
 use core::convert::Infallible;
-use encoding::CanonicalFieldKind;
+use encoding::{CanonicalFieldKind, CanonicalFieldReaderErrorReturn};
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter, IEncoderAdapter};
 #[cfg(any(test, feature = "mocks"))]
@@ -55,14 +55,7 @@ pub type PossessionVectorDescriptionTryNewReturn = Result<PossessionVectorDescri
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PossessionVectorFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

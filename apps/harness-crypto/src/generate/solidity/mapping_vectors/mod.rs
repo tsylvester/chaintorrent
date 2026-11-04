@@ -9,9 +9,9 @@ mod test;
 
 use domain::Secret;
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldsParams, FromFieldsReturn,
-    FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams, ToFieldsReturn,
-    ToFieldsSuccessReturn,
+    CanonicalFieldKind, CanonicalFieldReader, CanonicalFieldValue, CanonicalFields,
+    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams,
+    ToFieldsReturn, ToFieldsSuccessReturn,
 };
 use hash_to_scalar::{
     DomainTag, DomainTagConstructorParams, HashToScalarParams, HashToScalarPayload,
@@ -25,10 +25,9 @@ use pairing::{EncodeScalarParams, EncodeScalarPayload, IPairingArithmetic, ISamp
 use random::{FillBytesParams, FillBytesPayload};
 
 use self::interface::{
-    HASH_TO_SCALAR_VECTOR_FIELD_COUNT, HASH_TO_SCALAR_VECTOR_FIELD_KINDS,
-    HASH_TO_SCALAR_VECTOR_MEMBER_NAMES, HashToScalarVector, HashToScalarVectorDescription,
-    HashToScalarVectorDescriptionConstructorParams, HashToScalarVectorDescriptionTryNewReturn,
-    HashToScalarVectorFromFieldsErrorReturn, IDENTITY_MAPPING_VECTOR_FIELD_COUNT,
+    HASH_TO_SCALAR_VECTOR_FIELD_KINDS, HASH_TO_SCALAR_VECTOR_MEMBER_NAMES, HashToScalarVector,
+    HashToScalarVectorDescription, HashToScalarVectorDescriptionConstructorParams,
+    HashToScalarVectorDescriptionTryNewReturn, HashToScalarVectorFromFieldsErrorReturn,
     IDENTITY_MAPPING_VECTOR_FIELD_KINDS, IDENTITY_MAPPING_VECTOR_MEMBER_NAMES,
     IdentityMappingVector, IdentityMappingVectorDescription,
     IdentityMappingVectorDescriptionConstructorParams,
@@ -108,36 +107,17 @@ impl IEncodingContract for HashToScalarVectorDescription {
         _params: FromFieldsParams,
         payload: CanonicalFields,
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn> {
-        let [tag, message, scalar] =
-            match <[CanonicalFieldValue; HASH_TO_SCALAR_VECTOR_FIELD_COUNT]>::try_from(
-                payload.values,
-            ) {
-                Err(values) => {
-                    return Err(HashToScalarVectorFromFieldsErrorReturn::FieldCount {
-                        expected: HASH_TO_SCALAR_VECTOR_FIELD_COUNT,
-                        actual: values.len(),
-                    });
-                }
-                Ok(values) => values,
-            };
-        let CanonicalFieldValue::Bytes(tag) = tag else {
-            return Err(HashToScalarVectorFromFieldsErrorReturn::FieldKind {
-                index: 0,
-                expected: HASH_TO_SCALAR_VECTOR_FIELD_KINDS[0],
-            });
-        };
-        let CanonicalFieldValue::Bytes(message) = message else {
-            return Err(HashToScalarVectorFromFieldsErrorReturn::FieldKind {
-                index: 1,
-                expected: HASH_TO_SCALAR_VECTOR_FIELD_KINDS[1],
-            });
-        };
-        let CanonicalFieldValue::Unsigned256(scalar) = scalar else {
-            return Err(HashToScalarVectorFromFieldsErrorReturn::FieldKind {
-                index: 2,
-                expected: HASH_TO_SCALAR_VECTOR_FIELD_KINDS[2],
-            });
-        };
+        let mut reader = CanonicalFieldReader::try_new(payload, Self::FIELDS)
+            .map_err(HashToScalarVectorFromFieldsErrorReturn::Fields)?;
+        let tag = reader
+            .read_bytes()
+            .map_err(HashToScalarVectorFromFieldsErrorReturn::Fields)?;
+        let message = reader
+            .read_bytes()
+            .map_err(HashToScalarVectorFromFieldsErrorReturn::Fields)?;
+        let scalar = reader
+            .read_unsigned256()
+            .map_err(HashToScalarVectorFromFieldsErrorReturn::Fields)?;
         Ok(FromFieldsSuccessReturn {
             described: HashToScalarVector {
                 tag,
@@ -170,30 +150,14 @@ impl IEncodingContract for IdentityMappingVectorDescription {
         _params: FromFieldsParams,
         payload: CanonicalFields,
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn> {
-        let [identity, scalar] =
-            match <[CanonicalFieldValue; IDENTITY_MAPPING_VECTOR_FIELD_COUNT]>::try_from(
-                payload.values,
-            ) {
-                Err(values) => {
-                    return Err(IdentityMappingVectorFromFieldsErrorReturn::FieldCount {
-                        expected: IDENTITY_MAPPING_VECTOR_FIELD_COUNT,
-                        actual: values.len(),
-                    });
-                }
-                Ok(values) => values,
-            };
-        let CanonicalFieldValue::Bytes(identity) = identity else {
-            return Err(IdentityMappingVectorFromFieldsErrorReturn::FieldKind {
-                index: 0,
-                expected: IDENTITY_MAPPING_VECTOR_FIELD_KINDS[0],
-            });
-        };
-        let CanonicalFieldValue::Unsigned256(scalar) = scalar else {
-            return Err(IdentityMappingVectorFromFieldsErrorReturn::FieldKind {
-                index: 1,
-                expected: IDENTITY_MAPPING_VECTOR_FIELD_KINDS[1],
-            });
-        };
+        let mut reader = CanonicalFieldReader::try_new(payload, Self::FIELDS)
+            .map_err(IdentityMappingVectorFromFieldsErrorReturn::Fields)?;
+        let identity = reader
+            .read_bytes()
+            .map_err(IdentityMappingVectorFromFieldsErrorReturn::Fields)?;
+        let scalar = reader
+            .read_unsigned256()
+            .map_err(IdentityMappingVectorFromFieldsErrorReturn::Fields)?;
         Ok(FromFieldsSuccessReturn {
             described: IdentityMappingVector { identity, scalar },
         })

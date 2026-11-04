@@ -1,8 +1,8 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, IEncodingContract,
-    build_canonical_fields, build_from_fields_params, build_to_fields_params,
+    CanonicalFieldReaderErrorReturn, CanonicalFieldValue, CanonicalFieldsOverrides,
+    IEncodingContract, build_canonical_fields, build_from_fields_params, build_to_fields_params,
 };
 use pairing::{
     CreatePairingParamsOverrides, IPairingArithmetic, IPairingReference,
@@ -157,9 +157,9 @@ fn group_operation_vector_description_maps_draws_input_and_output_to_byte_string
 }
 // group_operation_vector_description_maps_draws_input_and_output_to_byte_strings_in_order
 
-/// Contract: `payload.values` converts into the field array and every value is
-///   `CanonicalFieldValue::Bytes` → `Ok(FromFieldsSuccessReturn { described:
-///   GroupOperationVector { draws, input, output } })`, each moved from its field.
+/// Contract: the reader admits every field → `Ok(FromFieldsSuccessReturn {
+///   described: GroupOperationVector { draws, input, output } })`, each moved
+///   from its field.
 /// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])`,
 ///   `Bytes(vec![0x0B, 0x0C])`, and `Bytes(vec![0x0D])`, the description from
 ///   `build_group_operation_vector_description(Default::default())`, and
@@ -196,16 +196,19 @@ fn group_operation_vector_description_rebuilds_the_record_from_its_fields() {
 }
 // group_operation_vector_description_rebuilds_the_record_from_its_fields
 
-/// Contract: `payload.values` does not convert into the field array →
-///   `Err(GroupOperationVectorFromFieldsErrorReturn::FieldCount { expected:
-///   VECTOR_RECORD_FIELD_COUNT, actual })`.
-/// Arrange: `build_canonical_fields` with `values` two `Bytes` values.
+/// Contract: a refusal of `CanonicalFieldReader::try_new` or of any read →
+///   `Err(GroupOperationVectorFromFieldsErrorReturn::Fields(error))`, the error
+///   unchanged.
+/// Arrange: `build_canonical_fields` with `values` two `Bytes` values, the
+///   description from
+///   `build_group_operation_vector_description(Default::default())`, and
+///   `build_from_fields_params(Default::default())`.
 /// Act:    `fields_to_value`.
 /// Assert: `result.err()` equals
-///   `Some(GroupOperationVectorFromFieldsErrorReturn::FieldCount { expected: 3,
-///   actual: 2 })`.
+///   `Some(GroupOperationVectorFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Count { expected: 3, actual: 2 }))`.
 #[test]
-fn group_operation_vector_description_refuses_a_wrong_field_count() {
+fn group_operation_vector_description_carries_the_readers_refusal() {
     // Arrange
     let payload = build_canonical_fields(CanonicalFieldsOverrides {
         values: Some(vec![
@@ -221,49 +224,15 @@ fn group_operation_vector_description_refuses_a_wrong_field_count() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(GroupOperationVectorFromFieldsErrorReturn::FieldCount {
-            expected: 3,
-            actual: 2,
-        })
+        Some(GroupOperationVectorFromFieldsErrorReturn::Fields(
+            CanonicalFieldReaderErrorReturn::Count {
+                expected: 3,
+                actual: 2,
+            }
+        ))
     );
 }
-// group_operation_vector_description_refuses_a_wrong_field_count
-
-/// Contract: the lowest index `i` whose value is not `CanonicalFieldValue::Bytes` →
-///   `Err(GroupOperationVectorFromFieldsErrorReturn::FieldKind { index: i, expected:
-///   CanonicalFieldKind::Bytes })`.
-/// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])`,
-///   `FixedBytes32([0x0B; 32])`, and `FixedBytes32([0x0C; 32])`, so the indexes `1`
-///   and `2` both hold a wrong kind.
-/// Act:    `fields_to_value`.
-/// Assert: `result.err()` equals
-///   `Some(GroupOperationVectorFromFieldsErrorReturn::FieldKind { index: 1,
-///   expected: CanonicalFieldKind::Bytes })`.
-#[test]
-fn group_operation_vector_description_refuses_the_lowest_index_of_the_wrong_kind() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x0A]),
-            CanonicalFieldValue::FixedBytes32([0x0B; 32]),
-            CanonicalFieldValue::FixedBytes32([0x0C; 32]),
-        ]),
-    });
-    let description = build_group_operation_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(GroupOperationVectorFromFieldsErrorReturn::FieldKind {
-            index: 1,
-            expected: CanonicalFieldKind::Bytes,
-        })
-    );
-}
-// group_operation_vector_description_refuses_the_lowest_index_of_the_wrong_kind
+// group_operation_vector_description_carries_the_readers_refusal
 
 /// Contract: `to_fields` → `Ok(ToFieldsSuccessReturn { fields })` whose `values` are
 ///   `CanonicalFieldValue::Bytes` of clones of `draws` and `input` and
@@ -304,10 +273,9 @@ fn pairing_check_vector_description_maps_its_output_to_a_fixed_32_byte_field() {
 }
 // pairing_check_vector_description_maps_its_output_to_a_fixed_32_byte_field
 
-/// Contract: `payload.values` converts into the field array and each value is the
-///   kind `PAIRING_CHECK_VECTOR_FIELD_KINDS` holds at its index →
-///   `Ok(FromFieldsSuccessReturn { described: PairingCheckVector { draws, input,
-///   output } })`, each moved from its field.
+/// Contract: the reader admits every field → `Ok(FromFieldsSuccessReturn {
+///   described: PairingCheckVector { draws, input, output } })`, each moved from
+///   its field.
 /// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])`,
 ///   `Bytes(vec![0x0B])`, and `FixedBytes32([0x0C; 32])`, the description from
 ///   `build_pairing_check_vector_description(Default::default())`, and
@@ -344,16 +312,19 @@ fn pairing_check_vector_description_rebuilds_the_record_from_its_fields() {
 }
 // pairing_check_vector_description_rebuilds_the_record_from_its_fields
 
-/// Contract: `payload.values` does not convert into the field array →
-///   `Err(PairingCheckVectorFromFieldsErrorReturn::FieldCount { expected:
-///   VECTOR_RECORD_FIELD_COUNT, actual })`.
-/// Arrange: `build_canonical_fields` with `values` two `Bytes` values.
+/// Contract: a refusal of `CanonicalFieldReader::try_new` or of any read →
+///   `Err(PairingCheckVectorFromFieldsErrorReturn::Fields(error))`, the error
+///   unchanged.
+/// Arrange: `build_canonical_fields` with `values` two `Bytes` values, the
+///   description from
+///   `build_pairing_check_vector_description(Default::default())`, and
+///   `build_from_fields_params(Default::default())`.
 /// Act:    `fields_to_value`.
 /// Assert: `result.err()` equals
-///   `Some(PairingCheckVectorFromFieldsErrorReturn::FieldCount { expected: 3,
-///   actual: 2 })`.
+///   `Some(PairingCheckVectorFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Count { expected: 3, actual: 2 }))`.
 #[test]
-fn pairing_check_vector_description_refuses_a_wrong_field_count() {
+fn pairing_check_vector_description_carries_the_readers_refusal() {
     // Arrange
     let payload = build_canonical_fields(CanonicalFieldsOverrides {
         values: Some(vec![
@@ -369,86 +340,15 @@ fn pairing_check_vector_description_refuses_a_wrong_field_count() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(PairingCheckVectorFromFieldsErrorReturn::FieldCount {
-            expected: 3,
-            actual: 2,
-        })
+        Some(PairingCheckVectorFromFieldsErrorReturn::Fields(
+            CanonicalFieldReaderErrorReturn::Count {
+                expected: 3,
+                actual: 2,
+            }
+        ))
     );
 }
-// pairing_check_vector_description_refuses_a_wrong_field_count
-
-/// Contract: the lowest index `i` whose value is not the kind
-///   `PAIRING_CHECK_VECTOR_FIELD_KINDS` holds at `i` →
-///   `Err(PairingCheckVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`,
-///   `expected` that kind.
-/// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])`,
-///   `Bytes(vec![0x0B])`, and `Bytes(vec![0x0C])`.
-/// Act:    `fields_to_value`.
-/// Assert: `result.err()` equals
-///   `Some(PairingCheckVectorFromFieldsErrorReturn::FieldKind { index: 2,
-///   expected: CanonicalFieldKind::FixedBytes32 })`.
-#[test]
-fn pairing_check_vector_description_refuses_a_byte_string_output() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x0A]),
-            CanonicalFieldValue::Bytes(vec![0x0B]),
-            CanonicalFieldValue::Bytes(vec![0x0C]),
-        ]),
-    });
-    let description = build_pairing_check_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(PairingCheckVectorFromFieldsErrorReturn::FieldKind {
-            index: 2,
-            expected: CanonicalFieldKind::FixedBytes32,
-        })
-    );
-}
-// pairing_check_vector_description_refuses_a_byte_string_output
-
-/// Contract: the lowest index `i` whose value is not the kind
-///   `PAIRING_CHECK_VECTOR_FIELD_KINDS` holds at `i` →
-///   `Err(PairingCheckVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`,
-///   `expected` that kind.
-/// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0A])`,
-///   `FixedBytes32([0x0B; 32])`, and `Bytes(vec![0x0C])`, so the indexes `1` and `2`
-///   both hold a wrong kind.
-/// Act:    `fields_to_value`.
-/// Assert: `result.err()` equals
-///   `Some(PairingCheckVectorFromFieldsErrorReturn::FieldKind { index: 1,
-///   expected: CanonicalFieldKind::Bytes })`.
-#[test]
-fn pairing_check_vector_description_refuses_the_lowest_index_of_the_wrong_kind() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x0A]),
-            CanonicalFieldValue::FixedBytes32([0x0B; 32]),
-            CanonicalFieldValue::Bytes(vec![0x0C]),
-        ]),
-    });
-    let description = build_pairing_check_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(PairingCheckVectorFromFieldsErrorReturn::FieldKind {
-            index: 1,
-            expected: CanonicalFieldKind::Bytes,
-        })
-    );
-}
-// pairing_check_vector_description_refuses_the_lowest_index_of_the_wrong_kind
+// pairing_check_vector_description_carries_the_readers_refusal
 
 /// Contract: each name in `VECTOR_RECORD_MEMBER_NAMES` that
 ///   `SolidityMemberName::try_new` admits → `Ok` of the names in order.

@@ -9,9 +9,9 @@ mod test;
 
 use domain::Secret;
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldsParams, FromFieldsReturn,
-    FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams, ToFieldsReturn,
-    ToFieldsSuccessReturn,
+    CanonicalFieldKind, CanonicalFieldReader, CanonicalFieldValue, CanonicalFields,
+    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams,
+    ToFieldsReturn, ToFieldsSuccessReturn,
 };
 use envelope::{
     GenerateKeysParams, GenerateKeysPayload, IKeyAgreementAdapter, KeyPairComponentsParams,
@@ -25,8 +25,8 @@ use pairing::{
 use random::{FillBytesParams, FillBytesPayload};
 
 use self::interface::{
-    POSSESSION_VECTOR_FIELD_COUNT, POSSESSION_VECTOR_FIELD_KINDS, POSSESSION_VECTOR_MEMBER_NAMES,
-    PossessionVector, PossessionVectorDescription, PossessionVectorDescriptionConstructorParams,
+    POSSESSION_VECTOR_FIELD_KINDS, POSSESSION_VECTOR_MEMBER_NAMES, PossessionVector,
+    PossessionVectorDescription, PossessionVectorDescriptionConstructorParams,
     PossessionVectorDescriptionTryNewReturn, PossessionVectorFromFieldsErrorReturn,
     PossessionVectorMemberNamesErrorReturn, PossessionVectorMemberNamesReturn,
     PossessionVectorsDeps, PossessionVectorsErrorReturn, PossessionVectorsParams,
@@ -85,66 +85,32 @@ impl IEncodingContract for PossessionVectorDescription {
         _params: FromFieldsParams,
         payload: CanonicalFields,
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn> {
-        let [x, y, pk1, pk2, r1, z1, r2, z2] = match <[CanonicalFieldValue;
-            POSSESSION_VECTOR_FIELD_COUNT]>::try_from(
-            payload.values
-        ) {
-            Err(values) => {
-                return Err(PossessionVectorFromFieldsErrorReturn::FieldCount {
-                    expected: POSSESSION_VECTOR_FIELD_COUNT,
-                    actual: values.len(),
-                });
-            }
-            Ok(values) => values,
-        };
-        let CanonicalFieldValue::Unsigned256(x) = x else {
-            return Err(PossessionVectorFromFieldsErrorReturn::FieldKind {
-                index: 0,
-                expected: POSSESSION_VECTOR_FIELD_KINDS[0],
-            });
-        };
-        let CanonicalFieldValue::Unsigned256(y) = y else {
-            return Err(PossessionVectorFromFieldsErrorReturn::FieldKind {
-                index: 1,
-                expected: POSSESSION_VECTOR_FIELD_KINDS[1],
-            });
-        };
-        let CanonicalFieldValue::Bytes(pk1) = pk1 else {
-            return Err(PossessionVectorFromFieldsErrorReturn::FieldKind {
-                index: 2,
-                expected: POSSESSION_VECTOR_FIELD_KINDS[2],
-            });
-        };
-        let CanonicalFieldValue::Bytes(pk2) = pk2 else {
-            return Err(PossessionVectorFromFieldsErrorReturn::FieldKind {
-                index: 3,
-                expected: POSSESSION_VECTOR_FIELD_KINDS[3],
-            });
-        };
-        let CanonicalFieldValue::Bytes(r1) = r1 else {
-            return Err(PossessionVectorFromFieldsErrorReturn::FieldKind {
-                index: 4,
-                expected: POSSESSION_VECTOR_FIELD_KINDS[4],
-            });
-        };
-        let CanonicalFieldValue::Unsigned256(z1) = z1 else {
-            return Err(PossessionVectorFromFieldsErrorReturn::FieldKind {
-                index: 5,
-                expected: POSSESSION_VECTOR_FIELD_KINDS[5],
-            });
-        };
-        let CanonicalFieldValue::Bytes(r2) = r2 else {
-            return Err(PossessionVectorFromFieldsErrorReturn::FieldKind {
-                index: 6,
-                expected: POSSESSION_VECTOR_FIELD_KINDS[6],
-            });
-        };
-        let CanonicalFieldValue::Unsigned256(z2) = z2 else {
-            return Err(PossessionVectorFromFieldsErrorReturn::FieldKind {
-                index: 7,
-                expected: POSSESSION_VECTOR_FIELD_KINDS[7],
-            });
-        };
+        let mut reader = CanonicalFieldReader::try_new(payload, Self::FIELDS)
+            .map_err(PossessionVectorFromFieldsErrorReturn::Fields)?;
+        let x = reader
+            .read_unsigned256()
+            .map_err(PossessionVectorFromFieldsErrorReturn::Fields)?;
+        let y = reader
+            .read_unsigned256()
+            .map_err(PossessionVectorFromFieldsErrorReturn::Fields)?;
+        let pk1 = reader
+            .read_bytes()
+            .map_err(PossessionVectorFromFieldsErrorReturn::Fields)?;
+        let pk2 = reader
+            .read_bytes()
+            .map_err(PossessionVectorFromFieldsErrorReturn::Fields)?;
+        let r1 = reader
+            .read_bytes()
+            .map_err(PossessionVectorFromFieldsErrorReturn::Fields)?;
+        let z1 = reader
+            .read_unsigned256()
+            .map_err(PossessionVectorFromFieldsErrorReturn::Fields)?;
+        let r2 = reader
+            .read_bytes()
+            .map_err(PossessionVectorFromFieldsErrorReturn::Fields)?;
+        let z2 = reader
+            .read_unsigned256()
+            .map_err(PossessionVectorFromFieldsErrorReturn::Fields)?;
         Ok(FromFieldsSuccessReturn {
             described: PossessionVector {
                 x,

@@ -1,8 +1,9 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, FromFieldsParams,
-    IDecoderAdapter, IEncoderAdapter, IEncodingContract, ToFieldsParams, build_canonical_fields,
+    CanonicalFieldReaderErrorReturn, CanonicalFieldValue, CanonicalFieldsOverrides,
+    FromFieldsParams, IDecoderAdapter, IEncoderAdapter, IEncodingContract, ToFieldsParams,
+    build_canonical_fields,
 };
 use envelope::{
     CreateKeyAgreementParamsOverrides, GenerateKeysErrorReturn, IKeyAgreementAdapter,
@@ -668,10 +669,9 @@ fn possession_vector_description_maps_secrets_keys_and_proof_components_in_membe
 }
 // possession_vector_description_maps_secrets_keys_and_proof_components_in_member_order
 
-/// Contract: `payload.values` converts into the field array and each value is
-///   the kind `POSSESSION_VECTOR_FIELD_KINDS` holds at its index →
-///   `Ok(FromFieldsSuccessReturn { described })` whose `described` is the
-///   record with each field moved from its value.
+/// Contract: the reader admits every field → `Ok(FromFieldsSuccessReturn {
+///   described: PossessionVector { x, y, pk1, pk2, r1, z1, r2, z2 } })`, each
+///   the value its read returned.
 /// Arrange: `build_canonical_fields` with `values` `Unsigned256([0x01; 32])`,
 ///   `Unsigned256([0x02; 32])`, `Bytes(vec![0x03; 64])`, `Bytes(vec![0x04; 128])`,
 ///   `Bytes(vec![0x05; 64])`, `Unsigned256([0x06; 32])`, `Bytes(vec![0x07; 128])`,
@@ -707,55 +707,18 @@ fn possession_vector_description_rebuilds_the_record_from_its_fields() {
 }
 // possession_vector_description_rebuilds_the_record_from_its_fields
 
-/// Contract: `payload.values` does not convert into the declared count →
-///   `Err(PossessionVectorFromFieldsErrorReturn::FieldCount { expected, actual })`.
+/// Contract: a refusal of `CanonicalFieldReader::try_new` or of any read →
+///   `Err(PossessionVectorFromFieldsErrorReturn::Fields(error))`, the error
+///   unchanged.
 /// Arrange: `build_canonical_fields` with `values` the values
 ///   `possession_vector_description_rebuilds_the_record_from_its_fields`
-///   arranges, less the last, with the value at index `0` replaced by
-///   `Bytes(vec![0x01; 32])`, so the count is wrong and a kind is wrong.
+///   arranges, less the last.
 /// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldCount { expected: 8, actual: 7 }` by
-///   `assert_eq!`, the count refused before any kind.
-#[test]
-fn possession_vector_description_refuses_a_list_one_field_short() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x01; 32]),
-            CanonicalFieldValue::Unsigned256([0x02; 32]),
-            CanonicalFieldValue::Bytes(vec![0x03; 64]),
-            CanonicalFieldValue::Bytes(vec![0x04; 128]),
-            CanonicalFieldValue::Bytes(vec![0x05; 64]),
-            CanonicalFieldValue::Unsigned256([0x06; 32]),
-            CanonicalFieldValue::Bytes(vec![0x07; 128]),
-        ]),
-    });
-    let description = build_possession_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(FromFieldsParams, payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(PossessionVectorFromFieldsErrorReturn::FieldCount {
-            expected: 8,
-            actual: 7,
-        })
-    );
-}
-// possession_vector_description_refuses_a_list_one_field_short
-
-/// Contract: `payload.values` does not convert into the declared count →
-///   `Err(PossessionVectorFromFieldsErrorReturn::FieldCount { expected, actual })`.
-/// Arrange: `build_canonical_fields` with `values` the values
-///   `possession_vector_description_rebuilds_the_record_from_its_fields`
-///   arranges, followed by `Unsigned256([0x09; 32])`.
-/// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldCount { expected: 8, actual: 9 }` by
+/// Assert: the error equals `PossessionVectorFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Count { expected: 8, actual: 7 })` by
 ///   `assert_eq!`.
 #[test]
-fn possession_vector_description_refuses_a_list_one_field_long() {
+fn possession_vector_description_carries_the_readers_refusal() {
     // Arrange
     let payload = build_canonical_fields(CanonicalFieldsOverrides {
         values: Some(vec![
@@ -766,8 +729,6 @@ fn possession_vector_description_refuses_a_list_one_field_long() {
             CanonicalFieldValue::Bytes(vec![0x05; 64]),
             CanonicalFieldValue::Unsigned256([0x06; 32]),
             CanonicalFieldValue::Bytes(vec![0x07; 128]),
-            CanonicalFieldValue::Unsigned256([0x08; 32]),
-            CanonicalFieldValue::Unsigned256([0x09; 32]),
         ]),
     });
     let description = build_possession_vector_description(Default::default());
@@ -778,55 +739,15 @@ fn possession_vector_description_refuses_a_list_one_field_long() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(PossessionVectorFromFieldsErrorReturn::FieldCount {
-            expected: 8,
-            actual: 9,
-        })
+        Some(PossessionVectorFromFieldsErrorReturn::Fields(
+            CanonicalFieldReaderErrorReturn::Count {
+                expected: 8,
+                actual: 7,
+            }
+        ))
     );
 }
-// possession_vector_description_refuses_a_list_one_field_long
-
-/// Contract: the lowest index whose value is not the kind the description
-///   holds there → `Err(PossessionVectorFromFieldsErrorReturn::FieldKind {
-///   index, expected })`.
-/// Arrange: `build_canonical_fields` with `values` the values
-///   `possession_vector_description_rebuilds_the_record_from_its_fields`
-///   arranges, with the values at index `2` and index `5` replaced by
-///   `Unsigned256([0x03; 32])` and `Bytes(vec![0x06; 64])`, so two kinds are
-///   wrong.
-/// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldKind { index: 2, expected:
-///   CanonicalFieldKind::Bytes }` by `assert_eq!`.
-#[test]
-fn possession_vector_description_refuses_the_lowest_field_of_the_wrong_kind() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Unsigned256([0x01; 32]),
-            CanonicalFieldValue::Unsigned256([0x02; 32]),
-            CanonicalFieldValue::Unsigned256([0x03; 32]),
-            CanonicalFieldValue::Bytes(vec![0x04; 128]),
-            CanonicalFieldValue::Bytes(vec![0x05; 64]),
-            CanonicalFieldValue::Bytes(vec![0x06; 64]),
-            CanonicalFieldValue::Bytes(vec![0x07; 128]),
-            CanonicalFieldValue::Unsigned256([0x08; 32]),
-        ]),
-    });
-    let description = build_possession_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(FromFieldsParams, payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(PossessionVectorFromFieldsErrorReturn::FieldKind {
-            index: 2,
-            expected: CanonicalFieldKind::Bytes,
-        })
-    );
-}
-// possession_vector_description_refuses_the_lowest_field_of_the_wrong_kind
+// possession_vector_description_carries_the_readers_refusal
 
 /// Contract: `member_names()` → `Ok` of the admitted names in member order.
 /// Arrange: `build_possession_vector_description(Default::default())`.

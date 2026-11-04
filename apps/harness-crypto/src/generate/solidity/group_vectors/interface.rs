@@ -1,6 +1,6 @@
 use core::convert::Infallible;
 use core::num::NonZeroU32;
-use encoding::CanonicalFieldKind;
+use encoding::{CanonicalFieldKind, CanonicalFieldReaderErrorReturn};
 #[cfg(any(test, feature = "mocks"))]
 use pairing::{CreatePairingErrorReturn, CreatePairingParams, IPairingReference};
 use pairing::{IPairingArithmetic, SampleUniformScalarErrorReturn};
@@ -102,14 +102,7 @@ pub type GroupOperationVectorDescriptionTryNewReturn =
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GroupOperationVectorFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
 }
 
 pub struct PairingCheckVectorDescription;
@@ -121,14 +114,7 @@ pub type PairingCheckVectorDescriptionTryNewReturn =
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PairingCheckVectorFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

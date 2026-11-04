@@ -9,8 +9,8 @@ use envelope::{
 };
 use hashing::build_root;
 use kem::{
-    CreateKemParamsOverrides, DeriveIdentityPayloadOverrides, ICredentialKemAdapter,
-    IdentityScope, IssuePayloadOverrides, ParameterSetScopeComponents, SetupParamsOverrides,
+    CreateKemParamsOverrides, DeriveIdentityPayloadOverrides, ICredentialKemAdapter, IdentityScope,
+    IssuePayloadOverrides, ParameterSetScopeComponents, SetupParamsOverrides,
     SetupPayloadOverrides, build_create_kem_params, build_credential_components_params,
     build_credential_components_payload, build_derive_identity_params,
     build_derive_identity_payload, build_identity_element_components_params,
@@ -21,8 +21,7 @@ use kem::{
 use pairing::{
     EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload, G1GeneratorParams,
     G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingArithmetic,
-    IPairingReference, ISampleUniformScalar, MulG1Params, MulG1Payload, MulG2Params,
-    MulG2Payload,
+    IPairingReference, ISampleUniformScalar, MulG1Params, MulG1Payload, MulG2Params, MulG2Payload,
 };
 use proof::{IDeliveryProofAdapter, MintPurpose, build_delivery_context};
 use random::IRandomSourceAdapter;
@@ -108,10 +107,7 @@ fn mint_returns_a_statement_over_the_payloads_context_and_the_recipients_keys() 
                 delivery.statement.context.entitlement_contract,
                 context.entitlement_contract
             );
-            assert_eq!(
-                delivery.statement.context.asset_root,
-                context.asset_root
-            );
+            assert_eq!(delivery.statement.context.asset_root, context.asset_root);
             assert_eq!(
                 delivery.statement.context.parameter_set_identifier,
                 context.parameter_set_identifier
@@ -434,10 +430,7 @@ fn mint_draws_six_uniforms_in_order() {
             let delivered_credential = kem
                 .credential_components(
                     build_credential_components_params(Default::default()),
-                    build_credential_components_payload(
-                        &delivery.credential,
-                        Default::default(),
-                    ),
+                    build_credential_components_payload(&delivery.credential, Default::default()),
                 )
                 .expect("the delivery's credential's components are infallible")
                 .components;
@@ -464,10 +457,7 @@ fn mint_draws_six_uniforms_in_order() {
             let replayed_public_keys = key_agreement
                 .key_pair_public_keys(
                     build_key_pair_public_keys_params(Default::default()),
-                    build_key_pair_public_keys_payload(
-                        &replayed_keys.key_pair,
-                        Default::default(),
-                    ),
+                    build_key_pair_public_keys_payload(&replayed_keys.key_pair, Default::default()),
                 )
                 .expect("the replayed key pair's public keys are infallible")
                 .components;
@@ -772,10 +762,7 @@ fn mint_returns_the_witnesses_the_objects_were_formed_with() {
                     scalar: delivery.witnesses.credential_randomness.expose().clone(),
                 },
             );
-            assert_eq!(
-                encode_g2(&credential.b),
-                encode_g2(&expected_b.product)
-            );
+            assert_eq!(encode_g2(&credential.b), encode_g2(&expected_b.product));
             let envelope = key_agreement
                 .envelope_components(
                     build_envelope_components_params(Default::default()),
@@ -793,10 +780,7 @@ fn mint_returns_the_witnesses_the_objects_were_formed_with() {
                     scalar: delivery.witnesses.coins.rho.expose().clone(),
                 },
             );
-            assert_eq!(
-                encode_g1(&envelope.c1),
-                encode_g1(&expected_c1.product)
-            );
+            assert_eq!(encode_g1(&envelope.c1), encode_g1(&expected_c1.product));
             let Ok(expected_d1) = pairing.mul_g2(
                 MulG2Params,
                 MulG2Payload {
@@ -804,10 +788,7 @@ fn mint_returns_the_witnesses_the_objects_were_formed_with() {
                     scalar: delivery.witnesses.coins.sigma.expose().clone(),
                 },
             );
-            assert_eq!(
-                encode_g2(&envelope.d1),
-                encode_g2(&expected_d1.product)
-            );
+            assert_eq!(encode_g2(&envelope.d1), encode_g2(&expected_d1.product));
         }
     }
 

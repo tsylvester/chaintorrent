@@ -232,10 +232,7 @@ fn cross_set_returns_the_sampling_refusal_of_setup_whole() {
             let expected = <P::Scalar as ISampleUniformScalar>::sample_from_uniform_bytes(
                 SampleUniformScalarParams,
                 SampleUniformScalarPayload {
-                    uniform: build_secret(
-                        master_uniform.expose().clone(),
-                        Default::default(),
-                    ),
+                    uniform: build_secret(master_uniform.expose().clone(), Default::default()),
                 },
             )
             .err()

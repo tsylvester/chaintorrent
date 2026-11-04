@@ -7,9 +7,7 @@ use domain::{
     SuiteIdentifierConstructorParamsOverrides, build_deployment_identity, build_group_index,
     build_parameter_set_identifier, build_piece_geometry, build_suite_identifier,
 };
-use encoding::{
-    CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, IEncoderAdapter,
-};
+use encoding::{CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, IEncoderAdapter};
 use hash_to_scalar::{
     DECLARED_HASH_TO_SCALAR_SELECTIONS, DomainTagConstructorParamsOverrides, HashToScalarConcrete,
     HashToScalarErrorReturn, HashToScalarIdentifier, IHashToScalarAdapter,
@@ -741,9 +739,9 @@ fn every_record_draw_replays_to_the_values_it_holds() {
                                         hash_to_scalar: Some(*h2s_selection),
                                         kem: Some(*kem_selection),
                                         encoding: Some(CreateEncodingParams {
-                                    concrete: encoding_selection.concrete,
-                                    identifier: encoding_selection.identifier,
-                                }),
+                                            concrete: encoding_selection.concrete,
+                                            identifier: encoding_selection.identifier,
+                                        }),
                                         key_derivation: Some(*kdf_selection),
                                         random_source: Some(build_create_random_source_params(
                                             CreateRandomSourceParamsOverrides {
@@ -1369,9 +1367,9 @@ fn records_under_pairings_sharing_a_target_group_encoding_hold_the_same_encapsul
                     })),
                     kem: Some(*kem_selection),
                     encoding: Some(CreateEncodingParams {
-                                    concrete: encoding_selection.concrete,
-                                    identifier: encoding_selection.identifier,
-                                }),
+                        concrete: encoding_selection.concrete,
+                        identifier: encoding_selection.identifier,
+                    }),
                     key_derivation: Some(*kdf_selection),
                     random_source: Some(build_create_random_source_params(Default::default())),
                     ..Default::default()

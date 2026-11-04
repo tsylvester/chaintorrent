@@ -61,7 +61,8 @@ use crate::delivery::mint::provides::{
 /// Collaborators: every family's mock concrete, reached through its factory
 ///   at the defaults of its params builder.
 #[test]
-fn transfer_returns_a_statement_over_the_payloads_context_the_holders_objects_and_the_buyers_keys() {
+fn transfer_returns_a_statement_over_the_payloads_context_the_holders_objects_and_the_buyers_keys()
+{
     struct Consumer;
 
     impl ITransferCaseConsumer for Consumer {
@@ -142,10 +143,7 @@ fn transfer_returns_a_statement_over_the_payloads_context_the_holders_objects_an
                 delivery.statement.context.entitlement_contract,
                 context.entitlement_contract
             );
-            assert_eq!(
-                delivery.statement.context.asset_root,
-                context.asset_root
-            );
+            assert_eq!(delivery.statement.context.asset_root, context.asset_root);
             assert_eq!(
                 delivery.statement.context.parameter_set_identifier,
                 context.parameter_set_identifier

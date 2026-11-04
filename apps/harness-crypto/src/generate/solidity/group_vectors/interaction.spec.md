@@ -31,9 +31,8 @@ Branch contract for the `group_vectors` module of the `solidity` module of the `
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| count | `payload.values` does not convert into `[CanonicalFieldValue; VECTOR_RECORD_FIELD_COUNT]` | the conversion | none | `Err(GroupOperationVectorFromFieldsErrorReturn::FieldCount { expected: VECTOR_RECORD_FIELD_COUNT, actual })`, `actual` the vector's length |
-| kind | the lowest index `i` whose `kind()` is not `CanonicalFieldKind::Bytes` | that field's kind | none | `Err(GroupOperationVectorFromFieldsErrorReturn::FieldKind { index: i, expected: CanonicalFieldKind::Bytes })` |
-| rebuilt | the count converts and every field is `Bytes` | none | none | `Ok(FromFieldsSuccessReturn { described: GroupOperationVector { draws, input, output } })`, each moved from its field |
+| fields refused | `CanonicalFieldReader::try_new` or a `read_bytes` returns `Err(error)` | the call's return | `CanonicalFieldReader::try_new(payload, Self::FIELDS)`, then `read_bytes` for `draws`, `input`, and `output` in that order | `Err(GroupOperationVectorFromFieldsErrorReturn::Fields(error))`, the refusal unchanged |
+| rebuilt | the reader's construction and every read return `Ok` | none | the same calls | `Ok(FromFieldsSuccessReturn { described: GroupOperationVector { draws, input, output } })`, each the value its read returned |
 
 ## `IEncodingContract for PairingCheckVectorDescription`
 
@@ -41,7 +40,12 @@ Branch contract for the `group_vectors` module of the `solidity` module of the `
 
 `to_fields`: one branch; `values` being `CanonicalFieldValue::Bytes` of clones of `draws` and `input` and `CanonicalFieldValue::FixedBytes32` of `output`.
 
-`fields_to_value`: the same count branch with `PairingCheckVectorFromFieldsErrorReturn`, then the kind branch by the lowest index whose value is not the kind `PAIRING_CHECK_VECTOR_FIELD_KINDS` holds at that index, carrying that kind as `expected`, then the rebuilt branch.
+`fields_to_value`:
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| fields refused | `CanonicalFieldReader::try_new`, a `read_bytes`, or the `read_fixed_bytes32` returns `Err(error)` | the call's return | `CanonicalFieldReader::try_new(payload, Self::FIELDS)`, then `read_bytes` for `draws` and `input` and `read_fixed_bytes32` for `output`, in that order | `Err(PairingCheckVectorFromFieldsErrorReturn::Fields(error))`, the refusal unchanged |
+| rebuilt | the reader's construction and every read return `Ok` | none | the same calls | `Ok(FromFieldsSuccessReturn { described: PairingCheckVector { draws, input, output } })`, each the value its read returned |
 
 ## `member_names`
 

@@ -20,9 +20,8 @@ Branch contract for the `mapping_vectors` module of the `solidity` module of the
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| count | `payload.values` does not convert into `[CanonicalFieldValue; HASH_TO_SCALAR_VECTOR_FIELD_COUNT]` | the conversion's return | none | `Err(HashToScalarVectorFromFieldsErrorReturn::FieldCount { expected: HASH_TO_SCALAR_VECTOR_FIELD_COUNT, actual })`, `actual` the vector's length |
-| kind | the lowest index `i` whose value is not the kind `HASH_TO_SCALAR_VECTOR_FIELD_KINDS` holds at `i` | that index's kind against the kinds constant | none | `Err(HashToScalarVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`, `expected` the kind `HASH_TO_SCALAR_VECTOR_FIELD_KINDS` holds at `i` |
-| rebuilt | the count converts and every value holds the kind its index declares | none | none | `Ok(FromFieldsSuccessReturn { described: HashToScalarVector { tag, message, scalar } })`, each moved from its field |
+| fields refused | `CanonicalFieldReader::try_new`, a `read_bytes`, or the `read_unsigned256` returns `Err(error)` | the call's return | `CanonicalFieldReader::try_new(payload, Self::FIELDS)`, then `read_bytes` for `tag`, `read_bytes` for `message`, and `read_unsigned256` for `scalar`, in that order | `Err(HashToScalarVectorFromFieldsErrorReturn::Fields(error))`, the refusal unchanged |
+| rebuilt | the reader's construction and every read return `Ok` | none | the same calls | `Ok(FromFieldsSuccessReturn { described: HashToScalarVector { tag, message, scalar } })`, each the value its read returned |
 
 ## `IEncodingContract` for `IdentityMappingVectorDescription`
 
@@ -34,9 +33,8 @@ Branch contract for the `mapping_vectors` module of the `solidity` module of the
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| count | `payload.values` does not convert into `[CanonicalFieldValue; IDENTITY_MAPPING_VECTOR_FIELD_COUNT]` | the conversion's return | none | `Err(IdentityMappingVectorFromFieldsErrorReturn::FieldCount { expected: IDENTITY_MAPPING_VECTOR_FIELD_COUNT, actual })`, `actual` the vector's length |
-| kind | the lowest index `i` whose value is not the kind `IDENTITY_MAPPING_VECTOR_FIELD_KINDS` holds at `i` | that index's kind against the kinds constant | none | `Err(IdentityMappingVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`, `expected` the kind `IDENTITY_MAPPING_VECTOR_FIELD_KINDS` holds at `i` |
-| rebuilt | the count converts and every value holds the kind its index declares | none | none | `Ok(FromFieldsSuccessReturn { described: IdentityMappingVector { identity, scalar } })`, each moved from its field |
+| fields refused | `CanonicalFieldReader::try_new`, a `read_bytes`, or the `read_unsigned256` returns `Err(error)` | the call's return | `CanonicalFieldReader::try_new(payload, Self::FIELDS)`, then `read_bytes` for `identity` and `read_unsigned256` for `scalar`, in that order | `Err(IdentityMappingVectorFromFieldsErrorReturn::Fields(error))`, the refusal unchanged |
+| rebuilt | the reader's construction and every read return `Ok` | none | the same calls | `Ok(FromFieldsSuccessReturn { described: IdentityMappingVector { identity, scalar } })`, each the value its read returned |
 
 ## `member_names`
 

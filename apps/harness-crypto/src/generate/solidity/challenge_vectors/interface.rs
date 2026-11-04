@@ -3,7 +3,10 @@ use chain::IChainForms;
 use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams};
 use core::convert::Infallible;
 use domain::{ParameterSetIdentifier, SuiteIdentifier};
-use encoding::{CanonicalFieldKind, CanonicalFieldValue, EncodeErrorReturn, IEncoderAdapter};
+use encoding::{
+    CanonicalFieldKind, CanonicalFieldReaderErrorReturn, CanonicalFieldValue, EncodeErrorReturn,
+    IEncoderAdapter,
+};
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter};
 #[cfg(any(test, feature = "mocks"))]
@@ -78,14 +81,7 @@ pub type ChallengeVectorDescriptionTryNewReturn = Result<ChallengeVectorDescript
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ChallengeVectorFromFieldsErrorReturn {
-    FieldCount {
-        expected: usize,
-        actual: usize,
-    },
-    FieldKind {
-        index: usize,
-        expected: CanonicalFieldKind,
-    },
+    Fields(CanonicalFieldReaderErrorReturn),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

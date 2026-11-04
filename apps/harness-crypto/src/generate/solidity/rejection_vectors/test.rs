@@ -1,8 +1,8 @@
 #![allow(clippy::expect_used)]
 
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, IEncodingContract,
-    build_canonical_fields, build_from_fields_params, build_to_fields_params,
+    CanonicalFieldReaderErrorReturn, CanonicalFieldValue, CanonicalFieldsOverrides,
+    IEncodingContract, build_canonical_fields, build_from_fields_params, build_to_fields_params,
 };
 use pairing::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
@@ -249,13 +249,17 @@ fn rejection_vector_description_rebuilds_the_record_from_its_fields() {
 }
 // rejection_vector_description_rebuilds_the_record_from_its_fields
 
-/// Contract: `payload.values` does not convert into the field array →
-///   `Err(RejectionVectorFromFieldsErrorReturn::FieldCount { expected: 2, actual: 1 })`.
-/// Arrange: `build_canonical_fields` with `values` `Text("G1")` alone.
+/// Contract: a refusal of `CanonicalFieldReader::try_new` or of any read →
+///   `Err(RejectionVectorFromFieldsErrorReturn::Fields(error))`, the error
+///   unchanged.
+/// Arrange: `build_canonical_fields` with `values` `Text("G1")` alone, the
+///   description from `build_rejection_vector_description(Default::default())`,
+///   and `build_from_fields_params(Default::default())`.
 /// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldCount { expected: 2, actual: 1 }`.
+/// Assert: the error equals `RejectionVectorFromFieldsErrorReturn::Fields(
+///   CanonicalFieldReaderErrorReturn::Count { expected: 2, actual: 1 })`.
 #[test]
-fn rejection_vector_description_refuses_too_few_fields() {
+fn rejection_vector_description_carries_the_readers_refusal() {
     // Arrange
     let payload = build_canonical_fields(CanonicalFieldsOverrides {
         values: Some(vec![CanonicalFieldValue::Text("G1".to_string())]),
@@ -268,138 +272,15 @@ fn rejection_vector_description_refuses_too_few_fields() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(RejectionVectorFromFieldsErrorReturn::FieldCount {
-            expected: 2,
-            actual: 1,
-        })
+        Some(RejectionVectorFromFieldsErrorReturn::Fields(
+            CanonicalFieldReaderErrorReturn::Count {
+                expected: 2,
+                actual: 1,
+            }
+        ))
     );
 }
-// rejection_vector_description_refuses_too_few_fields
-
-/// Contract: `payload.values` does not convert into the field array →
-///   `Err(RejectionVectorFromFieldsErrorReturn::FieldCount { expected: 2, actual: 3 })`.
-/// Arrange: `build_canonical_fields` with `values` `Text("G1")`, `Bytes(vec![0x0C])`,
-///   and `Bytes(vec![0x0D])`.
-/// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldCount { expected: 2, actual: 3 }`.
-#[test]
-fn rejection_vector_description_refuses_too_many_fields() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Text("G1".to_string()),
-            CanonicalFieldValue::Bytes(vec![0x0C]),
-            CanonicalFieldValue::Bytes(vec![0x0D]),
-        ]),
-    });
-    let description = build_rejection_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(RejectionVectorFromFieldsErrorReturn::FieldCount {
-            expected: 2,
-            actual: 3,
-        })
-    );
-}
-// rejection_vector_description_refuses_too_many_fields
-
-/// Contract: the lowest index `i` whose value is not the kind
-///   `REJECTION_VECTOR_FIELD_KINDS` holds at `i` →
-///   `Err(RejectionVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`.
-/// Arrange: `invalidate_rejection_vector` with `input`
-///   `CanonicalFieldValue::Text("input")`.
-/// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldKind { index: 1, expected: CanonicalFieldKind::Bytes }`.
-#[test]
-fn rejection_vector_description_refuses_a_field_of_the_wrong_kind() {
-    // Arrange
-    let payload = invalidate_rejection_vector(RejectionVectorCorruptions {
-        input: Some(CanonicalFieldValue::Text("input".to_string())),
-        ..Default::default()
-    });
-    let description = build_rejection_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(RejectionVectorFromFieldsErrorReturn::FieldKind {
-            index: 1,
-            expected: CanonicalFieldKind::Bytes,
-        })
-    );
-}
-// rejection_vector_description_refuses_a_field_of_the_wrong_kind
-
-/// Contract: the lowest index `i` whose value is not the kind
-///   `REJECTION_VECTOR_FIELD_KINDS` holds at `i` →
-///   `Err(RejectionVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`.
-/// Arrange: `invalidate_rejection_vector` with `target` `CanonicalFieldValue::Bytes(vec![0x0C])`
-///   and `input` `CanonicalFieldValue::Text("input")`, each the other field's kind.
-/// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldKind { index: 0, expected: CanonicalFieldKind::Text }`.
-#[test]
-fn rejection_vector_description_reports_the_lowest_index_of_a_wrong_kind() {
-    // Arrange
-    let payload = invalidate_rejection_vector(RejectionVectorCorruptions {
-        target: Some(CanonicalFieldValue::Bytes(vec![0x0C])),
-        input: Some(CanonicalFieldValue::Text("input".to_string())),
-    });
-    let description = build_rejection_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(RejectionVectorFromFieldsErrorReturn::FieldKind {
-            index: 0,
-            expected: CanonicalFieldKind::Text,
-        })
-    );
-}
-// rejection_vector_description_reports_the_lowest_index_of_a_wrong_kind
-
-/// Contract: `payload.values` does not convert into the field array →
-///   `Err(RejectionVectorFromFieldsErrorReturn::FieldCount { expected, actual })`,
-///   decided before the kind check.
-/// Arrange: `build_canonical_fields` with `values` `Bytes(vec![0x0C])`, `Text("input")`,
-///   and `Text("G1")`, the first of the wrong kind.
-/// Act:    `fields_to_value`.
-/// Assert: the error equals `FieldCount { expected: 2, actual: 3 }`.
-#[test]
-fn rejection_vector_description_reports_the_count_before_the_kind() {
-    // Arrange
-    let payload = build_canonical_fields(CanonicalFieldsOverrides {
-        values: Some(vec![
-            CanonicalFieldValue::Bytes(vec![0x0C]),
-            CanonicalFieldValue::Text("input".to_string()),
-            CanonicalFieldValue::Text("G1".to_string()),
-        ]),
-    });
-    let description = build_rejection_vector_description(Default::default());
-
-    // Act
-    let result = description.fields_to_value(build_from_fields_params(Default::default()), payload);
-
-    // Assert
-    assert_eq!(
-        result.err(),
-        Some(RejectionVectorFromFieldsErrorReturn::FieldCount {
-            expected: 2,
-            actual: 3,
-        })
-    );
-}
-// rejection_vector_description_reports_the_count_before_the_kind
+// rejection_vector_description_carries_the_readers_refusal
 
 /// Contract: the first field's `CanonicalFieldValue::Text` names no variant →
 ///   `Err(RejectionVectorFromFieldsErrorReturn::Target(error))`, the refusal unchanged.

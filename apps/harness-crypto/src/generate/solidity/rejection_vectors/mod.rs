@@ -6,9 +6,9 @@ pub mod provides;
 mod test;
 
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldsParams, FromFieldsReturn,
-    FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams, ToFieldsReturn,
-    ToFieldsSuccessReturn,
+    CanonicalFieldKind, CanonicalFieldReader, CanonicalFieldValue, CanonicalFields,
+    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams,
+    ToFieldsReturn, ToFieldsSuccessReturn,
 };
 use pairing::{
     G1OutsideSubgroupEncodingParams, G1OutsideSubgroupEncodingPayload,
@@ -95,33 +95,20 @@ impl IEncodingContract for RejectionVectorDescription {
         _params: FromFieldsParams,
         payload: CanonicalFields,
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn> {
-        let [target, input] = match <[CanonicalFieldValue; 2]>::try_from(payload.values) {
-            Err(values) => {
-                return Err(RejectionVectorFromFieldsErrorReturn::FieldCount {
-                    expected: REJECTION_VECTOR_FIELD_KINDS.len(),
-                    actual: values.len(),
-                });
-            }
-            Ok(values) => values,
-        };
-        let CanonicalFieldValue::Text(text) = target else {
-            return Err(RejectionVectorFromFieldsErrorReturn::FieldKind {
-                index: 0,
-                expected: REJECTION_VECTOR_FIELD_KINDS[0],
-            });
-        };
-        let CanonicalFieldValue::Bytes(input) = input else {
-            return Err(RejectionVectorFromFieldsErrorReturn::FieldKind {
-                index: 1,
-                expected: REJECTION_VECTOR_FIELD_KINDS[1],
-            });
-        };
+        let mut reader = CanonicalFieldReader::try_new(payload, Self::FIELDS)
+            .map_err(RejectionVectorFromFieldsErrorReturn::Fields)?;
+        let text = reader
+            .read_text()
+            .map_err(RejectionVectorFromFieldsErrorReturn::Fields)?;
         let target = match DecodeTarget::try_new(DecodeTargetConstructorParams { text }) {
             Err(error) => {
                 return Err(RejectionVectorFromFieldsErrorReturn::Target(error));
             }
             Ok(target) => target,
         };
+        let input = reader
+            .read_bytes()
+            .map_err(RejectionVectorFromFieldsErrorReturn::Fields)?;
         Ok(FromFieldsSuccessReturn {
             described: RejectionVector { target, input },
         })

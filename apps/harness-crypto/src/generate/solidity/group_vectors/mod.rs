@@ -1,16 +1,16 @@
+#[cfg(test)]
+mod integration_test;
 mod interface;
 #[cfg(any(test, feature = "mocks"))]
 mod mock;
 pub mod provides;
 #[cfg(test)]
 mod test;
-#[cfg(test)]
-mod integration_test;
 
 use core::num::NonZeroU32;
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldsParams,
-    FromFieldsReturn, FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams,
+    CanonicalFieldKind, CanonicalFieldReader, CanonicalFieldValue, CanonicalFields,
+    FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams,
     ToFieldsReturn, ToFieldsSuccessReturn,
 };
 use pairing::{
@@ -26,18 +26,18 @@ use pairing::{
 use random::{FillBytesParams, FillBytesPayload};
 
 use self::interface::{
-    FirstGroupVectors, GroupOperationVector, GroupOperationVectorDescription,
-    GroupOperationVectorDescriptionConstructorParams, GroupOperationVectorDescriptionTryNewReturn,
-    GroupOperationVectorFromFieldsErrorReturn, GroupVectorsDeps, GroupVectorsErrorReturn,
-    GroupVectorsParams, GroupVectorsPayload, GroupVectorsReturn, GroupVectorsSuccessReturn,
-    MsmTermCount, MsmTermCountConstructorParams, MsmTermCountTryNewErrorReturn,
-    MsmTermCountTryNewReturn, PairingCheckVector, PairingCheckVectorDescription,
+    FirstGroupVectors, GROUP_OPERATION_VECTOR_FIELD_KINDS, GroupOperationVector,
+    GroupOperationVectorDescription, GroupOperationVectorDescriptionConstructorParams,
+    GroupOperationVectorDescriptionTryNewReturn, GroupOperationVectorFromFieldsErrorReturn,
+    GroupVectorsDeps, GroupVectorsErrorReturn, GroupVectorsParams, GroupVectorsPayload,
+    GroupVectorsReturn, GroupVectorsSuccessReturn, MsmTermCount, MsmTermCountConstructorParams,
+    MsmTermCountTryNewErrorReturn, MsmTermCountTryNewReturn, PAIRING_CHECK_VECTOR_FIELD_KINDS,
+    PairingCheckVector, PairingCheckVectorDescription,
     PairingCheckVectorDescriptionConstructorParams, PairingCheckVectorDescriptionTryNewReturn,
-    PairingCheckVectorFromFieldsErrorReturn, SecondGroupVectors, VectorCount,
-    VectorCountConstructorParams, VectorCountTryNewErrorReturn, VectorCountTryNewReturn,
-    VectorRecordMemberNamesErrorReturn, VectorRecordMemberNamesReturn,
-    GROUP_OPERATION_VECTOR_FIELD_KINDS, PAIRING_CHECK_VECTOR_FIELD_KINDS,
-    VECTOR_RECORD_FIELD_COUNT, VECTOR_RECORD_MEMBER_NAMES,
+    PairingCheckVectorFromFieldsErrorReturn, SecondGroupVectors, VECTOR_RECORD_FIELD_COUNT,
+    VECTOR_RECORD_MEMBER_NAMES, VectorCount, VectorCountConstructorParams,
+    VectorCountTryNewErrorReturn, VectorCountTryNewReturn, VectorRecordMemberNamesErrorReturn,
+    VectorRecordMemberNamesReturn,
 };
 use super::render::provides::{SolidityMemberName, SolidityMemberNameConstructorParams};
 
@@ -135,42 +135,17 @@ impl IEncodingContract for GroupOperationVectorDescription {
         _params: FromFieldsParams,
         payload: CanonicalFields,
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn> {
-        let actual = payload.values.len();
-        let Ok(fields) = <[CanonicalFieldValue; VECTOR_RECORD_FIELD_COUNT]>::try_from(
-            payload.values,
-        ) else {
-            return Err(GroupOperationVectorFromFieldsErrorReturn::FieldCount {
-                expected: VECTOR_RECORD_FIELD_COUNT,
-                actual,
-            });
-        };
-        for (index, field) in fields.iter().enumerate() {
-            if field.kind() != CanonicalFieldKind::Bytes {
-                return Err(GroupOperationVectorFromFieldsErrorReturn::FieldKind {
-                    index,
-                    expected: CanonicalFieldKind::Bytes,
-                });
-            }
-        }
-        let [draws, input, output] = fields;
-        let CanonicalFieldValue::Bytes(draws) = draws else {
-            return Err(GroupOperationVectorFromFieldsErrorReturn::FieldKind {
-                index: 0,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(input) = input else {
-            return Err(GroupOperationVectorFromFieldsErrorReturn::FieldKind {
-                index: 1,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(output) = output else {
-            return Err(GroupOperationVectorFromFieldsErrorReturn::FieldKind {
-                index: 2,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
+        let mut reader = CanonicalFieldReader::try_new(payload, Self::FIELDS)
+            .map_err(GroupOperationVectorFromFieldsErrorReturn::Fields)?;
+        let draws = reader
+            .read_bytes()
+            .map_err(GroupOperationVectorFromFieldsErrorReturn::Fields)?;
+        let input = reader
+            .read_bytes()
+            .map_err(GroupOperationVectorFromFieldsErrorReturn::Fields)?;
+        let output = reader
+            .read_bytes()
+            .map_err(GroupOperationVectorFromFieldsErrorReturn::Fields)?;
         Ok(FromFieldsSuccessReturn {
             described: GroupOperationVector {
                 draws,
@@ -203,43 +178,17 @@ impl IEncodingContract for PairingCheckVectorDescription {
         _params: FromFieldsParams,
         payload: CanonicalFields,
     ) -> FromFieldsReturn<Self::Described, Self::FromFieldsErrorReturn> {
-        let actual = payload.values.len();
-        let Ok(fields) = <[CanonicalFieldValue; VECTOR_RECORD_FIELD_COUNT]>::try_from(
-            payload.values,
-        ) else {
-            return Err(PairingCheckVectorFromFieldsErrorReturn::FieldCount {
-                expected: VECTOR_RECORD_FIELD_COUNT,
-                actual,
-            });
-        };
-        for (index, field) in fields.iter().enumerate() {
-            let expected = PAIRING_CHECK_VECTOR_FIELD_KINDS[index];
-            if field.kind() != expected {
-                return Err(PairingCheckVectorFromFieldsErrorReturn::FieldKind {
-                    index,
-                    expected,
-                });
-            }
-        }
-        let [draws, input, output] = fields;
-        let CanonicalFieldValue::Bytes(draws) = draws else {
-            return Err(PairingCheckVectorFromFieldsErrorReturn::FieldKind {
-                index: 0,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::Bytes(input) = input else {
-            return Err(PairingCheckVectorFromFieldsErrorReturn::FieldKind {
-                index: 1,
-                expected: CanonicalFieldKind::Bytes,
-            });
-        };
-        let CanonicalFieldValue::FixedBytes32(output) = output else {
-            return Err(PairingCheckVectorFromFieldsErrorReturn::FieldKind {
-                index: 2,
-                expected: CanonicalFieldKind::FixedBytes32,
-            });
-        };
+        let mut reader = CanonicalFieldReader::try_new(payload, Self::FIELDS)
+            .map_err(PairingCheckVectorFromFieldsErrorReturn::Fields)?;
+        let draws = reader
+            .read_bytes()
+            .map_err(PairingCheckVectorFromFieldsErrorReturn::Fields)?;
+        let input = reader
+            .read_bytes()
+            .map_err(PairingCheckVectorFromFieldsErrorReturn::Fields)?;
+        let output = reader
+            .read_fixed_bytes32()
+            .map_err(PairingCheckVectorFromFieldsErrorReturn::Fields)?;
         Ok(FromFieldsSuccessReturn {
             described: PairingCheckVector {
                 draws,
@@ -347,10 +296,9 @@ pub fn group_vectors<'a, P: IPairingArithmetic>(
                 right: right.product,
             },
         );
-        let Ok(output) = deps.pairing.encode_g1(
-            EncodeG1Params,
-            EncodeG1Payload { point: sum.sum },
-        );
+        let Ok(output) = deps
+            .pairing
+            .encode_g1(EncodeG1Params, EncodeG1Payload { point: sum.sum });
         g1_add.push(GroupOperationVector {
             draws,
             input,
@@ -385,10 +333,9 @@ pub fn group_vectors<'a, P: IPairingArithmetic>(
             },
         );
         input.extend_from_slice(encoded_point.bytes.as_ref());
-        let Ok(encoded_s) = deps.pairing.encode_scalar(
-            EncodeScalarParams,
-            EncodeScalarPayload { scalar: s },
-        );
+        let Ok(encoded_s) = deps
+            .pairing
+            .encode_scalar(EncodeScalarParams, EncodeScalarPayload { scalar: s });
         input.extend_from_slice(encoded_s.bytes.expose().as_ref());
         let Ok(output) = deps.pairing.encode_g1(
             EncodeG1Params,
@@ -463,26 +410,17 @@ pub fn group_vectors<'a, P: IPairingArithmetic>(
             },
         );
         let mut input = Vec::new();
-        let Ok(encoded_ag1) = deps.pairing.encode_g1(
-            EncodeG1Params,
-            EncodeG1Payload {
-                point: ag1.product,
-            },
-        );
+        let Ok(encoded_ag1) = deps
+            .pairing
+            .encode_g1(EncodeG1Params, EncodeG1Payload { point: ag1.product });
         input.extend_from_slice(encoded_ag1.bytes.as_ref());
-        let Ok(encoded_bg2) = deps.pairing.encode_g2(
-            EncodeG2Params,
-            EncodeG2Payload {
-                point: bg2.product,
-            },
-        );
+        let Ok(encoded_bg2) = deps
+            .pairing
+            .encode_g2(EncodeG2Params, EncodeG2Payload { point: bg2.product });
         input.extend_from_slice(encoded_bg2.bytes.as_ref());
-        let Ok(encoded_tg1) = deps.pairing.encode_g1(
-            EncodeG1Params,
-            EncodeG1Payload {
-                point: tg1.product,
-            },
-        );
+        let Ok(encoded_tg1) = deps
+            .pairing
+            .encode_g1(EncodeG1Params, EncodeG1Payload { point: tg1.product });
         input.extend_from_slice(encoded_tg1.bytes.as_ref());
         let Ok(encoded_g2) = deps.pairing.encode_g2(
             EncodeG2Params,
@@ -545,10 +483,9 @@ pub fn group_vectors<'a, P: IPairingArithmetic>(
                         right: right.product,
                     },
                 );
-                let Ok(output) = deps.pairing.encode_g2(
-                    EncodeG2Params,
-                    EncodeG2Payload { point: sum.sum },
-                );
+                let Ok(output) = deps
+                    .pairing
+                    .encode_g2(EncodeG2Params, EncodeG2Payload { point: sum.sum });
                 g2_add.push(GroupOperationVector {
                     draws,
                     input,
@@ -589,13 +526,10 @@ pub fn group_vectors<'a, P: IPairingArithmetic>(
                         scalar: s_i,
                     });
                 }
-                let Ok(sum) = deps
+                let Ok(sum) = deps.pairing.msm_g1(MsmG1Params, MsmG1Payload { terms });
+                let Ok(output) = deps
                     .pairing
-                    .msm_g1(MsmG1Params, MsmG1Payload { terms });
-                let Ok(output) = deps.pairing.encode_g1(
-                    EncodeG1Params,
-                    EncodeG1Payload { point: sum.sum },
-                );
+                    .encode_g1(EncodeG1Params, EncodeG1Payload { point: sum.sum });
                 g1_msm.push(GroupOperationVector {
                     draws,
                     input,
@@ -636,13 +570,10 @@ pub fn group_vectors<'a, P: IPairingArithmetic>(
                         scalar: s_i,
                     });
                 }
-                let Ok(sum) = deps
+                let Ok(sum) = deps.pairing.msm_g2(MsmG2Params, MsmG2Payload { terms });
+                let Ok(output) = deps
                     .pairing
-                    .msm_g2(MsmG2Params, MsmG2Payload { terms });
-                let Ok(output) = deps.pairing.encode_g2(
-                    EncodeG2Params,
-                    EncodeG2Payload { point: sum.sum },
-                );
+                    .encode_g2(EncodeG2Params, EncodeG2Payload { point: sum.sum });
                 g2_msm.push(GroupOperationVector {
                     draws,
                     input,

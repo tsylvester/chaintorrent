@@ -16,9 +16,8 @@ Branch contract for the `possession_vectors` module of the `solidity` module of 
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| count | `payload.values` does not convert into `[CanonicalFieldValue; POSSESSION_VECTOR_FIELD_COUNT]` | the conversion's return | none | `Err(PossessionVectorFromFieldsErrorReturn::FieldCount { expected: POSSESSION_VECTOR_FIELD_COUNT, actual })`, `actual` the vector's length |
-| kind | the lowest index `i` whose value is not the kind `POSSESSION_VECTOR_FIELD_KINDS` holds at `i` | that index's kind against the kinds constant | none | `Err(PossessionVectorFromFieldsErrorReturn::FieldKind { index: i, expected })`, `expected` the kind `POSSESSION_VECTOR_FIELD_KINDS` holds at `i` |
-| rebuilt | the count converts and every value holds the kind its index declares | none | none | `Ok(FromFieldsSuccessReturn { described: PossessionVector { x, y, pk1, pk2, r1, z1, r2, z2 } })`, each moved from its field |
+| fields refused | `CanonicalFieldReader::try_new`, a `read_unsigned256`, or a `read_bytes` returns `Err(error)` | the call's return | `CanonicalFieldReader::try_new(payload, Self::FIELDS)`, then `read_unsigned256` for `x` and for `y`, `read_bytes` for `pk1`, `pk2`, and `r1`, `read_unsigned256` for `z1`, `read_bytes` for `r2`, and `read_unsigned256` for `z2`, in that order | `Err(PossessionVectorFromFieldsErrorReturn::Fields(error))`, the refusal unchanged |
+| rebuilt | the reader's construction and every read return `Ok` | none | the same calls | `Ok(FromFieldsSuccessReturn { described: PossessionVector { x, y, pk1, pk2, r1, z1, r2, z2 } })`, each the value its read returned |
 
 ## `member_names`
 
