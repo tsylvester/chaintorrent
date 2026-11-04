@@ -31,7 +31,7 @@ use proof::{
     AlgebraicStatement, ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload,
     CreateDeliveryProofParams, DELIVERY_STATEMENT_VERSION_ONE, DeliveryProofComponents,
     DeliveryRelation, IDeliveryProofAdapter, IDeliveryProofConsumer, ProofComponentsParams,
-    ProofComponentsPayload, VerifyAdapterPayload, build_create_delivery_proof_deps,
+    ProofComponentsPayload, VerifyPayload, build_create_delivery_proof_deps,
     build_create_delivery_proof_params, build_create_delivery_proof_payload, create_delivery_proof,
 };
 use random::{
@@ -264,7 +264,13 @@ impl<'a, D: IDeliveryProofAdapter> IVerifierAdapter for MockIVerifierAdapter<'a,
     fn verify_on_chain(
         &self,
         _params: VerifyOnChainParams,
-        payload: VerifyAdapterPayload<'_, D>,
+        payload: VerifyPayload<
+            '_,
+            D::Forms,
+            <D::Pairing as IPairingAdapter>::G1,
+            <D::Pairing as IPairingAdapter>::G2,
+            D::Proof,
+        >,
     ) -> VerifyOnChainReturn {
         let statement = match &payload.statement {
             AlgebraicStatement::Mint(_) => DeliveryRelation::Mint,

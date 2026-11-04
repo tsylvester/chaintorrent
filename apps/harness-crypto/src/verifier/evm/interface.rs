@@ -3,7 +3,9 @@ use alloy::providers::DynProvider;
 use alloy::transports::TransportError;
 #[cfg(any(test, feature = "mocks"))]
 use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams, IChainForms};
-use encoding::{CanonicalFieldKind, CanonicalFieldValue, FromFieldErrorReturn};
+use encoding::{
+    CanonicalFieldKind, CanonicalFieldReaderErrorReturn, CanonicalFieldValue, FromFieldErrorReturn,
+};
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams};
 #[cfg(any(test, feature = "mocks"))]
@@ -53,17 +55,16 @@ pub enum EvmVerifierField {
     GasPriceOracle,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EvmVerifierContextField {
-    ChainIdentifier,
-    EntitlementContract,
-    SourceEntitlement,
-    TargetEntitlement,
-    OldInterval,
-    NewInterval,
-    Seller,
-    Buyer,
-}
+pub const EVM_VERIFIER_CONTEXT_FIELD_KINDS: &'static [CanonicalFieldKind] = &[
+    CanonicalFieldKind::Unsigned256,
+    CanonicalFieldKind::FixedBytes20,
+    CanonicalFieldKind::Unsigned256,
+    CanonicalFieldKind::Unsigned256,
+    CanonicalFieldKind::Unsigned64,
+    CanonicalFieldKind::Unsigned64,
+    CanonicalFieldKind::FixedBytes20,
+    CanonicalFieldKind::FixedBytes20,
+];
 
 pub struct EvmVerifierConstructorParams<
     'a,
@@ -101,21 +102,12 @@ pub enum EvmVerifierTryNewErrorReturn {
 
 #[derive(Debug)]
 pub enum EvmVerifierErrorReturn {
-    NothingDeployed {
-        address: [u8; 20],
-    },
-    ContextFieldKind {
-        field: EvmVerifierContextField,
-        expected: CanonicalFieldKind,
-    },
-    ScalarLength {
-        actual: usize,
-    },
+    NothingDeployed { address: [u8; 20] },
+    Fields(CanonicalFieldReaderErrorReturn),
+    ScalarLength { actual: usize },
     Rpc(TransportError),
     ResultDecode(alloy::sol_types::Error),
-    L1FeeOutOfRange {
-        fee: [u8; 32],
-    },
+    L1FeeOutOfRange { fee: [u8; 32] },
 }
 
 pub const EVM_VERIFIER_DECLARATION: VerifierDeclaration = VerifierDeclaration {

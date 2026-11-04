@@ -1065,11 +1065,20 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
                 build_mock_i_encoding_consumer(&description, context.clone(), Vec::new());
             let outcome = create_encoding(
                 &build_create_encoding_deps(consumer),
-                *encoding_selection,
+                CreateEncodingParams {
+                    concrete: encoding_selection.concrete,
+                    identifier: encoding_selection.identifier,
+                },
                 build_create_encoding_payload(Default::default()),
             )
             .expect("the encoding succeeds");
-            encodings.push(outcome.output);
+            encodings.push(
+                outcome
+                    .output
+                    .encoded
+                    .expect("the consumer's encode succeeds")
+                    .bytes,
+            );
         }
     }
 
@@ -1237,7 +1246,7 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
                                 }),
                                 build_cross_set_case_payload(CrossSetCasePayloadOverrides {
                                     identity: Some(canonical.clone()),
-                                    context: Some(context),
+                                    context: Some(context.clone()),
                                 }),
                             );
                             // Assert

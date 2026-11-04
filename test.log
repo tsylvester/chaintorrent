@@ -4,43 +4,344 @@ help: Check that the patched package version and available features are compatib
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
    Compiling harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
-error[E0432]: unresolved import `proof::VerifyAdapterPayload`
-  --> apps\harness-crypto\src\verifier\factory\interface.rs:14:54
-   |
-14 | use proof::{DeliveryRelation, IDeliveryProofAdapter, VerifyAdapterPayload};
-   |                                                      ^^^^^^^^^^^^^^^^^^^^ no `VerifyAdapterPayload` in the root
+error[E0614]: type `TransferPurpose` cannot be dereferenced
+   --> apps\harness-crypto\tests\transfer_integration_test.rs:356:65
+    |
+356 | ...                   Consumer { purpose: *purpose },
+    |                                           ^^^^^^^^ can't be dereferenced
 
-error[E0432]: unresolved import `super::super::evm::provides`
-  --> apps\harness-crypto\src\verifier\factory\interface.rs:18:24
-   |
-18 | use super::super::evm::provides::{
-   |                        ^^^^^^^^ could not find `provides` in `evm`
+error[E0507]: cannot move out of `*encoding_selection` which is behind a shared reference
+   --> apps\harness-crypto\tests\cross_holder_integration_test.rs:324:17
+    |
+324 |                 *encoding_selection,
+    |                 ^^^^^^^^^^^^^^^^^^^ move occurs because `*encoding_selection` has type `CreateEncodingParams`, which does not implement the `Copy` trait
 
-error[E0432]: unresolved import `proof::VerifyAdapterPayload`
-  --> apps\harness-crypto\src\verifier\factory\mock.rs:34:29
-   |
-34 |     ProofComponentsPayload, VerifyAdapterPayload, build_create_delivery_proof_deps,
-   |                             ^^^^^^^^^^^^^^^^^^^^ no `VerifyAdapterPayload` in the root
+error[E0308]: mismatched types
+   --> apps\harness-crypto\tests\transfer_integration_test.rs:138:21
+    |
+ 81 |         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
+    |                                           --  -- expected type parameter
+    |                                           |
+    |                                           found type parameter
+...
+134 |                 build_transfer_payload(
+    |                 ---------------------- arguments to this function are incorrect
+...
+138 |                     &mint_delivery.recipient,
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^ expected `&DeliveryHolder<A2>`, found `&DeliveryHolder<A1>`
+    |
+    = note: expected reference `&DeliveryHolder<A2>`
+               found reference `&DeliveryHolder<A1>`
+    = note: a type parameter was expected, but a different one was found; you might be missing a type parameter or trait bound
+    = note: for more information, visit https://doc.rust-lang.org/book/ch10-02-traits.html#traits-as-parameters
+note: function defined here
+   --> apps\harness-crypto\src\delivery\transfer\mock.rs:76:8
+    |
+ 76 | pub fn build_transfer_payload<
+    |        ^^^^^^^^^^^^^^^^^^^^^^
 
-error[E0432]: unresolved import `super::super::evm::provides`
-  --> apps\harness-crypto\src\verifier\factory\mock.rs:55:24
-   |
-55 | use super::super::evm::provides::{build_evm_verifier_settings, invalidate_evm_verifier_settings};
-   |                        ^^^^^^^^ could not find `provides` in `evm`
+error[E0369]: binary operation `==` cannot be applied to type `DeliveryContext<F, TransferPurpose>`
+   --> apps\harness-crypto\tests\transfer_integration_test.rs:144:13
+    |
+144 |             assert_eq!(delivery.statement.context, context);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |             |
+    |             DeliveryContext<F, TransferPurpose>
+    |             DeliveryContext<F, TransferPurpose>
+    |
+note: `DeliveryContext<F, TransferPurpose>` does not implement `PartialEq`
+   --> adapters\proof\src\factory\interface.rs:47:1
+    |
+ 47 | pub struct DeliveryContext<F: IChainForms, Purpose> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `DeliveryContext<F, TransferPurpose>` is defined in another crate
 
-error[E0432]: unresolved import `super::evm::provides`
-  --> apps\harness-crypto\src\verifier\factory\mod.rs:13:17
-   |
-13 | use super::evm::provides::{EvmVerifier, EvmVerifierConstructorParams};
-   |                 ^^^^^^^^ could not find `provides` in `evm`
+For more information about this error, try `rustc --explain E0507`.
+error[E0277]: `DeliveryContext<F, TransferPurpose>` doesn't implement `Debug`
+   --> apps\harness-crypto\tests\transfer_integration_test.rs:144:13
+    |
+144 |             assert_eq!(delivery.statement.context, context);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Debug` is not implemented for `DeliveryContext<F, TransferPurpose>`
 
-error[E0432]: unresolved import `super::evm::provides`
- --> apps\harness-crypto\src\verifier\provides.rs:1:21
-  |
-1 | pub use super::evm::provides::*;
-  |                     ^^^^^^^^ could not find `provides` in `evm`
-
-For more information about this error, try `rustc --explain E0432`.
-error: could not compile `harness-crypto` (lib) due to 6 previous errors
+error: could not compile `harness-crypto` (test "cross_holder_integration_test") due to 1 previous error
 warning: build failed, waiting for other jobs to finish...
-error: could not compile `harness-crypto` (lib test) due to 6 previous errors
+error[E0507]: cannot move out of `*encoding_selection` which is behind a shared reference
+   --> apps\harness-crypto\tests\rerandomization_integration_test.rs:345:17
+    |
+345 |                 *encoding_selection,
+    |                 ^^^^^^^^^^^^^^^^^^^ move occurs because `*encoding_selection` has type `CreateEncodingParams`, which does not implement the `Copy` trait
+
+error[E0308]: mismatched types
+   --> apps\harness-crypto\tests\transfer_integration_test.rs:148:34
+    |
+ 81 |         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
+    |                                           --  -- expected type parameter
+    |                                           |
+    |                                           found type parameter
+...
+148 |                     public_keys: &mint_delivery.recipient.public_keys,
+    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected type parameter `A2`, found type parameter `A1`
+    |
+    = note: expected reference `&<A2 as IKeyAgreementAdapter>::PublicKeys`
+               found reference `&<A1 as IKeyAgreementAdapter>::PublicKeys`
+    = note: a type parameter was expected, but a different one was found; you might be missing a type parameter or trait bound
+    = note: for more information, visit https://doc.rust-lang.org/book/ch10-02-traits.html#traits-as-parameters
+
+error[E0507]: cannot move out of `*encoding_selection` which is behind a shared reference
+   --> apps\harness-crypto\tests\non_convertibility_integration_test.rs:476:17
+    |
+476 |                 *encoding_selection,
+    |                 ^^^^^^^^^^^^^^^^^^^ move occurs because `*encoding_selection` has type `CreateEncodingParams`, which does not implement the `Copy` trait
+
+error[E0308]: mismatched types
+   --> apps\harness-crypto\tests\transfer_integration_test.rs:215:31
+    |
+ 81 |         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
+    |                                           --  -- expected type parameter
+    |                                           |
+    |                                           found type parameter
+...
+215 |                     envelope: &mint_delivery.recipient.envelope,
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&<A2 as IKeyAgreementAdapter>::Envelope`, found `&<A1 as IKeyAgreementAdapter>::Envelope`
+    |
+    = note: expected reference `&<A2 as IKeyAgreementAdapter>::Envelope`
+               found reference `&<A1 as IKeyAgreementAdapter>::Envelope`
+    = note: a type parameter was expected, but a different one was found; you might be missing a type parameter or trait bound
+    = note: for more information, visit https://doc.rust-lang.org/book/ch10-02-traits.html#traits-as-parameters
+
+error[E0614]: type `TransferPurpose` cannot be dereferenced
+   --> apps\harness-crypto\tests\transfer_integration_test.rs:567:65
+    |
+567 | ...                   Consumer { purpose: *purpose },
+    |                                           ^^^^^^^^ can't be dereferenced
+
+error[E0308]: mismatched types
+   --> apps\harness-crypto\tests\transfer_integration_test.rs:521:21
+    |
+464 |         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
+    |                                           --  -- expected type parameter
+    |                                           |
+    |                                           found type parameter
+...
+517 |                 build_transfer_payload(
+    |                 ---------------------- arguments to this function are incorrect
+...
+521 |                     &mint_delivery.recipient,
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^ expected `&DeliveryHolder<A2>`, found `&DeliveryHolder<A1>`
+    |
+    = note: expected reference `&DeliveryHolder<A2>`
+               found reference `&DeliveryHolder<A1>`
+    = note: a type parameter was expected, but a different one was found; you might be missing a type parameter or trait bound
+    = note: for more information, visit https://doc.rust-lang.org/book/ch10-02-traits.html#traits-as-parameters
+note: function defined here
+   --> apps\harness-crypto\src\delivery\transfer\mock.rs:76:8
+    |
+ 76 | pub fn build_transfer_payload<
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+   --> apps\harness-crypto\tests\transfer_integration_test.rs:736:21
+    |
+679 |         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
+    |                                           --  -- expected type parameter
+    |                                           |
+    |                                           found type parameter
+...
+732 |                 build_transfer_payload(
+    |                 ---------------------- arguments to this function are incorrect
+...
+736 |                     &mint_delivery.recipient,
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^ expected `&DeliveryHolder<A2>`, found `&DeliveryHolder<A1>`
+    |
+    = note: expected reference `&DeliveryHolder<A2>`
+               found reference `&DeliveryHolder<A1>`
+    = note: a type parameter was expected, but a different one was found; you might be missing a type parameter or trait bound
+    = note: for more information, visit https://doc.rust-lang.org/book/ch10-02-traits.html#traits-as-parameters
+note: function defined here
+   --> apps\harness-crypto\src\delivery\transfer\mock.rs:76:8
+    |
+ 76 | pub fn build_transfer_payload<
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+
+Some errors have detailed explanations: E0277, E0308, E0369, E0614.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `harness-crypto` (test "rerandomization_integration_test") due to 1 previous error
+error: could not compile `harness-crypto` (test "non_convertibility_integration_test") due to 1 previous error
+error: could not compile `harness-crypto` (test "transfer_integration_test") due to 10 previous errors
+error[E0432]: unresolved imports `harness_crypto::HarnessStatements`, `harness_crypto::HarnessStatementsOverrides`, `harness_crypto::build_generate_consumer`, `harness_crypto::build_harness_statements`
+  --> apps\harness-crypto\tests\generate_consumer_integration_test.rs:53:5
+   |
+53 |     HarnessStatements, HarnessStatementsOverrides, VectorKind, build_create_generate_deps,
+   |     ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^ no `HarnessStatementsOverrides` in the root
+   |     |
+   |     no `HarnessStatements` in the root
+54 |     build_create_generate_params, build_create_generate_payload, build_generate_concrete,
+55 |     build_generate_consumer, build_generate_kind_configurations, build_harness_statements,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^                                      ^^^^^^^^^^^^^^^^^^^^^^^^ no `build_harness_statements` in the root
+   |     |
+   |     no `build_generate_consumer` in the root
+   |
+help: a similar name exists in the module
+   |
+55 -     build_generate_consumer, build_generate_kind_configurations, build_harness_statements,
+55 +     build_generate_concrete, build_generate_kind_configurations, build_harness_statements,
+   |
+
+error[E0432]: unresolved imports `harness_crypto::DeliveryProofConsumerConstructorParamsOverrides`, `harness_crypto::HarnessStatements`, `harness_crypto::HarnessStatementsOverrides`, `harness_crypto::build_delivery_proof_consumer`, `harness_crypto::build_harness_statements`
+  --> apps\harness-crypto\tests\delivery_proof_consumer_integration_test.rs:50:5
+   |
+50 |     DeliveryProofConsumerConstructorParamsOverrides, EmitReturn, EmitSuccessReturn,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `DeliveryProofConsumerConstructorParamsOverrides` in the root
+51 |     GENERATE_CONCRETES, GenerateConcrete, GenerateConcreteOverrides,
+52 |     GenerateKindConfigurationsOverrides, HarnessStatements, HarnessStatementsOverrides,
+   |                                          ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^ no `HarnessStatementsOverrides` in the root
+   |                                          |
+   |                                          no `HarnessStatements` in the root
+53 |     VectorCountConstructorParamsOverrides, VectorKind, VectorKindConfiguration,
+54 |     VectorKindConfigurationOverrides, VectorKindQuantitiesOverrides, build_delivery_proof_consumer,
+   |                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `build_delivery_proof_consumer` in the root
+55 |     build_generate_concrete, build_generate_kind_configurations, build_harness_statements,
+   |                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^ no `build_harness_statements` in the root
+   |
+help: a similar name exists in the module
+   |
+50 -     DeliveryProofConsumerConstructorParamsOverrides, EmitReturn, EmitSuccessReturn,
+50 +     SolidityConstantNameConstructorParamsOverrides, EmitReturn, EmitSuccessReturn,
+   |
+
+error[E0432]: unresolved imports `harness_crypto::DeliveryProofSelectionOverrides`, `harness_crypto::HarnessStatements`, `harness_crypto::HarnessStatementsOverrides`, `harness_crypto::KeyAgreementConsumerConstructorParamsOverrides`, `harness_crypto::build_delivery_proof_selection`, `harness_crypto::build_harness_statements`, `harness_crypto::build_key_agreement_consumer`
+  --> apps\harness-crypto\tests\key_agreement_consumer_integration_test.rs:46:56
+   |
+46 |     CreateGenerateReturn, CreateGenerateSuccessReturn, DeliveryProofSelectionOverrides, EmitReturn,
+   |                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `DeliveryProofSelectionOverrides` in the root
+47 |     EmitSuccessReturn, GENERATE_CONCRETES, GenerateConcrete, GenerateConcreteOverrides,
+48 |     GenerateKindConfigurationsOverrides, HarnessStatements, HarnessStatementsOverrides,
+   |                                          ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^ no `HarnessStatementsOverrides` in the root
+   |                                          |
+   |                                          no `HarnessStatements` in the root
+49 |     KeyAgreementConsumerConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `KeyAgreementConsumerConstructorParamsOverrides` in the root
+50 |     VectorKind, VectorKindConfiguration, VectorKindConfigurationOverrides,
+51 |     VectorKindQuantitiesOverrides, build_delivery_proof_selection, build_generate_concrete,
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `build_delivery_proof_selection` in the root
+52 |     build_generate_kind_configurations, build_harness_statements, build_key_agreement_consumer,
+   |                                         ^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `build_key_agreement_consumer` in the root
+   |                                         |
+   |                                         no `build_harness_statements` in the root
+   |
+help: a similar name exists in the module
+   |
+49 -     KeyAgreementConsumerConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
+49 +     VectorCountConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
+   |
+
+error[E0560]: struct `CreateGenerateParamsOverrides` has no field named `scope`
+   --> apps\harness-crypto\tests\generate_consumer_integration_test.rs:158:21
+    |
+158 |                     scope: Some(self.scope),
+    |                     ^^^^^ `CreateGenerateParamsOverrides` does not have this field
+    |
+    = note: available fields are: `statement_version`
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+   --> apps\harness-crypto\tests\generate_consumer_integration_test.rs:222:25
+    |
+222 |                         verifier_form: Some(self.verifier_form),
+    |                         ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
+   --> apps\harness-crypto\tests\delivery_proof_consumer_integration_test.rs:177:25
+    |
+177 |                         verifier_form: Some(self.verifier_form),
+    |                         ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
+    |
+    = note: available fields are: `algebra`, `statement_version`
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\tests\generate_consumer_integration_test.rs:370:22
+    |
+370 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+371 | |                         ChainFormsConsumer {
+372 | |                             pairing: self.pairing,
+373 | |                             hashing: self.hashing,
+...   |
+380 | |                         Default::default(),
+381 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+370 |                     &build_create_chain_forms_deps(
+...
+380 |                         Default::default(),
+381 ~                         /* CreateChainFormsDepsOverrides */,
+382 ~                     ),
+    |
+
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\tests\delivery_proof_consumer_integration_test.rs:330:22
+    |
+330 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+331 | |                         ChainFormsConsumer {
+332 | |                             pairing: self.pairing,
+333 | |                             hashing: self.hashing,
+...   |
+341 | |                         Default::default(),
+342 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+330 |                     &build_create_chain_forms_deps(
+...
+341 |                         Default::default(),
+342 ~                         /* CreateChainFormsDepsOverrides */,
+343 ~                     ),
+    |
+
+Some errors have detailed explanations: E0061, E0432, E0560.
+For more information about an error, try `rustc --explain E0061`.
+error[E0061]: this function takes 3 arguments but 2 arguments were supplied
+   --> apps\harness-crypto\tests\key_agreement_consumer_integration_test.rs:264:22
+    |
+264 |                       &build_create_chain_forms_deps(
+    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+265 | |                         ChainFormsConsumer {
+266 | |                             pairing: self.pairing,
+267 | |                             hash_to_scalar: self.hash_to_scalar,
+...   |
+274 | |                         Default::default(),
+275 | |                     ),
+    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
+    |
+note: function defined here
+   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
+    |
+ 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: provide the argument
+    |
+264 |                     &build_create_chain_forms_deps(
+...
+274 |                         Default::default(),
+275 ~                         /* CreateChainFormsDepsOverrides */,
+276 ~                     ),
+    |
+
+error: could not compile `harness-crypto` (test "generate_consumer_integration_test") due to 4 previous errors
+error: could not compile `harness-crypto` (test "delivery_proof_consumer_integration_test") due to 3 previous errors
+Some errors have detailed explanations: E0061, E0432.
+error: could not compile `harness-crypto` (test "key_agreement_consumer_integration_test") due to 2 previous errors

@@ -89,7 +89,7 @@ pub type PairingBenchmarkCaseReturn<O> =
     Result<PairingBenchmarkCaseSuccessReturn<O>, PairingBenchmarkCaseErrorReturn>;
 
 #[cfg(any(test, feature = "mocks"))]
-pub type RunPairingBenchmarkCaseFn<C: IPairingBenchmarkCaseConsumer> =
+pub type RunPairingBenchmarkCaseFn<C> =
     fn(
         &PairingBenchmarkCaseDeps<C>,
         PairingBenchmarkCaseParams,
