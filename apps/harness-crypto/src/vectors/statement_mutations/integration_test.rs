@@ -1140,8 +1140,8 @@ fn every_record_draw_replays_to_the_statements_and_the_offset_it_produced() {
                     build_generate_keys_payload(
                         pairing,
                         envelope::GenerateKeysPayloadOverrides {
-                            x_uniform: Some(clone_uniform(6)),
-                            y_uniform: Some(clone_uniform(7)),
+                            x_uniform: Some(clone_uniform(4)),
+                            y_uniform: Some(clone_uniform(5)),
                         },
                     ),
                 )
@@ -1167,8 +1167,8 @@ fn every_record_draw_replays_to_the_statements_and_the_offset_it_produced() {
                     build_generate_keys_payload(
                         pairing,
                         envelope::GenerateKeysPayloadOverrides {
-                            x_uniform: Some(clone_uniform(7)),
-                            y_uniform: Some(clone_uniform(8)),
+                            x_uniform: Some(clone_uniform(6)),
+                            y_uniform: Some(clone_uniform(7)),
                         },
                     ),
                 )
@@ -1588,7 +1588,9 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
 ///   configuration.
 #[test]
 fn a_nonce_draw_refusal_reaches_the_caller_whole() {
-    struct Consumer;
+    struct Consumer {
+        expects_refusal: bool,
+    }
 
     impl IStatementMutationsCaseConsumer for Consumer {
         type Output = ();
@@ -1646,20 +1648,29 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
                 ),
             );
             // Assert
-            assert_eq!(
-                returned.err(),
-                Some(StatementMutationsErrorReturn::Mint(
-                    MintErrorReturn::ProveMint(ProveMintErrorReturn::Mock(
-                        MockIDeliveryProofAdapterProveMintErrorReturn::NonceDrawRefused
+            if self.expects_refusal {
+                assert_eq!(
+                    returned.err(),
+                    Some(StatementMutationsErrorReturn::Mint(
+                        MintErrorReturn::ProveMint(ProveMintErrorReturn::Mock(
+                            MockIDeliveryProofAdapterProveMintErrorReturn::NonceDrawRefused
+                        ))
                     ))
-                ))
-            );
+                );
+            } else {
+                assert!(returned.is_ok());
+            }
         }
     }
     for pairing_concrete in PAIRING_CONCRETES {
         for kem_selection in DECLARED_KEM_SELECTIONS {
             let result = run_statement_mutations_case(
-                &build_statement_mutations_case_deps(Consumer, Default::default()),
+                &build_statement_mutations_case_deps(
+                    Consumer {
+                        expects_refusal: true,
+                    },
+                    Default::default(),
+                ),
                 case_params(StatementMutationsCaseParamsOverrides {
                     pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
                         concrete: Some(*pairing_concrete),
@@ -1685,7 +1696,12 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
             assert!(result.is_ok());
             for proof_concrete in DELIVERY_PROOF_CONCRETES {
                 let result = run_statement_mutations_case(
-                    &build_statement_mutations_case_deps(Consumer, Default::default()),
+                    &build_statement_mutations_case_deps(
+                        Consumer {
+                            expects_refusal: false,
+                        },
+                        Default::default(),
+                    ),
                     case_params(StatementMutationsCaseParamsOverrides {
                         pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
                             concrete: Some(*pairing_concrete),
@@ -1733,7 +1749,9 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
 ///   configuration.
 #[test]
 fn a_key_generation_nonce_draw_refusal_reaches_the_caller_whole() {
-    struct Consumer;
+    struct Consumer {
+        expects_refusal: bool,
+    }
 
     impl IStatementMutationsCaseConsumer for Consumer {
         type Output = ();
@@ -1791,20 +1809,29 @@ fn a_key_generation_nonce_draw_refusal_reaches_the_caller_whole() {
                 ),
             );
             // Assert
-            assert_eq!(
-                returned.err(),
-                Some(StatementMutationsErrorReturn::Mint(
-                    MintErrorReturn::GenerateKeys(GenerateKeysErrorReturn::Mock(
-                        MockIKeyAgreementAdapterGenerateKeysErrorReturn::NonceDrawRefused
+            if self.expects_refusal {
+                assert_eq!(
+                    returned.err(),
+                    Some(StatementMutationsErrorReturn::Mint(
+                        MintErrorReturn::GenerateKeys(GenerateKeysErrorReturn::Mock(
+                            MockIKeyAgreementAdapterGenerateKeysErrorReturn::NonceDrawRefused
+                        ))
                     ))
-                ))
-            );
+                );
+            } else {
+                assert!(returned.is_ok());
+            }
         }
     }
     for pairing_concrete in PAIRING_CONCRETES {
         for kem_selection in DECLARED_KEM_SELECTIONS {
             let result = run_statement_mutations_case(
-                &build_statement_mutations_case_deps(Consumer, Default::default()),
+                &build_statement_mutations_case_deps(
+                    Consumer {
+                        expects_refusal: true,
+                    },
+                    Default::default(),
+                ),
                 case_params(StatementMutationsCaseParamsOverrides {
                     pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
                         concrete: Some(*pairing_concrete),
@@ -1830,7 +1857,12 @@ fn a_key_generation_nonce_draw_refusal_reaches_the_caller_whole() {
             assert!(result.is_ok());
             for ka_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                 let result = run_statement_mutations_case(
-                    &build_statement_mutations_case_deps(Consumer, Default::default()),
+                    &build_statement_mutations_case_deps(
+                        Consumer {
+                            expects_refusal: false,
+                        },
+                        Default::default(),
+                    ),
                     case_params(StatementMutationsCaseParamsOverrides {
                         pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
                             concrete: Some(*pairing_concrete),
@@ -1873,7 +1905,9 @@ fn a_key_generation_nonce_draw_refusal_reaches_the_caller_whole() {
 ///   configuration.
 #[test]
 fn a_wrap_coin_draw_refusal_reaches_the_caller_whole() {
-    struct Consumer;
+    struct Consumer {
+        expects_refusal: bool,
+    }
 
     impl IStatementMutationsCaseConsumer for Consumer {
         type Output = ();
@@ -1931,20 +1965,29 @@ fn a_wrap_coin_draw_refusal_reaches_the_caller_whole() {
                 ),
             );
             // Assert
-            assert_eq!(
-                returned.err(),
-                Some(StatementMutationsErrorReturn::Mint(
-                    MintErrorReturn::WrapTo(WrapToErrorReturn::Mock(
-                        MockIKeyAgreementAdapterWrapToErrorReturn::CoinDrawRefused
+            if self.expects_refusal {
+                assert_eq!(
+                    returned.err(),
+                    Some(StatementMutationsErrorReturn::Mint(
+                        MintErrorReturn::WrapTo(WrapToErrorReturn::Mock(
+                            MockIKeyAgreementAdapterWrapToErrorReturn::CoinDrawRefused
+                        ))
                     ))
-                ))
-            );
+                );
+            } else {
+                assert!(returned.is_ok());
+            }
         }
     }
     for pairing_concrete in PAIRING_CONCRETES {
         for kem_selection in DECLARED_KEM_SELECTIONS {
             let result = run_statement_mutations_case(
-                &build_statement_mutations_case_deps(Consumer, Default::default()),
+                &build_statement_mutations_case_deps(
+                    Consumer {
+                        expects_refusal: true,
+                    },
+                    Default::default(),
+                ),
                 case_params(StatementMutationsCaseParamsOverrides {
                     pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
                         concrete: Some(*pairing_concrete),
@@ -1970,7 +2013,12 @@ fn a_wrap_coin_draw_refusal_reaches_the_caller_whole() {
             assert!(result.is_ok());
             for ka_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                 let result = run_statement_mutations_case(
-                    &build_statement_mutations_case_deps(Consumer, Default::default()),
+                    &build_statement_mutations_case_deps(
+                        Consumer {
+                            expects_refusal: false,
+                        },
+                        Default::default(),
+                    ),
                     case_params(StatementMutationsCaseParamsOverrides {
                         pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
                             concrete: Some(*pairing_concrete),

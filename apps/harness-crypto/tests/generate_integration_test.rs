@@ -1,8 +1,11 @@
 #![cfg(feature = "mocks")]
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-use chain::IChainForms;
-use encoding::IEncoderAdapter;
+use chain::{
+    CHAIN_FORMS_CONCRETES, CreateChainFormsParamsOverrides, IChainForms,
+    build_create_chain_forms_params,
+};
+use encoding::{CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
 use hash_to_scalar::IHashToScalarAdapter;
 use hashing::{RootConstructorParamsOverrides, build_root};
@@ -50,7 +53,9 @@ use harness_crypto::{
 ///   first; `count` from `build_vector_count` with `count: Some(7)`, other
 ///   than the builder's default and other than every other entry's count;
 ///   the random source `RandomSourceKind::OperatingSystem`; every member of
-///   `GENERATE_CONCRETES` crossed with every member of `PAIRING_CONCRETES`.
+///   `GENERATE_CONCRETES` crossed with every member of `PAIRING_CONCRETES`,
+///   over the `DECLARED_ENCODING_SELECTIONS` and `CHAIN_FORMS_CONCRETES`
+///   selections the concrete's declaration admits.
 /// Act:     `create_generate`, the single call inside the block's case
 ///   consumer whose `emit` runs inside the inner consumer, run once per
 ///   case by `run_create_generate_case`.
@@ -221,6 +226,16 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
                         concrete: Some(*pairing),
                         ..Default::default()
                     })),
+                    encoding: Some(CreateEncodingParams {
+                        concrete: DECLARED_ENCODING_SELECTIONS[0].concrete,
+                        identifier: DECLARED_ENCODING_SELECTIONS[0].identifier,
+                    }),
+                    chain_forms: Some(build_create_chain_forms_params(
+                        CreateChainFormsParamsOverrides {
+                            concrete: Some(CHAIN_FORMS_CONCRETES[0]),
+                            ..Default::default()
+                        },
+                    )),
                     random_source: Some(build_create_random_source_params(
                         CreateRandomSourceParamsOverrides {
                             kind: Some(RandomSourceKind::OperatingSystem),

@@ -51,10 +51,12 @@ use crate::delivery::provides::AdmittedKemIdentity;
 ///   declaration the consumer reads from the adapter has kinds whose
 ///   `requires_second_group_arithmetic` is `false`.
 /// Arrange: every member of `GENERATE_CONCRETES` crossed with every member of
-///   `PAIRING_CONCRETES` and each member of `DECLARED_KEM_SELECTIONS`, and the
-///   mock selection under `NoFailure`, the payload two distinct canonicals and
-///   two distinct roots so the case's KEM scope composes two admitted
-///   identities either way.
+///   `PAIRING_CONCRETES` and each member of `DECLARED_KEM_SELECTIONS`, over the
+///   `DECLARED_ENCODING_SELECTIONS` and `CHAIN_FORMS_CONCRETES` selections the
+///   concrete's declaration admits, and the mock selection under `NoFailure`
+///   over the mock encoding and chain-forms defaults its declaration admits;
+///   the payload two distinct canonicals and two distinct roots so the case's
+///   KEM scope composes two admitted identities either way.
 /// Act:    `emit` on the adapter the consumer receives, run once per case by
 ///   `run_create_generate_case`.
 /// Assert: in place inside the inner consumer — every path unique by
@@ -91,7 +93,6 @@ fn emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate() {
                     self.identities,
                     EmitPayloadOverrides {
                         proof_identity: Some(self.identities[0]),
-                        ..Default::default()
                     },
                 ),
             );
@@ -191,6 +192,16 @@ fn emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate() {
                             concrete: Some(*pairing),
                             ..Default::default()
                         })),
+                        encoding: Some(CreateEncodingParams {
+                            concrete: DECLARED_ENCODING_SELECTIONS[0].concrete,
+                            identifier: DECLARED_ENCODING_SELECTIONS[0].identifier,
+                        }),
+                        chain_forms: Some(build_create_chain_forms_params(
+                            CreateChainFormsParamsOverrides {
+                                concrete: Some(CHAIN_FORMS_CONCRETES[0]),
+                                ..Default::default()
+                            },
+                        )),
                         kem: Some(*kem),
                         ..Default::default()
                     });
@@ -243,9 +254,10 @@ fn emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate() {
 ///   MockIGenerateAdapterEmitErrorReturn::WriteRefused))`.
 /// Arrange: the mock selection under `WriteRefused` crossed with every member
 ///   of `PAIRING_CONCRETES`, of the keccak cases of
-///   `DECLARED_HASH_TO_SCALAR_SELECTIONS`, of `DECLARED_ENCODING_SELECTIONS`,
-///   of `CHAIN_FORMS_CONCRETES`, of `DECLARED_KEM_SELECTIONS`, of
-///   `DECLARED_KEY_AGREEMENT_SELECTIONS`, and of `DELIVERY_PROOF_CONCRETES`.
+///   `DECLARED_HASH_TO_SCALAR_SELECTIONS`, of `DECLARED_KEM_SELECTIONS`, of
+///   `DECLARED_KEY_AGREEMENT_SELECTIONS`, and of `DELIVERY_PROOF_CONCRETES`,
+///   over the mock encoding and chain-forms defaults the mock concrete's
+///   declared `encoding_identifier` requires.
 /// Act:    `emit` on the adapter the consumer receives, run once per case by
 ///   `run_create_generate_case`.
 /// Assert: `result`'s `output` matches `Ok(Err(EmitErrorReturn::Mock(
@@ -278,7 +290,6 @@ fn a_refused_write_returns_the_mock_concretes_own_error() {
                     self.identities,
                     EmitPayloadOverrides {
                         proof_identity: Some(self.identities[0]),
-                        ..Default::default()
                     },
                 ),
             )
@@ -354,70 +365,53 @@ fn a_refused_write_returns_the_mock_concretes_own_error() {
             .iter()
             .filter(|selection| selection.identifier == HashToScalarIdentifier::Keccak256V1)
         {
-            for encoding in DECLARED_ENCODING_SELECTIONS {
-                for chain_forms in CHAIN_FORMS_CONCRETES {
-                    for kem in DECLARED_KEM_SELECTIONS {
-                        for key_agreement in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for delivery_proof in DELIVERY_PROOF_CONCRETES {
-                                let consumer = Consumer {
-                                    params: build_create_generate_params(
-                                        CreateGenerateParamsOverrides {
-                                            concrete: Some(GenerateConcrete::Mock(
-                                                MockIGenerateAdapterFailureMode::WriteRefused,
-                                            )),
-                                            ..Default::default()
-                                        },
-                                    ),
-                                };
-                                let case_params = build_create_generate_case_params(
-                                    CreateGenerateCaseParamsOverrides {
-                                        pairing: Some(build_create_pairing_params(
-                                            CreatePairingParamsOverrides {
-                                                concrete: Some(*pairing),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        hash_to_scalar: Some(*hash_to_scalar),
-                                        encoding: Some(CreateEncodingParams {
-                                            concrete: encoding.concrete,
-                                            identifier: encoding.identifier,
-                                        }),
-                                        chain_forms: Some(build_create_chain_forms_params(
-                                            CreateChainFormsParamsOverrides {
-                                                concrete: Some(*chain_forms),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        kem: Some(*kem),
-                                        key_agreement: Some(*key_agreement),
-                                        delivery_proof: Some(build_create_delivery_proof_params(
-                                            CreateDeliveryProofParamsOverrides {
-                                                concrete: Some(*delivery_proof),
-                                                ..Default::default()
-                                            },
-                                        )),
+            for kem in DECLARED_KEM_SELECTIONS {
+                for key_agreement in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                    for delivery_proof in DELIVERY_PROOF_CONCRETES {
+                        let consumer = Consumer {
+                            params: build_create_generate_params(CreateGenerateParamsOverrides {
+                                concrete: Some(GenerateConcrete::Mock(
+                                    MockIGenerateAdapterFailureMode::WriteRefused,
+                                )),
+                                ..Default::default()
+                            }),
+                        };
+                        let case_params =
+                            build_create_generate_case_params(CreateGenerateCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing),
                                         ..Default::default()
                                     },
-                                );
-                                // Act
-                                let result = run_create_generate_case(
-                                    &build_create_generate_case_deps(consumer, Default::default()),
-                                    case_params,
-                                    build_create_generate_case_payload(
-                                        &canonicals,
-                                        &roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                // Assert
-                                assert!(matches!(
-                                    result.unwrap().output.map(|s| s.output),
-                                    Ok(Err(EmitErrorReturn::Mock(
-                                        MockIGenerateAdapterEmitErrorReturn::WriteRefused
-                                    )))
-                                ));
-                            }
-                        }
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                kem: Some(*kem),
+                                key_agreement: Some(*key_agreement),
+                                delivery_proof: Some(build_create_delivery_proof_params(
+                                    CreateDeliveryProofParamsOverrides {
+                                        concrete: Some(*delivery_proof),
+                                        ..Default::default()
+                                    },
+                                )),
+                                ..Default::default()
+                            });
+                        // Act
+                        let result = run_create_generate_case(
+                            &build_create_generate_case_deps(consumer, Default::default()),
+                            case_params,
+                            build_create_generate_case_payload(
+                                &canonicals,
+                                &roots,
+                                Default::default(),
+                            ),
+                        );
+                        // Assert
+                        assert!(matches!(
+                            result.unwrap().output.map(|s| s.output),
+                            Ok(Err(EmitErrorReturn::Mock(
+                                MockIGenerateAdapterEmitErrorReturn::WriteRefused
+                            )))
+                        ));
                     }
                 }
             }
@@ -431,8 +425,10 @@ fn a_refused_write_returns_the_mock_concretes_own_error() {
 ///   returns `Err(CreateGenerateErrorReturn::UnsupportedEncodingIdentifier)`
 ///   with the consumer never called.
 /// Arrange: every member of `GENERATE_CONCRETES` over `EncodingConcrete::Mock`,
-///   whose declared identifier is `EncodingIdentifier::Mock`, and the mock
-///   selection over every member of `DECLARED_ENCODING_SELECTIONS`.
+///   whose declared identifier is `EncodingIdentifier::Mock`, under the mock
+///   chain-forms default that admits it, and the mock selection over every
+///   member of `DECLARED_ENCODING_SELECTIONS` under `CHAIN_FORMS_CONCRETES`'
+///   selection, whose declaration admits each real encoder.
 /// Act:    `create_generate`, the single call inside the block's case
 ///   consumer, run once per case by `run_create_generate_case`.
 /// Assert: `result`'s `output` equals `Err(
@@ -568,6 +564,12 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
                 concrete: encoding.concrete,
                 identifier: encoding.identifier,
             }),
+            chain_forms: Some(build_create_chain_forms_params(
+                CreateChainFormsParamsOverrides {
+                    concrete: Some(CHAIN_FORMS_CONCRETES[0]),
+                    ..Default::default()
+                },
+            )),
             ..Default::default()
         });
         // Act

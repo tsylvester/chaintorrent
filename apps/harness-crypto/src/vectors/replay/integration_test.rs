@@ -1667,7 +1667,9 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
 ///   concrete is selected by configuration.
 #[test]
 fn a_nonce_draw_refusal_reaches_the_caller_whole() {
-    struct Consumer;
+    struct Consumer {
+        expects_refusal: bool,
+    }
 
     impl IReplayCaseConsumer for Consumer {
         type Output = ();
@@ -1745,13 +1747,22 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
                 ),
             );
             // Assert
-            assert_eq!(returned.err(), Some(expected));
+            if self.expects_refusal {
+                assert_eq!(returned.err(), Some(expected));
+            } else {
+                assert!(returned.is_ok());
+            }
         }
     }
     for pairing_concrete in PAIRING_CONCRETES {
         for kem_selection in DECLARED_KEM_SELECTIONS {
             let result = run_replay_case(
-                &build_replay_case_deps(Consumer, Default::default()),
+                &build_replay_case_deps(
+                    Consumer {
+                        expects_refusal: true,
+                    },
+                    Default::default(),
+                ),
                 selections(
                     *pairing_concrete,
                     &DECLARED_HASH_TO_SCALAR_SELECTIONS[0],
@@ -1768,7 +1779,12 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
             assert!(result.is_ok());
             for proof_concrete in DELIVERY_PROOF_CONCRETES {
                 let result = run_replay_case(
-                    &build_replay_case_deps(Consumer, Default::default()),
+                    &build_replay_case_deps(
+                        Consumer {
+                            expects_refusal: false,
+                        },
+                        Default::default(),
+                    ),
                     selections(
                         *pairing_concrete,
                         &DECLARED_HASH_TO_SCALAR_SELECTIONS[0],
@@ -1805,7 +1821,9 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
 ///   concrete is selected by configuration.
 #[test]
 fn a_key_generation_nonce_draw_refusal_reaches_the_caller_whole() {
-    struct Consumer;
+    struct Consumer {
+        expects_refusal: bool,
+    }
 
     impl IReplayCaseConsumer for Consumer {
         type Output = ();
@@ -1884,7 +1902,11 @@ fn a_key_generation_nonce_draw_refusal_reaches_the_caller_whole() {
                 ),
             );
             // Assert
-            assert_eq!(returned.err(), Some(expected));
+            if self.expects_refusal {
+                assert_eq!(returned.err(), Some(expected));
+            } else {
+                assert!(returned.is_ok());
+            }
         }
     }
     for pairing_concrete in PAIRING_CONCRETES {
@@ -1896,7 +1918,12 @@ fn a_key_generation_nonce_draw_refusal_reaches_the_caller_whole() {
                 ..Default::default()
             });
             let result = run_replay_case(
-                &build_replay_case_deps(Consumer, Default::default()),
+                &build_replay_case_deps(
+                    Consumer {
+                        expects_refusal: true,
+                    },
+                    Default::default(),
+                ),
                 selections(
                     *pairing_concrete,
                     &DECLARED_HASH_TO_SCALAR_SELECTIONS[0],
@@ -1911,7 +1938,12 @@ fn a_key_generation_nonce_draw_refusal_reaches_the_caller_whole() {
             assert!(result.is_ok());
             for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                 let result = run_replay_case(
-                    &build_replay_case_deps(Consumer, Default::default()),
+                    &build_replay_case_deps(
+                        Consumer {
+                            expects_refusal: false,
+                        },
+                        Default::default(),
+                    ),
                     selections(
                         *pairing_concrete,
                         &DECLARED_HASH_TO_SCALAR_SELECTIONS[0],
@@ -1947,7 +1979,9 @@ fn a_key_generation_nonce_draw_refusal_reaches_the_caller_whole() {
 ///   concrete is selected by configuration.
 #[test]
 fn a_wrap_coin_draw_refusal_reaches_the_caller_whole() {
-    struct Consumer;
+    struct Consumer {
+        expects_refusal: bool,
+    }
 
     impl IReplayCaseConsumer for Consumer {
         type Output = ();
@@ -2024,7 +2058,11 @@ fn a_wrap_coin_draw_refusal_reaches_the_caller_whole() {
                 ),
             );
             // Assert
-            assert_eq!(returned.err(), Some(expected));
+            if self.expects_refusal {
+                assert_eq!(returned.err(), Some(expected));
+            } else {
+                assert!(returned.is_ok());
+            }
         }
     }
     for pairing_concrete in PAIRING_CONCRETES {
@@ -2036,7 +2074,12 @@ fn a_wrap_coin_draw_refusal_reaches_the_caller_whole() {
                 ..Default::default()
             });
             let result = run_replay_case(
-                &build_replay_case_deps(Consumer, Default::default()),
+                &build_replay_case_deps(
+                    Consumer {
+                        expects_refusal: true,
+                    },
+                    Default::default(),
+                ),
                 selections(
                     *pairing_concrete,
                     &DECLARED_HASH_TO_SCALAR_SELECTIONS[0],
@@ -2051,7 +2094,12 @@ fn a_wrap_coin_draw_refusal_reaches_the_caller_whole() {
             assert!(result.is_ok());
             for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                 let result = run_replay_case(
-                    &build_replay_case_deps(Consumer, Default::default()),
+                    &build_replay_case_deps(
+                        Consumer {
+                            expects_refusal: false,
+                        },
+                        Default::default(),
+                    ),
                     selections(
                         *pairing_concrete,
                         &DECLARED_HASH_TO_SCALAR_SELECTIONS[0],

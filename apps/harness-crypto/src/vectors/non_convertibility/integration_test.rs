@@ -122,7 +122,7 @@ fn every_record_holds_a_true_verdict_for_its_own_identity_and_a_false_one_for_an
                 .filter(|selection| selection.scope == IdentityScope::Entitlement)
             {
                 for (other_canonical, expect_other) in
-                    [(b"pkg@2.0.0#7" as &[u8], false), (b"pkg@1.0.0#1", true)]
+                    [(b"pkg@2.0.0#7".as_slice(), false), (b"pkg@1.0.0#1", true)]
                 {
                     // Act
                     let returned = run_non_convertibility_case(
@@ -463,33 +463,33 @@ fn every_record_draw_replays_to_the_credential_and_verdicts_it_holds() {
                 encode_g1(&replayed_identity_element.element),
                 encode_g1(&expected_identity_element_point.sum)
             );
-            if self.h2s_identifier == HashToScalarIdentifier::Keccak256V1 {
-                if let KemIdentity::Entitlement { canonical } = identity.identity {
-                    let tag = build_domain_tag(DomainTagConstructorParamsOverrides {
-                        bytes: Some(K::DECLARATION.identity_tag.to_vec()),
-                    });
-                    let expected = <P::Scalar as ISampleUniformScalar>::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        SampleUniformScalarPayload {
-                            uniform: build_secret(
-                                expected_uniform_bytes(
-                                    &tag,
-                                    canonical,
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH,
-                                ),
-                                Default::default(),
+            if self.h2s_identifier == HashToScalarIdentifier::Keccak256V1
+                && let KemIdentity::Entitlement { canonical } = identity.identity
+            {
+                let tag = build_domain_tag(DomainTagConstructorParamsOverrides {
+                    bytes: Some(K::DECLARATION.identity_tag.to_vec()),
+                });
+                let expected = <P::Scalar as ISampleUniformScalar>::sample_from_uniform_bytes(
+                    SampleUniformScalarParams,
+                    SampleUniformScalarPayload {
+                        uniform: build_secret(
+                            expected_uniform_bytes(
+                                &tag,
+                                canonical,
+                                <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH,
                             ),
-                        },
-                    )
-                    .expect("the expected uniform bytes sample")
-                    .scalar
-                    .expose()
-                    .clone();
-                    assert_eq!(
-                        encode_scalar(&replayed_identity_element.scalar),
-                        encode_scalar(&expected)
-                    );
-                }
+                            Default::default(),
+                        ),
+                    },
+                )
+                .expect("the expected uniform bytes sample")
+                .scalar
+                .expose()
+                .clone();
+                assert_eq!(
+                    encode_scalar(&replayed_identity_element.scalar),
+                    encode_scalar(&expected)
+                );
             }
         }
     }
@@ -501,8 +501,8 @@ fn every_record_draw_replays_to_the_credential_and_verdicts_it_holds() {
                 .filter(|selection| selection.scope == IdentityScope::Entitlement)
             {
                 for (canonical, other_canonical) in [
-                    (b"pkg@1.0.0#1" as &[u8], b"pkg@2.0.0#7" as &[u8]),
-                    (b"pkg@3.0.0#2" as &[u8], b"pkg@4.0.0#9" as &[u8]),
+                    (b"pkg@1.0.0#1".as_slice(), b"pkg@2.0.0#7".as_slice()),
+                    (b"pkg@3.0.0#2".as_slice(), b"pkg@4.0.0#9".as_slice()),
                 ] {
                     // Act
                     let returned = run_non_convertibility_case(
