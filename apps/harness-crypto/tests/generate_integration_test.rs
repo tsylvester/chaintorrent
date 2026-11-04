@@ -97,7 +97,6 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
                     self.identities,
                     EmitPayloadOverrides {
                         proof_identity: Some(self.identities[0]),
-                        ..Default::default()
                     },
                 ),
             );

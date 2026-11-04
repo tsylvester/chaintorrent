@@ -1746,39 +1746,40 @@ fn evm_forms_signed_intent_decides_the_operation_before_the_fields_and_the_field
         }),
     ];
     let admitted_fields = vec![build_intent_field(Default::default())];
-    let mut order_cases = Vec::new();
-    order_cases.push(build_signed_intent_inputs(SignedIntentInputsOverrides {
-        call: Some(build_intent_call(IntentCallOverrides {
-            operation: Some("lock-it".to_string()),
-            fields: Some(rejected_fields.clone()),
-        })),
-        nonce: Some(CanonicalFieldValue::Unsigned32(7)),
-        expiry: Some(CanonicalFieldValue::Unsigned32(8)),
-        ..Default::default()
-    }));
-    order_cases.push(build_signed_intent_inputs(SignedIntentInputsOverrides {
-        call: Some(build_intent_call(IntentCallOverrides {
-            fields: Some(rejected_fields),
+    let order_cases = [
+        build_signed_intent_inputs(SignedIntentInputsOverrides {
+            call: Some(build_intent_call(IntentCallOverrides {
+                operation: Some("lock-it".to_string()),
+                fields: Some(rejected_fields.clone()),
+            })),
+            nonce: Some(CanonicalFieldValue::Unsigned32(7)),
+            expiry: Some(CanonicalFieldValue::Unsigned32(8)),
             ..Default::default()
-        })),
-        nonce: Some(CanonicalFieldValue::Unsigned32(7)),
-        expiry: Some(CanonicalFieldValue::Unsigned32(8)),
-        ..Default::default()
-    }));
-    order_cases.push(build_signed_intent_inputs(SignedIntentInputsOverrides {
-        call: Some(build_intent_call(IntentCallOverrides {
-            fields: Some(admitted_fields),
+        }),
+        build_signed_intent_inputs(SignedIntentInputsOverrides {
+            call: Some(build_intent_call(IntentCallOverrides {
+                fields: Some(rejected_fields),
+                ..Default::default()
+            })),
+            nonce: Some(CanonicalFieldValue::Unsigned32(7)),
+            expiry: Some(CanonicalFieldValue::Unsigned32(8)),
             ..Default::default()
-        })),
-        nonce: Some(CanonicalFieldValue::Unsigned32(7)),
-        expiry: Some(CanonicalFieldValue::Unsigned32(8)),
-        ..Default::default()
-    }));
-    order_cases.push(build_signed_intent_inputs(SignedIntentInputsOverrides {
-        call: Some(build_intent_call(Default::default())),
-        expiry: Some(CanonicalFieldValue::Unsigned32(8)),
-        ..Default::default()
-    }));
+        }),
+        build_signed_intent_inputs(SignedIntentInputsOverrides {
+            call: Some(build_intent_call(IntentCallOverrides {
+                fields: Some(admitted_fields),
+                ..Default::default()
+            })),
+            nonce: Some(CanonicalFieldValue::Unsigned32(7)),
+            expiry: Some(CanonicalFieldValue::Unsigned32(8)),
+            ..Default::default()
+        }),
+        build_signed_intent_inputs(SignedIntentInputsOverrides {
+            call: Some(build_intent_call(Default::default())),
+            expiry: Some(CanonicalFieldValue::Unsigned32(8)),
+            ..Default::default()
+        }),
+    ];
 
     // Act
     let errors: Vec<_> = order_cases

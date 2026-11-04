@@ -159,13 +159,13 @@ fn a_mint_proof_verifies_in_both_forms() {
                         build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
                             pairing: Some(build_create_pairing_params(
                                 CreatePairingParamsOverrides {
-                                    concrete: Some(pairing_concrete.clone()),
+                                    concrete: Some(*pairing_concrete),
                                     ..Default::default()
                                 },
                             )),
                             chain_forms: Some(build_create_chain_forms_params(
                                 CreateChainFormsParamsOverrides {
-                                    concrete: Some(chain_forms_concrete.clone()),
+                                    concrete: Some(*chain_forms_concrete),
                                     ..Default::default()
                                 },
                             )),
@@ -175,7 +175,7 @@ fn a_mint_proof_verifies_in_both_forms() {
                                     identifier: Some(encoding.identifier),
                                 },
                             )),
-                            hash_to_scalar: Some(hash_to_scalar.clone()),
+                            hash_to_scalar: Some(*hash_to_scalar),
                             random_source: Some(build_create_random_source_params(
                                 CreateRandomSourceParamsOverrides {
                                     kind: Some(RandomSourceKind::OperatingSystem),
@@ -286,13 +286,13 @@ fn a_transfer_proof_verifies_in_both_forms() {
                         build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
                             pairing: Some(build_create_pairing_params(
                                 CreatePairingParamsOverrides {
-                                    concrete: Some(pairing_concrete.clone()),
+                                    concrete: Some(*pairing_concrete),
                                     ..Default::default()
                                 },
                             )),
                             chain_forms: Some(build_create_chain_forms_params(
                                 CreateChainFormsParamsOverrides {
-                                    concrete: Some(chain_forms_concrete.clone()),
+                                    concrete: Some(*chain_forms_concrete),
                                     ..Default::default()
                                 },
                             )),
@@ -302,7 +302,7 @@ fn a_transfer_proof_verifies_in_both_forms() {
                                     identifier: Some(encoding.identifier),
                                 },
                             )),
-                            hash_to_scalar: Some(hash_to_scalar.clone()),
+                            hash_to_scalar: Some(*hash_to_scalar),
                             random_source: Some(build_create_random_source_params(
                                 CreateRandomSourceParamsOverrides {
                                     kind: Some(RandomSourceKind::OperatingSystem),
@@ -446,13 +446,13 @@ fn a_proof_rebuilt_from_its_components_verifies() {
                         build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
                             pairing: Some(build_create_pairing_params(
                                 CreatePairingParamsOverrides {
-                                    concrete: Some(pairing_concrete.clone()),
+                                    concrete: Some(*pairing_concrete),
                                     ..Default::default()
                                 },
                             )),
                             chain_forms: Some(build_create_chain_forms_params(
                                 CreateChainFormsParamsOverrides {
-                                    concrete: Some(chain_forms_concrete.clone()),
+                                    concrete: Some(*chain_forms_concrete),
                                     ..Default::default()
                                 },
                             )),
@@ -462,7 +462,7 @@ fn a_proof_rebuilt_from_its_components_verifies() {
                                     identifier: Some(encoding.identifier),
                                 },
                             )),
-                            hash_to_scalar: Some(hash_to_scalar.clone()),
+                            hash_to_scalar: Some(*hash_to_scalar),
                             random_source: Some(build_create_random_source_params(
                                 CreateRandomSourceParamsOverrides {
                                     kind: Some(RandomSourceKind::OperatingSystem),
@@ -722,13 +722,13 @@ fn a_mint_proofs_challenge_is_the_tagged_hash_of_its_transcripts_encoding() {
                         build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
                             pairing: Some(build_create_pairing_params(
                                 CreatePairingParamsOverrides {
-                                    concrete: Some(pairing_concrete.clone()),
+                                    concrete: Some(*pairing_concrete),
                                     ..Default::default()
                                 },
                             )),
                             chain_forms: Some(build_create_chain_forms_params(
                                 CreateChainFormsParamsOverrides {
-                                    concrete: Some(chain_forms_concrete.clone()),
+                                    concrete: Some(*chain_forms_concrete),
                                     ..Default::default()
                                 },
                             )),
@@ -738,7 +738,7 @@ fn a_mint_proofs_challenge_is_the_tagged_hash_of_its_transcripts_encoding() {
                                     identifier: Some(encoding.identifier),
                                 },
                             )),
-                            hash_to_scalar: Some(hash_to_scalar.clone()),
+                            hash_to_scalar: Some(*hash_to_scalar),
                             random_source: Some(build_create_random_source_params(
                                 CreateRandomSourceParamsOverrides {
                                     kind: Some(RandomSourceKind::OperatingSystem),
@@ -1047,13 +1047,13 @@ fn a_transfer_proofs_challenge_is_the_tagged_hash_of_its_transcripts_encoding() 
                         build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
                             pairing: Some(build_create_pairing_params(
                                 CreatePairingParamsOverrides {
-                                    concrete: Some(pairing_concrete.clone()),
+                                    concrete: Some(*pairing_concrete),
                                     ..Default::default()
                                 },
                             )),
                             chain_forms: Some(build_create_chain_forms_params(
                                 CreateChainFormsParamsOverrides {
-                                    concrete: Some(chain_forms_concrete.clone()),
+                                    concrete: Some(*chain_forms_concrete),
                                     ..Default::default()
                                 },
                             )),
@@ -1063,7 +1063,7 @@ fn a_transfer_proofs_challenge_is_the_tagged_hash_of_its_transcripts_encoding() 
                                     identifier: Some(encoding.identifier),
                                 },
                             )),
-                            hash_to_scalar: Some(hash_to_scalar.clone()),
+                            hash_to_scalar: Some(*hash_to_scalar),
                             random_source: Some(build_create_random_source_params(
                                 CreateRandomSourceParamsOverrides {
                                     kind: Some(RandomSourceKind::OperatingSystem),
@@ -1527,13 +1527,13 @@ fn a_proof_fails_against_a_statement_differing_in_one_field() {
                         build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
                             pairing: Some(build_create_pairing_params(
                                 CreatePairingParamsOverrides {
-                                    concrete: Some(pairing_concrete.clone()),
+                                    concrete: Some(*pairing_concrete),
                                     ..Default::default()
                                 },
                             )),
                             chain_forms: Some(build_create_chain_forms_params(
                                 CreateChainFormsParamsOverrides {
-                                    concrete: Some(chain_forms_concrete.clone()),
+                                    concrete: Some(*chain_forms_concrete),
                                     ..Default::default()
                                 },
                             )),
@@ -1543,7 +1543,7 @@ fn a_proof_fails_against_a_statement_differing_in_one_field() {
                                     identifier: Some(encoding.identifier),
                                 },
                             )),
-                            hash_to_scalar: Some(hash_to_scalar.clone()),
+                            hash_to_scalar: Some(*hash_to_scalar),
                             random_source: Some(build_create_random_source_params(
                                 CreateRandomSourceParamsOverrides {
                                     kind: Some(RandomSourceKind::OperatingSystem),
@@ -1769,13 +1769,13 @@ fn a_proof_with_a_changed_response_or_challenge_fails() {
                         build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
                             pairing: Some(build_create_pairing_params(
                                 CreatePairingParamsOverrides {
-                                    concrete: Some(pairing_concrete.clone()),
+                                    concrete: Some(*pairing_concrete),
                                     ..Default::default()
                                 },
                             )),
                             chain_forms: Some(build_create_chain_forms_params(
                                 CreateChainFormsParamsOverrides {
-                                    concrete: Some(chain_forms_concrete.clone()),
+                                    concrete: Some(*chain_forms_concrete),
                                     ..Default::default()
                                 },
                             )),
@@ -1785,7 +1785,7 @@ fn a_proof_with_a_changed_response_or_challenge_fails() {
                                     identifier: Some(encoding.identifier),
                                 },
                             )),
-                            hash_to_scalar: Some(hash_to_scalar.clone()),
+                            hash_to_scalar: Some(*hash_to_scalar),
                             random_source: Some(build_create_random_source_params(
                                 CreateRandomSourceParamsOverrides {
                                     kind: Some(RandomSourceKind::OperatingSystem),
@@ -1977,13 +1977,13 @@ fn a_first_group_only_proof_with_a_changed_second_group_first_message_fails() {
                         build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
                             pairing: Some(build_create_pairing_params(
                                 CreatePairingParamsOverrides {
-                                    concrete: Some(pairing_concrete.clone()),
+                                    concrete: Some(*pairing_concrete),
                                     ..Default::default()
                                 },
                             )),
                             chain_forms: Some(build_create_chain_forms_params(
                                 CreateChainFormsParamsOverrides {
-                                    concrete: Some(chain_forms_concrete.clone()),
+                                    concrete: Some(*chain_forms_concrete),
                                     ..Default::default()
                                 },
                             )),
@@ -1993,7 +1993,7 @@ fn a_first_group_only_proof_with_a_changed_second_group_first_message_fails() {
                                     identifier: Some(encoding.identifier),
                                 },
                             )),
-                            hash_to_scalar: Some(hash_to_scalar.clone()),
+                            hash_to_scalar: Some(*hash_to_scalar),
                             random_source: Some(build_create_random_source_params(
                                 CreateRandomSourceParamsOverrides {
                                     kind: Some(RandomSourceKind::OperatingSystem),
@@ -2235,13 +2235,13 @@ fn a_proof_from_a_witness_the_statement_does_not_hold_fails() {
                         build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
                             pairing: Some(build_create_pairing_params(
                                 CreatePairingParamsOverrides {
-                                    concrete: Some(pairing_concrete.clone()),
+                                    concrete: Some(*pairing_concrete),
                                     ..Default::default()
                                 },
                             )),
                             chain_forms: Some(build_create_chain_forms_params(
                                 CreateChainFormsParamsOverrides {
-                                    concrete: Some(chain_forms_concrete.clone()),
+                                    concrete: Some(*chain_forms_concrete),
                                     ..Default::default()
                                 },
                             )),
@@ -2251,7 +2251,7 @@ fn a_proof_from_a_witness_the_statement_does_not_hold_fails() {
                                     identifier: Some(encoding.identifier),
                                 },
                             )),
-                            hash_to_scalar: Some(hash_to_scalar.clone()),
+                            hash_to_scalar: Some(*hash_to_scalar),
                             random_source: Some(build_create_random_source_params(
                                 CreateRandomSourceParamsOverrides {
                                     kind: Some(RandomSourceKind::OperatingSystem),
@@ -2568,13 +2568,13 @@ fn a_proof_whose_second_group_errors_cancel_unweighted_fails_the_weighted_produc
                         build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
                             pairing: Some(build_create_pairing_params(
                                 CreatePairingParamsOverrides {
-                                    concrete: Some(pairing_concrete.clone()),
+                                    concrete: Some(*pairing_concrete),
                                     ..Default::default()
                                 },
                             )),
                             chain_forms: Some(build_create_chain_forms_params(
                                 CreateChainFormsParamsOverrides {
-                                    concrete: Some(chain_forms_concrete.clone()),
+                                    concrete: Some(*chain_forms_concrete),
                                     ..Default::default()
                                 },
                             )),
@@ -2584,7 +2584,7 @@ fn a_proof_whose_second_group_errors_cancel_unweighted_fails_the_weighted_produc
                                     identifier: Some(encoding.identifier),
                                 },
                             )),
-                            hash_to_scalar: Some(hash_to_scalar.clone()),
+                            hash_to_scalar: Some(*hash_to_scalar),
                             random_source: Some(build_create_random_source_params(
                                 CreateRandomSourceParamsOverrides {
                                     kind: Some(RandomSourceKind::OperatingSystem),

@@ -6,9 +6,10 @@ use chain::{
     build_create_chain_forms_payload, create_chain_forms,
 };
 use encoding::{
-    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams, IDecoderAdapter,
-    IEncoderAdapter, IEncodingConsumer, build_create_encoding_deps, build_create_encoding_params,
-    build_create_encoding_payload, create_encoding,
+    CanonicalFieldKind, ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams,
+    ICanonicalField, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer, TypeNameParams,
+    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
+    create_encoding,
 };
 use envelope::KeyAgreementDeclaration;
 use kem::KemDeclaration;
@@ -87,6 +88,90 @@ pub fn mock_constants<'a, P: IPairingReference, E: IEncoderAdapter>(
     _payload: ConstantsPayload<'_>,
 ) -> ConstantsReturn {
     Ok(build_constants_success_return(Default::default()))
+}
+
+fn field_names<E: IEncoderAdapter>(encoder: &E, kinds: &[CanonicalFieldKind]) -> String {
+    kinds
+        .iter()
+        .map(|kind| {
+            let Ok(success) = encoder.type_name(TypeNameParams, *kind);
+            success.name.as_str().to_string()
+        })
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+pub fn build_mint_fields_text<E: IEncoderAdapter, F: IChainForms>(encoder: &E) -> String {
+    field_names(
+        encoder,
+        &[
+            CanonicalFieldKind::FixedBytes32,
+            CanonicalFieldKind::Unsigned16,
+            <F::ChainIdentifier as ICanonicalField>::KIND,
+            <F::Identity as ICanonicalField>::KIND,
+            CanonicalFieldKind::FixedBytes32,
+            CanonicalFieldKind::FixedBytes32,
+            <F::Entitlement as ICanonicalField>::KIND,
+            <F::Entitlement as ICanonicalField>::KIND,
+            <F::Interval as ICanonicalField>::KIND,
+            <F::Interval as ICanonicalField>::KIND,
+            CanonicalFieldKind::Unsigned16,
+            <F::Identity as ICanonicalField>::KIND,
+            <F::Identity as ICanonicalField>::KIND,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Unsigned64,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+        ],
+    )
+}
+
+pub fn build_transfer_fields_text<E: IEncoderAdapter, F: IChainForms>(encoder: &E) -> String {
+    field_names(
+        encoder,
+        &[
+            CanonicalFieldKind::FixedBytes32,
+            CanonicalFieldKind::Unsigned16,
+            <F::ChainIdentifier as ICanonicalField>::KIND,
+            <F::Identity as ICanonicalField>::KIND,
+            CanonicalFieldKind::FixedBytes32,
+            CanonicalFieldKind::FixedBytes32,
+            <F::Entitlement as ICanonicalField>::KIND,
+            <F::Entitlement as ICanonicalField>::KIND,
+            <F::Interval as ICanonicalField>::KIND,
+            <F::Interval as ICanonicalField>::KIND,
+            CanonicalFieldKind::Unsigned16,
+            <F::Identity as ICanonicalField>::KIND,
+            <F::Identity as ICanonicalField>::KIND,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Unsigned64,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::Bytes,
+        ],
+    )
 }
 
 #[derive(Default)]

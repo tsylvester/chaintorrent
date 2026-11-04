@@ -1333,19 +1333,18 @@ impl<'a, P: IPairingArithmetic, E: IEncoderAdapter, F: IChainForms> IDeliveryPro
         _params: ProofFromComponentsParams,
         payload: ProofFromComponentsPayload<P::Scalar, P::G2>,
     ) -> ProofFromComponentsReturn<SchnorrFsProof<P>> {
-        let form_matches = match (&payload.components, &self.verifier_form) {
+        let form_matches = matches!(
+            (&payload.components, &self.verifier_form),
             (
                 DeliveryProofComponents::MintBothGroups { .. }
-                | DeliveryProofComponents::TransferBothGroups { .. },
+                    | DeliveryProofComponents::TransferBothGroups { .. },
                 VerifierGroupArithmetic::BothGroups,
-            ) => true,
-            (
+            ) | (
                 DeliveryProofComponents::MintFirstGroupOnly { .. }
-                | DeliveryProofComponents::TransferFirstGroupOnly { .. },
+                    | DeliveryProofComponents::TransferFirstGroupOnly { .. },
                 VerifierGroupArithmetic::FirstGroupOnly,
-            ) => true,
-            _ => false,
-        };
+            )
+        );
         if !form_matches {
             return Err(ProofFromComponentsErrorReturn::VerifierFormMismatch);
         }

@@ -31,7 +31,8 @@ use super::provides::{
     ConstantsCaseParams, ConstantsCaseParamsOverrides, ConstantsCasePayload,
     IConstantsCaseConsumer, build_constants_case_deps, build_constants_case_params,
     build_constants_case_payload, build_constants_deps, build_constants_params,
-    build_constants_payload, run_constants_case,
+    build_constants_payload, build_mint_fields_text, build_transfer_fields_text,
+    run_constants_case,
 };
 
 fn entry_named<'a>(entries: &'a [SolidityLibraryEntry], text: &str) -> &'a SolidityLibraryEntry {
@@ -277,15 +278,15 @@ fn the_entries_carry_the_statement_version_and_each_purpose_code_in_declared_ord
 ///   of the four `chain/create_chain_forms` round-trip entries the spec
 ///   dispositions.
 /// Arrange: the defaults; every concrete of both declared sets is the variation,
-///   each sequence compared with its own literal.
+///   each sequence compared with the text its builder states.
 /// Act:    `run_constants_case` per member of each declared set, the consumer's
 ///   method calling `constants::<P, E, F>`.
-/// Assert: the entry `MINT_FIELDS` equals `String` of the literal ABI type names
-///   the block assembles from the field kinds `proof/mint_statement`'s interaction
-///   spec lists, the forms' kinds, and the ABI table `encoding/abi` states, joined
-///   by `,`, and the entry `TRANSFER_FIELDS` equals `String` of the literal
-///   assembled likewise from `proof/transfer_statement`'s spec, each built with
-///   `build_solidity_string_literal`.
+/// Assert: the entry `MINT_FIELDS` equals `String` of `build_solidity_string_literal`
+///   over the text `build_mint_fields_text` states for the handed encoder and
+///   forms, and the entry `TRANSFER_FIELDS` equals `String` of
+///   `build_solidity_string_literal` over the text `build_transfer_fields_text`
+///   states likewise, each builder declaring the kinds its description's
+///   interaction spec lists.
 /// Boundary: `constants` over the real encoder's `type_name`,
 ///   `SolidityAbiType::try_new` and `as_str`, `SolidityStringLiteral::try_new`, and
 ///   the real forms concrete.
@@ -323,13 +324,10 @@ fn the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms(
             // Assert
             let entries = result.expect("a supported version admits").entries;
             for (text, sequence) in [
-                (
-                    "MINT_FIELDS",
-                    "bytes32,uint16,uint256,bytes20,bytes32,bytes32,uint256,uint256,uint64,uint64,uint16,bytes20,bytes20,bytes,bytes,bytes,bytes,bytes,bytes,uint64,bytes,bytes,bytes,bytes,bytes",
-                ),
+                ("MINT_FIELDS", build_mint_fields_text::<E, F>(encoder)),
                 (
                     "TRANSFER_FIELDS",
-                    "bytes32,uint16,uint256,bytes20,bytes32,bytes32,uint256,uint256,uint64,uint64,uint16,bytes20,bytes20,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,uint64,bytes,bytes,bytes,bytes,bytes,bytes",
+                    build_transfer_fields_text::<E, F>(encoder),
                 ),
             ] {
                 assert_eq!(
@@ -343,7 +341,7 @@ fn the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms(
                         value: Some(SolidityConstantValue::String(
                             build_solidity_string_literal(
                                 SolidityStringLiteralConstructorParamsOverrides {
-                                    text: Some(sequence.to_string()),
+                                    text: Some(sequence),
                                 }
                             )
                         )),

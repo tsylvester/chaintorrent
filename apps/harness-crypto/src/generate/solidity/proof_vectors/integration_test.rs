@@ -138,7 +138,7 @@ fn run_every_case(kind: RandomSourceKind, run: &dyn Fn(ProofVectorsCaseParams) -
                                     kem_selection,
                                     key_agreement,
                                     delivery_proof,
-                                    kind.clone(),
+                                    kind,
                                 )));
                             }
                         }

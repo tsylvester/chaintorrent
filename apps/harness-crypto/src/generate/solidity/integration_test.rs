@@ -266,7 +266,7 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -572,7 +572,7 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -946,7 +946,7 @@ fn every_written_line_decodes_under_its_kinds_description() {
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -1152,7 +1152,7 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -1415,7 +1415,7 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -1459,22 +1459,14 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                                         .enumerate()
                                 {
                                     assert!(text.contains(&format!(
-                                        "        {}{} {};",
+                                        "        {} {};",
                                         abi_name(kind),
-                                        if matches!(
-                                            kind,
-                                            CanonicalFieldKind::Text | CanonicalFieldKind::Bytes
-                                        ) {
-                                            " memory"
-                                        } else {
-                                            ""
-                                        },
                                         member_names[index]
                                     )));
                                 }
                                 assert!(text.contains(&format!(
                                     "    string internal constant POSSESSION_PATH = \"{}\";",
-                                    format!(
+                                    format_args!(
                                         "suite/generated/{}/possession.vectors",
                                         curve_directory
                                     )
@@ -1639,7 +1631,7 @@ fn a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -1793,7 +1785,7 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                                                         concrete: Some(HashToScalarConcrete::Mock(
                                                             MockIHashToScalarAdapterFailureMode::SamplingRefused,
                                                         )),
-                                                        identifier: Some(hash_selection.identifier),
+                                                        identifier: Some(HashToScalarIdentifier::Mock),
                                                     },
                                                 ),
                                             ),
@@ -1832,7 +1824,7 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -2019,7 +2011,7 @@ fn a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing() {
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -2206,7 +2198,7 @@ fn a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothin
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -2393,7 +2385,7 @@ fn a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing(
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -2586,7 +2578,7 @@ fn a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name() {
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -2772,7 +2764,7 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );
@@ -2988,7 +2980,7 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
                                     ),
                                     build_solidity_generate_case_payload(
                                         canonicals,
-                                        &roots,
+                                        roots,
                                         Default::default(),
                                     ),
                                 );

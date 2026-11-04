@@ -610,7 +610,12 @@ fn every_draw_replays_to_the_objects_it_produced() {
             let context =
                 build_delivery_context::<F, MintPurpose>(MintPurpose::Mint, Default::default());
             let second = build_admitted_kem_identity(AdmittedKemIdentityOverrides {
-                setup_scope: Some(identity.setup_scope),
+                setup_scope: Some(match identity.setup_scope {
+                    SetupScope::Entitlement => SetupScope::Entitlement,
+                    SetupScope::Asset { .. } => SetupScope::Asset {
+                        root: self.other_root,
+                    },
+                }),
                 identity: Some(match identity.setup_scope {
                     SetupScope::Entitlement => KemIdentity::Entitlement {
                         canonical: self.other_canonical,

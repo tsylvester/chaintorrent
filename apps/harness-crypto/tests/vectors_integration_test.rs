@@ -721,7 +721,8 @@ fn a_setup_sampling_refusal_reaches_the_caller_inside_the_cross_holder_variant()
 /// Contract: own entry
 ///   `a_next_settlement_refusal_reaches_the_caller_inside_the_replay_variant`.
 /// Arrange: every count `1`; every member of `CHAIN_FORMS_CONCRETES` over
-///   every member of `PAIRING_CONCRETES`; the private surface's contexts with
+///   every member of `PAIRING_CONCRETES`, each case of
+///   `DECLARED_ENCODING_SELECTIONS`; the private surface's contexts with
 ///   the next context's `old_interval` overridden with a clone of the
 ///   transfer context's `old_interval`, and, as the counterfactual, the
 ///   private surface's contexts.
@@ -833,26 +834,34 @@ fn a_next_settlement_refusal_reaches_the_caller_inside_the_replay_variant() {
     }
     for pairing_concrete in PAIRING_CONCRETES {
         for forms_concrete in CHAIN_FORMS_CONCRETES {
-            for refuse in [true, false] {
-                let result = run_vectors_case(
-                    &build_vectors_case_deps(Consumer { refuse }, Default::default()),
-                    build_vectors_case_params(VectorsCaseParamsOverrides {
-                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                            concrete: Some(*pairing_concrete),
+            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                for refuse in [true, false] {
+                    let result = run_vectors_case(
+                        &build_vectors_case_deps(Consumer { refuse }, Default::default()),
+                        build_vectors_case_params(VectorsCaseParamsOverrides {
+                            pairing: Some(build_create_pairing_params(
+                                CreatePairingParamsOverrides {
+                                    concrete: Some(*pairing_concrete),
+                                    ..Default::default()
+                                },
+                            )),
+                            encoding: Some(CreateEncodingParams {
+                                concrete: encoding_selection.concrete,
+                                identifier: encoding_selection.identifier,
+                            }),
+                            chain_forms: Some(build_create_chain_forms_params(
+                                CreateChainFormsParamsOverrides {
+                                    concrete: Some(*forms_concrete),
+                                    ..Default::default()
+                                },
+                            )),
+                            random_source: os_source(),
                             ..Default::default()
-                        })),
-                        chain_forms: Some(build_create_chain_forms_params(
-                            CreateChainFormsParamsOverrides {
-                                concrete: Some(*forms_concrete),
-                                ..Default::default()
-                            },
-                        )),
-                        random_source: os_source(),
-                        ..Default::default()
-                    }),
-                    case_payload(CANONICAL, &asset_root(), &other_asset_root()),
-                );
-                assert!(result.is_ok());
+                        }),
+                        case_payload(CANONICAL, &asset_root(), &other_asset_root()),
+                    );
+                    assert!(result.is_ok());
+                }
             }
         }
     }
@@ -1747,8 +1756,9 @@ fn a_mint_nonce_draw_refusal_reaches_the_caller_inside_the_statement_mutations_v
 /// Arrange: every count `1`; each entitlement-scope selection of
 ///   `DECLARED_KEM_SELECTIONS` over every member of `PAIRING_CONCRETES`, each
 ///   case of `DECLARED_HASH_TO_SCALAR_SELECTIONS` declaring `Keccak256V1`,
-///   and each case of `DECLARED_ENCODING_SELECTIONS` declaring
-///   `EthereumAbiV1`; the canonical bytes the bytes `create_encoding` returns
+///   each case of `DECLARED_ENCODING_SELECTIONS` declaring
+///   `EthereumAbiV1`, and each member of `CHAIN_FORMS_CONCRETES`; the
+///   canonical bytes the bytes `create_encoding` returns
 ///   for the derivation context `build_derivation_context(Default::default())`
 ///   returns, under `DerivationContextDescription`, through
 ///   `build_mock_i_encoding_consumer`; for each set that derives an identity,
@@ -2020,27 +2030,35 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
                     continue;
                 }
                 for (encoding_selection, canonical) in &encodings {
-                    let result = run_vectors_case(
-                        &build_vectors_case_deps(Consumer, Default::default()),
-                        build_vectors_case_params(VectorsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            hash_to_scalar: Some(*h2s_selection),
-                            encoding: Some(CreateEncodingParams {
-                                concrete: encoding_selection.concrete,
-                                identifier: encoding_selection.identifier,
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        let result = run_vectors_case(
+                            &build_vectors_case_deps(Consumer, Default::default()),
+                            build_vectors_case_params(VectorsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                hash_to_scalar: Some(*h2s_selection),
+                                encoding: Some(CreateEncodingParams {
+                                    concrete: encoding_selection.concrete,
+                                    identifier: encoding_selection.identifier,
+                                }),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                kem: Some(*kem_selection),
+                                random_source: os_source(),
+                                ..Default::default()
                             }),
-                            kem: Some(*kem_selection),
-                            random_source: os_source(),
-                            ..Default::default()
-                        }),
-                        case_payload(canonical.as_slice(), &asset_root(), &other_asset_root()),
-                    );
-                    assert!(result.is_ok());
+                            case_payload(canonical.as_slice(), &asset_root(), &other_asset_root()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }

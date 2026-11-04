@@ -602,7 +602,7 @@ fn possession_vectors_carry_each_commitment_in_its_groups_encoding() {
         assert!(u64::from_be_bytes(r1) < 65521);
         let r2: [u8; 8] = record.r2[..].try_into().expect("r2 is eight bytes");
         let commitment = u64::from_be_bytes(r2);
-        assert!(commitment % 2 == 0);
+        assert!(commitment.is_multiple_of(2));
         assert!(commitment < 131042);
     }
 }

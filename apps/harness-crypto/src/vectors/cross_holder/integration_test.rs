@@ -589,33 +589,33 @@ fn every_record_draw_replays_to_the_values_it_holds() {
                 record.encapsulated.key_material().expose().as_slice(),
                 encoded.bytes.expose().as_ref()
             );
-            if self.h2s_identifier == HashToScalarIdentifier::Keccak256V1 {
-                if let KemIdentity::Entitlement { canonical } = identity.identity {
-                    let tag = build_domain_tag(DomainTagConstructorParamsOverrides {
-                        bytes: Some(K::DECLARATION.identity_tag.to_vec()),
-                    });
-                    let expected = <P::Scalar as ISampleUniformScalar>::sample_from_uniform_bytes(
-                        SampleUniformScalarParams,
-                        SampleUniformScalarPayload {
-                            uniform: build_secret(
-                                expected_uniform_bytes(
-                                    &tag,
-                                    canonical,
-                                    <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH,
-                                ),
-                                Default::default(),
+            if self.h2s_identifier == HashToScalarIdentifier::Keccak256V1
+                && let KemIdentity::Entitlement { canonical } = identity.identity
+            {
+                let tag = build_domain_tag(DomainTagConstructorParamsOverrides {
+                    bytes: Some(K::DECLARATION.identity_tag.to_vec()),
+                });
+                let expected = <P::Scalar as ISampleUniformScalar>::sample_from_uniform_bytes(
+                    SampleUniformScalarParams,
+                    SampleUniformScalarPayload {
+                        uniform: build_secret(
+                            expected_uniform_bytes(
+                                &tag,
+                                canonical,
+                                <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH,
                             ),
-                        },
-                    )
-                    .expect("the expected uniform bytes sample")
-                    .scalar
-                    .expose()
-                    .clone();
-                    assert_eq!(
-                        encode_scalar(&actual_identity_element.scalar),
-                        encode_scalar(&expected)
-                    );
-                }
+                            Default::default(),
+                        ),
+                    },
+                )
+                .expect("the expected uniform bytes sample")
+                .scalar
+                .expose()
+                .clone();
+                assert_eq!(
+                    encode_scalar(&actual_identity_element.scalar),
+                    encode_scalar(&expected)
+                );
             }
         }
     }

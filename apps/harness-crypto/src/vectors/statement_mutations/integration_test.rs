@@ -1023,7 +1023,7 @@ fn every_record_draw_replays_to_the_statements_and_the_offset_it_produced() {
             let offset = replay_scalar(&uniforms[9]);
             let canonical = match identity.identity {
                 KemIdentity::Entitlement { canonical } => canonical.to_vec(),
-                KemIdentity::Asset { .. } => Vec::new(),
+                KemIdentity::Asset { root } => root.as_bytes().to_vec(),
             };
             let tag = build_domain_tag(DomainTagConstructorParamsOverrides {
                 bytes: Some(K::DECLARATION.identity_tag.to_vec()),

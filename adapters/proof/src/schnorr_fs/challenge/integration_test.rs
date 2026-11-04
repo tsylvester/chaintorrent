@@ -534,7 +534,6 @@ fn a_transcript_differing_in_one_field_yields_another_challenge() {
                     MintStatementOverrides {
                         asset_root: Some(build_root(RootConstructorParamsOverrides {
                             bytes: Some([0xA4; 32]),
-                            ..Default::default()
                         })),
                         ..Default::default()
                     },
@@ -545,7 +544,6 @@ fn a_transcript_differing_in_one_field_yields_another_challenge() {
                         parameter_set_identifier: Some(build_parameter_set_identifier(
                             ParameterSetIdentifierConstructorParamsOverrides {
                                 bytes: Some([0xA5; PARAMETER_SET_IDENTIFIER_LENGTH]),
-                                ..Default::default()
                             },
                         )),
                         ..Default::default()
@@ -753,7 +751,6 @@ fn a_transcript_differing_in_one_field_yields_another_challenge() {
                     TransferStatementOverrides {
                         asset_root: Some(build_root(RootConstructorParamsOverrides {
                             bytes: Some([0xB4; 32]),
-                            ..Default::default()
                         })),
                         ..Default::default()
                     },
@@ -764,7 +761,6 @@ fn a_transcript_differing_in_one_field_yields_another_challenge() {
                         parameter_set_identifier: Some(build_parameter_set_identifier(
                             ParameterSetIdentifierConstructorParamsOverrides {
                                 bytes: Some([0xB5; PARAMETER_SET_IDENTIFIER_LENGTH]),
-                                ..Default::default()
                             },
                         )),
                         ..Default::default()

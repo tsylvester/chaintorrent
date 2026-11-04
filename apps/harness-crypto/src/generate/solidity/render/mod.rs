@@ -325,9 +325,9 @@ pub fn render(_deps: &RenderDeps, params: RenderParams, payload: RenderPayload) 
     text.push_str(&params.license.text);
     text.push_str("\npragma solidity ");
     text.push_str(&params.compiler_version.major.to_string());
-    text.push_str(".");
+    text.push('.');
     text.push_str(&params.compiler_version.minor.to_string());
-    text.push_str(".");
+    text.push('.');
     text.push_str(&params.compiler_version.patch.to_string());
     text.push_str(";\n\nlibrary ");
     text.push_str(&payload.library_name.text);
@@ -389,7 +389,7 @@ pub fn render(_deps: &RenderDeps, params: RenderParams, payload: RenderPayload) 
         SolidityLibraryBody::Records(declarations) => {
             for (index, declaration) in declarations.declarations.iter().enumerate() {
                 if index > 0 {
-                    text.push_str("\n");
+                    text.push('\n');
                 }
                 text.push_str("    struct ");
                 text.push_str(&declaration.struct_name.text);
@@ -397,18 +397,18 @@ pub fn render(_deps: &RenderDeps, params: RenderParams, payload: RenderPayload) 
                 for member in &declaration.members.members {
                     text.push_str("        ");
                     text.push_str(member.abi_type.as_str());
-                    text.push_str(" ");
+                    text.push(' ');
                     text.push_str(&member.name.text);
                     text.push_str(";\n");
                 }
                 text.push_str("    }\n");
-                text.push_str("\n");
+                text.push('\n');
                 text.push_str("    string internal constant ");
                 text.push_str(&declaration.path_constant_name.text);
                 text.push_str(" = \"");
                 text.push_str(&declaration.path.text);
                 text.push_str("\";\n");
-                text.push_str("\n");
+                text.push('\n');
                 text.push_str("    function ");
                 text.push_str(&declaration.decode_function_name.text);
                 text.push_str("(bytes memory line) internal pure returns (");
@@ -423,7 +423,7 @@ pub fn render(_deps: &RenderDeps, params: RenderParams, payload: RenderPayload) 
                     if member.decodes_into_memory() {
                         text.push_str(" memory");
                     }
-                    text.push_str(" ");
+                    text.push(' ');
                     text.push_str(&member.name.text);
                 }
                 text.push_str(") = abi.decode(line, (");

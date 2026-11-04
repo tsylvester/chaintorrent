@@ -1,7 +1,7 @@
 #![allow(clippy::expect_used)]
 
 use chain::{
-    CHAIN_FORMS_CONCRETES, CreateChainFormsParamsOverrides, IChainForms,
+    CHAIN_FORMS_CONCRETES, ChainFormsConcrete, CreateChainFormsParamsOverrides, IChainForms,
     build_create_chain_forms_params,
 };
 use encoding::{
@@ -712,6 +712,12 @@ fn a_key_derivation_refusal_reaches_the_caller_inside_the_cross_set_variant() {
                                 ..Default::default()
                             },
                         )),
+                        chain_forms: Some(build_create_chain_forms_params(
+                            CreateChainFormsParamsOverrides {
+                                concrete: Some(ChainFormsConcrete::Evm),
+                                ..Default::default()
+                            },
+                        )),
                         kem: Some(*kem_selection),
                         random_source: Some(operating_system()),
                         ..Default::default()
@@ -740,6 +746,12 @@ fn a_key_derivation_refusal_reaches_the_caller_inside_the_cross_set_variant() {
                                 identifier: encoding_selection.identifier,
                             }),
                             key_derivation: Some(*kdf_selection),
+                            chain_forms: Some(build_create_chain_forms_params(
+                                CreateChainFormsParamsOverrides {
+                                    concrete: Some(ChainFormsConcrete::Evm),
+                                    ..Default::default()
+                                },
+                            )),
                             kem: Some(*kem_selection),
                             random_source: Some(operating_system()),
                             ..Default::default()

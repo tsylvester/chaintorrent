@@ -171,7 +171,7 @@ fn an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_vers
                             CreateDeliveryProofCaseParamsOverrides {
                                 pairing: Some(build_create_pairing_params(
                                     CreatePairingParamsOverrides {
-                                        concrete: Some(pairing_concrete.clone()),
+                                        concrete: Some(*pairing_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -184,7 +184,7 @@ fn an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_vers
                                 )),
                                 chain_forms: Some(build_create_chain_forms_params(
                                     CreateChainFormsParamsOverrides {
-                                        concrete: Some(chain_forms_concrete.clone()),
+                                        concrete: Some(*chain_forms_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -334,7 +334,7 @@ fn a_mint_proof_the_adapter_returns_verifies() {
                             CreateDeliveryProofCaseParamsOverrides {
                                 pairing: Some(build_create_pairing_params(
                                     CreatePairingParamsOverrides {
-                                        concrete: Some(pairing_concrete.clone()),
+                                        concrete: Some(*pairing_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -347,7 +347,7 @@ fn a_mint_proof_the_adapter_returns_verifies() {
                                 )),
                                 chain_forms: Some(build_create_chain_forms_params(
                                     CreateChainFormsParamsOverrides {
-                                        concrete: Some(chain_forms_concrete.clone()),
+                                        concrete: Some(*chain_forms_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -501,7 +501,7 @@ fn a_transfer_proof_the_adapter_returns_verifies() {
                             CreateDeliveryProofCaseParamsOverrides {
                                 pairing: Some(build_create_pairing_params(
                                     CreatePairingParamsOverrides {
-                                        concrete: Some(pairing_concrete.clone()),
+                                        concrete: Some(*pairing_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -514,7 +514,7 @@ fn a_transfer_proof_the_adapter_returns_verifies() {
                                 )),
                                 chain_forms: Some(build_create_chain_forms_params(
                                     CreateChainFormsParamsOverrides {
-                                        concrete: Some(chain_forms_concrete.clone()),
+                                        concrete: Some(*chain_forms_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -689,7 +689,7 @@ fn a_proof_the_adapter_rebuilds_from_its_components_verifies() {
                             CreateDeliveryProofCaseParamsOverrides {
                                 pairing: Some(build_create_pairing_params(
                                     CreatePairingParamsOverrides {
-                                        concrete: Some(pairing_concrete.clone()),
+                                        concrete: Some(*pairing_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -702,7 +702,7 @@ fn a_proof_the_adapter_rebuilds_from_its_components_verifies() {
                                 )),
                                 chain_forms: Some(build_create_chain_forms_params(
                                     CreateChainFormsParamsOverrides {
-                                        concrete: Some(chain_forms_concrete.clone()),
+                                        concrete: Some(*chain_forms_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -878,7 +878,7 @@ fn components_of_the_other_verifier_form_are_refused_by_the_adapter() {
                             CreateDeliveryProofCaseParamsOverrides {
                                 pairing: Some(build_create_pairing_params(
                                     CreatePairingParamsOverrides {
-                                        concrete: Some(pairing_concrete.clone()),
+                                        concrete: Some(*pairing_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -891,7 +891,7 @@ fn components_of_the_other_verifier_form_are_refused_by_the_adapter() {
                                 )),
                                 chain_forms: Some(build_create_chain_forms_params(
                                     CreateChainFormsParamsOverrides {
-                                        concrete: Some(chain_forms_concrete.clone()),
+                                        concrete: Some(*chain_forms_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -1048,7 +1048,7 @@ fn a_proof_of_another_relation_is_refused_by_verify() {
                             CreateDeliveryProofCaseParamsOverrides {
                                 pairing: Some(build_create_pairing_params(
                                     CreatePairingParamsOverrides {
-                                        concrete: Some(pairing_concrete.clone()),
+                                        concrete: Some(*pairing_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -1061,7 +1061,7 @@ fn a_proof_of_another_relation_is_refused_by_verify() {
                                 )),
                                 chain_forms: Some(build_create_chain_forms_params(
                                     CreateChainFormsParamsOverrides {
-                                        concrete: Some(chain_forms_concrete.clone()),
+                                        concrete: Some(*chain_forms_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -1636,7 +1636,7 @@ fn a_proof_against_a_statement_differing_in_one_field_is_refused() {
                             CreateDeliveryProofCaseParamsOverrides {
                                 pairing: Some(build_create_pairing_params(
                                     CreatePairingParamsOverrides {
-                                        concrete: Some(pairing_concrete.clone()),
+                                        concrete: Some(*pairing_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -1649,7 +1649,7 @@ fn a_proof_against_a_statement_differing_in_one_field_is_refused() {
                                 )),
                                 chain_forms: Some(build_create_chain_forms_params(
                                     CreateChainFormsParamsOverrides {
-                                        concrete: Some(chain_forms_concrete.clone()),
+                                        concrete: Some(*chain_forms_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -1868,7 +1868,6 @@ fn a_proof_with_a_changed_response_or_challenge_is_refused() {
                                         changed_response.clone()
                                     }),
                                     second_group_first_messages: Some(first_messages.clone()),
-                                    ..Default::default()
                                 },
                             );
                             let components =
@@ -1946,7 +1945,7 @@ fn a_proof_with_a_changed_response_or_challenge_is_refused() {
                             CreateDeliveryProofCaseParamsOverrides {
                                 pairing: Some(build_create_pairing_params(
                                     CreatePairingParamsOverrides {
-                                        concrete: Some(pairing_concrete.clone()),
+                                        concrete: Some(*pairing_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -1959,7 +1958,7 @@ fn a_proof_with_a_changed_response_or_challenge_is_refused() {
                                 )),
                                 chain_forms: Some(build_create_chain_forms_params(
                                     CreateChainFormsParamsOverrides {
-                                        concrete: Some(chain_forms_concrete.clone()),
+                                        concrete: Some(*chain_forms_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -2208,7 +2207,7 @@ fn a_proof_from_a_witness_the_statement_does_not_hold_is_refused() {
                             CreateDeliveryProofCaseParamsOverrides {
                                 pairing: Some(build_create_pairing_params(
                                     CreatePairingParamsOverrides {
-                                        concrete: Some(pairing_concrete.clone()),
+                                        concrete: Some(*pairing_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -2221,7 +2220,7 @@ fn a_proof_from_a_witness_the_statement_does_not_hold_is_refused() {
                                 )),
                                 chain_forms: Some(build_create_chain_forms_params(
                                     CreateChainFormsParamsOverrides {
-                                        concrete: Some(chain_forms_concrete.clone()),
+                                        concrete: Some(*chain_forms_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -2370,7 +2369,7 @@ fn a_refused_nonce_draw_is_returned_by_each_prover() {
                             CreateDeliveryProofCaseParamsOverrides {
                                 pairing: Some(build_create_pairing_params(
                                     CreatePairingParamsOverrides {
-                                        concrete: Some(pairing_concrete.clone()),
+                                        concrete: Some(*pairing_concrete),
                                         ..Default::default()
                                     },
                                 )),
@@ -2383,7 +2382,7 @@ fn a_refused_nonce_draw_is_returned_by_each_prover() {
                                 )),
                                 chain_forms: Some(build_create_chain_forms_params(
                                     CreateChainFormsParamsOverrides {
-                                        concrete: Some(chain_forms_concrete.clone()),
+                                        concrete: Some(*chain_forms_concrete),
                                         ..Default::default()
                                     },
                                 )),

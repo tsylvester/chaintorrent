@@ -379,6 +379,30 @@ pub enum ProofFromComponentsErrorReturn {
 pub type ProofFromComponentsReturn<PR> =
     Result<ProofFromComponentsSuccessReturn<PR>, ProofFromComponentsErrorReturn>;
 
+pub type AdapterProveMintPayload<'a, A> = ProveMintPayload<
+    'a,
+    <A as IDeliveryProofAdapter>::Forms,
+    <<A as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::Scalar,
+    <<A as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::G1,
+    <<A as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::G2,
+>;
+
+pub type AdapterProveTransferPayload<'a, A> = ProveTransferPayload<
+    'a,
+    <A as IDeliveryProofAdapter>::Forms,
+    <<A as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::Scalar,
+    <<A as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::G1,
+    <<A as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::G2,
+>;
+
+pub type AdapterVerifyPayload<'a, A> = VerifyPayload<
+    'a,
+    <A as IDeliveryProofAdapter>::Forms,
+    <<A as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::G1,
+    <<A as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::G2,
+    <A as IDeliveryProofAdapter>::Proof,
+>;
+
 pub trait IDeliveryProofAdapter {
     const DECLARATION: DeliveryProofDeclaration;
 
@@ -389,38 +413,17 @@ pub trait IDeliveryProofAdapter {
     fn prove_mint(
         &self,
         params: ProveMintParams,
-        payload: ProveMintPayload<
-            '_,
-            Self::Forms,
-            <Self::Pairing as IPairingAdapter>::Scalar,
-            <Self::Pairing as IPairingAdapter>::G1,
-            <Self::Pairing as IPairingAdapter>::G2,
-        >,
+        payload: AdapterProveMintPayload<'_, Self>,
     ) -> ProveMintReturn<Self::Proof>;
 
     fn prove_transfer(
         &self,
         params: ProveTransferParams,
-        payload: ProveTransferPayload<
-            '_,
-            Self::Forms,
-            <Self::Pairing as IPairingAdapter>::Scalar,
-            <Self::Pairing as IPairingAdapter>::G1,
-            <Self::Pairing as IPairingAdapter>::G2,
-        >,
+        payload: AdapterProveTransferPayload<'_, Self>,
     ) -> ProveTransferReturn<Self::Proof>;
 
-    fn verify(
-        &self,
-        params: VerifyParams,
-        payload: VerifyPayload<
-            '_,
-            Self::Forms,
-            <Self::Pairing as IPairingAdapter>::G1,
-            <Self::Pairing as IPairingAdapter>::G2,
-            Self::Proof,
-        >,
-    ) -> VerifyReturn;
+    fn verify(&self, params: VerifyParams, payload: AdapterVerifyPayload<'_, Self>)
+    -> VerifyReturn;
 
     fn proof_components(
         &self,

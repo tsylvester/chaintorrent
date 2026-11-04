@@ -9,9 +9,9 @@ use pairing::{
     CreatePairingErrorReturn, CreatePairingParams, IPairingArithmetic, IPairingReference,
 };
 use pairing::{IPairingAdapter, VerifierGroupArithmetic};
+use proof::{AdapterVerifyPayload, DeliveryRelation, IDeliveryProofAdapter};
 #[cfg(any(test, feature = "mocks"))]
 use proof::{CreateDeliveryProofErrorReturn, CreateDeliveryProofParams};
-use proof::{DeliveryRelation, IDeliveryProofAdapter, VerifyPayload};
 #[cfg(any(test, feature = "mocks"))]
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 
@@ -84,13 +84,7 @@ pub trait IVerifierAdapter {
     fn verify_on_chain(
         &self,
         params: VerifyOnChainParams,
-        payload: VerifyPayload<
-            '_,
-            <Self::DeliveryProof as IDeliveryProofAdapter>::Forms,
-            <<Self::DeliveryProof as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::G1,
-            <<Self::DeliveryProof as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::G2,
-            <Self::DeliveryProof as IDeliveryProofAdapter>::Proof,
-        >,
+        payload: AdapterVerifyPayload<'_, Self::DeliveryProof>,
     ) -> VerifyOnChainReturn;
 }
 

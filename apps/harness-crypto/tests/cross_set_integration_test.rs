@@ -344,7 +344,13 @@ fn every_run_emits_the_configured_count_of_records_with_distinct_draws() {
                     )),
                     ..Default::default()
                 }),
-                build_cross_set_case_payload(Default::default()),
+                build_cross_set_case_payload(CrossSetCasePayloadOverrides {
+                    identity: Some(match kem_selection.scope {
+                        IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
+                        IdentityScope::Asset => [0x44; 32].to_vec(),
+                    }),
+                    ..Default::default()
+                }),
             );
             // Assert
             assert!(returned.is_ok());
@@ -481,7 +487,13 @@ fn a_draw_refusal_reaches_the_caller_whole() {
                         )),
                         ..Default::default()
                     }),
-                    build_cross_set_case_payload(Default::default()),
+                    build_cross_set_case_payload(CrossSetCasePayloadOverrides {
+                        identity: Some(match kem_selection.scope {
+                            IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
+                            IdentityScope::Asset => [0x44; 32].to_vec(),
+                        }),
+                        ..Default::default()
+                    }),
                 );
                 // Assert
                 assert!(returned.is_ok());
@@ -625,7 +637,13 @@ fn a_setup_sampling_refusal_reaches_the_caller_whole() {
                 )),
                 ..Default::default()
             }),
-            build_cross_set_case_payload(Default::default()),
+            build_cross_set_case_payload(CrossSetCasePayloadOverrides {
+                identity: Some(match kem_selection.scope {
+                    IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
+                    IdentityScope::Asset => [0x44; 32].to_vec(),
+                }),
+                ..Default::default()
+            }),
         );
         // Assert
         assert!(returned.is_ok());
@@ -652,7 +670,13 @@ fn a_setup_sampling_refusal_reaches_the_caller_whole() {
                     )),
                     ..Default::default()
                 }),
-                build_cross_set_case_payload(Default::default()),
+                build_cross_set_case_payload(CrossSetCasePayloadOverrides {
+                    identity: Some(match kem_selection.scope {
+                        IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
+                        IdentityScope::Asset => [0x44; 32].to_vec(),
+                    }),
+                    ..Default::default()
+                }),
             );
             // Assert
             assert!(returned.is_ok());
@@ -1010,7 +1034,13 @@ fn a_key_derivation_refusal_reaches_the_caller_whole() {
                         )),
                         ..Default::default()
                     }),
-                    build_cross_set_case_payload(Default::default()),
+                    build_cross_set_case_payload(CrossSetCasePayloadOverrides {
+                        identity: Some(match kem_selection.scope {
+                            IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
+                            IdentityScope::Asset => [0x44; 32].to_vec(),
+                        }),
+                        ..Default::default()
+                    }),
                 );
                 // Assert
                 assert!(returned.is_ok());

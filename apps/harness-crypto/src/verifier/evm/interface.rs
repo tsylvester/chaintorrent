@@ -55,7 +55,7 @@ pub enum EvmVerifierField {
     GasPriceOracle,
 }
 
-pub const EVM_VERIFIER_CONTEXT_FIELD_KINDS: &'static [CanonicalFieldKind] = &[
+pub const EVM_VERIFIER_CONTEXT_FIELD_KINDS: &[CanonicalFieldKind] = &[
     CanonicalFieldKind::Unsigned256,
     CanonicalFieldKind::FixedBytes20,
     CanonicalFieldKind::Unsigned256,

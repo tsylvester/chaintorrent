@@ -334,6 +334,9 @@ fn vectors_draws_every_set_from_the_one_source_in_call_order() {
             let replay_draws = uniforms(12);
             let context = build_derivation_context(Default::default());
             let (mint, transfer, next) = default_contexts::<F>();
+            let count = |count: u32| {
+                build_vector_count(VectorCountConstructorParamsOverrides { count: Some(count) })
+            };
             // Act
             let returned = vectors::<P, K, A, D, E>(
                 &build_vectors_deps(
@@ -346,7 +349,15 @@ fn vectors_draws_every_set_from_the_one_source_in_call_order() {
                     encoder,
                     Default::default(),
                 ),
-                build_vectors_params(Default::default()),
+                build_vectors_params(VectorsParamsOverrides {
+                    cross_holder: Some(count(1)),
+                    rerandomization: Some(count(1)),
+                    non_convertibility: Some(count(1)),
+                    malformed_capsules: Some(count(1)),
+                    cross_set: Some(count(1)),
+                    statement_mutations: Some(count(1)),
+                    replay: Some(count(1)),
+                }),
                 build_vectors_payload(
                     &context,
                     &mint,
@@ -547,6 +558,9 @@ fn vectors_hands_every_set_the_configured_identity() {
             );
             let context = build_derivation_context(Default::default());
             let (mint, transfer, next) = default_contexts::<F>();
+            let count = |count: u32| {
+                build_vector_count(VectorCountConstructorParamsOverrides { count: Some(count) })
+            };
             // Act
             let returned = vectors::<P, K, A, D, E>(
                 &build_vectors_deps(
@@ -559,7 +573,15 @@ fn vectors_hands_every_set_the_configured_identity() {
                     encoder,
                     Default::default(),
                 ),
-                build_vectors_params(Default::default()),
+                build_vectors_params(VectorsParamsOverrides {
+                    cross_holder: Some(count(1)),
+                    rerandomization: Some(count(1)),
+                    non_convertibility: Some(count(1)),
+                    malformed_capsules: Some(count(1)),
+                    cross_set: Some(count(1)),
+                    statement_mutations: Some(count(1)),
+                    replay: Some(count(1)),
+                }),
                 build_vectors_payload(
                     &context,
                     &mint,
@@ -838,6 +860,9 @@ fn vectors_hands_cross_set_the_configured_derivation_context() {
             )
             .expect("the replay's wrap succeeds");
             let (mint, transfer, next) = default_contexts::<F>();
+            let count = |count: u32| {
+                build_vector_count(VectorCountConstructorParamsOverrides { count: Some(count) })
+            };
             // Act
             let returned = vectors::<P, K, A, D, E>(
                 &build_vectors_deps(
@@ -850,7 +875,15 @@ fn vectors_hands_cross_set_the_configured_derivation_context() {
                     encoder,
                     Default::default(),
                 ),
-                build_vectors_params(Default::default()),
+                build_vectors_params(VectorsParamsOverrides {
+                    cross_holder: Some(count(1)),
+                    rerandomization: Some(count(1)),
+                    non_convertibility: Some(count(1)),
+                    malformed_capsules: Some(count(1)),
+                    cross_set: Some(count(1)),
+                    statement_mutations: Some(count(1)),
+                    replay: Some(count(1)),
+                }),
                 build_vectors_payload(
                     &context,
                     &mint,
@@ -1240,6 +1273,9 @@ fn vectors_hands_every_set_the_asset_scoped_identity() {
             );
             let context = build_derivation_context(Default::default());
             let (mint, transfer, next) = default_contexts::<F>();
+            let count = |count: u32| {
+                build_vector_count(VectorCountConstructorParamsOverrides { count: Some(count) })
+            };
             // Act
             let returned = vectors::<P, K, A, D, E>(
                 &build_vectors_deps(
@@ -1252,7 +1288,15 @@ fn vectors_hands_every_set_the_asset_scoped_identity() {
                     encoder,
                     Default::default(),
                 ),
-                build_vectors_params(Default::default()),
+                build_vectors_params(VectorsParamsOverrides {
+                    cross_holder: Some(count(1)),
+                    rerandomization: Some(count(1)),
+                    non_convertibility: Some(count(1)),
+                    malformed_capsules: Some(count(1)),
+                    cross_set: Some(count(1)),
+                    statement_mutations: Some(count(1)),
+                    replay: Some(count(1)),
+                }),
                 build_vectors_payload(
                     &context,
                     &mint,

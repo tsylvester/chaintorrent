@@ -206,7 +206,6 @@ fn vectors_returns_the_draw_refusal_inside_the_cross_holder_variant() {
                     kind: Some(RandomSourceKind::Mock(
                         MockIRandomSourceAdapterFailureMode::FillBytesRefused,
                     )),
-                    ..Default::default()
                 },
             )),
             ..Default::default()

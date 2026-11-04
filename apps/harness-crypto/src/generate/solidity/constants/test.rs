@@ -18,7 +18,8 @@ use super::provides::{
     ConstantsCasePayload, ConstantsErrorReturn, ConstantsParamsOverrides, ConstantsReturn,
     IConstantsCaseConsumer, build_constants_case_deps, build_constants_case_params,
     build_constants_case_payload, build_constants_deps, build_constants_params,
-    build_constants_payload, run_constants_case,
+    build_constants_payload, build_mint_fields_text, build_transfer_fields_text,
+    run_constants_case,
 };
 
 fn entry_named<'a>(entries: &'a [SolidityLibraryEntry], text: &str) -> &'a SolidityLibraryEntry {
@@ -356,18 +357,19 @@ fn constants_carry_the_statement_version_and_each_purpose_code() {
 ///   and no name is one the ABI concrete returns.
 /// Act:    `constants::<P, E, F>` over the deps, params, and payload, inside the
 ///   consumer's method.
-/// Assert: the `MINT_FIELDS` and `TRANSFER_FIELDS` entries each equal
-///   `build_solidity_library_entry` over their name and
-///   `SolidityConstantValue::String` of `build_solidity_string_literal` over the
-///   literal text the block assembles for it from the field kinds the descriptions'
-///   interaction specs list and the mock encoder's declared names above, by
-///   `assert_eq!`.
+/// Assert: the consumer's output pairs the return with the texts
+///   `build_mint_fields_text` and `build_transfer_fields_text` state for the
+///   handed encoder and forms, each builder declaring the kinds its
+///   description's interaction spec lists; the `MINT_FIELDS` and
+///   `TRANSFER_FIELDS` entries each equal `build_solidity_library_entry` over
+///   their name and `SolidityConstantValue::String` of
+///   `build_solidity_string_literal` over that text, by `assert_eq!`.
 #[test]
 fn constants_carry_the_mint_and_transfer_field_sequences() {
     struct Consumer;
 
     impl IConstantsCaseConsumer for Consumer {
-        type Output = ConstantsReturn;
+        type Output = (ConstantsReturn, [(&'static str, String); 2]);
 
         fn consume_constants_case<
             P: IPairingArithmetic + IPairingReference,
@@ -383,10 +385,24 @@ fn constants_carry_the_mint_and_transfer_field_sequences() {
             let kem = build_kem_declaration(Default::default());
             let key_agreement = build_key_agreement_declaration(Default::default());
             let delivery_proof = build_delivery_proof_declaration(Default::default());
-            constants::<P, E, F>(
-                &build_constants_deps(pairing, encoder, Default::default()),
-                build_constants_params(Default::default()),
-                build_constants_payload(&kem, &key_agreement, &delivery_proof, Default::default()),
+            (
+                constants::<P, E, F>(
+                    &build_constants_deps(pairing, encoder, Default::default()),
+                    build_constants_params(Default::default()),
+                    build_constants_payload(
+                        &kem,
+                        &key_agreement,
+                        &delivery_proof,
+                        Default::default(),
+                    ),
+                ),
+                [
+                    ("MINT_FIELDS", build_mint_fields_text::<E, F>(encoder)),
+                    (
+                        "TRANSFER_FIELDS",
+                        build_transfer_fields_text::<E, F>(encoder),
+                    ),
+                ],
             )
         }
     }
@@ -399,20 +415,9 @@ fn constants_carry_the_mint_and_transfer_field_sequences() {
     );
 
     // Assert
-    let result = created
-        .expect("every factory ran")
-        .output
-        .expect("a supported version admits");
-    for (text, sequence) in [
-        (
-            "MINT_FIELDS",
-            "mockFixedBytes32,mockUnsigned16,mockUnsigned256,mockFixedBytes20,mockFixedBytes32,mockFixedBytes32,mockUnsigned256,mockUnsigned256,mockUnsigned64,mockUnsigned64,mockUnsigned16,mockFixedBytes20,mockFixedBytes20,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockUnsigned64,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes",
-        ),
-        (
-            "TRANSFER_FIELDS",
-            "mockFixedBytes32,mockUnsigned16,mockUnsigned256,mockFixedBytes20,mockFixedBytes32,mockFixedBytes32,mockUnsigned256,mockUnsigned256,mockUnsigned64,mockUnsigned64,mockUnsigned16,mockFixedBytes20,mockFixedBytes20,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockUnsigned64,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes",
-        ),
-    ] {
+    let (result, expected) = created.expect("every factory ran").output;
+    let result = result.expect("a supported version admits");
+    for (text, sequence) in expected {
         assert_eq!(
             entry_named(&result.entries, text),
             &build_solidity_library_entry(SolidityLibraryEntryOverrides {
@@ -424,7 +429,7 @@ fn constants_carry_the_mint_and_transfer_field_sequences() {
                 value: Some(SolidityConstantValue::String(
                     build_solidity_string_literal(
                         SolidityStringLiteralConstructorParamsOverrides {
-                            text: Some(sequence.to_string()),
+                            text: Some(sequence),
                         }
                     )
                 )),

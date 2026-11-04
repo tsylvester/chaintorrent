@@ -51,31 +51,32 @@ pub fn constants<'a, P: IPairingReference, E: IEncoderAdapter, F: IChainForms>(
         Ok(SolidityLibraryEntry { name, value })
     };
 
-    let mut entries = Vec::new();
-    entries.push(entry(
-        "IDENTITY_TAG",
-        SolidityConstantValue::Bytes(payload.kem.identity_tag.to_vec()),
-    )?);
-    entries.push(entry(
-        "POSSESSION_G1_TAG",
-        SolidityConstantValue::Bytes(payload.key_agreement.possession_g1_tag.to_vec()),
-    )?);
-    entries.push(entry(
-        "POSSESSION_G2_TAG",
-        SolidityConstantValue::Bytes(payload.key_agreement.possession_g2_tag.to_vec()),
-    )?);
-    entries.push(entry(
-        "CHALLENGE_TAG",
-        SolidityConstantValue::Bytes(payload.delivery_proof.challenge_tag.to_vec()),
-    )?);
-    entries.push(entry(
-        "WEIGHT_TAG",
-        SolidityConstantValue::Bytes(payload.delivery_proof.weight_tag.to_vec()),
-    )?);
-    entries.push(entry(
-        "DELIVERY_STATEMENT_VERSION",
-        SolidityConstantValue::Uint16(params.statement_version),
-    )?);
+    let mut entries = vec![
+        entry(
+            "IDENTITY_TAG",
+            SolidityConstantValue::Bytes(payload.kem.identity_tag.to_vec()),
+        )?,
+        entry(
+            "POSSESSION_G1_TAG",
+            SolidityConstantValue::Bytes(payload.key_agreement.possession_g1_tag.to_vec()),
+        )?,
+        entry(
+            "POSSESSION_G2_TAG",
+            SolidityConstantValue::Bytes(payload.key_agreement.possession_g2_tag.to_vec()),
+        )?,
+        entry(
+            "CHALLENGE_TAG",
+            SolidityConstantValue::Bytes(payload.delivery_proof.challenge_tag.to_vec()),
+        )?,
+        entry(
+            "WEIGHT_TAG",
+            SolidityConstantValue::Bytes(payload.delivery_proof.weight_tag.to_vec()),
+        )?,
+        entry(
+            "DELIVERY_STATEMENT_VERSION",
+            SolidityConstantValue::Uint16(params.statement_version),
+        )?,
+    ];
 
     for purpose in DELIVERY_PURPOSES {
         let name = match purpose {
