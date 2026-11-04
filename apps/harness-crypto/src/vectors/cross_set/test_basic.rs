@@ -1226,7 +1226,7 @@ fn cross_set_wraps_under_the_configured_context() {
         })),
         geometry: Some(build_piece_geometry(
             PieceGeometryConstructorParamsOverrides {
-                piece_group_size: Some(1),
+                piece_group_size: Some(32768),
                 total_extent: Some(2097152),
                 ..Default::default()
             },

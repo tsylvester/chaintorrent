@@ -82,7 +82,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             &self,
             pairing: &P,
             kem: &K,
-            key_agreement: &A1,
+            _key_agreement: &A1,
             transfer_key_agreement: &A2,
             delivery_proof: &D1,
             transfer_delivery_proof: &D2,
@@ -105,7 +105,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let minted = mint(
                 &build_mint_deps(
                     kem,
-                    key_agreement,
+                    transfer_key_agreement,
                     delivery_proof,
                     mint_source,
                     Default::default(),
@@ -141,7 +141,40 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             );
             let delivery = returned.expect("the subject's calls succeed").delivery;
             // Assert
-            assert_eq!(delivery.statement.context, context);
+            assert_eq!(
+                delivery.statement.context.suite_identifier,
+                context.suite_identifier
+            );
+            assert_eq!(delivery.statement.context.chain, context.chain);
+            assert_eq!(
+                delivery.statement.context.entitlement_contract,
+                context.entitlement_contract
+            );
+            assert_eq!(delivery.statement.context.asset_root, context.asset_root);
+            assert_eq!(
+                delivery.statement.context.parameter_set_identifier,
+                context.parameter_set_identifier
+            );
+            assert_eq!(
+                delivery.statement.context.source_entitlement,
+                context.source_entitlement
+            );
+            assert_eq!(
+                delivery.statement.context.target_entitlement,
+                context.target_entitlement
+            );
+            assert_eq!(
+                delivery.statement.context.old_interval,
+                context.old_interval
+            );
+            assert_eq!(
+                delivery.statement.context.new_interval,
+                context.new_interval
+            );
+            assert_eq!(delivery.statement.context.purpose, context.purpose);
+            assert_eq!(delivery.statement.context.seller, context.seller);
+            assert_eq!(delivery.statement.context.buyer, context.buyer);
+            assert_eq!(delivery.statement.context.expiry, context.expiry);
             let Ok(seller_components) = transfer_key_agreement.public_keys_components(
                 PublicKeysComponentsParams,
                 PublicKeysComponentsPayload {
@@ -157,7 +190,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_pk1) = pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
-                    point: delivery.statement.seller_keys.pk1,
+                    point: delivery.statement.seller_keys.pk1.clone(),
                 },
             );
             assert_eq!(seller_pk1.bytes.as_ref(), statement_pk1.bytes.as_ref());
@@ -170,7 +203,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_seller_pk2) = pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
-                    point: delivery.statement.seller_keys.pk2,
+                    point: delivery.statement.seller_keys.pk2.clone(),
                 },
             );
             assert_eq!(
@@ -192,7 +225,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_buyer_pk1) = pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
-                    point: delivery.statement.buyer_keys.pk1,
+                    point: delivery.statement.buyer_keys.pk1.clone(),
                 },
             );
             assert_eq!(buyer_pk1.bytes.as_ref(), statement_buyer_pk1.bytes.as_ref());
@@ -205,7 +238,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_buyer_pk2) = pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
-                    point: delivery.statement.buyer_keys.pk2,
+                    point: delivery.statement.buyer_keys.pk2.clone(),
                 },
             );
             assert_eq!(buyer_pk2.bytes.as_ref(), statement_buyer_pk2.bytes.as_ref());
@@ -224,7 +257,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_old_c1) = pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
-                    point: delivery.statement.old_envelope.c1,
+                    point: delivery.statement.old_envelope.c1.clone(),
                 },
             );
             assert_eq!(old_c1.bytes.as_ref(), statement_old_c1.bytes.as_ref());
@@ -237,7 +270,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_old_c2) = pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
-                    point: delivery.statement.old_envelope.c2,
+                    point: delivery.statement.old_envelope.c2.clone(),
                 },
             );
             assert_eq!(old_c2.bytes.as_ref(), statement_old_c2.bytes.as_ref());
@@ -250,7 +283,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_old_d1) = pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
-                    point: delivery.statement.old_envelope.d1,
+                    point: delivery.statement.old_envelope.d1.clone(),
                 },
             );
             assert_eq!(old_d1.bytes.as_ref(), statement_old_d1.bytes.as_ref());
@@ -263,7 +296,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_old_d2) = pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
-                    point: delivery.statement.old_envelope.d2,
+                    point: delivery.statement.old_envelope.d2.clone(),
                 },
             );
             assert_eq!(old_d2.bytes.as_ref(), statement_old_d2.bytes.as_ref());
@@ -282,7 +315,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_new_c1) = pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
-                    point: delivery.statement.new_envelope.c1,
+                    point: delivery.statement.new_envelope.c1.clone(),
                 },
             );
             assert_eq!(new_c1.bytes.as_ref(), statement_new_c1.bytes.as_ref());
@@ -295,7 +328,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_new_c2) = pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
-                    point: delivery.statement.new_envelope.c2,
+                    point: delivery.statement.new_envelope.c2.clone(),
                 },
             );
             assert_eq!(new_c2.bytes.as_ref(), statement_new_c2.bytes.as_ref());
@@ -308,7 +341,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_new_d1) = pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
-                    point: delivery.statement.new_envelope.d1,
+                    point: delivery.statement.new_envelope.d1.clone(),
                 },
             );
             assert_eq!(new_d1.bytes.as_ref(), statement_new_d1.bytes.as_ref());
@@ -321,7 +354,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
             let Ok(statement_new_d2) = pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
-                    point: delivery.statement.new_envelope.d2,
+                    point: delivery.statement.new_envelope.d2.clone(),
                 },
             );
             assert_eq!(new_d2.bytes.as_ref(), statement_new_d2.bytes.as_ref());
@@ -353,7 +386,7 @@ fn a_transfer_returns_a_statement_and_proof_binding_context_and_parties() {
                                     // Act
                                     let returned = run_transfer_case(
                                         &build_transfer_case_deps(
-                                            Consumer { purpose: *purpose },
+                                            Consumer { purpose },
                                             Default::default(),
                                         ),
                                         build_transfer_case_params(TransferCaseParamsOverrides {
@@ -465,7 +498,7 @@ fn a_transfer_opens_a_credential_the_buyer_holds() {
             &self,
             _pairing: &P,
             kem: &K,
-            key_agreement: &A1,
+            _key_agreement: &A1,
             transfer_key_agreement: &A2,
             delivery_proof: &D1,
             transfer_delivery_proof: &D2,
@@ -488,7 +521,7 @@ fn a_transfer_opens_a_credential_the_buyer_holds() {
             let minted = mint(
                 &build_mint_deps(
                     kem,
-                    key_agreement,
+                    transfer_key_agreement,
                     delivery_proof,
                     mint_source,
                     Default::default(),
@@ -564,7 +597,7 @@ fn a_transfer_opens_a_credential_the_buyer_holds() {
                                     // Act
                                     let returned = run_transfer_case(
                                         &build_transfer_case_deps(
-                                            Consumer { purpose: *purpose },
+                                            Consumer { purpose },
                                             Default::default(),
                                         ),
                                         build_transfer_case_params(TransferCaseParamsOverrides {
@@ -680,7 +713,7 @@ fn a_refused_draw_reaches_the_caller_whole() {
             &self,
             _pairing: &P,
             kem: &K,
-            key_agreement: &A1,
+            _key_agreement: &A1,
             transfer_key_agreement: &A2,
             delivery_proof: &D1,
             transfer_delivery_proof: &D2,
@@ -703,7 +736,7 @@ fn a_refused_draw_reaches_the_caller_whole() {
             let minted = mint(
                 &build_mint_deps(
                     kem,
-                    key_agreement,
+                    transfer_key_agreement,
                     delivery_proof,
                     mint_source,
                     Default::default(),

@@ -227,7 +227,13 @@ fn every_record_unwraps_the_drawn_piece_group_key_under_both_sets() {
                                     },
                                 )),
                             }),
-                            build_cross_set_case_payload(Default::default()),
+                            build_cross_set_case_payload(CrossSetCasePayloadOverrides {
+                                identity: Some(match kem_selection.scope {
+                                    IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
+                                    IdentityScope::Asset => [0x44; 32].to_vec(),
+                                }),
+                                ..Default::default()
+                            }),
                         );
                         // Assert
                         assert!(returned.is_ok());
@@ -294,7 +300,7 @@ fn every_record_draw_replays_to_the_values_it_holds() {
         })),
         geometry: Some(build_piece_geometry(
             PieceGeometryConstructorParamsOverrides {
-                piece_group_size: Some(1),
+                piece_group_size: Some(32768),
                 total_extent: Some(2097152),
                 ..Default::default()
             },
@@ -1087,7 +1093,13 @@ fn a_key_derivation_refusal_reaches_the_caller_whole() {
                         )),
                         ..Default::default()
                     }),
-                    build_cross_set_case_payload(Default::default()),
+                    build_cross_set_case_payload(CrossSetCasePayloadOverrides {
+                        identity: Some(match kem_selection.scope {
+                            IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
+                            IdentityScope::Asset => [0x44; 32].to_vec(),
+                        }),
+                        ..Default::default()
+                    }),
                 );
                 // Assert
                 assert!(returned.is_ok());
@@ -1234,7 +1246,13 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
                     )),
                     ..Default::default()
                 }),
-                build_cross_set_case_payload(Default::default()),
+                build_cross_set_case_payload(CrossSetCasePayloadOverrides {
+                    identity: Some(match kem_selection.scope {
+                        IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
+                        IdentityScope::Asset => [0x44; 32].to_vec(),
+                    }),
+                    ..Default::default()
+                }),
             );
             // Assert
             assert!(returned.is_ok());
@@ -1374,7 +1392,13 @@ fn records_under_pairings_sharing_a_target_group_encoding_hold_the_same_encapsul
                     random_source: Some(build_create_random_source_params(Default::default())),
                     ..Default::default()
                 }),
-                build_cross_set_case_payload(Default::default()),
+                build_cross_set_case_payload(CrossSetCasePayloadOverrides {
+                    identity: Some(match kem_selection.scope {
+                        IdentityScope::Entitlement => b"pkg@1.0.0#1".to_vec(),
+                        IdentityScope::Asset => [0x44; 32].to_vec(),
+                    }),
+                    ..Default::default()
+                }),
             );
             // Assert
             collected.push(returned.expect("the case succeeds").output);

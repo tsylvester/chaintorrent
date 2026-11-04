@@ -3,7 +3,7 @@
 
 use domain::build_secret;
 use encoding::{
-    DECLARED_ENCODING_SELECTIONS, EncodingIdentifier, MockIEncodingContract,
+    CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, EncodingIdentifier, MockIEncodingContract,
     build_canonical_fields, build_create_encoding_deps, build_create_encoding_payload,
     build_mock_i_encoding_consumer, create_encoding,
 };
@@ -321,7 +321,10 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
             );
             let outcome = create_encoding(
                 &build_create_encoding_deps(consumer),
-                *encoding_selection,
+                CreateEncodingParams {
+                    concrete: encoding_selection.concrete,
+                    identifier: encoding_selection.identifier,
+                },
                 build_create_encoding_payload(Default::default()),
             )
             .expect("the declared encoding selection constructs");

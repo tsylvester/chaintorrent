@@ -4,344 +4,759 @@ help: Check that the patched package version and available features are compatib
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
    Compiling harness-crypto v0.0.0 (C:\Users\Tim\ChainTorrent\apps\harness-crypto)
-error[E0614]: type `TransferPurpose` cannot be dereferenced
-   --> apps\harness-crypto\tests\transfer_integration_test.rs:356:65
-    |
-356 | ...                   Consumer { purpose: *purpose },
-    |                                           ^^^^^^^^ can't be dereferenced
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 26s
+     Running unittests src\lib.rs (target\debug\deps\harness_crypto-8dacddddfc49eb49.exe)
 
-error[E0507]: cannot move out of `*encoding_selection` which is behind a shared reference
-   --> apps\harness-crypto\tests\cross_holder_integration_test.rs:324:17
-    |
-324 |                 *encoding_selection,
-    |                 ^^^^^^^^^^^^^^^^^^^ move occurs because `*encoding_selection` has type `CreateEncodingParams`, which does not implement the `Copy` trait
+running 510 tests
+test benchmark::test::consume_pairing_returns_the_draw_error_unchanged ... ok
+test benchmark::test::consume_pairing_returns_the_sampling_error_unchanged ... ok
+test benchmark::test::consume_pairing_draws_the_length_the_sampling_bound_requires ... ok
+test delivery::mint::test_error::mint_returns_a_refused_draw_whole ... ok
+test delivery::mint::test_error::mint_returns_a_derivation_refusal_whole ... ok
+test delivery::mint::test_error::mint_returns_a_refused_key_generation_whole ... ok
+test delivery::mint::test_error::mint_returns_a_refused_wrap_whole ... ok
+test delivery::mint::test_error::mint_returns_a_setup_refusal_whole ... ok
+test delivery::mint::test_error::mint_returns_a_refused_proof_whole ... ok
+test delivery::mint::test_basic::mint_returns_the_witnesses_the_objects_were_formed_with ... ok
+test delivery::mint::test_basic::mint_hands_the_admitted_identity_to_setup_and_derivation ... ok
+test delivery::mint::test_basic::mint_returns_a_statement_over_the_payloads_context_and_the_recipients_keys ... ok
+test delivery::mint::test_basic::mint_draws_six_uniforms_in_order ... ok
+test delivery::mint::integration_test::every_concrete_returns_a_hash_to_scalar_refusal_whole ... ok
+test delivery::mint::integration_test::every_concrete_refuses_an_identity_of_the_other_scope ... ok
+test delivery::mint::integration_test::a_refused_nonce_draw_returns_the_mock_error_whole ... ok
+test delivery::mint::integration_test::every_concrete_maps_an_identity_under_its_declared_tag ... ok
+test delivery::mint::integration_test::a_refused_coin_draw_returns_the_mock_error_whole ... ok
+test delivery::mint::integration_test::every_concrete_derives_under_the_asset_scope_only_the_identity_the_set_fixes ... ok
+test delivery::mint::integration_test::a_refused_nonce_draw_is_returned_by_each_prover ... ok
+test delivery::mint::integration_test::public_keys_are_admitted_with_their_own_proof_of_possession ... ok
+test delivery::mint::integration_test::every_concrete_returns_the_randomness_its_credential_was_formed_with ... ok
+test delivery::transfer::test_basic::transfer_draws_three_uniforms_in_order ... ok
+test delivery::transfer::test_basic::transfer_from_the_returned_buyer_transfers_again ... ok
+test delivery::transfer::test_basic::transfer_returns_a_statement_over_the_payloads_context_the_holders_objects_and_the_buyers_keys ... ok
+test delivery::mint::integration_test::every_envelope_opens_under_its_key_pair_to_the_components_it_wrapped ... ok
+test delivery::transfer::test_basic::transfer_returns_the_witnesses_the_objects_were_formed_with ... ok
+test delivery::transfer::test_error::transfer_returns_a_refused_draw_whole ... ok
+test delivery::transfer::test_error::transfer_returns_a_refused_key_generation_whole ... ok
+test delivery::transfer::test_error::transfer_returns_a_refused_proof_whole ... ok
+test delivery::transfer::test_error::transfer_returns_a_refused_wrap_whole ... ok
+test generate::factory::integration_test::a_refused_write_returns_the_mock_concretes_own_error ... FAILED
+test generate::factory::integration_test::create_generate_refuses_an_encoder_declaring_another_encoding_identifier ... FAILED
+test generate::factory::integration_test::emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate ... FAILED
+test generate::factory::test::create_generate_refuses_a_count_on_an_enumerated_kind ... ok
+test generate::factory::test::create_generate_checks_a_kinds_count_before_its_terms ... ok
+test generate::factory::test::create_generate_checks_a_kinds_terms_before_its_message_length ... ok
+test generate::factory::test::create_generate_refuses_a_drawn_kind_missing_its_count ... ok
+test generate::factory::test::create_generate_refuses_a_kind_drawn_with_messages_missing_its_message_length ... ok
+test generate::factory::test::create_generate_refuses_a_kind_drawn_with_terms_missing_its_terms ... ok
+test generate::factory::test::create_generate_refuses_a_kind_named_twice ... ok
+test generate::factory::test::create_generate_refuses_a_kind_the_declaration_does_not_name ... ok
+test generate::factory::test::create_generate_refuses_a_message_length_on_a_drawn_kind ... ok
+test generate::factory::test::create_generate_refuses_an_entrys_quantity_before_a_missing_kind ... ok
+test generate::factory::test::create_generate_refuses_an_undeclared_kind_before_its_repeat ... ok
+test generate::factory::test::create_generate_refuses_terms_on_a_kind_over_configured_inputs ... ok
+test generate::factory::test::create_generate_refuses_the_first_declared_kind_no_entry_names ... ok
+test generate::factory::test::create_generate_refuses_the_first_failing_entry_before_a_later_one ... ok
+test generate::factory::test::create_generate_returns_the_consumers_output_for_settings_naming_every_declared_kind_in_reverse_order ... ok
+test delivery::mint::integration_test::a_source_from_the_factory_draws_random_bytes_through_the_family_trait ... ok
+test delivery::mint::integration_test::every_concrete_binds_the_public_value_to_the_master_scalar ... ok
+test delivery::mint::integration_test::a_sampled_scalar_encodes_through_secret ... ok
+test delivery::mint::integration_test::every_wrap_returns_the_coins_its_envelope_was_formed_with ... ok
+test delivery::mint::integration_test::the_consumer_receives_the_concrete_the_params_name ... ok
+test generate::solidity::challenge_vectors::test_description::challenge_vector_description_is_constructed_from_its_params ... ok
+test generate::solidity::challenge_vectors::test_description::challenge_vector_description_carries_the_readers_refusal ... ok
+test generate::solidity::challenge_vectors::test_description::challenge_vector_description_declares_its_member_names ... ok
+test generate::solidity::challenge_vectors::test_description::challenge_vector_description_maps_purpose_draws_encoding_and_challenge_in_member_order ... ok
+test delivery::mint::integration_test::every_key_agreement_forms_the_public_keys_its_secrets_form ... ok
+test generate::solidity::challenge_vectors::test_error::challenge_vectors_return_the_domain_tag_refusal_whole ... ok
+test generate::solidity::challenge_vectors::test_description::challenge_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::solidity::challenge_vectors::test_error::challenge_vectors_refuse_a_statement_version_no_description_serves ... ok
+test generate::solidity::challenge_vectors::test_error::challenge_vectors_return_the_sampling_refusal_whole ... ok
+test generate::solidity::constants::integration_test::the_entries_are_listed_in_declared_order ... ok
+test generate::solidity::constants::integration_test::libraries_sharing_an_identifier_carry_the_same_scalar_field_order ... ok
+test generate::solidity::challenge_vectors::test_error::challenge_vectors_return_the_draw_refusal_whole ... ok
+test generate::solidity::constants::integration_test::the_entries_carry_each_declarations_domain_tag_under_its_own_name ... ok
+test generate::solidity::constants::integration_test::the_entries_carry_the_scalar_field_order_as_32_big_endian_bytes ... ok
+test generate::solidity::constants::integration_test::the_entries_carry_the_generators_precompile_encodings ... ok
+test generate::solidity::constants::integration_test::the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms ... FAILED
+test generate::solidity::constants::test::constants_carry_the_generators_encodings ... ok
+test generate::solidity::constants::integration_test::the_entries_carry_the_statement_version_and_each_purpose_code_in_declared_order ... ok
+test generate::solidity::constants::integration_test::the_entries_carry_the_verifier_form_the_pairing_declares ... ok
+test generate::solidity::constants::test::constants_carry_each_declarations_domain_tag_under_its_own_name ... ok
+test generate::solidity::constants::test::constants_carry_the_scalar_field_order_as_32_big_endian_bytes ... ok
+test generate::solidity::constants::test::constants_carry_the_statement_version_and_each_purpose_code ... ok
+test generate::solidity::constants::test::constants_carry_the_mint_and_transfer_field_sequences ... FAILED
+test generate::solidity::constants::test::constants_refuse_a_statement_version_no_description_serves ... ok
+test generate::solidity::constants::test::constants_return_the_entries_in_declared_order ... ok
+test generate::solidity::group_vectors::integration_test::a_record_survives_its_description_round_trip ... ok
+test generate::solidity::challenge_vectors::integration_test::challenge_vectors_return_the_hash_to_scalar_refusal_whole ... ok
+test delivery::mint::integration_test::every_concrete_issues_a_credential_valid_for_its_identity ... ok
+test generate::solidity::group_vectors::integration_test::member_names_declare_one_name_per_field ... ok
+test delivery::mint::integration_test::a_mint_proof_the_adapter_returns_verifies ... ok
+test generate::solidity::group_vectors::test::group_operation_vector_description_declares_draws_input_and_output_member_names ... ok
+test generate::solidity::group_vectors::test::group_operation_vector_description_maps_draws_input_and_output_to_byte_strings_in_order ... ok
+test generate::solidity::group_vectors::test::group_operation_vector_description_carries_the_readers_refusal ... ok
+test generate::solidity::group_vectors::test::group_operation_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::solidity::group_vectors::test::group_vectors_draw_a_third_scalar_for_each_odd_pairing_check ... ok
+test generate::solidity::group_vectors::integration_test::a_both_groups_pairing_requires_its_second_group_settings ... ok
+test generate::solidity::group_vectors::test::group_vectors_emit_each_first_group_kind_at_its_configured_count ... ok
+test generate::solidity::group_vectors::test::group_vectors_g1_multiplication_ends_its_input_with_its_multiplier ... ok
+test generate::solidity::group_vectors::test::group_vectors_pairing_checks_alternate_passing_and_failing_verdicts ... ok
+test generate::solidity::group_vectors::test::group_vectors_refuse_second_group_settings_on_a_first_group_only_pairing ... ok
+test generate::solidity::group_vectors::test::group_vectors_return_the_fill_refusal_unchanged ... ok
+test generate::solidity::group_vectors::test::group_vectors_return_the_sampling_refusal_unchanged ... ok
+test generate::solidity::group_vectors::test::msm_term_count_admits_a_positive_count ... ok
+test generate::solidity::group_vectors::test::msm_term_count_refuses_zero ... ok
+test generate::solidity::group_vectors::test::pairing_check_vector_description_carries_the_readers_refusal ... ok
+test generate::solidity::group_vectors::test::pairing_check_vector_description_declares_draws_input_and_output_member_names ... ok
+test generate::solidity::group_vectors::test::pairing_check_vector_description_maps_its_output_to_a_fixed_32_byte_field ... ok
+test generate::solidity::group_vectors::test::pairing_check_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::solidity::group_vectors::test::vector_count_admits_a_positive_count ... ok
+test generate::solidity::group_vectors::test::vector_count_refuses_zero ... ok
+test generate::solidity::integration_test::a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing ... ok
+test generate::solidity::integration_test::a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing ... FAILED
+test delivery::mint::integration_test::a_credential_issued_and_wrapped_through_the_families_is_proved_by_a_mint_proof_that_verifies ... ok
+test delivery::mint::integration_test::an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_version ... ok
+test generate::solidity::challenge_vectors::integration_test::challenge_vectors_place_each_contexts_configured_values_in_its_transcript ... ok
+test delivery::mint::integration_test::a_delivered_credential_opens_valid_for_its_recipient_and_invalid_for_another_key_pair ... ok
+test generate::solidity::group_vectors::integration_test::a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts ... ok
+test generate::solidity::group_vectors::integration_test::each_msm_term_carries_its_multiplier_in_its_input ... ok
+test delivery::mint::integration_test::a_kem_from_the_factory_round_trips_from_operating_system_draws ... ok
+test generate::solidity::group_vectors::integration_test::each_first_group_output_is_the_references_result_for_its_drawn_operands ... ok
+test delivery::transfer::integration_test::a_refused_nonce_draw_is_returned_by_each_prover ... ok
+test generate::solidity::group_vectors::integration_test::each_second_group_output_is_the_references_result_for_its_drawn_operands ... ok
+test generate::solidity::mapping_vectors::integration_test::each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its_tag ... ok
+test generate::solidity::mapping_vectors::integration_test::a_record_survives_its_description_round_trip ... ok
+test generate::solidity::mapping_vectors::integration_test::member_names_declare_one_name_per_field ... ok
+test generate::solidity::mapping_vectors::test::hash_to_scalar_vector_description_carries_the_readers_refusal ... ok
+test generate::solidity::mapping_vectors::test::hash_to_scalar_vector_description_declares_tag_message_and_scalar_member_names ... ok
+test generate::solidity::mapping_vectors::test::hash_to_scalar_vector_description_maps_tag_message_and_scalar_in_order ... ok
+test generate::solidity::mapping_vectors::test::hash_to_scalar_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::solidity::mapping_vectors::test::identity_mapping_vector_description_carries_the_readers_refusal ... ok
+test generate::solidity::mapping_vectors::test::identity_mapping_vector_description_declares_identity_and_scalar_member_names ... ok
+test generate::solidity::mapping_vectors::test::identity_mapping_vector_description_maps_identity_and_scalar_in_order ... ok
+test generate::solidity::mapping_vectors::test::identity_mapping_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_draw_each_message_at_the_configured_length ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_emit_one_identity_record_per_identity_in_payload_order_under_the_asset_scope ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_emit_one_identity_record_per_identity_in_payload_order_under_the_entitlement_scope ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_emit_one_record_per_declared_tag_for_each_message_in_tag_order ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_record_one_scalar_per_identity_bytes_whatever_the_setup_draws ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_record_scalars_that_follow_their_tag_and_their_message ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_refuse_a_declared_tag_before_any_draw ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_return_the_derivation_refusal_unchanged_under_the_entitlement_scope ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_return_the_fill_refusal_unchanged ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_return_the_hash_refusal_before_mapping_any_identity ... ok
+test generate::solidity::challenge_vectors::integration_test::challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_return_the_hash_refusal_unchanged ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_return_the_refusal_of_a_declared_tag_unchanged ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_return_the_setup_refusal_unchanged_under_the_asset_scope ... ok
+test generate::solidity::mapping_vectors::test::mapping_vectors_share_one_message_across_the_tags_of_a_draw_and_draw_a_new_one_for_the_next ... ok
+test generate::solidity::mapping_vectors::integration_test::each_identity_record_is_the_references_mapping_of_its_identity_under_the_identity_tag ... ok
+test generate::solidity::challenge_vectors::integration_test::challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar ... ok
+test generate::solidity::possession_vectors::integration_test::every_record_survives_the_canonical_encoding_under_the_description ... ok
+test delivery::transfer::integration_test::a_refused_nonce_draw_returns_the_mock_error_whole ... ok
+test generate::solidity::possession_vectors::test::possession_vector_description_admits_its_fieldless_constructor_params ... ok
+test generate::solidity::challenge_vectors::integration_test::challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to ... ok
+test generate::solidity::possession_vectors::test::possession_vector_description_carries_the_readers_refusal ... ok
+test generate::solidity::possession_vectors::test::possession_vector_description_declares_its_member_names ... ok
+test generate::solidity::possession_vectors::test::possession_vector_description_maps_secrets_keys_and_proof_components_in_member_order ... ok
+test generate::solidity::possession_vectors::test::possession_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::solidity::possession_vectors::test::possession_vectors_carry_each_commitment_in_its_groups_encoding ... ok
+test generate::solidity::possession_vectors::test::possession_vectors_carry_the_first_group_public_key_the_secret_forms ... ok
+test generate::solidity::possession_vectors::test::possession_vectors_carry_the_second_group_public_key_the_secret_forms ... ok
+test generate::solidity::possession_vectors::test::possession_vectors_carry_their_scalar_fields_as_32_byte_encodings ... ok
+test generate::solidity::possession_vectors::test::possession_vectors_emit_the_configured_count_of_records ... ok
+test generate::solidity::possession_vectors::test::possession_vectors_give_each_record_its_own_secrets ... ok
+test generate::solidity::possession_vectors::test::possession_vectors_return_the_draw_refusal_unchanged ... ok
+test generate::solidity::possession_vectors::test::possession_vectors_return_the_generation_refusal_unchanged ... ok
+test generate::solidity::proof_vectors::integration_test::a_refused_mint_draw_reaches_the_caller_through_the_mint_variant ... ok
+test delivery::transfer::integration_test::a_refused_coin_draw_returns_the_mock_error_whole ... ok
+test generate::solidity::possession_vectors::integration_test::every_record_carries_public_keys_that_are_the_generators_times_their_secrets ... ok
+test generate::solidity::possession_vectors::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_secrets ... ok
+test generate::solidity::possession_vectors::integration_test::every_record_encodes_its_scalars_in_32_bytes_and_its_points_in_the_pairings_widths ... ok
+test generate::solidity::integration_test::the_records_library_declares_each_written_kinds_struct_decode_function_and_path ... FAILED
+test generate::solidity::possession_vectors::integration_test::every_record_carries_proofs_the_key_agreement_admits ... ok
+test delivery::transfer::integration_test::a_sampled_scalar_encodes_through_secret ... ok
+test delivery::transfer::integration_test::a_source_from_the_factory_draws_random_bytes_through_the_family_trait ... ok
+test generate::solidity::proof_vectors::integration_test::an_asset_identity_is_proved_under_the_asset_scope ... ok
+test delivery::transfer::integration_test::every_envelope_opens_under_its_key_pair_to_the_components_it_wrapped ... ok
+test delivery::transfer::integration_test::every_concrete_returns_the_offset_it_applied_under_rerandomization ... ok
+test delivery::transfer::integration_test::every_concrete_rerandomizes_a_credential_to_one_valid_for_its_identity ... ok
+test delivery::transfer::integration_test::every_key_agreement_forms_the_public_keys_its_secrets_form ... ok
+test delivery::transfer::integration_test::an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_version ... ok
+test generate::solidity::proof_vectors::test_basic::proof_vectors_carry_the_identity_element_of_an_asset_identity ... ok
+test delivery::transfer::integration_test::public_keys_are_admitted_with_their_own_proof_of_possession ... ok
+test generate::solidity::proof_vectors::test_basic::proof_vectors_carry_the_identity_element_of_an_entitlement_identity ... ok
+test generate::solidity::proof_vectors::test_basic::proof_vectors_emit_the_configured_counts_of_mint_and_transfer_records ... ok
+test generate::solidity::proof_vectors::test_basic::proof_vectors_draw_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
+test generate::solidity::proof_vectors::test_basic::proof_vectors_place_each_contexts_configured_values_in_its_records ... ok
+test delivery::transfer::integration_test::a_delivered_credential_opens_valid_for_its_recipient_and_invalid_for_another_key_pair ... ok
+test generate::solidity::proof_vectors::test_description::mint_proof_vector_description_carries_the_readers_refusal ... ok
+test generate::solidity::proof_vectors::test_basic::proof_vectors_record_the_draws_in_the_sequence_the_source_yields ... ok
+test generate::solidity::proof_vectors::test_description::mint_proof_vector_description_declares_one_name_per_field ... ok
+test generate::solidity::proof_vectors::test_description::mint_proof_vector_description_maps_the_record_in_member_order ... ok
+test generate::solidity::proof_vectors::test_description::mint_proof_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::solidity::proof_vectors::test_description::transfer_proof_vector_description_carries_the_readers_refusal ... ok
+test generate::solidity::proof_vectors::test_description::transfer_proof_vector_description_declares_one_name_per_field ... ok
+test generate::solidity::proof_vectors::test_description::transfer_proof_vector_description_maps_the_record_in_member_order ... ok
+test generate::solidity::proof_vectors::test_description::transfer_proof_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::solidity::proof_vectors::test_error::proof_vectors_return_the_draw_refusal_whole ... ok
+test generate::solidity::proof_vectors::test_error::proof_vectors_return_the_coin_draw_refusal_of_wrapping_whole ... ok
+test generate::solidity::proof_vectors::test_error::proof_vectors_return_the_hash_to_scalar_refusal_of_identity_derivation_whole ... ok
+test generate::solidity::proof_vectors::test_error::proof_vectors_return_the_nonce_draw_refusal_of_key_generation_whole ... ok
+test generate::solidity::proof_vectors::test_error::proof_vectors_return_the_nonce_draw_refusal_of_the_mint_prover_whole ... ok
+test generate::solidity::proof_vectors::test_error::proof_vectors_return_the_sampling_refusal_of_setup_whole ... ok
+test generate::solidity::rejection_vectors::test::decode_target_admits_the_name_g1 ... ok
+test generate::solidity::rejection_vectors::test::decode_target_admits_the_name_g2 ... ok
+test generate::solidity::rejection_vectors::test::decode_target_admits_the_name_scalar ... ok
+test generate::solidity::rejection_vectors::test::decode_target_g1_is_named_g1 ... ok
+test generate::solidity::rejection_vectors::test::decode_target_g2_is_named_g2 ... ok
+test generate::solidity::rejection_vectors::test::decode_target_refuses_an_unknown_name ... ok
+test generate::solidity::rejection_vectors::test::decode_target_scalar_is_named_scalar ... ok
+test generate::solidity::rejection_vectors::test::rejection_vector_description_is_admitted_from_its_fieldless_params ... ok
+test generate::solidity::rejection_vectors::test::rejection_vector_description_maps_target_and_input_in_order ... ok
+test generate::solidity::rejection_vectors::test::rejection_vector_description_rebuilds_the_record_from_its_fields ... ok
+test generate::solidity::rejection_vectors::test::rejection_vector_description_refuses_an_unknown_target ... ok
+test generate::solidity::rejection_vectors::test::rejection_vectors_enumerate_the_second_group_and_the_scalar_where_the_pairing_has_no_first_group_encoding ... ok
+test generate::solidity::rejection_vectors::test::rejection_vectors_hold_the_scalar_field_order_as_the_scalar_record_input ... ok
+test generate::solidity::rejection_vectors::test::rejection_vector_description_carries_the_readers_refusal ... ok
+test generate::solidity::rejection_vectors::test::rejection_vector_description_declares_target_and_input_member_names ... ok
+test generate::solidity::rejection_vectors::test::rejection_vectors_hold_the_second_group_candidate_as_the_g2_record_input ... ok
+test generate::solidity::rejection_vectors::test::rejection_vectors_return_the_second_group_refusal_unchanged ... ok
+test generate::solidity::render::integration_test::render_declares_the_decode_function_over_a_bytes_memory_line ... ok
+test generate::solidity::render::integration_test::render_declares_the_struct_with_one_member_line_per_member_in_order ... ok
+test generate::solidity::render::integration_test::render_decodes_the_line_over_the_members_abi_types_in_member_order ... ok
+test generate::solidity::rejection_vectors::test::rejection_vectors_return_the_first_group_refusal_unchanged ... ok
+test generate::solidity::render::integration_test::render_marks_only_bytes_and_string_locals_as_memory ... ok
+test generate::solidity::render::integration_test::render_produces_the_exact_source_of_a_reference_record_library ... ok
+test generate::solidity::render::integration_test::render_returns_the_struct_built_with_named_arguments ... ok
+test generate::solidity::render::integration_test::render_writes_record_declarations_in_payload_order ... ok
+test generate::solidity::render::integration_test::render_separates_record_declarations_by_one_empty_line ... ok
+test generate::solidity::render::integration_test::render_writes_the_first_record_block_without_a_leading_separator ... ok
+test generate::solidity::render::integration_test::render_writes_the_path_constant_as_a_string_internal_constant ... ok
+test generate::solidity::render::test::as_str_returns_each_name_type_its_text ... ok
+test generate::solidity::render::test::render_closes_the_library_with_one_final_newline ... ok
+test generate::solidity::render::test::render_declares_the_library_by_name ... ok
+test generate::solidity::render::test::render_opens_with_the_license_line_the_exact_pragma_and_an_empty_line ... ok
+test generate::solidity::render::test::render_writes_a_16_bit_value_in_decimal ... ok
+test generate::solidity::render::test::render_produces_the_exact_source_of_a_reference_library ... ok
+test generate::solidity::render::test::render_writes_a_256_bit_value_as_big_endian_hex_digits ... ok
+test generate::solidity::render::test::render_writes_a_64_bit_value_in_decimal ... ok
+test generate::solidity::render::test::render_writes_a_byte_string_as_a_lowercase_hex_literal ... ok
+test generate::solidity::render::test::render_writes_a_string_between_double_quotes ... ok
+test generate::solidity::render::test::render_writes_an_empty_byte_string_as_an_empty_hex_literal ... ok
+test generate::solidity::render::test::render_writes_booleans_as_true_and_false ... ok
+test generate::solidity::render::test::render_writes_entries_in_payload_order ... ok
+test generate::solidity::render::test::solidity_abi_type_holds_the_name_moved_from_the_params ... ok
+test generate::solidity::render::test::solidity_abi_type_refuses_a_leading_byte_outside_letters ... ok
+test generate::solidity::render::test::solidity_abi_type_refuses_empty_text ... ok
+test generate::solidity::render::test::solidity_abi_type_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
+test generate::solidity::render::test::solidity_constant_name_admits_every_boundary_byte_of_its_sets ... ok
+test generate::solidity::render::test::solidity_constant_name_refuses_a_leading_byte_outside_uppercase_letters ... ok
+test generate::solidity::render::test::solidity_constant_name_refuses_empty_text ... ok
+test generate::solidity::render::test::solidity_library_entries_refuses_an_empty_list ... ok
+test generate::solidity::render::test::solidity_library_entries_admits_distinct_names_and_keeps_their_order ... ok
+test generate::solidity::render::test::solidity_constant_name_refuses_the_lowest_later_byte_outside_uppercase_digits_and_underscore ... ok
+test generate::solidity::render::test::solidity_library_entries_refuses_the_lowest_index_whose_name_repeats_an_earlier_name ... ok
+test generate::solidity::render::test::solidity_library_name_admits_every_boundary_byte_of_its_sets ... ok
+test generate::solidity::render::test::solidity_library_name_refuses_a_leading_byte_outside_uppercase_letters ... ok
+test generate::solidity::render::test::solidity_library_name_refuses_empty_text ... ok
+test generate::solidity::render::test::solidity_library_name_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
+test generate::solidity::render::test::solidity_member_name_admits_every_boundary_byte_of_its_sets ... ok
+test generate::solidity::render::test::solidity_member_name_refuses_a_leading_byte_outside_lowercase_letters ... ok
+test generate::solidity::render::test::solidity_member_name_refuses_empty_text ... ok
+test generate::solidity::render::test::solidity_member_name_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
+test generate::solidity::render::test::solidity_record_declarations_admit_unique_names_and_keep_their_order ... ok
+test generate::solidity::render::test::solidity_record_declarations_refuse_a_repeated_decode_function_name_before_a_repeated_path_constant_name ... ok
+test generate::solidity::render::test::solidity_record_declarations_refuse_a_repeated_struct_name_before_a_repeated_decode_function_name ... ok
+test generate::solidity::render::test::solidity_record_declarations_refuse_an_empty_list ... ok
+test generate::solidity::render::test::solidity_record_declarations_refuse_the_lowest_index_whose_decode_function_name_repeats ... ok
+test generate::solidity::render::test::solidity_record_declarations_refuse_the_lowest_index_whose_path_constant_name_repeats ... ok
+test generate::solidity::render::test::solidity_record_declarations_refuse_the_lowest_index_whose_struct_name_repeats ... ok
+test generate::solidity::render::test::solidity_record_member_decodes_bytes_into_memory ... ok
+test generate::solidity::render::test::solidity_record_member_decodes_text_into_memory ... ok
+test generate::solidity::render::test::solidity_record_member_does_not_decode_fixed_bytes_20_into_memory ... ok
+test generate::solidity::render::test::solidity_record_member_does_not_decode_fixed_bytes_32_into_memory ... ok
+test generate::solidity::render::test::solidity_record_member_does_not_decode_unsigned_16_into_memory ... ok
+test generate::solidity::render::test::solidity_record_member_does_not_decode_unsigned_256_into_memory ... ok
+test generate::solidity::render::test::solidity_record_member_does_not_decode_unsigned_32_into_memory ... ok
+test generate::solidity::render::test::solidity_record_member_does_not_decode_unsigned_64_into_memory ... ok
+test generate::solidity::render::test::solidity_record_members_admit_unique_names_that_contain_line_and_keep_their_order ... ok
+test generate::solidity::render::test::solidity_record_members_refuse_a_reserved_name_before_a_duplicate ... ok
+test generate::solidity::render::test::solidity_record_members_refuse_a_single_member_as_too_few ... ok
+test generate::solidity::render::test::solidity_record_members_refuse_a_single_reserved_name_as_too_few ... ok
+test generate::solidity::render::test::solidity_record_members_refuse_an_empty_list_as_too_few ... ok
+test generate::solidity::render::test::solidity_record_members_refuse_the_lowest_index_named_line ... ok
+test generate::solidity::render::test::solidity_record_members_refuse_the_lowest_index_whose_name_repeats_an_earlier_name ... ok
+test generate::solidity::render::test::solidity_source_text_returns_its_text ... ok
+test generate::solidity::render::test::solidity_string_literal_admits_every_printable_byte_beside_the_excluded_ones ... ok
+test generate::solidity::render::test::solidity_string_literal_admits_the_empty_string ... ok
+test generate::solidity::render::test::solidity_string_literal_refuses_a_backslash ... ok
+test generate::solidity::render::test::solidity_string_literal_refuses_a_byte_above_tilde ... ok
+test generate::solidity::render::test::solidity_string_literal_refuses_a_byte_below_space ... ok
+test generate::solidity::render::test::solidity_string_literal_refuses_a_double_quote ... ok
+test generate::solidity::render::test::solidity_string_literal_refuses_the_first_byte_of_a_non_ascii_character ... ok
+test generate::solidity::render::test::solidity_string_literal_refuses_the_lowest_index_when_several_bytes_are_refused ... ok
+test generate::solidity::render::test::solidity_type_name_admits_every_boundary_byte_of_its_sets ... ok
+test generate::solidity::render::test::solidity_type_name_refuses_a_leading_byte_outside_uppercase_letters ... ok
+test generate::solidity::render::test::solidity_uint256_holds_the_array_moved_from_the_params ... ok
+test generate::solidity::render::test::solidity_type_name_refuses_empty_text ... ok
+test generate::solidity::render::test::solidity_type_name_refuses_the_lowest_later_byte_outside_letters_and_digits ... ok
+test generate::solidity::render::test::spdx_license_identifier_admits_every_boundary_byte_of_its_set ... ok
+test generate::solidity::render::test::spdx_license_identifier_refuses_a_lone_plus_as_empty ... ok
+test generate::solidity::render::test::spdx_license_identifier_refuses_a_plus_that_is_not_the_only_final_byte ... ok
+test generate::solidity::render::test::spdx_license_identifier_refuses_empty_text ... ok
+test generate::solidity::render::test::spdx_license_identifier_admits_a_final_plus_and_keeps_it ... ok
+test generate::solidity::render::test::spdx_license_identifier_refuses_the_lowest_byte_outside_its_set ... ok
+test generate::solidity::test::emit_refuses_sizes_missing_an_emitted_kind ... ok
+test generate::solidity::test::emit_refuses_settings_missing_an_emitted_kind ... ok
+test generate::solidity::test::generated_directory_admits_its_segments_in_order ... ok
+test generate::solidity::test::generated_directory_refuses_no_segments ... ok
+test generate::solidity::test::generated_file_name_admits_every_character_class_it_allows ... ok
+test generate::solidity::test::generated_file_name_as_str_returns_its_text ... ok
+test generate::solidity::test::generated_file_name_refuses_empty_text ... ok
+test generate::solidity::test::generated_file_name_refuses_the_byte_after_the_digits ... ok
+test generate::solidity::test::generated_file_name_refuses_the_byte_after_the_lowercase_letters ... ok
+test generate::solidity::test::generated_file_name_refuses_the_byte_after_the_uppercase_letters ... ok
+test generate::solidity::test::generated_file_name_refuses_the_byte_before_the_digits ... ok
+test generate::solidity::test::generated_file_name_refuses_the_byte_before_the_lowercase_letters ... ok
+test generate::solidity::test::generated_file_name_refuses_the_byte_before_the_uppercase_letters ... ok
+test generate::solidity::test::generated_file_name_refuses_the_double_dot_text ... ok
+test generate::solidity::test::generated_file_name_refuses_the_lowest_invalid_byte_index ... ok
+test generate::solidity::test::generated_file_name_refuses_the_single_dot_text ... ok
+test generate::solidity::test::solidity_generate_declares_its_kinds_with_their_sizing_and_second_group_gates ... ok
+test generate::solidity::test::each_record_member_carries_the_encoders_type_name_for_its_kind ... ok
+test vectors::cross_holder::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
+test delivery::transfer::integration_test::a_transfer_proof_the_adapter_returns_verifies ... ok
+test delivery::transfer::integration_test::every_wrap_returns_the_coins_its_envelope_was_formed_with ... ok
+test vectors::cross_holder::test_basic::cross_holder_draws_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
+test vectors::cross_holder::test_basic::cross_holder_emits_the_configured_count_of_records ... ok
+test delivery::transfer::integration_test::the_consumer_receives_the_concrete_the_params_name ... ok
+test vectors::cross_holder::test_basic::cross_holder_records_the_draws_in_the_sequence_the_source_yields ... ok
+test vectors::cross_holder::test_basic::cross_holder_records_the_values_its_draws_produce_under_the_asset_scope ... ok
+test vectors::cross_holder::test_basic::cross_holder_records_the_values_its_draws_produce_under_the_entitlement_scope ... ok
+test vectors::cross_holder::test_error::cross_holder_returns_the_draw_refusal_whole ... ok
+test vectors::cross_holder::test_error::cross_holder_returns_the_hash_to_scalar_refusal_of_asset_setup_whole ... ok
+test vectors::cross_holder::test_error::cross_holder_returns_the_hash_to_scalar_refusal_of_identity_derivation_whole ... ok
+test vectors::cross_holder::test_error::cross_holder_returns_the_sampling_refusal_of_setup_whole ... ok
+test vectors::cross_set::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... FAILED
+test vectors::cross_set::integration_test::every_record_draw_replays_to_the_values_it_holds ... FAILED
+test vectors::cross_set::integration_test::a_key_derivation_refusal_reaches_the_caller_whole ... FAILED
+test generate::solidity::proof_vectors::test_basic::proof_vectors_carry_second_group_first_messages_in_the_first_group_only_form_for_a_mint ... ok
+test generate::solidity::proof_vectors::integration_test::a_transfer_record_survives_its_description_round_trip ... ok
+test vectors::cross_set::test_basic::cross_set_draws_each_record_the_key_and_the_uniforms_of_its_calls_at_the_declared_lengths ... ok
+test vectors::cross_set::test_basic::cross_set_emits_the_configured_count_of_records ... ok
+test generate::solidity::proof_vectors::test_basic::proof_vectors_carry_second_group_first_messages_in_the_first_group_only_form_for_a_transfer ... ok
+test vectors::cross_set::test_basic::cross_set_records_the_values_its_draws_produce_under_the_asset_scope ... ok
+test vectors::cross_set::test_basic::cross_set_records_the_draws_in_the_sequence_the_source_yields ... ok
+test vectors::cross_set::test_basic::cross_set_wraps_under_the_configured_context ... FAILED
+test vectors::cross_set::test_basic::cross_set_records_the_values_its_draws_produce_under_the_entitlement_scope ... ok
+test vectors::cross_set::test_error::cross_set_returns_the_draw_refusal_whole ... ok
+test vectors::cross_set::test_error::cross_set_returns_the_hash_to_scalar_refusal_of_asset_setup_whole ... ok
+test vectors::cross_set::test_error::cross_set_returns_the_hash_to_scalar_refusal_of_identity_derivation_whole ... ok
+test vectors::cross_set::test_error::cross_set_returns_the_key_derivation_refusal_of_the_wrap_whole ... ok
+test vectors::cross_set::test_error::cross_set_returns_the_sampling_refusal_of_setup_whole ... ok
+test generate::solidity::proof_vectors::integration_test::a_mint_record_survives_its_description_round_trip ... ok
+test vectors::cross_set::integration_test::records_under_pairings_sharing_a_target_group_encoding_hold_the_same_encapsulated_bytes ... FAILED
+test delivery::transfer::integration_test::a_credential_rerandomized_and_wrapped_to_the_buyer_is_proved_by_a_transfer_proof_that_verifies_and_opens ... ok
+test vectors::cross_set::integration_test::every_record_unwraps_the_drawn_piece_group_key_under_both_sets ... FAILED
+test vectors::malformed_capsules::test_basic::malformed_capsules_draws_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
+test vectors::malformed_capsules::test_basic::malformed_capsules_emits_the_configured_count_of_records ... ok
+test vectors::malformed_capsules::test_basic::malformed_capsules_records_the_draws_in_the_sequence_the_source_yields ... ok
+test vectors::malformed_capsules::test_basic::malformed_capsules_records_the_values_its_draws_produce_under_the_asset_scope ... ok
+test vectors::malformed_capsules::test_basic::malformed_capsules_records_the_values_its_draws_produce_under_the_entitlement_scope ... ok
+test vectors::malformed_capsules::test_error::malformed_capsules_returns_the_draw_refusal_whole ... ok
+test vectors::malformed_capsules::test_error::malformed_capsules_returns_the_hash_to_scalar_refusal_of_asset_setup_whole ... ok
+test vectors::malformed_capsules::test_error::malformed_capsules_returns_the_sampling_refusal_of_setup_whole ... ok
+test generate::solidity::proof_vectors::integration_test::each_record_kind_declares_one_name_per_field_it_emits ... ok
+test generate::solidity::proof_vectors::test_basic::proof_vectors_carry_no_second_group_first_messages_in_the_both_groups_form_for_a_mint ... ok
+test vectors::non_convertibility::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
+test generate::solidity::proof_vectors::integration_test::every_record_carries_second_group_first_messages_exactly_in_the_first_group_only_form ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_draws_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_emits_the_configured_count_of_records ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_records_a_true_verdict_against_the_other_identity_when_it_is_the_configured_one ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_records_the_credential_and_verdicts_its_draws_produce ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_records_the_draws_in_the_sequence_the_source_yields ... ok
+test vectors::non_convertibility::test_basic::non_convertibility_returns_an_empty_set_under_the_asset_scope ... ok
+test vectors::non_convertibility::test_error::non_convertibility_makes_no_draw_under_the_asset_scope ... ok
+test vectors::non_convertibility::test_error::non_convertibility_returns_the_draw_refusal_whole ... ok
+test vectors::non_convertibility::test_error::non_convertibility_returns_the_hash_to_scalar_refusal_of_identity_derivation_whole ... ok
+test vectors::non_convertibility::test_error::non_convertibility_returns_the_sampling_refusal_of_setup_whole ... ok
+test generate::solidity::proof_vectors::integration_test::every_record_context_holds_the_fields_of_its_typed_context ... ok
+test generate::solidity::proof_vectors::test_basic::proof_vectors_carry_no_second_group_first_messages_in_the_both_groups_form_for_a_transfer ... ok
+test vectors::rerandomization::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
+test vectors::malformed_capsules::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
+test vectors::rerandomization::test_basic::rerandomization_draws_each_record_the_uniforms_of_its_calls_at_the_declared_length ... ok
+test vectors::rerandomization::test_basic::rerandomization_emits_the_configured_count_of_records ... ok
+test vectors::rerandomization::test_basic::rerandomization_records_the_draws_in_the_sequence_the_source_yields ... ok
+test vectors::rerandomization::test_basic::rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_asset_scope ... ok
+test vectors::rerandomization::test_basic::rerandomization_records_the_values_and_verdicts_its_draws_produce_under_the_entitlement_scope ... ok
+test vectors::rerandomization::test_error::rerandomization_returns_the_draw_refusal_whole ... ok
+test vectors::rerandomization::test_error::rerandomization_returns_the_hash_to_scalar_refusal_of_asset_setup_whole ... ok
+test vectors::rerandomization::test_error::rerandomization_returns_the_hash_to_scalar_refusal_of_identity_derivation_whole ... ok
+test vectors::rerandomization::test_error::rerandomization_returns_the_sampling_refusal_of_setup_whole ... ok
+test vectors::statement_mutations::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole ... ok
+test vectors::cross_holder::integration_test::records_under_pairings_sharing_a_target_group_encoding_hold_the_same_encapsulated_bytes ... ok
+test delivery::transfer::integration_test::the_recipient_opens_its_envelope_to_a_credential_valid_for_the_identity ... ok
+test vectors::non_convertibility::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test vectors::non_convertibility::integration_test::every_record_holds_a_true_verdict_for_its_own_identity_and_a_false_one_for_another ... ok
+test vectors::non_convertibility::integration_test::every_record_draw_replays_to_the_credential_and_verdicts_it_holds ... ok
+test vectors::statement_mutations::integration_test::a_nonce_draw_refusal_reaches_the_caller_whole ... FAILED
+test vectors::malformed_capsules::integration_test::every_record_draw_replays_to_the_values_it_holds ... ok
+test vectors::cross_set::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test generate::solidity::proof_vectors::integration_test::every_record_encodes_its_elements_in_the_selected_pairings_encodings ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_carry_the_identity_element_of_an_asset_identity ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_draws_each_record_ten_uniforms_at_the_declared_length ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_emits_the_configured_count_of_records ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_flip_the_lowest_bit_of_each_domain_value ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_flip_the_lowest_bit_of_each_form_typed_field ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_flip_the_lowest_bit_of_the_expiry ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_mutate_every_mint_field_and_proof_scalar_in_order ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_mutate_every_transfer_field_and_proof_scalar_in_order ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_offset_each_point_by_the_generator_times_the_offset ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_offset_each_proof_scalar_by_the_offset ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_record_the_baselines_as_verified_and_every_mutation_as_refused ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_record_the_draws_in_the_sequence_the_source_yields ... ok
+test vectors::statement_mutations::test_basic::statement_mutations_swap_each_purpose_for_the_other_of_its_relation ... ok
+test vectors::statement_mutations::test_error::statement_mutations_return_the_coin_draw_refusal_of_the_mint_delivery_wrap_whole ... ok
+test vectors::statement_mutations::test_error::statement_mutations_return_the_draw_refusal_of_the_mint_delivery_whole ... ok
+test vectors::malformed_capsules::integration_test::a_capsule_rebuilt_from_its_components_without_displacement_is_well_formed ... ok
+test vectors::statement_mutations::test_error::statement_mutations_return_the_hash_to_scalar_refusal_of_the_mint_delivery_asset_setup_whole ... ok
+test vectors::statement_mutations::test_error::statement_mutations_return_the_hash_to_scalar_refusal_of_the_mint_delivery_derivation_whole ... ok
+test vectors::statement_mutations::test_error::statement_mutations_return_the_nonce_draw_refusal_of_the_mint_delivery_key_generation_whole ... ok
+test vectors::statement_mutations::test_error::statement_mutations_return_the_nonce_draw_refusal_of_the_mint_delivery_prover_whole ... ok
+test vectors::statement_mutations::test_error::statement_mutations_return_the_refusal_of_a_mutated_asset_root_whole ... ok
+test vectors::statement_mutations::test_error::statement_mutations_return_the_refusal_of_a_mutated_parameter_set_identifier_whole ... ok
+test vectors::statement_mutations::test_error::statement_mutations_return_the_refusal_of_a_mutated_suite_identifier_whole ... ok
+test vectors::statement_mutations::test_error::statement_mutations_return_the_sampling_refusal_of_the_mint_delivery_whole ... ok
+test vectors::rerandomization::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test vectors::rerandomization::integration_test::every_record_holds_true_verdicts_for_its_issued_and_rerandomized_credentials ... ok
+test vectors::malformed_capsules::integration_test::every_record_holds_a_well_formed_capsule_and_an_ill_formed_displacement ... ok
+test vectors::rerandomization::integration_test::every_record_draw_replays_to_the_values_it_holds ... ok
+test vectors::malformed_capsules::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test vectors::cross_holder::integration_test::every_record_recovers_the_encapsulated_value_from_its_issued_and_successor_credentials ... ok
+test generate::solidity::proof_vectors::integration_test::every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies ... ok
+test vectors::cross_holder::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test vectors::statement_mutations::integration_test::every_record_draw_replays_to_the_statements_and_the_offset_it_produced ... FAILED
+test verifier::evm::integration_test::a_mint_proof_the_adapter_returns_verifies ... ok
+test verifier::evm::integration_test::a_proof_the_adapter_rebuilds_from_its_components_verifies ... ok
+test verifier::evm::test_basic::evm_verifier_declares_both_verifier_forms_and_statement_version_one ... ok
+test verifier::evm::test_basic::evm_verifier_endpoint_admits_a_url_text ... ok
+test verifier::evm::test_basic::evm_verifier_endpoint_refuses_text_that_is_not_a_url ... ok
+test verifier::evm::test_basic::evm_verifier_try_new_builds_the_http_provider_and_runtime_without_reading_the_chain ... ok
+test verifier::evm::test_basic::evm_verifier_try_new_checks_the_verifier_address_before_the_oracle_address ... ok
+test verifier::evm::integration_test::a_real_proof_of_the_other_relation_is_refused_before_any_chain_read ... ok
+test verifier::evm::test_basic::evm_verifier_try_new_holds_the_configured_addresses ... ok
+test verifier::evm::test_basic::evm_verifier_try_new_refuses_a_verifier_address_of_another_kind ... ok
+test verifier::evm::test_basic::evm_verifier_try_new_refuses_an_address_of_another_kind_as_try_new_mocked_does ... ok
+test verifier::evm::test_basic::evm_verifier_try_new_refuses_an_oracle_address_of_another_kind ... ok
+test verifier::evm::test_calldata::calldata_carries_no_second_group_first_messages_for_a_mint_under_the_both_groups_form ... ok
+test verifier::evm::test_calldata::calldata_carries_no_second_group_first_messages_for_a_transfer_under_the_both_groups_form ... ok
+test verifier::evm::test_calldata::calldata_concatenates_a_mints_second_group_first_messages_as_hpub_d1_d2 ... ok
+test verifier::evm::test_calldata::calldata_concatenates_a_transfers_second_group_first_messages_as_pk2_d1_d2 ... ok
+test verifier::evm::test_calldata::calldata_encodes_a_mint_statements_context_members_from_the_forms_and_domain_values ... ok
+test verifier::evm::test_calldata::calldata_encodes_a_mint_proofs_scalars_in_witness_order ... ok
+test verifier::evm::test_calldata::calldata_encodes_a_transfer_proofs_scalars_in_witness_order ... ok
+test verifier::evm::test_calldata::calldata_encodes_a_transfer_statements_context_members_from_the_forms_and_domain_values ... ok
+test verifier::evm::test_calldata::calldata_encodes_each_group_element_of_a_mint_statement_into_its_member ... ok
+test verifier::evm::test_calldata::calldata_encodes_each_group_element_of_a_transfer_statement_into_its_member ... ok
+test verifier::evm::test_calldata::calldata_encodes_the_purpose_code_of_a_mint_replacement ... ok
+test verifier::evm::test_calldata::calldata_encodes_the_purpose_code_of_a_transfer_grant ... ok
+test verifier::evm::test_calldata::calldata_selects_verify_mint_for_a_mint_statement ... ok
+test verifier::evm::test_calldata::calldata_selects_verify_transfer_for_a_transfer_statement ... ok
+test verifier::evm::test_calldata::fee_request_targets_the_oracle_with_the_get_l1_fee_call_over_the_unsigned_transaction ... ok
+test verifier::evm::test_calldata::unsigned_transaction_encodes_an_eip1559_transaction_as_the_rlp_standard_states ... ok
+test verifier::evm::test_calldata::verifier_request_targets_the_verifier_with_the_calldata ... ok
+test verifier::evm::test_error::verify_on_chain_refuses_a_fee_beyond_u128 ... FAILED
+test verifier::evm::test_error::verify_on_chain_refuses_a_mint_statement_with_a_transfer_proof ... FAILED
+test verifier::evm::test_error::verify_on_chain_refuses_a_transfer_statement_with_a_mint_proof ... FAILED
+test verifier::evm::test_error::verify_on_chain_refuses_when_nothing_is_deployed_at_the_verifier_address ... FAILED
+test verifier::evm::test_error::verify_on_chain_returns_a_json_rpc_refusal_without_revert_data_as_an_rpc_error ... FAILED
+test verifier::evm::test_error::verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error ... FAILED
+test verifier::evm::test_error::verify_on_chain_returns_the_refusal_of_a_fee_that_does_not_decode ... FAILED
+test verifier::evm::test_error::verify_on_chain_returns_the_refusal_of_a_result_that_does_not_decode ... FAILED
+test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier ... FAILED
+test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_code_read ... FAILED
+test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_gas_estimate ... FAILED
+test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_oracle_code_read ... FAILED
+test verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_verifying_call ... FAILED
+test verifier::evm::test_verdict::verify_on_chain_returns_a_fee_at_the_u128_limit ... FAILED
+test verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_fee_the_oracle_reads ... FAILED
+test verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_gas_estimate_and_no_fee_where_the_oracle_has_no_code ... FAILED
+test verifier::evm::test_verdict::verify_on_chain_returns_rejected_when_the_contract_returns_false ... FAILED
+test verifier::evm::test_verdict::verify_on_chain_returns_the_revert_data_when_the_call_reverts ... FAILED
+test verifier::evm::integration_test::chain_forms_chain_identifier_survives_its_field_round_trip ... ok
+test verifier::factory::test::create_verifier_hands_the_consumer_the_concrete_the_selection_names ... ok
+test verifier::evm::integration_test::a_real_proofs_calldata_decodes_to_its_statement_and_proof_at_the_pairings_encoding_lengths ... ok
+test verifier::factory::test::create_verifier_refuses_a_statement_version_the_declaration_does_not_list ... ok
+test verifier::evm::integration_test::chain_forms_entitlement_survives_its_field_round_trip ... ok
+test verifier::evm::integration_test::a_transfer_proof_the_adapter_returns_verifies ... ok
+test verifier::evm::integration_test::a_rejecting_chain_returns_rejected_for_a_real_proof ... ok
+test verifier::evm::integration_test::a_reverting_chain_returns_the_revert_data_for_a_real_proof ... ok
+test vectors::statement_mutations::integration_test::a_key_generation_nonce_draw_refusal_reaches_the_caller_whole ... FAILED
+test verifier::evm::integration_test::an_accepted_verdict_and_its_costs_reach_the_caller_for_a_real_proof ... ok
+test verifier::evm::integration_test::chain_forms_identity_survives_its_field_round_trip ... ok
+test verifier::factory::integration_test::a_refused_read_returns_the_mock_concretes_own_error ... ok
+test verifier::evm::integration_test::chain_forms_interval_survives_its_field_round_trip ... ok
+test vectors::statement_mutations::integration_test::a_wrap_coin_draw_refusal_reaches_the_caller_whole ... FAILED
+test verifier::factory::integration_test::every_concrete_refuses_a_proof_of_the_other_relation_before_any_chain_read ... ok
+test vectors::cross_holder::integration_test::every_record_draw_replays_to_the_values_it_holds ... ok
+test generate::solidity::proof_vectors::integration_test::every_transfer_record_is_a_statement_and_proof_the_delivery_proof_verifies ... ok
+test generate::solidity::integration_test::a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path ... ok
+test generate::solidity::proof_vectors::integration_test::every_record_draw_replays_to_the_statement_elements_it_produced ... ok
+test generate::solidity::integration_test::a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing ... ok
+test generate::solidity::integration_test::a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name ... ok
+test generate::solidity::integration_test::a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothing ... ok
+test generate::solidity::integration_test::emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_curve_directory ... ok
+test generate::solidity::integration_test::a_root_that_is_a_file_refuses_directory_creation_with_its_path ... ok
+test generate::solidity::integration_test::a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing ... ok
+test generate::solidity::integration_test::the_constants_library_opens_with_the_configured_license_version_and_name_and_holds_the_tag_entries ... ok
+test generate::solidity::integration_test::every_written_line_decodes_under_its_kinds_description ... ok
+test generate::solidity::proof_vectors::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test vectors::statement_mutations::integration_test::an_asset_identity_is_mutated_under_the_asset_scope ... ok
+test vectors::statement_mutations::integration_test::every_mutation_replaces_its_field_alone ... ok
+test generate::solidity::integration_test::each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size has been running for over 60 seconds
+test vectors::statement_mutations::integration_test::every_baseline_statement_verifies_and_every_mutation_is_refused has been running for over 60 seconds
+test vectors::statement_mutations::integration_test::every_carried_statement_and_proof_verify_to_their_recorded_verdict has been running for over 60 seconds
+test vectors::statement_mutations::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws has been running for over 60 seconds
+test vectors::statement_mutations::integration_test::every_run_emits_the_configured_count_of_records_with_distinct_draws ... ok
+test vectors::statement_mutations::integration_test::every_carried_statement_and_proof_verify_to_their_recorded_verdict ... ok
+test vectors::statement_mutations::integration_test::every_baseline_statement_verifies_and_every_mutation_is_refused ... ok
+test generate::solidity::integration_test::each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size ... ok
 
-error[E0308]: mismatched types
-   --> apps\harness-crypto\tests\transfer_integration_test.rs:138:21
-    |
- 81 |         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
-    |                                           --  -- expected type parameter
-    |                                           |
-    |                                           found type parameter
-...
-134 |                 build_transfer_payload(
-    |                 ---------------------- arguments to this function are incorrect
-...
-138 |                     &mint_delivery.recipient,
-    |                     ^^^^^^^^^^^^^^^^^^^^^^^^ expected `&DeliveryHolder<A2>`, found `&DeliveryHolder<A1>`
-    |
-    = note: expected reference `&DeliveryHolder<A2>`
-               found reference `&DeliveryHolder<A1>`
-    = note: a type parameter was expected, but a different one was found; you might be missing a type parameter or trait bound
-    = note: for more information, visit https://doc.rust-lang.org/book/ch10-02-traits.html#traits-as-parameters
-note: function defined here
-   --> apps\harness-crypto\src\delivery\transfer\mock.rs:76:8
-    |
- 76 | pub fn build_transfer_payload<
-    |        ^^^^^^^^^^^^^^^^^^^^^^
+failures:
 
-error[E0369]: binary operation `==` cannot be applied to type `DeliveryContext<F, TransferPurpose>`
-   --> apps\harness-crypto\tests\transfer_integration_test.rs:144:13
-    |
-144 |             assert_eq!(delivery.statement.context, context);
-    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |             |
-    |             DeliveryContext<F, TransferPurpose>
-    |             DeliveryContext<F, TransferPurpose>
-    |
-note: `DeliveryContext<F, TransferPurpose>` does not implement `PartialEq`
-   --> adapters\proof\src\factory\interface.rs:47:1
-    |
- 47 | pub struct DeliveryContext<F: IChainForms, Purpose> {
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `DeliveryContext<F, TransferPurpose>` is defined in another crate
+---- generate::factory::integration_test::a_refused_write_returns_the_mock_concretes_own_error stdout ----
 
-For more information about this error, try `rustc --explain E0507`.
-error[E0277]: `DeliveryContext<F, TransferPurpose>` doesn't implement `Debug`
-   --> apps\harness-crypto\tests\transfer_integration_test.rs:144:13
-    |
-144 |             assert_eq!(delivery.statement.context, context);
-    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Debug` is not implemented for `DeliveryContext<F, TransferPurpose>`
+thread 'generate::factory::integration_test::a_refused_write_returns_the_mock_concretes_own_error' (32420) panicked at apps\harness-crypto\src\generate\factory\integration_test.rs:413:33:
+assertion failed: matches!(result.unwrap().output.map(|s| s.output),
+    Ok(Err(EmitErrorReturn::Mock(MockIGenerateAdapterEmitErrorReturn::WriteRefused))))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
-error: could not compile `harness-crypto` (test "cross_holder_integration_test") due to 1 previous error
-warning: build failed, waiting for other jobs to finish...
-error[E0507]: cannot move out of `*encoding_selection` which is behind a shared reference
-   --> apps\harness-crypto\tests\rerandomization_integration_test.rs:345:17
-    |
-345 |                 *encoding_selection,
-    |                 ^^^^^^^^^^^^^^^^^^^ move occurs because `*encoding_selection` has type `CreateEncodingParams`, which does not implement the `Copy` trait
+---- generate::factory::integration_test::create_generate_refuses_an_encoder_declaring_another_encoding_identifier stdout ----
 
-error[E0308]: mismatched types
-   --> apps\harness-crypto\tests\transfer_integration_test.rs:148:34
-    |
- 81 |         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
-    |                                           --  -- expected type parameter
-    |                                           |
-    |                                           found type parameter
-...
-148 |                     public_keys: &mint_delivery.recipient.public_keys,
-    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected type parameter `A2`, found type parameter `A1`
-    |
-    = note: expected reference `&<A2 as IKeyAgreementAdapter>::PublicKeys`
-               found reference `&<A1 as IKeyAgreementAdapter>::PublicKeys`
-    = note: a type parameter was expected, but a different one was found; you might be missing a type parameter or trait bound
-    = note: for more information, visit https://doc.rust-lang.org/book/ch10-02-traits.html#traits-as-parameters
+thread 'generate::factory::integration_test::create_generate_refuses_an_encoder_declaring_another_encoding_identifier' (12836) panicked at apps\harness-crypto\src\generate\factory\integration_test.rs:581:20:
+called `Result::unwrap()` on an `Err` value: CreateChainForms(UnsupportedEncodingIdentifier)
 
-error[E0507]: cannot move out of `*encoding_selection` which is behind a shared reference
-   --> apps\harness-crypto\tests\non_convertibility_integration_test.rs:476:17
-    |
-476 |                 *encoding_selection,
-    |                 ^^^^^^^^^^^^^^^^^^^ move occurs because `*encoding_selection` has type `CreateEncodingParams`, which does not implement the `Copy` trait
+---- generate::factory::integration_test::emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate stdout ----
 
-error[E0308]: mismatched types
-   --> apps\harness-crypto\tests\transfer_integration_test.rs:215:31
-    |
- 81 |         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
-    |                                           --  -- expected type parameter
-    |                                           |
-    |                                           found type parameter
-...
-215 |                     envelope: &mint_delivery.recipient.envelope,
-    |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&<A2 as IKeyAgreementAdapter>::Envelope`, found `&<A1 as IKeyAgreementAdapter>::Envelope`
-    |
-    = note: expected reference `&<A2 as IKeyAgreementAdapter>::Envelope`
-               found reference `&<A1 as IKeyAgreementAdapter>::Envelope`
-    = note: a type parameter was expected, but a different one was found; you might be missing a type parameter or trait bound
-    = note: for more information, visit https://doc.rust-lang.org/book/ch10-02-traits.html#traits-as-parameters
+thread 'generate::factory::integration_test::emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate' (47824) panicked at apps\harness-crypto\src\generate\factory\integration_test.rs:204:17:
+assertion `left == right` failed
+  left: Err(UnsupportedEncodingIdentifier)
+ right: Ok(())
 
-error[E0614]: type `TransferPurpose` cannot be dereferenced
-   --> apps\harness-crypto\tests\transfer_integration_test.rs:567:65
-    |
-567 | ...                   Consumer { purpose: *purpose },
-    |                                           ^^^^^^^^ can't be dereferenced
+---- generate::solidity::constants::integration_test::the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms stdout ----
 
-error[E0308]: mismatched types
-   --> apps\harness-crypto\tests\transfer_integration_test.rs:521:21
-    |
-464 |         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
-    |                                           --  -- expected type parameter
-    |                                           |
-    |                                           found type parameter
-...
-517 |                 build_transfer_payload(
-    |                 ---------------------- arguments to this function are incorrect
-...
-521 |                     &mint_delivery.recipient,
-    |                     ^^^^^^^^^^^^^^^^^^^^^^^^ expected `&DeliveryHolder<A2>`, found `&DeliveryHolder<A1>`
-    |
-    = note: expected reference `&DeliveryHolder<A2>`
-               found reference `&DeliveryHolder<A1>`
-    = note: a type parameter was expected, but a different one was found; you might be missing a type parameter or trait bound
-    = note: for more information, visit https://doc.rust-lang.org/book/ch10-02-traits.html#traits-as-parameters
-note: function defined here
-   --> apps\harness-crypto\src\delivery\transfer\mock.rs:76:8
-    |
- 76 | pub fn build_transfer_payload<
-    |        ^^^^^^^^^^^^^^^^^^^^^^
+thread 'generate::solidity::constants::integration_test::the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms' (24780) panicked at apps\harness-crypto\src\generate\solidity\constants\integration_test.rs:335:17:
+assertion `left == right` failed
+  left: SolidityLibraryEntry { name: SolidityConstantName { text: "TRANSFER_FIELDS" }, value: String(SolidityStringLiteral { text: "bytes32,uint16,uint256,bytes20,bytes32,bytes32,uint256,uint256,uint64,uint64,uint16,bytes20,bytes20,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,uint64,bytes,bytes,bytes,bytes,bytes,bytes" }) }
+ right: SolidityLibraryEntry { name: SolidityConstantName { text: "TRANSFER_FIELDS" }, value: String(SolidityStringLiteral { text: "bytes32,uint16,uint256,bytes20,bytes32,bytes32,uint256,uint256,uint64,uint64,uint16,bytes20,bytes20,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,uint64,bytes,bytes,bytes,bytes,bytes,bytes" }) }
 
-error[E0308]: mismatched types
-   --> apps\harness-crypto\tests\transfer_integration_test.rs:736:21
-    |
-679 |         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
-    |                                           --  -- expected type parameter
-    |                                           |
-    |                                           found type parameter
-...
-732 |                 build_transfer_payload(
-    |                 ---------------------- arguments to this function are incorrect
-...
-736 |                     &mint_delivery.recipient,
-    |                     ^^^^^^^^^^^^^^^^^^^^^^^^ expected `&DeliveryHolder<A2>`, found `&DeliveryHolder<A1>`
-    |
-    = note: expected reference `&DeliveryHolder<A2>`
-               found reference `&DeliveryHolder<A1>`
-    = note: a type parameter was expected, but a different one was found; you might be missing a type parameter or trait bound
-    = note: for more information, visit https://doc.rust-lang.org/book/ch10-02-traits.html#traits-as-parameters
-note: function defined here
-   --> apps\harness-crypto\src\delivery\transfer\mock.rs:76:8
-    |
- 76 | pub fn build_transfer_payload<
-    |        ^^^^^^^^^^^^^^^^^^^^^^
+---- generate::solidity::constants::test::constants_carry_the_mint_and_transfer_field_sequences stdout ----
 
-Some errors have detailed explanations: E0277, E0308, E0369, E0614.
-For more information about an error, try `rustc --explain E0277`.
-error: could not compile `harness-crypto` (test "rerandomization_integration_test") due to 1 previous error
-error: could not compile `harness-crypto` (test "non_convertibility_integration_test") due to 1 previous error
-error: could not compile `harness-crypto` (test "transfer_integration_test") due to 10 previous errors
-error[E0432]: unresolved imports `harness_crypto::HarnessStatements`, `harness_crypto::HarnessStatementsOverrides`, `harness_crypto::build_generate_consumer`, `harness_crypto::build_harness_statements`
-  --> apps\harness-crypto\tests\generate_consumer_integration_test.rs:53:5
-   |
-53 |     HarnessStatements, HarnessStatementsOverrides, VectorKind, build_create_generate_deps,
-   |     ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^ no `HarnessStatementsOverrides` in the root
-   |     |
-   |     no `HarnessStatements` in the root
-54 |     build_create_generate_params, build_create_generate_payload, build_generate_concrete,
-55 |     build_generate_consumer, build_generate_kind_configurations, build_harness_statements,
-   |     ^^^^^^^^^^^^^^^^^^^^^^^                                      ^^^^^^^^^^^^^^^^^^^^^^^^ no `build_harness_statements` in the root
-   |     |
-   |     no `build_generate_consumer` in the root
-   |
-help: a similar name exists in the module
-   |
-55 -     build_generate_consumer, build_generate_kind_configurations, build_harness_statements,
-55 +     build_generate_concrete, build_generate_kind_configurations, build_harness_statements,
-   |
+thread 'generate::solidity::constants::test::constants_carry_the_mint_and_transfer_field_sequences' (49724) panicked at apps\harness-crypto\src\generate\solidity\constants\test.rs:416:9:
+assertion `left == right` failed
+  left: SolidityLibraryEntry { name: SolidityConstantName { text: "TRANSFER_FIELDS" }, value: String(SolidityStringLiteral { text: "mockFixedBytes32,mockUnsigned16,mockUnsigned256,mockFixedBytes20,mockFixedBytes32,mockFixedBytes32,mockUnsigned256,mockUnsigned256,mockUnsigned64,mockUnsigned64,mockUnsigned16,mockFixedBytes20,mockFixedBytes20,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockUnsigned64,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes" }) }
+ right: SolidityLibraryEntry { name: SolidityConstantName { text: "TRANSFER_FIELDS" }, value: String(SolidityStringLiteral { text: "mockFixedBytes32,mockUnsigned16,mockUnsigned256,mockFixedBytes20,mockFixedBytes32,mockFixedBytes32,mockUnsigned256,mockUnsigned256,mockUnsigned64,mockUnsigned64,mockUnsigned16,mockFixedBytes20,mockFixedBytes20,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockUnsigned64,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes,mockBytes" }) }
 
-error[E0432]: unresolved imports `harness_crypto::DeliveryProofConsumerConstructorParamsOverrides`, `harness_crypto::HarnessStatements`, `harness_crypto::HarnessStatementsOverrides`, `harness_crypto::build_delivery_proof_consumer`, `harness_crypto::build_harness_statements`
-  --> apps\harness-crypto\tests\delivery_proof_consumer_integration_test.rs:50:5
-   |
-50 |     DeliveryProofConsumerConstructorParamsOverrides, EmitReturn, EmitSuccessReturn,
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `DeliveryProofConsumerConstructorParamsOverrides` in the root
-51 |     GENERATE_CONCRETES, GenerateConcrete, GenerateConcreteOverrides,
-52 |     GenerateKindConfigurationsOverrides, HarnessStatements, HarnessStatementsOverrides,
-   |                                          ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^ no `HarnessStatementsOverrides` in the root
-   |                                          |
-   |                                          no `HarnessStatements` in the root
-53 |     VectorCountConstructorParamsOverrides, VectorKind, VectorKindConfiguration,
-54 |     VectorKindConfigurationOverrides, VectorKindQuantitiesOverrides, build_delivery_proof_consumer,
-   |                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `build_delivery_proof_consumer` in the root
-55 |     build_generate_concrete, build_generate_kind_configurations, build_harness_statements,
-   |                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^ no `build_harness_statements` in the root
-   |
-help: a similar name exists in the module
-   |
-50 -     DeliveryProofConsumerConstructorParamsOverrides, EmitReturn, EmitSuccessReturn,
-50 +     SolidityConstantNameConstructorParamsOverrides, EmitReturn, EmitSuccessReturn,
-   |
+---- generate::solidity::integration_test::a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing stdout ----
 
-error[E0432]: unresolved imports `harness_crypto::DeliveryProofSelectionOverrides`, `harness_crypto::HarnessStatements`, `harness_crypto::HarnessStatementsOverrides`, `harness_crypto::KeyAgreementConsumerConstructorParamsOverrides`, `harness_crypto::build_delivery_proof_selection`, `harness_crypto::build_harness_statements`, `harness_crypto::build_key_agreement_consumer`
-  --> apps\harness-crypto\tests\key_agreement_consumer_integration_test.rs:46:56
-   |
-46 |     CreateGenerateReturn, CreateGenerateSuccessReturn, DeliveryProofSelectionOverrides, EmitReturn,
-   |                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `DeliveryProofSelectionOverrides` in the root
-47 |     EmitSuccessReturn, GENERATE_CONCRETES, GenerateConcrete, GenerateConcreteOverrides,
-48 |     GenerateKindConfigurationsOverrides, HarnessStatements, HarnessStatementsOverrides,
-   |                                          ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^ no `HarnessStatementsOverrides` in the root
-   |                                          |
-   |                                          no `HarnessStatements` in the root
-49 |     KeyAgreementConsumerConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `KeyAgreementConsumerConstructorParamsOverrides` in the root
-50 |     VectorKind, VectorKindConfiguration, VectorKindConfigurationOverrides,
-51 |     VectorKindQuantitiesOverrides, build_delivery_proof_selection, build_generate_concrete,
-   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `build_delivery_proof_selection` in the root
-52 |     build_generate_kind_configurations, build_harness_statements, build_key_agreement_consumer,
-   |                                         ^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `build_key_agreement_consumer` in the root
-   |                                         |
-   |                                         no `build_harness_statements` in the root
-   |
-help: a similar name exists in the module
-   |
-49 -     KeyAgreementConsumerConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
-49 +     VectorCountConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
-   |
+thread 'generate::solidity::integration_test::a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing' (10488) panicked at apps\harness-crypto\src\generate\solidity\integration_test.rs:1839:33:
+assertion failed: result.is_ok()
 
-error[E0560]: struct `CreateGenerateParamsOverrides` has no field named `scope`
-   --> apps\harness-crypto\tests\generate_consumer_integration_test.rs:158:21
-    |
-158 |                     scope: Some(self.scope),
-    |                     ^^^^^ `CreateGenerateParamsOverrides` does not have this field
-    |
-    = note: available fields are: `statement_version`
+---- generate::solidity::integration_test::the_records_library_declares_each_written_kinds_struct_decode_function_and_path stdout ----
 
-error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
-   --> apps\harness-crypto\tests\generate_consumer_integration_test.rs:222:25
-    |
-222 |                         verifier_form: Some(self.verifier_form),
-    |                         ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
-    |
-    = note: all struct fields are already assigned
+thread 'generate::solidity::integration_test::the_records_library_declares_each_written_kinds_struct_decode_function_and_path' (27916) panicked at apps\harness-crypto\src\generate\solidity\integration_test.rs:1461:37:
+assertion failed: text.contains(&format!("        {}{} {};", abi_name(kind), if
+            matches!(kind, CanonicalFieldKind::Text |
+            CanonicalFieldKind::Bytes) { " memory" } else { "" },
+            member_names[index]))
 
-error[E0560]: struct `CreateDeliveryProofParamsOverrides` has no field named `verifier_form`
-   --> apps\harness-crypto\tests\delivery_proof_consumer_integration_test.rs:177:25
-    |
-177 |                         verifier_form: Some(self.verifier_form),
-    |                         ^^^^^^^^^^^^^ `CreateDeliveryProofParamsOverrides` does not have this field
-    |
-    = note: available fields are: `algebra`, `statement_version`
+---- vectors::cross_set::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole stdout ----
 
-error[E0061]: this function takes 3 arguments but 2 arguments were supplied
-   --> apps\harness-crypto\tests\generate_consumer_integration_test.rs:370:22
-    |
-370 |                       &build_create_chain_forms_deps(
-    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
-371 | |                         ChainFormsConsumer {
-372 | |                             pairing: self.pairing,
-373 | |                             hashing: self.hashing,
-...   |
-380 | |                         Default::default(),
-381 | |                     ),
-    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
-    |
-note: function defined here
-   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
-    |
- 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-help: provide the argument
-    |
-370 |                     &build_create_chain_forms_deps(
-...
-380 |                         Default::default(),
-381 ~                         /* CreateChainFormsDepsOverrides */,
-382 ~                     ),
-    |
+thread 'vectors::cross_set::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole' (38812) panicked at apps\harness-crypto\src\vectors\cross_set\integration_test.rs:1157:30:
+the case payload carries 32 bytes under the asset scope: TryFromSliceError(())
 
-error[E0061]: this function takes 3 arguments but 2 arguments were supplied
-   --> apps\harness-crypto\tests\delivery_proof_consumer_integration_test.rs:330:22
-    |
-330 |                       &build_create_chain_forms_deps(
-    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
-331 | |                         ChainFormsConsumer {
-332 | |                             pairing: self.pairing,
-333 | |                             hashing: self.hashing,
-...   |
-341 | |                         Default::default(),
-342 | |                     ),
-    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
-    |
-note: function defined here
-   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
-    |
- 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-help: provide the argument
-    |
-330 |                     &build_create_chain_forms_deps(
-...
-341 |                         Default::default(),
-342 ~                         /* CreateChainFormsDepsOverrides */,
-343 ~                     ),
-    |
+---- vectors::cross_set::integration_test::every_record_draw_replays_to_the_values_it_holds stdout ----
 
-Some errors have detailed explanations: E0061, E0432, E0560.
-For more information about an error, try `rustc --explain E0061`.
-error[E0061]: this function takes 3 arguments but 2 arguments were supplied
-   --> apps\harness-crypto\tests\key_agreement_consumer_integration_test.rs:264:22
-    |
-264 |                       &build_create_chain_forms_deps(
-    |  ______________________^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
-265 | |                         ChainFormsConsumer {
-266 | |                             pairing: self.pairing,
-267 | |                             hash_to_scalar: self.hash_to_scalar,
-...   |
-274 | |                         Default::default(),
-275 | |                     ),
-    | |_____________________- argument #3 of type `CreateChainFormsDepsOverrides` is missing
-    |
-note: function defined here
-   --> adapters\chain\src\create_chain_forms\mock.rs:67:8
-    |
- 67 | pub fn build_create_chain_forms_deps<'a, C: IChainFormsConsumer, E: IEncoderAdapter>(
-    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-help: provide the argument
-    |
-264 |                     &build_create_chain_forms_deps(
-...
-274 |                         Default::default(),
-275 ~                         /* CreateChainFormsDepsOverrides */,
-276 ~                     ),
-    |
+thread 'vectors::cross_set::integration_test::every_record_draw_replays_to_the_values_it_holds' (41096) panicked at crates\domain\src\piece_geometry\mock.rs:30:10:
+built piece geometry constructor params are admitted: PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 1, piece_size: 16384 }
 
-error: could not compile `harness-crypto` (test "generate_consumer_integration_test") due to 4 previous errors
-error: could not compile `harness-crypto` (test "delivery_proof_consumer_integration_test") due to 3 previous errors
-Some errors have detailed explanations: E0061, E0432.
-error: could not compile `harness-crypto` (test "key_agreement_consumer_integration_test") due to 2 previous errors
+---- vectors::cross_set::integration_test::a_key_derivation_refusal_reaches_the_caller_whole stdout ----
+
+thread 'vectors::cross_set::integration_test::a_key_derivation_refusal_reaches_the_caller_whole' (12672) panicked at apps\harness-crypto\src\vectors\cross_set\integration_test.rs:958:30:
+the case payload carries 32 bytes under the asset scope: TryFromSliceError(())
+
+---- vectors::cross_set::test_basic::cross_set_wraps_under_the_configured_context stdout ----
+
+thread 'vectors::cross_set::test_basic::cross_set_wraps_under_the_configured_context' (15656) panicked at crates\domain\src\piece_geometry\mock.rs:30:10:
+built piece geometry constructor params are admitted: PieceGroupSizeNotMultipleOfPieceSize { piece_group_size: 1, piece_size: 16384 }
+
+---- vectors::cross_set::integration_test::records_under_pairings_sharing_a_target_group_encoding_hold_the_same_encapsulated_bytes stdout ----
+
+thread 'vectors::cross_set::integration_test::records_under_pairings_sharing_a_target_group_encoding_hold_the_same_encapsulated_bytes' (16660) panicked at apps\harness-crypto\src\vectors\cross_set\integration_test.rs:1304:30:
+the case payload carries 32 bytes under the asset scope: TryFromSliceError(())
+
+---- vectors::cross_set::integration_test::every_record_unwraps_the_drawn_piece_group_key_under_both_sets stdout ----
+
+thread 'vectors::cross_set::integration_test::every_record_unwraps_the_drawn_piece_group_key_under_both_sets' (6692) panicked at apps\harness-crypto\src\vectors\cross_set\integration_test.rs:123:30:
+the case payload carries 32 bytes under the asset scope: TryFromSliceError(())
+
+---- vectors::statement_mutations::integration_test::a_nonce_draw_refusal_reaches_the_caller_whole stdout ----
+
+thread 'vectors::statement_mutations::integration_test::a_nonce_draw_refusal_reaches_the_caller_whole' (3300) panicked at apps\harness-crypto\src\vectors\statement_mutations\integration_test.rs:1649:13:
+assertion `left == right` failed
+  left: None
+ right: Some(Mint(ProveMint(Mock(NonceDrawRefused))))
+
+---- vectors::statement_mutations::integration_test::every_record_draw_replays_to_the_statements_and_the_offset_it_produced stdout ----
+
+thread 'vectors::statement_mutations::integration_test::every_record_draw_replays_to_the_statements_and_the_offset_it_produced' (24012) panicked at apps\harness-crypto\src\vectors\statement_mutations\integration_test.rs:1156:13:
+assertion `left == right` failed
+  left: [0, 71, 13, 226, 98, 19, 148, 180, 215, 41, 51, 228, 254, 194, 62, 64, 203, 17, 247, 223, 90, 78, 215, 94, 86, 153, 187, 159, 187, 200, 250, 149, 15, 115, 112, 201, 29, 158, 17, 198, 8, 189, 169, 227, 181, 32, 105, 27, 150, 103, 62, 234, 216, 14, 209, 135, 180, 182, 121, 124, 28, 174, 175, 240]
+ right: [6, 99, 143, 15, 252, 246, 171, 253, 56, 132, 98, 73, 230, 157, 8, 196, 106, 43, 13, 70, 24, 172, 127, 39, 247, 71, 98, 16, 143, 10, 71, 248, 2, 13, 229, 245, 171, 64, 65, 51, 79, 69, 46, 6, 190, 46, 203, 41, 246, 128, 65, 50, 252, 54, 33, 190, 120, 198, 228, 114, 179, 66, 31, 108]
+
+---- verifier::evm::test_error::verify_on_chain_refuses_a_fee_beyond_u128 stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_refuses_a_fee_beyond_u128' (25484) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:1333:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_refuses_a_mint_statement_with_a_transfer_proof stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_refuses_a_mint_statement_with_a_transfer_proof' (28928) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:93:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_refuses_a_transfer_statement_with_a_mint_proof stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_refuses_a_transfer_statement_with_a_mint_proof' (38600) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:193:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_refuses_when_nothing_is_deployed_at_the_verifier_address stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_refuses_when_nothing_is_deployed_at_the_verifier_address' (27124) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:303:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_returns_a_json_rpc_refusal_without_revert_data_as_an_rpc_error stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_returns_a_json_rpc_refusal_without_revert_data_as_an_rpc_error' (31552) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:601:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error' (10672) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:1118:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_returns_the_refusal_of_a_fee_that_does_not_decode stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_returns_the_refusal_of_a_fee_that_does_not_decode' (20300) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:1223:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_returns_the_refusal_of_a_result_that_does_not_decode stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_returns_the_refusal_of_a_result_that_does_not_decode' (16888) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:700:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier' (42752) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:1008:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_code_read stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_code_read' (29464) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:405:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_gas_estimate stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_gas_estimate' (27248) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:802:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_oracle_code_read stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_oracle_code_read' (604) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:904:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_verifying_call stdout ----
+
+thread 'verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_verifying_call' (46692) panicked at apps\harness-crypto\src\verifier\evm\test_error.rs:502:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_verdict::verify_on_chain_returns_a_fee_at_the_u128_limit stdout ----
+
+thread 'verifier::evm::test_verdict::verify_on_chain_returns_a_fee_at_the_u128_limit' (37556) panicked at apps\harness-crypto\src\verifier\evm\test_verdict.rs:327:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_fee_the_oracle_reads stdout ----
+
+thread 'verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_fee_the_oracle_reads' (35608) panicked at apps\harness-crypto\src\verifier\evm\test_verdict.rs:214:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_gas_estimate_and_no_fee_where_the_oracle_has_no_code stdout ----
+
+thread 'verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_gas_estimate_and_no_fee_where_the_oracle_has_no_code' (4816) panicked at apps\harness-crypto\src\verifier\evm\test_verdict.rs:92:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_verdict::verify_on_chain_returns_rejected_when_the_contract_returns_false stdout ----
+
+thread 'verifier::evm::test_verdict::verify_on_chain_returns_rejected_when_the_contract_returns_false' (2012) panicked at apps\harness-crypto\src\verifier\evm\test_verdict.rs:434:17:
+the adapter builds a proof from its own form's components
+
+---- verifier::evm::test_verdict::verify_on_chain_returns_the_revert_data_when_the_call_reverts stdout ----
+
+thread 'verifier::evm::test_verdict::verify_on_chain_returns_the_revert_data_when_the_call_reverts' (12912) panicked at apps\harness-crypto\src\verifier\evm\test_verdict.rs:536:17:
+the adapter builds a proof from its own form's components
+
+---- vectors::statement_mutations::integration_test::a_key_generation_nonce_draw_refusal_reaches_the_caller_whole stdout ----
+
+thread 'vectors::statement_mutations::integration_test::a_key_generation_nonce_draw_refusal_reaches_the_caller_whole' (50720) panicked at apps\harness-crypto\src\vectors\statement_mutations\integration_test.rs:1794:13:
+assertion `left == right` failed
+  left: None
+ right: Some(Mint(GenerateKeys(Mock(NonceDrawRefused))))
+
+---- vectors::statement_mutations::integration_test::a_wrap_coin_draw_refusal_reaches_the_caller_whole stdout ----
+
+thread 'vectors::statement_mutations::integration_test::a_wrap_coin_draw_refusal_reaches_the_caller_whole' (40744) panicked at apps\harness-crypto\src\vectors\statement_mutations\integration_test.rs:1934:13:
+assertion `left == right` failed
+  left: None
+ right: Some(Mint(WrapTo(Mock(CoinDrawRefused))))
+
+
+failures:
+    generate::factory::integration_test::a_refused_write_returns_the_mock_concretes_own_error
+    generate::factory::integration_test::create_generate_refuses_an_encoder_declaring_another_encoding_identifier
+    generate::factory::integration_test::emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate
+    generate::solidity::constants::integration_test::the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms
+    generate::solidity::constants::test::constants_carry_the_mint_and_transfer_field_sequences
+    generate::solidity::integration_test::a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing
+    generate::solidity::integration_test::the_records_library_declares_each_written_kinds_struct_decode_function_and_path
+    vectors::cross_set::integration_test::a_hash_to_scalar_refusal_reaches_the_caller_whole
+    vectors::cross_set::integration_test::a_key_derivation_refusal_reaches_the_caller_whole
+    vectors::cross_set::integration_test::every_record_draw_replays_to_the_values_it_holds
+    vectors::cross_set::integration_test::every_record_unwraps_the_drawn_piece_group_key_under_both_sets
+    vectors::cross_set::integration_test::records_under_pairings_sharing_a_target_group_encoding_hold_the_same_encapsulated_bytes
+    vectors::cross_set::test_basic::cross_set_wraps_under_the_configured_context
+    vectors::statement_mutations::integration_test::a_key_generation_nonce_draw_refusal_reaches_the_caller_whole
+    vectors::statement_mutations::integration_test::a_nonce_draw_refusal_reaches_the_caller_whole
+    vectors::statement_mutations::integration_test::a_wrap_coin_draw_refusal_reaches_the_caller_whole
+    vectors::statement_mutations::integration_test::every_record_draw_replays_to_the_statements_and_the_offset_it_produced
+    verifier::evm::test_error::verify_on_chain_refuses_a_fee_beyond_u128
+    verifier::evm::test_error::verify_on_chain_refuses_a_mint_statement_with_a_transfer_proof
+    verifier::evm::test_error::verify_on_chain_refuses_a_transfer_statement_with_a_mint_proof
+    verifier::evm::test_error::verify_on_chain_refuses_when_nothing_is_deployed_at_the_verifier_address
+    verifier::evm::test_error::verify_on_chain_returns_a_json_rpc_refusal_without_revert_data_as_an_rpc_error
+    verifier::evm::test_error::verify_on_chain_returns_any_refusal_of_the_oracles_fee_call_as_an_rpc_error
+    verifier::evm::test_error::verify_on_chain_returns_the_refusal_of_a_fee_that_does_not_decode
+    verifier::evm::test_error::verify_on_chain_returns_the_refusal_of_a_result_that_does_not_decode
+    verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_chain_identifier
+    verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_code_read
+    verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_gas_estimate
+    verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_oracle_code_read
+    verifier::evm::test_error::verify_on_chain_returns_the_transports_refusal_of_the_verifying_call
+    verifier::evm::test_verdict::verify_on_chain_returns_a_fee_at_the_u128_limit
+    verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_fee_the_oracle_reads
+    verifier::evm::test_verdict::verify_on_chain_returns_accepted_with_the_gas_estimate_and_no_fee_where_the_oracle_has_no_code
+    verifier::evm::test_verdict::verify_on_chain_returns_rejected_when_the_contract_returns_false
+    verifier::evm::test_verdict::verify_on_chain_returns_the_revert_data_when_the_call_reverts
+
+test result: FAILED. 475 passed; 35 failed; 0 ignored; 0 measured; 0 filtered out; finished in 327.85s
+
+error: test failed, to rerun pass `-p harness-crypto --lib`

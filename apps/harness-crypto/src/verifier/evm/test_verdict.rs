@@ -10,8 +10,9 @@ use proof::{
     AlgebraicStatement, DeliveryProofComponents, DeliveryProofWireComponentsOverrides,
     DeliveryRelation, IDeliveryProofAdapter, build_algebraic_mint_statement,
     build_algebraic_transfer_statement, build_delivery_proof_wire_components,
-    build_proof_from_components_params, build_proof_from_components_payload,
-    build_transfer_responses, build_verify_payload,
+    build_mint_second_group_first_messages, build_proof_from_components_params,
+    build_proof_from_components_payload, build_transfer_responses,
+    build_transfer_second_group_first_messages, build_verify_payload,
 };
 use serde_json::value::RawValue;
 
@@ -78,7 +79,15 @@ fn verify_on_chain_returns_accepted_with_the_gas_estimate_and_no_fee_where_the_o
                 pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
-                    verifier_form: Some(VerifierGroupArithmetic::BothGroups),
+                    verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
+                        VerifierGroupArithmetic::BothGroups => None,
+                        VerifierGroupArithmetic::FirstGroupOnly => {
+                            let messages =
+                                build_mint_second_group_first_messages(pairing, Default::default());
+                            Some(vec![messages.hpub, messages.d1, messages.d2])
+                        }
+                    },
                     ..Default::default()
                 },
             );
@@ -193,7 +202,17 @@ fn verify_on_chain_returns_accepted_with_the_fee_the_oracle_reads() {
                 pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Transfer),
-                    verifier_form: Some(VerifierGroupArithmetic::BothGroups),
+                    verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
+                        VerifierGroupArithmetic::BothGroups => None,
+                        VerifierGroupArithmetic::FirstGroupOnly => {
+                            let messages = build_transfer_second_group_first_messages(
+                                pairing,
+                                Default::default(),
+                            );
+                            Some(vec![messages.pk2, messages.d1, messages.d2])
+                        }
+                    },
                     responses: Some(vec![
                         responses.x.clone(),
                         responses.y.clone(),
@@ -313,7 +332,15 @@ fn verify_on_chain_returns_a_fee_at_the_u128_limit() {
                 pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
-                    verifier_form: Some(VerifierGroupArithmetic::BothGroups),
+                    verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
+                        VerifierGroupArithmetic::BothGroups => None,
+                        VerifierGroupArithmetic::FirstGroupOnly => {
+                            let messages =
+                                build_mint_second_group_first_messages(pairing, Default::default());
+                            Some(vec![messages.hpub, messages.d1, messages.d2])
+                        }
+                    },
                     ..Default::default()
                 },
             );
@@ -420,7 +447,15 @@ fn verify_on_chain_returns_rejected_when_the_contract_returns_false() {
                 pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
-                    verifier_form: Some(VerifierGroupArithmetic::BothGroups),
+                    verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
+                        VerifierGroupArithmetic::BothGroups => None,
+                        VerifierGroupArithmetic::FirstGroupOnly => {
+                            let messages =
+                                build_mint_second_group_first_messages(pairing, Default::default());
+                            Some(vec![messages.hpub, messages.d1, messages.d2])
+                        }
+                    },
                     ..Default::default()
                 },
             );
@@ -522,7 +557,15 @@ fn verify_on_chain_returns_the_revert_data_when_the_call_reverts() {
                 pairing,
                 DeliveryProofWireComponentsOverrides {
                     relation: Some(DeliveryRelation::Mint),
-                    verifier_form: Some(VerifierGroupArithmetic::BothGroups),
+                    verifier_form: Some(P::DECLARATION.verifier_group_arithmetic),
+                    second_group_first_messages: match P::DECLARATION.verifier_group_arithmetic {
+                        VerifierGroupArithmetic::BothGroups => None,
+                        VerifierGroupArithmetic::FirstGroupOnly => {
+                            let messages =
+                                build_mint_second_group_first_messages(pairing, Default::default());
+                            Some(vec![messages.hpub, messages.d1, messages.d2])
+                        }
+                    },
                     ..Default::default()
                 },
             );
