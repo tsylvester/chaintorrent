@@ -2245,212 +2245,212 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every block of `apps/harness-crypto/tests/admit_generate_integration_test.rs` passes (the generate settings admitted through the crate's public surface)
     * `[✅]`   Every test under `apps/harness-crypto/src/config/layers`, `apps/harness-crypto/src/config/admit_selections`, `apps/harness-crypto/src/config/admit_statements`, `apps/harness-crypto/src/measure`, `apps/harness-crypto/src/report`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes, and every test of the pairing crate passes
 
-* `[ ]`   `harness-crypto/config/admit_output` **The output destinations admitted from the document: each entry of `output.destinations`, the places the run's outcome is written, and of `report.destinations`, the places the report is written, mapped to the member of the declared set of destination kinds whose `Debug` text its `kind` equals, standard output or a file with the path the document carries, the first list admitted into `OutputDestination` and the second into the report's `ReportDestination`, an unknown kind, a file with no path, and an empty list each refused with its document path; owns the declared destination kinds, the admitted output types, and the refusal type**
+* `[✅]`   `harness-crypto/config/admit_output` **The output destinations admitted from the document: each entry of `output.destinations`, the places the run's outcome is written, and of `report.destinations`, the places the report is written, mapped to the member of the declared set of destination kinds whose `Debug` text its `kind` equals, standard output or a file with the path the document carries, the first list admitted into `OutputDestination` and the second into the report's `ReportDestination`, an unknown kind, a file with no path, and an empty list each refused with its document path; owns the declared destination kinds, the admitted output types, and the refusal type**
 
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: where the run's outcome and each curve's report are written is configured and never coded, and arrives in the document as text and paths, so the harness holds one function that turns those texts into the destination types the output and the report take, reading the declared set of destination kinds and holding no literal of its own, so that no later module names a destination, a stream, or a path (the dependency map's `harness-crypto/config/admit_output` row, its Dependencies edges on `harness-crypto/config/layers` and `harness-crypto/report`, and its statement that it admits the document's output destinations, the places the run's outcome is written, and the report's destinations, standard output, a file at a path the document carries, or both, each destination's text mapped to the variant it names and a file's path carried, an unknown destination and an empty destination list each refused with its document path; the Delivery proof and on-chain verifier milestone's scope for `harness-crypto/config`, composed over `harness-crypto/config/admit_output`, and for `harness-crypto/output`, writing the outcome to standard output, a file, or both as the configuration names; the technical requirements' Harness run output, standard output, a file at a configured path, or both, the shipped default standard output, overridable from a configuration file or a `--set` flag; the product requirements' Resolved Positions on the harness output; `harness-crypto/config/layers`' `DestinationTable`, `OutputTable`, and `ReportTable`, whose leaf values are raw text and paths; `harness-crypto/report`'s `ReportDestination`)
-    * `[ ]`   Functional: the function receives the document's `output` table and `report` table as data and reads no file, no environment variable, and no clock, and does not test whether a path names a file, a directory, or anything at all
-    * `[ ]`   Functional: a text names a destination kind when it equals the `Debug` text of a member of `DESTINATION_KINDS`, compared whole and case-sensitively
-    * `[ ]`   Functional: each entry of `output.destinations`, in the order the document holds them, is admitted into the `OutputDestination` its kind names: standard output for the kind `StandardOutput`, and for the kind `File` a file holding the path the entry carries
-    * `[ ]`   Functional: each entry of `report.destinations`, in the order the document holds them, is admitted the same way into the `ReportDestination` its kind names
-    * `[ ]`   Functional: the path of an entry whose kind is `StandardOutput` is not read; the path of an entry whose kind is `File` is carried as the document holds it
-    * `[ ]`   Functional: an empty `output.destinations`, an empty `report.destinations`, a kind no member names, and an entry of the kind `File` with no path each return a refusal carrying the document path that held it and, where a kind was refused, the text, with every later value unread
-    * `[ ]`   Non-functional: the function names no stream, path, file name, or default; every admitted kind is read from `DESTINATION_KINDS`, so a further kind is a further member of the set and a further arm of the exhaustive `match` that builds the destinations, and changes no line of the lookup
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: where the run's outcome and each curve's report are written is configured and never coded, and arrives in the document as text and paths, so the harness holds one function that turns those texts into the destination types the output and the report take, reading the declared set of destination kinds and holding no literal of its own, so that no later module names a destination, a stream, or a path (the dependency map's `harness-crypto/config/admit_output` row, its Dependencies edges on `harness-crypto/config/layers` and `harness-crypto/report`, and its statement that it admits the document's output destinations, the places the run's outcome is written, and the report's destinations, standard output, a file at a path the document carries, or both, each destination's text mapped to the variant it names and a file's path carried, an unknown destination and an empty destination list each refused with its document path; the Delivery proof and on-chain verifier milestone's scope for `harness-crypto/config`, composed over `harness-crypto/config/admit_output`, and for `harness-crypto/output`, writing the outcome to standard output, a file, or both as the configuration names; the technical requirements' Harness run output, standard output, a file at a configured path, or both, the shipped default standard output, overridable from a configuration file or a `--set` flag; the product requirements' Resolved Positions on the harness output; `harness-crypto/config/layers`' `DestinationTable`, `OutputTable`, and `ReportTable`, whose leaf values are raw text and paths; `harness-crypto/report`'s `ReportDestination`)
+    * `[✅]`   Functional: the function receives the document's `output` table and `report` table as data and reads no file, no environment variable, and no clock, and does not test whether a path names a file, a directory, or anything at all
+    * `[✅]`   Functional: a text names a destination kind when it equals the `Debug` text of a member of `DESTINATION_KINDS`, compared whole and case-sensitively
+    * `[✅]`   Functional: each entry of `output.destinations`, in the order the document holds them, is admitted into the `OutputDestination` its kind names: standard output for the kind `StandardOutput`, and for the kind `File` a file holding the path the entry carries
+    * `[✅]`   Functional: each entry of `report.destinations`, in the order the document holds them, is admitted the same way into the `ReportDestination` its kind names
+    * `[✅]`   Functional: the path of an entry whose kind is `StandardOutput` is not read; the path of an entry whose kind is `File` is carried as the document holds it
+    * `[✅]`   Functional: an empty `output.destinations`, an empty `report.destinations`, a kind no member names, and an entry of the kind `File` with no path each return a refusal carrying the document path that held it and, where a kind was refused, the text, with every later value unread
+    * `[✅]`   Non-functional: the function names no stream, path, file name, or default; every admitted kind is read from `DESTINATION_KINDS`, so a further kind is a further member of the set and a further arm of the exhaustive `match` that builds the destinations, and changes no line of the lookup
 
-  * `[ ]`   `role`
-    * `[ ]`   App module of the harness, beneath its `config` module: a pure function of the document's `output` and `report` tables and the declared set of destination kinds, as `harness-crypto/config/admit_generate` is of the `generate` table; it has no outer-edge collaborator
-    * `[ ]`   Owns `DestinationKind`, `DESTINATION_KINDS`, `OutputDestination`, `AdmittedOutput`, `AdmitOutputDeps`, `AdmitOutputParams`, `AdmitOutputPayload`, `AdmitOutputSuccessReturn`, `AdmitOutputErrorReturn`, `AdmitOutputReturn`, and `AdmitOutputFn`
-    * `[ ]`   Declares the destination kinds, their declared set, and the output destination type, because no upstream node provides them: `harness-crypto/report` owns `ReportDestination` and nothing owns a destination for the run's outcome or a declared set of kinds that names either
-    * `[ ]`   Does not write a file, print, open a stream, create a directory, or exit; does not admit the report's defaults, adjustment, labels, or conditions, the benchmark's or the measurement's iteration count, or any other value of the `report` table, which `harness-crypto/config` admits; does not redeclare `ReportDestination`
-    * `[ ]`   Does not carry a commit
+  * `[✅]`   `role`
+    * `[✅]`   App module of the harness, beneath its `config` module: a pure function of the document's `output` and `report` tables and the declared set of destination kinds, as `harness-crypto/config/admit_generate` is of the `generate` table; it has no outer-edge collaborator
+    * `[✅]`   Owns `DestinationKind`, `DESTINATION_KINDS`, `OutputDestination`, `AdmittedOutput`, `AdmitOutputDeps`, `AdmitOutputParams`, `AdmitOutputPayload`, `AdmitOutputSuccessReturn`, `AdmitOutputErrorReturn`, `AdmitOutputReturn`, and `AdmitOutputFn`
+    * `[✅]`   Declares the destination kinds, their declared set, and the output destination type, because no upstream node provides them: `harness-crypto/report` owns `ReportDestination` and nothing owns a destination for the run's outcome or a declared set of kinds that names either
+    * `[✅]`   Does not write a file, print, open a stream, create a directory, or exit; does not admit the report's defaults, adjustment, labels, or conditions, the benchmark's or the measurement's iteration count, or any other value of the `report` table, which `harness-crypto/config` admits; does not redeclare `ReportDestination`
+    * `[✅]`   Does not carry a commit
 
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `admit_output` module beneath the `config` module of `apps/harness-crypto`, holding the kind enum and its declared set, the output destination type, the admitted type, the function's deps, params, payload, success, error, return, and signature types, the function, its private lookup function, and its builders
-    * `[ ]`   Files: `apps/harness-crypto/src/config/mod.rs` and `provides.rs`; `apps/harness-crypto/src/config/admit_output/interface.rs`, `interaction.spec.md`, `mock.rs`, `test_basic.rs`, `test_error.rs`, `mod.rs`, `integration_test.rs`, and `provides.rs`; and `apps/harness-crypto/tests/admit_output_integration_test.rs`
-    * `[ ]`   Outside: the selections, statements, identities, and generate settings, whose admission belongs to the functions beside this one, the report's defaults, adjustment, labels, and conditions and the iteration counts, which `harness-crypto/config` admits, the writing of the outcome and the report, which `harness-crypto/output` and `harness-crypto/report` perform, and the shipped defaults text
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `admit_output` module beneath the `config` module of `apps/harness-crypto`, holding the kind enum and its declared set, the output destination type, the admitted type, the function's deps, params, payload, success, error, return, and signature types, the function, its private lookup function, and its builders
+    * `[✅]`   Files: `apps/harness-crypto/src/config/mod.rs` and `provides.rs`; `apps/harness-crypto/src/config/admit_output/interface.rs`, `interaction.spec.md`, `mock.rs`, `test_basic.rs`, `test_error.rs`, `mod.rs`, `integration_test.rs`, and `provides.rs`; and `apps/harness-crypto/tests/admit_output_integration_test.rs`
+    * `[✅]`   Outside: the selections, statements, identities, and generate settings, whose admission belongs to the functions beside this one, the report's defaults, adjustment, labels, and conditions and the iteration counts, which `harness-crypto/config` admits, the writing of the outcome and the report, which `harness-crypto/output` and `harness-crypto/report` perform, and the shipped defaults text
 
-  * `[ ]`   `deps`
-    * `[ ]`   `harness-crypto/config/layers`, same module tree, app ring: `DestinationTable`, `OutputTable`, and `ReportTable` from `apps/harness-crypto/src/config/layers/interface.rs` through `crate::config::layers::provides`; in `mock.rs` and the tests, `build_destination_table`, `DestinationTableOverrides`, `build_output_table`, `OutputTableOverrides`, `build_report_table`, and `ReportTableOverrides` from `apps/harness-crypto/src/config/layers/mock.rs`, as `harness-crypto/config/layers` authors them; direction inward, this module reads the document's types and `layers` names this module nothing
-    * `[ ]`   `harness-crypto/report`, same crate, app ring, through `crate::report::provides`: `ReportDestination` with its variants `StandardOutput` and `File { path }`, as `harness-crypto/report` authors it; direction inward, this module reads the report's destination type and `report` names this module nothing
-    * `[ ]`   `core::fmt::Debug` and `std::path::PathBuf`, standard library: the `Debug` text of a member is its name, and a file's path is carried as the document holds it
-    * `[ ]`   `apps/harness-crypto/Cargo.toml` already names every crate this node imports, through the nodes whose modules it reads; the manifest is unchanged
-    * `[ ]`   No reverse dependency: no adapter crate is named, and no later module of the harness is named by this module
+  * `[✅]`   `deps`
+    * `[✅]`   `harness-crypto/config/layers`, same module tree, app ring: `DestinationTable`, `OutputTable`, and `ReportTable` from `apps/harness-crypto/src/config/layers/interface.rs` through `crate::config::layers::provides`; in `mock.rs` and the tests, `build_destination_table`, `DestinationTableOverrides`, `build_output_table`, `OutputTableOverrides`, `build_report_table`, and `ReportTableOverrides` from `apps/harness-crypto/src/config/layers/mock.rs`, as `harness-crypto/config/layers` authors them; direction inward, this module reads the document's types and `layers` names this module nothing
+    * `[✅]`   `harness-crypto/report`, same crate, app ring, through `crate::report::provides`: `ReportDestination` with its variants `StandardOutput` and `File { path }`, as `harness-crypto/report` authors it; direction inward, this module reads the report's destination type and `report` names this module nothing
+    * `[✅]`   `core::fmt::Debug` and `std::path::PathBuf`, standard library: the `Debug` text of a member is its name, and a file's path is carried as the document holds it
+    * `[✅]`   `apps/harness-crypto/Cargo.toml` already names every crate this node imports, through the nodes whose modules it reads; the manifest is unchanged
+    * `[✅]`   No reverse dependency: no adapter crate is named, and no later module of the harness is named by this module
 
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the document tables: `OutputTable { destinations: Vec<DestinationTable> }`, `ReportTable { destinations: Vec<DestinationTable>, piece_group_size, primary_curve, adjustment }` of which this node reads `destinations` alone, and `DestinationTable { kind: String, path: Option<PathBuf> }`
-    * `[ ]`   From the report: `ReportDestination::{StandardOutput, File { path: PathBuf }}`, deriving `Clone`, `Debug`, `PartialEq`, and `Eq`
-    * `[ ]`   From `core::fmt`: `format!("{:?}", &value)` over a value deriving `Debug`, the text a member is named by
+  * `[✅]`   `context_slice`
+    * `[✅]`   From the document tables: `OutputTable { destinations: Vec<DestinationTable> }`, `ReportTable { destinations: Vec<DestinationTable>, piece_group_size, primary_curve, adjustment }` of which this node reads `destinations` alone, and `DestinationTable { kind: String, path: Option<PathBuf> }`
+    * `[✅]`   From the report: `ReportDestination::{StandardOutput, File { path: PathBuf }}`, deriving `Clone`, `Debug`, `PartialEq`, and `Eq`
+    * `[✅]`   From `core::fmt`: `format!("{:?}", &value)` over a value deriving `Debug`, the text a member is named by
 
-  * `[ ]`   `apps/harness-crypto/src/config/mod.rs`
-    * `[ ]`   Adds `mod admit_output;` beside `mod layers;`, `mod admit_selections;`, `mod admit_statements;`, and `mod admit_generate;`; every existing line is unchanged
-    * `[ ]`   Until `config/admit_output/mod.rs` exists, `cargo check` reports the unresolved `mod admit_output`, which is the RED state for every element below that precedes it
+  * `[✅]`   `apps/harness-crypto/src/config/mod.rs`
+    * `[✅]`   Adds `mod admit_output;` beside `mod layers;`, `mod admit_selections;`, `mod admit_statements;`, and `mod admit_generate;`; every existing line is unchanged
+    * `[✅]`   Until `config/admit_output/mod.rs` exists, `cargo check` reports the unresolved `mod admit_output`, which is the RED state for every element below that precedes it
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_output/interface.rs`
-    * `[ ]`   `DestinationKind`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variants `StandardOutput` and `File`, the kinds of place a text is written, each named by its `Debug` text
-    * `[ ]`   `DESTINATION_KINDS`, the constant `pub const DESTINATION_KINDS: &[DestinationKind] = &[DestinationKind::StandardOutput, DestinationKind::File];`, the declared set of destination kinds, read by iteration in declared order
-    * `[ ]`   `OutputDestination`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]` and the variants `StandardOutput` and `File { path: PathBuf }`, a place the run's outcome is written
-    * `[ ]`   `AdmittedOutput`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub destinations: Vec<OutputDestination>`, in the order the document holds them, and `pub report_destinations: Vec<ReportDestination>`, in the order the document holds them
-    * `[ ]`   `AdmitOutputDeps`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`, since the function's only inputs are its payload and the declared set
-    * `[ ]`   `AdmitOutputParams`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`
-    * `[ ]`   `AdmitOutputPayload`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub output: OutputTable` and `pub report: ReportTable`
-    * `[ ]`   `AdmitOutputSuccessReturn`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub admitted: AdmittedOutput`
-    * `[ ]`   `AdmitOutputErrorReturn`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]`, each variant naming the document path of the value it refused: `OutputDestinationsEmpty` for `output.destinations`; `OutputDestinationKind { index: usize, text: String }` for the `kind` of `output.destinations[index]`; `OutputDestinationPath { index: usize }` for the absent `path` of an entry of the kind `File` in `output.destinations`; `ReportDestinationsEmpty` for `report.destinations`; `ReportDestinationKind { index: usize, text: String }` for the `kind` of `report.destinations[index]`; and `ReportDestinationPath { index: usize }` for the absent `path` of an entry of the kind `File` in `report.destinations`
-    * `[ ]`   `AdmitOutputReturn`, the alias `Result<AdmitOutputSuccessReturn, AdmitOutputErrorReturn>`
-    * `[ ]`   `AdmitOutputFn`, the alias `fn(&AdmitOutputDeps, AdmitOutputParams, AdmitOutputPayload) -> AdmitOutputReturn`
-    * `[ ]`   No `Default` on any type in this file
-    * `[ ]`   Imports `ReportDestination` from `crate::report::provides`, `OutputTable` and `ReportTable` from `super::super::layers::provides`, and `std::path::PathBuf`; declares nothing else
+  * `[✅]`   `apps/harness-crypto/src/config/admit_output/interface.rs`
+    * `[✅]`   `DestinationKind`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variants `StandardOutput` and `File`, the kinds of place a text is written, each named by its `Debug` text
+    * `[✅]`   `DESTINATION_KINDS`, the constant `pub const DESTINATION_KINDS: &[DestinationKind] = &[DestinationKind::StandardOutput, DestinationKind::File];`, the declared set of destination kinds, read by iteration in declared order
+    * `[✅]`   `OutputDestination`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]` and the variants `StandardOutput` and `File { path: PathBuf }`, a place the run's outcome is written
+    * `[✅]`   `AdmittedOutput`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub destinations: Vec<OutputDestination>`, in the order the document holds them, and `pub report_destinations: Vec<ReportDestination>`, in the order the document holds them
+    * `[✅]`   `AdmitOutputDeps`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`, since the function's only inputs are its payload and the declared set
+    * `[✅]`   `AdmitOutputParams`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`
+    * `[✅]`   `AdmitOutputPayload`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub output: OutputTable` and `pub report: ReportTable`
+    * `[✅]`   `AdmitOutputSuccessReturn`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub admitted: AdmittedOutput`
+    * `[✅]`   `AdmitOutputErrorReturn`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]`, each variant naming the document path of the value it refused: `OutputDestinationsEmpty` for `output.destinations`; `OutputDestinationKind { index: usize, text: String }` for the `kind` of `output.destinations[index]`; `OutputDestinationPath { index: usize }` for the absent `path` of an entry of the kind `File` in `output.destinations`; `ReportDestinationsEmpty` for `report.destinations`; `ReportDestinationKind { index: usize, text: String }` for the `kind` of `report.destinations[index]`; and `ReportDestinationPath { index: usize }` for the absent `path` of an entry of the kind `File` in `report.destinations`
+    * `[✅]`   `AdmitOutputReturn`, the alias `Result<AdmitOutputSuccessReturn, AdmitOutputErrorReturn>`
+    * `[✅]`   `AdmitOutputFn`, the alias `fn(&AdmitOutputDeps, AdmitOutputParams, AdmitOutputPayload) -> AdmitOutputReturn`
+    * `[✅]`   No `Default` on any type in this file
+    * `[✅]`   Imports `ReportDestination` from `crate::report::provides`, `OutputTable` and `ReportTable` from `super::super::layers::provides`, and `std::path::PathBuf`; declares nothing else
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_output/interaction.spec.md`
-    * `[ ]`   `admit_output(deps: &AdmitOutputDeps, params: AdmitOutputParams, payload: AdmitOutputPayload) -> AdmitOutputReturn`, the trusted form
-    * `[ ]`   Lookup, private `kind_named`: given a text, it returns the first member of `DESTINATION_KINDS`, in declared order, for which `format!("{:?}", &member)` equals the text, or none
-    * `[ ]`   Output list empty: condition `payload.output.destinations` is empty; decision the emptiness check; dependency call none; outcome `Err(AdmitOutputErrorReturn::OutputDestinationsEmpty)`
-    * `[ ]`   Output destination kind, per entry of `payload.output.destinations` in order: decision `kind_named` over the entry's `kind`; no member returns `Err(AdmitOutputErrorReturn::OutputDestinationKind { index, text })`, `text` the entry's `kind`; a member continues with that `DestinationKind`
-    * `[ ]`   Output destination, per entry: decision an exhaustive `match` on the admitted `DestinationKind`; the kind `StandardOutput` yields `OutputDestination::StandardOutput`, the entry's `path` unread; the kind `File` with a `path` of `Some(path)` yields `OutputDestination::File { path }`, the path cloned from the entry; the kind `File` with a `path` of `None` returns `Err(AdmitOutputErrorReturn::OutputDestinationPath { index })`
-    * `[ ]`   Report list empty: condition `payload.report.destinations` is empty; outcome `Err(AdmitOutputErrorReturn::ReportDestinationsEmpty)`
-    * `[ ]`   Report destination kind and destination, per entry of `payload.report.destinations` in order: the same decisions as the output entries, returning `ReportDestinationKind { index, text }` for a kind no member names and `ReportDestinationPath { index }` for a `File` with no path, and yielding `ReportDestination::StandardOutput` or `ReportDestination::File { path }`
-    * `[ ]`   Success: outcome `Ok(AdmitOutputSuccessReturn { admitted: AdmittedOutput { destinations, report_destinations } })`, each list in the order of the document's entries
-    * `[ ]`   Ordering: the output list's emptiness, then each output entry's kind and path in order, then the report list's emptiness, then each report entry's kind and path in order; the first refusal returns and later values are unread; `deps` and `params` carry nothing and are not read; no side effect
-    * `[ ]`   Unreached, an entry whose kind is a member of `DESTINATION_KINDS` that the exhaustive `match` has no arm for: the `match` has an arm for every member, so that branch does not exist and has no unit block
-    * `[ ]`   Own entry `every_declared_destination_kind_is_admitted_to_its_own_variant`: condition `admit_output` over a document whose `output.destinations` and `report.destinations` each hold one entry whose `kind` is the `Debug` text of the member under test, its `path` chosen by an exhaustive `match` on the member (absent for `StandardOutput`, a distinct path in each list for `File`), every collaborator real, the declared set and the report's destination type; outcome `Ok` whose `destinations` holds the `OutputDestination` the member names and whose `report_destinations` holds the `ReportDestination` the member names, a file holding the path its own list's entry carried; variation every member of `DESTINATION_KINDS` in turn; edge a text matched to a neighbouring member, a path dropped or placed on the other variant, or the two lists' paths exchanged differs from the destinations built in Arrange
-    * `[ ]`   Own entry `a_destination_list_keeps_the_order_the_document_holds`: condition `admit_output` over a document whose two lists each hold every member of `DESTINATION_KINDS`, once in declared order and once in reverse, every collaborator real; outcome `Ok` whose lists hold the admitted destinations in the order the entries were held, each file with its own path; variation the two orders; edge a list sorted by kind, deduplicated, or reversed differs from the destinations built in Arrange
-    * `[ ]`   Own entry `an_unadmissible_destination_list_is_never_admitted`: condition `admit_output` over a document whose `output.destinations` and then whose `report.destinations`, the other list admissible, is empty, holds an entry whose `kind` is no member's `Debug` text, or holds a `File` entry with no path, every collaborator real; outcome `Err` carrying the list's variant with the entry's index and, for a kind, its text; variation the three refusals in turn for each list; edge a list that admitted an empty list, a kind matched case-insensitively, or a file without a path would differ from the refusal built in Arrange
-    * `[ ]`   Callee dispositions: no entry of a direct dependency passes through `admit_output` or ends at its tests, because it reads `layers`' tables as data and `report`'s destination type as a value and calls neither of their functions, and no entry of `harness-crypto/config/layers` or `harness-crypto/report` is proven through the lookup or the admission
-    * `[ ]`   Private surface: the chain of real functions `admit_output`, `kind_named`, and the `Debug` text of each declared member, all running for real over the real declared set; no outer-edge collaborator; the observable result is the `AdmitOutputReturn`; the entries proven are `every_declared_destination_kind_is_admitted_to_its_own_variant`, `a_destination_list_keeps_the_order_the_document_holds`, and `an_unadmissible_destination_list_is_never_admitted`
-    * `[ ]`   Public surface: an outside caller invokes `admit_output` through the crate root with an `AdmitOutputDeps`, an `AdmitOutputParams`, and an `AdmitOutputPayload` holding an `OutputTable` and a `ReportTable`, and observes the `AdmitOutputReturn` and the `AdmittedOutput` in its success; the entries proven are the three above; there is no outer-edge collaborator
+  * `[✅]`   `apps/harness-crypto/src/config/admit_output/interaction.spec.md`
+    * `[✅]`   `admit_output(deps: &AdmitOutputDeps, params: AdmitOutputParams, payload: AdmitOutputPayload) -> AdmitOutputReturn`, the trusted form
+    * `[✅]`   Lookup, private `kind_named`: given a text, it returns the first member of `DESTINATION_KINDS`, in declared order, for which `format!("{:?}", &member)` equals the text, or none
+    * `[✅]`   Output list empty: condition `payload.output.destinations` is empty; decision the emptiness check; dependency call none; outcome `Err(AdmitOutputErrorReturn::OutputDestinationsEmpty)`
+    * `[✅]`   Output destination kind, per entry of `payload.output.destinations` in order: decision `kind_named` over the entry's `kind`; no member returns `Err(AdmitOutputErrorReturn::OutputDestinationKind { index, text })`, `text` the entry's `kind`; a member continues with that `DestinationKind`
+    * `[✅]`   Output destination, per entry: decision an exhaustive `match` on the admitted `DestinationKind`; the kind `StandardOutput` yields `OutputDestination::StandardOutput`, the entry's `path` unread; the kind `File` with a `path` of `Some(path)` yields `OutputDestination::File { path }`, the path cloned from the entry; the kind `File` with a `path` of `None` returns `Err(AdmitOutputErrorReturn::OutputDestinationPath { index })`
+    * `[✅]`   Report list empty: condition `payload.report.destinations` is empty; outcome `Err(AdmitOutputErrorReturn::ReportDestinationsEmpty)`
+    * `[✅]`   Report destination kind and destination, per entry of `payload.report.destinations` in order: the same decisions as the output entries, returning `ReportDestinationKind { index, text }` for a kind no member names and `ReportDestinationPath { index }` for a `File` with no path, and yielding `ReportDestination::StandardOutput` or `ReportDestination::File { path }`
+    * `[✅]`   Success: outcome `Ok(AdmitOutputSuccessReturn { admitted: AdmittedOutput { destinations, report_destinations } })`, each list in the order of the document's entries
+    * `[✅]`   Ordering: the output list's emptiness, then each output entry's kind and path in order, then the report list's emptiness, then each report entry's kind and path in order; the first refusal returns and later values are unread; `deps` and `params` carry nothing and are not read; no side effect
+    * `[✅]`   Unreached, an entry whose kind is a member of `DESTINATION_KINDS` that the exhaustive `match` has no arm for: the `match` has an arm for every member, so that branch does not exist and has no unit block
+    * `[✅]`   Own entry `every_declared_destination_kind_is_admitted_to_its_own_variant`: condition `admit_output` over a document whose `output.destinations` and `report.destinations` each hold one entry whose `kind` is the `Debug` text of the member under test, its `path` chosen by an exhaustive `match` on the member (absent for `StandardOutput`, a distinct path in each list for `File`), every collaborator real, the declared set and the report's destination type; outcome `Ok` whose `destinations` holds the `OutputDestination` the member names and whose `report_destinations` holds the `ReportDestination` the member names, a file holding the path its own list's entry carried; variation every member of `DESTINATION_KINDS` in turn; edge a text matched to a neighbouring member, a path dropped or placed on the other variant, or the two lists' paths exchanged differs from the destinations built in Arrange
+    * `[✅]`   Own entry `a_destination_list_keeps_the_order_the_document_holds`: condition `admit_output` over a document whose two lists each hold every member of `DESTINATION_KINDS`, once in declared order and once in reverse, every collaborator real; outcome `Ok` whose lists hold the admitted destinations in the order the entries were held, each file with its own path; variation the two orders; edge a list sorted by kind, deduplicated, or reversed differs from the destinations built in Arrange
+    * `[✅]`   Own entry `an_unadmissible_destination_list_is_never_admitted`: condition `admit_output` over a document whose `output.destinations` and then whose `report.destinations`, the other list admissible, is empty, holds an entry whose `kind` is no member's `Debug` text, or holds a `File` entry with no path, every collaborator real; outcome `Err` carrying the list's variant with the entry's index and, for a kind, its text; variation the three refusals in turn for each list; edge a list that admitted an empty list, a kind matched case-insensitively, or a file without a path would differ from the refusal built in Arrange
+    * `[✅]`   Callee dispositions: no entry of a direct dependency passes through `admit_output` or ends at its tests, because it reads `layers`' tables as data and `report`'s destination type as a value and calls neither of their functions, and no entry of `harness-crypto/config/layers` or `harness-crypto/report` is proven through the lookup or the admission
+    * `[✅]`   Private surface: the chain of real functions `admit_output`, `kind_named`, and the `Debug` text of each declared member, all running for real over the real declared set; no outer-edge collaborator; the observable result is the `AdmitOutputReturn`; the entries proven are `every_declared_destination_kind_is_admitted_to_its_own_variant`, `a_destination_list_keeps_the_order_the_document_holds`, and `an_unadmissible_destination_list_is_never_admitted`
+    * `[✅]`   Public surface: an outside caller invokes `admit_output` through the crate root with an `AdmitOutputDeps`, an `AdmitOutputParams`, and an `AdmitOutputPayload` holding an `OutputTable` and a `ReportTable`, and observes the `AdmitOutputReturn` and the `AdmittedOutput` in its success; the entries proven are the three above; there is no outer-edge collaborator
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_output/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`, the file holding no `unwrap`, `expect`, `panic!`, or numeric `as`
-    * `[ ]`   `declared_name<T: Debug>(value: &T) -> String`, returning `format!("{:?}", value)`, the text a member is named by
-    * `[ ]`   Fixture values: every builder defaults to the first member of the declared set, so no test names a default kind; the default payload's `output` is `build_output_table` overridden so that `destinations` holds one `build_destination_table` entry whose `kind` is `declared_name(&DESTINATION_KINDS[0])` and whose `path` is absent, and its `report` is `build_report_table` overridden so that `destinations` holds the same one entry
-    * `[ ]`   The default admitted value is the one those texts admit to: `build_admitted_output` defaults `destinations` to `vec![OutputDestination::StandardOutput]` and `report_destinations` to `vec![ReportDestination::StandardOutput]`
-    * `[ ]`   `AdmittedOutputOverrides`, `#[derive(Default)]`, one `Option` per field; `build_admitted_output(overrides) -> AdmittedOutput`, defaulting as the fixture values state; `DestinationKind`, `OutputDestination`, and `AdmitOutputErrorReturn`, enums, take no builder; no corruptions type and no invalidator, since no value this interface owns arrives as untrusted data
-    * `[ ]`   `AdmitOutputDepsOverrides` and `AdmitOutputParamsOverrides`, each the fieldless struct with `#[derive(Default)]`; `build_admit_output_deps(_overrides) -> AdmitOutputDeps` and `build_admit_output_params(_overrides) -> AdmitOutputParams`
-    * `[ ]`   `AdmitOutputPayloadOverrides`, `#[derive(Default)]`, the fields `pub output: Option<OutputTable>` and `pub report: Option<ReportTable>`; `build_admit_output_payload(overrides) -> AdmitOutputPayload`, defaulting as the fixture values state
-    * `[ ]`   `AdmitOutputSuccessReturnOverrides`, `#[derive(Default)]`, the field `pub admitted: Option<AdmittedOutput>`; `build_admit_output_success_return(overrides) -> AdmitOutputSuccessReturn`, defaulting to `build_admitted_output(Default::default())`
-    * `[ ]`   `mock_admit_output(_deps: &AdmitOutputDeps, _params: AdmitOutputParams, _payload: AdmitOutputPayload) -> AdmitOutputReturn`, the production type `AdmitOutputFn` and nothing else, returning `Ok(build_admit_output_success_return(Default::default()))`
-    * `[ ]`   Dispositions: `DestinationKind`, `OutputDestination`, and `AdmitOutputErrorReturn`, enums, used by their production values; `AdmitOutputReturn`, an alias of `Result`, and `AdmitOutputFn`, a function type whose mock is `mock_admit_output`; `AdmittedOutput`, `AdmitOutputDeps`, `AdmitOutputParams`, `AdmitOutputPayload`, and `AdmitOutputSuccessReturn`, object types `interface.rs` declares, each with its builder above
-    * `[ ]`   Imports this module's types from `super::interface`, `Debug` from `core::fmt`, `ReportDestination` from `crate::report::provides`, and `build_destination_table`, `DestinationTableOverrides`, `build_output_table`, `OutputTableOverrides`, `OutputTable`, `build_report_table`, `ReportTableOverrides`, and `ReportTable` from `super::super::layers::provides`; nothing else
+  * `[✅]`   `apps/harness-crypto/src/config/admit_output/mock.rs`
+    * `[✅]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`, the file holding no `unwrap`, `expect`, `panic!`, or numeric `as`
+    * `[✅]`   `declared_name<T: Debug>(value: &T) -> String`, returning `format!("{:?}", value)`, the text a member is named by
+    * `[✅]`   Fixture values: every builder defaults to the first member of the declared set, so no test names a default kind; the default payload's `output` is `build_output_table` overridden so that `destinations` holds one `build_destination_table` entry whose `kind` is `declared_name(&DESTINATION_KINDS[0])` and whose `path` is absent, and its `report` is `build_report_table` overridden so that `destinations` holds the same one entry
+    * `[✅]`   The default admitted value is the one those texts admit to: `build_admitted_output` defaults `destinations` to `vec![OutputDestination::StandardOutput]` and `report_destinations` to `vec![ReportDestination::StandardOutput]`
+    * `[✅]`   `AdmittedOutputOverrides`, `#[derive(Default)]`, one `Option` per field; `build_admitted_output(overrides) -> AdmittedOutput`, defaulting as the fixture values state; `DestinationKind`, `OutputDestination`, and `AdmitOutputErrorReturn`, enums, take no builder; no corruptions type and no invalidator, since no value this interface owns arrives as untrusted data
+    * `[✅]`   `AdmitOutputDepsOverrides` and `AdmitOutputParamsOverrides`, each the fieldless struct with `#[derive(Default)]`; `build_admit_output_deps(_overrides) -> AdmitOutputDeps` and `build_admit_output_params(_overrides) -> AdmitOutputParams`
+    * `[✅]`   `AdmitOutputPayloadOverrides`, `#[derive(Default)]`, the fields `pub output: Option<OutputTable>` and `pub report: Option<ReportTable>`; `build_admit_output_payload(overrides) -> AdmitOutputPayload`, defaulting as the fixture values state
+    * `[✅]`   `AdmitOutputSuccessReturnOverrides`, `#[derive(Default)]`, the field `pub admitted: Option<AdmittedOutput>`; `build_admit_output_success_return(overrides) -> AdmitOutputSuccessReturn`, defaulting to `build_admitted_output(Default::default())`
+    * `[✅]`   `mock_admit_output(_deps: &AdmitOutputDeps, _params: AdmitOutputParams, _payload: AdmitOutputPayload) -> AdmitOutputReturn`, the production type `AdmitOutputFn` and nothing else, returning `Ok(build_admit_output_success_return(Default::default()))`
+    * `[✅]`   Dispositions: `DestinationKind`, `OutputDestination`, and `AdmitOutputErrorReturn`, enums, used by their production values; `AdmitOutputReturn`, an alias of `Result`, and `AdmitOutputFn`, a function type whose mock is `mock_admit_output`; `AdmittedOutput`, `AdmitOutputDeps`, `AdmitOutputParams`, `AdmitOutputPayload`, and `AdmitOutputSuccessReturn`, object types `interface.rs` declares, each with its builder above
+    * `[✅]`   Imports this module's types from `super::interface`, `Debug` from `core::fmt`, `ReportDestination` from `crate::report::provides`, and `build_destination_table`, `DestinationTableOverrides`, `build_output_table`, `OutputTableOverrides`, `OutputTable`, `build_report_table`, `ReportTableOverrides`, and `ReportTable` from `super::super::layers::provides`; nothing else
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_output/test_basic.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `admit_output`, every type of `super::interface`, and every builder, overrides type, and `declared_name` of `super::mock` its blocks name, `PathBuf`, and `ReportDestination`; contains only imports, contract headers, blocks, and assertions
-    * `[ ]`   Every block calls `admit_output` once with `build_admit_output_deps`, `build_admit_output_params`, and the payload it names; expected values are built in Arrange as the enum values the block's destinations name and by `build_admitted_output`, and are never read from the subject; a block changing a text changes that override alone
-    * `[ ]`   `admit_output_admits_the_default_payload`
-      * `[ ]`   Contract: Success → a payload whose texts the declared set names admits to the destinations built from the same members
-      * `[ ]`   Arrange: `build_admit_output_payload(Default::default())`
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result is `Ok` and its `admitted` equals `build_admitted_output(Default::default())`
-    * `[ ]`   `admit_output_admits_a_standard_output_destination_in_each_list`
-      * `[ ]`   Contract: Output destination and Report destination → the kind `StandardOutput` admits to the variant of that name in each list
-      * `[ ]`   Arrange: one entry of the kind `declared_name(&DestinationKind::StandardOutput)` and no path in each list
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: `admitted.destinations` equals `vec![OutputDestination::StandardOutput]` and `admitted.report_destinations` equals `vec![ReportDestination::StandardOutput]`
-    * `[ ]`   `admit_output_admits_a_file_destination_with_the_path_the_document_holds`
-      * `[ ]`   Contract: Output destination and Report destination → the kind `File` admits to a file holding its own entry's path
-      * `[ ]`   Arrange: one entry of the kind `declared_name(&DestinationKind::File)` in each list, the output entry with the path `"outcome.txt"` and the report entry with the path `"report.json"`
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: `admitted.destinations` equals `vec![OutputDestination::File { path: PathBuf::from("outcome.txt") }]` and `admitted.report_destinations` equals `vec![ReportDestination::File { path: PathBuf::from("report.json") }]`
-    * `[ ]`   `admit_output_keeps_the_destinations_in_the_order_the_document_holds_them`
-      * `[ ]`   Contract: Success → each list is admitted in the order of its entries
-      * `[ ]`   Arrange: in each list, a file with the path `"first"`, a standard output, and a file with the path `"second"`, in that order
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: each admitted list equals the three destinations in that order
-    * `[ ]`   `admit_output_admits_the_two_lists_independently`
-      * `[ ]`   Contract: Success → the output list's entries do not decide the report list's
-      * `[ ]`   Arrange: `output.destinations` holding a file with the path `"outcome.txt"` and `report.destinations` holding a standard output
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: `admitted.destinations` equals the file and `admitted.report_destinations` equals `vec![ReportDestination::StandardOutput]`
-    * `[ ]`   `admit_output_does_not_read_the_path_of_a_standard_output_destination`
-      * `[ ]`   Contract: Output destination → the path of a standard output entry is unread
-      * `[ ]`   Arrange: a standard output entry in each list carrying the path `"ignored"`
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result is `Ok` and each admitted list equals its standard output variant alone
-    * `[ ]`   `admit_output_reads_only_the_destinations_of_the_report_table`
-      * `[ ]`   Contract: Report destination → the report table's other values do not change the admission
-      * `[ ]`   Arrange: the default payload with `build_report_table` overridden so that `piece_group_size` and `primary_curve` differ from the defaults
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result is `Ok` and its `admitted` equals `build_admitted_output(Default::default())`
+  * `[✅]`   `apps/harness-crypto/src/config/admit_output/test_basic.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; imports `admit_output`, every type of `super::interface`, and every builder, overrides type, and `declared_name` of `super::mock` its blocks name, `PathBuf`, and `ReportDestination`; contains only imports, contract headers, blocks, and assertions
+    * `[✅]`   Every block calls `admit_output` once with `build_admit_output_deps`, `build_admit_output_params`, and the payload it names; expected values are built in Arrange as the enum values the block's destinations name and by `build_admitted_output`, and are never read from the subject; a block changing a text changes that override alone
+    * `[✅]`   `admit_output_admits_the_default_payload`
+      * `[✅]`   Contract: Success → a payload whose texts the declared set names admits to the destinations built from the same members
+      * `[✅]`   Arrange: `build_admit_output_payload(Default::default())`
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result is `Ok` and its `admitted` equals `build_admitted_output(Default::default())`
+    * `[✅]`   `admit_output_admits_a_standard_output_destination_in_each_list`
+      * `[✅]`   Contract: Output destination and Report destination → the kind `StandardOutput` admits to the variant of that name in each list
+      * `[✅]`   Arrange: one entry of the kind `declared_name(&DestinationKind::StandardOutput)` and no path in each list
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: `admitted.destinations` equals `vec![OutputDestination::StandardOutput]` and `admitted.report_destinations` equals `vec![ReportDestination::StandardOutput]`
+    * `[✅]`   `admit_output_admits_a_file_destination_with_the_path_the_document_holds`
+      * `[✅]`   Contract: Output destination and Report destination → the kind `File` admits to a file holding its own entry's path
+      * `[✅]`   Arrange: one entry of the kind `declared_name(&DestinationKind::File)` in each list, the output entry with the path `"outcome.txt"` and the report entry with the path `"report.json"`
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: `admitted.destinations` equals `vec![OutputDestination::File { path: PathBuf::from("outcome.txt") }]` and `admitted.report_destinations` equals `vec![ReportDestination::File { path: PathBuf::from("report.json") }]`
+    * `[✅]`   `admit_output_keeps_the_destinations_in_the_order_the_document_holds_them`
+      * `[✅]`   Contract: Success → each list is admitted in the order of its entries
+      * `[✅]`   Arrange: in each list, a file with the path `"first"`, a standard output, and a file with the path `"second"`, in that order
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: each admitted list equals the three destinations in that order
+    * `[✅]`   `admit_output_admits_the_two_lists_independently`
+      * `[✅]`   Contract: Success → the output list's entries do not decide the report list's
+      * `[✅]`   Arrange: `output.destinations` holding a file with the path `"outcome.txt"` and `report.destinations` holding a standard output
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: `admitted.destinations` equals the file and `admitted.report_destinations` equals `vec![ReportDestination::StandardOutput]`
+    * `[✅]`   `admit_output_does_not_read_the_path_of_a_standard_output_destination`
+      * `[✅]`   Contract: Output destination → the path of a standard output entry is unread
+      * `[✅]`   Arrange: a standard output entry in each list carrying the path `"ignored"`
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result is `Ok` and each admitted list equals its standard output variant alone
+    * `[✅]`   `admit_output_reads_only_the_destinations_of_the_report_table`
+      * `[✅]`   Contract: Report destination → the report table's other values do not change the admission
+      * `[✅]`   Arrange: the default payload with `build_report_table` overridden so that `piece_group_size` and `primary_curve` differ from the defaults
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result is `Ok` and its `admitted` equals `build_admitted_output(Default::default())`
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_output/test_error.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports as `test_basic.rs` imports, with `AdmitOutputErrorReturn`; contains only imports, contract headers, blocks, and assertions
-    * `[ ]`   Every block asserts the whole error with `assert_eq!`, the refusal type deriving `PartialEq` and `Debug`; the unknown text is `"unknown"` in every block that names one, a text no declared member's `Debug` text equals
-    * `[ ]`   `admit_output_refuses_an_empty_output_list`
-      * `[ ]`   Contract: Output list empty → `Err(AdmitOutputErrorReturn::OutputDestinationsEmpty)`
-      * `[ ]`   Arrange: the default payload with `output.destinations` empty
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitOutputErrorReturn::OutputDestinationsEmpty)`
-    * `[ ]`   `admit_output_refuses_an_unknown_output_destination_kind_with_its_index`
-      * `[ ]`   Contract: Output destination kind → `Err(AdmitOutputErrorReturn::OutputDestinationKind { index, text })`
-      * `[ ]`   Arrange: `output.destinations` holding a standard output entry and then an entry of the kind `"unknown"`
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitOutputErrorReturn::OutputDestinationKind { index: 1, text: "unknown".to_string() })`
-    * `[ ]`   `admit_output_refuses_an_output_destination_kind_that_differs_only_in_case`
-      * `[ ]`   Contract: the naming rule → a text equals a member's `Debug` text whole and case-sensitively
-      * `[ ]`   Arrange: `output.destinations` holding one entry whose kind is the lowercase of `declared_name(&DestinationKind::StandardOutput)`
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitOutputErrorReturn::OutputDestinationKind { index: 0, text })` with `text` the lowercase text
-    * `[ ]`   `admit_output_refuses_an_output_file_destination_with_no_path`
-      * `[ ]`   Contract: Output destination → `Err(AdmitOutputErrorReturn::OutputDestinationPath { index })`
-      * `[ ]`   Arrange: `output.destinations` holding a standard output entry and then an entry of the kind `declared_name(&DestinationKind::File)` with no path
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitOutputErrorReturn::OutputDestinationPath { index: 1 })`
-    * `[ ]`   `admit_output_refuses_an_empty_report_list`
-      * `[ ]`   Contract: Report list empty → `Err(AdmitOutputErrorReturn::ReportDestinationsEmpty)`
-      * `[ ]`   Arrange: the default payload with `report.destinations` empty
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitOutputErrorReturn::ReportDestinationsEmpty)`
-    * `[ ]`   `admit_output_refuses_an_unknown_report_destination_kind_with_its_index`
-      * `[ ]`   Contract: Report destination kind → `Err(AdmitOutputErrorReturn::ReportDestinationKind { index, text })`
-      * `[ ]`   Arrange: `report.destinations` holding a standard output entry and then an entry of the kind `"unknown"`
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitOutputErrorReturn::ReportDestinationKind { index: 1, text: "unknown".to_string() })`
-    * `[ ]`   `admit_output_refuses_a_report_file_destination_with_no_path`
-      * `[ ]`   Contract: Report destination → `Err(AdmitOutputErrorReturn::ReportDestinationPath { index })`
-      * `[ ]`   Arrange: `report.destinations` holding an entry of the kind `declared_name(&DestinationKind::File)` with no path
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitOutputErrorReturn::ReportDestinationPath { index: 0 })`
-    * `[ ]`   `admit_output_returns_the_first_refusal_in_the_stated_order`
-      * `[ ]`   Contract: Ordering → the output list is admitted before the report list, and the first refused value returns with later values unread
-      * `[ ]`   Arrange: the default payload with `output.destinations` holding an entry of the kind `"unknown"` and `report.destinations` empty
-      * `[ ]`   Act: `admit_output`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitOutputErrorReturn::OutputDestinationKind { index: 0, text: "unknown".to_string() })`
+  * `[✅]`   `apps/harness-crypto/src/config/admit_output/test_error.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; imports as `test_basic.rs` imports, with `AdmitOutputErrorReturn`; contains only imports, contract headers, blocks, and assertions
+    * `[✅]`   Every block asserts the whole error with `assert_eq!`, the refusal type deriving `PartialEq` and `Debug`; the unknown text is `"unknown"` in every block that names one, a text no declared member's `Debug` text equals
+    * `[✅]`   `admit_output_refuses_an_empty_output_list`
+      * `[✅]`   Contract: Output list empty → `Err(AdmitOutputErrorReturn::OutputDestinationsEmpty)`
+      * `[✅]`   Arrange: the default payload with `output.destinations` empty
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitOutputErrorReturn::OutputDestinationsEmpty)`
+    * `[✅]`   `admit_output_refuses_an_unknown_output_destination_kind_with_its_index`
+      * `[✅]`   Contract: Output destination kind → `Err(AdmitOutputErrorReturn::OutputDestinationKind { index, text })`
+      * `[✅]`   Arrange: `output.destinations` holding a standard output entry and then an entry of the kind `"unknown"`
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitOutputErrorReturn::OutputDestinationKind { index: 1, text: "unknown".to_string() })`
+    * `[✅]`   `admit_output_refuses_an_output_destination_kind_that_differs_only_in_case`
+      * `[✅]`   Contract: the naming rule → a text equals a member's `Debug` text whole and case-sensitively
+      * `[✅]`   Arrange: `output.destinations` holding one entry whose kind is the lowercase of `declared_name(&DestinationKind::StandardOutput)`
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitOutputErrorReturn::OutputDestinationKind { index: 0, text })` with `text` the lowercase text
+    * `[✅]`   `admit_output_refuses_an_output_file_destination_with_no_path`
+      * `[✅]`   Contract: Output destination → `Err(AdmitOutputErrorReturn::OutputDestinationPath { index })`
+      * `[✅]`   Arrange: `output.destinations` holding a standard output entry and then an entry of the kind `declared_name(&DestinationKind::File)` with no path
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitOutputErrorReturn::OutputDestinationPath { index: 1 })`
+    * `[✅]`   `admit_output_refuses_an_empty_report_list`
+      * `[✅]`   Contract: Report list empty → `Err(AdmitOutputErrorReturn::ReportDestinationsEmpty)`
+      * `[✅]`   Arrange: the default payload with `report.destinations` empty
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitOutputErrorReturn::ReportDestinationsEmpty)`
+    * `[✅]`   `admit_output_refuses_an_unknown_report_destination_kind_with_its_index`
+      * `[✅]`   Contract: Report destination kind → `Err(AdmitOutputErrorReturn::ReportDestinationKind { index, text })`
+      * `[✅]`   Arrange: `report.destinations` holding a standard output entry and then an entry of the kind `"unknown"`
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitOutputErrorReturn::ReportDestinationKind { index: 1, text: "unknown".to_string() })`
+    * `[✅]`   `admit_output_refuses_a_report_file_destination_with_no_path`
+      * `[✅]`   Contract: Report destination → `Err(AdmitOutputErrorReturn::ReportDestinationPath { index })`
+      * `[✅]`   Arrange: `report.destinations` holding an entry of the kind `declared_name(&DestinationKind::File)` with no path
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitOutputErrorReturn::ReportDestinationPath { index: 0 })`
+    * `[✅]`   `admit_output_returns_the_first_refusal_in_the_stated_order`
+      * `[✅]`   Contract: Ordering → the output list is admitted before the report list, and the first refused value returns with later values unread
+      * `[✅]`   Arrange: the default payload with `output.destinations` holding an entry of the kind `"unknown"` and `report.destinations` empty
+      * `[✅]`   Act: `admit_output`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitOutputErrorReturn::OutputDestinationKind { index: 0, text: "unknown".to_string() })`
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_output/mod.rs`
-    * `[ ]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `#[cfg(test)] mod test_basic;`, `#[cfg(test)] mod test_error;`, `#[cfg(test)] mod integration_test;`, and `pub mod provides;`; the implementation of `admit_output`, the trusted form, following the interaction spec's branches in its order, and the private `kind_named` the spec states; the file holds no `unwrap`, `expect`, `panic!`, or numeric `as`
-    * `[ ]`   Each kind text is matched by `kind_named` over `DESTINATION_KINDS`; each destination is built by an exhaustive `match` on the member it returns, a file's path cloned from the entry, and each refusal carries the document path as the variant's fields
-    * `[ ]`   Introduces no undeclared dependency; bypasses no contract
+  * `[✅]`   `apps/harness-crypto/src/config/admit_output/mod.rs`
+    * `[✅]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `#[cfg(test)] mod test_basic;`, `#[cfg(test)] mod test_error;`, `#[cfg(test)] mod integration_test;`, and `pub mod provides;`; the implementation of `admit_output`, the trusted form, following the interaction spec's branches in its order, and the private `kind_named` the spec states; the file holds no `unwrap`, `expect`, `panic!`, or numeric `as`
+    * `[✅]`   Each kind text is matched by `kind_named` over `DESTINATION_KINDS`; each destination is built by an exhaustive `match` on the member it returns, a file's path cloned from the entry, and each refusal carries the document path as the variant's fields
+    * `[✅]`   Introduces no undeclared dependency; bypasses no contract
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_output/integration_test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; a `#[cfg(test)]` module of its own, never part of the unit test files; each block's `Contract` transcribes one entry of the spec's private surface and its `Arrange` names the entry's variation; each block's body is written once and run over every member of `DESTINATION_KINDS`, so the test names no kind and a further member adds a case without an edit
-    * `[ ]`   `every_declared_destination_kind_is_admitted_to_its_own_variant`, one block, proving the own entry of the same name; Arrange for each member of `DESTINATION_KINDS` a payload from `build_admit_output_payload` whose two lists each hold one entry keyed `declared_name` of the member, its path chosen by an exhaustive `match` on the member (absent for `StandardOutput`, a distinct path in each list for `File`), and the expected `OutputDestination` and `ReportDestination` built by the same `match`; Act `admit_output`, once per member; Assert the result is `Ok` and each admitted list equals the one expected destination; Boundary the real `admit_output` and `kind_named` over the real declared set; Mocked none
-    * `[ ]`   `a_destination_list_keeps_the_order_the_document_holds`, one block, proving the own entry of the same name; Arrange a payload whose two lists each hold every member of `DESTINATION_KINDS` in declared order and a payload whose lists hold them in reverse, each file with a path distinct from every other file's, and the expected destinations built by the exhaustive `match` in the same orders; Act `admit_output`, once per payload; Assert the result is `Ok` and each admitted list equals the expected destinations in order; Boundary and Mocked as the block above states
-    * `[ ]`   `an_unadmissible_destination_list_is_never_admitted`, one block, proving the own entry of the same name; Arrange for each list and each of the three refusals a payload whose other list is the default, the refused list empty, holding an entry of the kind `"unknown"`, or holding an entry of the kind `declared_name` of each member that takes a path, with none; Act `admit_output`, once per payload; Assert the result equals `Err` of the list's variant carrying the index and, for a kind, the text; Boundary and Mocked as the first block states
-    * `[ ]`   Reports its enumeration: every entry the private surface lists and the block that proves it
+  * `[✅]`   `apps/harness-crypto/src/config/admit_output/integration_test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; a `#[cfg(test)]` module of its own, never part of the unit test files; each block's `Contract` transcribes one entry of the spec's private surface and its `Arrange` names the entry's variation; each block's body is written once and run over every member of `DESTINATION_KINDS`, so the test names no kind and a further member adds a case without an edit
+    * `[✅]`   `every_declared_destination_kind_is_admitted_to_its_own_variant`, one block, proving the own entry of the same name; Arrange for each member of `DESTINATION_KINDS` a payload from `build_admit_output_payload` whose two lists each hold one entry keyed `declared_name` of the member, its path chosen by an exhaustive `match` on the member (absent for `StandardOutput`, a distinct path in each list for `File`), and the expected `OutputDestination` and `ReportDestination` built by the same `match`; Act `admit_output`, once per member; Assert the result is `Ok` and each admitted list equals the one expected destination; Boundary the real `admit_output` and `kind_named` over the real declared set; Mocked none
+    * `[✅]`   `a_destination_list_keeps_the_order_the_document_holds`, one block, proving the own entry of the same name; Arrange a payload whose two lists each hold every member of `DESTINATION_KINDS` in declared order and a payload whose lists hold them in reverse, each file with a path distinct from every other file's, and the expected destinations built by the exhaustive `match` in the same orders; Act `admit_output`, once per payload; Assert the result is `Ok` and each admitted list equals the expected destinations in order; Boundary and Mocked as the block above states
+    * `[✅]`   `an_unadmissible_destination_list_is_never_admitted`, one block, proving the own entry of the same name; Arrange for each list and each of the three refusals a payload whose other list is the default, the refused list empty, holding an entry of the kind `"unknown"`, or holding an entry of the kind `declared_name` of each member that takes a path, with none; Act `admit_output`, once per payload; Assert the result equals `Err` of the list's variant carrying the index and, for a kind, the text; Boundary and Mocked as the first block states
+    * `[✅]`   Reports its enumeration: every entry the private surface lists and the block that proves it
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_output/provides.rs`
-    * `[ ]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and the function's re-export `pub use super::admit_output;`; the module's only `pub mod` is `provides`
+  * `[✅]`   `apps/harness-crypto/src/config/admit_output/provides.rs`
+    * `[✅]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and the function's re-export `pub use super::admit_output;`; the module's only `pub mod` is `provides`
 
-  * `[ ]`   `apps/harness-crypto/src/config/provides.rs`
-    * `[ ]`   Adds `pub use super::admit_output::provides::*;` beside the lines `harness-crypto/config/layers`, `harness-crypto/config/admit_selections`, `harness-crypto/config/admit_statements`, and `harness-crypto/config/admit_generate` authored, which the crate barrel re-exports, so the function is a public entry of the crate
+  * `[✅]`   `apps/harness-crypto/src/config/provides.rs`
+    * `[✅]`   Adds `pub use super::admit_output::provides::*;` beside the lines `harness-crypto/config/layers`, `harness-crypto/config/admit_selections`, `harness-crypto/config/admit_statements`, and `harness-crypto/config/admit_generate` authored, which the crate barrel re-exports, so the function is a public entry of the crate
 
-  * `[ ]`   `apps/harness-crypto/tests/admit_output_integration_test.rs`
-    * `[ ]`   The public integration test, consuming only the crate's public surface and the official mocks under the `mocks` feature; each block transcribes one entry of the spec's public surface, its `Boundary` the public call `admit_output` with the route of the entry and its `Mocked` the outer-edge collaborators on that route; module-level `#![allow(clippy::expect_used)]`
-    * `[ ]`   `every_declared_destination_kind_is_admitted_to_its_own_variant`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states, through the crate's public surface and its public `DESTINATION_KINDS`; Act `admit_output` through the crate root once per member; Assert the result is `Ok` and each admitted list equals the expected destination; Boundary the public call `admit_output` and the real declared set; Mocked none
-    * `[ ]`   `a_destination_list_keeps_the_order_the_document_holds`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states; Act `admit_output` through the crate root once per payload; Assert the result is `Ok` and each admitted list equals the expected destinations in order; Boundary and Mocked as the block above states
-    * `[ ]`   `an_unadmissible_destination_list_is_never_admitted`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states; Act `admit_output` through the crate root once per payload; Assert the result equals `Err` of the variant carrying the index and text; Boundary and Mocked as the first block states
-    * `[ ]`   Reports its enumeration: every entry the public surface lists and the block that proves it
+  * `[✅]`   `apps/harness-crypto/tests/admit_output_integration_test.rs`
+    * `[✅]`   The public integration test, consuming only the crate's public surface and the official mocks under the `mocks` feature; each block transcribes one entry of the spec's public surface, its `Boundary` the public call `admit_output` with the route of the entry and its `Mocked` the outer-edge collaborators on that route; module-level `#![allow(clippy::expect_used)]`
+    * `[✅]`   `every_declared_destination_kind_is_admitted_to_its_own_variant`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states, through the crate's public surface and its public `DESTINATION_KINDS`; Act `admit_output` through the crate root once per member; Assert the result is `Ok` and each admitted list equals the expected destination; Boundary the public call `admit_output` and the real declared set; Mocked none
+    * `[✅]`   `a_destination_list_keeps_the_order_the_document_holds`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states; Act `admit_output` through the crate root once per payload; Assert the result is `Ok` and each admitted list equals the expected destinations in order; Boundary and Mocked as the block above states
+    * `[✅]`   `an_unadmissible_destination_list_is_never_admitted`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states; Act `admit_output` through the crate root once per payload; Assert the result equals `Err` of the variant carrying the index and text; Boundary and Mocked as the first block states
+    * `[✅]`   Reports its enumeration: every entry the public surface lists and the block that proves it
 
-  * `[ ]`   `directionality`
-    * `[ ]`   `admit_output` depends on `layers`' document types, on `report`'s destination type through `crate::report::provides`, and on the standard library; it names no adapter crate; the module's surface leaves through `config::provides` and the crate barrel; nothing under `delivery`, `generate`, `verifier`, `measure`, `report`, or `benchmark` names it; no cycle
-    * `[ ]`   `harness-crypto/config` reads `AdmittedOutput` from this node, `harness-crypto/output` writes the run's outcome to the `OutputDestination`s it holds, and `harness-crypto/run` hands the report its `ReportDestination`s through the configuration
+  * `[✅]`   `directionality`
+    * `[✅]`   `admit_output` depends on `layers`' document types, on `report`'s destination type through `crate::report::provides`, and on the standard library; it names no adapter crate; the module's surface leaves through `config::provides` and the crate barrel; nothing under `delivery`, `generate`, `verifier`, `measure`, `report`, or `benchmark` names it; no cycle
+    * `[✅]`   `harness-crypto/config` reads `AdmittedOutput` from this node, `harness-crypto/output` writes the run's outcome to the `OutputDestination`s it holds, and `harness-crypto/run` hands the report its `ReportDestination`s through the configuration
 
-  * `[ ]`   `requirements`
-    * `[ ]`   `apps/harness-crypto/src/config/mod.rs` and `provides.rs` gain the lines their elements state; `apps/harness-crypto/Cargo.toml`, `apps/harness-crypto/src/lib.rs`, `deny.toml`, every adapter crate, and every file under `apps/harness-crypto/src/config/layers`, `config/admit_selections`, `config/admit_statements`, `config/admit_generate`, `report`, `measure`, `delivery`, `generate`, `verifier`, and `benchmark` are unchanged
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, the `admit_output` module having no unused item
-    * `[ ]`   Every block of `test_basic.rs` passes: the default payload, standard output and a file in each list, the path carried as the document holds it, the order of each list, the two lists admitted independently, a standard output entry's path unread, and the report table's other values unread
-    * `[ ]`   Every block of `test_error.rs` passes, each refusal returned whole with its list, index, and text, an empty list in each, an unknown kind in each, a kind differing only in case refused, a file with no path in each, and the first refusal returned in the stated order
-    * `[ ]`   `every_declared_destination_kind_is_admitted_to_its_own_variant`, `a_destination_list_keeps_the_order_the_document_holds`, and `an_unadmissible_destination_list_is_never_admitted` pass in `integration_test.rs` (each destination of the document admitted to the type its owner declares, in order, and an empty list, an unknown kind, and a file with no path never admitted)
-    * `[ ]`   Every block of `apps/harness-crypto/tests/admit_output_integration_test.rs` passes (the output and report destinations admitted through the crate's public surface)
-    * `[ ]`   Every test under `apps/harness-crypto/src/config/layers`, `apps/harness-crypto/src/config/admit_selections`, `apps/harness-crypto/src/config/admit_statements`, `apps/harness-crypto/src/config/admit_generate`, `apps/harness-crypto/src/measure`, `apps/harness-crypto/src/report`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes
+  * `[✅]`   `requirements`
+    * `[✅]`   `apps/harness-crypto/src/config/mod.rs` and `provides.rs` gain the lines their elements state; `apps/harness-crypto/Cargo.toml`, `apps/harness-crypto/src/lib.rs`, `deny.toml`, every adapter crate, and every file under `apps/harness-crypto/src/config/layers`, `config/admit_selections`, `config/admit_statements`, `config/admit_generate`, `report`, `measure`, `delivery`, `generate`, `verifier`, and `benchmark` are unchanged
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, the `admit_output` module having no unused item
+    * `[✅]`   Every block of `test_basic.rs` passes: the default payload, standard output and a file in each list, the path carried as the document holds it, the order of each list, the two lists admitted independently, a standard output entry's path unread, and the report table's other values unread
+    * `[✅]`   Every block of `test_error.rs` passes, each refusal returned whole with its list, index, and text, an empty list in each, an unknown kind in each, a kind differing only in case refused, a file with no path in each, and the first refusal returned in the stated order
+    * `[✅]`   `every_declared_destination_kind_is_admitted_to_its_own_variant`, `a_destination_list_keeps_the_order_the_document_holds`, and `an_unadmissible_destination_list_is_never_admitted` pass in `integration_test.rs` (each destination of the document admitted to the type its owner declares, in order, and an empty list, an unknown kind, and a file with no path never admitted)
+    * `[✅]`   Every block of `apps/harness-crypto/tests/admit_output_integration_test.rs` passes (the output and report destinations admitted through the crate's public surface)
+    * `[✅]`   Every test under `apps/harness-crypto/src/config/layers`, `apps/harness-crypto/src/config/admit_selections`, `apps/harness-crypto/src/config/admit_statements`, `apps/harness-crypto/src/config/admit_generate`, `apps/harness-crypto/src/measure`, `apps/harness-crypto/src/report`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes
 
 * `[ ]`   `harness-crypto/config` **The configuration's composing function: hands the command line and the shipped defaults text to `layers`, the document's tables to `admit_selections`, to `admit_statements` under the identity scope `admit_selections` admitted, to `admit_generate`, and to `admit_output`; admits the benchmark's and the measurement's iteration counts, the report's defaults and adjustment, the curve labels, and the verifier's endpoint itself; builds the verifier concrete from the endpoint, the deployment record, and the gas price oracle; and returns the one typed configuration or the first refusal; owns the typed configuration, its settings types, and its error; carries the shipped defaults file and its text**
 
