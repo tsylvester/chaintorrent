@@ -2,17 +2,14 @@ use chain::IChainForms;
 #[cfg(any(test, feature = "mocks"))]
 use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams};
 use core::convert::Infallible;
-use domain::{ParameterSetIdentifier, SuiteIdentifier};
 use encoding::{
-    CanonicalFieldKind, CanonicalFieldReaderErrorReturn, CanonicalFieldValue, EncodeErrorReturn,
-    IEncoderAdapter,
+    CanonicalFieldKind, CanonicalFieldReaderErrorReturn, EncodeErrorReturn, IEncoderAdapter,
 };
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter};
 #[cfg(any(test, feature = "mocks"))]
 use hash_to_scalar::{CreateHashToScalarErrorReturn, CreateHashToScalarParams};
 use hash_to_scalar::{DomainTagTryNewErrorReturn, HashToScalarErrorReturn, IHashToScalarAdapter};
-use hashing::Root;
 #[cfg(any(test, feature = "mocks"))]
 use pairing::{
     CreatePairingErrorReturn, CreatePairingParams, IPairingArithmetic, IPairingReference,
@@ -25,22 +22,8 @@ use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
 use super::super::group_vectors::provides::VectorCount;
 use super::super::render::provides::{SolidityMemberName, SolidityMemberNameTryNewErrorReturn};
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CanonicalDeliveryContext {
-    pub suite_identifier: SuiteIdentifier,
-    pub chain: CanonicalFieldValue,
-    pub entitlement_contract: CanonicalFieldValue,
-    pub asset_root: Root,
-    pub parameter_set_identifier: ParameterSetIdentifier,
-    pub source_entitlement: CanonicalFieldValue,
-    pub target_entitlement: CanonicalFieldValue,
-    pub old_interval: CanonicalFieldValue,
-    pub new_interval: CanonicalFieldValue,
-    pub seller: CanonicalFieldValue,
-    pub buyer: CanonicalFieldValue,
-    pub expiry: u64,
-}
+#[cfg(any(test, feature = "mocks"))]
+use crate::config::provides::CanonicalDeliveryContext;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DeliveryContextField {

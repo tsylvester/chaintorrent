@@ -445,7 +445,7 @@ pub trait IDeliveryProofAdapter {
 }
 
 #[cfg(any(test, feature = "mocks"))]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MockIDeliveryProofAdapterFailureMode {
     NoFailure,
     NonceDrawRefused,
@@ -463,7 +463,7 @@ pub enum MockIDeliveryProofAdapterProveTransferErrorReturn {
     NonceDrawRefused,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DeliveryProofConcrete {
     SchnorrFs,
     #[cfg(any(test, feature = "mocks"))]

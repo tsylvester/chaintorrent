@@ -76,3 +76,5 @@ pub type CreateRandomSourceFn = fn(
     CreateRandomSourceParams,
     CreateRandomSourcePayload,
 ) -> CreateRandomSourceReturn;
+
+pub const RANDOM_SOURCE_KINDS: &[RandomSourceKind] = &[RandomSourceKind::OperatingSystem];

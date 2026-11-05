@@ -20,16 +20,18 @@ use random::{
 
 use super::challenge_vectors;
 use super::interface::{
-    CanonicalDeliveryContext, ChallengeVectorsCasePayload, ChallengeVectorsErrorReturn,
-    ChallengeVectorsReturn, IChallengeVectorsCaseConsumer,
+    ChallengeVectorsCasePayload, ChallengeVectorsErrorReturn, ChallengeVectorsReturn,
+    IChallengeVectorsCaseConsumer,
 };
 use super::mock::{
-    CanonicalDeliveryContextOverrides, ChallengeVectorsCaseParamsOverrides,
-    ChallengeVectorsCasePayloadOverrides, ChallengeVectorsParamsOverrides,
-    build_canonical_delivery_context, build_challenge_vectors_case_deps,
+    ChallengeVectorsCaseParamsOverrides, ChallengeVectorsCasePayloadOverrides,
+    ChallengeVectorsParamsOverrides, build_challenge_vectors_case_deps,
     build_challenge_vectors_case_params, build_challenge_vectors_case_payload,
     build_challenge_vectors_deps, build_challenge_vectors_params, build_challenge_vectors_payload,
     run_challenge_vectors_case,
+};
+use crate::config::provides::{
+    CanonicalDeliveryContext, CanonicalDeliveryContextOverrides, build_canonical_delivery_context,
 };
 
 fn delivery_context_overrides<F: IChainForms>(

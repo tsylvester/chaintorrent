@@ -63,6 +63,11 @@ pub type CreateChainFormsFn<C, E> =
         CreateChainFormsPayload,
     ) -> CreateChainFormsReturn<<C as IChainFormsConsumer>::Output>;
 
+pub const DECLARED_CHAIN_FORMS_SELECTIONS: &[CreateChainFormsParams] = &[CreateChainFormsParams {
+    concrete: ChainFormsConcrete::Evm,
+    identifier: ChainFormsIdentifier::EvmV1,
+}];
+
 #[cfg(any(test, feature = "mocks"))]
 pub trait ICreateChainFormsCaseConsumer {
     type Output;

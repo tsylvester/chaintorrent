@@ -20,6 +20,7 @@ Cited by: construction view (workplan node `interface.test`, `guard.test`, `unit
 - The agent never runs tests (see [environment](environment.md)). A test's RED or GREEN state is proven by compiler/linter output, not by execution.
 - Examples in this topic use `test(...)` for a test block and `assert(...)` for a truthy assertion as neutral placeholders. Substitute your project's own runner and assertion library — `Deno.test` + `@std/assert`, `test` / `it` + `expect`, and so on — and its module-resolution convention for import paths.
 - End each test block with a comment stating the test's unique name so that every test has a unique start and stop anchor. 
+- Reason and write every test one test block at a time, block by block, in a single turn. Do not halt between writing test blocks, only halt once every test block is written. 
 
 ## Every test states its contract
 

@@ -26,6 +26,18 @@ pub enum CanonicalFieldValue {
     Unsigned256([u8; 32]),
 }
 
+pub const DECLARED_FIXED_WIDTH_FIELD_KINDS: &[CanonicalFieldKind] = &[
+    CanonicalFieldKind::FixedBytes32,
+    CanonicalFieldKind::FixedBytes20,
+];
+
+pub const DECLARED_UNSIGNED_FIELD_KINDS: &[CanonicalFieldKind] = &[
+    CanonicalFieldKind::Unsigned16,
+    CanonicalFieldKind::Unsigned32,
+    CanonicalFieldKind::Unsigned64,
+    CanonicalFieldKind::Unsigned256,
+];
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CanonicalFields {
     pub values: Vec<CanonicalFieldValue>,
@@ -182,7 +194,7 @@ pub trait IDecoderAdapter {
     ) -> DecodeReturn<D::Described, D::FromFieldsErrorReturn>;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EncodingConcrete {
     Abi,
     #[cfg(any(test, feature = "mocks"))]

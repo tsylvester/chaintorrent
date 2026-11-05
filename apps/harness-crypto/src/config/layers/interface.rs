@@ -86,7 +86,6 @@ pub struct ContextTable {
 pub struct StatementsTable {
     pub mint: ContextTable,
     pub transfer: ContextTable,
-    pub next: ContextTable,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
@@ -94,7 +93,6 @@ pub struct StatementsTable {
 pub struct IdentitiesTable {
     pub proof: String,
     pub mapping: Vec<String>,
-    pub other: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]

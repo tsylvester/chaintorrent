@@ -694,3 +694,13 @@ pub const PAIRING_CONCRETES: &[PairingConcrete] = &[
     PairingConcrete::Bls12381Arkworks,
     PairingConcrete::Bls12381Halo2curves,
 ];
+
+pub const PRECOMPILE_ENCODINGS: &[PrecompileEncoding] = &[
+    PrecompileEncoding::Eip196Eip197,
+    PrecompileEncoding::Eip2537,
+];
+
+pub const TARGET_GROUP_ENCODING_IDENTIFIERS: &[TargetGroupEncodingIdentifier] = &[
+    TargetGroupEncodingIdentifier::Bn254V1,
+    TargetGroupEncodingIdentifier::Bls12381V1,
+];

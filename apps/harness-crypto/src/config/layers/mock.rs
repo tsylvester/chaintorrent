@@ -62,24 +62,9 @@ buyer = { kind = "bytes20", value = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 expiry = 1000
 purpose = 2
 
-[statements.next]
-suite_identifier = "0x3333333333333333333333333333333333333333333333333333333333333333"
-suite_version = 1
-asset_root = "0x4444444444444444444444444444444444444444444444444444444444444444"
-parameter_set_identifier = "0x5555555555555555555555555555555555555555555555555555555555555555"
-source_entitlement = { kind = "uint256", value = "101" }
-target_entitlement = { kind = "uint256", value = "102" }
-old_interval = { kind = "uint64", value = "1" }
-new_interval = { kind = "uint64", value = "2" }
-seller = { kind = "bytes20", value = "0x9999999999999999999999999999999999999999" }
-buyer = { kind = "bytes20", value = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }
-expiry = 1000
-purpose = 2
-
 [identities]
 proof = "0x6666666666666666666666666666666666666666666666666666666666666666"
 mapping = ["0x7777777777777777777777777777777777777777777777777777777777777777"]
-other = "0x8888888888888888888888888888888888888888888888888888888888888888"
 
 [generate]
 concrete = "solidity"
@@ -325,7 +310,6 @@ pub fn build_context_table(overrides: ContextTableOverrides) -> ContextTable {
 pub struct StatementsTableOverrides {
     pub mint: Option<ContextTable>,
     pub transfer: Option<ContextTable>,
-    pub next: Option<ContextTable>,
 }
 
 pub fn build_statements_table(overrides: StatementsTableOverrides) -> StatementsTable {
@@ -339,12 +323,6 @@ pub fn build_statements_table(overrides: StatementsTableOverrides) -> Statements
                 ..Default::default()
             })
         }),
-        next: overrides.next.unwrap_or_else(|| {
-            build_context_table(ContextTableOverrides {
-                purpose: Some(2),
-                ..Default::default()
-            })
-        }),
     }
 }
 
@@ -352,7 +330,6 @@ pub fn build_statements_table(overrides: StatementsTableOverrides) -> Statements
 pub struct IdentitiesTableOverrides {
     pub proof: Option<String>,
     pub mapping: Option<Vec<String>>,
-    pub other: Option<String>,
 }
 
 pub fn build_identities_table(overrides: IdentitiesTableOverrides) -> IdentitiesTable {
@@ -362,9 +339,6 @@ pub fn build_identities_table(overrides: IdentitiesTableOverrides) -> Identities
         }),
         mapping: overrides.mapping.unwrap_or_else(|| {
             vec!["0x7777777777777777777777777777777777777777777777777777777777777777".to_string()]
-        }),
-        other: overrides.other.unwrap_or_else(|| {
-            "0x8888888888888888888888888888888888888888888888888888888888888888".to_string()
         }),
     }
 }
