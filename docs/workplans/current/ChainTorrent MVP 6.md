@@ -1096,519 +1096,519 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every block of `apps/harness-crypto/tests/measure_integration_test.rs` passes (every operation timed on every concrete, the mint delivery's draw refusal, and the verifier's refused read, through the crate's public surface)
     * `[✅]`   Every test under `apps/harness-crypto/src/vectors`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes
 
-* `[ ]`   `harness-crypto/report` **The release-evidence report of one curve's delivery measurement: a JSON document recording the capsule, envelope, and proof sizes in bytes, the mean time of proving, verifying, and decapsulating, the L2 execution gas and L1 data fee of a mint and a transfer, the piece-group size and primary curve defaults in force, any adjustment the data supports, and the conditions the measurement was taken under, selecting nothing against a threshold, returned and written to each destination its params carry; composes no measurement and decides no default; owns the report's text, destination, defaults, adjustment, and function types**
+* `[✅]`   `harness-crypto/report` **The release-evidence report of one curve's delivery measurement: a JSON document recording the capsule, envelope, and proof sizes in bytes, the mean time of proving, verifying, and decapsulating, the L2 execution gas and L1 data fee of a mint and a transfer, the piece-group size and primary curve defaults in force, any adjustment the data supports, and the conditions the measurement was taken under, selecting nothing against a threshold, returned and written to each destination its params carry; composes no measurement and decides no default; owns the report's text, destination, defaults, adjustment, and function types**
 
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: the piece-group size and curve defaults are adjusted from measurement, and the release evidence records what was measured, the defaults in force, and any adjustment the data supports, so the harness holds, for each curve it runs, one document that states the measurement `harness-crypto/measure` returned together with the defaults and the conditions it was taken under (CD-07 and AS-21's capsule, envelope, and proof sizes, decapsulation time per piece group, proof generation and verification time, and delivery cost as L2 execution gas and L1 data fee, with the piece-group size default in force and any adjustment the measurements support recorded in release evidence; the dependency map's `harness-crypto/report` row, its Dependencies edge on `harness-crypto/measure`, and its statement that the report selects nothing against a threshold; the Delivery proof and on-chain verifier milestone's scope for `harness-crypto/report`, the release-evidence report written under the destinations its params carry, and its exit, the measurements, the piece-group size and curve defaults in force, and any adjustment the data supports recorded in release evidence; the technical requirements' Harness report, a release-evidence JSON document per curve; `docs/project-planning/success-metrics.md`'s Measurement Plan, the conditions declaring that the L1 fee is the test network's and is re-taken on the mainnet pilot; `docs/research/MVP Scope.md`'s Cost Instrumentation, the defaults adjusted when the data shows a better value and no threshold failing a run)
-    * `[ ]`   Functional: the measurement, the curve's label, the conditions, the defaults in force, and the adjustment arrive handed and admitted; the function computes, compares, and selects nothing, and records each value as it was handed
-    * `[ ]`   Functional: the document is a JSON object holding the curve's label, the conditions text, the iteration count the means were computed from, the five timings, the four sizes in bytes, the two delivery costs, the defaults in force, and the adjustment or its absence
-    * `[ ]`   Functional: each timing is recorded as the whole seconds and the subsecond nanoseconds of the `Duration` the measurement holds, so no precision is lost and no conversion can fail
-    * `[ ]`   Functional: each delivery's cost is recorded as its L2 execution gas and its L1 data fee, the fee as the state the chain returned it in: a charged fee with its wei as decimal text, since the wei is a `u128`, and a fee the chain does not charge as its own state, never as a zero
-    * `[ ]`   Functional: the document is returned and is written, as the same text, to each destination the params carry in the order the params carry them, a file at its path or standard output; a refused write is returned unchanged with the destination it concerned, before any later destination is written
-    * `[ ]`   Non-functional: the function names no curve, concrete, form, count, network, path, file name, default, or threshold; the destinations arrive in its params and everything recorded arrives in its payload; it compares no recorded value with any bound, creates no directory, and touches the filesystem and standard output only to write the document to the destinations it was handed
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: the piece-group size and curve defaults are adjusted from measurement, and the release evidence records what was measured, the defaults in force, and any adjustment the data supports, so the harness holds, for each curve it runs, one document that states the measurement `harness-crypto/measure` returned together with the defaults and the conditions it was taken under (CD-07 and AS-21's capsule, envelope, and proof sizes, decapsulation time per piece group, proof generation and verification time, and delivery cost as L2 execution gas and L1 data fee, with the piece-group size default in force and any adjustment the measurements support recorded in release evidence; the dependency map's `harness-crypto/report` row, its Dependencies edge on `harness-crypto/measure`, and its statement that the report selects nothing against a threshold; the Delivery proof and on-chain verifier milestone's scope for `harness-crypto/report`, the release-evidence report written under the destinations its params carry, and its exit, the measurements, the piece-group size and curve defaults in force, and any adjustment the data supports recorded in release evidence; the technical requirements' Harness report, a release-evidence JSON document per curve; `docs/project-planning/success-metrics.md`'s Measurement Plan, the conditions declaring that the L1 fee is the test network's and is re-taken on the mainnet pilot; `docs/research/MVP Scope.md`'s Cost Instrumentation, the defaults adjusted when the data shows a better value and no threshold failing a run)
+    * `[✅]`   Functional: the measurement, the curve's label, the conditions, the defaults in force, and the adjustment arrive handed and admitted; the function computes, compares, and selects nothing, and records each value as it was handed
+    * `[✅]`   Functional: the document is a JSON object holding the curve's label, the conditions text, the iteration count the means were computed from, the five timings, the four sizes in bytes, the two delivery costs, the defaults in force, and the adjustment or its absence
+    * `[✅]`   Functional: each timing is recorded as the whole seconds and the subsecond nanoseconds of the `Duration` the measurement holds, so no precision is lost and no conversion can fail
+    * `[✅]`   Functional: each delivery's cost is recorded as its L2 execution gas and its L1 data fee, the fee as the state the chain returned it in: a charged fee with its wei as decimal text, since the wei is a `u128`, and a fee the chain does not charge as its own state, never as a zero
+    * `[✅]`   Functional: the document is returned and is written, as the same text, to each destination the params carry in the order the params carry them, a file at its path or standard output; a refused write is returned unchanged with the destination it concerned, before any later destination is written
+    * `[✅]`   Non-functional: the function names no curve, concrete, form, count, network, path, file name, default, or threshold; the destinations arrive in its params and everything recorded arrives in its payload; it compares no recorded value with any bound, creates no directory, and touches the filesystem and standard output only to write the document to the destinations it was handed
 
-  * `[ ]`   `role`
-    * `[ ]`   App module in the adapter role: a function the harness owns over the filesystem and standard output, as `harness-crypto/generate/solidity` is over the filesystem and `harness-crypto/measure` over the monotonic clock, beneath the crate root of `apps/harness-crypto`
-    * `[ ]`   Owns `ReportText`, `ReportDestination`, `ReportDefaults`, `ReportAdjustment`, and the function's deps, params, payload, success, error, return, and signature types; consumes `DeliveryMeasurement`, `DeliveryOperationTimings`, `DeliverySizes`, and `DeliveryCosts`, which `harness-crypto/measure` owns, and `VerifyCost` and `L1DataFee`, which `harness-crypto/verifier/evm` authors in the verifier family's `factory` module
-    * `[ ]`   Declares the destination, defaults, adjustment, and text types as the types the configuration's admission functions admit the document's report destinations, defaults, and labels into, and the run reads from this node to call the function once per curve
-    * `[ ]`   Adds its module line and its re-export line to `apps/harness-crypto/src/lib.rs`, so the function is a public entry of the crate through the crate barrel
-    * `[ ]`   Does not run, time, size, or submit a delivery, read the monotonic clock, or call a family's factory or the verifier
-    * `[ ]`   Does not decide parity between the reference and the chain, choose a count, a destination, a default, an adjustment, a label, or a condition, compare a value with a threshold, or adjust any default; it records the adjustment it is handed
-    * `[ ]`   Does not carry a commit
+  * `[✅]`   `role`
+    * `[✅]`   App module in the adapter role: a function the harness owns over the filesystem and standard output, as `harness-crypto/generate/solidity` is over the filesystem and `harness-crypto/measure` over the monotonic clock, beneath the crate root of `apps/harness-crypto`
+    * `[✅]`   Owns `ReportText`, `ReportDestination`, `ReportDefaults`, `ReportAdjustment`, and the function's deps, params, payload, success, error, return, and signature types; consumes `DeliveryMeasurement`, `DeliveryOperationTimings`, `DeliverySizes`, and `DeliveryCosts`, which `harness-crypto/measure` owns, and `VerifyCost` and `L1DataFee`, which `harness-crypto/verifier/evm` authors in the verifier family's `factory` module
+    * `[✅]`   Declares the destination, defaults, adjustment, and text types as the types the configuration's admission functions admit the document's report destinations, defaults, and labels into, and the run reads from this node to call the function once per curve
+    * `[✅]`   Adds its module line and its re-export line to `apps/harness-crypto/src/lib.rs`, so the function is a public entry of the crate through the crate barrel
+    * `[✅]`   Does not run, time, size, or submit a delivery, read the monotonic clock, or call a family's factory or the verifier
+    * `[✅]`   Does not decide parity between the reference and the chain, choose a count, a destination, a default, an adjustment, a label, or a condition, compare a value with a threshold, or adjust any default; it records the adjustment it is handed
+    * `[✅]`   Does not carry a commit
 
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `report` module of `apps/harness-crypto`, holding the text, destination, defaults, and adjustment types, the function's deps, params, payload, success, error, return, and signature types, the function, and its builders
-    * `[ ]`   Files: `apps/harness-crypto/Cargo.toml`; `apps/harness-crypto/src/lib.rs`; `apps/harness-crypto/src/report/interface.rs`, `interaction.spec.md`, `mock.rs`, `test_basic.rs`, `test_error.rs`, `mod.rs`, `integration_test.rs`, and `provides.rs`; and `apps/harness-crypto/tests/report_integration_test.rs`
-    * `[ ]`   Outside: the measurement and its means, sizes, and costs, the deliveries, the verifier concrete and its chain, the configuration and its admission of the destinations, the defaults, the adjustment, and the labels, the run's per-curve calls, the output of the run's outcome, the choice of any default, and every family's construction and admission
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `report` module of `apps/harness-crypto`, holding the text, destination, defaults, and adjustment types, the function's deps, params, payload, success, error, return, and signature types, the function, and its builders
+    * `[✅]`   Files: `apps/harness-crypto/Cargo.toml`; `apps/harness-crypto/src/lib.rs`; `apps/harness-crypto/src/report/interface.rs`, `interaction.spec.md`, `mock.rs`, `test_basic.rs`, `test_error.rs`, `mod.rs`, `integration_test.rs`, and `provides.rs`; and `apps/harness-crypto/tests/report_integration_test.rs`
+    * `[✅]`   Outside: the measurement and its means, sizes, and costs, the deliveries, the verifier concrete and its chain, the configuration and its admission of the destinations, the defaults, the adjustment, and the labels, the run's per-curve calls, the output of the run's outcome, the choice of any default, and every family's construction and admission
 
-  * `[ ]`   `deps`
-    * `[ ]`   `harness-crypto/measure`, same crate, app ring, through `crate::measure::provides`: `DeliveryMeasurement`, `DeliveryOperationTimings`, `DeliverySizes`, and `DeliveryCosts`, as `harness-crypto/measure` authors them; in `report/mock.rs` and the unit test files, `build_delivery_measurement` with `DeliveryMeasurementOverrides`, `build_delivery_operation_timings` with `DeliveryOperationTimingsOverrides`, `build_delivery_sizes` with `DeliverySizesOverrides`, and `build_delivery_costs` with `DeliveryCostsOverrides`
-    * `[ ]`   `harness-crypto/verifier/factory`, same crate, app ring, through `crate::verifier::provides`: `VerifyCost` and `L1DataFee`, as `harness-crypto/verifier/evm` and `harness-crypto/verifier/factory` author them; in `report/mock.rs` and the unit test files, `build_verify_cost` and `VerifyCostOverrides`
-    * `[ ]`   In `integration_test.rs` only, through each crate's `mocks` feature: `measure`, `MeasureDeps`, `MeasureParams`, `MeasurePayload`, `MeasureErrorReturn`, `IMeasureCaseConsumer`, `run_measure_case`, `MeasureCaseDeps`, `MeasureCaseParams`, `MeasureCasePayload`, and the `build_measure_*` and `build_measure_case_*` builders, as `harness-crypto/measure` authors them through `crate::measure::provides`; and the names `harness-crypto/measure`'s `integration_test.rs` lists from the adapter crates, `domain`, and `verifier`, with the declared sets `PAIRING_CONCRETES`, `DECLARED_HASH_TO_SCALAR_SELECTIONS`, `DECLARED_ENCODING_SELECTIONS`, `CHAIN_FORMS_CONCRETES`, `DECLARED_KEM_SELECTIONS`, `DECLARED_KEY_AGREEMENT_SELECTIONS`, `DELIVERY_PROOF_CONCRETES`, and `VERIFIER_CONCRETES`, as their owning nodes author them
-    * `[ ]`   In `apps/harness-crypto/tests/report_integration_test.rs` only: `report`, `ReportErrorReturn`, `ReportDestination`, `ReportText`, `ReportDefaults`, `build_report_deps`, `build_report_params`, `build_report_payload`, and their overrides types from `harness_crypto` through its `mocks` feature, public through the crate barrel's re-export of `report::provides`; and the names `harness-crypto/measure`'s `measure_integration_test.rs` lists from `harness_crypto` and from the adapter crates and `domain` through their `mocks` features
-    * `[ ]`   `serde_json` `1.0.151`, external crate, MIT OR Apache-2.0, the JSON document the function renders: `serde_json::json!`, `serde_json::Value`, and `Value`'s `Display`, whose alternate form prints the document indented; in the unit test files and the integration tests, `serde_json::from_str::<Value>` to read a document back; the one external crate this node adds as a production dependency, already allowed by `deny.toml` and already in the manifest, where it is optional behind `mocks` and a dev-dependency
-    * `[ ]`   `std::fs::write`, `std::io::Write`, `std::io::stdout`, `std::io::Error`, and `std::path::PathBuf`, standard library, the filesystem and standard output the function writes, its outer edge; `core::num::NonZeroU32`, the piece-group size and the iteration count; `core::time::Duration` with `as_secs` and `subsec_nanos`; in the tests, `std::fs::create_dir_all`, `std::fs::read_to_string`, `std::fs::remove_dir_all`, `std::path::Path`, and `std::env::temp_dir`
-    * `[ ]`   Every repository dependency points inward from the app ring and is already in `apps/harness-crypto/Cargo.toml`; the manifest gains the one change `apps/harness-crypto/Cargo.toml` states below; none names `apps/harness-crypto`
+  * `[✅]`   `deps`
+    * `[✅]`   `harness-crypto/measure`, same crate, app ring, through `crate::measure::provides`: `DeliveryMeasurement`, `DeliveryOperationTimings`, `DeliverySizes`, and `DeliveryCosts`, as `harness-crypto/measure` authors them; in `report/mock.rs` and the unit test files, `build_delivery_measurement` with `DeliveryMeasurementOverrides`, `build_delivery_operation_timings` with `DeliveryOperationTimingsOverrides`, `build_delivery_sizes` with `DeliverySizesOverrides`, and `build_delivery_costs` with `DeliveryCostsOverrides`
+    * `[✅]`   `harness-crypto/verifier/factory`, same crate, app ring, through `crate::verifier::provides`: `VerifyCost` and `L1DataFee`, as `harness-crypto/verifier/evm` and `harness-crypto/verifier/factory` author them; in `report/mock.rs` and the unit test files, `build_verify_cost` and `VerifyCostOverrides`
+    * `[✅]`   In `integration_test.rs` only, through each crate's `mocks` feature: `measure`, `MeasureDeps`, `MeasureParams`, `MeasurePayload`, `MeasureErrorReturn`, `IMeasureCaseConsumer`, `run_measure_case`, `MeasureCaseDeps`, `MeasureCaseParams`, `MeasureCasePayload`, and the `build_measure_*` and `build_measure_case_*` builders, as `harness-crypto/measure` authors them through `crate::measure::provides`; and the names `harness-crypto/measure`'s `integration_test.rs` lists from the adapter crates, `domain`, and `verifier`, with the declared sets `PAIRING_CONCRETES`, `DECLARED_HASH_TO_SCALAR_SELECTIONS`, `DECLARED_ENCODING_SELECTIONS`, `CHAIN_FORMS_CONCRETES`, `DECLARED_KEM_SELECTIONS`, `DECLARED_KEY_AGREEMENT_SELECTIONS`, `DELIVERY_PROOF_CONCRETES`, and `VERIFIER_CONCRETES`, as their owning nodes author them
+    * `[✅]`   In `apps/harness-crypto/tests/report_integration_test.rs` only: `report`, `ReportErrorReturn`, `ReportDestination`, `ReportText`, `ReportDefaults`, `build_report_deps`, `build_report_params`, `build_report_payload`, and their overrides types from `harness_crypto` through its `mocks` feature, public through the crate barrel's re-export of `report::provides`; and the names `harness-crypto/measure`'s `measure_integration_test.rs` lists from `harness_crypto` and from the adapter crates and `domain` through their `mocks` features
+    * `[✅]`   `serde_json` `1.0.151`, external crate, MIT OR Apache-2.0, the JSON document the function renders: `serde_json::json!`, `serde_json::Value`, and `Value`'s `Display`, whose alternate form prints the document indented; in the unit test files and the integration tests, `serde_json::from_str::<Value>` to read a document back; the one external crate this node adds as a production dependency, already allowed by `deny.toml` and already in the manifest, where it is optional behind `mocks` and a dev-dependency
+    * `[✅]`   `std::fs::write`, `std::io::Write`, `std::io::stdout`, `std::io::Error`, and `std::path::PathBuf`, standard library, the filesystem and standard output the function writes, its outer edge; `core::num::NonZeroU32`, the piece-group size and the iteration count; `core::time::Duration` with `as_secs` and `subsec_nanos`; in the tests, `std::fs::create_dir_all`, `std::fs::read_to_string`, `std::fs::remove_dir_all`, `std::path::Path`, and `std::env::temp_dir`
+    * `[✅]`   Every repository dependency points inward from the app ring and is already in `apps/harness-crypto/Cargo.toml`; the manifest gains the one change `apps/harness-crypto/Cargo.toml` states below; none names `apps/harness-crypto`
 
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `measure`: `DeliveryMeasurement { iterations: NonZeroU32, timings: DeliveryOperationTimings, sizes: DeliverySizes, costs: DeliveryCosts }`, `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`; `DeliveryOperationTimings { prove_mint, prove_transfer, verify_mint, verify_transfer, decapsulate }`, each a `Duration`, the mean time of one call; `DeliverySizes { capsule, envelope, mint_proof, transfer_proof }`, each a `usize`; `DeliveryCosts { mint: VerifyCost, transfer: VerifyCost }`
-    * `[ ]`   From `verifier`: `VerifyCost { l2_execution_gas: u64, l1_data_fee: L1DataFee }`, `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`; `L1DataFee::{Charged { wei: u128 }, NotApplicable}`, `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`
-    * `[ ]`   From `serde_json`: `json!({ … })` building a `Value::Object`, `Value::Null`, `Value`'s `Display` and its alternate form `{:#}` returning the indented text, infallible; `serde_json::from_str::<Value>(&str)` and `Value`'s `PartialEq`
-    * `[ ]`   From `std`: `fs::write(path, contents) -> std::io::Result<()>`, `io::stdout()` and `Write::write_all(&mut self, &[u8]) -> std::io::Result<()>`, `std::io::Error` deriving `Debug` and not `PartialEq`; from `core`: `Duration::as_secs(&self) -> u64` and `Duration::subsec_nanos(&self) -> u32`; `NonZeroU32::get(self) -> u32`
+  * `[✅]`   `context_slice`
+    * `[✅]`   From `measure`: `DeliveryMeasurement { iterations: NonZeroU32, timings: DeliveryOperationTimings, sizes: DeliverySizes, costs: DeliveryCosts }`, `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`; `DeliveryOperationTimings { prove_mint, prove_transfer, verify_mint, verify_transfer, decapsulate }`, each a `Duration`, the mean time of one call; `DeliverySizes { capsule, envelope, mint_proof, transfer_proof }`, each a `usize`; `DeliveryCosts { mint: VerifyCost, transfer: VerifyCost }`
+    * `[✅]`   From `verifier`: `VerifyCost { l2_execution_gas: u64, l1_data_fee: L1DataFee }`, `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`; `L1DataFee::{Charged { wei: u128 }, NotApplicable}`, `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`
+    * `[✅]`   From `serde_json`: `json!({ … })` building a `Value::Object`, `Value::Null`, `Value`'s `Display` and its alternate form `{:#}` returning the indented text, infallible; `serde_json::from_str::<Value>(&str)` and `Value`'s `PartialEq`
+    * `[✅]`   From `std`: `fs::write(path, contents) -> std::io::Result<()>`, `io::stdout()` and `Write::write_all(&mut self, &[u8]) -> std::io::Result<()>`, `std::io::Error` deriving `Debug` and not `PartialEq`; from `core`: `Duration::as_secs(&self) -> u64` and `Duration::subsec_nanos(&self) -> u32`; `NonZeroU32::get(self) -> u32`
 
-  * `[ ]`   `apps/harness-crypto/Cargo.toml`
-    * `[ ]`   `[dependencies]` has its `serde_json = { version = "1.0.151", optional = true }` line become `serde_json = "1.0.151"`, and the `mocks` feature drops its `"dep:serde_json"` entry, since a dependency that is not optional has no `dep:` feature; the `[dev-dependencies]` entry, which carries the `raw_value` feature, and every other line are unchanged
+  * `[✅]`   `apps/harness-crypto/Cargo.toml`
+    * `[✅]`   `[dependencies]` has its `serde_json = { version = "1.0.151", optional = true }` line become `serde_json = "1.0.151"`, and the `mocks` feature drops its `"dep:serde_json"` entry, since a dependency that is not optional has no `dep:` feature; the `[dev-dependencies]` entry, which carries the `raw_value` feature, and every other line are unchanged
 
-  * `[ ]`   `apps/harness-crypto/src/lib.rs`
-    * `[ ]`   Adds `mod report;` and `pub use report::provides::*;` to the barrel's existing module and re-export lines
-    * `[ ]`   Until `report/mod.rs` exists, `cargo check` reports the unresolved `mod report`, which is the RED state for every element below that precedes it
+  * `[✅]`   `apps/harness-crypto/src/lib.rs`
+    * `[✅]`   Adds `mod report;` and `pub use report::provides::*;` to the barrel's existing module and re-export lines
+    * `[✅]`   Until `report/mod.rs` exists, `cargo check` reports the unresolved `mod report`, which is the RED state for every element below that precedes it
 
-  * `[ ]`   `apps/harness-crypto/src/report/interface.rs`
-    * `[ ]`   `ReportText`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub(super) text: String`, so only the `report` module reaches the field; the admitted text of a curve's label or of the conditions
-    * `[ ]`   `ReportTextConstructorParams`, a struct with the field `pub text: String`; no derives
-    * `[ ]`   `ReportTextTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variant `Empty`, a text with no character other than whitespace
-    * `[ ]`   `ReportTextTryNewReturn`, the alias `Result<ReportText, ReportTextTryNewErrorReturn>`
-    * `[ ]`   `ReportDestination`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]` and the variants `StandardOutput` and `File { path: PathBuf }`, a place the document is written
-    * `[ ]`   `ReportDefaults`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub piece_group_size: NonZeroU32`, the piece-group size default in force in bytes, and `pub primary_curve: ReportText`, the label of the primary curve form in force
-    * `[ ]`   `ReportAdjustment`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub piece_group_size: Option<NonZeroU32>` and `pub primary_curve: Option<ReportText>`, the value the data supports for each default, or none where it supports no change
-    * `[ ]`   `ReportDeps`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`, since the function's only collaborators are the filesystem and standard output, its outer edge
-    * `[ ]`   `ReportParams`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub destinations: Vec<ReportDestination>`, in the order they are written
-    * `[ ]`   `ReportPayload`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub measurement: DeliveryMeasurement`, `pub curve: ReportText`, `pub conditions: ReportText`, `pub defaults: ReportDefaults`, and `pub adjustment: Option<ReportAdjustment>`
-    * `[ ]`   `ReportSuccessReturn`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub document: String`, the JSON text written to each destination
-    * `[ ]`   `ReportErrorReturn`, an enum with `#[derive(Debug)]` and the variants `WriteFile { path: PathBuf, error: std::io::Error }` and `WriteStandardOutput(std::io::Error)`; it omits `PartialEq` and `Eq` because `std::io::Error` omits them
-    * `[ ]`   `ReportReturn`, the alias `Result<ReportSuccessReturn, ReportErrorReturn>`
-    * `[ ]`   `ReportFn`, the alias `fn(&ReportDeps, ReportParams, ReportPayload) -> ReportReturn`
-    * `[ ]`   No `Default` on any type in this file
-    * `[ ]`   Imports `DeliveryMeasurement` from `crate::measure::provides`, `core::num::NonZeroU32`, and `std::path::PathBuf`; declares nothing else
+  * `[✅]`   `apps/harness-crypto/src/report/interface.rs`
+    * `[✅]`   `ReportText`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub(super) text: String`, so only the `report` module reaches the field; the admitted text of a curve's label or of the conditions
+    * `[✅]`   `ReportTextConstructorParams`, a struct with the field `pub text: String`; no derives
+    * `[✅]`   `ReportTextTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variant `Empty`, a text with no character other than whitespace
+    * `[✅]`   `ReportTextTryNewReturn`, the alias `Result<ReportText, ReportTextTryNewErrorReturn>`
+    * `[✅]`   `ReportDestination`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]` and the variants `StandardOutput` and `File { path: PathBuf }`, a place the document is written
+    * `[✅]`   `ReportDefaults`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub piece_group_size: NonZeroU32`, the piece-group size default in force in bytes, and `pub primary_curve: ReportText`, the label of the primary curve form in force
+    * `[✅]`   `ReportAdjustment`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub piece_group_size: Option<NonZeroU32>` and `pub primary_curve: Option<ReportText>`, the value the data supports for each default, or none where it supports no change
+    * `[✅]`   `ReportDeps`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`, since the function's only collaborators are the filesystem and standard output, its outer edge
+    * `[✅]`   `ReportParams`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub destinations: Vec<ReportDestination>`, in the order they are written
+    * `[✅]`   `ReportPayload`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub measurement: DeliveryMeasurement`, `pub curve: ReportText`, `pub conditions: ReportText`, `pub defaults: ReportDefaults`, and `pub adjustment: Option<ReportAdjustment>`
+    * `[✅]`   `ReportSuccessReturn`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub document: String`, the JSON text written to each destination
+    * `[✅]`   `ReportErrorReturn`, an enum with `#[derive(Debug)]` and the variants `WriteFile { path: PathBuf, error: std::io::Error }` and `WriteStandardOutput(std::io::Error)`; it omits `PartialEq` and `Eq` because `std::io::Error` omits them
+    * `[✅]`   `ReportReturn`, the alias `Result<ReportSuccessReturn, ReportErrorReturn>`
+    * `[✅]`   `ReportFn`, the alias `fn(&ReportDeps, ReportParams, ReportPayload) -> ReportReturn`
+    * `[✅]`   No `Default` on any type in this file
+    * `[✅]`   Imports `DeliveryMeasurement` from `crate::measure::provides`, `core::num::NonZeroU32`, and `std::path::PathBuf`; declares nothing else
 
-  * `[ ]`   `apps/harness-crypto/src/report/interaction.spec.md`
-    * `[ ]`   `ReportText::try_new(params: ReportTextConstructorParams) -> ReportTextTryNewReturn`: condition the text has no character other than whitespace, `params.text.trim().is_empty()`; decision the emptiness check; dependency call none; outcome `Err(ReportTextTryNewErrorReturn::Empty)`
-    * `[ ]`   Admitted text: condition the text has a non-whitespace character; decision none further; dependency call none; outcome `Ok(ReportText { text })`, moved from the params
-    * `[ ]`   `ReportText::as_str(&self) -> &str`: one branch; outcome the held text
-    * `[ ]`   `report(deps: &ReportDeps, params: ReportParams, payload: ReportPayload) -> ReportReturn`, the trusted form
-    * `[ ]`   Render, the first step: dependency call none; the document is the indented text of the `serde_json::Value` object `{ "curve": <curve text>, "conditions": <conditions text>, "iterations": <iterations>, "timings": { "prove_mint", "prove_transfer", "verify_mint", "verify_transfer", "decapsulate": each { "seconds": <as_secs>, "subsec_nanos": <subsec_nanos> } }, "sizes_bytes": { "capsule", "envelope", "mint_proof", "transfer_proof": each the size }, "costs": { "mint", "transfer": each { "l2_execution_gas": <gas>, "l1_data_fee": <fee> } }, "defaults_in_force": { "piece_group_size_bytes": <size>, "primary_curve": <label> }, "adjustment": <adjustment> }`, every value taken from the payload as it was handed and compared with nothing
-    * `[ ]`   Fee, within render: condition `L1DataFee::Charged { wei }`; decision the exhaustive `match` on the fee; outcome `{ "state": "charged", "wei": <wei as decimal text> }`; condition `L1DataFee::NotApplicable`; outcome `{ "state": "not_applicable" }`
-    * `[ ]`   Adjustment, within render: condition `payload.adjustment` is `None`; decision the `Option` match; outcome the JSON `null`; condition it is `Some`; outcome `{ "piece_group_size_bytes": <size or null>, "primary_curve": <label or null> }`, each field `null` where the adjustment holds `None`
-    * `[ ]`   Destination file, per destination in order: condition the destination is `ReportDestination::File { path }`; decision the variant match; dependency call `std::fs::write(&path, document.as_bytes())`; outcome a failure returns `Err(ReportErrorReturn::WriteFile { path, error })`, the error unchanged, before any later destination is written
-    * `[ ]`   Destination standard output, per destination in order: condition the destination is `ReportDestination::StandardOutput`; decision the variant match; dependency call `std::io::stdout().write_all(document.as_bytes())`; outcome a failure returns `Err(ReportErrorReturn::WriteStandardOutput(error))`, the error unchanged, before any later destination is written
-    * `[ ]`   Unreached, refused standard output: no input and no failure mode of the official mocks makes standard output refuse a write in a test process, so `Err(ReportErrorReturn::WriteStandardOutput(..))` has no unit block
-    * `[ ]`   No destination: condition `params.destinations` is empty; decision the loop's bound; dependency call none; outcome the document is returned and nothing is written
-    * `[ ]`   Computed: outcome `Ok(ReportSuccessReturn { document })`, the document the text every destination received
-    * `[ ]`   Ordering: the document is rendered once; the destinations are written in the order the params carry them; the first failure returns; no side effect beyond the writes; the same payload always renders the same document
-    * `[ ]`   Own entry `the_document_records_every_value_a_measurement_holds`: condition `report` over the measurement the real `measure` returned for a case with an iteration count of one, every adapter real, the operating-system source real, and the verifier family's mock concrete under `NoFailure`, and one file destination; outcome `Ok`, the file read back equal to the returned document, and the document parsed to a JSON value whose `iterations`, five `timings`, four `sizes_bytes`, and two `costs` equal the measurement's values, each timing as the whole seconds and subsecond nanoseconds of its `Duration`; variation every member of `PAIRING_CONCRETES` crossed with the selections the other families declare and with the verifier form each pairing declares, so both curves and both verifier forms run; edge a timing or a size read from another field, a cost read from the other relation, a fee recorded as a zero, or a field omitted, differs from the values the measurement holds
-    * `[ ]`   Callee disposition, `harness-crypto/measure` entry `every_operation_is_timed_on_every_concrete`: carried; restated where this node transforms it: each of the five timings the document records is greater than zero seconds or greater than zero subsecond nanoseconds; route `create_random_source`, `create_pairing`, the arm's concrete through its `try_new`, `create_hash_to_scalar`, `create_encoding`, `create_chain_forms`, `create_kem`, `create_key_agreement`, `create_delivery_proof`, `create_verifier`, `measure`, `report`; outer-edge collaborators the operating system's generator and monotonic clock running real, the verifier family's mock concrete, and the filesystem
-    * `[ ]`   Callee disposition, `harness-crypto/measure` entry `the_measurement_carries_the_iteration_count_its_means_were_computed_from`: carried; restated where this node transforms it: the document's `iterations` equals the count the measurement was taken with; route and outer-edge collaborators as the entry above
-    * `[ ]`   Callee disposition, `harness-crypto/measure` entry `every_object_is_sized_by_the_encodings_of_its_elements`: carried; restated where this node transforms it: the document's `sizes_bytes` equal the encoded lengths of the object's elements, each computed in Arrange through the received pairing's encoders over its generators and a scalar its sampling bound samples; route and outer-edge collaborators as the first entry above
-    * `[ ]`   Callee disposition, `harness-crypto/measure` entry `every_accepted_delivery_reports_the_cost_the_verifier_returned`: carried; restated where this node transforms it: the document's `costs` equal the cost the verifier family's mock concrete returns for each submission, its gas `100_000` and its fee charged at the wei `"1000"`; route and outer-edge collaborators as the first entry above
-    * `[ ]`   Private surface: the chain of real functions `create_random_source` for the operating-system kind, `create_pairing`, the arm's concrete through its `try_new`, `create_hash_to_scalar`, `create_encoding`, `create_chain_forms`, `create_kem`, `create_key_agreement`, `create_delivery_proof`, and `create_verifier`, each selected concrete through its `try_new`, `measure`, `mint`, `transfer`, every adapter method those functions call, `report`, and the `Secret` of `domain`, all running for real; the cases are those `harness-crypto/measure`'s private surface lists, the verifier the family's mock concrete under `NoFailure`; the outer-edge collaborators are the operating system's generator and monotonic clock running real, the verifier family's mock concrete, and the filesystem, a directory beneath the operating system's temporary directory removed before each act; the observable result is the `ReportReturn`, the file read back, and the document parsed; the entry proven is `the_document_records_every_value_a_measurement_holds`
-    * `[ ]`   Public surface: an outside caller invokes `report` through the crate root with a `ReportDeps`, a `ReportParams` holding a file destination, and a `ReportPayload` over the measurement `measure` returned through the crate root, a curve label, conditions, defaults, and an adjustment, and observes the `ReportReturn`, the document, and the file written, with the official mocks selectable through each family's params under the `mocks` feature; the entries proven are `the_document_records_every_value_a_measurement_holds` and the carried `measure` entries `every_operation_is_timed_on_every_concrete`, `the_measurement_carries_the_iteration_count_its_means_were_computed_from`, `every_object_is_sized_by_the_encodings_of_its_elements`, and `every_accepted_delivery_reports_the_cost_the_verifier_returned`; the outer-edge collaborators are the operating system's generator and monotonic clock behind `create_random_source`, running real, the verifier family's mock concrete selected by configuration, and the filesystem
+  * `[✅]`   `apps/harness-crypto/src/report/interaction.spec.md`
+    * `[✅]`   `ReportText::try_new(params: ReportTextConstructorParams) -> ReportTextTryNewReturn`: condition the text has no character other than whitespace, `params.text.trim().is_empty()`; decision the emptiness check; dependency call none; outcome `Err(ReportTextTryNewErrorReturn::Empty)`
+    * `[✅]`   Admitted text: condition the text has a non-whitespace character; decision none further; dependency call none; outcome `Ok(ReportText { text })`, moved from the params
+    * `[✅]`   `ReportText::as_str(&self) -> &str`: one branch; outcome the held text
+    * `[✅]`   `report(deps: &ReportDeps, params: ReportParams, payload: ReportPayload) -> ReportReturn`, the trusted form
+    * `[✅]`   Render, the first step: dependency call none; the document is the indented text of the `serde_json::Value` object `{ "curve": <curve text>, "conditions": <conditions text>, "iterations": <iterations>, "timings": { "prove_mint", "prove_transfer", "verify_mint", "verify_transfer", "decapsulate": each { "seconds": <as_secs>, "subsec_nanos": <subsec_nanos> } }, "sizes_bytes": { "capsule", "envelope", "mint_proof", "transfer_proof": each the size }, "costs": { "mint", "transfer": each { "l2_execution_gas": <gas>, "l1_data_fee": <fee> } }, "defaults_in_force": { "piece_group_size_bytes": <size>, "primary_curve": <label> }, "adjustment": <adjustment> }`, every value taken from the payload as it was handed and compared with nothing
+    * `[✅]`   Fee, within render: condition `L1DataFee::Charged { wei }`; decision the exhaustive `match` on the fee; outcome `{ "state": "charged", "wei": <wei as decimal text> }`; condition `L1DataFee::NotApplicable`; outcome `{ "state": "not_applicable" }`
+    * `[✅]`   Adjustment, within render: condition `payload.adjustment` is `None`; decision the `Option` match; outcome the JSON `null`; condition it is `Some`; outcome `{ "piece_group_size_bytes": <size or null>, "primary_curve": <label or null> }`, each field `null` where the adjustment holds `None`
+    * `[✅]`   Destination file, per destination in order: condition the destination is `ReportDestination::File { path }`; decision the variant match; dependency call `std::fs::write(&path, document.as_bytes())`; outcome a failure returns `Err(ReportErrorReturn::WriteFile { path, error })`, the error unchanged, before any later destination is written
+    * `[✅]`   Destination standard output, per destination in order: condition the destination is `ReportDestination::StandardOutput`; decision the variant match; dependency call `std::io::stdout().write_all(document.as_bytes())`; outcome a failure returns `Err(ReportErrorReturn::WriteStandardOutput(error))`, the error unchanged, before any later destination is written
+    * `[✅]`   Unreached, refused standard output: no input and no failure mode of the official mocks makes standard output refuse a write in a test process, so `Err(ReportErrorReturn::WriteStandardOutput(..))` has no unit block
+    * `[✅]`   No destination: condition `params.destinations` is empty; decision the loop's bound; dependency call none; outcome the document is returned and nothing is written
+    * `[✅]`   Computed: outcome `Ok(ReportSuccessReturn { document })`, the document the text every destination received
+    * `[✅]`   Ordering: the document is rendered once; the destinations are written in the order the params carry them; the first failure returns; no side effect beyond the writes; the same payload always renders the same document
+    * `[✅]`   Own entry `the_document_records_every_value_a_measurement_holds`: condition `report` over the measurement the real `measure` returned for a case with an iteration count of one, every adapter real, the operating-system source real, and the verifier family's mock concrete under `NoFailure`, and one file destination; outcome `Ok`, the file read back equal to the returned document, and the document parsed to a JSON value whose `iterations`, five `timings`, four `sizes_bytes`, and two `costs` equal the measurement's values, each timing as the whole seconds and subsecond nanoseconds of its `Duration`; variation every member of `PAIRING_CONCRETES` crossed with the selections the other families declare and with the verifier form each pairing declares, so both curves and both verifier forms run; edge a timing or a size read from another field, a cost read from the other relation, a fee recorded as a zero, or a field omitted, differs from the values the measurement holds
+    * `[✅]`   Callee disposition, `harness-crypto/measure` entry `every_operation_is_timed_on_every_concrete`: carried; restated where this node transforms it: each of the five timings the document records is greater than zero seconds or greater than zero subsecond nanoseconds; route `create_random_source`, `create_pairing`, the arm's concrete through its `try_new`, `create_hash_to_scalar`, `create_encoding`, `create_chain_forms`, `create_kem`, `create_key_agreement`, `create_delivery_proof`, `create_verifier`, `measure`, `report`; outer-edge collaborators the operating system's generator and monotonic clock running real, the verifier family's mock concrete, and the filesystem
+    * `[✅]`   Callee disposition, `harness-crypto/measure` entry `the_measurement_carries_the_iteration_count_its_means_were_computed_from`: carried; restated where this node transforms it: the document's `iterations` equals the count the measurement was taken with; route and outer-edge collaborators as the entry above
+    * `[✅]`   Callee disposition, `harness-crypto/measure` entry `every_object_is_sized_by_the_encodings_of_its_elements`: carried; restated where this node transforms it: the document's `sizes_bytes` equal the encoded lengths of the object's elements, each computed in Arrange through the received pairing's encoders over its generators and a scalar its sampling bound samples; route and outer-edge collaborators as the first entry above
+    * `[✅]`   Callee disposition, `harness-crypto/measure` entry `every_accepted_delivery_reports_the_cost_the_verifier_returned`: carried; restated where this node transforms it: the document's `costs` equal the cost the verifier family's mock concrete returns for each submission, its gas `100_000` and its fee charged at the wei `"1000"`; route and outer-edge collaborators as the first entry above
+    * `[✅]`   Private surface: the chain of real functions `create_random_source` for the operating-system kind, `create_pairing`, the arm's concrete through its `try_new`, `create_hash_to_scalar`, `create_encoding`, `create_chain_forms`, `create_kem`, `create_key_agreement`, `create_delivery_proof`, and `create_verifier`, each selected concrete through its `try_new`, `measure`, `mint`, `transfer`, every adapter method those functions call, `report`, and the `Secret` of `domain`, all running for real; the cases are those `harness-crypto/measure`'s private surface lists, the verifier the family's mock concrete under `NoFailure`; the outer-edge collaborators are the operating system's generator and monotonic clock running real, the verifier family's mock concrete, and the filesystem, a directory beneath the operating system's temporary directory removed before each act; the observable result is the `ReportReturn`, the file read back, and the document parsed; the entry proven is `the_document_records_every_value_a_measurement_holds`
+    * `[✅]`   Public surface: an outside caller invokes `report` through the crate root with a `ReportDeps`, a `ReportParams` holding a file destination, and a `ReportPayload` over the measurement `measure` returned through the crate root, a curve label, conditions, defaults, and an adjustment, and observes the `ReportReturn`, the document, and the file written, with the official mocks selectable through each family's params under the `mocks` feature; the entries proven are `the_document_records_every_value_a_measurement_holds` and the carried `measure` entries `every_operation_is_timed_on_every_concrete`, `the_measurement_carries_the_iteration_count_its_means_were_computed_from`, `every_object_is_sized_by_the_encodings_of_its_elements`, and `every_accepted_delivery_reports_the_cost_the_verifier_returned`; the outer-edge collaborators are the operating system's generator and monotonic clock behind `create_random_source`, running real, the verifier family's mock concrete selected by configuration, and the filesystem
 
-  * `[ ]`   `apps/harness-crypto/src/report/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`, the file holding no `unwrap`, `expect`, `panic!`, or numeric `as`
-    * `[ ]`   `ReportTextConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub text: Option<String>`; `build_report_text_constructor_params`, the text defaulting to `"curve"`; `ReportTextConstructorParamsCorruptions`, `#[derive(Default)]`, one field `pub text: Option<serde_json::Value>`; `invalidate_report_text_constructor_params(corruptions) -> serde_json::Value`, the built params rendered as a JSON object whose `text` is the text, with the corrupted key overwritten; `build_report_text(overrides: ReportTextConstructorParamsOverrides) -> ReportText`, returning the value `ReportText::try_new(build_report_text_constructor_params(overrides))` admits, its failure arm unpacked by a `match` whose refusal arm is the `ReportText` built from `"curve"` through the same constructor over a literal that always admits; no `invalidate_report_text`
-    * `[ ]`   `ReportDefaultsOverrides`, `#[derive(Default)]`, one `Option` per field; `build_report_defaults(overrides: ReportDefaultsOverrides) -> ReportDefaults`, `piece_group_size` defaulting to `NonZeroU32::MIN` and `primary_curve` to `build_report_text(Default::default())`
-    * `[ ]`   `ReportAdjustmentOverrides`, `#[derive(Default)]`, one `Option` per field, each wrapping the field's own `Option`; `build_report_adjustment(overrides: ReportAdjustmentOverrides) -> ReportAdjustment`, each field defaulting to `None`
-    * `[ ]`   `ReportDepsOverrides`, the fieldless struct with `#[derive(Default)]`; `build_report_deps(_overrides: ReportDepsOverrides) -> ReportDeps`; no corruptions type and no invalidator
-    * `[ ]`   `ReportParamsOverrides`, `#[derive(Default)]`, the field `pub destinations: Option<Vec<ReportDestination>>`; `build_report_params(overrides: ReportParamsOverrides) -> ReportParams`, defaulting to no destination; no corruptions type and no invalidator, the destinations arriving admitted
-    * `[ ]`   `ReportPayloadOverrides`, `#[derive(Default)]`, one `Option` per field of `ReportPayload`, `adjustment` an `Option<Option<ReportAdjustment>>`; `build_report_payload(overrides: ReportPayloadOverrides) -> ReportPayload`, defaulting `measurement` to `build_delivery_measurement(Default::default())`, `curve` and `conditions` to `build_report_text(Default::default())`, `defaults` to `build_report_defaults(Default::default())`, and `adjustment` to `None`; no corruptions type and no invalidator
-    * `[ ]`   `ReportSuccessReturnOverrides`, `#[derive(Default)]`, the field `pub document: Option<String>`; `build_report_success_return(overrides: ReportSuccessReturnOverrides) -> ReportSuccessReturn`, defaulting to the text `"{}"`; no corruptions type and no invalidator
-    * `[ ]`   `mock_report(_deps: &ReportDeps, _params: ReportParams, _payload: ReportPayload) -> ReportReturn`, the production type `ReportFn` and nothing else, returning `Ok(build_report_success_return(Default::default()))`
-    * `[ ]`   Dispositions: `ReportDestination` and `ReportErrorReturn`, enums, used by their production values; `ReportTextTryNewReturn` and `ReportReturn`, aliases of `Result`, and `ReportFn`, a function type whose mock is `mock_report`; `ReportText`, `ReportDefaults`, `ReportAdjustment`, `ReportDeps`, `ReportParams`, `ReportPayload`, and `ReportSuccessReturn`, object types `interface.rs` declares, each with its builder above; `ReportTextTryNewErrorReturn`, an enum, produced by the constructor
-    * `[ ]`   Imports this module's types from `super::interface`, `NonZeroU32` from `core::num`, `build_delivery_measurement` from `crate::measure::provides`, and `serde_json`; nothing else
+  * `[✅]`   `apps/harness-crypto/src/report/mock.rs`
+    * `[✅]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`, the file holding no `unwrap`, `expect`, `panic!`, or numeric `as`
+    * `[✅]`   `ReportTextConstructorParamsOverrides`, `#[derive(Default)]`, one field `pub text: Option<String>`; `build_report_text_constructor_params`, the text defaulting to `"curve"`; `ReportTextConstructorParamsCorruptions`, `#[derive(Default)]`, one field `pub text: Option<serde_json::Value>`; `invalidate_report_text_constructor_params(corruptions) -> serde_json::Value`, the built params rendered as a JSON object whose `text` is the text, with the corrupted key overwritten; `build_report_text(overrides: ReportTextConstructorParamsOverrides) -> ReportText`, returning the value `ReportText::try_new(build_report_text_constructor_params(overrides))` admits, its failure arm unpacked by a `match` whose refusal arm is the `ReportText` built from `"curve"` through the same constructor over a literal that always admits; no `invalidate_report_text`
+    * `[✅]`   `ReportDefaultsOverrides`, `#[derive(Default)]`, one `Option` per field; `build_report_defaults(overrides: ReportDefaultsOverrides) -> ReportDefaults`, `piece_group_size` defaulting to `NonZeroU32::MIN` and `primary_curve` to `build_report_text(Default::default())`
+    * `[✅]`   `ReportAdjustmentOverrides`, `#[derive(Default)]`, one `Option` per field, each wrapping the field's own `Option`; `build_report_adjustment(overrides: ReportAdjustmentOverrides) -> ReportAdjustment`, each field defaulting to `None`
+    * `[✅]`   `ReportDepsOverrides`, the fieldless struct with `#[derive(Default)]`; `build_report_deps(_overrides: ReportDepsOverrides) -> ReportDeps`; no corruptions type and no invalidator
+    * `[✅]`   `ReportParamsOverrides`, `#[derive(Default)]`, the field `pub destinations: Option<Vec<ReportDestination>>`; `build_report_params(overrides: ReportParamsOverrides) -> ReportParams`, defaulting to no destination; no corruptions type and no invalidator, the destinations arriving admitted
+    * `[✅]`   `ReportPayloadOverrides`, `#[derive(Default)]`, one `Option` per field of `ReportPayload`, `adjustment` an `Option<Option<ReportAdjustment>>`; `build_report_payload(overrides: ReportPayloadOverrides) -> ReportPayload`, defaulting `measurement` to `build_delivery_measurement(Default::default())`, `curve` and `conditions` to `build_report_text(Default::default())`, `defaults` to `build_report_defaults(Default::default())`, and `adjustment` to `None`; no corruptions type and no invalidator
+    * `[✅]`   `ReportSuccessReturnOverrides`, `#[derive(Default)]`, the field `pub document: Option<String>`; `build_report_success_return(overrides: ReportSuccessReturnOverrides) -> ReportSuccessReturn`, defaulting to the text `"{}"`; no corruptions type and no invalidator
+    * `[✅]`   `mock_report(_deps: &ReportDeps, _params: ReportParams, _payload: ReportPayload) -> ReportReturn`, the production type `ReportFn` and nothing else, returning `Ok(build_report_success_return(Default::default()))`
+    * `[✅]`   Dispositions: `ReportDestination` and `ReportErrorReturn`, enums, used by their production values; `ReportTextTryNewReturn` and `ReportReturn`, aliases of `Result`, and `ReportFn`, a function type whose mock is `mock_report`; `ReportText`, `ReportDefaults`, `ReportAdjustment`, `ReportDeps`, `ReportParams`, `ReportPayload`, and `ReportSuccessReturn`, object types `interface.rs` declares, each with its builder above; `ReportTextTryNewErrorReturn`, an enum, produced by the constructor
+    * `[✅]`   Imports this module's types from `super::interface`, `NonZeroU32` from `core::num`, `build_delivery_measurement` from `crate::measure::provides`, and `serde_json`; nothing else
 
-  * `[ ]`   `apps/harness-crypto/src/report/test_basic.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`, for the unpacking of each write and read; imports `report`, `ReportText` with its constructor, and every type of `super::interface` and every builder and overrides type of `super::mock` its blocks name, the measurement, timing, size, and cost builders the `deps` element lists, `NonZeroU32`, `Duration`, `L1DataFee`, `serde_json::{json, Value}`, and `std::fs`, `std::env::temp_dir`, and `std::path::Path`; contains only imports, contract headers, blocks, and assertions
-    * `[ ]`   Every block: the block calls `report` once with `build_report_deps` and the params and payload it names, every collaborator the function takes being handed; a block that writes a file arranges a directory beneath `std::env::temp_dir()` named `chaintorrent-report-`, the process id, `-`, and the current thread's id as its `Debug` text, so each test thread names its own directory, removed by `std::fs::remove_dir_all` before the act and created by `std::fs::create_dir_all`, and a file path joined beneath it; a block that asserts the document parses the returned text with `serde_json::from_str::<Value>` and compares it with the expected `Value`
-    * `[ ]`   Defaults: the measurement is `build_delivery_measurement` over `iterations` of `NonZeroU32::MIN.saturating_add(2)`, timings of `Duration::new(1, 1)`, `Duration::new(2, 2)`, `Duration::new(3, 3)`, `Duration::new(4, 4)`, and `Duration::new(5, 5)` for `prove_mint`, `prove_transfer`, `verify_mint`, `verify_transfer`, and `decapsulate`, sizes of `11`, `22`, `33`, and `44` for `capsule`, `envelope`, `mint_proof`, and `transfer_proof`, and the costs `build_verify_cost` builds for `100` and `L1DataFee::Charged { wei: 7 }` on the mint and for `200` and `L1DataFee::Charged { wei: 8 }` on the transfer; the curve `build_report_text` builds from `"curve-a"`, the conditions from `"conditions-a"`, the defaults a piece-group size of `NonZeroU32::MIN.saturating_add(16_383)` and the primary curve `"curve-b"`, and no adjustment, unless the block names others; the destinations none unless the block names them
-    * `[ ]`   Expected values are built in Arrange as `json!` literals and never read from the subject: the expected document is the literal object `{ "curve": "curve-a", "conditions": "conditions-a", "iterations": 3, "timings": { "prove_mint": { "seconds": 1, "subsec_nanos": 1 }, "prove_transfer": { "seconds": 2, "subsec_nanos": 2 }, "verify_mint": { "seconds": 3, "subsec_nanos": 3 }, "verify_transfer": { "seconds": 4, "subsec_nanos": 4 }, "decapsulate": { "seconds": 5, "subsec_nanos": 5 } }, "sizes_bytes": { "capsule": 11, "envelope": 22, "mint_proof": 33, "transfer_proof": 44 }, "costs": { "mint": { "l2_execution_gas": 100, "l1_data_fee": { "state": "charged", "wei": "7" } }, "transfer": { "l2_execution_gas": 200, "l1_data_fee": { "state": "charged", "wei": "8" } } }, "defaults_in_force": { "piece_group_size_bytes": 16384, "primary_curve": "curve-b" }, "adjustment": null }`, a block changing a field changing the literal's value for that field alone
-    * `[ ]`   `report_records_the_curve_the_conditions_and_the_iteration_count`
-      * `[ ]`   Contract: Render → the document's `curve`, `conditions`, and `iterations` are the label, the conditions text, and the count the payload holds
-      * `[ ]`   Arrange: the defaults of this element; no destination
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the returned document parsed equals the expected literal
-    * `[ ]`   `report_records_each_timing_as_whole_seconds_and_subsecond_nanoseconds`
-      * `[ ]`   Contract: Render → a timing is its `Duration`'s `as_secs` and `subsec_nanos`
-      * `[ ]`   Arrange: the five timings of this element's defaults, each with distinct seconds and nanoseconds
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the parsed document's `timings` equals the expected literal's `timings`
-    * `[ ]`   `report_records_each_size_in_bytes`
-      * `[ ]`   Contract: Render → each of the four sizes is recorded under its own key
-      * `[ ]`   Arrange: the four sizes of this element's defaults
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the parsed document's `sizes_bytes` equals the expected literal's `sizes_bytes`
-    * `[ ]`   `report_records_the_cost_of_each_delivery_with_its_charged_l1_fee_in_wei`
-      * `[ ]`   Contract: Render and Fee → each delivery's gas and its charged fee as decimal text of its wei
-      * `[ ]`   Arrange: the two costs of this element's defaults
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the parsed document's `costs` equals the expected literal's `costs`
-    * `[ ]`   `report_records_a_fee_the_chain_does_not_charge_as_its_own_state`
-      * `[ ]`   Contract: Fee → `L1DataFee::NotApplicable` is `{ "state": "not_applicable" }`, never a zero
-      * `[ ]`   Arrange: the mint's cost with `L1DataFee::NotApplicable`
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the parsed document's `costs.mint.l1_data_fee` equals `json!({ "state": "not_applicable" })`
-    * `[ ]`   `report_records_the_defaults_in_force`
-      * `[ ]`   Contract: Render → the piece-group size in bytes and the primary curve's label
-      * `[ ]`   Arrange: the defaults of this element
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the parsed document's `defaults_in_force` equals the expected literal's `defaults_in_force`
-    * `[ ]`   `report_records_no_adjustment_as_null`
-      * `[ ]`   Contract: Adjustment → no adjustment is the JSON `null`
-      * `[ ]`   Arrange: no adjustment
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the parsed document's `adjustment` is `Value::Null`
-    * `[ ]`   `report_records_an_adjustment_that_changes_one_default`
-      * `[ ]`   Contract: Adjustment → each field of the adjustment is its value, or `null` where it holds none
-      * `[ ]`   Arrange: an adjustment of `piece_group_size` `NonZeroU32::MIN.saturating_add(32_767)` and no `primary_curve`
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the parsed document's `adjustment` equals `json!({ "piece_group_size_bytes": 32768, "primary_curve": null })`
-    * `[ ]`   `report_records_every_value_verbatim_whatever_its_magnitude`
-      * `[ ]`   Contract: Render → no value is compared with a bound, clamped, or refused
-      * `[ ]`   Arrange: a measurement of the timing `Duration::MAX` for `prove_mint`, the size `usize::MAX` for `capsule`, and a mint cost of gas `u64::MAX` and `L1DataFee::Charged { wei: u128::MAX }`
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the parsed document's `timings.prove_mint` equals `json!({ "seconds": u64::MAX, "subsec_nanos": 999999999 })`, `sizes_bytes.capsule` equals `usize::MAX` as a JSON number, and `costs.mint` equals `json!({ "l2_execution_gas": u64::MAX, "l1_data_fee": { "state": "charged", "wei": "340282366920938463463374607431768211455" } })`
-    * `[ ]`   `report_writes_the_document_to_a_file_destination`
-      * `[ ]`   Contract: Destination file → the file at the path holds the returned document
-      * `[ ]`   Arrange: the block's directory and one `ReportDestination::File` beneath it
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: `std::fs::read_to_string` of the path equals the returned document
-    * `[ ]`   `report_writes_the_same_document_to_each_destination_in_order`
-      * `[ ]`   Contract: Destination file → every destination receives the same text
-      * `[ ]`   Arrange: two `ReportDestination::File` destinations beneath the block's directory
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: both files read back equal the returned document
-    * `[ ]`   `report_with_no_destination_writes_nothing_and_returns_the_document`
-      * `[ ]`   Contract: No destination → the document is returned and nothing is written
-      * `[ ]`   Arrange: the block's directory created and no destination
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the result is `Ok` with a non-empty document, and the directory holds no entry
-    * `[ ]`   `report_returns_the_document_when_it_writes_to_standard_output`
-      * `[ ]`   Contract: Destination standard output → the write succeeds and the document is returned
-      * `[ ]`   Arrange: one `ReportDestination::StandardOutput`
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the result is `Ok` and the returned document parsed equals the expected literal
-    * `[ ]`   `report_text_try_new_admits_a_text_with_a_visible_character`
-      * `[ ]`   Contract: `ReportText::try_new` → `Ok(ReportText)` holding the text moved from the params
-      * `[ ]`   Arrange: `build_report_text_constructor_params` over `"curve-a"`
-      * `[ ]`   Act: `ReportText::try_new`, once
-      * `[ ]`   Assert: the result is `Ok` and `as_str()` of the value equals `"curve-a"`
+  * `[✅]`   `apps/harness-crypto/src/report/test_basic.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`, for the unpacking of each write and read; imports `report`, `ReportText` with its constructor, and every type of `super::interface` and every builder and overrides type of `super::mock` its blocks name, the measurement, timing, size, and cost builders the `deps` element lists, `NonZeroU32`, `Duration`, `L1DataFee`, `serde_json::{json, Value}`, and `std::fs`, `std::env::temp_dir`, and `std::path::Path`; contains only imports, contract headers, blocks, and assertions
+    * `[✅]`   Every block: the block calls `report` once with `build_report_deps` and the params and payload it names, every collaborator the function takes being handed; a block that writes a file arranges a directory beneath `std::env::temp_dir()` named `chaintorrent-report-`, the process id, `-`, and the current thread's id as its `Debug` text, so each test thread names its own directory, removed by `std::fs::remove_dir_all` before the act and created by `std::fs::create_dir_all`, and a file path joined beneath it; a block that asserts the document parses the returned text with `serde_json::from_str::<Value>` and compares it with the expected `Value`
+    * `[✅]`   Defaults: the measurement is `build_delivery_measurement` over `iterations` of `NonZeroU32::MIN.saturating_add(2)`, timings of `Duration::new(1, 1)`, `Duration::new(2, 2)`, `Duration::new(3, 3)`, `Duration::new(4, 4)`, and `Duration::new(5, 5)` for `prove_mint`, `prove_transfer`, `verify_mint`, `verify_transfer`, and `decapsulate`, sizes of `11`, `22`, `33`, and `44` for `capsule`, `envelope`, `mint_proof`, and `transfer_proof`, and the costs `build_verify_cost` builds for `100` and `L1DataFee::Charged { wei: 7 }` on the mint and for `200` and `L1DataFee::Charged { wei: 8 }` on the transfer; the curve `build_report_text` builds from `"curve-a"`, the conditions from `"conditions-a"`, the defaults a piece-group size of `NonZeroU32::MIN.saturating_add(16_383)` and the primary curve `"curve-b"`, and no adjustment, unless the block names others; the destinations none unless the block names them
+    * `[✅]`   Expected values are built in Arrange as `json!` literals and never read from the subject: the expected document is the literal object `{ "curve": "curve-a", "conditions": "conditions-a", "iterations": 3, "timings": { "prove_mint": { "seconds": 1, "subsec_nanos": 1 }, "prove_transfer": { "seconds": 2, "subsec_nanos": 2 }, "verify_mint": { "seconds": 3, "subsec_nanos": 3 }, "verify_transfer": { "seconds": 4, "subsec_nanos": 4 }, "decapsulate": { "seconds": 5, "subsec_nanos": 5 } }, "sizes_bytes": { "capsule": 11, "envelope": 22, "mint_proof": 33, "transfer_proof": 44 }, "costs": { "mint": { "l2_execution_gas": 100, "l1_data_fee": { "state": "charged", "wei": "7" } }, "transfer": { "l2_execution_gas": 200, "l1_data_fee": { "state": "charged", "wei": "8" } } }, "defaults_in_force": { "piece_group_size_bytes": 16384, "primary_curve": "curve-b" }, "adjustment": null }`, a block changing a field changing the literal's value for that field alone
+    * `[✅]`   `report_records_the_curve_the_conditions_and_the_iteration_count`
+      * `[✅]`   Contract: Render → the document's `curve`, `conditions`, and `iterations` are the label, the conditions text, and the count the payload holds
+      * `[✅]`   Arrange: the defaults of this element; no destination
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the returned document parsed equals the expected literal
+    * `[✅]`   `report_records_each_timing_as_whole_seconds_and_subsecond_nanoseconds`
+      * `[✅]`   Contract: Render → a timing is its `Duration`'s `as_secs` and `subsec_nanos`
+      * `[✅]`   Arrange: the five timings of this element's defaults, each with distinct seconds and nanoseconds
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the parsed document's `timings` equals the expected literal's `timings`
+    * `[✅]`   `report_records_each_size_in_bytes`
+      * `[✅]`   Contract: Render → each of the four sizes is recorded under its own key
+      * `[✅]`   Arrange: the four sizes of this element's defaults
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the parsed document's `sizes_bytes` equals the expected literal's `sizes_bytes`
+    * `[✅]`   `report_records_the_cost_of_each_delivery_with_its_charged_l1_fee_in_wei`
+      * `[✅]`   Contract: Render and Fee → each delivery's gas and its charged fee as decimal text of its wei
+      * `[✅]`   Arrange: the two costs of this element's defaults
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the parsed document's `costs` equals the expected literal's `costs`
+    * `[✅]`   `report_records_a_fee_the_chain_does_not_charge_as_its_own_state`
+      * `[✅]`   Contract: Fee → `L1DataFee::NotApplicable` is `{ "state": "not_applicable" }`, never a zero
+      * `[✅]`   Arrange: the mint's cost with `L1DataFee::NotApplicable`
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the parsed document's `costs.mint.l1_data_fee` equals `json!({ "state": "not_applicable" })`
+    * `[✅]`   `report_records_the_defaults_in_force`
+      * `[✅]`   Contract: Render → the piece-group size in bytes and the primary curve's label
+      * `[✅]`   Arrange: the defaults of this element
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the parsed document's `defaults_in_force` equals the expected literal's `defaults_in_force`
+    * `[✅]`   `report_records_no_adjustment_as_null`
+      * `[✅]`   Contract: Adjustment → no adjustment is the JSON `null`
+      * `[✅]`   Arrange: no adjustment
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the parsed document's `adjustment` is `Value::Null`
+    * `[✅]`   `report_records_an_adjustment_that_changes_one_default`
+      * `[✅]`   Contract: Adjustment → each field of the adjustment is its value, or `null` where it holds none
+      * `[✅]`   Arrange: an adjustment of `piece_group_size` `NonZeroU32::MIN.saturating_add(32_767)` and no `primary_curve`
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the parsed document's `adjustment` equals `json!({ "piece_group_size_bytes": 32768, "primary_curve": null })`
+    * `[✅]`   `report_records_every_value_verbatim_whatever_its_magnitude`
+      * `[✅]`   Contract: Render → no value is compared with a bound, clamped, or refused
+      * `[✅]`   Arrange: a measurement of the timing `Duration::MAX` for `prove_mint`, the size `usize::MAX` for `capsule`, and a mint cost of gas `u64::MAX` and `L1DataFee::Charged { wei: u128::MAX }`
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the parsed document's `timings.prove_mint` equals `json!({ "seconds": u64::MAX, "subsec_nanos": 999999999 })`, `sizes_bytes.capsule` equals `usize::MAX` as a JSON number, and `costs.mint` equals `json!({ "l2_execution_gas": u64::MAX, "l1_data_fee": { "state": "charged", "wei": "340282366920938463463374607431768211455" } })`
+    * `[✅]`   `report_writes_the_document_to_a_file_destination`
+      * `[✅]`   Contract: Destination file → the file at the path holds the returned document
+      * `[✅]`   Arrange: the block's directory and one `ReportDestination::File` beneath it
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: `std::fs::read_to_string` of the path equals the returned document
+    * `[✅]`   `report_writes_the_same_document_to_each_destination_in_order`
+      * `[✅]`   Contract: Destination file → every destination receives the same text
+      * `[✅]`   Arrange: two `ReportDestination::File` destinations beneath the block's directory
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: both files read back equal the returned document
+    * `[✅]`   `report_with_no_destination_writes_nothing_and_returns_the_document`
+      * `[✅]`   Contract: No destination → the document is returned and nothing is written
+      * `[✅]`   Arrange: the block's directory created and no destination
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the result is `Ok` with a non-empty document, and the directory holds no entry
+    * `[✅]`   `report_returns_the_document_when_it_writes_to_standard_output`
+      * `[✅]`   Contract: Destination standard output → the write succeeds and the document is returned
+      * `[✅]`   Arrange: one `ReportDestination::StandardOutput`
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the result is `Ok` and the returned document parsed equals the expected literal
+    * `[✅]`   `report_text_try_new_admits_a_text_with_a_visible_character`
+      * `[✅]`   Contract: `ReportText::try_new` → `Ok(ReportText)` holding the text moved from the params
+      * `[✅]`   Arrange: `build_report_text_constructor_params` over `"curve-a"`
+      * `[✅]`   Act: `ReportText::try_new`, once
+      * `[✅]`   Assert: the result is `Ok` and `as_str()` of the value equals `"curve-a"`
 
-  * `[ ]`   `apps/harness-crypto/src/report/test_error.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports as `test_basic.rs` imports, with `ReportErrorReturn` and `ReportTextTryNewErrorReturn`; contains only imports, contract headers, blocks, and assertions
-    * `[ ]`   Every block: the collaborators, the block's directory, and the defaults as `test_basic.rs` states them; the block asserts the whole error, by a pattern where the error omits `PartialEq`
-    * `[ ]`   `report_returns_a_refused_file_write_with_its_path`
-      * `[ ]`   Contract: Destination file → a refused write is `Err(ReportErrorReturn::WriteFile { path, error })`, the error unchanged
-      * `[ ]`   Arrange: the block's directory created, and its own path as the destination, a path `std::fs::write` refuses because it names a directory
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the result matches `Err(ReportErrorReturn::WriteFile { path, .. })` with `path` equal to the directory's path
-    * `[ ]`   `report_stops_at_the_first_refused_destination`
-      * `[ ]`   Contract: Ordering → a refused destination returns before any later destination is written
-      * `[ ]`   Arrange: the destinations the directory's own path, then a file beneath the directory
-      * `[ ]`   Act: `report`, once
-      * `[ ]`   Assert: the result matches `Err(ReportErrorReturn::WriteFile { path, .. })` with `path` equal to the directory's path, and the later file does not exist
-    * `[ ]`   `report_text_try_new_refuses_an_empty_text`
-      * `[ ]`   Contract: `ReportText::try_new` → a text with no character is `Err(ReportTextTryNewErrorReturn::Empty)`
-      * `[ ]`   Arrange: `build_report_text_constructor_params` over `""`
-      * `[ ]`   Act: `ReportText::try_new`, once
-      * `[ ]`   Assert: the result equals `Err(ReportTextTryNewErrorReturn::Empty)`
-    * `[ ]`   `report_text_try_new_refuses_a_text_of_whitespace_only`
-      * `[ ]`   Contract: `ReportText::try_new` → a text of whitespace alone is `Err(ReportTextTryNewErrorReturn::Empty)`
-      * `[ ]`   Arrange: `build_report_text_constructor_params` over `"  \t "`
-      * `[ ]`   Act: `ReportText::try_new`, once
-      * `[ ]`   Assert: the result equals `Err(ReportTextTryNewErrorReturn::Empty)`
+  * `[✅]`   `apps/harness-crypto/src/report/test_error.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; imports as `test_basic.rs` imports, with `ReportErrorReturn` and `ReportTextTryNewErrorReturn`; contains only imports, contract headers, blocks, and assertions
+    * `[✅]`   Every block: the collaborators, the block's directory, and the defaults as `test_basic.rs` states them; the block asserts the whole error, by a pattern where the error omits `PartialEq`
+    * `[✅]`   `report_returns_a_refused_file_write_with_its_path`
+      * `[✅]`   Contract: Destination file → a refused write is `Err(ReportErrorReturn::WriteFile { path, error })`, the error unchanged
+      * `[✅]`   Arrange: the block's directory created, and its own path as the destination, a path `std::fs::write` refuses because it names a directory
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the result matches `Err(ReportErrorReturn::WriteFile { path, .. })` with `path` equal to the directory's path
+    * `[✅]`   `report_stops_at_the_first_refused_destination`
+      * `[✅]`   Contract: Ordering → a refused destination returns before any later destination is written
+      * `[✅]`   Arrange: the destinations the directory's own path, then a file beneath the directory
+      * `[✅]`   Act: `report`, once
+      * `[✅]`   Assert: the result matches `Err(ReportErrorReturn::WriteFile { path, .. })` with `path` equal to the directory's path, and the later file does not exist
+    * `[✅]`   `report_text_try_new_refuses_an_empty_text`
+      * `[✅]`   Contract: `ReportText::try_new` → a text with no character is `Err(ReportTextTryNewErrorReturn::Empty)`
+      * `[✅]`   Arrange: `build_report_text_constructor_params` over `""`
+      * `[✅]`   Act: `ReportText::try_new`, once
+      * `[✅]`   Assert: the result equals `Err(ReportTextTryNewErrorReturn::Empty)`
+    * `[✅]`   `report_text_try_new_refuses_a_text_of_whitespace_only`
+      * `[✅]`   Contract: `ReportText::try_new` → a text of whitespace alone is `Err(ReportTextTryNewErrorReturn::Empty)`
+      * `[✅]`   Arrange: `build_report_text_constructor_params` over `"  \t "`
+      * `[✅]`   Act: `ReportText::try_new`, once
+      * `[✅]`   Assert: the result equals `Err(ReportTextTryNewErrorReturn::Empty)`
 
-  * `[ ]`   `apps/harness-crypto/src/report/mod.rs`
-    * `[ ]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `#[cfg(test)] mod test_basic;`, `#[cfg(test)] mod test_error;`, `#[cfg(test)] mod integration_test;`, and `pub mod provides;`; the implementation of `ReportText::try_new` and `ReportText::as_str`, and of `report`, the trusted form, following the interaction spec's branches in its order; the file holds no `unwrap`, `expect`, `panic!`, or numeric `as`
-    * `[ ]`   The document is built once as a `serde_json::Value` by `json!` over the payload's values and rendered by `format!("{value:#}")`, each timing from `Duration::as_secs` and `Duration::subsec_nanos`, each fee by an exhaustive `match` on `L1DataFee`, the wei rendered by `u128::to_string`, and the adjustment by a `match` on the `Option`
-    * `[ ]`   The destinations are written by a `for` loop over `params.destinations` in order, each by an exhaustive `match` on `ReportDestination`, a failure returned by its variant of `ReportErrorReturn` before the next iteration
-    * `[ ]`   Introduces no undeclared dependency; bypasses no contract
+  * `[✅]`   `apps/harness-crypto/src/report/mod.rs`
+    * `[✅]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `#[cfg(test)] mod test_basic;`, `#[cfg(test)] mod test_error;`, `#[cfg(test)] mod integration_test;`, and `pub mod provides;`; the implementation of `ReportText::try_new` and `ReportText::as_str`, and of `report`, the trusted form, following the interaction spec's branches in its order; the file holds no `unwrap`, `expect`, `panic!`, or numeric `as`
+    * `[✅]`   The document is built once as a `serde_json::Value` by `json!` over the payload's values and rendered by `format!("{value:#}")`, each timing from `Duration::as_secs` and `Duration::subsec_nanos`, each fee by an exhaustive `match` on `L1DataFee`, the wei rendered by `u128::to_string`, and the adjustment by a `match` on the `Option`
+    * `[✅]`   The destinations are written by a `for` loop over `params.destinations` in order, each by an exhaustive `match` on `ReportDestination`, a failure returned by its variant of `ReportErrorReturn` before the next iteration
+    * `[✅]`   Introduces no undeclared dependency; bypasses no contract
 
-  * `[ ]`   `apps/harness-crypto/src/report/integration_test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; a `#[cfg(test)]` module of its own, never part of the unit test files; each block's `Contract` transcribes one entry of the spec's private surface and its `Arrange` names the entry's variation; each block is run over the declared sets its entry names through `run_measure_case` once per member, its body written once, through the case consumer of `harness-crypto/measure`'s case runner
-    * `[ ]`   `the_document_records_every_value_a_measurement_holds`, one block, proving the own entry of the same name; its case consumer's method calls `measure` over the received adapters with an iteration count of one, then `report` over the measurement it returned, a curve label, conditions, defaults, no adjustment, and one file destination beneath a directory removed before the act, and returns the `ReportReturn` with the file's text and the measurement; the block asserts the file equals the returned document and the parsed document equals the `json!` object built in Arrange from the measurement's values field by field
-    * `[ ]`   Reports its enumeration: every entry the private surface lists and the block that proves it
+  * `[✅]`   `apps/harness-crypto/src/report/integration_test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; a `#[cfg(test)]` module of its own, never part of the unit test files; each block's `Contract` transcribes one entry of the spec's private surface and its `Arrange` names the entry's variation; each block is run over the declared sets its entry names through `run_measure_case` once per member, its body written once, through the case consumer of `harness-crypto/measure`'s case runner
+    * `[✅]`   `the_document_records_every_value_a_measurement_holds`, one block, proving the own entry of the same name; its case consumer's method calls `measure` over the received adapters with an iteration count of one, then `report` over the measurement it returned, a curve label, conditions, defaults, no adjustment, and one file destination beneath a directory removed before the act, and returns the `ReportReturn` with the file's text and the measurement; the block asserts the file equals the returned document and the parsed document equals the `json!` object built in Arrange from the measurement's values field by field
+    * `[✅]`   Reports its enumeration: every entry the private surface lists and the block that proves it
 
-  * `[ ]`   `apps/harness-crypto/src/report/provides.rs`
-    * `[ ]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and the function's re-export `pub use super::report;`; the module's only `pub mod` is `provides`
+  * `[✅]`   `apps/harness-crypto/src/report/provides.rs`
+    * `[✅]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and the function's re-export `pub use super::report;`; the module's only `pub mod` is `provides`
 
-  * `[ ]`   `apps/harness-crypto/tests/report_integration_test.rs`
-    * `[ ]`   The public integration test, consuming only the crate's public surface and the official mocks under the `mocks` feature; each block transcribes one entry of the spec's public surface, its `Boundary` the public call `report` with the route of the entry and its `Mocked` the outer-edge collaborators on that route; each block is run over the declared sets its entry names through `run_measure_case`, once per member, its body written once, through the case consumer of `measure`'s case runner reached through the public surface
-    * `[ ]`   `the_document_records_every_value_a_measurement_holds`: Contract the own entry of the same name; Arrange each member of `PAIRING_CONCRETES`, the operating-system source, the verifier family's mock concrete under `NoFailure`, an iteration count of one, and a file destination beneath a directory removed before the act; Act `measure` then `report`, once per member, in the case consumer's method; Assert the result is `Ok`, the file equals the returned document, and the parsed document's `iterations`, `timings`, `sizes_bytes`, and `costs` equal the `json!` literal built in Arrange from the measurement's values; Boundary the public call `report` over the measurement the public call `measure` returned; Mocked the verifier family's mock concrete by configuration; the operating-system generator and monotonic clock run real
-    * `[ ]`   `every_operation_is_timed_on_every_concrete`: Contract the carried `measure` entry of the same name; Arrange each member of `PAIRING_CONCRETES` as above; Act `measure` then `report`, once per member; Assert each of the five recorded timings has seconds or subsecond nanoseconds greater than zero; Boundary and Mocked as the block above
-    * `[ ]`   `the_measurement_carries_the_iteration_count_its_means_were_computed_from`: Contract the carried `measure` entry of the same name; Arrange iteration counts of `3` and `1` over each member of `PAIRING_CONCRETES`; Act `measure` then `report`, once per count and member; Assert the parsed document's `iterations` equals each count; Boundary and Mocked as the first block
-    * `[ ]`   `every_object_is_sized_by_the_encodings_of_its_elements`: Contract the carried `measure` entry of the same name; Arrange each member of `PAIRING_CONCRETES` crossed with both identity scopes and the verifier form each pairing declares, each expected size computed through the received pairing's encoders over its generators and a scalar its sampling bound samples; Act `measure` then `report`, once per case; Assert the parsed document's `sizes_bytes.capsule`, `envelope`, `mint_proof`, and `transfer_proof` equal the expected sizes; Boundary and Mocked as the first block
-    * `[ ]`   `every_accepted_delivery_reports_the_cost_the_verifier_returned`: Contract the carried `measure` entry of the same name; Arrange each member of `PAIRING_CONCRETES` with the verifier family's mock concrete under `NoFailure`; Act `measure` then `report`, once per member; Assert the parsed document's `costs.mint` and `costs.transfer` each equal `json!({ "l2_execution_gas": 100000, "l1_data_fee": { "state": "charged", "wei": "1000" } })`; Boundary and Mocked as the first block
+  * `[✅]`   `apps/harness-crypto/tests/report_integration_test.rs`
+    * `[✅]`   The public integration test, consuming only the crate's public surface and the official mocks under the `mocks` feature; each block transcribes one entry of the spec's public surface, its `Boundary` the public call `report` with the route of the entry and its `Mocked` the outer-edge collaborators on that route; each block is run over the declared sets its entry names through `run_measure_case`, once per member, its body written once, through the case consumer of `measure`'s case runner reached through the public surface
+    * `[✅]`   `the_document_records_every_value_a_measurement_holds`: Contract the own entry of the same name; Arrange each member of `PAIRING_CONCRETES`, the operating-system source, the verifier family's mock concrete under `NoFailure`, an iteration count of one, and a file destination beneath a directory removed before the act; Act `measure` then `report`, once per member, in the case consumer's method; Assert the result is `Ok`, the file equals the returned document, and the parsed document's `iterations`, `timings`, `sizes_bytes`, and `costs` equal the `json!` literal built in Arrange from the measurement's values; Boundary the public call `report` over the measurement the public call `measure` returned; Mocked the verifier family's mock concrete by configuration; the operating-system generator and monotonic clock run real
+    * `[✅]`   `every_operation_is_timed_on_every_concrete`: Contract the carried `measure` entry of the same name; Arrange each member of `PAIRING_CONCRETES` as above; Act `measure` then `report`, once per member; Assert each of the five recorded timings has seconds or subsecond nanoseconds greater than zero; Boundary and Mocked as the block above
+    * `[✅]`   `the_measurement_carries_the_iteration_count_its_means_were_computed_from`: Contract the carried `measure` entry of the same name; Arrange iteration counts of `3` and `1` over each member of `PAIRING_CONCRETES`; Act `measure` then `report`, once per count and member; Assert the parsed document's `iterations` equals each count; Boundary and Mocked as the first block
+    * `[✅]`   `every_object_is_sized_by_the_encodings_of_its_elements`: Contract the carried `measure` entry of the same name; Arrange each member of `PAIRING_CONCRETES` crossed with both identity scopes and the verifier form each pairing declares, each expected size computed through the received pairing's encoders over its generators and a scalar its sampling bound samples; Act `measure` then `report`, once per case; Assert the parsed document's `sizes_bytes.capsule`, `envelope`, `mint_proof`, and `transfer_proof` equal the expected sizes; Boundary and Mocked as the first block
+    * `[✅]`   `every_accepted_delivery_reports_the_cost_the_verifier_returned`: Contract the carried `measure` entry of the same name; Arrange each member of `PAIRING_CONCRETES` with the verifier family's mock concrete under `NoFailure`; Act `measure` then `report`, once per member; Assert the parsed document's `costs.mint` and `costs.transfer` each equal `json!({ "l2_execution_gas": 100000, "l1_data_fee": { "state": "charged", "wei": "1000" } })`; Boundary and Mocked as the first block
 
-  * `[ ]`   `directionality`
-    * `[ ]`   `report` depends on `DeliveryMeasurement` and its parts through `crate::measure::provides`, on `VerifyCost` and `L1DataFee` through `crate::verifier::provides`, on `serde_json`, and on the standard library; in its tests it depends on `measure` and the families' public surfaces; its surface leaves through `report::provides` and the crate barrel; nothing under `generate`, `vectors`, `verifier`, `delivery`, `benchmark`, or `measure` names it; none of those crates names `apps/harness-crypto`; no cycle
-    * `[ ]`   `harness-crypto/config` admits the report's destinations, defaults, adjustment, and labels into the types this node owns, `harness-crypto/config/admit_output` reads its destinations from this node, and `harness-crypto/run` calls `report` over each curve's measurement
+  * `[✅]`   `directionality`
+    * `[✅]`   `report` depends on `DeliveryMeasurement` and its parts through `crate::measure::provides`, on `VerifyCost` and `L1DataFee` through `crate::verifier::provides`, on `serde_json`, and on the standard library; in its tests it depends on `measure` and the families' public surfaces; its surface leaves through `report::provides` and the crate barrel; nothing under `generate`, `vectors`, `verifier`, `delivery`, `benchmark`, or `measure` names it; none of those crates names `apps/harness-crypto`; no cycle
+    * `[✅]`   `harness-crypto/config` admits the report's destinations, defaults, adjustment, and labels into the types this node owns, `harness-crypto/config/admit_output` reads its destinations from this node, and `harness-crypto/run` calls `report` over each curve's measurement
 
-  * `[ ]`   `requirements`
-    * `[ ]`   `apps/harness-crypto/src/lib.rs` gains the module and re-export lines stated above; `apps/harness-crypto/Cargo.toml` gains the one change its element states; `deny.toml` and every file under `delivery`, `generate`, `vectors`, `verifier`, `measure`, and `benchmark` are unchanged
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, the `report` module having no unused item
-    * `[ ]`   Every block of `test_basic.rs` passes: the curve, conditions, and iteration count, the timings as whole seconds and subsecond nanoseconds, the sizes, the costs with their charged and uncharged fees, the defaults in force, the absence and presence of an adjustment, every value verbatim whatever its magnitude, each destination written with the same document, and the text constructor's admission (CD-07 and AS-21 sizes, timings, and delivery cost recorded in release evidence)
-    * `[ ]`   Every block of `test_error.rs` passes, each refused write returned unchanged with its destination, a refused destination stopping the later writes, and the text constructor's refusal of an empty and of a whitespace-only text
-    * `[ ]`   `the_document_records_every_value_a_measurement_holds` passes (CD-07 and AS-21: the measurement `measure` returned recorded whole in the release-evidence document on both curves and both verifier forms)
-    * `[ ]`   Every block of `apps/harness-crypto/tests/report_integration_test.rs` passes (the document of every measurement, the five timings, the iteration count, the four sizes, and the two costs, through the crate's public surface)
-    * `[ ]`   Every test under `apps/harness-crypto/src/measure`, `apps/harness-crypto/src/vectors`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes
+  * `[✅]`   `requirements`
+    * `[✅]`   `apps/harness-crypto/src/lib.rs` gains the module and re-export lines stated above; `apps/harness-crypto/Cargo.toml` gains the one change its element states; `deny.toml` and every file under `delivery`, `generate`, `vectors`, `verifier`, `measure`, and `benchmark` are unchanged
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, the `report` module having no unused item
+    * `[✅]`   Every block of `test_basic.rs` passes: the curve, conditions, and iteration count, the timings as whole seconds and subsecond nanoseconds, the sizes, the costs with their charged and uncharged fees, the defaults in force, the absence and presence of an adjustment, every value verbatim whatever its magnitude, each destination written with the same document, and the text constructor's admission (CD-07 and AS-21 sizes, timings, and delivery cost recorded in release evidence)
+    * `[✅]`   Every block of `test_error.rs` passes, each refused write returned unchanged with its destination, a refused destination stopping the later writes, and the text constructor's refusal of an empty and of a whitespace-only text
+    * `[✅]`   `the_document_records_every_value_a_measurement_holds` passes (CD-07 and AS-21: the measurement `measure` returned recorded whole in the release-evidence document on both curves and both verifier forms)
+    * `[✅]`   Every block of `apps/harness-crypto/tests/report_integration_test.rs` passes (the document of every measurement, the five timings, the iteration count, the four sizes, and the two costs, through the crate's public surface)
+    * `[✅]`   Every test under `apps/harness-crypto/src/measure`, `apps/harness-crypto/src/vectors`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes
 
-* `[ ]`   `harness-crypto/config/layers` **The configuration document produced from layered sources: the command line parsed through `clap` into its repeatable `--config <PATH>` and `--set <KEY=VALUE>` arguments, each named file read through `std::fs`, and the defaults text, each file's text, and each assignment parsed as TOML and merged over the defaults in command-line order, a table merging key by key and any other value replacing the earlier one whole, then deserialized into the configuration document, each of whose tables refuses a key it does not declare; owns the argument and document types, the function's types, and the refusal types; names `clap`, `toml`, and `serde`, the one place the harness names any of them; creates the `config` module**
+* `[✅]`   `harness-crypto/config/layers` **The configuration document produced from layered sources: the command line parsed through `clap` into its repeatable `--config <PATH>` and `--set <KEY=VALUE>` arguments, each named file read through `std::fs`, and the defaults text, each file's text, and each assignment parsed as TOML and merged over the defaults in command-line order, a table merging key by key and any other value replacing the earlier one whole, then deserialized into the configuration document, each of whose tables refuses a key it does not declare; owns the argument and document types, the function's types, and the refusal types; names `clap`, `toml`, and `serde`, the one place the harness names any of them; creates the `config` module**
 
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: every value the harness passes as params or payload is configured and never coded, overridable from a configuration file and from a command-line flag over a shipped default, so the harness holds one function that turns the shipped defaults text, the named files, and the named assignments into the one typed document every admission function reads (the dependency map's `harness-crypto/config/layers` row, its Dependencies edge on `workspace/cargo`, and its conflict flag on the configuration as a composing function over functions it owns, `harness-crypto/config/layers` alone parsing the command line, reading files, and naming `clap`, `toml`, and `serde`; the Delivery proof and on-chain verifier milestone's scope for `harness-crypto/config`, composed over `harness-crypto/config/layers`, and its exit, the harness run composing every family from the configuration's values with a file and a flag override each shown to replace a default; the technical requirements' statement that the harness is configured, never coded, with a configuration file and command-line flags overriding the shipped defaults; the product requirements' Resolved Positions on the harness configuration; `docs/project-planning/tech-stack.md`'s `clap` for the harness's flags and TOML for its configuration file)
-    * `[ ]`   Functional: the command line arrives as handed arguments and the defaults arrive as handed text; the function reads the filesystem only for the files the arguments name, and reads no environment variable and no file the arguments do not name
-    * `[ ]`   Functional: the arguments are the repeatable `--config <PATH>` and the repeatable `--set <KEY=VALUE>`; the order in which they appear on the command line, across both flags, is the order in which their layers apply
-    * `[ ]`   Functional: the merged table starts as the defaults text parsed as TOML; each `--config` layer is the named file's text parsed as TOML, and each `--set` layer is the assignment text parsed as a TOML document of one assignment, so a dotted key names a nested table and the value is a TOML value
-    * `[ ]`   Functional: a layer merges over the table so far key by key where both values are tables, recursing into each shared key, and replaces the earlier value whole where either value is not a table, an array included
-    * `[ ]`   Functional: the merged table is deserialized into the configuration document, whose every table declares its keys and refuses a key it does not declare and a key it requires that is absent
-    * `[ ]`   Functional: a refused argument, an unreadable file, an unparsable text, an assignment that is not a key and a value, and a table that is not the document are each returned unchanged in the error arm, the callee's error whole with the path or assignment it concerned, before any later layer is read
-    * `[ ]`   Non-functional: the function names no concrete, curve, selection, path, count, or default; the shipped defaults arrive in its payload, and the document's leaf values are raw text, numbers, and tables, which the admission functions map to the types their owning families declare
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: every value the harness passes as params or payload is configured and never coded, overridable from a configuration file and from a command-line flag over a shipped default, so the harness holds one function that turns the shipped defaults text, the named files, and the named assignments into the one typed document every admission function reads (the dependency map's `harness-crypto/config/layers` row, its Dependencies edge on `workspace/cargo`, and its conflict flag on the configuration as a composing function over functions it owns, `harness-crypto/config/layers` alone parsing the command line, reading files, and naming `clap`, `toml`, and `serde`; the Delivery proof and on-chain verifier milestone's scope for `harness-crypto/config`, composed over `harness-crypto/config/layers`, and its exit, the harness run composing every family from the configuration's values with a file and a flag override each shown to replace a default; the technical requirements' statement that the harness is configured, never coded, with a configuration file and command-line flags overriding the shipped defaults; the product requirements' Resolved Positions on the harness configuration; `docs/project-planning/tech-stack.md`'s `clap` for the harness's flags and TOML for its configuration file)
+    * `[✅]`   Functional: the command line arrives as handed arguments and the defaults arrive as handed text; the function reads the filesystem only for the files the arguments name, and reads no environment variable and no file the arguments do not name
+    * `[✅]`   Functional: the arguments are the repeatable `--config <PATH>` and the repeatable `--set <KEY=VALUE>`; the order in which they appear on the command line, across both flags, is the order in which their layers apply
+    * `[✅]`   Functional: the merged table starts as the defaults text parsed as TOML; each `--config` layer is the named file's text parsed as TOML, and each `--set` layer is the assignment text parsed as a TOML document of one assignment, so a dotted key names a nested table and the value is a TOML value
+    * `[✅]`   Functional: a layer merges over the table so far key by key where both values are tables, recursing into each shared key, and replaces the earlier value whole where either value is not a table, an array included
+    * `[✅]`   Functional: the merged table is deserialized into the configuration document, whose every table declares its keys and refuses a key it does not declare and a key it requires that is absent
+    * `[✅]`   Functional: a refused argument, an unreadable file, an unparsable text, an assignment that is not a key and a value, and a table that is not the document are each returned unchanged in the error arm, the callee's error whole with the path or assignment it concerned, before any later layer is read
+    * `[✅]`   Non-functional: the function names no concrete, curve, selection, path, count, or default; the shipped defaults arrive in its payload, and the document's leaf values are raw text, numbers, and tables, which the admission functions map to the types their owning families declare
 
-  * `[ ]`   `role`
-    * `[ ]`   App module in the adapter role: a function the harness owns over the filesystem and the process's command-line grammar, as `harness-crypto/report` is over the filesystem and `harness-crypto/measure` over the monotonic clock, beneath the crate root of `apps/harness-crypto`
-    * `[ ]`   Owns `ConfigArguments`, `ConfigDocument`, the table types it holds, `LayersDeps`, `LayersParams`, `LayersPayload`, `LayersSuccessReturn`, `LayersErrorReturn`, `LayersReturn`, and `LayersFn`
-    * `[ ]`   Declares the document's tables as the types every admission function reads: `harness-crypto/config/admit_selections` reads `selections`, `harness-crypto/config/admit_statements` reads `network_profile`, `statements`, and `identities`, `harness-crypto/config/admit_generate` reads `generate`, `harness-crypto/config/admit_output` reads `output` and `report`, and `harness-crypto/config` reads `network_profile.verifier_endpoint`, `benchmark`, `measurement`, and the `report` table's defaults and adjustment, and carries the shipped defaults text
-    * `[ ]`   Creates `apps/harness-crypto/src/config/mod.rs` with the module wiring and `apps/harness-crypto/src/config/provides.rs` with the module's surface, which the crate barrel re-exports, so the function is a public entry of the crate; the composing function is `harness-crypto/config`'s
-    * `[ ]`   Pins `clap` with its `derive` feature, `toml`, and `serde` with its `derive` feature, the one node that names any of them
-    * `[ ]`   Does not admit a selection, context, identity, name, destination, count, or default into the type its owning family declares, does not hold the shipped defaults text, and does not name an adapter family, a concrete, a curve, or a path of the harness's own
-    * `[ ]`   Does not write a file, print, or exit; the help and version outputs `clap` refuses with are returned in the error arm for the binary to print
-    * `[ ]`   Does not carry a commit
+  * `[✅]`   `role`
+    * `[✅]`   App module in the adapter role: a function the harness owns over the filesystem and the process's command-line grammar, as `harness-crypto/report` is over the filesystem and `harness-crypto/measure` over the monotonic clock, beneath the crate root of `apps/harness-crypto`
+    * `[✅]`   Owns `ConfigArguments`, `ConfigDocument`, the table types it holds, `LayersDeps`, `LayersParams`, `LayersPayload`, `LayersSuccessReturn`, `LayersErrorReturn`, `LayersReturn`, and `LayersFn`
+    * `[✅]`   Declares the document's tables as the types every admission function reads: `harness-crypto/config/admit_selections` reads `selections`, `harness-crypto/config/admit_statements` reads `network_profile`, `statements`, and `identities`, `harness-crypto/config/admit_generate` reads `generate`, `harness-crypto/config/admit_output` reads `output` and `report`, and `harness-crypto/config` reads `network_profile.verifier_endpoint`, `benchmark`, `measurement`, and the `report` table's defaults and adjustment, and carries the shipped defaults text
+    * `[✅]`   Creates `apps/harness-crypto/src/config/mod.rs` with the module wiring and `apps/harness-crypto/src/config/provides.rs` with the module's surface, which the crate barrel re-exports, so the function is a public entry of the crate; the composing function is `harness-crypto/config`'s
+    * `[✅]`   Pins `clap` with its `derive` feature, `toml`, and `serde` with its `derive` feature, the one node that names any of them
+    * `[✅]`   Does not admit a selection, context, identity, name, destination, count, or default into the type its owning family declares, does not hold the shipped defaults text, and does not name an adapter family, a concrete, a curve, or a path of the harness's own
+    * `[✅]`   Does not write a file, print, or exit; the help and version outputs `clap` refuses with are returned in the error arm for the binary to print
+    * `[✅]`   Does not carry a commit
 
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `layers` module beneath the `config` module of `apps/harness-crypto`, holding the argument type, the document and its tables, the function's deps, params, payload, success, error, return, and signature types, the function, and its builders
-    * `[ ]`   Files: `apps/harness-crypto/Cargo.toml`; `apps/harness-crypto/src/lib.rs`; `apps/harness-crypto/src/config/mod.rs` and `provides.rs`; `apps/harness-crypto/src/config/layers/interface.rs`, `interaction.spec.md`, `mock.rs`, `test_basic.rs`, `test_error.rs`, `mod.rs`, `integration_test.rs`, and `provides.rs`; and `apps/harness-crypto/tests/layers_integration_test.rs`
-    * `[ ]`   Outside: the admission of every document value into the types its owning family declares, the shipped defaults text and its embedding, the typed configuration, the run, the output, and every family's construction and admission
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `layers` module beneath the `config` module of `apps/harness-crypto`, holding the argument type, the document and its tables, the function's deps, params, payload, success, error, return, and signature types, the function, and its builders
+    * `[✅]`   Files: `apps/harness-crypto/Cargo.toml`; `apps/harness-crypto/src/lib.rs`; `apps/harness-crypto/src/config/mod.rs` and `provides.rs`; `apps/harness-crypto/src/config/layers/interface.rs`, `interaction.spec.md`, `mock.rs`, `test_basic.rs`, `test_error.rs`, `mod.rs`, `integration_test.rs`, and `provides.rs`; and `apps/harness-crypto/tests/layers_integration_test.rs`
+    * `[✅]`   Outside: the admission of every document value into the types its owning family declares, the shipped defaults text and its embedding, the typed configuration, the run, the output, and every family's construction and admission
 
-  * `[ ]`   `deps`
-    * `[ ]`   `workspace/cargo`, repository root, configuration: the workspace's `apps/*` member glob admits the crate, its lint table binds every file below, and `deny.toml`'s license allowlist admits the three crates below, each `MIT OR Apache-2.0`; direction inward, the crate names the root configuration and the root names no crate
-    * `[ ]`   `harness-crypto/benchmark`, same crate, app ring: the crate and its `apps/harness-crypto/Cargo.toml`, as `harness-crypto/benchmark` creates them, and `harness-crypto/report`'s edit of the manifest's `serde_json` line; this node edits the manifest's `[dependencies]` alone
-    * `[ ]`   `clap` `4.6.7`, external crate, MIT OR Apache-2.0, with the `derive` feature: `clap::Parser`, `clap::CommandFactory`, `clap::FromArgMatches`, `clap::ArgAction`, `clap::ArgMatches::indices_of`, `clap::Command::try_get_matches_from`, and `clap::Error`; the one place the harness names `clap`
-    * `[ ]`   `toml` `1.2.0`, external crate, MIT OR Apache-2.0: `toml::from_str`, `toml::Table`, `toml::Value`, `toml::Value::try_into`, and `toml::de::Error`; the one place the harness names `toml`
-    * `[ ]`   `serde` `1.0.229`, external crate, MIT OR Apache-2.0, with the `derive` feature: `serde::Deserialize` and the container attribute `#[serde(deny_unknown_fields)]`; the one place the harness names `serde`
-    * `[ ]`   `std::fs::read_to_string`, `std::io::Error`, `std::path::PathBuf`, `std::ffi::OsString`, and `std::collections::BTreeMap`, standard library, the filesystem the function reads, its outer edge, and the leaf containers of the document; in the tests, `std::fs::create_dir_all`, `std::fs::write`, `std::fs::remove_dir_all`, `std::env::temp_dir`, and `std::process::id`
-    * `[ ]`   `harness-crypto/measure` and `harness-crypto/report`, same crate, are not dependencies; their iteration count and destination types are admitted from this node's document by the nodes that follow it
-    * `[ ]`   No repository dependency other than the crate's own manifest; every dependency points inward from the app ring; no reverse dependency
+  * `[✅]`   `deps`
+    * `[✅]`   `workspace/cargo`, repository root, configuration: the workspace's `apps/*` member glob admits the crate, its lint table binds every file below, and `deny.toml`'s license allowlist admits the three crates below, each `MIT OR Apache-2.0`; direction inward, the crate names the root configuration and the root names no crate
+    * `[✅]`   `harness-crypto/benchmark`, same crate, app ring: the crate and its `apps/harness-crypto/Cargo.toml`, as `harness-crypto/benchmark` creates them, and `harness-crypto/report`'s edit of the manifest's `serde_json` line; this node edits the manifest's `[dependencies]` alone
+    * `[✅]`   `clap` `4.6.7`, external crate, MIT OR Apache-2.0, with the `derive` feature: `clap::Parser`, `clap::CommandFactory`, `clap::FromArgMatches`, `clap::ArgAction`, `clap::ArgMatches::indices_of`, `clap::Command::try_get_matches_from`, and `clap::Error`; the one place the harness names `clap`
+    * `[✅]`   `toml` `1.2.0`, external crate, MIT OR Apache-2.0: `toml::from_str`, `toml::Table`, `toml::Value`, `toml::Value::try_into`, and `toml::de::Error`; the one place the harness names `toml`
+    * `[✅]`   `serde` `1.0.229`, external crate, MIT OR Apache-2.0, with the `derive` feature: `serde::Deserialize` and the container attribute `#[serde(deny_unknown_fields)]`; the one place the harness names `serde`
+    * `[✅]`   `std::fs::read_to_string`, `std::io::Error`, `std::path::PathBuf`, `std::ffi::OsString`, and `std::collections::BTreeMap`, standard library, the filesystem the function reads, its outer edge, and the leaf containers of the document; in the tests, `std::fs::create_dir_all`, `std::fs::write`, `std::fs::remove_dir_all`, `std::env::temp_dir`, and `std::process::id`
+    * `[✅]`   `harness-crypto/measure` and `harness-crypto/report`, same crate, are not dependencies; their iteration count and destination types are admitted from this node's document by the nodes that follow it
+    * `[✅]`   No repository dependency other than the crate's own manifest; every dependency points inward from the app ring; no reverse dependency
 
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `clap`: `#[derive(Parser)]` on a struct whose fields carry `#[arg(long = "config", value_name = "PATH", action = ArgAction::Append)]` and `#[arg(long = "set", value_name = "KEY=VALUE", action = ArgAction::Append)]`; `CommandFactory::command() -> Command`; `Command::try_get_matches_from<I, T>(self, itr: I) -> Result<ArgMatches, clap::Error>` over an iterator of `Into<OsString> + Clone` items, the first item the program name; `FromArgMatches::from_arg_matches(&ArgMatches) -> Result<Self, clap::Error>`; `ArgMatches::indices_of(&self, id: &str) -> Option<Indices<'_>>`, an iterator of `usize` positions over the command line, one per occurrence of an appended argument, in the order of its values; `clap::Error`, deriving `Debug` and not `PartialEq`
-    * `[ ]`   From `toml`: `toml::from_str::<toml::Table>(&str) -> Result<toml::Table, toml::de::Error>`; `toml::Table`, the map from `String` to `toml::Value`; `toml::Value::{Table(Table), Array(Vec<Value>), String(String), Integer(i64), Float(f64), Boolean(bool), Datetime(_)}`, `Clone` and `PartialEq`; `Value::try_into::<T: Deserialize>(self) -> Result<T, toml::de::Error>`; `toml::de::Error`, deriving `Debug` and `PartialEq`, its message naming the key a table refused
-    * `[ ]`   From `serde`: `#[derive(Deserialize)]` on a struct with `#[serde(deny_unknown_fields)]`, which refuses a key the struct does not declare, and which requires each field that is not an `Option`; an `Option` field absent from the table deserializes to `None`
-    * `[ ]`   From `std`: `fs::read_to_string(path) -> std::io::Result<String>`; `std::io::Error` deriving `Debug` and not `PartialEq`; `str::split_once('=') -> Option<(&str, &str)>`; `str::trim`
+  * `[✅]`   `context_slice`
+    * `[✅]`   From `clap`: `#[derive(Parser)]` on a struct whose fields carry `#[arg(long = "config", value_name = "PATH", action = ArgAction::Append)]` and `#[arg(long = "set", value_name = "KEY=VALUE", action = ArgAction::Append)]`; `CommandFactory::command() -> Command`; `Command::try_get_matches_from<I, T>(self, itr: I) -> Result<ArgMatches, clap::Error>` over an iterator of `Into<OsString> + Clone` items, the first item the program name; `FromArgMatches::from_arg_matches(&ArgMatches) -> Result<Self, clap::Error>`; `ArgMatches::indices_of(&self, id: &str) -> Option<Indices<'_>>`, an iterator of `usize` positions over the command line, one per occurrence of an appended argument, in the order of its values; `clap::Error`, deriving `Debug` and not `PartialEq`
+    * `[✅]`   From `toml`: `toml::from_str::<toml::Table>(&str) -> Result<toml::Table, toml::de::Error>`; `toml::Table`, the map from `String` to `toml::Value`; `toml::Value::{Table(Table), Array(Vec<Value>), String(String), Integer(i64), Float(f64), Boolean(bool), Datetime(_)}`, `Clone` and `PartialEq`; `Value::try_into::<T: Deserialize>(self) -> Result<T, toml::de::Error>`; `toml::de::Error`, deriving `Debug` and `PartialEq`, its message naming the key a table refused
+    * `[✅]`   From `serde`: `#[derive(Deserialize)]` on a struct with `#[serde(deny_unknown_fields)]`, which refuses a key the struct does not declare, and which requires each field that is not an `Option`; an `Option` field absent from the table deserializes to `None`
+    * `[✅]`   From `std`: `fs::read_to_string(path) -> std::io::Result<String>`; `std::io::Error` deriving `Debug` and not `PartialEq`; `str::split_once('=') -> Option<(&str, &str)>`; `str::trim`
 
-  * `[ ]`   `apps/harness-crypto/Cargo.toml`
-    * `[ ]`   `[dependencies]` gains `clap = { version = "4.6.7", features = ["derive"] }`, `serde = { version = "1.0.229", features = ["derive"] }`, and `toml = "1.2.0"`, each not optional, since the function is production code; `[dev-dependencies]`, `[features]`, `[lints]`, and every other line are unchanged
+  * `[✅]`   `apps/harness-crypto/Cargo.toml`
+    * `[✅]`   `[dependencies]` gains `clap = { version = "4.6.7", features = ["derive"] }`, `serde = { version = "1.0.229", features = ["derive"] }`, and `toml = "1.2.0"`, each not optional, since the function is production code; `[dev-dependencies]`, `[features]`, `[lints]`, and every other line are unchanged
 
-  * `[ ]`   `apps/harness-crypto/src/lib.rs`
-    * `[ ]`   Adds `mod config;` and `pub use config::provides::*;` to the barrel's existing module and re-export lines
-    * `[ ]`   Until `config/mod.rs` exists, `cargo check` reports the unresolved `mod config`, which is the RED state for every element below that precedes it
+  * `[✅]`   `apps/harness-crypto/src/lib.rs`
+    * `[✅]`   Adds `mod config;` and `pub use config::provides::*;` to the barrel's existing module and re-export lines
+    * `[✅]`   Until `config/mod.rs` exists, `cargo check` reports the unresolved `mod config`, which is the RED state for every element below that precedes it
 
-  * `[ ]`   `apps/harness-crypto/src/config/mod.rs`
-    * `[ ]`   Reads `mod layers;` and `pub mod provides;`
-    * `[ ]`   Until `config/layers/mod.rs` and `config/provides.rs` exist, `cargo check` reports the unresolved `mod layers` and `mod provides`, which is the RED state for every element below that precedes them
+  * `[✅]`   `apps/harness-crypto/src/config/mod.rs`
+    * `[✅]`   Reads `mod layers;` and `pub mod provides;`
+    * `[✅]`   Until `config/layers/mod.rs` and `config/provides.rs` exist, `cargo check` reports the unresolved `mod layers` and `mod provides`, which is the RED state for every element below that precedes them
 
-  * `[ ]`   `apps/harness-crypto/src/config/layers/interface.rs`
-    * `[ ]`   `ConfigArguments`, a struct with `#[derive(Parser, Clone, Debug, PartialEq, Eq)]`, `#[command(name = "harness-crypto")]`, and the fields `pub config: Vec<PathBuf>`, with `#[arg(long = "config", value_name = "PATH", action = ArgAction::Append)]`, and `pub set: Vec<String>`, with `#[arg(long = "set", value_name = "KEY=VALUE", action = ArgAction::Append)]`; the arguments the command line carries
-    * `[ ]`   `CanonicalValueTable`, a struct with `#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]`, `#[serde(deny_unknown_fields)]`, and the fields `pub kind: String` and `pub value: String`, a canonical field value as the document carries it, a fixed-width value as `0x`-prefixed hex and an unsigned value as decimal text
-    * `[ ]`   `CurveTable`, with the same derives and attribute and the fields `pub label: String`, `pub pairing_concrete: String`, and `pub target_group_encoding: String`, one curve to run
-    * `[ ]`   `BenchmarkConcreteTable`, with the same derives and attribute and the fields `pub pairing_concrete: String` and `pub target_group_encoding: String`, one pairing concrete the benchmark measures
-    * `[ ]`   `SelectionsTable`, with the same derives and attribute and the fields `pub random_source: String`, `pub encoding: String`, `pub hash_to_scalar: String`, `pub chain_forms: String`, `pub kem: String`, `pub key_agreement: String`, `pub delivery_proof: String`, `pub verifier: String`, `pub identity_scope: String`, `pub envelope_algebra: String`, `pub delivery_statement_version: u16`, `pub curves: Vec<CurveTable>`, and `pub benchmark_concretes: Vec<BenchmarkConcreteTable>`
-    * `[ ]`   `NetworkProfileTable`, with the same derives and attribute and the fields `pub chain_identifier: CanonicalValueTable`, `pub entitlement_contract: CanonicalValueTable`, `pub deployment_record: CanonicalValueTable`, `pub gas_price_oracle: CanonicalValueTable`, the OP Stack gas price oracle's address on the network, `pub verifier_endpoint: String`, the URL text of the endpoint the verifier connects to, and `pub precompile_encodings: Vec<String>`
-    * `[ ]`   `ContextTable`, with the same derives and attribute and the fields `pub suite_identifier: String`, `pub suite_version: u32`, `pub asset_root: String`, `pub parameter_set_identifier: String`, `pub source_entitlement: CanonicalValueTable`, `pub target_entitlement: CanonicalValueTable`, `pub old_interval: CanonicalValueTable`, `pub new_interval: CanonicalValueTable`, `pub seller: CanonicalValueTable`, `pub buyer: CanonicalValueTable`, `pub expiry: u64`, and `pub purpose: u16`, the identifiers and root as `0x`-prefixed hex text
-    * `[ ]`   `StatementsTable`, with the same derives and attribute and the fields `pub mint: ContextTable`, `pub transfer: ContextTable`, and `pub next: ContextTable`
-    * `[ ]`   `IdentitiesTable`, with the same derives and attribute and the fields `pub proof: String`, `pub mapping: Vec<String>`, and `pub other: String`, each identity as `0x`-prefixed hex text
-    * `[ ]`   `GenerateKindTable`, with the same derives and attribute and the fields `pub count: Option<u32>`, `pub terms: Option<u32>`, `pub message_length: Option<usize>`, `pub file: String`, `pub struct_name: String`, `pub decode_function: String`, and `pub path_constant: String`, one vector kind's configured quantities and names
-    * `[ ]`   `LibraryTable`, with the same derives and attribute and the fields `pub file: String` and `pub library: String`
-    * `[ ]`   `GenerateTable`, with the same derives and attribute and the fields `pub concrete: String`, `pub kinds: BTreeMap<String, GenerateKindTable>`, keyed by the vector kind's name, `pub constants_library: LibraryTable`, `pub records_library: LibraryTable`, `pub foundry_root: PathBuf`, `pub generated_directory: Vec<String>`, `pub curve_directories: BTreeMap<String, String>`, keyed by the `Debug` text of a member of the pairing family's declared curves, `pub compiler_version: String`, and `pub license: String`
-    * `[ ]`   `DestinationTable`, with the same derives and attribute and the fields `pub kind: String` and `pub path: Option<PathBuf>`, a place a text is written, the path present for a file
-    * `[ ]`   `BenchmarkTable`, with the same derives and attribute and the field `pub iterations: u32`
-    * `[ ]`   `MeasurementTable`, with the same derives and attribute and the fields `pub iterations: u32` and `pub conditions: String`
-    * `[ ]`   `AdjustmentTable`, with the same derives and attribute and the fields `pub piece_group_size: Option<u32>` and `pub primary_curve: Option<String>`
-    * `[ ]`   `ReportTable`, with the same derives and attribute and the fields `pub destinations: Vec<DestinationTable>`, `pub piece_group_size: u32`, `pub primary_curve: String`, and `pub adjustment: Option<AdjustmentTable>`
-    * `[ ]`   `OutputTable`, with the same derives and attribute and the field `pub destinations: Vec<DestinationTable>`
-    * `[ ]`   `ConfigDocument`, with the same derives and attribute and the fields `pub selections: SelectionsTable`, `pub network_profile: NetworkProfileTable`, `pub statements: StatementsTable`, `pub identities: IdentitiesTable`, `pub generate: GenerateTable`, `pub benchmark: BenchmarkTable`, `pub measurement: MeasurementTable`, `pub report: ReportTable`, and `pub output: OutputTable`
-    * `[ ]`   `LayersDeps`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`, since the function's only collaborator is the filesystem, its outer edge
-    * `[ ]`   `LayersParams`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub arguments: Vec<OsString>`, the command line as the process received it, the program name first
-    * `[ ]`   `LayersPayload`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub defaults: String`, the shipped defaults text
-    * `[ ]`   `LayersSuccessReturn`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub document: ConfigDocument`
-    * `[ ]`   `LayersErrorReturn`, an enum with `#[derive(Debug)]` and the variants `Arguments(clap::Error)`, `ParseDefaults(toml::de::Error)`, `ReadFile { path: PathBuf, error: std::io::Error }`, `ParseFile { path: PathBuf, error: toml::de::Error }`, `MalformedAssignment { assignment: String }`, `ParseAssignment { assignment: String, error: toml::de::Error }`, and `Document(toml::de::Error)`; it omits `PartialEq` and `Eq` because `clap::Error` and `std::io::Error` omit them
-    * `[ ]`   `LayersReturn`, the alias `Result<LayersSuccessReturn, LayersErrorReturn>`
-    * `[ ]`   `LayersFn`, the alias `fn(&LayersDeps, LayersParams, LayersPayload) -> LayersReturn`
-    * `[ ]`   No `Default` on any type in this file
-    * `[ ]`   Imports `clap::{ArgAction, Parser}`, `serde::Deserialize`, `std::collections::BTreeMap`, `std::ffi::OsString`, and `std::path::PathBuf`; declares nothing else
+  * `[✅]`   `apps/harness-crypto/src/config/layers/interface.rs`
+    * `[✅]`   `ConfigArguments`, a struct with `#[derive(Parser, Clone, Debug, PartialEq, Eq)]`, `#[command(name = "harness-crypto")]`, and the fields `pub config: Vec<PathBuf>`, with `#[arg(long = "config", value_name = "PATH", action = ArgAction::Append)]`, and `pub set: Vec<String>`, with `#[arg(long = "set", value_name = "KEY=VALUE", action = ArgAction::Append)]`; the arguments the command line carries
+    * `[✅]`   `CanonicalValueTable`, a struct with `#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]`, `#[serde(deny_unknown_fields)]`, and the fields `pub kind: String` and `pub value: String`, a canonical field value as the document carries it, a fixed-width value as `0x`-prefixed hex and an unsigned value as decimal text
+    * `[✅]`   `CurveTable`, with the same derives and attribute and the fields `pub label: String`, `pub pairing_concrete: String`, and `pub target_group_encoding: String`, one curve to run
+    * `[✅]`   `BenchmarkConcreteTable`, with the same derives and attribute and the fields `pub pairing_concrete: String` and `pub target_group_encoding: String`, one pairing concrete the benchmark measures
+    * `[✅]`   `SelectionsTable`, with the same derives and attribute and the fields `pub random_source: String`, `pub encoding: String`, `pub hash_to_scalar: String`, `pub chain_forms: String`, `pub kem: String`, `pub key_agreement: String`, `pub delivery_proof: String`, `pub verifier: String`, `pub identity_scope: String`, `pub envelope_algebra: String`, `pub delivery_statement_version: u16`, `pub curves: Vec<CurveTable>`, and `pub benchmark_concretes: Vec<BenchmarkConcreteTable>`
+    * `[✅]`   `NetworkProfileTable`, with the same derives and attribute and the fields `pub chain_identifier: CanonicalValueTable`, `pub entitlement_contract: CanonicalValueTable`, `pub deployment_record: CanonicalValueTable`, `pub gas_price_oracle: CanonicalValueTable`, the OP Stack gas price oracle's address on the network, `pub verifier_endpoint: String`, the URL text of the endpoint the verifier connects to, and `pub precompile_encodings: Vec<String>`
+    * `[✅]`   `ContextTable`, with the same derives and attribute and the fields `pub suite_identifier: String`, `pub suite_version: u32`, `pub asset_root: String`, `pub parameter_set_identifier: String`, `pub source_entitlement: CanonicalValueTable`, `pub target_entitlement: CanonicalValueTable`, `pub old_interval: CanonicalValueTable`, `pub new_interval: CanonicalValueTable`, `pub seller: CanonicalValueTable`, `pub buyer: CanonicalValueTable`, `pub expiry: u64`, and `pub purpose: u16`, the identifiers and root as `0x`-prefixed hex text
+    * `[✅]`   `StatementsTable`, with the same derives and attribute and the fields `pub mint: ContextTable`, `pub transfer: ContextTable`, and `pub next: ContextTable`
+    * `[✅]`   `IdentitiesTable`, with the same derives and attribute and the fields `pub proof: String`, `pub mapping: Vec<String>`, and `pub other: String`, each identity as `0x`-prefixed hex text
+    * `[✅]`   `GenerateKindTable`, with the same derives and attribute and the fields `pub count: Option<u32>`, `pub terms: Option<u32>`, `pub message_length: Option<usize>`, `pub file: String`, `pub struct_name: String`, `pub decode_function: String`, and `pub path_constant: String`, one vector kind's configured quantities and names
+    * `[✅]`   `LibraryTable`, with the same derives and attribute and the fields `pub file: String` and `pub library: String`
+    * `[✅]`   `GenerateTable`, with the same derives and attribute and the fields `pub concrete: String`, `pub kinds: BTreeMap<String, GenerateKindTable>`, keyed by the vector kind's name, `pub constants_library: LibraryTable`, `pub records_library: LibraryTable`, `pub foundry_root: PathBuf`, `pub generated_directory: Vec<String>`, `pub curve_directories: BTreeMap<String, String>`, keyed by the `Debug` text of a member of the pairing family's declared curves, `pub compiler_version: String`, and `pub license: String`
+    * `[✅]`   `DestinationTable`, with the same derives and attribute and the fields `pub kind: String` and `pub path: Option<PathBuf>`, a place a text is written, the path present for a file
+    * `[✅]`   `BenchmarkTable`, with the same derives and attribute and the field `pub iterations: u32`
+    * `[✅]`   `MeasurementTable`, with the same derives and attribute and the fields `pub iterations: u32` and `pub conditions: String`
+    * `[✅]`   `AdjustmentTable`, with the same derives and attribute and the fields `pub piece_group_size: Option<u32>` and `pub primary_curve: Option<String>`
+    * `[✅]`   `ReportTable`, with the same derives and attribute and the fields `pub destinations: Vec<DestinationTable>`, `pub piece_group_size: u32`, `pub primary_curve: String`, and `pub adjustment: Option<AdjustmentTable>`
+    * `[✅]`   `OutputTable`, with the same derives and attribute and the field `pub destinations: Vec<DestinationTable>`
+    * `[✅]`   `ConfigDocument`, with the same derives and attribute and the fields `pub selections: SelectionsTable`, `pub network_profile: NetworkProfileTable`, `pub statements: StatementsTable`, `pub identities: IdentitiesTable`, `pub generate: GenerateTable`, `pub benchmark: BenchmarkTable`, `pub measurement: MeasurementTable`, `pub report: ReportTable`, and `pub output: OutputTable`
+    * `[✅]`   `LayersDeps`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`, since the function's only collaborator is the filesystem, its outer edge
+    * `[✅]`   `LayersParams`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub arguments: Vec<OsString>`, the command line as the process received it, the program name first
+    * `[✅]`   `LayersPayload`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub defaults: String`, the shipped defaults text
+    * `[✅]`   `LayersSuccessReturn`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub document: ConfigDocument`
+    * `[✅]`   `LayersErrorReturn`, an enum with `#[derive(Debug)]` and the variants `Arguments(clap::Error)`, `ParseDefaults(toml::de::Error)`, `ReadFile { path: PathBuf, error: std::io::Error }`, `ParseFile { path: PathBuf, error: toml::de::Error }`, `MalformedAssignment { assignment: String }`, `ParseAssignment { assignment: String, error: toml::de::Error }`, and `Document(toml::de::Error)`; it omits `PartialEq` and `Eq` because `clap::Error` and `std::io::Error` omit them
+    * `[✅]`   `LayersReturn`, the alias `Result<LayersSuccessReturn, LayersErrorReturn>`
+    * `[✅]`   `LayersFn`, the alias `fn(&LayersDeps, LayersParams, LayersPayload) -> LayersReturn`
+    * `[✅]`   No `Default` on any type in this file
+    * `[✅]`   Imports `clap::{ArgAction, Parser}`, `serde::Deserialize`, `std::collections::BTreeMap`, `std::ffi::OsString`, and `std::path::PathBuf`; declares nothing else
 
-  * `[ ]`   `apps/harness-crypto/src/config/layers/interaction.spec.md`
-    * `[ ]`   `layers(deps: &LayersDeps, params: LayersParams, payload: LayersPayload) -> LayersReturn`, the trusted form
-    * `[ ]`   Arguments refused: condition `ConfigArguments::command().try_get_matches_from(params.arguments)` returns `Err(error)`, an unknown flag, a flag without its value, and the help and version requests among them; decision the `Result`; dependency call `clap`; outcome `Err(LayersErrorReturn::Arguments(error))`, the error unchanged, before the defaults are parsed
-    * `[ ]`   Arguments admitted: condition the matches are `Ok`; dependency call `ConfigArguments::from_arg_matches(&matches)`; outcome the `ConfigArguments`, whose `config` and `set` hold their values in the order they appeared; a refusal of `from_arg_matches` returns `Err(LayersErrorReturn::Arguments(error))` unchanged
-    * `[ ]`   Command-line order: the layer list pairs each value of `config` with the position `matches.indices_of("config")` returns for it and each value of `set` with the position `matches.indices_of("set")` returns for it, and sorts the pairs by position, so the layers apply in the order the flags appeared across both flags
-    * `[ ]`   Defaults refused: condition `toml::from_str::<toml::Table>(&payload.defaults)` returns `Err(error)`; outcome `Err(LayersErrorReturn::ParseDefaults(error))`, the error unchanged, before any file is read
-    * `[ ]`   Defaults admitted: condition the text parses; outcome the table the merge starts from
-    * `[ ]`   File layer, per layer in order: condition the layer is a `--config` path; dependency call `std::fs::read_to_string(&path)`; outcome a failure returns `Err(LayersErrorReturn::ReadFile { path, error })`, the error unchanged, before any later layer is read
-    * `[ ]`   File text refused: condition the file's text does not parse as a TOML table; dependency call `toml::from_str::<toml::Table>`; outcome `Err(LayersErrorReturn::ParseFile { path, error })`, the error unchanged
-    * `[ ]`   Assignment malformed: condition the assignment has no `=` or its text before the first `=` is empty once trimmed; decision `split_once('=')` and the trimmed key; dependency call none; outcome `Err(LayersErrorReturn::MalformedAssignment { assignment })`
-    * `[ ]`   Assignment text refused: condition the assignment is a key and a value and the whole assignment text does not parse as a TOML table of one assignment; dependency call `toml::from_str::<toml::Table>(&assignment)`; outcome `Err(LayersErrorReturn::ParseAssignment { assignment, error })`, the error unchanged
-    * `[ ]`   Merge, per layer: condition the layer's table parsed; decision for each key of the layer, both values are `Value::Table`; outcome the shared key's merge recurses into the two tables; decision either value is not a table or the key is absent from the table so far; outcome the layer's value replaces the earlier value whole, or is inserted
-    * `[ ]`   Document refused: condition `toml::Value::Table(merged).try_into::<ConfigDocument>()` returns `Err(error)`, an undeclared key in any table, an absent required key, or a value of the wrong kind; outcome `Err(LayersErrorReturn::Document(error))`, the error unchanged
-    * `[ ]`   Document admitted: outcome `Ok(LayersSuccessReturn { document })`
-    * `[ ]`   Unreached, refused arguments after matching: no input makes `ConfigArguments::from_arg_matches` refuse matches the command it was derived from accepted, so that `Err` has no unit block
-    * `[ ]`   Ordering: arguments, then defaults, then each layer in command-line order, then the document; the first failure returns; each file is read when its layer is reached; no side effect beyond the reads
-    * `[ ]`   Own entry `layered_sources_merge_in_command_line_order`: condition `layers` over a command line naming two files and two assignments interleaved, every collaborator real, the filesystem real, over a defaults text declaring every table; outcome `Ok` whose document holds, for each key a later layer named, the value of the last layer that named it, and, for each key no layer named, the defaults' value; variation the interleavings file then assignment, assignment then file, and two files, each over a key the defaults declare as a scalar, as a table key, and as an array; edge a layer applied in flag order within its own flag instead of across both, a table replaced whole instead of merged key by key, or an array merged instead of replaced, differs from the document built in Arrange
-    * `[ ]`   Private surface: the chain of real functions `layers`, `clap`'s command and matches, `std::fs::read_to_string`, `toml::from_str`, the merge, and `toml::Value::try_into`, all running for real; the outer-edge collaborator is the filesystem, a directory beneath the operating system's temporary directory removed before each act; the observable result is the `LayersReturn`; the entry proven is `layered_sources_merge_in_command_line_order`
-    * `[ ]`   Public surface: an outside caller invokes `layers` through the crate root with a `LayersDeps`, a `LayersParams` holding a command line, and a `LayersPayload` holding a defaults text, and observes the `LayersReturn` and the `ConfigDocument` in its success; the entry proven is `layered_sources_merge_in_command_line_order`; the outer-edge collaborator is the filesystem
+  * `[✅]`   `apps/harness-crypto/src/config/layers/interaction.spec.md`
+    * `[✅]`   `layers(deps: &LayersDeps, params: LayersParams, payload: LayersPayload) -> LayersReturn`, the trusted form
+    * `[✅]`   Arguments refused: condition `ConfigArguments::command().try_get_matches_from(params.arguments)` returns `Err(error)`, an unknown flag, a flag without its value, and the help and version requests among them; decision the `Result`; dependency call `clap`; outcome `Err(LayersErrorReturn::Arguments(error))`, the error unchanged, before the defaults are parsed
+    * `[✅]`   Arguments admitted: condition the matches are `Ok`; dependency call `ConfigArguments::from_arg_matches(&matches)`; outcome the `ConfigArguments`, whose `config` and `set` hold their values in the order they appeared; a refusal of `from_arg_matches` returns `Err(LayersErrorReturn::Arguments(error))` unchanged
+    * `[✅]`   Command-line order: the layer list pairs each value of `config` with the position `matches.indices_of("config")` returns for it and each value of `set` with the position `matches.indices_of("set")` returns for it, and sorts the pairs by position, so the layers apply in the order the flags appeared across both flags
+    * `[✅]`   Defaults refused: condition `toml::from_str::<toml::Table>(&payload.defaults)` returns `Err(error)`; outcome `Err(LayersErrorReturn::ParseDefaults(error))`, the error unchanged, before any file is read
+    * `[✅]`   Defaults admitted: condition the text parses; outcome the table the merge starts from
+    * `[✅]`   File layer, per layer in order: condition the layer is a `--config` path; dependency call `std::fs::read_to_string(&path)`; outcome a failure returns `Err(LayersErrorReturn::ReadFile { path, error })`, the error unchanged, before any later layer is read
+    * `[✅]`   File text refused: condition the file's text does not parse as a TOML table; dependency call `toml::from_str::<toml::Table>`; outcome `Err(LayersErrorReturn::ParseFile { path, error })`, the error unchanged
+    * `[✅]`   Assignment malformed: condition the assignment has no `=` or its text before the first `=` is empty once trimmed; decision `split_once('=')` and the trimmed key; dependency call none; outcome `Err(LayersErrorReturn::MalformedAssignment { assignment })`
+    * `[✅]`   Assignment text refused: condition the assignment is a key and a value and the whole assignment text does not parse as a TOML table of one assignment; dependency call `toml::from_str::<toml::Table>(&assignment)`; outcome `Err(LayersErrorReturn::ParseAssignment { assignment, error })`, the error unchanged
+    * `[✅]`   Merge, per layer: condition the layer's table parsed; decision for each key of the layer, both values are `Value::Table`; outcome the shared key's merge recurses into the two tables; decision either value is not a table or the key is absent from the table so far; outcome the layer's value replaces the earlier value whole, or is inserted
+    * `[✅]`   Document refused: condition `toml::Value::Table(merged).try_into::<ConfigDocument>()` returns `Err(error)`, an undeclared key in any table, an absent required key, or a value of the wrong kind; outcome `Err(LayersErrorReturn::Document(error))`, the error unchanged
+    * `[✅]`   Document admitted: outcome `Ok(LayersSuccessReturn { document })`
+    * `[✅]`   Unreached, refused arguments after matching: no input makes `ConfigArguments::from_arg_matches` refuse matches the command it was derived from accepted, so that `Err` has no unit block
+    * `[✅]`   Ordering: arguments, then defaults, then each layer in command-line order, then the document; the first failure returns; each file is read when its layer is reached; no side effect beyond the reads
+    * `[✅]`   Own entry `layered_sources_merge_in_command_line_order`: condition `layers` over a command line naming two files and two assignments interleaved, every collaborator real, the filesystem real, over a defaults text declaring every table; outcome `Ok` whose document holds, for each key a later layer named, the value of the last layer that named it, and, for each key no layer named, the defaults' value; variation the interleavings file then assignment, assignment then file, and two files, each over a key the defaults declare as a scalar, as a table key, and as an array; edge a layer applied in flag order within its own flag instead of across both, a table replaced whole instead of merged key by key, or an array merged instead of replaced, differs from the document built in Arrange
+    * `[✅]`   Private surface: the chain of real functions `layers`, `clap`'s command and matches, `std::fs::read_to_string`, `toml::from_str`, the merge, and `toml::Value::try_into`, all running for real; the outer-edge collaborator is the filesystem, a directory beneath the operating system's temporary directory removed before each act; the observable result is the `LayersReturn`; the entry proven is `layered_sources_merge_in_command_line_order`
+    * `[✅]`   Public surface: an outside caller invokes `layers` through the crate root with a `LayersDeps`, a `LayersParams` holding a command line, and a `LayersPayload` holding a defaults text, and observes the `LayersReturn` and the `ConfigDocument` in its success; the entry proven is `layered_sources_merge_in_command_line_order`; the outer-edge collaborator is the filesystem
 
-  * `[ ]`   `apps/harness-crypto/src/config/layers/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`, the file holding no `unwrap`, `expect`, `panic!`, or numeric `as`
-    * `[ ]`   Fixture values: every builder below defaults to the values the defaults text of `build_layers_defaults` declares; the text declares, under `selections`, `random_source = "operating_system"`, `encoding = "abi"`, `hash_to_scalar = "keccak256"`, `chain_forms = "evm"`, `kem = "bb1_depth_one"`, `key_agreement = "pairing_elgamal"`, `delivery_proof = "schnorr_fs"`, `verifier = "evm"`, `identity_scope = "entitlement"`, `envelope_algebra = "pairing_elgamal"`, `delivery_statement_version = 1`, one `curves` entry of label `"curve-a"`, pairing concrete `"concrete-a"`, and target-group encoding `"encoding-a"`, and one `benchmark_concretes` entry of pairing concrete `"concrete-a"` and target-group encoding `"encoding-a"`
-    * `[ ]`   The text declares, under `network_profile`, `chain_identifier`, `entitlement_contract`, `deployment_record`, and `gas_price_oracle` each as a `kind` and a `value`, the kinds `"uint256"`, `"bytes20"`, `"bytes20"`, and `"bytes20"` and the values `"1"`, `"0x" ` followed by forty `1` digits, `"0x"` followed by forty `2` digits, and `"0x"` followed by forty `a` digits, `verifier_endpoint = "http://endpoint-a.test"`, and `precompile_encodings = ["encoding-a"]`; under `statements`, the tables `mint`, `transfer`, and `next`, each declaring `suite_identifier = "0x" ` followed by sixty-four `3` digits, `suite_version = 1`, `asset_root = "0x"` followed by sixty-four `4` digits, `parameter_set_identifier = "0x"` followed by sixty-four `5` digits, each canonical value as a `kind` and a `value`, `expiry = 1000`, and `purpose` `1`, `2`, and `2` for `mint`, `transfer`, and `next`
-    * `[ ]`   The text declares, under `identities`, `proof = "0x"` followed by sixty-four `6` digits, `mapping = ["0x"` followed by sixty-four `7` digits`]`, and `other = "0x"` followed by sixty-four `8` digits; under `generate`, `concrete = "solidity"`, one `kinds` entry named `"kind-a"` with `count = 2`, `file = "kind-a.txt"`, `struct_name = "KindA"`, `decode_function = "decodeKindA"`, and `path_constant = "KIND_A_PATH"`, `constants_library` and `records_library` each a `file` and a `library`, `foundry_root = "root"`, `generated_directory = ["generated"]`, `curve_directories = { "Bn254" = "directory-a", "Bls12381" = "directory-b" }`, `compiler_version = "0.8.0"`, and `license = "MIT"`
-    * `[ ]`   The text declares, under `benchmark`, `iterations = 1`; under `measurement`, `iterations = 1` and `conditions = "conditions-a"`; under `report`, `destinations = [{ kind = "standard_output" }]`, `piece_group_size = 16384`, and `primary_curve = "curve-a"`, with no `adjustment`; under `output`, `destinations = [{ kind = "standard_output" }]`
-    * `[ ]`   For each table type of `interface.rs` and for `ConfigDocument`: an `…Overrides` struct with `#[derive(Default)]` and one `Option` per field, and `build_<table>(overrides) -> <Table>` defaulting each field to the value the text declares, each nested table to its own builder at its defaults; no corruptions type and no invalidator, since the document is deserialized from text and its refusals are proven by text
-    * `[ ]`   `ConfigArgumentsOverrides`, `#[derive(Default)]`, the fields `pub config: Option<Vec<PathBuf>>` and `pub set: Option<Vec<String>>`; `build_config_arguments(overrides) -> ConfigArguments`, each defaulting to an empty vector
-    * `[ ]`   `LayersDefaultsOverrides`, `#[derive(Default)]`, the field `pub text: Option<String>`; `build_layers_defaults(overrides) -> String`, the text above, or the override
-    * `[ ]`   `LayersDepsOverrides`, the fieldless struct with `#[derive(Default)]`; `build_layers_deps(_overrides) -> LayersDeps`; no corruptions type and no invalidator
-    * `[ ]`   `LayersParamsOverrides`, `#[derive(Default)]`, the field `pub arguments: Option<Vec<OsString>>`; `build_layers_params(overrides) -> LayersParams`, defaulting to the program name `"harness-crypto"` alone; no corruptions type and no invalidator
-    * `[ ]`   `LayersPayloadOverrides`, `#[derive(Default)]`, the field `pub defaults: Option<String>`; `build_layers_payload(overrides) -> LayersPayload`, defaulting `defaults` to `build_layers_defaults(Default::default())`; no corruptions type and no invalidator
-    * `[ ]`   `LayersSuccessReturnOverrides`, `#[derive(Default)]`, the field `pub document: Option<ConfigDocument>`; `build_layers_success_return(overrides) -> LayersSuccessReturn`, defaulting to `build_config_document(Default::default())`
-    * `[ ]`   `mock_layers(_deps: &LayersDeps, _params: LayersParams, _payload: LayersPayload) -> LayersReturn`, the production type `LayersFn` and nothing else, returning `Ok(build_layers_success_return(Default::default()))`
-    * `[ ]`   Dispositions: `LayersErrorReturn`, an enum, used by its production values; `LayersReturn`, an alias of `Result`, and `LayersFn`, a function type whose mock is `mock_layers`; `ConfigArguments`, `ConfigDocument`, every table type, `LayersDeps`, `LayersParams`, `LayersPayload`, and `LayersSuccessReturn`, object types `interface.rs` declares, each with its builder above
-    * `[ ]`   Imports this module's types from `super::interface`, `OsString` from `std::ffi`, and `PathBuf` from `std::path`; nothing else
+  * `[✅]`   `apps/harness-crypto/src/config/layers/mock.rs`
+    * `[✅]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`, the file holding no `unwrap`, `expect`, `panic!`, or numeric `as`
+    * `[✅]`   Fixture values: every builder below defaults to the values the defaults text of `build_layers_defaults` declares; the text declares, under `selections`, `random_source = "operating_system"`, `encoding = "abi"`, `hash_to_scalar = "keccak256"`, `chain_forms = "evm"`, `kem = "bb1_depth_one"`, `key_agreement = "pairing_elgamal"`, `delivery_proof = "schnorr_fs"`, `verifier = "evm"`, `identity_scope = "entitlement"`, `envelope_algebra = "pairing_elgamal"`, `delivery_statement_version = 1`, one `curves` entry of label `"curve-a"`, pairing concrete `"concrete-a"`, and target-group encoding `"encoding-a"`, and one `benchmark_concretes` entry of pairing concrete `"concrete-a"` and target-group encoding `"encoding-a"`
+    * `[✅]`   The text declares, under `network_profile`, `chain_identifier`, `entitlement_contract`, `deployment_record`, and `gas_price_oracle` each as a `kind` and a `value`, the kinds `"uint256"`, `"bytes20"`, `"bytes20"`, and `"bytes20"` and the values `"1"`, `"0x" ` followed by forty `1` digits, `"0x"` followed by forty `2` digits, and `"0x"` followed by forty `a` digits, `verifier_endpoint = "http://endpoint-a.test"`, and `precompile_encodings = ["encoding-a"]`; under `statements`, the tables `mint`, `transfer`, and `next`, each declaring `suite_identifier = "0x" ` followed by sixty-four `3` digits, `suite_version = 1`, `asset_root = "0x"` followed by sixty-four `4` digits, `parameter_set_identifier = "0x"` followed by sixty-four `5` digits, each canonical value as a `kind` and a `value`, `expiry = 1000`, and `purpose` `1`, `2`, and `2` for `mint`, `transfer`, and `next`
+    * `[✅]`   The text declares, under `identities`, `proof = "0x"` followed by sixty-four `6` digits, `mapping = ["0x"` followed by sixty-four `7` digits`]`, and `other = "0x"` followed by sixty-four `8` digits; under `generate`, `concrete = "solidity"`, one `kinds` entry named `"kind-a"` with `count = 2`, `file = "kind-a.txt"`, `struct_name = "KindA"`, `decode_function = "decodeKindA"`, and `path_constant = "KIND_A_PATH"`, `constants_library` and `records_library` each a `file` and a `library`, `foundry_root = "root"`, `generated_directory = ["generated"]`, `curve_directories = { "Bn254" = "directory-a", "Bls12381" = "directory-b" }`, `compiler_version = "0.8.0"`, and `license = "MIT"`
+    * `[✅]`   The text declares, under `benchmark`, `iterations = 1`; under `measurement`, `iterations = 1` and `conditions = "conditions-a"`; under `report`, `destinations = [{ kind = "standard_output" }]`, `piece_group_size = 16384`, and `primary_curve = "curve-a"`, with no `adjustment`; under `output`, `destinations = [{ kind = "standard_output" }]`
+    * `[✅]`   For each table type of `interface.rs` and for `ConfigDocument`: an `…Overrides` struct with `#[derive(Default)]` and one `Option` per field, and `build_<table>(overrides) -> <Table>` defaulting each field to the value the text declares, each nested table to its own builder at its defaults; no corruptions type and no invalidator, since the document is deserialized from text and its refusals are proven by text
+    * `[✅]`   `ConfigArgumentsOverrides`, `#[derive(Default)]`, the fields `pub config: Option<Vec<PathBuf>>` and `pub set: Option<Vec<String>>`; `build_config_arguments(overrides) -> ConfigArguments`, each defaulting to an empty vector
+    * `[✅]`   `LayersDefaultsOverrides`, `#[derive(Default)]`, the field `pub text: Option<String>`; `build_layers_defaults(overrides) -> String`, the text above, or the override
+    * `[✅]`   `LayersDepsOverrides`, the fieldless struct with `#[derive(Default)]`; `build_layers_deps(_overrides) -> LayersDeps`; no corruptions type and no invalidator
+    * `[✅]`   `LayersParamsOverrides`, `#[derive(Default)]`, the field `pub arguments: Option<Vec<OsString>>`; `build_layers_params(overrides) -> LayersParams`, defaulting to the program name `"harness-crypto"` alone; no corruptions type and no invalidator
+    * `[✅]`   `LayersPayloadOverrides`, `#[derive(Default)]`, the field `pub defaults: Option<String>`; `build_layers_payload(overrides) -> LayersPayload`, defaulting `defaults` to `build_layers_defaults(Default::default())`; no corruptions type and no invalidator
+    * `[✅]`   `LayersSuccessReturnOverrides`, `#[derive(Default)]`, the field `pub document: Option<ConfigDocument>`; `build_layers_success_return(overrides) -> LayersSuccessReturn`, defaulting to `build_config_document(Default::default())`
+    * `[✅]`   `mock_layers(_deps: &LayersDeps, _params: LayersParams, _payload: LayersPayload) -> LayersReturn`, the production type `LayersFn` and nothing else, returning `Ok(build_layers_success_return(Default::default()))`
+    * `[✅]`   Dispositions: `LayersErrorReturn`, an enum, used by its production values; `LayersReturn`, an alias of `Result`, and `LayersFn`, a function type whose mock is `mock_layers`; `ConfigArguments`, `ConfigDocument`, every table type, `LayersDeps`, `LayersParams`, `LayersPayload`, and `LayersSuccessReturn`, object types `interface.rs` declares, each with its builder above
+    * `[✅]`   Imports this module's types from `super::interface`, `OsString` from `std::ffi`, and `PathBuf` from `std::path`; nothing else
 
-  * `[ ]`   `apps/harness-crypto/src/config/layers/test_basic.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`, for the unpacking of each write; imports `layers` and every type of `super::interface` and every builder and overrides type of `super::mock` its blocks name, `std::ffi::OsString`, `std::fs`, `std::env::temp_dir`, and `std::path::PathBuf`; contains only imports, contract headers, blocks, and assertions
-    * `[ ]`   Every block calls `layers` once with `build_layers_deps` and the params and payload it names; a block that names a file arranges a directory beneath `std::env::temp_dir()` named `chaintorrent-layers-`, the process id, `-`, and the current thread's id as its `Debug` text, removed by `std::fs::remove_dir_all` before the act and created by `std::fs::create_dir_all`, and writes each file beneath it by `std::fs::write`; the arguments are `OsString`s whose first is `"harness-crypto"`
-    * `[ ]`   Expected documents are built in Arrange by `build_config_document` over overrides naming the value a layer changes and are never read from the subject; a block changing a value changes that override alone
-    * `[ ]`   `layers_returns_the_defaults_when_no_source_is_named`
-      * `[ ]`   Contract: Defaults admitted and Document admitted → the document is the defaults text's own values
-      * `[ ]`   Arrange: the program name alone and the default defaults text
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result is `Ok` and its document equals `build_config_document(Default::default())`
-    * `[ ]`   `layers_applies_a_file_over_the_defaults`
-      * `[ ]`   Contract: File layer → a key the file names takes the file's value and every other key keeps the defaults'
-      * `[ ]`   Arrange: a file declaring `[benchmark]` with `iterations = 7`, named by `--config`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the document equals `build_config_document` with the `benchmark` override of `iterations` `7`
-    * `[ ]`   `layers_applies_an_assignment_over_the_defaults`
-      * `[ ]`   Contract: Assignment text → the assignment's value, parsed as TOML, replaces the defaults' value
-      * `[ ]`   Arrange: `--set` with `benchmark.iterations=9`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the document equals `build_config_document` with `iterations` `9` under `benchmark`
-    * `[ ]`   `layers_parses_a_string_assignment_value_as_a_toml_string`
-      * `[ ]`   Contract: Assignment text → a quoted value is a TOML string
-      * `[ ]`   Arrange: `--set` with `selections.kem="kem-b"`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the document's `selections.kem` equals `"kem-b"` and every other value is the defaults'
-    * `[ ]`   `layers_merges_a_table_key_by_key`
-      * `[ ]`   Contract: Merge → a layer naming one key of a table leaves its sibling keys at the earlier layers' values
-      * `[ ]`   Arrange: a file declaring `[measurement]` with `conditions = "conditions-b"` alone
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the document's `measurement.conditions` equals `"conditions-b"` and `measurement.iterations` equals the defaults' value
-    * `[ ]`   `layers_replaces_an_array_whole`
-      * `[ ]`   Contract: Merge → an array a layer names replaces the earlier array and is not extended
-      * `[ ]`   Arrange: a file declaring `[identities]` with `mapping` of two entries, differing from the defaults' one entry
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the document's `identities.mapping` equals the file's two entries in order
-    * `[ ]`   `layers_applies_layers_in_command_line_order_across_both_flags`
-      * `[ ]`   Contract: Command-line order → a later flag's value wins over an earlier flag's, whichever flag each is
-      * `[ ]`   Arrange: two command lines over one key: a `--config` file naming `benchmark.iterations` `3` then `--set` `benchmark.iterations=4`; and `--set` `benchmark.iterations=4` then the file
-      * `[ ]`   Act: `layers`, once per command line
-      * `[ ]`   Assert: the first command line's document holds `4` and the second's holds `3`
-    * `[ ]`   `layers_applies_repeated_files_in_the_order_named`
-      * `[ ]`   Contract: Command-line order → of two files naming one key, the later-named wins
-      * `[ ]`   Arrange: two files naming `benchmark.iterations`, `5` and `6`, named in that order
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the document's `benchmark.iterations` equals `6`
-    * `[ ]`   `layers_applies_a_dotted_assignment_key_to_its_nested_table`
-      * `[ ]`   Contract: Assignment text → a dotted key names a key of a nested table
-      * `[ ]`   Arrange: `--set` with `generate.kinds.kind-a.count=5`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the document's `generate.kinds["kind-a"].count` equals `Some(5)` and its `file` equals the defaults' value
-    * `[ ]`   `layers_leaves_an_optional_table_absent_when_no_layer_names_it`
-      * `[ ]`   Contract: Document admitted → an optional key no layer names is `None`
-      * `[ ]`   Arrange: the program name alone
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the document's `report.adjustment` is `None`
+  * `[✅]`   `apps/harness-crypto/src/config/layers/test_basic.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`, for the unpacking of each write; imports `layers` and every type of `super::interface` and every builder and overrides type of `super::mock` its blocks name, `std::ffi::OsString`, `std::fs`, `std::env::temp_dir`, and `std::path::PathBuf`; contains only imports, contract headers, blocks, and assertions
+    * `[✅]`   Every block calls `layers` once with `build_layers_deps` and the params and payload it names; a block that names a file arranges a directory beneath `std::env::temp_dir()` named `chaintorrent-layers-`, the process id, `-`, and the current thread's id as its `Debug` text, removed by `std::fs::remove_dir_all` before the act and created by `std::fs::create_dir_all`, and writes each file beneath it by `std::fs::write`; the arguments are `OsString`s whose first is `"harness-crypto"`
+    * `[✅]`   Expected documents are built in Arrange by `build_config_document` over overrides naming the value a layer changes and are never read from the subject; a block changing a value changes that override alone
+    * `[✅]`   `layers_returns_the_defaults_when_no_source_is_named`
+      * `[✅]`   Contract: Defaults admitted and Document admitted → the document is the defaults text's own values
+      * `[✅]`   Arrange: the program name alone and the default defaults text
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result is `Ok` and its document equals `build_config_document(Default::default())`
+    * `[✅]`   `layers_applies_a_file_over_the_defaults`
+      * `[✅]`   Contract: File layer → a key the file names takes the file's value and every other key keeps the defaults'
+      * `[✅]`   Arrange: a file declaring `[benchmark]` with `iterations = 7`, named by `--config`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the document equals `build_config_document` with the `benchmark` override of `iterations` `7`
+    * `[✅]`   `layers_applies_an_assignment_over_the_defaults`
+      * `[✅]`   Contract: Assignment text → the assignment's value, parsed as TOML, replaces the defaults' value
+      * `[✅]`   Arrange: `--set` with `benchmark.iterations=9`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the document equals `build_config_document` with `iterations` `9` under `benchmark`
+    * `[✅]`   `layers_parses_a_string_assignment_value_as_a_toml_string`
+      * `[✅]`   Contract: Assignment text → a quoted value is a TOML string
+      * `[✅]`   Arrange: `--set` with `selections.kem="kem-b"`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the document's `selections.kem` equals `"kem-b"` and every other value is the defaults'
+    * `[✅]`   `layers_merges_a_table_key_by_key`
+      * `[✅]`   Contract: Merge → a layer naming one key of a table leaves its sibling keys at the earlier layers' values
+      * `[✅]`   Arrange: a file declaring `[measurement]` with `conditions = "conditions-b"` alone
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the document's `measurement.conditions` equals `"conditions-b"` and `measurement.iterations` equals the defaults' value
+    * `[✅]`   `layers_replaces_an_array_whole`
+      * `[✅]`   Contract: Merge → an array a layer names replaces the earlier array and is not extended
+      * `[✅]`   Arrange: a file declaring `[identities]` with `mapping` of two entries, differing from the defaults' one entry
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the document's `identities.mapping` equals the file's two entries in order
+    * `[✅]`   `layers_applies_layers_in_command_line_order_across_both_flags`
+      * `[✅]`   Contract: Command-line order → a later flag's value wins over an earlier flag's, whichever flag each is
+      * `[✅]`   Arrange: two command lines over one key: a `--config` file naming `benchmark.iterations` `3` then `--set` `benchmark.iterations=4`; and `--set` `benchmark.iterations=4` then the file
+      * `[✅]`   Act: `layers`, once per command line
+      * `[✅]`   Assert: the first command line's document holds `4` and the second's holds `3`
+    * `[✅]`   `layers_applies_repeated_files_in_the_order_named`
+      * `[✅]`   Contract: Command-line order → of two files naming one key, the later-named wins
+      * `[✅]`   Arrange: two files naming `benchmark.iterations`, `5` and `6`, named in that order
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the document's `benchmark.iterations` equals `6`
+    * `[✅]`   `layers_applies_a_dotted_assignment_key_to_its_nested_table`
+      * `[✅]`   Contract: Assignment text → a dotted key names a key of a nested table
+      * `[✅]`   Arrange: `--set` with `generate.kinds.kind-a.count=5`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the document's `generate.kinds["kind-a"].count` equals `Some(5)` and its `file` equals the defaults' value
+    * `[✅]`   `layers_leaves_an_optional_table_absent_when_no_layer_names_it`
+      * `[✅]`   Contract: Document admitted → an optional key no layer names is `None`
+      * `[✅]`   Arrange: the program name alone
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the document's `report.adjustment` is `None`
 
-  * `[ ]`   `apps/harness-crypto/src/config/layers/test_error.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports as `test_basic.rs` imports, with `LayersErrorReturn`; contains only imports, contract headers, blocks, and assertions
-    * `[ ]`   Every block: the collaborators, the block's directory, and the arguments as `test_basic.rs` states them; the block asserts the whole error by a pattern naming every field, since the error omits `PartialEq`
-    * `[ ]`   `layers_returns_a_refused_flag_unchanged`
-      * `[ ]`   Contract: Arguments refused → `Err(LayersErrorReturn::Arguments(error))`, the error unchanged
-      * `[ ]`   Arrange: a command line with the flag `--unknown`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::Arguments(error))` with `error.kind()` equal to `clap::error::ErrorKind::UnknownArgument`
-    * `[ ]`   `layers_returns_a_malformed_defaults_text_unchanged`
-      * `[ ]`   Contract: Defaults refused → `Err(LayersErrorReturn::ParseDefaults(error))`
-      * `[ ]`   Arrange: a defaults text of `"= ="`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::ParseDefaults(_))`
-    * `[ ]`   `layers_returns_an_unreadable_file_with_its_path`
-      * `[ ]`   Contract: File layer → a refused read is `Err(LayersErrorReturn::ReadFile { path, error })`, the error unchanged
-      * `[ ]`   Arrange: `--config` naming a path beneath the block's directory that names no file
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::ReadFile { path, .. })` with `path` equal to the named path
-    * `[ ]`   `layers_returns_a_malformed_file_with_its_path`
-      * `[ ]`   Contract: File text refused → `Err(LayersErrorReturn::ParseFile { path, error })`
-      * `[ ]`   Arrange: a file whose text is `"= ="`, named by `--config`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::ParseFile { path, .. })` with `path` equal to the file's path
-    * `[ ]`   `layers_returns_an_assignment_without_an_equals_sign`
-      * `[ ]`   Contract: Assignment malformed → `Err(LayersErrorReturn::MalformedAssignment { assignment })`
-      * `[ ]`   Arrange: `--set` with `benchmark.iterations`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::MalformedAssignment { assignment })` with `assignment` equal to `"benchmark.iterations"`
-    * `[ ]`   `layers_returns_an_assignment_with_an_empty_key`
-      * `[ ]`   Contract: Assignment malformed → a key that is empty once trimmed is refused
-      * `[ ]`   Arrange: `--set` with `  =3`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::MalformedAssignment { assignment })` with `assignment` equal to `"  =3"`
-    * `[ ]`   `layers_returns_an_assignment_whose_value_is_not_toml`
-      * `[ ]`   Contract: Assignment text refused → `Err(LayersErrorReturn::ParseAssignment { assignment, error })`
-      * `[ ]`   Arrange: `--set` with `selections.kem=kem-b`, an unquoted string
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::ParseAssignment { assignment, .. })` with `assignment` equal to `"selections.kem=kem-b"`
-    * `[ ]`   `layers_refuses_a_key_the_document_does_not_declare_at_its_top_level`
-      * `[ ]`   Contract: Document refused → an undeclared top-level key is `Err(LayersErrorReturn::Document(error))`
-      * `[ ]`   Arrange: `--set` with `undeclared=1`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::Document(error))` with `error.to_string()` containing `"undeclared"`
-    * `[ ]`   `layers_refuses_a_key_a_table_does_not_declare`
-      * `[ ]`   Contract: Document refused → an undeclared key in a table is refused
-      * `[ ]`   Arrange: `--set` with `benchmark.undeclared=1`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::Document(error))` with `error.to_string()` containing `"undeclared"`
-    * `[ ]`   `layers_refuses_a_key_in_a_nested_table_it_does_not_declare`
-      * `[ ]`   Contract: Document refused → an undeclared key in a table nested in a table is refused
-      * `[ ]`   Arrange: `--set` with `network_profile.chain_identifier.undeclared="x"`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::Document(error))` with `error.to_string()` containing `"undeclared"`
-    * `[ ]`   `layers_refuses_a_document_missing_a_required_key`
-      * `[ ]`   Contract: Document refused → a defaults text that omits a required key is refused
-      * `[ ]`   Arrange: a defaults text of the default text without its `[benchmark]` table, through `LayersDefaultsOverrides`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::Document(error))` with `error.to_string()` containing `"benchmark"`
-    * `[ ]`   `layers_refuses_a_value_of_the_wrong_kind`
-      * `[ ]`   Contract: Document refused → a value of a kind the key does not take is refused
-      * `[ ]`   Arrange: `--set` with `benchmark.iterations="three"`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::Document(error))` with `error.to_string()` containing `"iterations"`
-    * `[ ]`   `layers_stops_at_the_first_refused_layer`
-      * `[ ]`   Contract: Ordering → a layer's refusal returns before any later layer is read
-      * `[ ]`   Arrange: `--config` naming a path that names no file, then `--set` with `benchmark.iterations`
-      * `[ ]`   Act: `layers`, once
-      * `[ ]`   Assert: the result matches `Err(LayersErrorReturn::ReadFile { .. })`, not the malformed assignment
+  * `[✅]`   `apps/harness-crypto/src/config/layers/test_error.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; imports as `test_basic.rs` imports, with `LayersErrorReturn`; contains only imports, contract headers, blocks, and assertions
+    * `[✅]`   Every block: the collaborators, the block's directory, and the arguments as `test_basic.rs` states them; the block asserts the whole error by a pattern naming every field, since the error omits `PartialEq`
+    * `[✅]`   `layers_returns_a_refused_flag_unchanged`
+      * `[✅]`   Contract: Arguments refused → `Err(LayersErrorReturn::Arguments(error))`, the error unchanged
+      * `[✅]`   Arrange: a command line with the flag `--unknown`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::Arguments(error))` with `error.kind()` equal to `clap::error::ErrorKind::UnknownArgument`
+    * `[✅]`   `layers_returns_a_malformed_defaults_text_unchanged`
+      * `[✅]`   Contract: Defaults refused → `Err(LayersErrorReturn::ParseDefaults(error))`
+      * `[✅]`   Arrange: a defaults text of `"= ="`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::ParseDefaults(_))`
+    * `[✅]`   `layers_returns_an_unreadable_file_with_its_path`
+      * `[✅]`   Contract: File layer → a refused read is `Err(LayersErrorReturn::ReadFile { path, error })`, the error unchanged
+      * `[✅]`   Arrange: `--config` naming a path beneath the block's directory that names no file
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::ReadFile { path, .. })` with `path` equal to the named path
+    * `[✅]`   `layers_returns_a_malformed_file_with_its_path`
+      * `[✅]`   Contract: File text refused → `Err(LayersErrorReturn::ParseFile { path, error })`
+      * `[✅]`   Arrange: a file whose text is `"= ="`, named by `--config`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::ParseFile { path, .. })` with `path` equal to the file's path
+    * `[✅]`   `layers_returns_an_assignment_without_an_equals_sign`
+      * `[✅]`   Contract: Assignment malformed → `Err(LayersErrorReturn::MalformedAssignment { assignment })`
+      * `[✅]`   Arrange: `--set` with `benchmark.iterations`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::MalformedAssignment { assignment })` with `assignment` equal to `"benchmark.iterations"`
+    * `[✅]`   `layers_returns_an_assignment_with_an_empty_key`
+      * `[✅]`   Contract: Assignment malformed → a key that is empty once trimmed is refused
+      * `[✅]`   Arrange: `--set` with `  =3`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::MalformedAssignment { assignment })` with `assignment` equal to `"  =3"`
+    * `[✅]`   `layers_returns_an_assignment_whose_value_is_not_toml`
+      * `[✅]`   Contract: Assignment text refused → `Err(LayersErrorReturn::ParseAssignment { assignment, error })`
+      * `[✅]`   Arrange: `--set` with `selections.kem=kem-b`, an unquoted string
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::ParseAssignment { assignment, .. })` with `assignment` equal to `"selections.kem=kem-b"`
+    * `[✅]`   `layers_refuses_a_key_the_document_does_not_declare_at_its_top_level`
+      * `[✅]`   Contract: Document refused → an undeclared top-level key is `Err(LayersErrorReturn::Document(error))`
+      * `[✅]`   Arrange: `--set` with `undeclared=1`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::Document(error))` with `error.to_string()` containing `"undeclared"`
+    * `[✅]`   `layers_refuses_a_key_a_table_does_not_declare`
+      * `[✅]`   Contract: Document refused → an undeclared key in a table is refused
+      * `[✅]`   Arrange: `--set` with `benchmark.undeclared=1`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::Document(error))` with `error.to_string()` containing `"undeclared"`
+    * `[✅]`   `layers_refuses_a_key_in_a_nested_table_it_does_not_declare`
+      * `[✅]`   Contract: Document refused → an undeclared key in a table nested in a table is refused
+      * `[✅]`   Arrange: `--set` with `network_profile.chain_identifier.undeclared="x"`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::Document(error))` with `error.to_string()` containing `"undeclared"`
+    * `[✅]`   `layers_refuses_a_document_missing_a_required_key`
+      * `[✅]`   Contract: Document refused → a defaults text that omits a required key is refused
+      * `[✅]`   Arrange: a defaults text of the default text without its `[benchmark]` table, through `LayersDefaultsOverrides`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::Document(error))` with `error.to_string()` containing `"benchmark"`
+    * `[✅]`   `layers_refuses_a_value_of_the_wrong_kind`
+      * `[✅]`   Contract: Document refused → a value of a kind the key does not take is refused
+      * `[✅]`   Arrange: `--set` with `benchmark.iterations="three"`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::Document(error))` with `error.to_string()` containing `"iterations"`
+    * `[✅]`   `layers_stops_at_the_first_refused_layer`
+      * `[✅]`   Contract: Ordering → a layer's refusal returns before any later layer is read
+      * `[✅]`   Arrange: `--config` naming a path that names no file, then `--set` with `benchmark.iterations`
+      * `[✅]`   Act: `layers`, once
+      * `[✅]`   Assert: the result matches `Err(LayersErrorReturn::ReadFile { .. })`, not the malformed assignment
 
-  * `[ ]`   `apps/harness-crypto/src/config/layers/mod.rs`
-    * `[ ]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `#[cfg(test)] mod test_basic;`, `#[cfg(test)] mod test_error;`, `#[cfg(test)] mod integration_test;`, and `pub mod provides;`; the implementation of `layers`, the trusted form, following the interaction spec's branches in its order, and the private merge function the branch contract states; the file holds no `unwrap`, `expect`, `panic!`, or numeric `as`
-    * `[ ]`   The command is `ConfigArguments::command()` and its matches `try_get_matches_from(params.arguments)`; the arguments are `ConfigArguments::from_arg_matches(&matches)`; the layers are the pairs of each value with its `indices_of` position, sorted by position; each file is read by `std::fs::read_to_string`; each text is parsed by `toml::from_str::<toml::Table>`; the document is `toml::Value::Table(merged).try_into::<ConfigDocument>()`
-    * `[ ]`   Introduces no undeclared dependency; bypasses no contract
+  * `[✅]`   `apps/harness-crypto/src/config/layers/mod.rs`
+    * `[✅]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `#[cfg(test)] mod test_basic;`, `#[cfg(test)] mod test_error;`, `#[cfg(test)] mod integration_test;`, and `pub mod provides;`; the implementation of `layers`, the trusted form, following the interaction spec's branches in its order, and the private merge function the branch contract states; the file holds no `unwrap`, `expect`, `panic!`, or numeric `as`
+    * `[✅]`   The command is `ConfigArguments::command()` and its matches `try_get_matches_from(params.arguments)`; the arguments are `ConfigArguments::from_arg_matches(&matches)`; the layers are the pairs of each value with its `indices_of` position, sorted by position; each file is read by `std::fs::read_to_string`; each text is parsed by `toml::from_str::<toml::Table>`; the document is `toml::Value::Table(merged).try_into::<ConfigDocument>()`
+    * `[✅]`   Introduces no undeclared dependency; bypasses no contract
 
-  * `[ ]`   `apps/harness-crypto/src/config/layers/integration_test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; a `#[cfg(test)]` module of its own, never part of the unit test files; each block's `Contract` transcribes one entry of the spec's private surface and its `Arrange` names the entry's variation
-    * `[ ]`   `layered_sources_merge_in_command_line_order`, one block, proving the own entry of the same name; Arrange a directory removed before the act, two files and two assignments written and named in each of the three interleavings, over a defaults text declaring a scalar, a table key, and an array the layers name, and an expected document built by `build_config_document` over the value each key's last layer names; Act `layers`, once per interleaving; Assert the result is `Ok` and its document equals the expected document
-    * `[ ]`   Reports its enumeration: every entry the private surface lists and the block that proves it
+  * `[✅]`   `apps/harness-crypto/src/config/layers/integration_test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; a `#[cfg(test)]` module of its own, never part of the unit test files; each block's `Contract` transcribes one entry of the spec's private surface and its `Arrange` names the entry's variation
+    * `[✅]`   `layered_sources_merge_in_command_line_order`, one block, proving the own entry of the same name; Arrange a directory removed before the act, two files and two assignments written and named in each of the three interleavings, over a defaults text declaring a scalar, a table key, and an array the layers name, and an expected document built by `build_config_document` over the value each key's last layer names; Act `layers`, once per interleaving; Assert the result is `Ok` and its document equals the expected document
+    * `[✅]`   Reports its enumeration: every entry the private surface lists and the block that proves it
 
-  * `[ ]`   `apps/harness-crypto/src/config/layers/provides.rs`
-    * `[ ]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and the function's re-export `pub use super::layers;`; the module's only `pub mod` is `provides`
+  * `[✅]`   `apps/harness-crypto/src/config/layers/provides.rs`
+    * `[✅]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and the function's re-export `pub use super::layers;`; the module's only `pub mod` is `provides`
 
-  * `[ ]`   `apps/harness-crypto/src/config/provides.rs`
-    * `[ ]`   `pub use super::layers::provides::*;`, the module's surface, which the crate barrel re-exports; a later function of the module adds its own re-export line
+  * `[✅]`   `apps/harness-crypto/src/config/provides.rs`
+    * `[✅]`   `pub use super::layers::provides::*;`, the module's surface, which the crate barrel re-exports; a later function of the module adds its own re-export line
 
-  * `[ ]`   `apps/harness-crypto/tests/layers_integration_test.rs`
-    * `[ ]`   The public integration test, consuming only the crate's public surface and the official mocks under the `mocks` feature; each block transcribes one entry of the spec's public surface, its `Boundary` the public call `layers` with the route of the entry and its `Mocked` the outer-edge collaborators on that route; module-level `#![allow(clippy::expect_used)]`
-    * `[ ]`   `layered_sources_merge_in_command_line_order`: Contract the own entry of the same name; Arrange a directory beneath the operating system's temporary directory removed before the act, two files and two assignments in each of the three interleavings, a defaults text from `build_layers_defaults` overridden to declare the keys the layers name, and expected documents built in Arrange by `build_config_document`; Act `layers` through the crate root once per interleaving; Assert the result is `Ok` and its document equals the expected document; Boundary the public call `layers`, the real command-line grammar, filesystem, and TOML merge; Mocked none, the filesystem a real directory
+  * `[✅]`   `apps/harness-crypto/tests/layers_integration_test.rs`
+    * `[✅]`   The public integration test, consuming only the crate's public surface and the official mocks under the `mocks` feature; each block transcribes one entry of the spec's public surface, its `Boundary` the public call `layers` with the route of the entry and its `Mocked` the outer-edge collaborators on that route; module-level `#![allow(clippy::expect_used)]`
+    * `[✅]`   `layered_sources_merge_in_command_line_order`: Contract the own entry of the same name; Arrange a directory beneath the operating system's temporary directory removed before the act, two files and two assignments in each of the three interleavings, a defaults text from `build_layers_defaults` overridden to declare the keys the layers name, and expected documents built in Arrange by `build_config_document`; Act `layers` through the crate root once per interleaving; Assert the result is `Ok` and its document equals the expected document; Boundary the public call `layers`, the real command-line grammar, filesystem, and TOML merge; Mocked none, the filesystem a real directory
 
-  * `[ ]`   `directionality`
-    * `[ ]`   `layers` depends on `clap`, `toml`, `serde`, and the standard library, and on no repository module; its surface leaves through `config::provides` and the crate barrel; nothing under `delivery`, `generate`, `vectors`, `verifier`, `measure`, `report`, or `benchmark` names it; none of the adapter crates names `apps/harness-crypto`; no cycle
-    * `[ ]`   `harness-crypto/config/admit_selections`, `harness-crypto/config/admit_statements`, `harness-crypto/config/admit_generate`, `harness-crypto/config/admit_output`, and `harness-crypto/config` read the document's tables from this node, and `harness-crypto/main` reads `ConfigArguments` through the function's arguments
+  * `[✅]`   `directionality`
+    * `[✅]`   `layers` depends on `clap`, `toml`, `serde`, and the standard library, and on no repository module; its surface leaves through `config::provides` and the crate barrel; nothing under `delivery`, `generate`, `vectors`, `verifier`, `measure`, `report`, or `benchmark` names it; none of the adapter crates names `apps/harness-crypto`; no cycle
+    * `[✅]`   `harness-crypto/config/admit_selections`, `harness-crypto/config/admit_statements`, `harness-crypto/config/admit_generate`, `harness-crypto/config/admit_output`, and `harness-crypto/config` read the document's tables from this node, and `harness-crypto/main` reads `ConfigArguments` through the function's arguments
 
-  * `[ ]`   `requirements`
-    * `[ ]`   `apps/harness-crypto/Cargo.toml` gains the three dependency lines its element states; `apps/harness-crypto/src/lib.rs` gains the module and re-export lines stated above; `deny.toml` and every file under `delivery`, `generate`, `vectors`, `verifier`, `measure`, `report`, and `benchmark` are unchanged
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, the `config` module having no unused item
-    * `[ ]`   `clap`, `toml`, and `serde` are named by no file of the crate outside `apps/harness-crypto/src/config/layers`
-    * `[ ]`   Every block of `test_basic.rs` passes: the defaults alone, a file, an assignment, a string assignment, the key-by-key table merge, the whole replacement of an array, command-line order across both flags and across repeated files, a dotted key, and an absent optional table
-    * `[ ]`   Every block of `test_error.rs` passes, each refusal returned unchanged with the path or assignment it concerned, an undeclared key refused at the top level, in a table, and in a nested table, an absent required key and a value of the wrong kind refused, and a refused layer stopping the later layers
-    * `[ ]`   `layered_sources_merge_in_command_line_order` passes (the configuration overridable from a configuration file and from a command-line flag, applied in command-line order over the shipped defaults)
-    * `[ ]`   Every block of `apps/harness-crypto/tests/layers_integration_test.rs` passes (the layers merged through the crate's public surface)
-    * `[ ]`   Every test under `apps/harness-crypto/src/measure`, `apps/harness-crypto/src/report`, `apps/harness-crypto/src/vectors`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes
+  * `[✅]`   `requirements`
+    * `[✅]`   `apps/harness-crypto/Cargo.toml` gains the three dependency lines its element states; `apps/harness-crypto/src/lib.rs` gains the module and re-export lines stated above; `deny.toml` and every file under `delivery`, `generate`, `vectors`, `verifier`, `measure`, `report`, and `benchmark` are unchanged
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, the `config` module having no unused item
+    * `[✅]`   `clap`, `toml`, and `serde` are named by no file of the crate outside `apps/harness-crypto/src/config/layers`
+    * `[✅]`   Every block of `test_basic.rs` passes: the defaults alone, a file, an assignment, a string assignment, the key-by-key table merge, the whole replacement of an array, command-line order across both flags and across repeated files, a dotted key, and an absent optional table
+    * `[✅]`   Every block of `test_error.rs` passes, each refusal returned unchanged with the path or assignment it concerned, an undeclared key refused at the top level, in a table, and in a nested table, an absent required key and a value of the wrong kind refused, and a refused layer stopping the later layers
+    * `[✅]`   `layered_sources_merge_in_command_line_order` passes (the configuration overridable from a configuration file and from a command-line flag, applied in command-line order over the shipped defaults)
+    * `[✅]`   Every block of `apps/harness-crypto/tests/layers_integration_test.rs` passes (the layers merged through the crate's public surface)
+    * `[✅]`   Every test under `apps/harness-crypto/src/measure`, `apps/harness-crypto/src/report`, `apps/harness-crypto/src/vectors`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes
 
 * `[ ]`   `harness-crypto/config/admit_selections` **The family selections admitted from the document: each text of the `selections` table and of `network_profile.precompile_encodings` mapped to the real member of its family's declared set whose `Debug` text it equals, carrying the identifier, scope, and algebra that declared member carries, and an unknown text refused with its document path; owns the admitted selection types and the refusal type; adds to the families' factory interfaces the derives the admitted types need and the declared sets the random, pairing, and chain families lack**
 
@@ -2131,11 +2131,6 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[ ]`   Arrange: the default payload with `deployment_record` of kind `"unknown"`
       * `[ ]`   Act: `admit_statements`, once
       * `[ ]`   Assert: the result equals the `NetworkProfile` refusal with `field` `NetworkProfileField::DeploymentRecord`
-    * `[ ]`   `admit_statements_refuses_a_refused_gas_price_oracle_with_its_own_field`
-      * `[ ]`   Contract: Network profile → the refusal names `NetworkProfileField::GasPriceOracle` for a refused gas price oracle
-      * `[ ]`   Arrange: the default payload with `gas_price_oracle` of kind `"unknown"`
-      * `[ ]`   Act: `admit_statements`, once
-      * `[ ]`   Assert: the result equals the `NetworkProfile` refusal with `field` `NetworkProfileField::GasPriceOracle`
     * `[ ]`   `admit_statements_refuses_a_hex_text_without_the_prefix`
       * `[ ]`   Contract: Hex → a text lacking `0x` is `CanonicalValueRefusal::Hex(HexRefusal::Malformed { text })`
       * `[ ]`   Arrange: the default payload with `entitlement_contract` of kind `FixedBytes20` and 40 digits without the prefix
