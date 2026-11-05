@@ -5,6 +5,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 pub const PAIRING_INTERFACE_VERSION: u32 = 1;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PairingCurve {
     Bn254,
     Bls12381,
@@ -704,3 +705,5 @@ pub const TARGET_GROUP_ENCODING_IDENTIFIERS: &[TargetGroupEncodingIdentifier] = 
     TargetGroupEncodingIdentifier::Bn254V1,
     TargetGroupEncodingIdentifier::Bls12381V1,
 ];
+
+pub const PAIRING_CURVES: &[PairingCurve] = &[PairingCurve::Bn254, PairingCurve::Bls12381];

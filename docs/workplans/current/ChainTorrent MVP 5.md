@@ -1924,326 +1924,326 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every block of `apps/harness-crypto/tests/admit_statements_integration_test.rs` passes (the statements admitted through the crate's public surface)
     * `[✅]`   Every test under `apps/harness-crypto/src/config/layers`, `apps/harness-crypto/src/config/admit_selections`, `apps/harness-crypto/src/measure`, `apps/harness-crypto/src/report`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes, and every test of the encoding, domain, hashing, kem, and proof crates passes
 
-* `[ ]`   `harness-crypto/config/admit_generate` **The generate settings admitted from the document: the `concrete` text mapped to the real member of `GENERATE_CONCRETES` whose `Debug` text it equals and built into `GenerateConcrete::Solidity { settings }`, each key of `kinds` mapped to the kind of the `SOLIDITY_GENERATE_DECLARATION` entry whose `Debug` text it equals and admitted into that kind's `SolidityVectorKindSettings` and `VectorKindConfiguration`, its count and term count through `VectorCount` and `MsmTermCount` and its names through `GeneratedFileName` and the render name types, the two libraries, the generated directory, each curve directory keyed by the `Debug` text of a member of the pairing family's declared curves, the compiler version, and the license through their own constructors, every callee refusal carried whole with the document path that held the text; owns the admitted generate type and the refusal types; declares in the pairing family's factory interface the derives on `PairingCurve` and the declared set `PAIRING_CURVES`**
+* `[✅]`   `harness-crypto/config/admit_generate` **The generate settings admitted from the document: the `concrete` text mapped to the real member of `GENERATE_CONCRETES` whose `Debug` text it equals and built into `GenerateConcrete::Solidity { settings }`, each key of `kinds` mapped to the kind of the `SOLIDITY_GENERATE_DECLARATION` entry whose `Debug` text it equals and admitted into that kind's `SolidityVectorKindSettings` and `VectorKindConfiguration`, its count and term count through `VectorCount` and `MsmTermCount` and its names through `GeneratedFileName` and the render name types, the two libraries, the generated directory, each curve directory keyed by the `Debug` text of a member of the pairing family's declared curves, the compiler version, and the license through their own constructors, every callee refusal carried whole with the document path that held the text; owns the admitted generate type and the refusal types; declares in the pairing family's factory interface the derives on `PairingCurve` and the declared set `PAIRING_CURVES`**
 
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: every kind's names and quantities, the libraries' names, the generated directory, the curve directories, the compiler version, and the license the generate concrete takes are configured and never coded, and arrive in the document as text and numbers, so the harness holds one function that turns them into the types the generate family and its concrete declare, reading each declared set and each constructor and holding no literal of its own, so that no later module names a kind, a file, a struct, a decode function, a path constant, a library, a directory, a version, or a license (the dependency map's `harness-crypto/config/admit_generate` row, its Dependencies edges on `harness-crypto/config/layers`, `harness-crypto/generate/solidity/render`, `harness-crypto/generate/solidity/group_vectors`, `harness-crypto/generate/solidity`, `harness-crypto/generate/factory`, and `pairing/factory`, and its conflict flags on the configuration as a composing function over functions it owns and on vector kinds, counts, and names being declared and configured, the generate factory alone admitting the kind set against the concrete's declaration; the Delivery proof and on-chain verifier milestone's scope for `harness-crypto/config`, composed over `harness-crypto/config/admit_generate`, and its exit, the run composing every family from the configuration's values; the technical requirements' statement that the harness is configured, never coded, with a shipped default for every kind's file, struct, decode function, and path constant names and, for a drawn kind, its count, the generated libraries' file and library names, the Foundry project root and the generated directory relative to it, the Solidity compiler version and license identifier every generated library opens with; `harness-crypto/config/layers`' `GenerateTable`, `GenerateKindTable`, and `LibraryTable`, whose leaf values are raw text and numbers)
-    * `[ ]`   Functional: the function receives the document's `generate` table as data and reads no file, no environment variable, and no clock
-    * `[ ]`   Functional: a text names a member when it equals the `Debug` text of that member, compared whole and case-sensitively; a declared set holds its real members and never its mock selection, so a mock selection's text is never named
-    * `[ ]`   Functional: `concrete` names the kind of a member of `GENERATE_CONCRETES`, and the admitted concrete is `GenerateConcrete::Solidity { settings }` built by an exhaustive `match` on that kind, `settings` boxed
-    * `[ ]`   Functional: each key of `kinds`, in the key order of the map, names the `kind` of a `VectorKindDeclaration` of `SOLIDITY_GENERATE_DECLARATION.kinds`; each entry yields one `SolidityVectorKindSettings` pairing the kind with its `SolidityVectorKindNames`, and one `VectorKindConfiguration` pairing the kind with its `VectorKindQuantities`, the two lists holding their entries in the same order
-    * `[ ]`   Functional: an entry's `count` present is admitted through `VectorCount::try_new` and its `terms` present through `MsmTermCount::try_new`, a quantity absent staying absent and `message_length` carried as the document holds it; the function does not read the kind's declared sizing, which `harness-crypto/generate/factory` admits the quantities against
-    * `[ ]`   Functional: an entry's `file` is admitted through `GeneratedFileName::try_new`, its `struct_name` through `SolidityTypeName::try_new`, its `decode_function` through `SolidityMemberName::try_new`, and its `path_constant` through `SolidityConstantName::try_new`
-    * `[ ]`   Functional: each library table is admitted into `SolidityLibraryNames`, its `file` through `GeneratedFileName::try_new` and its `library` through `SolidityLibraryName::try_new`; `foundry_root` is carried as the document holds it
-    * `[ ]`   Functional: `generated_directory` is admitted segment by segment through `GeneratedFileName::try_new` and then as a whole through `GeneratedDirectory::try_new`
-    * `[ ]`   Functional: each key of `curve_directories` names a member of `PAIRING_CURVES`, and each value is admitted through `GeneratedFileName::try_new`; `SolidityCurveDirectories` is built with each of its fields taken from the entry for the curve that field is named for, and a curve with no entry is refused
-    * `[ ]`   Functional: `compiler_version` is admitted as three decimal parts separated by `.`, each a `u16`, into `SolidityCompilerVersion { major, minor, patch }`; `license` is admitted through `SpdxLicenseIdentifier::try_new`
-    * `[ ]`   Functional: the first text or quantity no declared set names or no constructor admits returns its refusal, carrying the callee's refusal whole and the document path that held the text, with every later value unread
-    * `[ ]`   Non-functional: the function names no concrete, kind, file, name, library, path, count, version, or license; every admitted kind and curve is read from a declared set, so a further kind of the concrete's declaration or a further member of `PAIRING_CURVES` changes no line of the function that reads the set; the one place the function relates a curve to a field is the construction of `SolidityCurveDirectories`, whose fields the generate concrete names by curve
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: every kind's names and quantities, the libraries' names, the generated directory, the curve directories, the compiler version, and the license the generate concrete takes are configured and never coded, and arrive in the document as text and numbers, so the harness holds one function that turns them into the types the generate family and its concrete declare, reading each declared set and each constructor and holding no literal of its own, so that no later module names a kind, a file, a struct, a decode function, a path constant, a library, a directory, a version, or a license (the dependency map's `harness-crypto/config/admit_generate` row, its Dependencies edges on `harness-crypto/config/layers`, `harness-crypto/generate/solidity/render`, `harness-crypto/generate/solidity/group_vectors`, `harness-crypto/generate/solidity`, `harness-crypto/generate/factory`, and `pairing/factory`, and its conflict flags on the configuration as a composing function over functions it owns and on vector kinds, counts, and names being declared and configured, the generate factory alone admitting the kind set against the concrete's declaration; the Delivery proof and on-chain verifier milestone's scope for `harness-crypto/config`, composed over `harness-crypto/config/admit_generate`, and its exit, the run composing every family from the configuration's values; the technical requirements' statement that the harness is configured, never coded, with a shipped default for every kind's file, struct, decode function, and path constant names and, for a drawn kind, its count, the generated libraries' file and library names, the Foundry project root and the generated directory relative to it, the Solidity compiler version and license identifier every generated library opens with; `harness-crypto/config/layers`' `GenerateTable`, `GenerateKindTable`, and `LibraryTable`, whose leaf values are raw text and numbers)
+    * `[✅]`   Functional: the function receives the document's `generate` table as data and reads no file, no environment variable, and no clock
+    * `[✅]`   Functional: a text names a member when it equals the `Debug` text of that member, compared whole and case-sensitively; a declared set holds its real members and never its mock selection, so a mock selection's text is never named
+    * `[✅]`   Functional: `concrete` names the kind of a member of `GENERATE_CONCRETES`, and the admitted concrete is `GenerateConcrete::Solidity { settings }` built by an exhaustive `match` on that kind, `settings` boxed
+    * `[✅]`   Functional: each key of `kinds`, in the key order of the map, names the `kind` of a `VectorKindDeclaration` of `SOLIDITY_GENERATE_DECLARATION.kinds`; each entry yields one `SolidityVectorKindSettings` pairing the kind with its `SolidityVectorKindNames`, and one `VectorKindConfiguration` pairing the kind with its `VectorKindQuantities`, the two lists holding their entries in the same order
+    * `[✅]`   Functional: an entry's `count` present is admitted through `VectorCount::try_new` and its `terms` present through `MsmTermCount::try_new`, a quantity absent staying absent and `message_length` carried as the document holds it; the function does not read the kind's declared sizing, which `harness-crypto/generate/factory` admits the quantities against
+    * `[✅]`   Functional: an entry's `file` is admitted through `GeneratedFileName::try_new`, its `struct_name` through `SolidityTypeName::try_new`, its `decode_function` through `SolidityMemberName::try_new`, and its `path_constant` through `SolidityConstantName::try_new`
+    * `[✅]`   Functional: each library table is admitted into `SolidityLibraryNames`, its `file` through `GeneratedFileName::try_new` and its `library` through `SolidityLibraryName::try_new`; `foundry_root` is carried as the document holds it
+    * `[✅]`   Functional: `generated_directory` is admitted segment by segment through `GeneratedFileName::try_new` and then as a whole through `GeneratedDirectory::try_new`
+    * `[✅]`   Functional: each key of `curve_directories` names a member of `PAIRING_CURVES`, and each value is admitted through `GeneratedFileName::try_new`; `SolidityCurveDirectories` is built with each of its fields taken from the entry for the curve that field is named for, and a curve with no entry is refused
+    * `[✅]`   Functional: `compiler_version` is admitted as three decimal parts separated by `.`, each a `u16`, into `SolidityCompilerVersion { major, minor, patch }`; `license` is admitted through `SpdxLicenseIdentifier::try_new`
+    * `[✅]`   Functional: the first text or quantity no declared set names or no constructor admits returns its refusal, carrying the callee's refusal whole and the document path that held the text, with every later value unread
+    * `[✅]`   Non-functional: the function names no concrete, kind, file, name, library, path, count, version, or license; every admitted kind and curve is read from a declared set, so a further kind of the concrete's declaration or a further member of `PAIRING_CURVES` changes no line of the function that reads the set; the one place the function relates a curve to a field is the construction of `SolidityCurveDirectories`, whose fields the generate concrete names by curve
 
-  * `[ ]`   `role`
-    * `[ ]`   App module of the harness, beneath its `config` module: a pure function of the document's `generate` table, the families' declared sets, and the constructors of the types the generate family declares, as `harness-crypto/config/admit_selections` is of the selections; it has no outer-edge collaborator
-    * `[ ]`   Owns `AdmittedGenerate`, `CompilerVersionErrorReturn`, `AdmitGenerateDeps`, `AdmitGenerateParams`, `AdmitGeneratePayload`, `AdmitGenerateSuccessReturn`, `AdmitGenerateErrorReturn`, `AdmitGenerateReturn`, and `AdmitGenerateFn`
-    * `[ ]`   Declares in the pairing family's factory interface, because no upstream node provides them and this node is the first file that requires them: the derives on `PairingCurve` and the declared set `PAIRING_CURVES`
-    * `[ ]`   Does not call a factory, construct an adapter, emit a file, admit a quantity against a kind's declared sizing, admit the kind set against the concrete's declaration, or hold the shipped defaults
-    * `[ ]`   Does not carry a commit
+  * `[✅]`   `role`
+    * `[✅]`   App module of the harness, beneath its `config` module: a pure function of the document's `generate` table, the families' declared sets, and the constructors of the types the generate family declares, as `harness-crypto/config/admit_selections` is of the selections; it has no outer-edge collaborator
+    * `[✅]`   Owns `AdmittedGenerate`, `CompilerVersionErrorReturn`, `AdmitGenerateDeps`, `AdmitGenerateParams`, `AdmitGeneratePayload`, `AdmitGenerateSuccessReturn`, `AdmitGenerateErrorReturn`, `AdmitGenerateReturn`, and `AdmitGenerateFn`
+    * `[✅]`   Declares in the pairing family's factory interface, because no upstream node provides them and this node is the first file that requires them: the derives on `PairingCurve` and the declared set `PAIRING_CURVES`
+    * `[✅]`   Does not call a factory, construct an adapter, emit a file, admit a quantity against a kind's declared sizing, admit the kind set against the concrete's declaration, or hold the shipped defaults
+    * `[✅]`   Does not carry a commit
 
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `admit_generate` module beneath the `config` module of `apps/harness-crypto`, holding the admitted type, the version refusal type, the function's deps, params, payload, success, error, return, and signature types, the function, its private lookup and version-parsing functions, and its builders; and, in the pairing crate, the derive and declared-set edit of its factory interface
-    * `[ ]`   Files: `adapters/pairing/src/factory/interface.rs`; `apps/harness-crypto/src/config/mod.rs` and `provides.rs`; `apps/harness-crypto/src/config/admit_generate/interface.rs`, `interaction.spec.md`, `mock.rs`, `test_basic.rs`, `test_error.rs`, `mod.rs`, `integration_test.rs`, and `provides.rs`; and `apps/harness-crypto/tests/admit_generate_integration_test.rs`
-    * `[ ]`   Outside: the selections, statements, identities, and output destinations, whose admission belongs to the functions beside this one, the benchmark's iteration count and the measurement's settings, the admission of each kind's quantities against its declared sizing and of the kind set against the concrete's declaration, which `harness-crypto/generate/factory` performs, every adapter's construction, and the files the concrete writes
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `admit_generate` module beneath the `config` module of `apps/harness-crypto`, holding the admitted type, the version refusal type, the function's deps, params, payload, success, error, return, and signature types, the function, its private lookup and version-parsing functions, and its builders; and, in the pairing crate, the derive and declared-set edit of its factory interface
+    * `[✅]`   Files: `adapters/pairing/src/factory/interface.rs`; `apps/harness-crypto/src/config/mod.rs` and `provides.rs`; `apps/harness-crypto/src/config/admit_generate/interface.rs`, `interaction.spec.md`, `mock.rs`, `test_basic.rs`, `test_error.rs`, `mod.rs`, `integration_test.rs`, and `provides.rs`; and `apps/harness-crypto/tests/admit_generate_integration_test.rs`
+    * `[✅]`   Outside: the selections, statements, identities, and output destinations, whose admission belongs to the functions beside this one, the benchmark's iteration count and the measurement's settings, the admission of each kind's quantities against its declared sizing and of the kind set against the concrete's declaration, which `harness-crypto/generate/factory` performs, every adapter's construction, and the files the concrete writes
 
-  * `[ ]`   `deps`
-    * `[ ]`   `harness-crypto/config/layers`, same module tree, app ring: `GenerateTable`, `GenerateKindTable`, and `LibraryTable` from `apps/harness-crypto/src/config/layers/interface.rs` through `crate::config::layers::provides`; in `mock.rs` and the tests, `build_generate_table`, `GenerateTableOverrides`, `build_generate_kind_table`, `GenerateKindTableOverrides`, `build_library_table`, and `LibraryTableOverrides` from `apps/harness-crypto/src/config/layers/mock.rs`, as `harness-crypto/config/layers` authors them; direction inward, this module reads the document's types and `layers` names this module nothing
-    * `[ ]`   `harness-crypto/generate/factory`, same crate, app ring, through `crate::generate::provides`: `GenerateConcrete`, `GenerateConcreteKind`, `GENERATE_CONCRETES`, `VectorKind`, `VectorKindConfiguration`, `VectorKindQuantities`, and, under the `mocks` feature, `MockIGenerateAdapterFailureMode`, as `harness-crypto/generate/solidity` and `harness-crypto/generate/factory` author them
-    * `[ ]`   `harness-crypto/generate/solidity`, same crate, app ring, through `crate::generate::provides`: `SolidityGenerateSettings`, `SolidityVectorKindSettings`, `SolidityVectorKindNames`, `SolidityLibraryNames`, `SolidityCurveDirectories`, `SOLIDITY_GENERATE_DECLARATION`, `VectorKindDeclaration`, `GeneratedFileName` with `GeneratedFileNameConstructorParams` and `GeneratedFileNameTryNewErrorReturn`, and `GeneratedDirectory` with `GeneratedDirectoryConstructorParams` and `GeneratedDirectoryTryNewErrorReturn`, as `harness-crypto/generate/solidity` authors them; in `mock.rs` and the tests, `build_solidity_generate_settings`, `SolidityGenerateSettingsOverrides`, `build_solidity_vector_kind_settings`, `SolidityVectorKindSettingsOverrides`, `build_solidity_vector_kind_names`, `SolidityVectorKindNamesOverrides`, `build_solidity_library_names`, `SolidityLibraryNamesOverrides`, `build_solidity_curve_directories`, `SolidityCurveDirectoriesOverrides`, `build_generated_file_name`, `GeneratedFileNameConstructorParamsOverrides`, `build_generated_directory`, and `GeneratedDirectoryConstructorParamsOverrides`, as it authors them
-    * `[ ]`   `harness-crypto/generate/solidity/render`, same crate, app ring, through `crate::generate::provides`: `SolidityTypeName`, `SolidityMemberName`, `SolidityConstantName`, `SolidityLibraryName`, `SpdxLicenseIdentifier`, and `SolidityCompilerVersion`, each name and identifier type with its constructor params and `TryNewErrorReturn`, as `harness-crypto/generate/solidity/render` authors them; in `mock.rs` and the tests, `build_solidity_type_name`, `SolidityTypeNameConstructorParamsOverrides`, `build_solidity_member_name`, `SolidityMemberNameConstructorParamsOverrides`, `build_solidity_constant_name`, `SolidityConstantNameConstructorParamsOverrides`, `build_solidity_library_name`, `SolidityLibraryNameConstructorParamsOverrides`, `build_spdx_license_identifier`, `SpdxLicenseIdentifierConstructorParamsOverrides`, `build_solidity_compiler_version`, and `SolidityCompilerVersionOverrides`, as it authors them
-    * `[ ]`   `harness-crypto/generate/solidity/group_vectors`, same crate, app ring, through `crate::generate::provides`: `VectorCount` with `VectorCountConstructorParams` and `VectorCountTryNewErrorReturn`, and `MsmTermCount` with `MsmTermCountConstructorParams` and `MsmTermCountTryNewErrorReturn`; in `mock.rs` and the tests, `build_vector_count`, `VectorCountConstructorParamsOverrides`, `build_msm_term_count`, and `MsmTermCountConstructorParamsOverrides`, as it authors them
-    * `[ ]`   `pairing`, `adapters/pairing`, adapter ring: `PairingCurve` from `adapters/pairing/src/factory/interface.rs`, as `pairing/bn254_arkworks` and `pairing/bls12_381_arkworks` author it; this node edits that file
-    * `[ ]`   `core::fmt::Debug`, `core::str::FromStr`, `std::collections::BTreeMap`, and `std::path::PathBuf`, standard library: the `Debug` text of a member is its name, `u16::from_str` admits a version part, and the document's map and path are carried as the document holds them
-    * `[ ]`   `apps/harness-crypto/Cargo.toml` already names every crate this node imports, through the nodes whose modules it reads; the manifest is unchanged
-    * `[ ]`   No reverse dependency: the pairing crate names no harness item, and no later module of the harness is named by this module
+  * `[✅]`   `deps`
+    * `[✅]`   `harness-crypto/config/layers`, same module tree, app ring: `GenerateTable`, `GenerateKindTable`, and `LibraryTable` from `apps/harness-crypto/src/config/layers/interface.rs` through `crate::config::layers::provides`; in `mock.rs` and the tests, `build_generate_table`, `GenerateTableOverrides`, `build_generate_kind_table`, `GenerateKindTableOverrides`, `build_library_table`, and `LibraryTableOverrides` from `apps/harness-crypto/src/config/layers/mock.rs`, as `harness-crypto/config/layers` authors them; direction inward, this module reads the document's types and `layers` names this module nothing
+    * `[✅]`   `harness-crypto/generate/factory`, same crate, app ring, through `crate::generate::provides`: `GenerateConcrete`, `GenerateConcreteKind`, `GENERATE_CONCRETES`, `VectorKind`, `VectorKindConfiguration`, `VectorKindQuantities`, and, under the `mocks` feature, `MockIGenerateAdapterFailureMode`, as `harness-crypto/generate/solidity` and `harness-crypto/generate/factory` author them
+    * `[✅]`   `harness-crypto/generate/solidity`, same crate, app ring, through `crate::generate::provides`: `SolidityGenerateSettings`, `SolidityVectorKindSettings`, `SolidityVectorKindNames`, `SolidityLibraryNames`, `SolidityCurveDirectories`, `SOLIDITY_GENERATE_DECLARATION`, `VectorKindDeclaration`, `GeneratedFileName` with `GeneratedFileNameConstructorParams` and `GeneratedFileNameTryNewErrorReturn`, and `GeneratedDirectory` with `GeneratedDirectoryConstructorParams` and `GeneratedDirectoryTryNewErrorReturn`, as `harness-crypto/generate/solidity` authors them; in `mock.rs` and the tests, `build_solidity_generate_settings`, `SolidityGenerateSettingsOverrides`, `build_solidity_vector_kind_settings`, `SolidityVectorKindSettingsOverrides`, `build_solidity_vector_kind_names`, `SolidityVectorKindNamesOverrides`, `build_solidity_library_names`, `SolidityLibraryNamesOverrides`, `build_solidity_curve_directories`, `SolidityCurveDirectoriesOverrides`, `build_generated_file_name`, `GeneratedFileNameConstructorParamsOverrides`, `build_generated_directory`, and `GeneratedDirectoryConstructorParamsOverrides`, as it authors them
+    * `[✅]`   `harness-crypto/generate/solidity/render`, same crate, app ring, through `crate::generate::provides`: `SolidityTypeName`, `SolidityMemberName`, `SolidityConstantName`, `SolidityLibraryName`, `SpdxLicenseIdentifier`, and `SolidityCompilerVersion`, each name and identifier type with its constructor params and `TryNewErrorReturn`, as `harness-crypto/generate/solidity/render` authors them; in `mock.rs` and the tests, `build_solidity_type_name`, `SolidityTypeNameConstructorParamsOverrides`, `build_solidity_member_name`, `SolidityMemberNameConstructorParamsOverrides`, `build_solidity_constant_name`, `SolidityConstantNameConstructorParamsOverrides`, `build_solidity_library_name`, `SolidityLibraryNameConstructorParamsOverrides`, `build_spdx_license_identifier`, `SpdxLicenseIdentifierConstructorParamsOverrides`, `build_solidity_compiler_version`, and `SolidityCompilerVersionOverrides`, as it authors them
+    * `[✅]`   `harness-crypto/generate/solidity/group_vectors`, same crate, app ring, through `crate::generate::provides`: `VectorCount` with `VectorCountConstructorParams` and `VectorCountTryNewErrorReturn`, and `MsmTermCount` with `MsmTermCountConstructorParams` and `MsmTermCountTryNewErrorReturn`; in `mock.rs` and the tests, `build_vector_count`, `VectorCountConstructorParamsOverrides`, `build_msm_term_count`, and `MsmTermCountConstructorParamsOverrides`, as it authors them
+    * `[✅]`   `pairing`, `adapters/pairing`, adapter ring: `PairingCurve` from `adapters/pairing/src/factory/interface.rs`, as `pairing/bn254_arkworks` and `pairing/bls12_381_arkworks` author it; this node edits that file
+    * `[✅]`   `core::fmt::Debug`, `core::str::FromStr`, `std::collections::BTreeMap`, and `std::path::PathBuf`, standard library: the `Debug` text of a member is its name, `u16::from_str` admits a version part, and the document's map and path are carried as the document holds them
+    * `[✅]`   `apps/harness-crypto/Cargo.toml` already names every crate this node imports, through the nodes whose modules it reads; the manifest is unchanged
+    * `[✅]`   No reverse dependency: the pairing crate names no harness item, and no later module of the harness is named by this module
 
-  * `[ ]`   `context_slice`
-    * `[ ]`   From the document tables: `GenerateTable { concrete: String, kinds: BTreeMap<String, GenerateKindTable>, constants_library: LibraryTable, records_library: LibraryTable, foundry_root: PathBuf, generated_directory: Vec<String>, curve_directories: BTreeMap<String, String>, compiler_version: String, license: String }`, `GenerateKindTable { count: Option<u32>, terms: Option<u32>, message_length: Option<usize>, file: String, struct_name: String, decode_function: String, path_constant: String }`, and `LibraryTable { file: String, library: String }`
-    * `[ ]`   From the declared sets: `GENERATE_CONCRETES: &[GenerateConcreteKind]`, `SOLIDITY_GENERATE_DECLARATION.kinds: &'static [VectorKindDeclaration]` with `VectorKindDeclaration { kind, sizing, requires_second_group_arithmetic }` read by its `kind`, and `PAIRING_CURVES: &[PairingCurve]`, each read by iteration in declared order, every member `Copy`
-    * `[ ]`   From the constructors: `VectorCount::try_new(VectorCountConstructorParams { count: u32 }) -> Result<VectorCount, VectorCountTryNewErrorReturn>`, `MsmTermCount::try_new(MsmTermCountConstructorParams { count: u32 }) -> Result<MsmTermCount, MsmTermCountTryNewErrorReturn>`, `GeneratedFileName::try_new(GeneratedFileNameConstructorParams { text: String }) -> Result<GeneratedFileName, GeneratedFileNameTryNewErrorReturn>`, `GeneratedDirectory::try_new(GeneratedDirectoryConstructorParams { segments: Vec<GeneratedFileName> }) -> Result<GeneratedDirectory, GeneratedDirectoryTryNewErrorReturn>`, `SolidityTypeName::try_new`, `SolidityMemberName::try_new`, `SolidityConstantName::try_new`, and `SolidityLibraryName::try_new`, each over its `…ConstructorParams { text: String }`, and `SpdxLicenseIdentifier::try_new(SpdxLicenseIdentifierConstructorParams { text: String })`, each returning its `…TryNewReturn`, every refusal type deriving `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`
-    * `[ ]`   From the generate family's types: `GenerateConcrete::Solidity { settings: Box<SolidityGenerateSettings> }`; `VectorKindConfiguration { kind, quantities }`; `VectorKindQuantities { count: Option<VectorCount>, terms: Option<MsmTermCount>, message_length: Option<usize> }`; `SolidityVectorKindSettings { kind, names }`; `SolidityVectorKindNames { file_name, struct_name, decode_function_name, path_constant_name }`; `SolidityLibraryNames { file_name, library_name }`; `SolidityCurveDirectories { bn254, bls12_381 }`; and `SolidityGenerateSettings { kinds, constants_library, records_library, foundry_root, generated_directory, curve_directories, compiler_version, license }`, every field `pub`
-    * `[ ]`   From `SolidityCompilerVersion { major: u16, minor: u16, patch: u16 }`, every field `pub`
-    * `[ ]`   From `core::fmt`: `format!("{:?}", &value)` over a value deriving `Debug`, the text a member is named by; from `core::str`: `str::split('.')` and `u16::from_str`
+  * `[✅]`   `context_slice`
+    * `[✅]`   From the document tables: `GenerateTable { concrete: String, kinds: BTreeMap<String, GenerateKindTable>, constants_library: LibraryTable, records_library: LibraryTable, foundry_root: PathBuf, generated_directory: Vec<String>, curve_directories: BTreeMap<String, String>, compiler_version: String, license: String }`, `GenerateKindTable { count: Option<u32>, terms: Option<u32>, message_length: Option<usize>, file: String, struct_name: String, decode_function: String, path_constant: String }`, and `LibraryTable { file: String, library: String }`
+    * `[✅]`   From the declared sets: `GENERATE_CONCRETES: &[GenerateConcreteKind]`, `SOLIDITY_GENERATE_DECLARATION.kinds: &'static [VectorKindDeclaration]` with `VectorKindDeclaration { kind, sizing, requires_second_group_arithmetic }` read by its `kind`, and `PAIRING_CURVES: &[PairingCurve]`, each read by iteration in declared order, every member `Copy`
+    * `[✅]`   From the constructors: `VectorCount::try_new(VectorCountConstructorParams { count: u32 }) -> Result<VectorCount, VectorCountTryNewErrorReturn>`, `MsmTermCount::try_new(MsmTermCountConstructorParams { count: u32 }) -> Result<MsmTermCount, MsmTermCountTryNewErrorReturn>`, `GeneratedFileName::try_new(GeneratedFileNameConstructorParams { text: String }) -> Result<GeneratedFileName, GeneratedFileNameTryNewErrorReturn>`, `GeneratedDirectory::try_new(GeneratedDirectoryConstructorParams { segments: Vec<GeneratedFileName> }) -> Result<GeneratedDirectory, GeneratedDirectoryTryNewErrorReturn>`, `SolidityTypeName::try_new`, `SolidityMemberName::try_new`, `SolidityConstantName::try_new`, and `SolidityLibraryName::try_new`, each over its `…ConstructorParams { text: String }`, and `SpdxLicenseIdentifier::try_new(SpdxLicenseIdentifierConstructorParams { text: String })`, each returning its `…TryNewReturn`, every refusal type deriving `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`
+    * `[✅]`   From the generate family's types: `GenerateConcrete::Solidity { settings: Box<SolidityGenerateSettings> }`; `VectorKindConfiguration { kind, quantities }`; `VectorKindQuantities { count: Option<VectorCount>, terms: Option<MsmTermCount>, message_length: Option<usize> }`; `SolidityVectorKindSettings { kind, names }`; `SolidityVectorKindNames { file_name, struct_name, decode_function_name, path_constant_name }`; `SolidityLibraryNames { file_name, library_name }`; `SolidityCurveDirectories { bn254, bls12_381 }`; and `SolidityGenerateSettings { kinds, constants_library, records_library, foundry_root, generated_directory, curve_directories, compiler_version, license }`, every field `pub`
+    * `[✅]`   From `SolidityCompilerVersion { major: u16, minor: u16, patch: u16 }`, every field `pub`
+    * `[✅]`   From `core::fmt`: `format!("{:?}", &value)` over a value deriving `Debug`, the text a member is named by; from `core::str`: `str::split('.')` and `u16::from_str`
 
-  * `[ ]`   `adapters/pairing/src/factory/interface.rs`
-    * `[ ]`   `PairingCurve` gains `#[derive(Clone, Copy, Debug, PartialEq, Eq)]`, so a declared member is read by value, named by its `Debug` text, and compared
-    * `[ ]`   `PAIRING_CURVES`, the constant `pub const PAIRING_CURVES: &[PairingCurve] = &[PairingCurve::Bn254, PairingCurve::Bls12381];`, the declared set of real curves; it never holds the mock variant
-    * `[ ]`   Every other item in the file is unchanged
+  * `[✅]`   `adapters/pairing/src/factory/interface.rs`
+    * `[✅]`   `PairingCurve` gains `#[derive(Clone, Copy, Debug, PartialEq, Eq)]`, so a declared member is read by value, named by its `Debug` text, and compared
+    * `[✅]`   `PAIRING_CURVES`, the constant `pub const PAIRING_CURVES: &[PairingCurve] = &[PairingCurve::Bn254, PairingCurve::Bls12381];`, the declared set of real curves; it never holds the mock variant
+    * `[✅]`   Every other item in the file is unchanged
 
-  * `[ ]`   `apps/harness-crypto/src/config/mod.rs`
-    * `[ ]`   Adds `mod admit_generate;` beside `mod layers;`, `mod admit_selections;`, and `mod admit_statements;`; every existing line is unchanged
-    * `[ ]`   Until `config/admit_generate/mod.rs` exists, `cargo check` reports the unresolved `mod admit_generate`, which is the RED state for every element below that precedes it
+  * `[✅]`   `apps/harness-crypto/src/config/mod.rs`
+    * `[✅]`   Adds `mod admit_generate;` beside `mod layers;`, `mod admit_selections;`, and `mod admit_statements;`; every existing line is unchanged
+    * `[✅]`   Until `config/admit_generate/mod.rs` exists, `cargo check` reports the unresolved `mod admit_generate`, which is the RED state for every element below that precedes it
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_generate/interface.rs`
-    * `[ ]`   `AdmittedGenerate`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub concrete: GenerateConcrete` and `pub kinds: Vec<VectorKindConfiguration>`, the selection a `CreateGenerateParams` is built from and the per-kind configuration it carries
-    * `[ ]`   `CompilerVersionErrorReturn`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]` and the variants `Parts { count: usize }`, the text not holding three parts separated by `.`, and `Part { index: usize, text: String }`, a part `u16::from_str` refuses
-    * `[ ]`   `AdmitGenerateDeps`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`, since the function's only inputs are its payload, the declared sets, and the constructors
-    * `[ ]`   `AdmitGenerateParams`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`
-    * `[ ]`   `AdmitGeneratePayload`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub generate: GenerateTable`
-    * `[ ]`   `AdmitGenerateSuccessReturn`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub admitted: AdmittedGenerate`
-    * `[ ]`   `AdmitGenerateErrorReturn`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]`, each variant naming the document path of the value it refused: `Concrete { text: String }` for `generate.concrete`; `Kind { text: String }` for a key of `generate.kinds`; `Count { kind: String, error: VectorCountTryNewErrorReturn }`, `Terms { kind: String, error: MsmTermCountTryNewErrorReturn }`, `File { kind: String, error: GeneratedFileNameTryNewErrorReturn }`, `StructName { kind: String, error: SolidityTypeNameTryNewErrorReturn }`, `DecodeFunction { kind: String, error: SolidityMemberNameTryNewErrorReturn }`, and `PathConstant { kind: String, error: SolidityConstantNameTryNewErrorReturn }` for the fields of the entry `generate.kinds.<kind>`; `ConstantsLibraryFile { error: GeneratedFileNameTryNewErrorReturn }` and `ConstantsLibraryName { error: SolidityLibraryNameTryNewErrorReturn }` for `generate.constants_library`; `RecordsLibraryFile { error: GeneratedFileNameTryNewErrorReturn }` and `RecordsLibraryName { error: SolidityLibraryNameTryNewErrorReturn }` for `generate.records_library`; `GeneratedDirectorySegment { index: usize, error: GeneratedFileNameTryNewErrorReturn }` and `GeneratedDirectory { error: GeneratedDirectoryTryNewErrorReturn }` for `generate.generated_directory`; `CurveKey { text: String }`, `CurveDirectory { curve: PairingCurve, error: GeneratedFileNameTryNewErrorReturn }`, and `MissingCurveDirectory { curve: PairingCurve }` for `generate.curve_directories`; `CompilerVersion { text: String, error: CompilerVersionErrorReturn }` for `generate.compiler_version`; and `License { error: SpdxLicenseIdentifierTryNewErrorReturn }` for `generate.license`
-    * `[ ]`   `AdmitGenerateReturn`, the alias `Result<AdmitGenerateSuccessReturn, AdmitGenerateErrorReturn>`
-    * `[ ]`   `AdmitGenerateFn`, the alias `fn(&AdmitGenerateDeps, AdmitGenerateParams, AdmitGeneratePayload) -> AdmitGenerateReturn`
-    * `[ ]`   No `Default` on any type in this file
-    * `[ ]`   Imports `GenerateConcrete`, `VectorKindConfiguration`, `VectorCountTryNewErrorReturn`, `MsmTermCountTryNewErrorReturn`, `GeneratedFileNameTryNewErrorReturn`, `GeneratedDirectoryTryNewErrorReturn`, `SolidityTypeNameTryNewErrorReturn`, `SolidityMemberNameTryNewErrorReturn`, `SolidityConstantNameTryNewErrorReturn`, `SolidityLibraryNameTryNewErrorReturn`, and `SpdxLicenseIdentifierTryNewErrorReturn` from `crate::generate::provides`; `PairingCurve` from `pairing`; and `GenerateTable` from `super::super::layers::provides`; declares nothing else
+  * `[✅]`   `apps/harness-crypto/src/config/admit_generate/interface.rs`
+    * `[✅]`   `AdmittedGenerate`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub concrete: GenerateConcrete` and `pub kinds: Vec<VectorKindConfiguration>`, the selection a `CreateGenerateParams` is built from and the per-kind configuration it carries
+    * `[✅]`   `CompilerVersionErrorReturn`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]` and the variants `Parts { count: usize }`, the text not holding three parts separated by `.`, and `Part { index: usize, text: String }`, a part `u16::from_str` refuses
+    * `[✅]`   `AdmitGenerateDeps`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`, since the function's only inputs are its payload, the declared sets, and the constructors
+    * `[✅]`   `AdmitGenerateParams`, a fieldless struct with `#[derive(Clone, Copy, Debug)]`
+    * `[✅]`   `AdmitGeneratePayload`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub generate: GenerateTable`
+    * `[✅]`   `AdmitGenerateSuccessReturn`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the field `pub admitted: AdmittedGenerate`
+    * `[✅]`   `AdmitGenerateErrorReturn`, an enum with `#[derive(Clone, Debug, PartialEq, Eq)]`, each variant naming the document path of the value it refused: `Concrete { text: String }` for `generate.concrete`; `Kind { text: String }` for a key of `generate.kinds`; `Count { kind: String, error: VectorCountTryNewErrorReturn }`, `Terms { kind: String, error: MsmTermCountTryNewErrorReturn }`, `File { kind: String, error: GeneratedFileNameTryNewErrorReturn }`, `StructName { kind: String, error: SolidityTypeNameTryNewErrorReturn }`, `DecodeFunction { kind: String, error: SolidityMemberNameTryNewErrorReturn }`, and `PathConstant { kind: String, error: SolidityConstantNameTryNewErrorReturn }` for the fields of the entry `generate.kinds.<kind>`; `ConstantsLibraryFile { error: GeneratedFileNameTryNewErrorReturn }` and `ConstantsLibraryName { error: SolidityLibraryNameTryNewErrorReturn }` for `generate.constants_library`; `RecordsLibraryFile { error: GeneratedFileNameTryNewErrorReturn }` and `RecordsLibraryName { error: SolidityLibraryNameTryNewErrorReturn }` for `generate.records_library`; `GeneratedDirectorySegment { index: usize, error: GeneratedFileNameTryNewErrorReturn }` and `GeneratedDirectory { error: GeneratedDirectoryTryNewErrorReturn }` for `generate.generated_directory`; `CurveKey { text: String }`, `CurveDirectory { curve: PairingCurve, error: GeneratedFileNameTryNewErrorReturn }`, and `MissingCurveDirectory { curve: PairingCurve }` for `generate.curve_directories`; `CompilerVersion { text: String, error: CompilerVersionErrorReturn }` for `generate.compiler_version`; and `License { error: SpdxLicenseIdentifierTryNewErrorReturn }` for `generate.license`
+    * `[✅]`   `AdmitGenerateReturn`, the alias `Result<AdmitGenerateSuccessReturn, AdmitGenerateErrorReturn>`
+    * `[✅]`   `AdmitGenerateFn`, the alias `fn(&AdmitGenerateDeps, AdmitGenerateParams, AdmitGeneratePayload) -> AdmitGenerateReturn`
+    * `[✅]`   No `Default` on any type in this file
+    * `[✅]`   Imports `GenerateConcrete`, `VectorKindConfiguration`, `VectorCountTryNewErrorReturn`, `MsmTermCountTryNewErrorReturn`, `GeneratedFileNameTryNewErrorReturn`, `GeneratedDirectoryTryNewErrorReturn`, `SolidityTypeNameTryNewErrorReturn`, `SolidityMemberNameTryNewErrorReturn`, `SolidityConstantNameTryNewErrorReturn`, `SolidityLibraryNameTryNewErrorReturn`, and `SpdxLicenseIdentifierTryNewErrorReturn` from `crate::generate::provides`; `PairingCurve` from `pairing`; and `GenerateTable` from `super::super::layers::provides`; declares nothing else
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_generate/interaction.spec.md`
-    * `[ ]`   `admit_generate(deps: &AdmitGenerateDeps, params: AdmitGenerateParams, payload: AdmitGeneratePayload) -> AdmitGenerateReturn`, the trusted form
-    * `[ ]`   Lookup, private `member_named`: given a text, a slice of members, and a function from a member to the value it is named by, it returns the first member in declared order for which `format!("{:?}", &name_of(member))` equals the text, or none; a mock selection is never a member of a declared set, so its text names no member
-    * `[ ]`   Version parsing, private `parse_compiler_version`: given a text, it splits the text on `.`; a split that does not yield three parts returns `Err(CompilerVersionErrorReturn::Parts { count })`, `count` the number of parts; a part `u16::from_str` refuses returns `Err(CompilerVersionErrorReturn::Part { index, text })`, the lowest such index; otherwise it returns `SolidityCompilerVersion { major, minor, patch }` from the three parts in order
-    * `[ ]`   Concrete: decision `member_named` over `GENERATE_CONCRETES` and `payload.generate.concrete`; no member returns `Err(AdmitGenerateErrorReturn::Concrete { text })`; a member continues with that `GenerateConcreteKind`
-    * `[ ]`   Kinds, per entry of `payload.generate.kinds` in key order: decision `member_named` over `SOLIDITY_GENERATE_DECLARATION.kinds` by each declaration's `kind` and the entry's key; no member returns `Err(AdmitGenerateErrorReturn::Kind { text })`; a member continues with its `kind`
-    * `[ ]`   Count: condition the entry's `count` is `Some`; dependency call `VectorCount::try_new(VectorCountConstructorParams { count })`; a refusal returns `Err(AdmitGenerateErrorReturn::Count { kind, error })`, `kind` the entry's key and `error` the refusal unchanged; `None` continues as `None`
-    * `[ ]`   Terms: the same over `terms` and `MsmTermCount::try_new`, returning `Err(AdmitGenerateErrorReturn::Terms { kind, error })`
-    * `[ ]`   Message length: the entry's `message_length` continues as the document holds it
-    * `[ ]`   Names, per entry: dependency calls `GeneratedFileName::try_new` over `file`, `SolidityTypeName::try_new` over `struct_name`, `SolidityMemberName::try_new` over `decode_function`, and `SolidityConstantName::try_new` over `path_constant`, in that order; a refusal returns `File`, `StructName`, `DecodeFunction`, or `PathConstant` with the entry's key as `kind` and the refusal unchanged; success yields the entry's `SolidityVectorKindNames` and then its `SolidityVectorKindSettings { kind, names }` and `VectorKindConfiguration { kind, quantities }`
-    * `[ ]`   Constants library: dependency calls `GeneratedFileName::try_new` over `constants_library.file` and `SolidityLibraryName::try_new` over `constants_library.library`; a refusal returns `ConstantsLibraryFile` or `ConstantsLibraryName` with the refusal unchanged; success yields `SolidityLibraryNames { file_name, library_name }`
-    * `[ ]`   Records library: the same over `records_library`, returning `RecordsLibraryFile` or `RecordsLibraryName`
-    * `[ ]`   Generated directory: dependency call `GeneratedFileName::try_new` per segment of `generated_directory` in order; a refusal returns `Err(AdmitGenerateErrorReturn::GeneratedDirectorySegment { index, error })`; then `GeneratedDirectory::try_new(GeneratedDirectoryConstructorParams { segments })`; a refusal returns `Err(AdmitGenerateErrorReturn::GeneratedDirectory { error })`
-    * `[ ]`   Curve directories, per entry of `payload.generate.curve_directories` in key order: decision `member_named` over `PAIRING_CURVES` and the entry's key; no member returns `Err(AdmitGenerateErrorReturn::CurveKey { text })`; a member continues with that `PairingCurve`; dependency call `GeneratedFileName::try_new` over the entry's value; a refusal returns `Err(AdmitGenerateErrorReturn::CurveDirectory { curve, error })`
-    * `[ ]`   Missing curve: after every entry, for each member of `PAIRING_CURVES` in declared order, condition no entry names it; outcome `Err(AdmitGenerateErrorReturn::MissingCurveDirectory { curve })`; otherwise `SolidityCurveDirectories` is built with its `bn254` field taken from the entry for `PairingCurve::Bn254` and its `bls12_381` field from the entry for `PairingCurve::Bls12381`
-    * `[ ]`   Compiler version: dependency call the private `parse_compiler_version` over `compiler_version`; a refusal returns `Err(AdmitGenerateErrorReturn::CompilerVersion { text, error })`
-    * `[ ]`   License: dependency call `SpdxLicenseIdentifier::try_new(SpdxLicenseIdentifierConstructorParams { text })`; a refusal returns `Err(AdmitGenerateErrorReturn::License { error })`
-    * `[ ]`   Success: the settings are `SolidityGenerateSettings { kinds, constants_library, records_library, foundry_root, generated_directory, curve_directories, compiler_version, license }` with `foundry_root` cloned from the document; the concrete is an exhaustive `match` on the admitted `GenerateConcreteKind`, its `Solidity` arm `GenerateConcrete::Solidity { settings: Box::new(settings) }`; outcome `Ok(AdmitGenerateSuccessReturn { admitted: AdmittedGenerate { concrete, kinds } })`, `kinds` the admitted `VectorKindConfiguration`s in key order
-    * `[ ]`   Ordering: concrete, then each kind in key order with its key, count, terms, file, struct name, decode function, and path constant, then the constants library's file and name, the records library's file and name, the generated directory's segments and whole, the curve directories in key order and then the missing curves in declared order, the compiler version, and the license; the first refusal returns; `deps` and `params` carry nothing and are not read; no side effect
-    * `[ ]`   Unreached, a quantity present for a kind whose declared sizing does not take it, and a kind set that omits or repeats a declared kind: the function admits each kind it is given and the map holds each key once, so those refusals are `harness-crypto/generate/factory`'s and have no unit block here
-    * `[ ]`   Own entry `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`: condition `admit_generate` over a document whose `kinds` names one kind of `SOLIDITY_GENERATE_DECLARATION.kinds` with the quantities its declared sizing takes and names distinct from every other kind's, every collaborator real, the declaration and the constructors the generate family declares; outcome `Ok` whose `admitted.kinds` holds the `VectorKindConfiguration` of that kind with the quantities the document holds and whose settings hold that kind's `SolidityVectorKindSettings` with the names the document holds; variation every `VectorKindDeclaration` of the declaration in turn and each sizing it declares, the document's quantities chosen by an exhaustive `match` on the sizing; edge a text matched to a neighbouring kind, a quantity placed in another field, or a name placed in another field differs from the value built in Arrange
-    * `[ ]`   Own entry `every_declared_curve_directory_reaches_the_field_its_curve_names`: condition `admit_generate` over a document whose `curve_directories` names every member of `PAIRING_CURVES`, the member under test with one directory text and every other member with another, every collaborator real; outcome `Ok` whose `SolidityCurveDirectories` holds the member under test's text in the field that member names and the other text in the other field; variation every member of `PAIRING_CURVES` in turn as the member under test; edge the two fields exchanged, a key matched to a neighbouring member, or an entry read by its position instead of its key differs from the directories built in Arrange
-    * `[ ]`   Own entry `an_undeclared_name_is_never_admitted`: condition `admit_generate` over a document whose `concrete` is the `Debug` text of the family's mock selection, and over a document whose curve key is the `Debug` text of the pairing family's mock variant, the other values admitted; outcome `Err` carrying `Concrete` or `CurveKey` and that text; variation the two texts in turn; edge a declared set that held its mock selection would admit it
-    * `[ ]`   Callee dispositions: no entry of a direct dependency passes through `admit_generate` or ends at its tests, because it calls only the constructors the generate family and its functions declare and reads each declared set as a constant, and no entry of `harness-crypto/generate/solidity/render`, `harness-crypto/generate/solidity/group_vectors`, `harness-crypto/generate/solidity`, `harness-crypto/generate/factory`, or `harness-crypto/config/layers` is proven through those constructors
-    * `[ ]`   Private surface: the chain of real functions `admit_generate`, `member_named`, `parse_compiler_version`, and each constructor named above, all running for real over the real declared sets; no outer-edge collaborator; the observable result is the `AdmitGenerateReturn`; the entries proven are `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`, `every_declared_curve_directory_reaches_the_field_its_curve_names`, and `an_undeclared_name_is_never_admitted`
-    * `[ ]`   Public surface: an outside caller invokes `admit_generate` through the crate root with an `AdmitGenerateDeps`, an `AdmitGenerateParams`, and an `AdmitGeneratePayload` holding a `GenerateTable`, and observes the `AdmitGenerateReturn` and the `AdmittedGenerate` in its success; the entries proven are the three above; there is no outer-edge collaborator
+  * `[✅]`   `apps/harness-crypto/src/config/admit_generate/interaction.spec.md`
+    * `[✅]`   `admit_generate(deps: &AdmitGenerateDeps, params: AdmitGenerateParams, payload: AdmitGeneratePayload) -> AdmitGenerateReturn`, the trusted form
+    * `[✅]`   Lookup, private `member_named`: given a text, a slice of members, and a function from a member to the value it is named by, it returns the first member in declared order for which `format!("{:?}", &name_of(member))` equals the text, or none; a mock selection is never a member of a declared set, so its text names no member
+    * `[✅]`   Version parsing, private `parse_compiler_version`: given a text, it splits the text on `.`; a split that does not yield three parts returns `Err(CompilerVersionErrorReturn::Parts { count })`, `count` the number of parts; a part `u16::from_str` refuses returns `Err(CompilerVersionErrorReturn::Part { index, text })`, the lowest such index; otherwise it returns `SolidityCompilerVersion { major, minor, patch }` from the three parts in order
+    * `[✅]`   Concrete: decision `member_named` over `GENERATE_CONCRETES` and `payload.generate.concrete`; no member returns `Err(AdmitGenerateErrorReturn::Concrete { text })`; a member continues with that `GenerateConcreteKind`
+    * `[✅]`   Kinds, per entry of `payload.generate.kinds` in key order: decision `member_named` over `SOLIDITY_GENERATE_DECLARATION.kinds` by each declaration's `kind` and the entry's key; no member returns `Err(AdmitGenerateErrorReturn::Kind { text })`; a member continues with its `kind`
+    * `[✅]`   Count: condition the entry's `count` is `Some`; dependency call `VectorCount::try_new(VectorCountConstructorParams { count })`; a refusal returns `Err(AdmitGenerateErrorReturn::Count { kind, error })`, `kind` the entry's key and `error` the refusal unchanged; `None` continues as `None`
+    * `[✅]`   Terms: the same over `terms` and `MsmTermCount::try_new`, returning `Err(AdmitGenerateErrorReturn::Terms { kind, error })`
+    * `[✅]`   Message length: the entry's `message_length` continues as the document holds it
+    * `[✅]`   Names, per entry: dependency calls `GeneratedFileName::try_new` over `file`, `SolidityTypeName::try_new` over `struct_name`, `SolidityMemberName::try_new` over `decode_function`, and `SolidityConstantName::try_new` over `path_constant`, in that order; a refusal returns `File`, `StructName`, `DecodeFunction`, or `PathConstant` with the entry's key as `kind` and the refusal unchanged; success yields the entry's `SolidityVectorKindNames` and then its `SolidityVectorKindSettings { kind, names }` and `VectorKindConfiguration { kind, quantities }`
+    * `[✅]`   Constants library: dependency calls `GeneratedFileName::try_new` over `constants_library.file` and `SolidityLibraryName::try_new` over `constants_library.library`; a refusal returns `ConstantsLibraryFile` or `ConstantsLibraryName` with the refusal unchanged; success yields `SolidityLibraryNames { file_name, library_name }`
+    * `[✅]`   Records library: the same over `records_library`, returning `RecordsLibraryFile` or `RecordsLibraryName`
+    * `[✅]`   Generated directory: dependency call `GeneratedFileName::try_new` per segment of `generated_directory` in order; a refusal returns `Err(AdmitGenerateErrorReturn::GeneratedDirectorySegment { index, error })`; then `GeneratedDirectory::try_new(GeneratedDirectoryConstructorParams { segments })`; a refusal returns `Err(AdmitGenerateErrorReturn::GeneratedDirectory { error })`
+    * `[✅]`   Curve directories, per entry of `payload.generate.curve_directories` in key order: decision `member_named` over `PAIRING_CURVES` and the entry's key; no member returns `Err(AdmitGenerateErrorReturn::CurveKey { text })`; a member continues with that `PairingCurve`; dependency call `GeneratedFileName::try_new` over the entry's value; a refusal returns `Err(AdmitGenerateErrorReturn::CurveDirectory { curve, error })`
+    * `[✅]`   Missing curve: after every entry, for each member of `PAIRING_CURVES` in declared order, condition no entry names it; outcome `Err(AdmitGenerateErrorReturn::MissingCurveDirectory { curve })`; otherwise `SolidityCurveDirectories` is built with its `bn254` field taken from the entry for `PairingCurve::Bn254` and its `bls12_381` field from the entry for `PairingCurve::Bls12381`
+    * `[✅]`   Compiler version: dependency call the private `parse_compiler_version` over `compiler_version`; a refusal returns `Err(AdmitGenerateErrorReturn::CompilerVersion { text, error })`
+    * `[✅]`   License: dependency call `SpdxLicenseIdentifier::try_new(SpdxLicenseIdentifierConstructorParams { text })`; a refusal returns `Err(AdmitGenerateErrorReturn::License { error })`
+    * `[✅]`   Success: the settings are `SolidityGenerateSettings { kinds, constants_library, records_library, foundry_root, generated_directory, curve_directories, compiler_version, license }` with `foundry_root` cloned from the document; the concrete is an exhaustive `match` on the admitted `GenerateConcreteKind`, its `Solidity` arm `GenerateConcrete::Solidity { settings: Box::new(settings) }`; outcome `Ok(AdmitGenerateSuccessReturn { admitted: AdmittedGenerate { concrete, kinds } })`, `kinds` the admitted `VectorKindConfiguration`s in key order
+    * `[✅]`   Ordering: concrete, then each kind in key order with its key, count, terms, file, struct name, decode function, and path constant, then the constants library's file and name, the records library's file and name, the generated directory's segments and whole, the curve directories in key order and then the missing curves in declared order, the compiler version, and the license; the first refusal returns; `deps` and `params` carry nothing and are not read; no side effect
+    * `[✅]`   Unreached, a quantity present for a kind whose declared sizing does not take it, and a kind set that omits or repeats a declared kind: the function admits each kind it is given and the map holds each key once, so those refusals are `harness-crypto/generate/factory`'s and have no unit block here
+    * `[✅]`   Own entry `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`: condition `admit_generate` over a document whose `kinds` names one kind of `SOLIDITY_GENERATE_DECLARATION.kinds` with the quantities its declared sizing takes and names distinct from every other kind's, every collaborator real, the declaration and the constructors the generate family declares; outcome `Ok` whose `admitted.kinds` holds the `VectorKindConfiguration` of that kind with the quantities the document holds and whose settings hold that kind's `SolidityVectorKindSettings` with the names the document holds; variation every `VectorKindDeclaration` of the declaration in turn and each sizing it declares, the document's quantities chosen by an exhaustive `match` on the sizing; edge a text matched to a neighbouring kind, a quantity placed in another field, or a name placed in another field differs from the value built in Arrange
+    * `[✅]`   Own entry `every_declared_curve_directory_reaches_the_field_its_curve_names`: condition `admit_generate` over a document whose `curve_directories` names every member of `PAIRING_CURVES`, the member under test with one directory text and every other member with another, every collaborator real; outcome `Ok` whose `SolidityCurveDirectories` holds the member under test's text in the field that member names and the other text in the other field; variation every member of `PAIRING_CURVES` in turn as the member under test; edge the two fields exchanged, a key matched to a neighbouring member, or an entry read by its position instead of its key differs from the directories built in Arrange
+    * `[✅]`   Own entry `an_undeclared_name_is_never_admitted`: condition `admit_generate` over a document whose `concrete` is the `Debug` text of the family's mock selection, and over a document whose curve key is the `Debug` text of the pairing family's mock variant, the other values admitted; outcome `Err` carrying `Concrete` or `CurveKey` and that text; variation the two texts in turn; edge a declared set that held its mock selection would admit it
+    * `[✅]`   Callee dispositions: no entry of a direct dependency passes through `admit_generate` or ends at its tests, because it calls only the constructors the generate family and its functions declare and reads each declared set as a constant, and no entry of `harness-crypto/generate/solidity/render`, `harness-crypto/generate/solidity/group_vectors`, `harness-crypto/generate/solidity`, `harness-crypto/generate/factory`, or `harness-crypto/config/layers` is proven through those constructors
+    * `[✅]`   Private surface: the chain of real functions `admit_generate`, `member_named`, `parse_compiler_version`, and each constructor named above, all running for real over the real declared sets; no outer-edge collaborator; the observable result is the `AdmitGenerateReturn`; the entries proven are `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`, `every_declared_curve_directory_reaches_the_field_its_curve_names`, and `an_undeclared_name_is_never_admitted`
+    * `[✅]`   Public surface: an outside caller invokes `admit_generate` through the crate root with an `AdmitGenerateDeps`, an `AdmitGenerateParams`, and an `AdmitGeneratePayload` holding a `GenerateTable`, and observes the `AdmitGenerateReturn` and the `AdmittedGenerate` in its success; the entries proven are the three above; there is no outer-edge collaborator
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_generate/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`, the file holding no `unwrap`, `expect`, `panic!`, or numeric `as`
-    * `[ ]`   `declared_name<T: Debug>(value: &T) -> String`, returning `format!("{:?}", value)`, the text a member is named by
-    * `[ ]`   Fixture values: the default payload's `generate` is `build_generate_table` overridden so that `concrete` is `declared_name(&GENERATE_CONCRETES[0])`; `kinds` holds one entry keyed `declared_name(&VectorKind::G1Addition)` from `build_generate_kind_table` with `count` `Some(2)`, `terms` and `message_length` `None`, `file` `"g1_add.vectors"`, `struct_name` `"G1AddVector"`, `decode_function` `"decodeG1Add"`, and `path_constant` `"G1_ADD_PATH"`; `constants_library` from `build_library_table` of `file` `"Constants.sol"` and `library` `"Constants"`; `records_library` of `file` `"VectorRecords.sol"` and `library` `"VectorRecords"`; `foundry_root` `PathBuf::from("root")`; `generated_directory` `vec!["generated".to_string()]`; `curve_directories` keyed `declared_name(&PairingCurve::Bn254)` to `"bn254"` and `declared_name(&PairingCurve::Bls12381)` to `"bls12_381"`; `compiler_version` `"0.8.24"`; and `license` `"MIT"`
-    * `[ ]`   The default admitted value is the one those texts admit to, built from the generate family's own builders and never from the subject: `build_admitted_generate` defaults `concrete` to `GenerateConcrete::Solidity { settings: Box::new(build_solidity_generate_settings(…)) }` whose overrides set `kinds` to one `build_solidity_vector_kind_settings` over `Default::default()`, `foundry_root` to `PathBuf::from("root")`, and `license` to `build_spdx_license_identifier` over `text` `"MIT"`, every other field at the builder's default, which equals the texts above; and `kinds` to one `VectorKindConfiguration` of `VectorKind::G1Addition` with `count` `Some(build_vector_count(…))` over `count` `2`, `terms` `None`, and `message_length` `None`
-    * `[ ]`   `AdmittedGenerateOverrides`, `#[derive(Default)]`, one `Option` per field; `build_admitted_generate(overrides) -> AdmittedGenerate`, defaulting as the fixture values state; `CompilerVersionErrorReturn`, an enum, takes no builder; no corruptions type and no invalidator, since no value this interface owns arrives as untrusted data
-    * `[ ]`   `AdmitGenerateDepsOverrides` and `AdmitGenerateParamsOverrides`, each the fieldless struct with `#[derive(Default)]`; `build_admit_generate_deps(_overrides) -> AdmitGenerateDeps` and `build_admit_generate_params(_overrides) -> AdmitGenerateParams`
-    * `[ ]`   `AdmitGeneratePayloadOverrides`, `#[derive(Default)]`, the field `pub generate: Option<GenerateTable>`; `build_admit_generate_payload(overrides) -> AdmitGeneratePayload`, defaulting as the fixture values state
-    * `[ ]`   `AdmitGenerateSuccessReturnOverrides`, `#[derive(Default)]`, the field `pub admitted: Option<AdmittedGenerate>`; `build_admit_generate_success_return(overrides) -> AdmitGenerateSuccessReturn`, defaulting to `build_admitted_generate(Default::default())`
-    * `[ ]`   `mock_admit_generate(_deps: &AdmitGenerateDeps, _params: AdmitGenerateParams, _payload: AdmitGeneratePayload) -> AdmitGenerateReturn`, the production type `AdmitGenerateFn` and nothing else, returning `Ok(build_admit_generate_success_return(Default::default()))`
-    * `[ ]`   Dispositions: `AdmitGenerateErrorReturn` and `CompilerVersionErrorReturn`, enums, used by their production values; `AdmitGenerateReturn`, an alias of `Result`, and `AdmitGenerateFn`, a function type whose mock is `mock_admit_generate`; `AdmittedGenerate`, `AdmitGenerateDeps`, `AdmitGenerateParams`, `AdmitGeneratePayload`, and `AdmitGenerateSuccessReturn`, object types `interface.rs` declares, each with its builder above
-    * `[ ]`   Imports this module's types from `super::interface`, `Debug` from `core::fmt`, `BTreeMap` from `std::collections` and `PathBuf` from `std::path`, `GENERATE_CONCRETES`, `VectorKind`, `GenerateConcrete`, `VectorKindConfiguration`, `VectorKindQuantities`, and the builders and overrides types the deps element lists from `crate::generate::provides`, `PairingCurve` from `pairing`, and `build_generate_table`, `GenerateTableOverrides`, `GenerateTable`, `build_generate_kind_table`, `GenerateKindTableOverrides`, `build_library_table`, and `LibraryTableOverrides` from `super::super::layers::provides`; nothing else
+  * `[✅]`   `apps/harness-crypto/src/config/admit_generate/mock.rs`
+    * `[✅]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`, the file holding no `unwrap`, `expect`, `panic!`, or numeric `as`
+    * `[✅]`   `declared_name<T: Debug>(value: &T) -> String`, returning `format!("{:?}", value)`, the text a member is named by
+    * `[✅]`   Fixture values: the default payload's `generate` is `build_generate_table` overridden so that `concrete` is `declared_name(&GENERATE_CONCRETES[0])`; `kinds` holds one entry keyed `declared_name(&VectorKind::G1Addition)` from `build_generate_kind_table` with `count` `Some(2)`, `terms` and `message_length` `None`, `file` `"g1_add.vectors"`, `struct_name` `"G1AddVector"`, `decode_function` `"decodeG1Add"`, and `path_constant` `"G1_ADD_PATH"`; `constants_library` from `build_library_table` of `file` `"Constants.sol"` and `library` `"Constants"`; `records_library` of `file` `"VectorRecords.sol"` and `library` `"VectorRecords"`; `foundry_root` `PathBuf::from("root")`; `generated_directory` `vec!["generated".to_string()]`; `curve_directories` keyed `declared_name(&PairingCurve::Bn254)` to `"bn254"` and `declared_name(&PairingCurve::Bls12381)` to `"bls12_381"`; `compiler_version` `"0.8.24"`; and `license` `"MIT"`
+    * `[✅]`   The default admitted value is the one those texts admit to, built from the generate family's own builders and never from the subject: `build_admitted_generate` defaults `concrete` to `GenerateConcrete::Solidity { settings: Box::new(build_solidity_generate_settings(…)) }` whose overrides set `kinds` to one `build_solidity_vector_kind_settings` over `Default::default()`, `foundry_root` to `PathBuf::from("root")`, and `license` to `build_spdx_license_identifier` over `text` `"MIT"`, every other field at the builder's default, which equals the texts above; and `kinds` to one `VectorKindConfiguration` of `VectorKind::G1Addition` with `count` `Some(build_vector_count(…))` over `count` `2`, `terms` `None`, and `message_length` `None`
+    * `[✅]`   `AdmittedGenerateOverrides`, `#[derive(Default)]`, one `Option` per field; `build_admitted_generate(overrides) -> AdmittedGenerate`, defaulting as the fixture values state; `CompilerVersionErrorReturn`, an enum, takes no builder; no corruptions type and no invalidator, since no value this interface owns arrives as untrusted data
+    * `[✅]`   `AdmitGenerateDepsOverrides` and `AdmitGenerateParamsOverrides`, each the fieldless struct with `#[derive(Default)]`; `build_admit_generate_deps(_overrides) -> AdmitGenerateDeps` and `build_admit_generate_params(_overrides) -> AdmitGenerateParams`
+    * `[✅]`   `AdmitGeneratePayloadOverrides`, `#[derive(Default)]`, the field `pub generate: Option<GenerateTable>`; `build_admit_generate_payload(overrides) -> AdmitGeneratePayload`, defaulting as the fixture values state
+    * `[✅]`   `AdmitGenerateSuccessReturnOverrides`, `#[derive(Default)]`, the field `pub admitted: Option<AdmittedGenerate>`; `build_admit_generate_success_return(overrides) -> AdmitGenerateSuccessReturn`, defaulting to `build_admitted_generate(Default::default())`
+    * `[✅]`   `mock_admit_generate(_deps: &AdmitGenerateDeps, _params: AdmitGenerateParams, _payload: AdmitGeneratePayload) -> AdmitGenerateReturn`, the production type `AdmitGenerateFn` and nothing else, returning `Ok(build_admit_generate_success_return(Default::default()))`
+    * `[✅]`   Dispositions: `AdmitGenerateErrorReturn` and `CompilerVersionErrorReturn`, enums, used by their production values; `AdmitGenerateReturn`, an alias of `Result`, and `AdmitGenerateFn`, a function type whose mock is `mock_admit_generate`; `AdmittedGenerate`, `AdmitGenerateDeps`, `AdmitGenerateParams`, `AdmitGeneratePayload`, and `AdmitGenerateSuccessReturn`, object types `interface.rs` declares, each with its builder above
+    * `[✅]`   Imports this module's types from `super::interface`, `Debug` from `core::fmt`, `BTreeMap` from `std::collections` and `PathBuf` from `std::path`, `GENERATE_CONCRETES`, `VectorKind`, `GenerateConcrete`, `VectorKindConfiguration`, `VectorKindQuantities`, and the builders and overrides types the deps element lists from `crate::generate::provides`, `PairingCurve` from `pairing`, and `build_generate_table`, `GenerateTableOverrides`, `GenerateTable`, `build_generate_kind_table`, `GenerateKindTableOverrides`, `build_library_table`, and `LibraryTableOverrides` from `super::super::layers::provides`; nothing else
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_generate/test_basic.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `admit_generate`, every type of `super::interface`, and every builder, overrides type, and `declared_name` of `super::mock` its blocks name; contains only imports, contract headers, blocks, and assertions
-    * `[ ]`   Every block calls `admit_generate` once with `build_admit_generate_deps`, `build_admit_generate_params`, and the payload it names; expected values are built in Arrange by `build_admitted_generate` and the generate family's builders and are never read from the subject; a block changing a text changes that override alone
-    * `[ ]`   `admit_generate_admits_the_default_payload`
-      * `[ ]`   Contract: Success → a payload whose every text and number the builders admit admits to the generate settings and kind configuration built from the same values
-      * `[ ]`   Arrange: `build_admit_generate_payload(Default::default())`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result is `Ok` and its `admitted` equals `build_admitted_generate(Default::default())`
-    * `[ ]`   `admit_generate_admits_the_concrete_the_text_names`
-      * `[ ]`   Contract: Concrete → the text of the first member of `GENERATE_CONCRETES` admits to `GenerateConcrete::Solidity`
-      * `[ ]`   Arrange: the default payload
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: `admitted.concrete` matches `GenerateConcrete::Solidity { .. }`
-    * `[ ]`   `admit_generate_admits_each_kind_in_key_order`
-      * `[ ]`   Contract: Kinds → each entry admitted, the settings and the configuration holding their entries in the map's key order
-      * `[ ]`   Arrange: two `kinds` entries keyed `declared_name(&VectorKind::HashToScalar)` and `declared_name(&VectorKind::G1Addition)` with distinct names and counts, inserted in that order, and the expected settings and configuration built in key order, `G1Addition` first
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: `admitted.kinds` equals the two `VectorKindConfiguration`s in key order and the concrete's `settings.kinds` equals the two `SolidityVectorKindSettings` in that order, each with the names its entry holds
-    * `[ ]`   `admit_generate_carries_the_quantities_each_entry_holds`
-      * `[ ]`   Contract: Count, Terms, and Message length → a quantity present is admitted and a quantity absent stays absent
-      * `[ ]`   Arrange: three entries: `count` `Some(3)` and `terms` `Some(4)`; `count` `Some(5)` and `message_length` `Some(32)`; and none of the three
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: each `VectorKindConfiguration`'s quantities equal `VectorKindQuantities` built from `build_vector_count` and `build_msm_term_count` over those numbers and the message length as given, and `None` where the entry holds none
-    * `[ ]`   `admit_generate_admits_the_library_names`
-      * `[ ]`   Contract: Constants library and Records library → each library table admitted to its `SolidityLibraryNames`
-      * `[ ]`   Arrange: `constants_library` of `"Constants.sol"` and `"ConstantsLib"`, and `records_library` of `"Records.sol"` and `"RecordsLib"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the concrete's `settings.constants_library` and `settings.records_library` equal `build_solidity_library_names` over those names
-    * `[ ]`   `admit_generate_admits_the_generated_directory_segments_in_order`
-      * `[ ]`   Contract: Generated directory → the segments admitted in the document's order
-      * `[ ]`   Arrange: `generated_directory` of `"generated"` and `"nested"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: `settings.generated_directory` equals `build_generated_directory` over those two segments in that order
-    * `[ ]`   `admit_generate_admits_each_curve_directory_to_the_field_its_curve_names`
-      * `[ ]`   Contract: Curve directories → the entry keyed for a curve reaches the field that curve names
-      * `[ ]`   Arrange: `curve_directories` keyed `declared_name(&PairingCurve::Bn254)` to `"directory-a"` and `declared_name(&PairingCurve::Bls12381)` to `"directory-b"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: `settings.curve_directories` equals `build_solidity_curve_directories` with `bn254` `"directory-a"` and `bls12_381` `"directory-b"`
-    * `[ ]`   `admit_generate_parses_the_compiler_version_into_its_parts`
-      * `[ ]`   Contract: Compiler version → three decimal parts admitted in order
-      * `[ ]`   Arrange: `compiler_version` `"1.20.300"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: `settings.compiler_version` equals `build_solidity_compiler_version` with `major` `1`, `minor` `20`, and `patch` `300`
-    * `[ ]`   `admit_generate_admits_the_license_text`
-      * `[ ]`   Contract: License → the text admitted as an SPDX license identifier
-      * `[ ]`   Arrange: `license` `"GPL-3.0+"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: `settings.license` equals `build_spdx_license_identifier` over `"GPL-3.0+"`
-    * `[ ]`   `admit_generate_carries_the_foundry_root_as_the_document_holds_it`
-      * `[ ]`   Contract: Success → the root is carried and not admitted against the filesystem
-      * `[ ]`   Arrange: `foundry_root` `PathBuf::from("a path that names no directory")`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: `settings.foundry_root` equals that path
-    * `[ ]`   `admit_generate_admits_a_document_naming_no_kinds`
-      * `[ ]`   Contract: Kinds → the function admits each kind it is given, and the kind set is the generate factory's to admit
-      * `[ ]`   Arrange: `kinds` empty
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result is `Ok` and both `admitted.kinds` and `settings.kinds` are empty
+  * `[✅]`   `apps/harness-crypto/src/config/admit_generate/test_basic.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; imports `admit_generate`, every type of `super::interface`, and every builder, overrides type, and `declared_name` of `super::mock` its blocks name; contains only imports, contract headers, blocks, and assertions
+    * `[✅]`   Every block calls `admit_generate` once with `build_admit_generate_deps`, `build_admit_generate_params`, and the payload it names; expected values are built in Arrange by `build_admitted_generate` and the generate family's builders and are never read from the subject; a block changing a text changes that override alone
+    * `[✅]`   `admit_generate_admits_the_default_payload`
+      * `[✅]`   Contract: Success → a payload whose every text and number the builders admit admits to the generate settings and kind configuration built from the same values
+      * `[✅]`   Arrange: `build_admit_generate_payload(Default::default())`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result is `Ok` and its `admitted` equals `build_admitted_generate(Default::default())`
+    * `[✅]`   `admit_generate_admits_the_concrete_the_text_names`
+      * `[✅]`   Contract: Concrete → the text of the first member of `GENERATE_CONCRETES` admits to `GenerateConcrete::Solidity`
+      * `[✅]`   Arrange: the default payload
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: `admitted.concrete` matches `GenerateConcrete::Solidity { .. }`
+    * `[✅]`   `admit_generate_admits_each_kind_in_key_order`
+      * `[✅]`   Contract: Kinds → each entry admitted, the settings and the configuration holding their entries in the map's key order
+      * `[✅]`   Arrange: two `kinds` entries keyed `declared_name(&VectorKind::HashToScalar)` and `declared_name(&VectorKind::G1Addition)` with distinct names and counts, inserted in that order, and the expected settings and configuration built in key order, `G1Addition` first
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: `admitted.kinds` equals the two `VectorKindConfiguration`s in key order and the concrete's `settings.kinds` equals the two `SolidityVectorKindSettings` in that order, each with the names its entry holds
+    * `[✅]`   `admit_generate_carries_the_quantities_each_entry_holds`
+      * `[✅]`   Contract: Count, Terms, and Message length → a quantity present is admitted and a quantity absent stays absent
+      * `[✅]`   Arrange: three entries: `count` `Some(3)` and `terms` `Some(4)`; `count` `Some(5)` and `message_length` `Some(32)`; and none of the three
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: each `VectorKindConfiguration`'s quantities equal `VectorKindQuantities` built from `build_vector_count` and `build_msm_term_count` over those numbers and the message length as given, and `None` where the entry holds none
+    * `[✅]`   `admit_generate_admits_the_library_names`
+      * `[✅]`   Contract: Constants library and Records library → each library table admitted to its `SolidityLibraryNames`
+      * `[✅]`   Arrange: `constants_library` of `"Constants.sol"` and `"ConstantsLib"`, and `records_library` of `"Records.sol"` and `"RecordsLib"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the concrete's `settings.constants_library` and `settings.records_library` equal `build_solidity_library_names` over those names
+    * `[✅]`   `admit_generate_admits_the_generated_directory_segments_in_order`
+      * `[✅]`   Contract: Generated directory → the segments admitted in the document's order
+      * `[✅]`   Arrange: `generated_directory` of `"generated"` and `"nested"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: `settings.generated_directory` equals `build_generated_directory` over those two segments in that order
+    * `[✅]`   `admit_generate_admits_each_curve_directory_to_the_field_its_curve_names`
+      * `[✅]`   Contract: Curve directories → the entry keyed for a curve reaches the field that curve names
+      * `[✅]`   Arrange: `curve_directories` keyed `declared_name(&PairingCurve::Bn254)` to `"directory-a"` and `declared_name(&PairingCurve::Bls12381)` to `"directory-b"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: `settings.curve_directories` equals `build_solidity_curve_directories` with `bn254` `"directory-a"` and `bls12_381` `"directory-b"`
+    * `[✅]`   `admit_generate_parses_the_compiler_version_into_its_parts`
+      * `[✅]`   Contract: Compiler version → three decimal parts admitted in order
+      * `[✅]`   Arrange: `compiler_version` `"1.20.300"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: `settings.compiler_version` equals `build_solidity_compiler_version` with `major` `1`, `minor` `20`, and `patch` `300`
+    * `[✅]`   `admit_generate_admits_the_license_text`
+      * `[✅]`   Contract: License → the text admitted as an SPDX license identifier
+      * `[✅]`   Arrange: `license` `"GPL-3.0+"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: `settings.license` equals `build_spdx_license_identifier` over `"GPL-3.0+"`
+    * `[✅]`   `admit_generate_carries_the_foundry_root_as_the_document_holds_it`
+      * `[✅]`   Contract: Success → the root is carried and not admitted against the filesystem
+      * `[✅]`   Arrange: `foundry_root` `PathBuf::from("a path that names no directory")`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: `settings.foundry_root` equals that path
+    * `[✅]`   `admit_generate_admits_a_document_naming_no_kinds`
+      * `[✅]`   Contract: Kinds → the function admits each kind it is given, and the kind set is the generate factory's to admit
+      * `[✅]`   Arrange: `kinds` empty
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result is `Ok` and both `admitted.kinds` and `settings.kinds` are empty
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_generate/test_error.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports as `test_basic.rs` imports, with `AdmitGenerateErrorReturn` and `CompilerVersionErrorReturn`; contains only imports, contract headers, blocks, and assertions
-    * `[ ]`   Every block asserts the whole error with `assert_eq!`, the refusal type deriving `PartialEq` and `Debug`; the unknown text is `"unknown"` in every block that names one, a text no declared member's `Debug` text equals; an entry's key in a refusal is the key the block arranged
-    * `[ ]`   `admit_generate_refuses_an_unknown_concrete`
-      * `[ ]`   Contract: Concrete → `Err(AdmitGenerateErrorReturn::Concrete { text })`
-      * `[ ]`   Arrange: the default payload with `concrete` `"unknown"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Concrete { text: "unknown".to_string() })`
-    * `[ ]`   `admit_generate_refuses_the_mock_concretes_name`
-      * `[ ]`   Contract: Concrete → the family's mock selection is never a member of the declared set
-      * `[ ]`   Arrange: the default payload with `concrete` `declared_name` of `GenerateConcrete::Mock(MockIGenerateAdapterFailureMode::NoFailure)`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Concrete { text })` with `text` that name
-    * `[ ]`   `admit_generate_refuses_an_unknown_kind`
-      * `[ ]`   Contract: Kinds → `Err(AdmitGenerateErrorReturn::Kind { text })`
-      * `[ ]`   Arrange: the default payload with the entry's key `"unknown"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Kind { text: "unknown".to_string() })`
-    * `[ ]`   `admit_generate_refuses_a_kind_name_that_differs_only_in_case`
-      * `[ ]`   Contract: the naming rule → a text equals a member's `Debug` text whole and case-sensitively
-      * `[ ]`   Arrange: the default payload with the entry's key the lowercase of `declared_name(&VectorKind::G1Addition)`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Kind { text })` with `text` the lowercase text
-    * `[ ]`   `admit_generate_refuses_a_zero_count_with_its_kind`
-      * `[ ]`   Contract: Count → `Err(AdmitGenerateErrorReturn::Count { kind, error })`, the constructor's refusal unchanged
-      * `[ ]`   Arrange: the default payload with the entry's `count` `Some(0)`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Count { kind: declared_name(&VectorKind::G1Addition), error: VectorCountTryNewErrorReturn::Zero })`
-    * `[ ]`   `admit_generate_refuses_a_zero_term_count_with_its_kind`
-      * `[ ]`   Contract: Terms → `Err(AdmitGenerateErrorReturn::Terms { kind, error })`
-      * `[ ]`   Arrange: the default payload with the entry's `terms` `Some(0)`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Terms { kind: declared_name(&VectorKind::G1Addition), error: MsmTermCountTryNewErrorReturn::Zero })`
-    * `[ ]`   `admit_generate_refuses_an_empty_file_name_with_its_kind`
-      * `[ ]`   Contract: Names → `Err(AdmitGenerateErrorReturn::File { kind, error })`, the constructor's refusal unchanged
-      * `[ ]`   Arrange: the default payload with the entry's `file` `""`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::File { kind: declared_name(&VectorKind::G1Addition), error: GeneratedFileNameTryNewErrorReturn::Empty })`
-    * `[ ]`   `admit_generate_refuses_a_file_name_with_an_invalid_byte`
-      * `[ ]`   Contract: Names → the refusal carries the index and byte the constructor reports
-      * `[ ]`   Arrange: the default payload with the entry's `file` `"a b"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::File { kind: declared_name(&VectorKind::G1Addition), error: GeneratedFileNameTryNewErrorReturn::InvalidCharacter { index: 1, byte: 32 } })`
-    * `[ ]`   `admit_generate_refuses_a_struct_name_with_an_invalid_leading_byte`
-      * `[ ]`   Contract: Names → `Err(AdmitGenerateErrorReturn::StructName { kind, error })`
-      * `[ ]`   Arrange: the default payload with the entry's `struct_name` `"1Vector"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::StructName { kind: declared_name(&VectorKind::G1Addition), error: SolidityTypeNameTryNewErrorReturn::LeadingCharacter { byte: 49 } })`
-    * `[ ]`   `admit_generate_refuses_an_empty_decode_function_name`, `admit_generate_refuses_an_empty_path_constant_name`
-      * `[ ]`   Contract: Names → `Err` carrying `DecodeFunction` or `PathConstant` with the entry's key and the constructor's `Empty` refusal
-      * `[ ]`   Arrange: the default payload with that one field `""`
-      * `[ ]`   Act: `admit_generate`, once per block
-      * `[ ]`   Assert: the result equals `Err` of the block's variant with `kind` `declared_name(&VectorKind::G1Addition)` and `error` the type's `Empty`
-    * `[ ]`   `admit_generate_refuses_an_empty_constants_library_file`, `admit_generate_refuses_an_empty_constants_library_name`, `admit_generate_refuses_an_empty_records_library_file`, and `admit_generate_refuses_an_empty_records_library_name`
-      * `[ ]`   Contract: Constants library and Records library → `Err` carrying `ConstantsLibraryFile`, `ConstantsLibraryName`, `RecordsLibraryFile`, or `RecordsLibraryName` with the constructor's `Empty` refusal
-      * `[ ]`   Arrange: the default payload with that one text `""`
-      * `[ ]`   Act: `admit_generate`, once per block
-      * `[ ]`   Assert: the result equals `Err` of the block's variant with `error` the type's `Empty`
-    * `[ ]`   `admit_generate_refuses_a_generated_directory_segment_with_its_index`
-      * `[ ]`   Contract: Generated directory → `Err(AdmitGenerateErrorReturn::GeneratedDirectorySegment { index, error })`
-      * `[ ]`   Arrange: `generated_directory` of `"generated"` then `"a b"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::GeneratedDirectorySegment { index: 1, error: GeneratedFileNameTryNewErrorReturn::InvalidCharacter { index: 1, byte: 32 } })`
-    * `[ ]`   `admit_generate_refuses_a_generated_directory_with_no_segments`
-      * `[ ]`   Contract: Generated directory → `Err(AdmitGenerateErrorReturn::GeneratedDirectory { error })`
-      * `[ ]`   Arrange: `generated_directory` empty
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::GeneratedDirectory { error: GeneratedDirectoryTryNewErrorReturn::Empty })`
-    * `[ ]`   `admit_generate_refuses_an_unknown_curve_key`
-      * `[ ]`   Contract: Curve directories → `Err(AdmitGenerateErrorReturn::CurveKey { text })`
-      * `[ ]`   Arrange: the default payload with the first curve entry keyed `"unknown"`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::CurveKey { text: "unknown".to_string() })`
-    * `[ ]`   `admit_generate_refuses_a_curve_key_that_differs_only_in_case`
-      * `[ ]`   Contract: the naming rule → a curve key equals a member's `Debug` text whole and case-sensitively
-      * `[ ]`   Arrange: the default payload with the `PairingCurve::Bn254` entry keyed by the lowercase of its `declared_name`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::CurveKey { text })` with `text` the lowercase text
-    * `[ ]`   `admit_generate_refuses_the_mock_curves_name`
-      * `[ ]`   Contract: Curve directories → the pairing family's mock variant is never a member of the declared set
-      * `[ ]`   Arrange: the default payload with the first curve entry keyed `declared_name(&PairingCurve::Mock)`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::CurveKey { text })` with `text` that name
-    * `[ ]`   `admit_generate_refuses_an_invalid_curve_directory_with_its_curve`
-      * `[ ]`   Contract: Curve directories → `Err(AdmitGenerateErrorReturn::CurveDirectory { curve, error })`
-      * `[ ]`   Arrange: the `PairingCurve::Bls12381` entry's value `""`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::CurveDirectory { curve: PairingCurve::Bls12381, error: GeneratedFileNameTryNewErrorReturn::Empty })`
-    * `[ ]`   `admit_generate_refuses_a_declared_curve_with_no_directory`
-      * `[ ]`   Contract: Missing curve → `Err(AdmitGenerateErrorReturn::MissingCurveDirectory { curve })`, the first declared curve with no entry
-      * `[ ]`   Arrange: `curve_directories` holding the `PairingCurve::Bls12381` entry alone
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::MissingCurveDirectory { curve: PairingCurve::Bn254 })`
-    * `[ ]`   `admit_generate_refuses_a_compiler_version_without_three_parts`
-      * `[ ]`   Contract: Compiler version → `Err(AdmitGenerateErrorReturn::CompilerVersion { text, error })` with `CompilerVersionErrorReturn::Parts { count }`
-      * `[ ]`   Arrange: `compiler_version` `"0.8"`, then `"0.8.24.1"`
-      * `[ ]`   Act: `admit_generate`, once per text
-      * `[ ]`   Assert: the results equal `Err(AdmitGenerateErrorReturn::CompilerVersion { text, error: CompilerVersionErrorReturn::Parts { count: 2 } })` and the same with `count` `4`
-    * `[ ]`   `admit_generate_refuses_a_compiler_version_part_that_is_not_a_u16`
-      * `[ ]`   Contract: Compiler version → `CompilerVersionErrorReturn::Part { index, text }`, the lowest refused part
-      * `[ ]`   Arrange: `compiler_version` `"0.x.y"`, then `"0.8.70000"`
-      * `[ ]`   Act: `admit_generate`, once per text
-      * `[ ]`   Assert: the results equal `Err(AdmitGenerateErrorReturn::CompilerVersion { … })` with `Part { index: 1, text: "x".to_string() }` and with `Part { index: 2, text: "70000".to_string() }`
-    * `[ ]`   `admit_generate_refuses_an_empty_license`
-      * `[ ]`   Contract: License → `Err(AdmitGenerateErrorReturn::License { error })`
-      * `[ ]`   Arrange: `license` `""`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::License { error: SpdxLicenseIdentifierTryNewErrorReturn::Empty })`
-    * `[ ]`   `admit_generate_returns_the_first_refusal_in_the_stated_order`
-      * `[ ]`   Contract: Ordering → the first refused value in the stated order returns and later values are unread
-      * `[ ]`   Arrange: the default payload with `concrete` `"unknown"`, the entry's `count` `Some(0)`, and `license` `""`
-      * `[ ]`   Act: `admit_generate`, once
-      * `[ ]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Concrete { text: "unknown".to_string() })`
+  * `[✅]`   `apps/harness-crypto/src/config/admit_generate/test_error.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; imports as `test_basic.rs` imports, with `AdmitGenerateErrorReturn` and `CompilerVersionErrorReturn`; contains only imports, contract headers, blocks, and assertions
+    * `[✅]`   Every block asserts the whole error with `assert_eq!`, the refusal type deriving `PartialEq` and `Debug`; the unknown text is `"unknown"` in every block that names one, a text no declared member's `Debug` text equals; an entry's key in a refusal is the key the block arranged
+    * `[✅]`   `admit_generate_refuses_an_unknown_concrete`
+      * `[✅]`   Contract: Concrete → `Err(AdmitGenerateErrorReturn::Concrete { text })`
+      * `[✅]`   Arrange: the default payload with `concrete` `"unknown"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Concrete { text: "unknown".to_string() })`
+    * `[✅]`   `admit_generate_refuses_the_mock_concretes_name`
+      * `[✅]`   Contract: Concrete → the family's mock selection is never a member of the declared set
+      * `[✅]`   Arrange: the default payload with `concrete` `declared_name` of `GenerateConcrete::Mock(MockIGenerateAdapterFailureMode::NoFailure)`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Concrete { text })` with `text` that name
+    * `[✅]`   `admit_generate_refuses_an_unknown_kind`
+      * `[✅]`   Contract: Kinds → `Err(AdmitGenerateErrorReturn::Kind { text })`
+      * `[✅]`   Arrange: the default payload with the entry's key `"unknown"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Kind { text: "unknown".to_string() })`
+    * `[✅]`   `admit_generate_refuses_a_kind_name_that_differs_only_in_case`
+      * `[✅]`   Contract: the naming rule → a text equals a member's `Debug` text whole and case-sensitively
+      * `[✅]`   Arrange: the default payload with the entry's key the lowercase of `declared_name(&VectorKind::G1Addition)`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Kind { text })` with `text` the lowercase text
+    * `[✅]`   `admit_generate_refuses_a_zero_count_with_its_kind`
+      * `[✅]`   Contract: Count → `Err(AdmitGenerateErrorReturn::Count { kind, error })`, the constructor's refusal unchanged
+      * `[✅]`   Arrange: the default payload with the entry's `count` `Some(0)`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Count { kind: declared_name(&VectorKind::G1Addition), error: VectorCountTryNewErrorReturn::Zero })`
+    * `[✅]`   `admit_generate_refuses_a_zero_term_count_with_its_kind`
+      * `[✅]`   Contract: Terms → `Err(AdmitGenerateErrorReturn::Terms { kind, error })`
+      * `[✅]`   Arrange: the default payload with the entry's `terms` `Some(0)`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Terms { kind: declared_name(&VectorKind::G1Addition), error: MsmTermCountTryNewErrorReturn::Zero })`
+    * `[✅]`   `admit_generate_refuses_an_empty_file_name_with_its_kind`
+      * `[✅]`   Contract: Names → `Err(AdmitGenerateErrorReturn::File { kind, error })`, the constructor's refusal unchanged
+      * `[✅]`   Arrange: the default payload with the entry's `file` `""`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::File { kind: declared_name(&VectorKind::G1Addition), error: GeneratedFileNameTryNewErrorReturn::Empty })`
+    * `[✅]`   `admit_generate_refuses_a_file_name_with_an_invalid_byte`
+      * `[✅]`   Contract: Names → the refusal carries the index and byte the constructor reports
+      * `[✅]`   Arrange: the default payload with the entry's `file` `"a b"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::File { kind: declared_name(&VectorKind::G1Addition), error: GeneratedFileNameTryNewErrorReturn::InvalidCharacter { index: 1, byte: 32 } })`
+    * `[✅]`   `admit_generate_refuses_a_struct_name_with_an_invalid_leading_byte`
+      * `[✅]`   Contract: Names → `Err(AdmitGenerateErrorReturn::StructName { kind, error })`
+      * `[✅]`   Arrange: the default payload with the entry's `struct_name` `"1Vector"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::StructName { kind: declared_name(&VectorKind::G1Addition), error: SolidityTypeNameTryNewErrorReturn::LeadingCharacter { byte: 49 } })`
+    * `[✅]`   `admit_generate_refuses_an_empty_decode_function_name`, `admit_generate_refuses_an_empty_path_constant_name`
+      * `[✅]`   Contract: Names → `Err` carrying `DecodeFunction` or `PathConstant` with the entry's key and the constructor's `Empty` refusal
+      * `[✅]`   Arrange: the default payload with that one field `""`
+      * `[✅]`   Act: `admit_generate`, once per block
+      * `[✅]`   Assert: the result equals `Err` of the block's variant with `kind` `declared_name(&VectorKind::G1Addition)` and `error` the type's `Empty`
+    * `[✅]`   `admit_generate_refuses_an_empty_constants_library_file`, `admit_generate_refuses_an_empty_constants_library_name`, `admit_generate_refuses_an_empty_records_library_file`, and `admit_generate_refuses_an_empty_records_library_name`
+      * `[✅]`   Contract: Constants library and Records library → `Err` carrying `ConstantsLibraryFile`, `ConstantsLibraryName`, `RecordsLibraryFile`, or `RecordsLibraryName` with the constructor's `Empty` refusal
+      * `[✅]`   Arrange: the default payload with that one text `""`
+      * `[✅]`   Act: `admit_generate`, once per block
+      * `[✅]`   Assert: the result equals `Err` of the block's variant with `error` the type's `Empty`
+    * `[✅]`   `admit_generate_refuses_a_generated_directory_segment_with_its_index`
+      * `[✅]`   Contract: Generated directory → `Err(AdmitGenerateErrorReturn::GeneratedDirectorySegment { index, error })`
+      * `[✅]`   Arrange: `generated_directory` of `"generated"` then `"a b"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::GeneratedDirectorySegment { index: 1, error: GeneratedFileNameTryNewErrorReturn::InvalidCharacter { index: 1, byte: 32 } })`
+    * `[✅]`   `admit_generate_refuses_a_generated_directory_with_no_segments`
+      * `[✅]`   Contract: Generated directory → `Err(AdmitGenerateErrorReturn::GeneratedDirectory { error })`
+      * `[✅]`   Arrange: `generated_directory` empty
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::GeneratedDirectory { error: GeneratedDirectoryTryNewErrorReturn::Empty })`
+    * `[✅]`   `admit_generate_refuses_an_unknown_curve_key`
+      * `[✅]`   Contract: Curve directories → `Err(AdmitGenerateErrorReturn::CurveKey { text })`
+      * `[✅]`   Arrange: the default payload with the first curve entry keyed `"unknown"`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::CurveKey { text: "unknown".to_string() })`
+    * `[✅]`   `admit_generate_refuses_a_curve_key_that_differs_only_in_case`
+      * `[✅]`   Contract: the naming rule → a curve key equals a member's `Debug` text whole and case-sensitively
+      * `[✅]`   Arrange: the default payload with the `PairingCurve::Bn254` entry keyed by the lowercase of its `declared_name`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::CurveKey { text })` with `text` the lowercase text
+    * `[✅]`   `admit_generate_refuses_the_mock_curves_name`
+      * `[✅]`   Contract: Curve directories → the pairing family's mock variant is never a member of the declared set
+      * `[✅]`   Arrange: the default payload with the first curve entry keyed `declared_name(&PairingCurve::Mock)`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::CurveKey { text })` with `text` that name
+    * `[✅]`   `admit_generate_refuses_an_invalid_curve_directory_with_its_curve`
+      * `[✅]`   Contract: Curve directories → `Err(AdmitGenerateErrorReturn::CurveDirectory { curve, error })`
+      * `[✅]`   Arrange: the `PairingCurve::Bls12381` entry's value `""`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::CurveDirectory { curve: PairingCurve::Bls12381, error: GeneratedFileNameTryNewErrorReturn::Empty })`
+    * `[✅]`   `admit_generate_refuses_a_declared_curve_with_no_directory`
+      * `[✅]`   Contract: Missing curve → `Err(AdmitGenerateErrorReturn::MissingCurveDirectory { curve })`, the first declared curve with no entry
+      * `[✅]`   Arrange: `curve_directories` holding the `PairingCurve::Bls12381` entry alone
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::MissingCurveDirectory { curve: PairingCurve::Bn254 })`
+    * `[✅]`   `admit_generate_refuses_a_compiler_version_without_three_parts`
+      * `[✅]`   Contract: Compiler version → `Err(AdmitGenerateErrorReturn::CompilerVersion { text, error })` with `CompilerVersionErrorReturn::Parts { count }`
+      * `[✅]`   Arrange: `compiler_version` `"0.8"`, then `"0.8.24.1"`
+      * `[✅]`   Act: `admit_generate`, once per text
+      * `[✅]`   Assert: the results equal `Err(AdmitGenerateErrorReturn::CompilerVersion { text, error: CompilerVersionErrorReturn::Parts { count: 2 } })` and the same with `count` `4`
+    * `[✅]`   `admit_generate_refuses_a_compiler_version_part_that_is_not_a_u16`
+      * `[✅]`   Contract: Compiler version → `CompilerVersionErrorReturn::Part { index, text }`, the lowest refused part
+      * `[✅]`   Arrange: `compiler_version` `"0.x.y"`, then `"0.8.70000"`
+      * `[✅]`   Act: `admit_generate`, once per text
+      * `[✅]`   Assert: the results equal `Err(AdmitGenerateErrorReturn::CompilerVersion { … })` with `Part { index: 1, text: "x".to_string() }` and with `Part { index: 2, text: "70000".to_string() }`
+    * `[✅]`   `admit_generate_refuses_an_empty_license`
+      * `[✅]`   Contract: License → `Err(AdmitGenerateErrorReturn::License { error })`
+      * `[✅]`   Arrange: `license` `""`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::License { error: SpdxLicenseIdentifierTryNewErrorReturn::Empty })`
+    * `[✅]`   `admit_generate_returns_the_first_refusal_in_the_stated_order`
+      * `[✅]`   Contract: Ordering → the first refused value in the stated order returns and later values are unread
+      * `[✅]`   Arrange: the default payload with `concrete` `"unknown"`, the entry's `count` `Some(0)`, and `license` `""`
+      * `[✅]`   Act: `admit_generate`, once
+      * `[✅]`   Assert: the result equals `Err(AdmitGenerateErrorReturn::Concrete { text: "unknown".to_string() })`
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_generate/mod.rs`
-    * `[ ]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `#[cfg(test)] mod test_basic;`, `#[cfg(test)] mod test_error;`, `#[cfg(test)] mod integration_test;`, and `pub mod provides;`; the implementation of `admit_generate`, the trusted form, following the interaction spec's branches in its order, and the private `member_named` and `parse_compiler_version` the spec states; the file holds no `unwrap`, `expect`, `panic!`, or numeric `as`
-    * `[ ]`   Each text is matched by `member_named` over the declared set the spec names, and each admitted value is read by value from the member it returns; each constructor is called through its `try_new` over its `…ConstructorParams`, and its refusal is carried unchanged inside the variant the spec names with the document path as the variant's fields
-    * `[ ]`   Introduces no undeclared dependency; bypasses no contract
+  * `[✅]`   `apps/harness-crypto/src/config/admit_generate/mod.rs`
+    * `[✅]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `#[cfg(test)] mod test_basic;`, `#[cfg(test)] mod test_error;`, `#[cfg(test)] mod integration_test;`, and `pub mod provides;`; the implementation of `admit_generate`, the trusted form, following the interaction spec's branches in its order, and the private `member_named` and `parse_compiler_version` the spec states; the file holds no `unwrap`, `expect`, `panic!`, or numeric `as`
+    * `[✅]`   Each text is matched by `member_named` over the declared set the spec names, and each admitted value is read by value from the member it returns; each constructor is called through its `try_new` over its `…ConstructorParams`, and its refusal is carried unchanged inside the variant the spec names with the document path as the variant's fields
+    * `[✅]`   Introduces no undeclared dependency; bypasses no contract
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_generate/integration_test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; a `#[cfg(test)]` module of its own, never part of the unit test files; each block's `Contract` transcribes one entry of the spec's private surface and its `Arrange` names the entry's variation; each block's body is written once and run over every member of the declared sets, so the test names no kind and no curve and a further member adds a case without an edit
-    * `[ ]`   `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`, one block, proving the own entry of the same name; Arrange for each `VectorKindDeclaration` of `SOLIDITY_GENERATE_DECLARATION.kinds` a payload from `build_admit_generate_payload` whose single `kinds` entry is keyed `declared_name` of the declaration's `kind`, carrying names distinct from the default's and quantities chosen by an exhaustive `match` on the declaration's `sizing` (`count` for `Drawn`; `count` and `terms` for `DrawnTerms`; `count` and `message_length` for `DrawnMessages`; none for `Enumerated` and `OverConfiguredInputs`), and an expected `VectorKindConfiguration` and `SolidityVectorKindSettings` built from the generate family's builders over the same values; Act `admit_generate`, once per payload; Assert the result is `Ok` and the admitted configuration and the concrete's settings entry equal the expected values; Boundary the real `admit_generate`, `member_named`, and each constructor over the real declaration; Mocked none
-    * `[ ]`   `every_declared_curve_directory_reaches_the_field_its_curve_names`, one block, proving the own entry of the same name; Arrange for each member of `PAIRING_CURVES` a payload whose `curve_directories` names every member by `declared_name`, the member under test with `"directory-a"` and every other member with `"directory-b"`, and an expected `SolidityCurveDirectories` built by `build_solidity_curve_directories` whose field that member names is `"directory-a"` and whose other field is `"directory-b"`; Act `admit_generate`, once per member; Assert the result is `Ok` and the concrete's `settings.curve_directories` equals the expected directories; Boundary and Mocked as the block above states
-    * `[ ]`   `an_undeclared_name_is_never_admitted`, one block, proving the own entry of the same name; Arrange a payload whose `concrete` is `declared_name` of `GenerateConcrete::Mock(MockIGenerateAdapterFailureMode::NoFailure)` and a payload whose first curve key is `declared_name` of `PairingCurve::Mock`, the other values admitted; Act `admit_generate`, once per payload; Assert the result equals `Err` of `Concrete` or `CurveKey` carrying the text; Boundary and Mocked as the block above states
-    * `[ ]`   Reports its enumeration: every entry the private surface lists and the block that proves it
+  * `[✅]`   `apps/harness-crypto/src/config/admit_generate/integration_test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; a `#[cfg(test)]` module of its own, never part of the unit test files; each block's `Contract` transcribes one entry of the spec's private surface and its `Arrange` names the entry's variation; each block's body is written once and run over every member of the declared sets, so the test names no kind and no curve and a further member adds a case without an edit
+    * `[✅]`   `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`, one block, proving the own entry of the same name; Arrange for each `VectorKindDeclaration` of `SOLIDITY_GENERATE_DECLARATION.kinds` a payload from `build_admit_generate_payload` whose single `kinds` entry is keyed `declared_name` of the declaration's `kind`, carrying names distinct from the default's and quantities chosen by an exhaustive `match` on the declaration's `sizing` (`count` for `Drawn`; `count` and `terms` for `DrawnTerms`; `count` and `message_length` for `DrawnMessages`; none for `Enumerated` and `OverConfiguredInputs`), and an expected `VectorKindConfiguration` and `SolidityVectorKindSettings` built from the generate family's builders over the same values; Act `admit_generate`, once per payload; Assert the result is `Ok` and the admitted configuration and the concrete's settings entry equal the expected values; Boundary the real `admit_generate`, `member_named`, and each constructor over the real declaration; Mocked none
+    * `[✅]`   `every_declared_curve_directory_reaches_the_field_its_curve_names`, one block, proving the own entry of the same name; Arrange for each member of `PAIRING_CURVES` a payload whose `curve_directories` names every member by `declared_name`, the member under test with `"directory-a"` and every other member with `"directory-b"`, and an expected `SolidityCurveDirectories` built by `build_solidity_curve_directories` whose field that member names is `"directory-a"` and whose other field is `"directory-b"`; Act `admit_generate`, once per member; Assert the result is `Ok` and the concrete's `settings.curve_directories` equals the expected directories; Boundary and Mocked as the block above states
+    * `[✅]`   `an_undeclared_name_is_never_admitted`, one block, proving the own entry of the same name; Arrange a payload whose `concrete` is `declared_name` of `GenerateConcrete::Mock(MockIGenerateAdapterFailureMode::NoFailure)` and a payload whose first curve key is `declared_name` of `PairingCurve::Mock`, the other values admitted; Act `admit_generate`, once per payload; Assert the result equals `Err` of `Concrete` or `CurveKey` carrying the text; Boundary and Mocked as the block above states
+    * `[✅]`   Reports its enumeration: every entry the private surface lists and the block that proves it
 
-  * `[ ]`   `apps/harness-crypto/src/config/admit_generate/provides.rs`
-    * `[ ]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and the function's re-export `pub use super::admit_generate;`; the module's only `pub mod` is `provides`
+  * `[✅]`   `apps/harness-crypto/src/config/admit_generate/provides.rs`
+    * `[✅]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and the function's re-export `pub use super::admit_generate;`; the module's only `pub mod` is `provides`
 
-  * `[ ]`   `apps/harness-crypto/src/config/provides.rs`
-    * `[ ]`   Adds `pub use super::admit_generate::provides::*;` beside the lines `harness-crypto/config/layers`, `harness-crypto/config/admit_selections`, and `harness-crypto/config/admit_statements` authored, which the crate barrel re-exports, so the function is a public entry of the crate
+  * `[✅]`   `apps/harness-crypto/src/config/provides.rs`
+    * `[✅]`   Adds `pub use super::admit_generate::provides::*;` beside the lines `harness-crypto/config/layers`, `harness-crypto/config/admit_selections`, and `harness-crypto/config/admit_statements` authored, which the crate barrel re-exports, so the function is a public entry of the crate
 
-  * `[ ]`   `apps/harness-crypto/tests/admit_generate_integration_test.rs`
-    * `[ ]`   The public integration test, consuming only the crate's public surface and the official mocks under the `mocks` feature; each block transcribes one entry of the spec's public surface, its `Boundary` the public call `admit_generate` with the route of the entry and its `Mocked` the outer-edge collaborators on that route; module-level `#![allow(clippy::expect_used)]`
-    * `[ ]`   `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states, through the crate's public surface and the generate family's public declaration; Act `admit_generate` through the crate root once per payload; Assert the result is `Ok` and the admitted values equal the expected values; Boundary the public call `admit_generate` and the real declaration; Mocked none
-    * `[ ]`   `every_declared_curve_directory_reaches_the_field_its_curve_names`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states, over the pairing crate's public `PAIRING_CURVES`; Act `admit_generate` through the crate root once per member; Assert the result is `Ok` and the directories equal the expected directories; Boundary and Mocked as the block above states
-    * `[ ]`   `an_undeclared_name_is_never_admitted`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states; Act `admit_generate` through the crate root once per payload; Assert the result equals `Err` of the variant carrying the text; Boundary and Mocked as the block above states
-    * `[ ]`   Reports its enumeration: every entry the public surface lists and the block that proves it
+  * `[✅]`   `apps/harness-crypto/tests/admit_generate_integration_test.rs`
+    * `[✅]`   The public integration test, consuming only the crate's public surface and the official mocks under the `mocks` feature; each block transcribes one entry of the spec's public surface, its `Boundary` the public call `admit_generate` with the route of the entry and its `Mocked` the outer-edge collaborators on that route; module-level `#![allow(clippy::expect_used)]`
+    * `[✅]`   `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states, through the crate's public surface and the generate family's public declaration; Act `admit_generate` through the crate root once per payload; Assert the result is `Ok` and the admitted values equal the expected values; Boundary the public call `admit_generate` and the real declaration; Mocked none
+    * `[✅]`   `every_declared_curve_directory_reaches_the_field_its_curve_names`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states, over the pairing crate's public `PAIRING_CURVES`; Act `admit_generate` through the crate root once per member; Assert the result is `Ok` and the directories equal the expected directories; Boundary and Mocked as the block above states
+    * `[✅]`   `an_undeclared_name_is_never_admitted`: Contract the own entry of the same name as an outside caller observes it; Arrange as the private block states; Act `admit_generate` through the crate root once per payload; Assert the result equals `Err` of the variant carrying the text; Boundary and Mocked as the block above states
+    * `[✅]`   Reports its enumeration: every entry the public surface lists and the block that proves it
 
-  * `[ ]`   `directionality`
-    * `[ ]`   `admit_generate` depends on `layers`' document types, on the generate area's surface through `crate::generate::provides`, on the pairing crate's public surface, and on the standard library; no adapter crate names `apps/harness-crypto`, and the edit to the pairing interface adds a derive and a constant that name no harness item; the module's surface leaves through `config::provides` and the crate barrel; nothing under `delivery`, `generate`, `verifier`, `measure`, `report`, or `benchmark` names it; no cycle
-    * `[ ]`   `harness-crypto/config` reads `AdmittedGenerate` from this node, and `harness-crypto/run/delivery_proof_consumer` passes its `concrete` and `kinds` to the generate factory through the configuration
+  * `[✅]`   `directionality`
+    * `[✅]`   `admit_generate` depends on `layers`' document types, on the generate area's surface through `crate::generate::provides`, on the pairing crate's public surface, and on the standard library; no adapter crate names `apps/harness-crypto`, and the edit to the pairing interface adds a derive and a constant that name no harness item; the module's surface leaves through `config::provides` and the crate barrel; nothing under `delivery`, `generate`, `verifier`, `measure`, `report`, or `benchmark` names it; no cycle
+    * `[✅]`   `harness-crypto/config` reads `AdmittedGenerate` from this node, and `harness-crypto/run/delivery_proof_consumer` passes its `concrete` and `kinds` to the generate factory through the configuration
 
-  * `[ ]`   `requirements`
-    * `[ ]`   `adapters/pairing/src/factory/interface.rs` gains the derive and the declared set its element states and no other change; `apps/harness-crypto/src/config/mod.rs` and `provides.rs` gain the lines their elements state; `apps/harness-crypto/Cargo.toml`, `apps/harness-crypto/src/lib.rs`, `deny.toml`, and every file under `apps/harness-crypto/src/config/layers`, `config/admit_selections`, `config/admit_statements`, `delivery`, `generate`, `verifier`, `measure`, `report`, and `benchmark` are unchanged
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, the `admit_generate` module having no unused item
-    * `[ ]`   Every block of `test_basic.rs` passes: the default payload, the concrete, the kinds in key order, the quantities each entry holds, the libraries, the generated directory in order, each curve directory reaching its field, the compiler version's parts, the license, the foundry root carried as given, and a document naming no kinds
-    * `[ ]`   Every block of `test_error.rs` passes, each refusal returned whole with its kind, index, or curve, an unknown concrete and the mock concrete's name refused, an unknown kind and a kind differing only in case refused, each quantity and name constructor's refusal carried unchanged, each library, the generated directory, an unknown, case-differing, and mock curve key, an invalid and a missing curve directory, a compiler version of the wrong parts or with a part that is not a `u16`, and an empty license refused, and the first refusal returned in the stated order
-    * `[ ]`   `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`, `every_declared_curve_directory_reaches_the_field_its_curve_names`, and `an_undeclared_name_is_never_admitted` pass in `integration_test.rs` (each kind, quantity, name, and curve directory of the document admitted to the type its owner declares, and a mock selection never admitted)
-    * `[ ]`   Every block of `apps/harness-crypto/tests/admit_generate_integration_test.rs` passes (the generate settings admitted through the crate's public surface)
-    * `[ ]`   Every test under `apps/harness-crypto/src/config/layers`, `apps/harness-crypto/src/config/admit_selections`, `apps/harness-crypto/src/config/admit_statements`, `apps/harness-crypto/src/measure`, `apps/harness-crypto/src/report`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes, and every test of the pairing crate passes
+  * `[✅]`   `requirements`
+    * `[✅]`   `adapters/pairing/src/factory/interface.rs` gains the derive and the declared set its element states and no other change; `apps/harness-crypto/src/config/mod.rs` and `provides.rs` gain the lines their elements state; `apps/harness-crypto/Cargo.toml`, `apps/harness-crypto/src/lib.rs`, `deny.toml`, and every file under `apps/harness-crypto/src/config/layers`, `config/admit_selections`, `config/admit_statements`, `delivery`, `generate`, `verifier`, `measure`, `report`, and `benchmark` are unchanged
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning, the `admit_generate` module having no unused item
+    * `[✅]`   Every block of `test_basic.rs` passes: the default payload, the concrete, the kinds in key order, the quantities each entry holds, the libraries, the generated directory in order, each curve directory reaching its field, the compiler version's parts, the license, the foundry root carried as given, and a document naming no kinds
+    * `[✅]`   Every block of `test_error.rs` passes, each refusal returned whole with its kind, index, or curve, an unknown concrete and the mock concrete's name refused, an unknown kind and a kind differing only in case refused, each quantity and name constructor's refusal carried unchanged, each library, the generated directory, an unknown, case-differing, and mock curve key, an invalid and a missing curve directory, a compiler version of the wrong parts or with a part that is not a `u16`, and an empty license refused, and the first refusal returned in the stated order
+    * `[✅]`   `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`, `every_declared_curve_directory_reaches_the_field_its_curve_names`, and `an_undeclared_name_is_never_admitted` pass in `integration_test.rs` (each kind, quantity, name, and curve directory of the document admitted to the type its owner declares, and a mock selection never admitted)
+    * `[✅]`   Every block of `apps/harness-crypto/tests/admit_generate_integration_test.rs` passes (the generate settings admitted through the crate's public surface)
+    * `[✅]`   Every test under `apps/harness-crypto/src/config/layers`, `apps/harness-crypto/src/config/admit_selections`, `apps/harness-crypto/src/config/admit_statements`, `apps/harness-crypto/src/measure`, `apps/harness-crypto/src/report`, `apps/harness-crypto/src/verifier`, `apps/harness-crypto/src/generate`, `apps/harness-crypto/src/delivery`, and `apps/harness-crypto/src/benchmark` passes, and every test of the pairing crate passes
 
 * `[ ]`   `harness-crypto/config/admit_output` **The output destinations admitted from the document: each entry of `output.destinations`, the places the run's outcome is written, and of `report.destinations`, the places the report is written, mapped to the member of the declared set of destination kinds whose `Debug` text its `kind` equals, standard output or a file with the path the document carries, the first list admitted into `OutputDestination` and the second into the report's `ReportDestination`, an unknown kind, a file with no path, and an empty list each refused with its document path; owns the declared destination kinds, the admitted output types, and the refusal type**
 

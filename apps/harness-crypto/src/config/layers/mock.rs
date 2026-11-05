@@ -1,5 +1,9 @@
 #![allow(dead_code, clippy::too_many_arguments)]
 
+use pairing::PairingCurve;
+use std::ffi::OsString;
+use std::path::PathBuf;
+
 use super::interface::{
     AdjustmentTable, BenchmarkConcreteTable, BenchmarkTable, CanonicalValueTable, ConfigArguments,
     ConfigDocument, ContextTable, CurveTable, DestinationTable, GenerateKindTable, GenerateTable,
@@ -7,8 +11,7 @@ use super::interface::{
     LayersSuccessReturn, LibraryTable, MeasurementTable, NetworkProfileTable, OutputTable,
     ReportTable, SelectionsTable, StatementsTable,
 };
-use std::ffi::OsString;
-use std::path::PathBuf;
+use crate::generate::provides::{GENERATE_CONCRETES, VectorKind};
 
 const LAYERS_DEFAULTS_TEXT: &str = r#"
 [selections]
@@ -67,14 +70,14 @@ proof = "0x6666666666666666666666666666666666666666666666666666666666666666"
 mapping = ["0x7777777777777777777777777777777777777777777777777777777777777777"]
 
 [generate]
-concrete = "solidity"
-kinds = { "kind-a" = { count = 2, file = "kind-a.txt", struct_name = "KindA", decode_function = "decodeKindA", path_constant = "KIND_A_PATH" } }
-constants_library = { file = "constants-a.sol", library = "ConstantsA" }
-records_library = { file = "records-a.sol", library = "RecordsA" }
+concrete = "Solidity"
+kinds = { "G1Addition" = { count = 2, file = "g1_add.vectors", struct_name = "G1AddVector", decode_function = "decodeG1Add", path_constant = "G1_ADD_PATH" } }
+constants_library = { file = "Constants.sol", library = "Constants" }
+records_library = { file = "VectorRecords.sol", library = "VectorRecords" }
 foundry_root = "root"
 generated_directory = ["generated"]
-curve_directories = { "Bn254" = "directory-a", "Bls12381" = "directory-b" }
-compiler_version = "0.8.0"
+curve_directories = { "Bn254" = "bn254", "Bls12381" = "bls12_381" }
+compiler_version = "0.8.24"
 license = "MIT"
 
 [benchmark]
@@ -359,14 +362,18 @@ pub fn build_generate_kind_table(overrides: GenerateKindTableOverrides) -> Gener
         count: overrides.count.unwrap_or(Some(2)),
         terms: overrides.terms.unwrap_or(None),
         message_length: overrides.message_length.unwrap_or(None),
-        file: overrides.file.unwrap_or_else(|| "kind-a.txt".to_string()),
-        struct_name: overrides.struct_name.unwrap_or_else(|| "KindA".to_string()),
+        file: overrides
+            .file
+            .unwrap_or_else(|| "g1_add.vectors".to_string()),
+        struct_name: overrides
+            .struct_name
+            .unwrap_or_else(|| "G1AddVector".to_string()),
         decode_function: overrides
             .decode_function
-            .unwrap_or_else(|| "decodeKindA".to_string()),
+            .unwrap_or_else(|| "decodeG1Add".to_string()),
         path_constant: overrides
             .path_constant
-            .unwrap_or_else(|| "KIND_A_PATH".to_string()),
+            .unwrap_or_else(|| "G1_ADD_PATH".to_string()),
     }
 }
 
@@ -380,10 +387,8 @@ pub fn build_library_table(overrides: LibraryTableOverrides) -> LibraryTable {
     LibraryTable {
         file: overrides
             .file
-            .unwrap_or_else(|| "constants-a.sol".to_string()),
-        library: overrides
-            .library
-            .unwrap_or_else(|| "ConstantsA".to_string()),
+            .unwrap_or_else(|| "Constants.sol".to_string()),
+        library: overrides.library.unwrap_or_else(|| "Constants".to_string()),
     }
 }
 
@@ -402,10 +407,12 @@ pub struct GenerateTableOverrides {
 
 pub fn build_generate_table(overrides: GenerateTableOverrides) -> GenerateTable {
     GenerateTable {
-        concrete: overrides.concrete.unwrap_or_else(|| "solidity".to_string()),
+        concrete: overrides
+            .concrete
+            .unwrap_or_else(|| format!("{:?}", GENERATE_CONCRETES[0])),
         kinds: overrides.kinds.unwrap_or_else(|| {
             std::collections::BTreeMap::from([(
-                "kind-a".to_string(),
+                format!("{:?}", VectorKind::G1Addition),
                 build_generate_kind_table(Default::default()),
             )])
         }),
@@ -414,8 +421,8 @@ pub fn build_generate_table(overrides: GenerateTableOverrides) -> GenerateTable 
             .unwrap_or_else(|| build_library_table(Default::default())),
         records_library: overrides.records_library.unwrap_or_else(|| {
             build_library_table(LibraryTableOverrides {
-                file: Some("records-a.sol".to_string()),
-                library: Some("RecordsA".to_string()),
+                file: Some("VectorRecords.sol".to_string()),
+                library: Some("VectorRecords".to_string()),
             })
         }),
         foundry_root: overrides
@@ -426,13 +433,16 @@ pub fn build_generate_table(overrides: GenerateTableOverrides) -> GenerateTable 
             .unwrap_or_else(|| vec!["generated".to_string()]),
         curve_directories: overrides.curve_directories.unwrap_or_else(|| {
             std::collections::BTreeMap::from([
-                ("Bn254".to_string(), "directory-a".to_string()),
-                ("Bls12381".to_string(), "directory-b".to_string()),
+                (format!("{:?}", PairingCurve::Bn254), "bn254".to_string()),
+                (
+                    format!("{:?}", PairingCurve::Bls12381),
+                    "bls12_381".to_string(),
+                ),
             ])
         }),
         compiler_version: overrides
             .compiler_version
-            .unwrap_or_else(|| "0.8.0".to_string()),
+            .unwrap_or_else(|| "0.8.24".to_string()),
         license: overrides.license.unwrap_or_else(|| "MIT".to_string()),
     }
 }

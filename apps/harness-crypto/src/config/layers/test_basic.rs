@@ -316,9 +316,9 @@ fn layers_applies_repeated_files_in_the_order_named() {
 }
 
 /// Contract: Assignment text → a dotted key names a key of a nested table.
-/// Arrange: `--set` with `generate.kinds.kind-a.count=5`.
+/// Arrange: `--set` with `generate.kinds.G1Addition.count=5`.
 /// Act:     `layers`, once.
-/// Assert:  the document's `generate.kinds["kind-a"].count` equals `Some(5)`
+/// Assert:  the document's `generate.kinds["G1Addition"].count` equals `Some(5)`
 ///   and its `file` equals the defaults' value.
 #[test]
 fn layers_applies_a_dotted_assignment_key_to_its_nested_table() {
@@ -327,7 +327,7 @@ fn layers_applies_a_dotted_assignment_key_to_its_nested_table() {
         arguments: Some(vec![
             OsString::from("harness-crypto"),
             OsString::from("--set"),
-            OsString::from("generate.kinds.kind-a.count=5"),
+            OsString::from("generate.kinds.G1Addition.count=5"),
         ]),
     });
     let payload = build_layers_payload(Default::default());
@@ -336,8 +336,8 @@ fn layers_applies_a_dotted_assignment_key_to_its_nested_table() {
         .expect("the layering succeeds")
         .document;
     // Assert
-    assert_eq!(document.generate.kinds["kind-a"].count, Some(5));
-    assert_eq!(document.generate.kinds["kind-a"].file, "kind-a.txt");
+    assert_eq!(document.generate.kinds["G1Addition"].count, Some(5));
+    assert_eq!(document.generate.kinds["G1Addition"].file, "g1_add.vectors");
     // layers_applies_a_dotted_assignment_key_to_its_nested_table
 }
 
