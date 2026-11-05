@@ -1,0 +1,198 @@
+[selections]
+random_source = "OperatingSystem"
+encoding = "Abi"
+hash_to_scalar = "Keccak256"
+chain_forms = "Evm"
+kem = "Bb1DepthOne"
+key_agreement = "PairingElGamal"
+delivery_proof = "SchnorrFs"
+verifier = "Evm"
+identity_scope = "Entitlement"
+envelope_algebra = "PairingElGamal"
+delivery_statement_version = 1
+
+[[selections.curves]]
+label = "bn254"
+pairing_concrete = "Bn254Arkworks"
+target_group_encoding = "Bn254V1"
+
+[[selections.curves]]
+label = "bls12_381"
+pairing_concrete = "Bls12381Arkworks"
+target_group_encoding = "Bls12381V1"
+
+[[selections.benchmark_concretes]]
+pairing_concrete = "Bn254Arkworks"
+target_group_encoding = "Bn254V1"
+
+[[selections.benchmark_concretes]]
+pairing_concrete = "Bn254Halo2curves"
+target_group_encoding = "Bn254V1"
+
+[[selections.benchmark_concretes]]
+pairing_concrete = "Bls12381Arkworks"
+target_group_encoding = "Bls12381V1"
+
+[[selections.benchmark_concretes]]
+pairing_concrete = "Bls12381Halo2curves"
+target_group_encoding = "Bls12381V1"
+
+[network_profile]
+precompile_encodings = ["Eip196Eip197", "Eip2537"]
+verifier_endpoint = "https://sepolia.base.org"
+chain_identifier = { kind = "Unsigned256", value = "84532" }
+entitlement_contract = { kind = "FixedBytes20", value = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" }
+deployment_record = { kind = "FixedBytes20", value = "0x0000000000000000000000000000000000000000" }
+gas_price_oracle = { kind = "FixedBytes20", value = "0x420000000000000000000000000000000000000f" }
+
+[statements.mint]
+suite_identifier = "0x1111111111111111111111111111111111111111111111111111111111111111"
+suite_version = 1
+asset_root = "0x2222222222222222222222222222222222222222222222222222222222222222"
+parameter_set_identifier = "0x3333333333333333333333333333333333333333333333333333333333333333"
+source_entitlement = { kind = "Unsigned256", value = "1" }
+target_entitlement = { kind = "Unsigned256", value = "1" }
+old_interval = { kind = "Unsigned64", value = "0" }
+new_interval = { kind = "Unsigned64", value = "0" }
+seller = { kind = "FixedBytes20", value = "0x6161616161616161616161616161616161616161" }
+buyer = { kind = "FixedBytes20", value = "0x6262626262626262626262626262626262626262" }
+expiry = 1800000000
+purpose = 1
+
+[statements.transfer]
+suite_identifier = "0x1111111111111111111111111111111111111111111111111111111111111111"
+suite_version = 1
+asset_root = "0x2222222222222222222222222222222222222222222222222222222222222222"
+parameter_set_identifier = "0x3333333333333333333333333333333333333333333333333333333333333333"
+source_entitlement = { kind = "Unsigned256", value = "1" }
+target_entitlement = { kind = "Unsigned256", value = "1" }
+old_interval = { kind = "Unsigned64", value = "0" }
+new_interval = { kind = "Unsigned64", value = "1" }
+seller = { kind = "FixedBytes20", value = "0x6262626262626262626262626262626262626262" }
+buyer = { kind = "FixedBytes20", value = "0x6363636363636363636363636363636363636363" }
+expiry = 1800000000
+purpose = 2
+
+[identities]
+proof = "0x5555555555555555555555555555555555555555555555555555555555555555"
+mapping = [
+    "0x6666666666666666666666666666666666666666666666666666666666666666",
+    "0x7777777777777777777777777777777777777777777777777777777777777777",
+]
+
+[generate]
+concrete = "Solidity"
+foundry_root = "contracts/evm"
+generated_directory = ["generated"]
+compiler_version = "0.8.38"
+license = "UNLICENSED"
+constants_library = { file = "Constants.sol", library = "Constants" }
+records_library = { file = "VectorRecords.sol", library = "VectorRecords" }
+curve_directories = { Bn254 = "bn254", Bls12381 = "bls12_381" }
+
+[generate.kinds.G1Addition]
+count = 16
+file = "g1_addition.txt"
+struct_name = "G1AdditionVector"
+decode_function = "decodeG1Addition"
+path_constant = "G1_ADDITION_PATH"
+
+[generate.kinds.G1Multiplication]
+count = 16
+file = "g1_multiplication.txt"
+struct_name = "G1MultiplicationVector"
+decode_function = "decodeG1Multiplication"
+path_constant = "G1_MULTIPLICATION_PATH"
+
+[generate.kinds.PairingCheck]
+count = 16
+file = "pairing_check.txt"
+struct_name = "PairingCheckVector"
+decode_function = "decodePairingCheck"
+path_constant = "PAIRING_CHECK_PATH"
+
+[generate.kinds.G2Addition]
+count = 16
+file = "g2_addition.txt"
+struct_name = "G2AdditionVector"
+decode_function = "decodeG2Addition"
+path_constant = "G2_ADDITION_PATH"
+
+[generate.kinds.G1MultiScalarMultiplication]
+count = 16
+terms = 4
+file = "g1_multi_scalar_multiplication.txt"
+struct_name = "G1MultiScalarMultiplicationVector"
+decode_function = "decodeG1MultiScalarMultiplication"
+path_constant = "G1_MULTI_SCALAR_MULTIPLICATION_PATH"
+
+[generate.kinds.G2MultiScalarMultiplication]
+count = 16
+terms = 4
+file = "g2_multi_scalar_multiplication.txt"
+struct_name = "G2MultiScalarMultiplicationVector"
+decode_function = "decodeG2MultiScalarMultiplication"
+path_constant = "G2_MULTI_SCALAR_MULTIPLICATION_PATH"
+
+[generate.kinds.DecodeRejection]
+file = "decode_rejection.txt"
+struct_name = "DecodeRejectionVector"
+decode_function = "decodeDecodeRejection"
+path_constant = "DECODE_REJECTION_PATH"
+
+[generate.kinds.HashToScalar]
+count = 16
+message_length = 32
+file = "hash_to_scalar.txt"
+struct_name = "HashToScalarVector"
+decode_function = "decodeHashToScalar"
+path_constant = "HASH_TO_SCALAR_PATH"
+
+[generate.kinds.IdentityMapping]
+file = "identity_mapping.txt"
+struct_name = "IdentityMappingVector"
+decode_function = "decodeIdentityMapping"
+path_constant = "IDENTITY_MAPPING_PATH"
+
+[generate.kinds.Possession]
+count = 16
+file = "possession.txt"
+struct_name = "PossessionVector"
+decode_function = "decodePossession"
+path_constant = "POSSESSION_PATH"
+
+[generate.kinds.Challenge]
+count = 16
+file = "challenge.txt"
+struct_name = "ChallengeVector"
+decode_function = "decodeChallenge"
+path_constant = "CHALLENGE_PATH"
+
+[generate.kinds.MintProof]
+count = 16
+file = "mint_proof.txt"
+struct_name = "MintProofVector"
+decode_function = "decodeMintProof"
+path_constant = "MINT_PROOF_PATH"
+
+[generate.kinds.TransferProof]
+count = 16
+file = "transfer_proof.txt"
+struct_name = "TransferProofVector"
+decode_function = "decodeTransferProof"
+path_constant = "TRANSFER_PROOF_PATH"
+
+[benchmark]
+iterations = 100
+
+[measurement]
+iterations = 100
+conditions = "Base Sepolia verifier, L1 data fee as Sepolia's, one idle machine"
+
+[report]
+destinations = [{ kind = "File", path = "harness-report.json" }]
+piece_group_size = 16384
+primary_curve = "bls12_381"
+
+[output]
+destinations = [{ kind = "StandardOutput" }]
