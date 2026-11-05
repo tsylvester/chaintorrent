@@ -9,7 +9,7 @@ use chain::{
 };
 use encoding::{
     CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, EncodingConcrete, EncodingIdentifier,
-    IEncoderAdapter,
+    IDecoderAdapter, IEncoderAdapter,
 };
 use envelope::{DECLARED_KEY_AGREEMENT_SELECTIONS, IKeyAgreementAdapter};
 use hash_to_scalar::{
@@ -121,6 +121,7 @@ fn emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -129,7 +130,7 @@ fn emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -308,6 +309,7 @@ fn a_refused_write_returns_the_mock_concretes_own_error() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -316,7 +318,7 @@ fn a_refused_write_returns_the_mock_concretes_own_error() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -471,6 +473,7 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -479,7 +482,7 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,

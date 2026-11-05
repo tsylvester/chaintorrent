@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use chain::IChainForms;
-use encoding::IEncoderAdapter;
+use encoding::{IDecoderAdapter, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
 use hash_to_scalar::IHashToScalarAdapter;
 use kem::ICredentialKemAdapter;
@@ -49,6 +49,7 @@ fn create_generate_returns_the_consumers_output_for_settings_naming_every_declar
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -57,7 +58,7 @@ fn create_generate_returns_the_consumers_output_for_settings_naming_every_declar
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -125,6 +126,7 @@ fn create_generate_refuses_a_kind_the_declaration_does_not_name() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -133,7 +135,7 @@ fn create_generate_refuses_a_kind_the_declaration_does_not_name() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -211,6 +213,7 @@ fn create_generate_refuses_an_undeclared_kind_before_its_repeat() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -219,7 +222,7 @@ fn create_generate_refuses_an_undeclared_kind_before_its_repeat() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -303,6 +306,7 @@ fn create_generate_refuses_a_kind_named_twice() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -311,7 +315,7 @@ fn create_generate_refuses_a_kind_named_twice() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -390,6 +394,7 @@ fn create_generate_refuses_a_drawn_kind_missing_its_count() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -398,7 +403,7 @@ fn create_generate_refuses_a_drawn_kind_missing_its_count() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -476,6 +481,7 @@ fn create_generate_refuses_a_kind_drawn_with_terms_missing_its_terms() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -484,7 +490,7 @@ fn create_generate_refuses_a_kind_drawn_with_terms_missing_its_terms() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -559,6 +565,7 @@ fn create_generate_refuses_a_kind_drawn_with_messages_missing_its_message_length
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -567,7 +574,7 @@ fn create_generate_refuses_a_kind_drawn_with_messages_missing_its_message_length
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -642,6 +649,7 @@ fn create_generate_refuses_a_count_on_an_enumerated_kind() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -650,7 +658,7 @@ fn create_generate_refuses_a_count_on_an_enumerated_kind() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -725,6 +733,7 @@ fn create_generate_refuses_terms_on_a_kind_over_configured_inputs() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -733,7 +742,7 @@ fn create_generate_refuses_terms_on_a_kind_over_configured_inputs() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -812,6 +821,7 @@ fn create_generate_refuses_a_message_length_on_a_drawn_kind() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -820,7 +830,7 @@ fn create_generate_refuses_a_message_length_on_a_drawn_kind() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -899,6 +909,7 @@ fn create_generate_checks_a_kinds_count_before_its_terms() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -907,7 +918,7 @@ fn create_generate_checks_a_kinds_count_before_its_terms() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -985,6 +996,7 @@ fn create_generate_checks_a_kinds_terms_before_its_message_length() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -993,7 +1005,7 @@ fn create_generate_checks_a_kinds_terms_before_its_message_length() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -1072,6 +1084,7 @@ fn create_generate_refuses_the_first_failing_entry_before_a_later_one() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -1080,7 +1093,7 @@ fn create_generate_refuses_the_first_failing_entry_before_a_later_one() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -1169,6 +1182,7 @@ fn create_generate_refuses_the_first_declared_kind_no_entry_names() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -1177,7 +1191,7 @@ fn create_generate_refuses_the_first_declared_kind_no_entry_names() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
@@ -1272,6 +1286,7 @@ fn create_generate_refuses_an_entrys_quantity_before_a_missing_kind() {
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -1280,7 +1295,7 @@ fn create_generate_refuses_an_entrys_quantity_before_a_missing_kind() {
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,

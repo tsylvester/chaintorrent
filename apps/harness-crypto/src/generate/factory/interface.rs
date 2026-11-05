@@ -3,7 +3,7 @@ use chain::IChainForms;
 use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams};
 use core::convert::Infallible;
 #[cfg(any(test, feature = "mocks"))]
-use encoding::{CreateEncodingErrorReturn, CreateEncodingParams};
+use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter};
 use encoding::{EncodingIdentifier, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
 #[cfg(any(test, feature = "mocks"))]
@@ -275,6 +275,7 @@ pub trait ICreateGenerateCaseConsumer {
         pairing: &P,
         hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
         encoder: &E,
+        decoder: &E,
         kem: &K,
         key_agreement: &A,
         delivery_proof: &D,
@@ -283,7 +284,7 @@ pub trait ICreateGenerateCaseConsumer {
     ) -> Self::Output
     where
         P: IPairingArithmetic + IPairingReference,
-        E: IEncoderAdapter,
+        E: IEncoderAdapter + IDecoderAdapter,
         F: IChainForms,
         K: ICredentialKemAdapter<Pairing = P>,
         A: IKeyAgreementAdapter<Pairing = P>,

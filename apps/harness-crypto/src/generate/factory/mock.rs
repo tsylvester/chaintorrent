@@ -958,7 +958,7 @@ impl<'a, P, E, F, K, A, C> IDeliveryProofConsumer<P, F>
     for CaseAtDeliveryProof<'a, P, E, F, K, A, C>
 where
     P: IPairingArithmetic + IPairingReference,
-    E: IEncoderAdapter,
+    E: IEncoderAdapter + IDecoderAdapter,
     F: IChainForms,
     K: ICredentialKemAdapter<Pairing = P>,
     A: IKeyAgreementAdapter<Pairing = P>,
@@ -975,6 +975,7 @@ where
             output: self.consumer.consume_create_generate_case(
                 self.pairing,
                 self.hash_to_scalar,
+                self.encoder,
                 self.encoder,
                 self.kem,
                 self.key_agreement,
@@ -1001,7 +1002,7 @@ struct CaseAtKeyAgreement<'a, P: IPairingArithmetic, E, F, K, C: ICreateGenerate
 impl<'a, P, E, F, K, C> IKeyAgreementConsumer<P> for CaseAtKeyAgreement<'a, P, E, F, K, C>
 where
     P: IPairingArithmetic + IPairingReference,
-    E: IEncoderAdapter,
+    E: IEncoderAdapter + IDecoderAdapter,
     F: IChainForms,
     K: ICredentialKemAdapter<Pairing = P>,
     C: ICreateGenerateCaseConsumer,
@@ -1060,7 +1061,7 @@ struct CaseAtKem<'a, P: IPairingArithmetic, E, F, C: ICreateGenerateCaseConsumer
 impl<'a, P, E, F, C> IKemConsumer<P> for CaseAtKem<'a, P, E, F, C>
 where
     P: IPairingArithmetic + IPairingReference,
-    E: IEncoderAdapter,
+    E: IEncoderAdapter + IDecoderAdapter,
     F: IChainForms,
     C: ICreateGenerateCaseConsumer,
 {
@@ -1134,7 +1135,7 @@ struct CaseAtChainForms<'a, P: IPairingArithmetic, E, C: ICreateGenerateCaseCons
 impl<'a, P, E, C> IChainFormsConsumer for CaseAtChainForms<'a, P, E, C>
 where
     P: IPairingArithmetic + IPairingReference,
-    E: IEncoderAdapter,
+    E: IEncoderAdapter + IDecoderAdapter,
     C: ICreateGenerateCaseConsumer,
 {
     type Output = CreateGenerateCaseReturn<C::Output>;

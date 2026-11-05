@@ -5,7 +5,9 @@ use chain::{
     CHAIN_FORMS_CONCRETES, CreateChainFormsParamsOverrides, IChainForms,
     build_create_chain_forms_params,
 };
-use encoding::{CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, IEncoderAdapter};
+use encoding::{
+    CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, IDecoderAdapter, IEncoderAdapter,
+};
 use envelope::IKeyAgreementAdapter;
 use hash_to_scalar::IHashToScalarAdapter;
 use hashing::{RootConstructorParamsOverrides, build_root};
@@ -134,6 +136,7 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
             pairing: &P,
             hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
             encoder: &E,
+            _decoder: &E,
             kem: &K,
             key_agreement: &A,
             delivery_proof: &D,
@@ -142,7 +145,7 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter,
+            E: IEncoderAdapter + IDecoderAdapter,
             F: IChainForms,
             K: ICredentialKemAdapter<Pairing = P>,
             A: IKeyAgreementAdapter<Pairing = P>,
