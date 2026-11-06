@@ -25,17 +25,6 @@ use super::super::render::provides::{SolidityMemberName, SolidityMemberNameTryNe
 #[cfg(any(test, feature = "mocks"))]
 use crate::config::provides::CanonicalDeliveryContext;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DeliveryContextField {
-    EntitlementContract,
-    SourceEntitlement,
-    TargetEntitlement,
-    OldInterval,
-    NewInterval,
-    Seller,
-    Buyer,
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ChallengeVector {
     pub purpose: u16,

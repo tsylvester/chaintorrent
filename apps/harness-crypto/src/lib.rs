@@ -13,4 +13,5 @@ pub use delivery::provides::*;
 pub use generate::provides::*;
 pub use measure::provides::*;
 pub use report::provides::*;
+pub use run::provides::*;
 pub use verifier::provides::*;
