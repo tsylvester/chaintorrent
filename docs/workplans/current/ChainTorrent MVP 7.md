@@ -41,3 +41,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
 * **Cryptographic validation harness**
 
 ## Delivery proof and on-chain verifier
+
+* `[ ]`   `contracts/evm/PairingLib`
+
+* `[ ]`   `contracts/evm/DeliveryVerifier`
+
+* `[ ]`   `contracts/evm/deploy`
