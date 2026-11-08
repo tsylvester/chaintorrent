@@ -42,14 +42,14 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
 ## Delivery proof and on-chain verifier
 
-* `[✅]`   `contracts/evm/IDeliveryVerifier` **The contract suite's delivery verifier interface, stated once as the language-neutral ABI description and realized in Solidity, with its interface test, the suite's Foundry configuration, and the suite's continuous-integration definition; creates the `contracts/evm` suite**
+* `[ ]`   `contracts/evm/IDeliveryVerifier` **The contract suite's delivery verifier interface, stated once as the language-neutral ABI description and realized in Solidity, with its interface test, the suite's Foundry configuration, and the suite's continuous-integration definition; creates the `contracts/evm` suite**
 
-  * `[✅]`   `objective`
+  * `[ ]`   `objective`
     * `[✅]`   Problem: the delivery verifier's ABI is the boundary between the Rust verifier client and the deployed contract, so it is stated once in a description the client binds and the contract implements, and the toolchain every contract ticket builds under is authored once and complete (CD-03 interface; the dependency map's `contracts/evm/IDeliveryVerifier` row; the technical requirements' `contracts/evm` file tree; the Delivery proof and on-chain verifier milestone)
     * `[✅]`   Functional: `contracts/evm/abi/IDeliveryVerifier.json` declares `verifyMint` and `verifyTransfer`, each a `view` function over one statement struct and one proof struct returning `bool accepted`; every struct member carries the name and order of the proof vector records' members, a group element and the second-group first messages being `bytes` so one interface serves both curves and both verifier forms
     * `[✅]`   Functional: `contracts/evm/src/IDeliveryVerifier.sol` realizes that interface in Solidity with the same functions, structs, members, and types
     * `[✅]`   Functional: the interface test proves the Solidity realization against independently written selector texts and proves the ABI description against the same texts, member by member, by reading the description
-    * `[✅]`   Functional: `contracts/evm/foundry.toml` and `.github/workflows/contracts.yml` are created here, each authored once and complete, the suite compiling through the IR pipeline with `ffi` disabled and read access to the generated directory and the ABI description directory alone
+    * `[ ]`   Functional: `contracts/evm/foundry.toml` and `.github/workflows/contracts.yml` are created here, each authored once and complete, the suite compiling through the IR pipeline with `ffi` disabled, read access to the generated directory and the ABI description directory, and write access to the deployments directory, and to nothing else
     * `[✅]`   Non-functional: the interface is stated in one description and one realization, neither copied into another file; the interface owns the builders and mock that stand in for it
 
   * `[✅]`   `role`
@@ -106,8 +106,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `contract IDeliveryVerifierMock is IDeliveryVerifier` with a constructor taking one `bool` and `verifyMint` and `verifyTransfer` each returning that `bool` whatever their inputs, the mock of the interface's two functions
     * `[✅]`   Imported by the tests of the contracts that consume the interface; it is not imported by the interface test
 
-  * `[✅]`   `contracts/evm/foundry.toml`
-    * `[✅]`   One `[profile.default]` table, authored once and complete, holding `src = "src"`, `test = "test"`, `out = "out"`, `libs = ["lib"]`, `remappings = ["forge-std/=lib/forge-std/src/"]`, `solc = "0.8.38"`, `evm_version = "prague"`, the EVM revision whose Pectra upgrade includes EIP-2537, the BLS12-381 precompiles, `via_ir = true`, since a proof record's decode function destructures more values than the legacy pipeline's sixteen reachable stack slots hold, `ffi = false`, and `fs_permissions = [{ access = "read", path = "generated" }, { access = "read", path = "abi" }]`, read access to the generated directory the harness binary writes and to the ABI description directory, and to nothing else
+  * `[ ]`   `contracts/evm/foundry.toml`
+    * `[ ]`   One `[profile.default]` table, authored once and complete, holding `src = "src"`, `test = "test"`, `out = "out"`, `libs = ["lib"]`, `remappings = ["forge-std/=lib/forge-std/src/"]`, `solc = "0.8.38"`, `evm_version = "prague"`, the EVM revision whose Pectra upgrade includes EIP-2537, the BLS12-381 precompiles, `via_ir = true`, since a proof record's decode function destructures more values than the legacy pipeline's sixteen reachable stack slots hold, `ffi = false`, and `fs_permissions = [{ access = "read", path = "generated" }, { access = "read", path = "abi" }, { access = "write", path = "deployments" }]`, read access to the generated directory the harness binary writes and to the ABI description directory, and write access to the deployments directory the deployment script writes the layer file of deployment records into, and to nothing else
     * `[✅]`   A configuration file with no types and no tests; no later ticket amends it
 
   * `[✅]`   `.github/workflows/contracts.yml`
