@@ -300,21 +300,21 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
 
 The template names elements with TypeScript suffixes. Each language realizes the same elements as follows; the element, its order, and its governing topics do not change.
 
-| Element | TypeScript | Rust | Solidity |
-| --- | --- | --- | --- |
-| interface test | `[function].interface.test.ts` | — | `[Contract].interface.t.sol` in the suite's `test/` |
-| interface | `[function].interface.ts` | `interface.rs` | `I[Contract].sol` in the suite's `src/` |
-| interaction spec | `[function].interaction.spec` | `interaction.spec.md` | `interaction.spec.md` |
-| mock | `[function].mock.ts` | `mock.rs`, behind the `mocks` feature | `[Contract]Mock.sol` in the suite's `test/` |
-| guard test | `[function].guard.test.ts` | — | `[Contract].guard.t.sol` |
-| guard | `[function].guard.ts` | — | the contract's `require` and custom-error revert paths |
-| unit test | `[function].test.ts` | `test.rs`, a `#[cfg(test)]` module, split by behavior as `test_*.rs` | `[Contract].t.sol` |
-| implementation | `[function].ts` | `mod.rs` | `[Contract].sol` |
-| private integration test | — | `integration_test.rs`, a `#[cfg(test)]` module of its own in the function's module directory | — |
-| provides | `[function].provides.ts` | `provides.rs`, the module's only `pub mod` | the contract's public ABI |
-| integration test | `[function].integration.test.ts` | `[module]_integration_test.rs` under the crate's `tests/`, the public integration test | `[Contract].integration.t.sol` against a deployed suite |
+| Element | TypeScript | Rust | Solidity | Solidity library |
+| --- | --- | --- | --- | --- |
+| interface test | `[function].interface.test.ts` | — | `[Contract].interface.t.sol` in the suite's `test/` | — |
+| interface | `[function].interface.ts` | `interface.rs` | `I[Contract].sol` in the suite's `src/` | — |
+| interaction spec | `[function].interaction.spec` | `interaction.spec.md` | `interaction.spec.md` | `interaction.spec.md` |
+| mock | `[function].mock.ts` | `mock.rs`, behind the `mocks` feature | `[Contract]Mock.sol` in the suite's `test/` | — |
+| guard test | `[function].guard.test.ts` | — | `[Contract].guard.t.sol` | — |
+| guard | `[function].guard.ts` | — | the contract's `require` and custom-error revert paths | — |
+| unit test | `[function].test.ts` | `test.rs`, a `#[cfg(test)]` module, split by behavior as `test_*.rs` | `[Contract].t.sol` | `[Library].t.sol` in the suite's `test/`: a `forge-std` `Test` contract calling the library's internal functions directly, over fuzzed parameters and the committed vector files, its revert branches asserted with `vm.expectRevert` |
+| implementation | `[function].ts` | `mod.rs` | `[Contract].sol` | `[Library].sol` in the suite's `src/`: `library [Library]`, with its custom errors, enums and structs declared in its body beside its `internal` functions |
+| private integration test | — | `integration_test.rs`, a `#[cfg(test)]` module of its own in the function's module directory | — | — |
+| provides | `[function].provides.ts` | `provides.rs`, the module's only `pub mod` | the contract's public ABI | the library, which consumers import by name from `[Library].sol` and reach as `[Library].<member>` |
+| integration test | `[function].integration.test.ts` | `[module]_integration_test.rs` under the crate's `tests/`, the public integration test | `[Contract].integration.t.sol` against a deployed suite | — |
 
-In Rust a function is a module directory holding these files; crate directories are hyphenated and module directories underscored, and a node is addressed as `crate/module`. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it. In Solidity a suite is a directory under `contracts/` holding its own `src/`, `test/`, and Foundry configuration, the EVM suite at `contracts/evm`; a contract is one node addressed as `contracts/<suite>/Contract`, its Foundry test contracts are its test elements, and its constants and vectors are generated from the Rust reference rather than authored.
+In Rust a function is a module directory holding these files; crate directories are hyphenated and module directories underscored, and a node is addressed as `crate/module`. An interface lives in the module it provides an interface for and is authored in the node of the first consumer that needs it. In Solidity a suite is a directory under `contracts/` holding its own `src/`, `test/`, and Foundry configuration, the EVM suite at `contracts/evm`; a contract is one node addressed as `contracts/<suite>/Contract`, its Foundry test contracts are its test elements, and its constants and vectors are generated from the Rust reference rather than authored. A library is one node, addressed as `contracts/<suite>/Library`. Its code is compiled into each contract that calls it, so its boundary is crossed by that contract's integration test.
 
 In Rust the unit test is `test.rs`, split by behavior as `test_*.rs`, and the private integration test is `integration_test.rs`, a separate file, so integration blocks are never mixed into a unit test file. The public integration test file carries its module's name because every public entry in a crate hosts its own file under `tests/`. TypeScript and Solidity have a single integration test; the private and public tiers and the integration elements of the interaction spec are Rust forms.
 
