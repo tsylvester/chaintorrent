@@ -1,4 +1,12 @@
-Read the rules index(`docs/agents/index.md`) and every Process topic it lists. Then read every file in `docs/project-planning`, and every file in `docs/research` that those documents cite, in full. A file that cannot be read in one call is read in consecutive ranges until every line has been read. Code on disk is not a source; do not open it.
+Read the rules index(`docs/agents/index.md`) and every Process topic it lists. 
+
+In `docs/project-planning`, read the TRD, PRD, dependency map, and milestones. The other documents are for reference if and when needed. 
+
+Read the files in `docs/research` that the planning documents cite whenever you require additional technical details for a specific reference. 
+
+Never guess about project or technical details, read the planning and research documents to learn, and ask the user for clarification if required. 
+
+A file that cannot be read in one call is read in consecutive ranges until every line has been read. Code on disk is not a source; do not open it.
 
 Do not halt until you have fully complied with this instruction. Do not stop early and warn the user about the context volume. Complete the reads you were given. 
 
