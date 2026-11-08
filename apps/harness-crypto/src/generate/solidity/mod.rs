@@ -32,15 +32,14 @@ use super::factory::provides::{
 
 use self::challenge_vectors::provides::{
     ChallengeVectorDescription, ChallengeVectorDescriptionConstructorParams, ChallengeVectorsDeps,
-    ChallengeVectorsParams, ChallengeVectorsPayload, challenge_vectors,
+    ChallengeVectorsParams, ChallengeVectorsPayload,
 };
-use self::constants::provides::{ConstantsDeps, ConstantsParams, ConstantsPayload, constants};
+use self::constants::provides::{ConstantsDeps, ConstantsParams, ConstantsPayload};
 use self::group_vectors::provides::{
     FirstGroupVectorCounts, GroupOperationVectorDescription,
     GroupOperationVectorDescriptionConstructorParams, GroupVectorsDeps, GroupVectorsParams,
     GroupVectorsPayload, MsmVectorSettings, PairingCheckVectorDescription,
     PairingCheckVectorDescriptionConstructorParams, SecondGroupVectorCounts, VectorCount,
-    group_vectors,
 };
 use self::interface::{
     GeneratedDirectory, GeneratedDirectoryConstructorParams, GeneratedDirectoryTryNewErrorReturn,
@@ -52,20 +51,20 @@ use self::interface::{
 use self::mapping_vectors::provides::{
     HashToScalarVectorDescription, HashToScalarVectorDescriptionConstructorParams,
     IdentityMappingVectorDescription, IdentityMappingVectorDescriptionConstructorParams,
-    MappingVectorsDeps, MappingVectorsParams, MappingVectorsPayload, mapping_vectors,
+    MappingVectorsDeps, MappingVectorsParams, MappingVectorsPayload,
 };
 use self::possession_vectors::provides::{
     PossessionVectorDescription, PossessionVectorDescriptionConstructorParams,
-    PossessionVectorsDeps, PossessionVectorsParams, PossessionVectorsPayload, possession_vectors,
+    PossessionVectorsDeps, PossessionVectorsParams, PossessionVectorsPayload,
 };
 use self::proof_vectors::provides::{
     MintProofVectorDescription, MintProofVectorDescriptionConstructorParams, ProofVectorsDeps,
     ProofVectorsParams, ProofVectorsPayload, TransferProofVectorDescription,
-    TransferProofVectorDescriptionConstructorParams, proof_vectors,
+    TransferProofVectorDescriptionConstructorParams,
 };
 use self::rejection_vectors::provides::{
     RejectionVectorDescription, RejectionVectorDescriptionConstructorParams, RejectionVectorsDeps,
-    RejectionVectorsParams, RejectionVectorsPayload, rejection_vectors,
+    RejectionVectorsParams, RejectionVectorsPayload,
 };
 use self::render::provides::{
     RenderDeps, RenderParams, RenderPayload, SolidityAbiType, SolidityAbiTypeConstructorParams,
@@ -73,7 +72,7 @@ use self::render::provides::{
     SolidityMemberName, SolidityRecordDeclaration, SolidityRecordDeclarations,
     SolidityRecordDeclarationsConstructorParams, SolidityRecordMember, SolidityRecordMembers,
     SolidityRecordMembersConstructorParams, SolidityStringLiteral,
-    SolidityStringLiteralConstructorParams, render,
+    SolidityStringLiteralConstructorParams,
 };
 
 impl GeneratedFileName {
@@ -128,6 +127,14 @@ where
             kem: params.kem,
             key_agreement: params.key_agreement,
             delivery_proof: params.delivery_proof,
+            render: params.render,
+            constants: params.constants,
+            group_vectors: params.group_vectors,
+            rejection_vectors: params.rejection_vectors,
+            mapping_vectors: params.mapping_vectors,
+            possession_vectors: params.possession_vectors,
+            challenge_vectors: params.challenge_vectors,
+            proof_vectors: params.proof_vectors,
             statement_version: params.statement_version,
             settings: params.settings,
             sizes: params.sizes,
@@ -236,7 +243,7 @@ where
                 }),
             };
 
-        let constants = match constants::<P, E, D::Forms>(
+        let constants = match (self.constants)(
             &ConstantsDeps {
                 pairing: self.pairing,
                 encoder: self.encoder,
@@ -269,7 +276,7 @@ where
                 }
             };
 
-        let groups = match group_vectors(
+        let groups = match (self.group_vectors)(
             &GroupVectorsDeps {
                 pairing: self.pairing,
                 random: self.random,
@@ -291,7 +298,7 @@ where
                 ));
             }
         };
-        let rejections = match rejection_vectors(
+        let rejections = match (self.rejection_vectors)(
             &RejectionVectorsDeps {
                 pairing: self.pairing,
             },
@@ -305,7 +312,7 @@ where
                 ));
             }
         };
-        let mappings = match mapping_vectors(
+        let mappings = match (self.mapping_vectors)(
             &MappingVectorsDeps {
                 pairing: self.pairing,
                 hash_to_scalar: self.hash_to_scalar,
@@ -329,7 +336,7 @@ where
                 ));
             }
         };
-        let possessions = match possession_vectors(
+        let possessions = match (self.possession_vectors)(
             &PossessionVectorsDeps {
                 pairing: self.pairing,
                 key_agreement: self.key_agreement,
@@ -347,7 +354,7 @@ where
                 ));
             }
         };
-        let challenges = match challenge_vectors(
+        let challenges = match (self.challenge_vectors)(
             &ChallengeVectorsDeps {
                 pairing: self.pairing,
                 encoder: self.encoder,
@@ -371,7 +378,7 @@ where
                 ));
             }
         };
-        let proofs = match proof_vectors(
+        let proofs = match (self.proof_vectors)(
             &ProofVectorsDeps {
                 pairing: self.pairing,
                 kem: self.kem,
@@ -478,10 +485,32 @@ where
             .map(|segment| segment.as_str())
             .collect::<Vec<_>>()
             .join("/");
-        let curve_directory = match P::DECLARATION.curve {
-            PairingCurve::Bn254 => &self.settings.curve_directories.bn254,
-            PairingCurve::Bls12381 => &self.settings.curve_directories.bls12_381,
-            _ => &self.settings.curve_directories.bn254,
+        #[allow(unreachable_patterns)]
+        let (curve_directory, curve_library) = match P::DECLARATION.curve {
+            PairingCurve::Bn254 => (
+                &self.settings.curve_directories.bn254,
+                &self.settings.curve_libraries.bn254,
+            ),
+            PairingCurve::Bls12381 => (
+                &self.settings.curve_directories.bls12_381,
+                &self.settings.curve_libraries.bls12_381,
+            ),
+            _ => {
+                #[cfg(any(test, feature = "mocks"))]
+                {
+                    (
+                        &self.settings.curve_directories.mock,
+                        &self.settings.curve_libraries.mock,
+                    )
+                }
+                #[cfg(not(any(test, feature = "mocks")))]
+                {
+                    (
+                        &self.settings.curve_directories.bls12_381,
+                        &self.settings.curve_libraries.bls12_381,
+                    )
+                }
+            }
         };
         let mut directory_path = self.settings.foundry_root.clone();
         for segment in &self.settings.generated_directory.segments {
@@ -974,25 +1003,25 @@ where
                     ));
                 }
             };
-        let Ok(constants_library) = render(
+        let Ok(constants_library) = (self.render)(
             &RenderDeps,
             RenderParams {
                 license: self.settings.license.clone(),
                 compiler_version: self.settings.compiler_version,
             },
             RenderPayload {
-                library_name: self.settings.constants_library.library_name.clone(),
+                library_name: curve_library.constants_library.library_name.clone(),
                 body: SolidityLibraryBody::Constants(entries),
             },
         );
-        let Ok(records_library) = render(
+        let Ok(records_library) = (self.render)(
             &RenderDeps,
             RenderParams {
                 license: self.settings.license.clone(),
                 compiler_version: self.settings.compiler_version,
             },
             RenderPayload {
-                library_name: self.settings.records_library.library_name.clone(),
+                library_name: curve_library.records_library.library_name.clone(),
                 body: SolidityLibraryBody::Records(declarations),
             },
         );
@@ -1021,7 +1050,7 @@ where
             });
         }
         let constants_path =
-            directory_path.join(self.settings.constants_library.file_name.as_str());
+            directory_path.join(curve_library.constants_library.file_name.as_str());
         if let Err(error) = fs::write(&constants_path, constants_library.source.as_str()) {
             return Err(EmitErrorReturn::Solidity(
                 SolidityGenerateErrorReturn::WriteFile {
@@ -1034,7 +1063,7 @@ where
             kind: None,
             path: constants_path,
         });
-        let records_path = directory_path.join(self.settings.records_library.file_name.as_str());
+        let records_path = directory_path.join(curve_library.records_library.file_name.as_str());
         if let Err(error) = fs::write(&records_path, records_library.source.as_str()) {
             return Err(EmitErrorReturn::Solidity(
                 SolidityGenerateErrorReturn::WriteFile {

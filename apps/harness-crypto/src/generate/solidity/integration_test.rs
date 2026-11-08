@@ -37,12 +37,12 @@ use super::super::factory::provides::{
     VectorKindSettings, VectorKindSettingsOverrides, VectorKindSize, build_emit_params,
     build_emit_payload, build_vector_kind_settings,
 };
-use super::challenge_vectors::provides::build_challenge_vector_description;
-use super::constants::provides::ConstantsErrorReturn;
+use super::challenge_vectors::provides::{build_challenge_vector_description, challenge_vectors};
+use super::constants::provides::{ConstantsErrorReturn, constants};
 use super::group_vectors::provides::{
     MsmTermCountConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
     build_group_operation_vector_description, build_msm_term_count,
-    build_pairing_check_vector_description, build_vector_count,
+    build_pairing_check_vector_description, build_vector_count, group_vectors,
 };
 use super::interface::{
     ISolidityGenerateCaseConsumer, SOLIDITY_GENERATE_DECLARATION, SolidityGenerateErrorReturn,
@@ -50,24 +50,24 @@ use super::interface::{
 };
 use super::mapping_vectors::provides::{
     MappingVectorsErrorReturn, build_hash_to_scalar_vector_description,
-    build_identity_mapping_vector_description,
+    build_identity_mapping_vector_description, mapping_vectors,
 };
 use super::mock::*;
 use super::possession_vectors::provides::{
     POSSESSION_VECTOR_MEMBER_NAMES, PossessionVectorDescription,
-    build_possession_vector_description,
+    build_possession_vector_description, possession_vectors,
 };
 use super::proof_vectors::provides::{
-    build_mint_proof_vector_description, build_transfer_proof_vector_description,
+    build_mint_proof_vector_description, build_transfer_proof_vector_description, proof_vectors,
 };
-use super::rejection_vectors::provides::build_rejection_vector_description;
+use super::rejection_vectors::provides::{build_rejection_vector_description, rejection_vectors};
 use super::render::provides::{
     SolidityCompilerVersionOverrides, SolidityConstantNameConstructorParamsOverrides,
     SolidityLibraryNameConstructorParamsOverrides, SolidityMemberNameConstructorParamsOverrides,
     SolidityRecordDeclarationsTryNewErrorReturn, SolidityTypeNameConstructorParamsOverrides,
     SpdxLicenseIdentifierConstructorParamsOverrides, build_solidity_compiler_version,
     build_solidity_constant_name, build_solidity_library_name, build_solidity_member_name,
-    build_solidity_type_name, build_spdx_license_identifier,
+    build_solidity_type_name, build_spdx_license_identifier, render,
 };
 use crate::delivery::provides::AdmittedKemIdentity;
 
@@ -119,6 +119,111 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                 bls12_381: Some(build_generated_file_name(
                     GeneratedFileNameConstructorParamsOverrides {
                         text: Some("second-curve".to_string()),
+                    },
+                )),
+                mock: Some(build_generated_file_name(
+                    GeneratedFileNameConstructorParamsOverrides {
+                        text: Some("mock-curve".to_string()),
+                    },
+                )),
+            },
+        )),
+        curve_libraries: Some(build_solidity_curve_libraries(
+            SolidityCurveLibrariesOverrides {
+                bn254: Some(build_solidity_curve_library_names(
+                    SolidityCurveLibraryNamesOverrides {
+                        constants_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                file_name: Some(build_generated_file_name(
+                                    GeneratedFileNameConstructorParamsOverrides {
+                                        text: Some("FirstConstants.sol".to_string()),
+                                    },
+                                )),
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("FirstConstants".to_string()),
+                                    },
+                                )),
+                            },
+                        )),
+                        records_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                file_name: Some(build_generated_file_name(
+                                    GeneratedFileNameConstructorParamsOverrides {
+                                        text: Some("FirstRecords.sol".to_string()),
+                                    },
+                                )),
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("FirstRecords".to_string()),
+                                    },
+                                )),
+                            },
+                        )),
+                    },
+                )),
+                bls12_381: Some(build_solidity_curve_library_names(
+                    SolidityCurveLibraryNamesOverrides {
+                        constants_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                file_name: Some(build_generated_file_name(
+                                    GeneratedFileNameConstructorParamsOverrides {
+                                        text: Some("SecondConstants.sol".to_string()),
+                                    },
+                                )),
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("SecondConstants".to_string()),
+                                    },
+                                )),
+                            },
+                        )),
+                        records_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                file_name: Some(build_generated_file_name(
+                                    GeneratedFileNameConstructorParamsOverrides {
+                                        text: Some("SecondRecords.sol".to_string()),
+                                    },
+                                )),
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("SecondRecords".to_string()),
+                                    },
+                                )),
+                            },
+                        )),
+                    },
+                )),
+                mock: Some(build_solidity_curve_library_names(
+                    SolidityCurveLibraryNamesOverrides {
+                        constants_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                file_name: Some(build_generated_file_name(
+                                    GeneratedFileNameConstructorParamsOverrides {
+                                        text: Some("MockConstants.sol".to_string()),
+                                    },
+                                )),
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("MockConstants".to_string()),
+                                    },
+                                )),
+                            },
+                        )),
+                        records_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                file_name: Some(build_generated_file_name(
+                                    GeneratedFileNameConstructorParamsOverrides {
+                                        text: Some("MockRecords.sol".to_string()),
+                                    },
+                                )),
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("MockRecords".to_string()),
+                                    },
+                                )),
+                            },
+                        )),
                     },
                 )),
             },
@@ -181,6 +286,14 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -288,6 +401,13 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                                         panic!("PAIRING_CONCRETES names no Mock pairing")
                                     }
                                 };
+                                let curve_library = match curve {
+                                    PairingCurve::Bn254 => &settings.curve_libraries.bn254,
+                                    PairingCurve::Bls12381 => &settings.curve_libraries.bls12_381,
+                                    PairingCurve::Mock => {
+                                        panic!("PAIRING_CONCRETES names no Mock pairing")
+                                    }
+                                };
                                 let emitted: Vec<VectorKind> = SOLIDITY_GENERATE_DECLARATION
                                     .kinds
                                     .iter()
@@ -324,7 +444,7 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                                     .join("alpha")
                                     .join("beta")
                                     .join(curve_directory)
-                                    .join(settings.constants_library.file_name.as_str());
+                                    .join(curve_library.constants_library.file_name.as_str());
                                 assert_eq!(success.files[emitted.len()].kind, None);
                                 assert_eq!(success.files[emitted.len()].path, constants_path);
                                 assert!(constants_path.exists());
@@ -332,7 +452,7 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                                     .join("alpha")
                                     .join("beta")
                                     .join(curve_directory)
-                                    .join(settings.records_library.file_name.as_str());
+                                    .join(curve_library.records_library.file_name.as_str());
                                 assert_eq!(success.files[emitted.len() + 1].kind, None);
                                 assert_eq!(success.files[emitted.len() + 1].path, records_path);
                                 assert!(records_path.exists());
@@ -490,6 +610,14 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     sizes: Some(self.sizes.clone()),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -680,7 +808,17 @@ fn every_written_line_decodes_under_its_kinds_description() {
                 kem,
                 key_agreement,
                 delivery_proof,
-                Default::default(),
+                SolidityGenerateConstructorParamsOverrides {
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
+                    ..Default::default()
+                },
             );
             let result = generate.emit(
                 build_emit_params(Default::default()),
@@ -995,16 +1133,63 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
     let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
         license: Some(license.clone()),
         compiler_version: Some(compiler_version),
-        constants_library: Some(build_solidity_library_names(
-            SolidityLibraryNamesOverrides {
-                file_name: Some(build_generated_file_name(
-                    GeneratedFileNameConstructorParamsOverrides {
-                        text: Some("CustomConstants.sol".to_string()),
+        curve_libraries: Some(build_solidity_curve_libraries(
+            SolidityCurveLibrariesOverrides {
+                bn254: Some(build_solidity_curve_library_names(
+                    SolidityCurveLibraryNamesOverrides {
+                        constants_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                file_name: Some(build_generated_file_name(
+                                    GeneratedFileNameConstructorParamsOverrides {
+                                        text: Some("FirstConstants.sol".to_string()),
+                                    },
+                                )),
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("FirstConstants".to_string()),
+                                    },
+                                )),
+                            },
+                        )),
+                        ..Default::default()
                     },
                 )),
-                library_name: Some(build_solidity_library_name(
-                    SolidityLibraryNameConstructorParamsOverrides {
-                        text: Some("ConfiguredConstants".to_string()),
+                bls12_381: Some(build_solidity_curve_library_names(
+                    SolidityCurveLibraryNamesOverrides {
+                        constants_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                file_name: Some(build_generated_file_name(
+                                    GeneratedFileNameConstructorParamsOverrides {
+                                        text: Some("SecondConstants.sol".to_string()),
+                                    },
+                                )),
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("SecondConstants".to_string()),
+                                    },
+                                )),
+                            },
+                        )),
+                        ..Default::default()
+                    },
+                )),
+                mock: Some(build_solidity_curve_library_names(
+                    SolidityCurveLibraryNamesOverrides {
+                        constants_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                file_name: Some(build_generated_file_name(
+                                    GeneratedFileNameConstructorParamsOverrides {
+                                        text: Some("MockConstants.sol".to_string()),
+                                    },
+                                )),
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("MockConstants".to_string()),
+                                    },
+                                )),
+                            },
+                        )),
+                        ..Default::default()
                     },
                 )),
             },
@@ -1067,6 +1252,14 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -1174,6 +1367,13 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                                         panic!("PAIRING_CONCRETES names no Mock pairing")
                                     }
                                 };
+                                let curve_library = match curve {
+                                    PairingCurve::Bn254 => &settings.curve_libraries.bn254,
+                                    PairingCurve::Bls12381 => &settings.curve_libraries.bls12_381,
+                                    PairingCurve::Mock => {
+                                        panic!("PAIRING_CONCRETES names no Mock pairing")
+                                    }
+                                };
                                 let result = result.expect("the case chain runs clean").output;
                                 let Ok(_success) = result else {
                                     panic!("emit admits the case's arrangement")
@@ -1181,7 +1381,7 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                                 let library_path = root
                                     .join("generated")
                                     .join(curve_directory)
-                                    .join(settings.constants_library.file_name.as_str());
+                                    .join(curve_library.constants_library.file_name.as_str());
                                 let text = std::fs::read_to_string(&library_path)
                                     .expect("the constants library was written");
                                 assert!(text.starts_with(&format!(
@@ -1190,7 +1390,7 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                                     compiler_version.major,
                                     compiler_version.minor,
                                     compiler_version.patch,
-                                    settings.constants_library.library_name.as_str()
+                                    curve_library.constants_library.library_name.as_str()
                                 )));
                                 let tag_hex = challenge_tag
                                     .iter()
@@ -1262,14 +1462,53 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                 ]),
             },
         )),
-        records_library: Some(build_solidity_library_names(
-            SolidityLibraryNamesOverrides {
-                library_name: Some(build_solidity_library_name(
-                    SolidityLibraryNameConstructorParamsOverrides {
-                        text: Some("ConfiguredRecords".to_string()),
+        curve_libraries: Some(build_solidity_curve_libraries(
+            SolidityCurveLibrariesOverrides {
+                bn254: Some(build_solidity_curve_library_names(
+                    SolidityCurveLibraryNamesOverrides {
+                        records_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("FirstRecords".to_string()),
+                                    },
+                                )),
+                                ..Default::default()
+                            },
+                        )),
+                        ..Default::default()
                     },
                 )),
-                ..Default::default()
+                bls12_381: Some(build_solidity_curve_library_names(
+                    SolidityCurveLibraryNamesOverrides {
+                        records_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("SecondRecords".to_string()),
+                                    },
+                                )),
+                                ..Default::default()
+                            },
+                        )),
+                        ..Default::default()
+                    },
+                )),
+                mock: Some(build_solidity_curve_library_names(
+                    SolidityCurveLibraryNamesOverrides {
+                        records_library: Some(build_solidity_library_names(
+                            SolidityLibraryNamesOverrides {
+                                library_name: Some(build_solidity_library_name(
+                                    SolidityLibraryNameConstructorParamsOverrides {
+                                        text: Some("MockRecords".to_string()),
+                                    },
+                                )),
+                                ..Default::default()
+                            },
+                        )),
+                        ..Default::default()
+                    },
+                )),
             },
         )),
         ..Default::default()
@@ -1330,6 +1569,14 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -1437,6 +1684,13 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                                         panic!("PAIRING_CONCRETES names no Mock pairing")
                                     }
                                 };
+                                let curve_library = match curve {
+                                    PairingCurve::Bn254 => &settings.curve_libraries.bn254,
+                                    PairingCurve::Bls12381 => &settings.curve_libraries.bls12_381,
+                                    PairingCurve::Mock => {
+                                        panic!("PAIRING_CONCRETES names no Mock pairing")
+                                    }
+                                };
                                 let result = result.expect("the case chain runs clean").output;
                                 let Ok(_success) = result else {
                                     panic!("emit admits the case's arrangement")
@@ -1445,12 +1699,12 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                                     .join("suite")
                                     .join("generated")
                                     .join(curve_directory)
-                                    .join(settings.records_library.file_name.as_str());
+                                    .join(curve_library.records_library.file_name.as_str());
                                 let text = std::fs::read_to_string(&library_path)
                                     .expect("the records library was written");
                                 assert!(text.contains(&format!(
                                     "library {} {{\n",
-                                    settings.records_library.library_name.as_str()
+                                    curve_library.records_library.library_name.as_str()
                                 )));
                                 assert!(text.contains("    struct PossessionVector {"));
                                 for (index, kind) in
@@ -1554,6 +1808,14 @@ fn a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     statement_version: Some(2),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -1729,7 +1991,17 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                 kem,
                 key_agreement,
                 delivery_proof,
-                Default::default(),
+                SolidityGenerateConstructorParamsOverrides {
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
+                    ..Default::default()
+                },
             );
             let result = generate.emit(
                 build_emit_params(Default::default()),
@@ -1929,6 +2201,14 @@ fn a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing() {
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -2116,6 +2396,14 @@ fn a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothin
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -2303,6 +2591,14 @@ fn a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing(
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -2496,6 +2792,14 @@ fn a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name() {
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -2680,6 +2984,14 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -2881,6 +3193,14 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
                 delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
+                    render: Some(render),
+                    constants: Some(constants::<P, E, F>),
+                    group_vectors: Some(group_vectors),
+                    rejection_vectors: Some(rejection_vectors),
+                    mapping_vectors: Some(mapping_vectors),
+                    possession_vectors: Some(possession_vectors),
+                    challenge_vectors: Some(challenge_vectors),
+                    proof_vectors: Some(proof_vectors),
                     ..Default::default()
                 },
             );
@@ -2911,14 +3231,27 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
                             for proof_concrete in DELIVERY_PROOF_CONCRETES {
                                 let curve_directory = match pairing_concrete {
                                     PairingConcrete::Bn254Arkworks
-                                    | PairingConcrete::Bn254Halo2curves
-                                    | PairingConcrete::Mock(_) => {
+                                    | PairingConcrete::Bn254Halo2curves => {
                                         settings.curve_directories.bn254.as_str()
                                     }
                                     PairingConcrete::Bls12381Arkworks
                                     | PairingConcrete::Bls12381Halo2curves => {
                                         settings.curve_directories.bls12_381.as_str()
                                     }
+                                    PairingConcrete::Mock(_) => {
+                                        settings.curve_directories.mock.as_str()
+                                    }
+                                };
+                                let curve_library = match pairing_concrete {
+                                    PairingConcrete::Bn254Arkworks
+                                    | PairingConcrete::Bn254Halo2curves => {
+                                        &settings.curve_libraries.bn254
+                                    }
+                                    PairingConcrete::Bls12381Arkworks
+                                    | PairingConcrete::Bls12381Halo2curves => {
+                                        &settings.curve_libraries.bls12_381
+                                    }
+                                    PairingConcrete::Mock(_) => &settings.curve_libraries.mock,
                                 };
                                 let file_path = root
                                     .join("generated")
@@ -3005,7 +3338,7 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
                                 let constants_path = root
                                     .join("generated")
                                     .join(curve_directory)
-                                    .join(settings.constants_library.file_name.as_str());
+                                    .join(curve_library.constants_library.file_name.as_str());
                                 assert!(!constants_path.exists());
                                 let _ = std::fs::remove_dir_all(&root);
                             }

@@ -31,22 +31,26 @@ use super::super::factory::provides::{
     VectorKindSettings, VectorKindSizing,
 };
 use super::challenge_vectors::provides::{
-    ChallengeVectorMemberNamesErrorReturn, ChallengeVectorsErrorReturn,
+    ChallengeVectorMemberNamesErrorReturn, ChallengeVectorsErrorReturn, ChallengeVectorsFn,
 };
-use super::constants::provides::ConstantsErrorReturn;
-use super::group_vectors::provides::{GroupVectorsErrorReturn, VectorRecordMemberNamesErrorReturn};
+use super::constants::provides::{ConstantsErrorReturn, ConstantsFn};
+use super::group_vectors::provides::{
+    GroupVectorsErrorReturn, GroupVectorsFn, VectorRecordMemberNamesErrorReturn,
+};
 use super::mapping_vectors::provides::{
-    MappingVectorMemberNamesErrorReturn, MappingVectorsErrorReturn,
+    MappingVectorMemberNamesErrorReturn, MappingVectorsErrorReturn, MappingVectorsFn,
 };
 use super::possession_vectors::provides::{
-    PossessionVectorMemberNamesErrorReturn, PossessionVectorsErrorReturn,
+    PossessionVectorMemberNamesErrorReturn, PossessionVectorsErrorReturn, PossessionVectorsFn,
 };
-use super::proof_vectors::provides::{ProofVectorMemberNamesErrorReturn, ProofVectorsErrorReturn};
+use super::proof_vectors::provides::{
+    ProofVectorMemberNamesErrorReturn, ProofVectorsErrorReturn, ProofVectorsFn,
+};
 use super::rejection_vectors::provides::{
-    RejectionVectorMemberNamesErrorReturn, RejectionVectorsErrorReturn,
+    RejectionVectorMemberNamesErrorReturn, RejectionVectorsErrorReturn, RejectionVectorsFn,
 };
 use super::render::provides::{
-    SolidityAbiTypeTryNewErrorReturn, SolidityCompilerVersion, SolidityConstantName,
+    RenderFn, SolidityAbiTypeTryNewErrorReturn, SolidityCompilerVersion, SolidityConstantName,
     SolidityLibraryEntriesTryNewErrorReturn, SolidityLibraryName, SolidityMemberName,
     SolidityRecordDeclarationsTryNewErrorReturn, SolidityRecordMembersTryNewErrorReturn,
     SolidityStringLiteralTryNewErrorReturn, SolidityTypeName, SpdxLicenseIdentifier,
@@ -111,16 +115,31 @@ pub struct SolidityLibraryNames {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SolidityCurveLibraryNames {
+    pub constants_library: SolidityLibraryNames,
+    pub records_library: SolidityLibraryNames,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SolidityCurveLibraries {
+    pub bn254: SolidityCurveLibraryNames,
+    pub bls12_381: SolidityCurveLibraryNames,
+    #[cfg(any(test, feature = "mocks"))]
+    pub mock: SolidityCurveLibraryNames,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SolidityCurveDirectories {
     pub bn254: GeneratedFileName,
     pub bls12_381: GeneratedFileName,
+    #[cfg(any(test, feature = "mocks"))]
+    pub mock: GeneratedFileName,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SolidityGenerateSettings {
     pub kinds: Vec<SolidityVectorKindSettings>,
-    pub constants_library: SolidityLibraryNames,
-    pub records_library: SolidityLibraryNames,
+    pub curve_libraries: SolidityCurveLibraries,
     pub foundry_root: PathBuf,
     pub generated_directory: GeneratedDirectory,
     pub curve_directories: SolidityCurveDirectories,
@@ -143,6 +162,14 @@ pub struct SolidityGenerateConstructorParams<
     pub kem: &'a K,
     pub key_agreement: &'a A,
     pub delivery_proof: &'a D,
+    pub render: RenderFn,
+    pub constants: ConstantsFn<'a, P, E>,
+    pub group_vectors: GroupVectorsFn<'a, P>,
+    pub rejection_vectors: RejectionVectorsFn<'a, P>,
+    pub mapping_vectors: MappingVectorsFn<'a, P, K>,
+    pub possession_vectors: PossessionVectorsFn<'a, P, A>,
+    pub challenge_vectors: ChallengeVectorsFn<'a, P, E, <D as IDeliveryProofAdapter>::Forms>,
+    pub proof_vectors: ProofVectorsFn<'a, P, K, A, D>,
     pub statement_version: u16,
     pub settings: SolidityGenerateSettings,
     pub sizes: Vec<VectorKindSettings>,
@@ -163,6 +190,14 @@ pub struct SolidityGenerate<
     pub(super) kem: &'a K,
     pub(super) key_agreement: &'a A,
     pub(super) delivery_proof: &'a D,
+    pub(super) render: RenderFn,
+    pub(super) constants: ConstantsFn<'a, P, E>,
+    pub(super) group_vectors: GroupVectorsFn<'a, P>,
+    pub(super) rejection_vectors: RejectionVectorsFn<'a, P>,
+    pub(super) mapping_vectors: MappingVectorsFn<'a, P, K>,
+    pub(super) possession_vectors: PossessionVectorsFn<'a, P, A>,
+    pub(super) challenge_vectors: ChallengeVectorsFn<'a, P, E, <D as IDeliveryProofAdapter>::Forms>,
+    pub(super) proof_vectors: ProofVectorsFn<'a, P, K, A, D>,
     pub(super) statement_version: u16,
     pub(super) settings: SolidityGenerateSettings,
     pub(super) sizes: Vec<VectorKindSettings>,

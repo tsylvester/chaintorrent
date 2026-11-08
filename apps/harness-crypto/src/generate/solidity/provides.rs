@@ -5,9 +5,9 @@ pub use super::interface::{
     GeneratedDirectory, GeneratedDirectoryConstructorParams, GeneratedDirectoryTryNewErrorReturn,
     GeneratedDirectoryTryNewReturn, GeneratedFileName, GeneratedFileNameConstructorParams,
     GeneratedFileNameTryNewErrorReturn, GeneratedFileNameTryNewReturn,
-    SOLIDITY_GENERATE_DECLARATION, SolidityCurveDirectories, SolidityGenerateErrorReturn,
-    SolidityGenerateSettings, SolidityLibraryNames, SolidityVectorKindNames,
-    SolidityVectorKindSettings,
+    SOLIDITY_GENERATE_DECLARATION, SolidityCurveDirectories, SolidityCurveLibraries,
+    SolidityCurveLibraryNames, SolidityGenerateErrorReturn, SolidityGenerateSettings,
+    SolidityLibraryNames, SolidityVectorKindNames, SolidityVectorKindSettings,
 };
 pub(crate) use super::interface::{SolidityGenerate, SolidityGenerateConstructorParams};
 pub use super::mapping_vectors::provides::*;

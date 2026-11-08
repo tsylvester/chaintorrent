@@ -13,7 +13,10 @@ use kem::ICredentialKemAdapter;
 use pairing::{IPairingArithmetic, IPairingReference};
 use proof::IDeliveryProofAdapter;
 
-use super::solidity::provides::{SolidityGenerate, SolidityGenerateConstructorParams};
+use super::solidity::provides::{
+    SolidityGenerate, SolidityGenerateConstructorParams, challenge_vectors, constants,
+    group_vectors, mapping_vectors, possession_vectors, proof_vectors, rejection_vectors, render,
+};
 use interface::{
     ConsumeGenerateParams, ConsumeGeneratePayload, CreateGenerateDeps, CreateGenerateErrorReturn,
     CreateGenerateParams, CreateGeneratePayload, CreateGenerateReturn, CreateGenerateSuccessReturn,
@@ -178,6 +181,14 @@ pub fn create_generate<
                 kem: deps.kem,
                 key_agreement: deps.key_agreement,
                 delivery_proof: deps.delivery_proof,
+                render,
+                constants: constants::<P, E, D::Forms>,
+                group_vectors,
+                rejection_vectors,
+                mapping_vectors,
+                possession_vectors,
+                challenge_vectors,
+                proof_vectors,
                 statement_version: params.statement_version,
                 settings: *settings,
                 sizes,
