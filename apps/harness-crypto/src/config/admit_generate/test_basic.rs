@@ -27,10 +27,10 @@ use crate::generate::provides::{
     SpdxLicenseIdentifierConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
     VectorKind, VectorKindConfiguration, VectorKindQuantities, build_generated_directory,
     build_generated_file_name, build_msm_term_count, build_solidity_compiler_version,
-    build_solidity_constant_name, build_solidity_curve_directories,
-    build_solidity_curve_libraries, build_solidity_curve_library_names,
-    build_solidity_generate_settings, build_solidity_library_name, build_solidity_library_names,
-    build_solidity_member_name, build_solidity_type_name, build_solidity_vector_kind_names,
+    build_solidity_constant_name, build_solidity_curve_directories, build_solidity_curve_libraries,
+    build_solidity_curve_library_names, build_solidity_generate_settings,
+    build_solidity_library_name, build_solidity_library_names, build_solidity_member_name,
+    build_solidity_type_name, build_solidity_vector_kind_names,
     build_solidity_vector_kind_settings, build_spdx_license_identifier, build_vector_count,
 };
 
@@ -526,8 +526,8 @@ fn admit_generate_admits_each_curve_directory_to_the_field_its_curve_names() {
             ..Default::default()
         })),
     });
-    let expected_directories = build_solidity_curve_directories(
-        SolidityCurveDirectoriesOverrides {
+    let expected_directories =
+        build_solidity_curve_directories(SolidityCurveDirectoriesOverrides {
             bn254: Some(build_generated_file_name(
                 GeneratedFileNameConstructorParamsOverrides {
                     text: Some("directory-a".to_string()),
@@ -539,8 +539,7 @@ fn admit_generate_admits_each_curve_directory_to_the_field_its_curve_names() {
                 },
             )),
             ..Default::default()
-        },
-    );
+        });
     // Act
     let admitted = admit_generate(
         &build_admit_generate_deps(Default::default()),

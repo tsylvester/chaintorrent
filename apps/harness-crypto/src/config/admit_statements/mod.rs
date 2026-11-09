@@ -306,23 +306,25 @@ pub fn admit_statements(
     _params: AdmitStatementsParams,
     payload: AdmitStatementsPayload,
 ) -> AdmitStatementsReturn {
-    let chain_identifier = canonical_value(&payload.network_profile.chain_identifier).map_err(
-        |refusal| AdmitStatementsErrorReturn::NetworkProfile {
-            field: NetworkProfileField::ChainIdentifier,
-            refusal,
-        },
-    )?;
+    let chain_identifier =
+        canonical_value(&payload.network_profile.chain_identifier).map_err(|refusal| {
+            AdmitStatementsErrorReturn::NetworkProfile {
+                field: NetworkProfileField::ChainIdentifier,
+                refusal,
+            }
+        })?;
     let entitlement_contract = canonical_value(&payload.network_profile.entitlement_contract)
         .map_err(|refusal| AdmitStatementsErrorReturn::NetworkProfile {
             field: NetworkProfileField::EntitlementContract,
             refusal,
         })?;
-    let gas_price_oracle = canonical_value(&payload.network_profile.gas_price_oracle).map_err(
-        |refusal| AdmitStatementsErrorReturn::NetworkProfile {
-            field: NetworkProfileField::GasPriceOracle,
-            refusal,
-        },
-    )?;
+    let gas_price_oracle =
+        canonical_value(&payload.network_profile.gas_price_oracle).map_err(|refusal| {
+            AdmitStatementsErrorReturn::NetworkProfile {
+                field: NetworkProfileField::GasPriceOracle,
+                refusal,
+            }
+        })?;
     let mut deployment_records = Vec::with_capacity(payload.curve_labels.len());
     for label in &payload.curve_labels {
         let record = match payload.network_profile.deployment_records.get(label) {

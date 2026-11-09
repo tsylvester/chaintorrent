@@ -8,20 +8,19 @@ use pairing::{PAIRING_CURVES, PairingCurve};
 
 use harness_crypto::{
     AdmitGenerateErrorReturn, CurveLibrariesTableOverrides, GenerateConcrete,
-    GenerateKindTableOverrides, GeneratedFileNameConstructorParamsOverrides,
-    LibraryTableOverrides, MockIGenerateAdapterFailureMode,
-    MsmTermCountConstructorParamsOverrides, SOLIDITY_GENERATE_DECLARATION,
-    SolidityConstantNameConstructorParamsOverrides, SolidityCurveDirectoriesOverrides,
-    SolidityCurveLibrariesOverrides, SolidityCurveLibraryNamesOverrides,
-    SolidityGenerateSettingsOverrides, SolidityLibraryNameConstructorParamsOverrides,
-    SolidityLibraryNamesOverrides, SolidityMemberNameConstructorParamsOverrides,
-    SolidityTypeNameConstructorParamsOverrides, SolidityVectorKindNamesOverrides,
-    SolidityVectorKindSettingsOverrides, VectorCountConstructorParamsOverrides,
-    VectorKindConfiguration, VectorKindQuantities, VectorKindSizing, admit_generate,
-    build_admit_generate_deps, build_admit_generate_params, build_admit_generate_payload,
-    build_curve_libraries_table, build_generate_kind_table, build_generated_file_name,
-    build_library_table, build_msm_term_count, build_solidity_constant_name,
-    build_solidity_curve_directories, build_solidity_curve_libraries,
+    GenerateKindTableOverrides, GeneratedFileNameConstructorParamsOverrides, LibraryTableOverrides,
+    MockIGenerateAdapterFailureMode, MsmTermCountConstructorParamsOverrides,
+    SOLIDITY_GENERATE_DECLARATION, SolidityConstantNameConstructorParamsOverrides,
+    SolidityCurveDirectoriesOverrides, SolidityCurveLibrariesOverrides,
+    SolidityCurveLibraryNamesOverrides, SolidityGenerateSettingsOverrides,
+    SolidityLibraryNameConstructorParamsOverrides, SolidityLibraryNamesOverrides,
+    SolidityMemberNameConstructorParamsOverrides, SolidityTypeNameConstructorParamsOverrides,
+    SolidityVectorKindNamesOverrides, SolidityVectorKindSettingsOverrides,
+    VectorCountConstructorParamsOverrides, VectorKindConfiguration, VectorKindQuantities,
+    VectorKindSizing, admit_generate, build_admit_generate_deps, build_admit_generate_params,
+    build_admit_generate_payload, build_curve_libraries_table, build_generate_kind_table,
+    build_generated_file_name, build_library_table, build_msm_term_count,
+    build_solidity_constant_name, build_solidity_curve_directories, build_solidity_curve_libraries,
     build_solidity_curve_library_names, build_solidity_generate_settings,
     build_solidity_library_name, build_solidity_library_names, build_solidity_member_name,
     build_solidity_type_name, build_solidity_vector_kind_names,
@@ -358,12 +357,11 @@ fn every_declared_curve_libraries_reach_the_field_their_curve_names() {
             PairingCurve::Bls12381 => (libraries_b.clone(), libraries_a.clone()),
             PairingCurve::Mock => panic!("PAIRING_CURVES names no Mock member"),
         };
-        let expected_libraries =
-            build_solidity_curve_libraries(SolidityCurveLibrariesOverrides {
-                bn254: Some(bn254),
-                bls12_381: Some(bls12_381),
-                ..Default::default()
-            });
+        let expected_libraries = build_solidity_curve_libraries(SolidityCurveLibrariesOverrides {
+            bn254: Some(bn254),
+            bls12_381: Some(bls12_381),
+            ..Default::default()
+        });
 
         let admitted = admit_generate(&deps, params, payload)
             .expect("the member is admitted")
@@ -442,6 +440,9 @@ fn an_undeclared_name_is_never_admitted() {
     // Act
     let result = admit_generate(&deps, params, payload);
     // Assert
-    assert_eq!(result, Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text }));
+    assert_eq!(
+        result,
+        Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text })
+    );
     // an_undeclared_name_is_never_admitted
 }

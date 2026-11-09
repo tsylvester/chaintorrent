@@ -2843,7 +2843,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                         &settings.kinds[0].names,
                         members(
                             group_names.clone(),
-                            &<GroupOperationVectorDescription as IEncodingContract>::FIELDS,
+                            <GroupOperationVectorDescription as IEncodingContract>::FIELDS,
                         ),
                         "generated/mock/g1_add.vectors",
                     ),
@@ -2851,7 +2851,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                         &settings.kinds[1].names,
                         members(
                             group_names,
-                            &<GroupOperationVectorDescription as IEncodingContract>::FIELDS,
+                            <GroupOperationVectorDescription as IEncodingContract>::FIELDS,
                         ),
                         "generated/mock/g1_mul.vectors",
                     ),
@@ -2859,7 +2859,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                         &settings.kinds[2].names,
                         members(
                             pairing_check_names,
-                            &<PairingCheckVectorDescription as IEncodingContract>::FIELDS,
+                            <PairingCheckVectorDescription as IEncodingContract>::FIELDS,
                         ),
                         "generated/mock/pairing_check.vectors",
                     ),
@@ -2867,7 +2867,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                         &settings.kinds[6].names,
                         members(
                             rejection_names,
-                            &<RejectionVectorDescription as IEncodingContract>::FIELDS,
+                            <RejectionVectorDescription as IEncodingContract>::FIELDS,
                         ),
                         "generated/mock/decode_rejection.vectors",
                     ),
@@ -2875,7 +2875,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                         &settings.kinds[7].names,
                         members(
                             scalar_names,
-                            &<HashToScalarVectorDescription as IEncodingContract>::FIELDS,
+                            <HashToScalarVectorDescription as IEncodingContract>::FIELDS,
                         ),
                         "generated/mock/hash_to_scalar.vectors",
                     ),
@@ -2883,7 +2883,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                         &settings.kinds[8].names,
                         members(
                             mapping_names,
-                            &<IdentityMappingVectorDescription as IEncodingContract>::FIELDS,
+                            <IdentityMappingVectorDescription as IEncodingContract>::FIELDS,
                         ),
                         "generated/mock/identity_mapping.vectors",
                     ),
@@ -2891,7 +2891,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                         &settings.kinds[9].names,
                         members(
                             possession_names,
-                            &<PossessionVectorDescription as IEncodingContract>::FIELDS,
+                            <PossessionVectorDescription as IEncodingContract>::FIELDS,
                         ),
                         "generated/mock/possession.vectors",
                     ),
@@ -2899,7 +2899,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                         &settings.kinds[10].names,
                         members(
                             challenge_names,
-                            &<ChallengeVectorDescription as IEncodingContract>::FIELDS,
+                            <ChallengeVectorDescription as IEncodingContract>::FIELDS,
                         ),
                         "generated/mock/challenge.vectors",
                     ),
@@ -2907,7 +2907,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                         &settings.kinds[11].names,
                         members(
                             mint_proof_names,
-                            &<MintProofVectorDescription<F> as IEncodingContract>::FIELDS,
+                            <MintProofVectorDescription<F> as IEncodingContract>::FIELDS,
                         ),
                         "generated/mock/mint_proof.vectors",
                     ),
@@ -2915,7 +2915,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                         &settings.kinds[12].names,
                         members(
                             transfer_proof_names,
-                            &<TransferProofVectorDescription<F> as IEncodingContract>::FIELDS,
+                            <TransferProofVectorDescription<F> as IEncodingContract>::FIELDS,
                         ),
                         "generated/mock/transfer_proof.vectors",
                     ),

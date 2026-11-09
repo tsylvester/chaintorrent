@@ -33,8 +33,7 @@ use crate::report::provides::{ReportTextConstructorParamsOverrides, build_report
 fn config_returns_the_values_the_composed_functions_returned() {
     // Arrange
     let expected_selections = build_admitted_selections(Default::default());
-    let expected_network_profile =
-        build_harness_configuration(Default::default()).network_profile;
+    let expected_network_profile = build_harness_configuration(Default::default()).network_profile;
     let expected_identities = build_admitted_identities(Default::default());
     let expected_generate = build_admitted_generate(Default::default());
     let expected_output = build_admitted_output(Default::default());

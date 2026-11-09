@@ -932,7 +932,10 @@ fn admit_generate_refuses_a_curve_libraries_key_that_differs_only_in_case() {
         payload,
     );
     // Assert
-    assert_eq!(result, Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text }));
+    assert_eq!(
+        result,
+        Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text })
+    );
     // admit_generate_refuses_a_curve_libraries_key_that_differs_only_in_case
 }
 
@@ -966,7 +969,10 @@ fn admit_generate_refuses_the_mock_curves_name_as_a_curve_libraries_key() {
         payload,
     );
     // Assert
-    assert_eq!(result, Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text }));
+    assert_eq!(
+        result,
+        Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text })
+    );
     // admit_generate_refuses_the_mock_curves_name_as_a_curve_libraries_key
 }
 

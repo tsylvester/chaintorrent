@@ -129,10 +129,7 @@ fn the_document_records_every_value_a_measurement_holds() {
                     },
                 ),
             );
-            let success = match measured {
-                Ok(success) => success,
-                Err(error) => return Err(error),
-            };
+            let success = measured?;
             let directory = temp_dir().join(format!(
                 "chaintorrent-report-{}-{:?}",
                 std::process::id(),
@@ -332,10 +329,7 @@ fn every_operation_is_timed_on_every_concrete() {
                     },
                 ),
             );
-            let success = match measured {
-                Ok(success) => success,
-                Err(error) => return Err(error),
-            };
+            let success = measured?;
             let directory = temp_dir().join(format!(
                 "chaintorrent-report-{}-{:?}",
                 std::process::id(),
@@ -480,10 +474,7 @@ fn the_measurement_carries_the_iteration_count_its_means_were_computed_from() {
                     },
                 ),
             );
-            let success = match measured {
-                Ok(success) => success,
-                Err(error) => return Err(error),
-            };
+            let success = measured?;
             let directory = temp_dir().join(format!(
                 "chaintorrent-report-{}-{:?}",
                 std::process::id(),
@@ -668,10 +659,7 @@ fn every_object_is_sized_by_the_encodings_of_its_elements() {
                     },
                 ),
             );
-            let success = match measured {
-                Ok(success) => success,
-                Err(error) => return Err(error),
-            };
+            let success = measured?;
             let directory = temp_dir().join(format!(
                 "chaintorrent-report-{}-{:?}",
                 std::process::id(),
@@ -820,10 +808,7 @@ fn every_accepted_delivery_reports_the_cost_the_verifier_returned() {
                     },
                 ),
             );
-            let success = match measured {
-                Ok(success) => success,
-                Err(error) => return Err(error),
-            };
+            let success = measured?;
             let directory = temp_dir().join(format!(
                 "chaintorrent-report-{}-{:?}",
                 std::process::id(),

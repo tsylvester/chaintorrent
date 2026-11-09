@@ -400,9 +400,7 @@ pub struct CurveLibrariesTableOverrides {
     pub records_library: Option<LibraryTable>,
 }
 
-pub fn build_curve_libraries_table(
-    overrides: CurveLibrariesTableOverrides,
-) -> CurveLibrariesTable {
+pub fn build_curve_libraries_table(overrides: CurveLibrariesTableOverrides) -> CurveLibrariesTable {
     CurveLibrariesTable {
         constants_library: overrides
             .constants_library
@@ -430,9 +428,7 @@ pub struct GenerateTableOverrides {
 
 pub fn build_generate_table(overrides: GenerateTableOverrides) -> GenerateTable {
     GenerateTable {
-        concrete: overrides
-            .concrete
-            .unwrap_or_else(|| "Solidity".to_string()),
+        concrete: overrides.concrete.unwrap_or_else(|| "Solidity".to_string()),
         kinds: overrides.kinds.unwrap_or_else(|| {
             std::collections::BTreeMap::from([(
                 "G1Addition".to_string(),

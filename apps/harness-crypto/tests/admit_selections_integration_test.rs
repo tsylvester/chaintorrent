@@ -235,11 +235,12 @@ fn every_member_of_every_declared_set_is_admitted_by_its_own_name() {
 fn a_mock_selections_name_is_never_admitted() {
     // Arrange — one case per family: the mock selection's `Debug` text, the
     // field it is written to, and the variant the refusal carries.
-    let cases: Vec<(
+    type MockSelectionCase = (
         String,
         fn(&mut SelectionsTable, String),
         fn(String) -> AdmitSelectionsErrorReturn,
-    )> = vec![
+    );
+    let cases: Vec<MockSelectionCase> = vec![
         (
             declared_name(&RandomSourceKind::Mock(
                 MockIRandomSourceAdapterFailureMode::Succeeds,

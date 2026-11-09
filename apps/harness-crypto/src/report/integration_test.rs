@@ -139,10 +139,7 @@ fn the_document_records_every_value_a_measurement_holds() {
                     },
                 ),
             );
-            let success = match measured {
-                Ok(success) => success,
-                Err(error) => return Err(error),
-            };
+            let success = measured?;
             let directory = temp_dir().join(format!(
                 "chaintorrent-report-{}-{:?}",
                 std::process::id(),

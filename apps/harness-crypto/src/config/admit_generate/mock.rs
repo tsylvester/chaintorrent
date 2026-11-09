@@ -18,10 +18,10 @@ use super::interface::{
 };
 use crate::generate::provides::{
     GENERATE_CONCRETES, GenerateConcrete, SolidityGenerateSettingsOverrides,
-    SolidityVectorKindSettingsOverrides,
-    SpdxLicenseIdentifierConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
-    VectorKind, VectorKindConfiguration, VectorKindQuantities, build_solidity_generate_settings,
-    build_solidity_vector_kind_settings, build_spdx_license_identifier, build_vector_count,
+    SolidityVectorKindSettingsOverrides, SpdxLicenseIdentifierConstructorParamsOverrides,
+    VectorCountConstructorParamsOverrides, VectorKind, VectorKindConfiguration,
+    VectorKindQuantities, build_solidity_generate_settings, build_solidity_vector_kind_settings,
+    build_spdx_license_identifier, build_vector_count,
 };
 
 #[derive(Default)]

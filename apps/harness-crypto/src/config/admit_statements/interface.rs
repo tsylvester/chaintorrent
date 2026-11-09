@@ -132,8 +132,12 @@ pub enum AdmitStatementsErrorReturn {
         label: String,
         refusal: CanonicalValueRefusal,
     },
-    MissingDeploymentRecord { label: String },
-    UndeclaredDeploymentRecord { label: String },
+    MissingDeploymentRecord {
+        label: String,
+    },
+    UndeclaredDeploymentRecord {
+        label: String,
+    },
     Context {
         relation: ContextRelation,
         field: ContextField,

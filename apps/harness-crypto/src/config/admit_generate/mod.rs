@@ -19,12 +19,11 @@ use crate::generate::provides::{
     MsmTermCount, MsmTermCountConstructorParams, SOLIDITY_GENERATE_DECLARATION,
     SolidityCompilerVersion, SolidityConstantName, SolidityConstantNameConstructorParams,
     SolidityCurveDirectories, SolidityCurveLibraries, SolidityCurveLibraryNames,
-    SolidityGenerateSettings, SolidityLibraryName,
-    SolidityLibraryNameConstructorParams, SolidityLibraryNames, SolidityMemberName,
-    SolidityMemberNameConstructorParams, SolidityTypeName, SolidityTypeNameConstructorParams,
-    SolidityVectorKindNames, SolidityVectorKindSettings, SpdxLicenseIdentifier,
-    SpdxLicenseIdentifierConstructorParams, VectorCount, VectorCountConstructorParams,
-    VectorKindConfiguration, VectorKindQuantities,
+    SolidityGenerateSettings, SolidityLibraryName, SolidityLibraryNameConstructorParams,
+    SolidityLibraryNames, SolidityMemberName, SolidityMemberNameConstructorParams,
+    SolidityTypeName, SolidityTypeNameConstructorParams, SolidityVectorKindNames,
+    SolidityVectorKindSettings, SpdxLicenseIdentifier, SpdxLicenseIdentifierConstructorParams,
+    VectorCount, VectorCountConstructorParams, VectorKindConfiguration, VectorKindQuantities,
 };
 use interface::{
     AdmitGenerateDeps, AdmitGenerateErrorReturn, AdmitGenerateFn, AdmitGenerateParams,
@@ -170,11 +169,9 @@ pub fn admit_generate(
                     return Err(AdmitGenerateErrorReturn::ConstantsLibraryFile { curve, error });
                 }
             },
-            library_name: match SolidityLibraryName::try_new(
-                SolidityLibraryNameConstructorParams {
-                    text: entry.constants_library.library.clone(),
-                },
-            ) {
+            library_name: match SolidityLibraryName::try_new(SolidityLibraryNameConstructorParams {
+                text: entry.constants_library.library.clone(),
+            }) {
                 Ok(library_name) => library_name,
                 Err(error) => {
                     return Err(AdmitGenerateErrorReturn::ConstantsLibraryName { curve, error });
@@ -190,11 +187,9 @@ pub fn admit_generate(
                     return Err(AdmitGenerateErrorReturn::RecordsLibraryFile { curve, error });
                 }
             },
-            library_name: match SolidityLibraryName::try_new(
-                SolidityLibraryNameConstructorParams {
-                    text: entry.records_library.library.clone(),
-                },
-            ) {
+            library_name: match SolidityLibraryName::try_new(SolidityLibraryNameConstructorParams {
+                text: entry.records_library.library.clone(),
+            }) {
                 Ok(library_name) => library_name,
                 Err(error) => {
                     return Err(AdmitGenerateErrorReturn::RecordsLibraryName { curve, error });

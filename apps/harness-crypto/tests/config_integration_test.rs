@@ -795,38 +795,30 @@ fn the_verifier_is_selected_with_the_settings_the_document_holds() {
         oracle[19] = 0x0f;
         oracle
     };
-    let expected =
-        |endpoint_text: &str,
-         bn254: [u8; 20],
-         bls12_381: [u8; 20],
-         oracle: [u8; 20]| {
-            vec![
-                VerifierConcrete::Evm {
-                    settings: Box::new(EvmVerifierSettings {
-                        endpoint: EvmVerifierEndpoint::try_new(
-                            EvmVerifierEndpointConstructorParams {
-                                text: endpoint_text.to_string(),
-                            },
-                        )
-                        .expect("the endpoint is admitted"),
-                        verifier_address: CanonicalFieldValue::FixedBytes20(bn254),
-                        gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
-                    }),
-                },
-                VerifierConcrete::Evm {
-                    settings: Box::new(EvmVerifierSettings {
-                        endpoint: EvmVerifierEndpoint::try_new(
-                            EvmVerifierEndpointConstructorParams {
-                                text: endpoint_text.to_string(),
-                            },
-                        )
-                        .expect("the endpoint is admitted"),
-                        verifier_address: CanonicalFieldValue::FixedBytes20(bls12_381),
-                        gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
-                    }),
-                },
-            ]
-        };
+    let expected = |endpoint_text: &str, bn254: [u8; 20], bls12_381: [u8; 20], oracle: [u8; 20]| {
+        vec![
+            VerifierConcrete::Evm {
+                settings: Box::new(EvmVerifierSettings {
+                    endpoint: EvmVerifierEndpoint::try_new(EvmVerifierEndpointConstructorParams {
+                        text: endpoint_text.to_string(),
+                    })
+                    .expect("the endpoint is admitted"),
+                    verifier_address: CanonicalFieldValue::FixedBytes20(bn254),
+                    gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
+                }),
+            },
+            VerifierConcrete::Evm {
+                settings: Box::new(EvmVerifierSettings {
+                    endpoint: EvmVerifierEndpoint::try_new(EvmVerifierEndpointConstructorParams {
+                        text: endpoint_text.to_string(),
+                    })
+                    .expect("the endpoint is admitted"),
+                    verifier_address: CanonicalFieldValue::FixedBytes20(bls12_381),
+                    gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
+                }),
+            },
+        ]
+    };
 
     // The endpoint overridden alone.
     let result = config(
@@ -868,7 +860,12 @@ fn the_verifier_is_selected_with_the_settings_the_document_holds() {
             .expect("the configuration succeeds")
             .configuration
             .verifiers,
-        expected("https://sepolia.base.org", [0x11; 20], [0; 20], default_oracle)
+        expected(
+            "https://sepolia.base.org",
+            [0x11; 20],
+            [0; 20],
+            default_oracle
+        )
     );
 
     // The bls12_381 record overridden alone, leaving the bn254 shipped
@@ -891,7 +888,12 @@ fn the_verifier_is_selected_with_the_settings_the_document_holds() {
             .expect("the configuration succeeds")
             .configuration
             .verifiers,
-        expected("https://sepolia.base.org", [0; 20], [0x22; 20], default_oracle)
+        expected(
+            "https://sepolia.base.org",
+            [0; 20],
+            [0x22; 20],
+            default_oracle
+        )
     );
 
     // The gas price oracle overridden alone.
@@ -939,7 +941,12 @@ fn the_verifier_is_selected_with_the_settings_the_document_holds() {
             .expect("the configuration succeeds")
             .configuration
             .verifiers,
-        expected("https://sepolia.base.org", [0x11; 20], [0x22; 20], default_oracle)
+        expected(
+            "https://sepolia.base.org",
+            [0x11; 20],
+            [0x22; 20],
+            default_oracle
+        )
     );
     // the_verifier_is_selected_with_the_settings_the_document_holds
 }

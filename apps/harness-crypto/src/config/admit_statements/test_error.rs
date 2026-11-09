@@ -951,13 +951,10 @@ fn admit_statements_refuses_a_curve_without_a_record_and_a_record_without_a_curv
 
     // Arrange — a record key no curve label names.
     let mut undeclared = build_admit_statements_payload(Default::default());
-    undeclared
-        .network_profile
-        .deployment_records
-        .insert(
-            "curve-c".to_string(),
-            undeclared.network_profile.entitlement_contract.clone(),
-        );
+    undeclared.network_profile.deployment_records.insert(
+        "curve-c".to_string(),
+        undeclared.network_profile.entitlement_contract.clone(),
+    );
     // Act
     let result = admit_statements(
         &build_admit_statements_deps(Default::default()),

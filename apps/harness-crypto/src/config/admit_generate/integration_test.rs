@@ -27,9 +27,9 @@ use crate::generate::provides::{
     VectorKindConfiguration, VectorKindQuantities, VectorKindSizing, build_generated_file_name,
     build_msm_term_count, build_solidity_constant_name, build_solidity_curve_directories,
     build_solidity_curve_libraries, build_solidity_curve_library_names,
-    build_solidity_generate_settings, build_solidity_library_name,
-    build_solidity_library_names, build_solidity_member_name, build_solidity_type_name,
-    build_solidity_vector_kind_names, build_solidity_vector_kind_settings, build_vector_count,
+    build_solidity_generate_settings, build_solidity_library_name, build_solidity_library_names,
+    build_solidity_member_name, build_solidity_type_name, build_solidity_vector_kind_names,
+    build_solidity_vector_kind_settings, build_vector_count,
 };
 
 /// Contract: `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`
@@ -363,12 +363,11 @@ fn every_declared_curve_libraries_reach_the_field_their_curve_names() {
             PairingCurve::Bls12381 => (libraries_b.clone(), libraries_a.clone()),
             PairingCurve::Mock => panic!("PAIRING_CURVES names no Mock member"),
         };
-        let expected_libraries =
-            build_solidity_curve_libraries(SolidityCurveLibrariesOverrides {
-                bn254: Some(bn254),
-                bls12_381: Some(bls12_381),
-                ..Default::default()
-            });
+        let expected_libraries = build_solidity_curve_libraries(SolidityCurveLibrariesOverrides {
+            bn254: Some(bn254),
+            bls12_381: Some(bls12_381),
+            ..Default::default()
+        });
 
         let admitted = admit_generate(&deps, params, payload)
             .expect("the member is admitted")
@@ -449,6 +448,9 @@ fn an_undeclared_name_is_never_admitted() {
     // Act
     let result = admit_generate(&deps, params, payload);
     // Assert
-    assert_eq!(result, Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text }));
+    assert_eq!(
+        result,
+        Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text })
+    );
     // an_undeclared_name_is_never_admitted
 }

@@ -27,7 +27,9 @@ use crate::generate::provides::{
     build_create_generate_case_params, build_create_generate_case_payload, build_emitted_file,
     run_create_generate_case,
 };
-use crate::verifier::provides::{L1DataFee, VerifyCost};
+use crate::verifier::provides::{
+    L1DataFee, MockIVerifierAdapterFailureMode, VerifierConcrete, VerifyCost,
+};
 
 /// Contract: Consumed → the files the mock generate concrete returns and the
 ///   measurement the verifier step returns are the output whole, the files in
@@ -172,18 +174,24 @@ fn consume_key_agreement_returns_the_files_and_the_measurement_both_steps_comput
 /// Arrange: a mint context built with `expiry` `Some(11)` and
 ///   `MintPurpose::Replacement`, a transfer context built with `expiry`
 ///   `Some(12)` and `TransferPurpose::Grant`, `statement_version` of `2`,
-///   `iterations` of `7`, and the received adapters and identities.
+///   `iterations` of `7`, `verifier` of `VerifierConcrete::Mock(
+///   MockIVerifierAdapterFailureMode::RpcRefused)`, a value other than
+///   the builder's default, standing for the verifier concrete of the
+///   one curve the consumer composes, and the received adapters and
+///   identities.
 /// Act:     `build_key_agreement_consumer`, once, inside the case consumer's
 ///   method.
-/// Assert:  the consumer's `mint.expiry` equals `11` and `mint.purpose.code()`
-///   equals `4`, its `transfer.expiry` equals `12` and
-///   `transfer.purpose.code()` equals `3`, its `statement_version` equals `2`,
-///   its `iterations.get()` equals `7`, its `pairing`, `encoder`, and `kem`
-///   are the received borrows by `core::ptr::eq`, its `hash_to_scalar` and
-///   `random` are the received adapters by `core::ptr::addr_eq`, and its
-///   `identities` and `proof_identity` hold the received values, the
-///   identities compared in length and each element's `setup_scope` and
-///   `identity` by the kinds the received scope reports.
+/// Assert:  the consumer's `verifier` equals `VerifierConcrete::Mock(
+///   MockIVerifierAdapterFailureMode::RpcRefused)`, its `mint.expiry`
+///   equals `11` and `mint.purpose.code()` equals `4`, its
+///   `transfer.expiry` equals `12` and `transfer.purpose.code()` equals
+///   `3`, its `statement_version` equals `2`, its `iterations.get()`
+///   equals `7`, its `pairing`, `encoder`, and `kem` are the received
+///   borrows by `core::ptr::eq`, its `hash_to_scalar` and `random` are
+///   the received adapters by `core::ptr::addr_eq`, and its `identities`
+///   and `proof_identity` hold the received values, the identities
+///   compared in length and each element's `setup_scope` and `identity`
+///   by the kinds the received scope reports.
 #[test]
 fn try_new_holds_every_value_it_is_handed() {
     // Arrange
@@ -235,10 +243,17 @@ fn try_new_holds_every_value_it_is_handed() {
                 identities.clone(),
                 identities[0],
                 KeyAgreementConsumerConstructorParamsOverrides {
+                    verifier: Some(VerifierConcrete::Mock(
+                        MockIVerifierAdapterFailureMode::RpcRefused,
+                    )),
                     statement_version: Some(2),
                     iterations: NonZeroU32::new(7),
                     ..Default::default()
                 },
+            );
+            assert_eq!(
+                consumer.verifier,
+                VerifierConcrete::Mock(MockIVerifierAdapterFailureMode::RpcRefused)
             );
             assert_eq!(consumer.mint.expiry, 11);
             assert_eq!(consumer.mint.purpose.code(), 4);

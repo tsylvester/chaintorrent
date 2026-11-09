@@ -259,15 +259,14 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_key_agreement_whole(
                                         identifier: EncodingIdentifier::Mock,
                                     },
                                 }),
-                                chain_forms: match selection {
-                                    Some(_) => Some(build_create_chain_forms_params(
+                                chain_forms: selection.as_ref().map(|_| {
+                                    build_create_chain_forms_params(
                                         CreateChainFormsParamsOverrides {
                                             concrete: Some(CHAIN_FORMS_CONCRETES[0]),
                                             ..Default::default()
                                         },
-                                    )),
-                                    None => None,
-                                },
+                                    )
+                                }),
                                 kem: Some(*kem_selection),
                                 key_agreement: Some(DECLARED_KEY_AGREEMENT_SELECTIONS[0]),
                                 delivery_proof: Some(build_create_delivery_proof_params(

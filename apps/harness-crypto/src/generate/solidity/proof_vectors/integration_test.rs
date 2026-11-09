@@ -73,14 +73,18 @@ use super::mock::{
 use super::proof_vectors;
 use crate::delivery::provides::{AdmittedKemIdentity, MintErrorReturn};
 
+struct DeliverySelections<'a> {
+    kem: &'a CreateKemParams,
+    key_agreement: &'a CreateKeyAgreementParams,
+    delivery_proof: &'a DeliveryProofConcrete,
+}
+
 fn case_params(
     pairing_concrete: PairingConcrete,
     hash_to_scalar: &CreateHashToScalarParams,
     encoding_selection: &CreateEncodingParams,
     forms_concrete: ChainFormsConcrete,
-    kem: &CreateKemParams,
-    key_agreement: &CreateKeyAgreementParams,
-    delivery_proof: &DeliveryProofConcrete,
+    selections: DeliverySelections<'_>,
     random_kind: RandomSourceKind,
 ) -> ProofVectorsCaseParams {
     build_proof_vectors_case_params(ProofVectorsCaseParamsOverrides {
@@ -106,11 +110,11 @@ fn case_params(
                 ..Default::default()
             },
         )),
-        kem: Some(*kem),
-        key_agreement: Some(*key_agreement),
+        kem: Some(*selections.kem),
+        key_agreement: Some(*selections.key_agreement),
         delivery_proof: Some(build_create_delivery_proof_params(
             CreateDeliveryProofParamsOverrides {
-                concrete: Some(*delivery_proof),
+                concrete: Some(*selections.delivery_proof),
                 ..Default::default()
             },
         )),
@@ -135,9 +139,11 @@ fn run_every_case(kind: RandomSourceKind, run: &dyn Fn(ProofVectorsCaseParams) -
                                     hash_to_scalar,
                                     encoding_selection,
                                     *forms_concrete,
-                                    kem_selection,
-                                    key_agreement,
-                                    delivery_proof,
+                                    DeliverySelections {
+                                        kem: kem_selection,
+                                        key_agreement,
+                                        delivery_proof,
+                                    },
                                     kind,
                                 )));
                             }
