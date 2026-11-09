@@ -13,9 +13,9 @@ use super::admit_selections::provides::{
     AdmitSelectionsFn, AdmittedSelections, build_admitted_selections, mock_admit_selections,
 };
 use super::admit_statements::provides::{
-    AdmitStatementsFn, AdmittedIdentities, AdmittedNetworkProfile, AdmittedStatements,
-    build_admitted_identities, build_admitted_network_profile, build_admitted_statements,
-    mock_admit_statements,
+    AdmitStatementsFn, AdmittedIdentities, AdmittedNetworkProfile, AdmittedNetworkProfileOverrides,
+    AdmittedStatements, build_admitted_identities, build_admitted_network_profile,
+    build_admitted_statements, mock_admit_statements,
 };
 use super::interface::{
     ConfigDeps, ConfigFn, ConfigParams, ConfigPayload, ConfigReturn, ConfigSuccessReturn,
@@ -71,7 +71,7 @@ pub fn build_report_settings(overrides: ReportSettingsOverrides) -> ReportSettin
 #[derive(Default)]
 pub struct HarnessConfigurationOverrides {
     pub selections: Option<AdmittedSelections>,
-    pub verifier: Option<VerifierConcrete>,
+    pub verifiers: Option<Vec<VerifierConcrete>>,
     pub curve_labels: Option<Vec<ReportText>>,
     pub network_profile: Option<AdmittedNetworkProfile>,
     pub statements: Option<AdmittedStatements>,
@@ -86,28 +86,46 @@ pub struct HarnessConfigurationOverrides {
 pub fn build_harness_configuration(
     overrides: HarnessConfigurationOverrides,
 ) -> HarnessConfiguration {
-    let default_network_profile = build_admitted_network_profile(Default::default());
-    let default_verifier = VerifierConcrete::Evm {
-        settings: Box::new(build_evm_verifier_settings(EvmVerifierSettingsOverrides {
-            endpoint: Some(build_evm_verifier_endpoint(
-                EvmVerifierEndpointConstructorParamsOverrides {
-                    text: Some("http://endpoint-a.test".to_string()),
-                },
-            )),
-            verifier_address: Some(default_network_profile.deployment_record.clone()),
-            gas_price_oracle: Some(default_network_profile.gas_price_oracle.clone()),
-        })),
-    };
+    let default_selections = build_admitted_selections(Default::default());
+    let default_network_profile = build_admitted_network_profile(AdmittedNetworkProfileOverrides {
+        deployment_records: Some(
+            build_admitted_network_profile(Default::default())
+                .deployment_records
+                .into_iter()
+                .take(default_selections.curves.len())
+                .collect(),
+        ),
+        ..Default::default()
+    });
+    let default_verifiers: Vec<VerifierConcrete> = default_selections
+        .curves
+        .iter()
+        .zip(default_network_profile.deployment_records.iter())
+        .map(|(_, record)| VerifierConcrete::Evm {
+            settings: Box::new(build_evm_verifier_settings(EvmVerifierSettingsOverrides {
+                endpoint: Some(build_evm_verifier_endpoint(
+                    EvmVerifierEndpointConstructorParamsOverrides {
+                        text: Some("http://endpoint-a.test".to_string()),
+                    },
+                )),
+                verifier_address: Some(record.clone()),
+                gas_price_oracle: Some(default_network_profile.gas_price_oracle.clone()),
+            })),
+        })
+        .collect();
+    let default_curve_labels: Vec<ReportText> = default_selections
+        .curves
+        .iter()
+        .map(|curve| {
+            build_report_text(ReportTextConstructorParamsOverrides {
+                text: Some(curve.label.clone()),
+            })
+        })
+        .collect();
     HarnessConfiguration {
-        selections: overrides
-            .selections
-            .unwrap_or_else(|| build_admitted_selections(Default::default())),
-        verifier: overrides.verifier.unwrap_or(default_verifier),
-        curve_labels: overrides.curve_labels.unwrap_or_else(|| {
-            vec![build_report_text(ReportTextConstructorParamsOverrides {
-                text: Some("curve-a".to_string()),
-            })]
-        }),
+        selections: overrides.selections.unwrap_or(default_selections),
+        verifiers: overrides.verifiers.unwrap_or(default_verifiers),
+        curve_labels: overrides.curve_labels.unwrap_or(default_curve_labels),
         network_profile: overrides.network_profile.unwrap_or(default_network_profile),
         statements: overrides
             .statements

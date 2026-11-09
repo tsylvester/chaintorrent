@@ -1,7 +1,7 @@
 #![allow(clippy::expect_used)]
 
 use domain::{ParameterSetIdentifierTryNewErrorReturn, SuiteIdentifierTryNewErrorReturn};
-use encoding::CanonicalFieldKind;
+use encoding::{CanonicalFieldKind, CanonicalFieldValue};
 use hashing::RootTryNewErrorReturn;
 use kem::IdentityScope;
 use proof::UndeclaredDeliveryPurposeCode;
@@ -79,17 +79,18 @@ fn admit_statements_refuses_a_kind_name_that_differs_only_in_case() {
     // admit_statements_refuses_a_kind_name_that_differs_only_in_case
 }
 
-/// Contract: Network profile → the refusal names
-///   `NetworkProfileField::DeploymentRecord` for a refused deployment record.
-/// Arrange: the default payload with `deployment_record` of kind `"unknown"`.
+/// Contract: Network profile → the refusal names the field of
+///   `network_profile` that held the refused value, here `gas_price_oracle`.
+/// Arrange: the default payload with `gas_price_oracle` of kind `"unknown"`.
 /// Act:     `admit_statements`, once.
-/// Assert:  the result's error equals the `NetworkProfile` refusal with
-///   `field` `NetworkProfileField::DeploymentRecord`.
+/// Assert:  the result's error equals `AdmitStatementsErrorReturn::
+///   NetworkProfile { field: NetworkProfileField::GasPriceOracle, refusal:
+///   CanonicalValueRefusal::UnknownKind { text: "unknown".to_string() } }`.
 #[test]
 fn admit_statements_refuses_the_network_profile_field_that_held_the_refused_value() {
     // Arrange
     let mut payload = build_admit_statements_payload(Default::default());
-    payload.network_profile.deployment_record.kind = "unknown".to_string();
+    payload.network_profile.gas_price_oracle.kind = "unknown".to_string();
     // Act
     let result = admit_statements(
         &build_admit_statements_deps(Default::default()),
@@ -100,7 +101,7 @@ fn admit_statements_refuses_the_network_profile_field_that_held_the_refused_valu
     assert_eq!(
         result.err(),
         Some(AdmitStatementsErrorReturn::NetworkProfile {
-            field: NetworkProfileField::DeploymentRecord,
+            field: NetworkProfileField::GasPriceOracle,
             refusal: CanonicalValueRefusal::UnknownKind {
                 text: "unknown".to_string()
             }
@@ -786,16 +787,21 @@ fn admit_statements_refuses_a_malformed_entitlement_scope_identity() {
 
 /// Contract: Ordering → the first refused text in the stated order returns
 ///   and later texts are unread.
-/// Arrange: the default payload with an unknown `deployment_record` kind, a
-///   zero `mint.suite_identifier`, and a malformed `proof`.
+/// Arrange: the default payload with an unknown deployment record kind under
+///   a curve label, a zero `mint.suite_identifier`, and a malformed `proof`.
 /// Act:     `admit_statements`, once.
-/// Assert:  the result's error equals the `NetworkProfile` refusal at
-///   `NetworkProfileField::DeploymentRecord`.
+/// Assert:  the result's error equals the `DeploymentRecord` refusal carrying
+///   that label.
 #[test]
 fn admit_statements_returns_the_first_refusal_in_the_stated_order() {
     // Arrange
     let mut payload = build_admit_statements_payload(Default::default());
-    payload.network_profile.deployment_record.kind = "unknown".to_string();
+    payload
+        .network_profile
+        .deployment_records
+        .get_mut("curve-a")
+        .expect("the default holds a curve-a record")
+        .kind = "unknown".to_string();
     payload.statements.mint.suite_identifier = format!("0x{}", "00".repeat(32));
     payload.identities.proof = "aa01".to_string();
     // Act
@@ -807,8 +813,8 @@ fn admit_statements_returns_the_first_refusal_in_the_stated_order() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(AdmitStatementsErrorReturn::NetworkProfile {
-            field: NetworkProfileField::DeploymentRecord,
+        Some(AdmitStatementsErrorReturn::DeploymentRecord {
+            label: "curve-a".to_string(),
             refusal: CanonicalValueRefusal::UnknownKind {
                 text: "unknown".to_string()
             }
@@ -846,4 +852,124 @@ fn admit_statements_admits_the_network_profile_before_the_statements_and_the_sta
         })
     );
     // admit_statements_admits_the_network_profile_before_the_statements_and_the_statements_before_the_identities
+}
+
+/// Contract: Deployment records → the refusal names the label of the curve
+///   whose record is refused, `AdmitStatementsErrorReturn::DeploymentRecord
+///   { label, refusal }`.
+/// Arrange: the default payload with two curve labels and the record under
+///   the second label of kind `"unknown"`.
+/// Act:     `admit_statements`, once.
+/// Assert:  the result's error equals `DeploymentRecord { label, refusal:
+///   CanonicalValueRefusal::UnknownKind { text } }` with the second label and
+///   the text `"unknown"`.
+#[test]
+fn admit_statements_refuses_a_deployment_record_naming_its_curve_label() {
+    // Arrange
+    let mut payload = build_admit_statements_payload(Default::default());
+    payload
+        .network_profile
+        .deployment_records
+        .get_mut("curve-b")
+        .expect("the default holds a curve-b record")
+        .kind = "unknown".to_string();
+    // Act
+    let result = admit_statements(
+        &build_admit_statements_deps(Default::default()),
+        build_admit_statements_params(Default::default()),
+        payload,
+    );
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(AdmitStatementsErrorReturn::DeploymentRecord {
+            label: "curve-b".to_string(),
+            refusal: CanonicalValueRefusal::UnknownKind {
+                text: "unknown".to_string()
+            }
+        })
+    );
+    // admit_statements_refuses_a_deployment_record_naming_its_curve_label
+}
+
+/// Contract: Deployment records → the admitted records are one per curve
+///   label, in curve order.
+/// Arrange: the default payload with two curve labels and a distinct
+///   `FixedBytes20` record under each.
+/// Act:     `admit_statements`, once.
+/// Assert:  `network_profile.deployment_records` equals the two
+///   `CanonicalFieldValue::FixedBytes20` values in curve order.
+#[test]
+fn admit_statements_admits_each_curves_record_in_curve_order() {
+    // Arrange — the labels in the reverse of the records' key order, so a
+    //   key-order reading differs from the curve order the contract states.
+    let mut payload = build_admit_statements_payload(Default::default());
+    payload.curve_labels = vec!["curve-b".to_string(), "curve-a".to_string()];
+    // Act
+    let admitted = admit_statements(
+        &build_admit_statements_deps(Default::default()),
+        build_admit_statements_params(Default::default()),
+        payload,
+    )
+    .expect("the admission succeeds");
+    // Assert
+    assert_eq!(
+        admitted.network_profile.deployment_records,
+        vec![
+            CanonicalFieldValue::FixedBytes20([0x24; 20]),
+            CanonicalFieldValue::FixedBytes20([0x22; 20]),
+        ]
+    );
+    // admit_statements_admits_each_curves_record_in_curve_order
+}
+
+/// Contract: Deployment records → `MissingDeploymentRecord { label }` for a
+///   curve label with no record and `UndeclaredDeploymentRecord { label }`
+///   for a key naming no curve label.
+/// Arrange: the default payload with a curve label whose record is absent,
+///   then with a record key no curve label names.
+/// Act:     `admit_statements`, once per payload.
+/// Assert:  each result's error equals the refusal carrying that label.
+#[test]
+fn admit_statements_refuses_a_curve_without_a_record_and_a_record_without_a_curve() {
+    // Arrange — a curve label whose record is absent.
+    let mut missing = build_admit_statements_payload(Default::default());
+    missing.curve_labels = vec!["curve-a".to_string(), "curve-c".to_string()];
+    // Act
+    let result = admit_statements(
+        &build_admit_statements_deps(Default::default()),
+        build_admit_statements_params(Default::default()),
+        missing,
+    );
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(AdmitStatementsErrorReturn::MissingDeploymentRecord {
+            label: "curve-c".to_string()
+        })
+    );
+
+    // Arrange — a record key no curve label names.
+    let mut undeclared = build_admit_statements_payload(Default::default());
+    undeclared
+        .network_profile
+        .deployment_records
+        .insert(
+            "curve-c".to_string(),
+            undeclared.network_profile.entitlement_contract.clone(),
+        );
+    // Act
+    let result = admit_statements(
+        &build_admit_statements_deps(Default::default()),
+        build_admit_statements_params(Default::default()),
+        undeclared,
+    );
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(AdmitStatementsErrorReturn::UndeclaredDeploymentRecord {
+            label: "curve-c".to_string()
+        })
+    );
+    // admit_statements_refuses_a_curve_without_a_record_and_a_record_without_a_curve
 }

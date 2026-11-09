@@ -139,7 +139,7 @@ pub fn representative_canonical_value(
 pub struct AdmittedNetworkProfileOverrides {
     pub chain_identifier: Option<CanonicalFieldValue>,
     pub entitlement_contract: Option<CanonicalFieldValue>,
-    pub deployment_record: Option<CanonicalFieldValue>,
+    pub deployment_records: Option<Vec<CanonicalFieldValue>>,
     pub gas_price_oracle: Option<CanonicalFieldValue>,
 }
 
@@ -151,9 +151,12 @@ pub fn build_admitted_network_profile(
         entitlement_contract: overrides
             .entitlement_contract
             .unwrap_or(CanonicalFieldValue::FixedBytes20([0x11; 20])),
-        deployment_record: overrides
-            .deployment_record
-            .unwrap_or(CanonicalFieldValue::FixedBytes20([0x22; 20])),
+        deployment_records: overrides.deployment_records.unwrap_or_else(|| {
+            vec![
+                CanonicalFieldValue::FixedBytes20([0x22; 20]),
+                CanonicalFieldValue::FixedBytes20([0x24; 20]),
+            ]
+        }),
         gas_price_oracle: overrides
             .gas_price_oracle
             .unwrap_or(CanonicalFieldValue::FixedBytes20([0x23; 20])),
@@ -221,6 +224,7 @@ pub struct AdmitStatementsPayloadOverrides {
     pub network_profile: Option<NetworkProfileTable>,
     pub statements: Option<StatementsTable>,
     pub identities: Option<IdentitiesTable>,
+    pub curve_labels: Option<Vec<String>>,
     pub scope: Option<IdentityScope>,
 }
 
@@ -232,7 +236,16 @@ pub fn build_admit_statements_payload(
             build_network_profile_table(NetworkProfileTableOverrides {
                 chain_identifier: Some(unsigned256_table("1")),
                 entitlement_contract: Some(fixed_bytes20_table(&hex_text("11", 20))),
-                deployment_record: Some(fixed_bytes20_table(&hex_text("22", 20))),
+                deployment_records: Some(std::collections::BTreeMap::from([
+                    (
+                        "curve-a".to_string(),
+                        fixed_bytes20_table(&hex_text("22", 20)),
+                    ),
+                    (
+                        "curve-b".to_string(),
+                        fixed_bytes20_table(&hex_text("24", 20)),
+                    ),
+                ])),
                 gas_price_oracle: Some(fixed_bytes20_table(&hex_text("23", 20))),
                 ..Default::default()
             })
@@ -249,6 +262,9 @@ pub fn build_admit_statements_payload(
                 mapping: Some(vec!["0xbb02".to_string()]),
             })
         }),
+        curve_labels: overrides
+            .curve_labels
+            .unwrap_or_else(|| vec!["curve-a".to_string(), "curve-b".to_string()]),
         scope: overrides.scope.unwrap_or(IdentityScope::Entitlement),
     }
 }

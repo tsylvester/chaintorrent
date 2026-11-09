@@ -5,7 +5,10 @@ use std::path::PathBuf;
 
 use pairing::{PAIRING_CURVES, PairingCurve};
 
-use super::super::layers::provides::{GenerateKindTableOverrides, build_generate_kind_table};
+use super::super::layers::provides::{
+    CurveLibrariesTableOverrides, GenerateKindTableOverrides, LibraryTableOverrides,
+    build_curve_libraries_table, build_generate_kind_table, build_library_table,
+};
 use super::admit_generate;
 use super::interface::AdmitGenerateErrorReturn;
 use super::mock::{
@@ -16,12 +19,16 @@ use crate::generate::provides::{
     GenerateConcrete, GeneratedFileNameConstructorParamsOverrides, MockIGenerateAdapterFailureMode,
     MsmTermCountConstructorParamsOverrides, SOLIDITY_GENERATE_DECLARATION,
     SolidityConstantNameConstructorParamsOverrides, SolidityCurveDirectoriesOverrides,
-    SolidityGenerateSettingsOverrides, SolidityMemberNameConstructorParamsOverrides,
+    SolidityCurveLibrariesOverrides, SolidityCurveLibraryNamesOverrides,
+    SolidityGenerateSettingsOverrides, SolidityLibraryNameConstructorParamsOverrides,
+    SolidityLibraryNamesOverrides, SolidityMemberNameConstructorParamsOverrides,
     SolidityTypeNameConstructorParamsOverrides, SolidityVectorKindNamesOverrides,
     SolidityVectorKindSettingsOverrides, VectorCountConstructorParamsOverrides,
     VectorKindConfiguration, VectorKindQuantities, VectorKindSizing, build_generated_file_name,
     build_msm_term_count, build_solidity_constant_name, build_solidity_curve_directories,
-    build_solidity_generate_settings, build_solidity_member_name, build_solidity_type_name,
+    build_solidity_curve_libraries, build_solidity_curve_library_names,
+    build_solidity_generate_settings, build_solidity_library_name,
+    build_solidity_library_names, build_solidity_member_name, build_solidity_type_name,
     build_solidity_vector_kind_names, build_solidity_vector_kind_settings, build_vector_count,
 };
 
@@ -200,6 +207,7 @@ fn every_declared_curve_directory_reaches_the_field_its_curve_names() {
             build_solidity_curve_directories(SolidityCurveDirectoriesOverrides {
                 bn254: Some(bn254),
                 bls12_381: Some(bls12_381),
+                ..Default::default()
             });
 
         let admitted = admit_generate(&deps, params, payload)
@@ -225,18 +233,182 @@ fn every_declared_curve_directory_reaches_the_field_its_curve_names() {
     // every_declared_curve_directory_reaches_the_field_its_curve_names
 }
 
+/// Contract: `every_declared_curve_libraries_reach_the_field_their_curve_names`
+///   → `admit_generate` over a document whose `curve_libraries` names every
+///   member of `PAIRING_CURVES`, the member under test with one pair of
+///   library names and every other member with another, returns `Ok` whose
+///   `SolidityCurveLibraries` holds the member under test's
+///   `SolidityCurveLibraryNames` in the field that member names and the
+///   other pair in the other field.
+/// Arrange: for each member of `PAIRING_CURVES` a payload whose
+///   `curve_libraries` names every member by `declared_name`, the member
+///   under test with the library names `"constants-a.sol"`, `"ConstantsA"`,
+///   `"records-a.sol"`, and `"RecordsA"` and every other member with
+///   `"constants-b.sol"`, `"ConstantsB"`, `"records-b.sol"`, and `"RecordsB"`,
+///   and an expected `SolidityCurveLibraries` built by
+///   `build_solidity_curve_libraries` whose field that member names holds the
+///   `-a` names and whose other field holds the `-b` names.
+/// Act:     `admit_generate`, once per member.
+/// Assert:  the result is `Ok` and the concrete's `settings.curve_libraries`
+///   equals the expected libraries.
+/// Boundary: the real `admit_generate`, `member_named`, and each constructor
+///   over the real declared set.
+/// Mocked:  none.
+#[test]
+fn every_declared_curve_libraries_reach_the_field_their_curve_names() {
+    // Arrange — the deps, params, and library names are invariant across
+    // every member.
+    let deps = build_admit_generate_deps(Default::default());
+    let params = build_admit_generate_params(Default::default());
+    let table_a = build_curve_libraries_table(CurveLibrariesTableOverrides {
+        constants_library: Some(build_library_table(LibraryTableOverrides {
+            file: Some("constants-a.sol".to_string()),
+            library: Some("ConstantsA".to_string()),
+        })),
+        records_library: Some(build_library_table(LibraryTableOverrides {
+            file: Some("records-a.sol".to_string()),
+            library: Some("RecordsA".to_string()),
+        })),
+    });
+    let table_b = build_curve_libraries_table(CurveLibrariesTableOverrides {
+        constants_library: Some(build_library_table(LibraryTableOverrides {
+            file: Some("constants-b.sol".to_string()),
+            library: Some("ConstantsB".to_string()),
+        })),
+        records_library: Some(build_library_table(LibraryTableOverrides {
+            file: Some("records-b.sol".to_string()),
+            library: Some("RecordsB".to_string()),
+        })),
+    });
+    let libraries_a = build_solidity_curve_library_names(SolidityCurveLibraryNamesOverrides {
+        constants_library: Some(build_solidity_library_names(
+            SolidityLibraryNamesOverrides {
+                file_name: Some(build_generated_file_name(
+                    GeneratedFileNameConstructorParamsOverrides {
+                        text: Some("constants-a.sol".to_string()),
+                    },
+                )),
+                library_name: Some(build_solidity_library_name(
+                    SolidityLibraryNameConstructorParamsOverrides {
+                        text: Some("ConstantsA".to_string()),
+                    },
+                )),
+            },
+        )),
+        records_library: Some(build_solidity_library_names(
+            SolidityLibraryNamesOverrides {
+                file_name: Some(build_generated_file_name(
+                    GeneratedFileNameConstructorParamsOverrides {
+                        text: Some("records-a.sol".to_string()),
+                    },
+                )),
+                library_name: Some(build_solidity_library_name(
+                    SolidityLibraryNameConstructorParamsOverrides {
+                        text: Some("RecordsA".to_string()),
+                    },
+                )),
+            },
+        )),
+    });
+    let libraries_b = build_solidity_curve_library_names(SolidityCurveLibraryNamesOverrides {
+        constants_library: Some(build_solidity_library_names(
+            SolidityLibraryNamesOverrides {
+                file_name: Some(build_generated_file_name(
+                    GeneratedFileNameConstructorParamsOverrides {
+                        text: Some("constants-b.sol".to_string()),
+                    },
+                )),
+                library_name: Some(build_solidity_library_name(
+                    SolidityLibraryNameConstructorParamsOverrides {
+                        text: Some("ConstantsB".to_string()),
+                    },
+                )),
+            },
+        )),
+        records_library: Some(build_solidity_library_names(
+            SolidityLibraryNamesOverrides {
+                file_name: Some(build_generated_file_name(
+                    GeneratedFileNameConstructorParamsOverrides {
+                        text: Some("records-b.sol".to_string()),
+                    },
+                )),
+                library_name: Some(build_solidity_library_name(
+                    SolidityLibraryNameConstructorParamsOverrides {
+                        text: Some("RecordsB".to_string()),
+                    },
+                )),
+            },
+        )),
+    });
+
+    // Act / Assert — every member of `PAIRING_CURVES` in turn as the member
+    // under test.
+    for member_under_test in PAIRING_CURVES {
+        let mut payload = build_admit_generate_payload(Default::default());
+        payload.generate.curve_libraries = PAIRING_CURVES
+            .iter()
+            .map(|member| {
+                (
+                    declared_name(member),
+                    if member == member_under_test {
+                        table_a.clone()
+                    } else {
+                        table_b.clone()
+                    },
+                )
+            })
+            .collect();
+        let (bn254, bls12_381) = match member_under_test {
+            PairingCurve::Bn254 => (libraries_a.clone(), libraries_b.clone()),
+            PairingCurve::Bls12381 => (libraries_b.clone(), libraries_a.clone()),
+            PairingCurve::Mock => panic!("PAIRING_CURVES names no Mock member"),
+        };
+        let expected_libraries =
+            build_solidity_curve_libraries(SolidityCurveLibrariesOverrides {
+                bn254: Some(bn254),
+                bls12_381: Some(bls12_381),
+                ..Default::default()
+            });
+
+        let admitted = admit_generate(&deps, params, payload)
+            .expect("the member is admitted")
+            .admitted;
+
+        assert_eq!(
+            admitted.concrete,
+            GenerateConcrete::Solidity {
+                settings: Box::new(build_solidity_generate_settings(
+                    SolidityGenerateSettingsOverrides {
+                        kinds: Some(vec![build_solidity_vector_kind_settings(
+                            SolidityVectorKindSettingsOverrides::default(),
+                        )]),
+                        curve_libraries: Some(expected_libraries),
+                        foundry_root: Some(PathBuf::from("root")),
+                        ..Default::default()
+                    },
+                ))
+            }
+        );
+    }
+    // every_declared_curve_libraries_reach_the_field_their_curve_names
+}
+
 /// Contract: `an_undeclared_name_is_never_admitted` → `admit_generate` over a
 ///   document whose `concrete` is the `Debug` text of the family's mock
-///   selection, and over a document whose curve key is the `Debug` text of
-///   the pairing family's mock variant, the other values admitted, returns
-///   `Err` carrying `Concrete` or `CurveKey` and that text.
-/// Arrange: a payload whose `concrete` is `declared_name` of
-///   `GenerateConcrete::Mock(MockIGenerateAdapterFailureMode::NoFailure)` and
-///   a payload whose first curve key is `declared_name` of
-///   `PairingCurve::Mock`, the other values admitted.
-/// Act:     `admit_generate`, once per payload.
-/// Assert:  the result equals `Err` of `Concrete` or `CurveKey` carrying the
+///   selection, and over a document whose curve key in `curve_directories`
+///   and a document whose curve key in `curve_libraries` is the `Debug` text
+///   of the pairing family's mock variant, the other values admitted, returns
+///   `Err` carrying `Concrete`, `CurveKey`, or `CurveLibrariesKey` and that
 ///   text.
+/// Arrange: a payload whose `concrete` is `declared_name` of
+///   `GenerateConcrete::Mock(MockIGenerateAdapterFailureMode::NoFailure)`, a
+///   payload whose first curve key in `curve_directories` is `declared_name`
+///   of `PairingCurve::Mock`, and a payload whose first curve key in
+///   `curve_libraries` is `declared_name` of `PairingCurve::Mock`, the other
+///   values admitted.
+/// Act:     `admit_generate`, once per payload.
+/// Assert:  the result equals `Err` of `Concrete`, `CurveKey`, or
+///   `CurveLibrariesKey` carrying the text.
 /// Boundary: the real `admit_generate`, `member_named`, and each constructor
 ///   over the real declared sets.
 /// Mocked:  none.
@@ -265,5 +437,18 @@ fn an_undeclared_name_is_never_admitted() {
     let result = admit_generate(&deps, params, payload);
     // Assert
     assert_eq!(result, Err(AdmitGenerateErrorReturn::CurveKey { text }));
+
+    // The mock curve's `Debug` text names no member of `PAIRING_CURVES` as a
+    // `curve_libraries` key either.
+    let text = declared_name(&PairingCurve::Mock);
+    let mut payload = build_admit_generate_payload(Default::default());
+    payload.generate.curve_libraries = BTreeMap::from([(
+        text.clone(),
+        build_curve_libraries_table(Default::default()),
+    )]);
+    // Act
+    let result = admit_generate(&deps, params, payload);
+    // Assert
+    assert_eq!(result, Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text }));
     // an_undeclared_name_is_never_admitted
 }

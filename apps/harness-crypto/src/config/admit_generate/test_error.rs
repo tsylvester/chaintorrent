@@ -378,18 +378,25 @@ fn admit_generate_refuses_an_empty_path_constant_name() {
     // admit_generate_refuses_an_empty_path_constant_name
 }
 
-/// Contract: Constants library → `Err` carrying `ConstantsLibraryFile` with
-///   the constructor's `Empty` refusal.
-/// Arrange: the default payload with `constants_library.file` `""`.
+/// Contract: Curve libraries → `Err` carrying `ConstantsLibraryFile` with the
+///   curve and the constructor's `Empty` refusal.
+/// Arrange: the default payload with `constants_library.file` `""` in the
+///   `PairingCurve::Bls12381` entry's table.
 /// Act:     `admit_generate`, once.
 /// Assert:  the result equals `Err(AdmitGenerateErrorReturn::
-///   ConstantsLibraryFile { error:
+///   ConstantsLibraryFile { curve: PairingCurve::Bls12381, error:
 ///   GeneratedFileNameTryNewErrorReturn::Empty })`.
 #[test]
 fn admit_generate_refuses_an_empty_constants_library_file() {
     // Arrange
     let mut payload = build_admit_generate_payload(Default::default());
-    payload.generate.constants_library.file = String::new();
+    payload
+        .generate
+        .curve_libraries
+        .get_mut(&declared_name(&PairingCurve::Bls12381))
+        .expect("the curve's entry")
+        .constants_library
+        .file = String::new();
     // Act
     let result = admit_generate(
         &build_admit_generate_deps(Default::default()),
@@ -400,24 +407,32 @@ fn admit_generate_refuses_an_empty_constants_library_file() {
     assert_eq!(
         result,
         Err(AdmitGenerateErrorReturn::ConstantsLibraryFile {
+            curve: PairingCurve::Bls12381,
             error: GeneratedFileNameTryNewErrorReturn::Empty
         })
     );
     // admit_generate_refuses_an_empty_constants_library_file
 }
 
-/// Contract: Constants library → `Err` carrying `ConstantsLibraryName` with
-///   the constructor's `Empty` refusal.
-/// Arrange: the default payload with `constants_library.library` `""`.
+/// Contract: Curve libraries → `Err` carrying `ConstantsLibraryName` with the
+///   curve and the constructor's `Empty` refusal.
+/// Arrange: the default payload with `constants_library.library` `""` in the
+///   `PairingCurve::Bls12381` entry's table.
 /// Act:     `admit_generate`, once.
 /// Assert:  the result equals `Err(AdmitGenerateErrorReturn::
-///   ConstantsLibraryName { error:
+///   ConstantsLibraryName { curve: PairingCurve::Bls12381, error:
 ///   SolidityLibraryNameTryNewErrorReturn::Empty })`.
 #[test]
 fn admit_generate_refuses_an_empty_constants_library_name() {
     // Arrange
     let mut payload = build_admit_generate_payload(Default::default());
-    payload.generate.constants_library.library = String::new();
+    payload
+        .generate
+        .curve_libraries
+        .get_mut(&declared_name(&PairingCurve::Bls12381))
+        .expect("the curve's entry")
+        .constants_library
+        .library = String::new();
     // Act
     let result = admit_generate(
         &build_admit_generate_deps(Default::default()),
@@ -428,24 +443,32 @@ fn admit_generate_refuses_an_empty_constants_library_name() {
     assert_eq!(
         result,
         Err(AdmitGenerateErrorReturn::ConstantsLibraryName {
+            curve: PairingCurve::Bls12381,
             error: SolidityLibraryNameTryNewErrorReturn::Empty
         })
     );
     // admit_generate_refuses_an_empty_constants_library_name
 }
 
-/// Contract: Records library → `Err` carrying `RecordsLibraryFile` with the
-///   constructor's `Empty` refusal.
-/// Arrange: the default payload with `records_library.file` `""`.
+/// Contract: Curve libraries → `Err` carrying `RecordsLibraryFile` with the
+///   curve and the constructor's `Empty` refusal.
+/// Arrange: the default payload with `records_library.file` `""` in the
+///   `PairingCurve::Bls12381` entry's table.
 /// Act:     `admit_generate`, once.
 /// Assert:  the result equals `Err(AdmitGenerateErrorReturn::
-///   RecordsLibraryFile { error:
+///   RecordsLibraryFile { curve: PairingCurve::Bls12381, error:
 ///   GeneratedFileNameTryNewErrorReturn::Empty })`.
 #[test]
 fn admit_generate_refuses_an_empty_records_library_file() {
     // Arrange
     let mut payload = build_admit_generate_payload(Default::default());
-    payload.generate.records_library.file = String::new();
+    payload
+        .generate
+        .curve_libraries
+        .get_mut(&declared_name(&PairingCurve::Bls12381))
+        .expect("the curve's entry")
+        .records_library
+        .file = String::new();
     // Act
     let result = admit_generate(
         &build_admit_generate_deps(Default::default()),
@@ -456,24 +479,32 @@ fn admit_generate_refuses_an_empty_records_library_file() {
     assert_eq!(
         result,
         Err(AdmitGenerateErrorReturn::RecordsLibraryFile {
+            curve: PairingCurve::Bls12381,
             error: GeneratedFileNameTryNewErrorReturn::Empty
         })
     );
     // admit_generate_refuses_an_empty_records_library_file
 }
 
-/// Contract: Records library → `Err` carrying `RecordsLibraryName` with the
-///   constructor's `Empty` refusal.
-/// Arrange: the default payload with `records_library.library` `""`.
+/// Contract: Curve libraries → `Err` carrying `RecordsLibraryName` with the
+///   curve and the constructor's `Empty` refusal.
+/// Arrange: the default payload with `records_library.library` `""` in the
+///   `PairingCurve::Bls12381` entry's table.
 /// Act:     `admit_generate`, once.
 /// Assert:  the result equals `Err(AdmitGenerateErrorReturn::
-///   RecordsLibraryName { error:
+///   RecordsLibraryName { curve: PairingCurve::Bls12381, error:
 ///   SolidityLibraryNameTryNewErrorReturn::Empty })`.
 #[test]
 fn admit_generate_refuses_an_empty_records_library_name() {
     // Arrange
     let mut payload = build_admit_generate_payload(Default::default());
-    payload.generate.records_library.library = String::new();
+    payload
+        .generate
+        .curve_libraries
+        .get_mut(&declared_name(&PairingCurve::Bls12381))
+        .expect("the curve's entry")
+        .records_library
+        .library = String::new();
     // Act
     let result = admit_generate(
         &build_admit_generate_deps(Default::default()),
@@ -484,6 +515,7 @@ fn admit_generate_refuses_an_empty_records_library_name() {
     assert_eq!(
         result,
         Err(AdmitGenerateErrorReturn::RecordsLibraryName {
+            curve: PairingCurve::Bls12381,
             error: SolidityLibraryNameTryNewErrorReturn::Empty
         })
     );
@@ -829,4 +861,148 @@ fn admit_generate_returns_the_first_refusal_in_the_stated_order() {
         })
     );
     // admit_generate_returns_the_first_refusal_in_the_stated_order
+}
+
+/// Contract: Curve libraries → `Err(AdmitGenerateErrorReturn::
+///   CurveLibrariesKey { text })`, a key equal to a member's `Debug` text
+///   whole and case-sensitively and never the mock variant's.
+/// Arrange: the default payload with the first `curve_libraries` entry keyed
+///   `"unknown"`.
+/// Act:     `admit_generate`, once.
+/// Assert:  the result equals `Err(AdmitGenerateErrorReturn::
+///   CurveLibrariesKey { text: "unknown".to_string() })`.
+#[test]
+fn admit_generate_refuses_an_unknown_curve_libraries_key() {
+    // Arrange
+    let mut payload = build_admit_generate_payload(Default::default());
+    let entry = payload
+        .generate
+        .curve_libraries
+        .values_mut()
+        .next()
+        .expect("an entry")
+        .clone();
+    payload.generate.curve_libraries = BTreeMap::from([
+        ("unknown".to_string(), entry.clone()),
+        (declared_name(&PairingCurve::Bn254), entry),
+    ]);
+    // Act
+    let result = admit_generate(
+        &build_admit_generate_deps(Default::default()),
+        build_admit_generate_params(Default::default()),
+        payload,
+    );
+    // Assert
+    assert_eq!(
+        result,
+        Err(AdmitGenerateErrorReturn::CurveLibrariesKey {
+            text: "unknown".to_string()
+        })
+    );
+    // admit_generate_refuses_an_unknown_curve_libraries_key
+}
+
+/// Contract: the naming rule → a curve libraries key equals a member's
+///   `Debug` text whole and case-sensitively.
+/// Arrange: the default payload with the `PairingCurve::Bn254` entry keyed by
+///   the lowercase of its `declared_name`.
+/// Act:     `admit_generate`, once.
+/// Assert:  the result equals `Err(AdmitGenerateErrorReturn::
+///   CurveLibrariesKey { text })` with `text` the lowercase text.
+#[test]
+fn admit_generate_refuses_a_curve_libraries_key_that_differs_only_in_case() {
+    // Arrange
+    let text = declared_name(&PairingCurve::Bn254).to_lowercase();
+    let mut payload = build_admit_generate_payload(Default::default());
+    let entry = payload
+        .generate
+        .curve_libraries
+        .values_mut()
+        .next()
+        .expect("an entry")
+        .clone();
+    payload.generate.curve_libraries = BTreeMap::from([
+        (declared_name(&PairingCurve::Bls12381), entry.clone()),
+        (text.clone(), entry),
+    ]);
+    // Act
+    let result = admit_generate(
+        &build_admit_generate_deps(Default::default()),
+        build_admit_generate_params(Default::default()),
+        payload,
+    );
+    // Assert
+    assert_eq!(result, Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text }));
+    // admit_generate_refuses_a_curve_libraries_key_that_differs_only_in_case
+}
+
+/// Contract: Curve libraries → the pairing family's mock variant is never a
+///   member of the declared set.
+/// Arrange: the default payload with the first `curve_libraries` entry keyed
+///   `declared_name(&PairingCurve::Mock)`.
+/// Act:     `admit_generate`, once.
+/// Assert:  the result equals `Err(AdmitGenerateErrorReturn::
+///   CurveLibrariesKey { text })` with `text` that name.
+#[test]
+fn admit_generate_refuses_the_mock_curves_name_as_a_curve_libraries_key() {
+    // Arrange
+    let text = declared_name(&PairingCurve::Mock);
+    let mut payload = build_admit_generate_payload(Default::default());
+    let entry = payload
+        .generate
+        .curve_libraries
+        .values_mut()
+        .next()
+        .expect("an entry")
+        .clone();
+    payload.generate.curve_libraries = BTreeMap::from([
+        (declared_name(&PairingCurve::Bls12381), entry.clone()),
+        (text.clone(), entry),
+    ]);
+    // Act
+    let result = admit_generate(
+        &build_admit_generate_deps(Default::default()),
+        build_admit_generate_params(Default::default()),
+        payload,
+    );
+    // Assert
+    assert_eq!(result, Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text }));
+    // admit_generate_refuses_the_mock_curves_name_as_a_curve_libraries_key
+}
+
+/// Contract: Missing curve libraries → `Err(AdmitGenerateErrorReturn::
+///   MissingCurveLibraries { curve })`, the first declared curve with no
+///   entry.
+/// Arrange: `curve_libraries` holding the `PairingCurve::Bls12381` entry
+///   alone.
+/// Act:     `admit_generate`, once.
+/// Assert:  the result equals `Err(AdmitGenerateErrorReturn::
+///   MissingCurveLibraries { curve: PairingCurve::Bn254 })`.
+#[test]
+fn admit_generate_refuses_a_declared_curve_with_no_libraries() {
+    // Arrange
+    let mut payload = build_admit_generate_payload(Default::default());
+    let entry = payload
+        .generate
+        .curve_libraries
+        .values_mut()
+        .next()
+        .expect("an entry")
+        .clone();
+    payload.generate.curve_libraries =
+        BTreeMap::from([(declared_name(&PairingCurve::Bls12381), entry)]);
+    // Act
+    let result = admit_generate(
+        &build_admit_generate_deps(Default::default()),
+        build_admit_generate_params(Default::default()),
+        payload,
+    );
+    // Assert
+    assert_eq!(
+        result,
+        Err(AdmitGenerateErrorReturn::MissingCurveLibraries {
+            curve: PairingCurve::Bn254
+        })
+    );
+    // admit_generate_refuses_a_declared_curve_with_no_libraries
 }

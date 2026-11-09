@@ -1,6 +1,6 @@
 # `admit_generate` — interaction spec
 
-Branch contract for the `admit_generate` module of `apps/harness-crypto`: `admit_generate` turns the document's `generate` table into the types the generate family and its concrete declare — the `concrete` text mapped to the member of `GENERATE_CONCRETES` it names, each key of `kinds` mapped to the kind of the `SOLIDITY_GENERATE_DECLARATION` entry it names and the entry's quantities and names admitted through their constructors, the two libraries, the generated directory, each curve directory keyed by the member of `PAIRING_CURVES` its key names, the compiler version, and the license — and refuses the first text or quantity no declared set names and no constructor admits, every callee refusal carried whole with the document path that held the text. Each branch states condition, decision, dependency call, and the exact return outcome.
+Branch contract for the `admit_generate` module of `apps/harness-crypto`: `admit_generate` turns the document's `generate` table into the types the generate family and its concrete declare — the `concrete` text mapped to the member of `GENERATE_CONCRETES` it names, each key of `kinds` mapped to the kind of the `SOLIDITY_GENERATE_DECLARATION` entry it names and the entry's quantities and names admitted through their constructors, each curve's two libraries keyed by the member of `PAIRING_CURVES` its `curve_libraries` key names, the generated directory, each curve directory keyed by the member of `PAIRING_CURVES` its key names, the compiler version, and the license — and refuses the first text or quantity no declared set names and no constructor admits, every callee refusal carried whole with the document path that held the text. Each branch states condition, decision, dependency call, and the exact return outcome.
 
 ## `admit_generate`
 
@@ -50,9 +50,13 @@ Per entry, dependency calls `GeneratedFileName::try_new` over `file`, `SolidityT
 
 Condition every name returns; outcome the entry's `SolidityVectorKindNames` of the admitted names, and then its `SolidityVectorKindSettings { kind, names }` and `VectorKindConfiguration { kind, quantities }`.
 
+### Curve libraries key refused
+
+Per entry of `payload.generate.curve_libraries` in key order: condition `member_named` over `PAIRING_CURVES` and the entry's key returns none; outcome `Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text })`, `text` the entry's key.
+
 ### Constants library refused
 
-Condition `constants_library.file` returns none of `GeneratedFileName::try_new`, or `constants_library.library` returns none of `SolidityLibraryName::try_new`, in that order; outcome `Err` of `ConstantsLibraryFile` or `ConstantsLibraryName` with `error` the refusal unchanged.
+Condition a member returns; dependency calls `GeneratedFileName::try_new` over the entry's `constants_library.file` and `SolidityLibraryName::try_new` over its `constants_library.library`, in that order; outcome `Err` of `ConstantsLibraryFile` or `ConstantsLibraryName` with `curve` the named member and `error` the refusal unchanged.
 
 ### Constants library admitted
 
@@ -60,11 +64,15 @@ Condition both return; outcome `SolidityLibraryNames { file_name, library_name }
 
 ### Records library refused
 
-Condition `records_library.file` returns none of `GeneratedFileName::try_new`, or `records_library.library` returns none of `SolidityLibraryName::try_new`, in that order; outcome `Err` of `RecordsLibraryFile` or `RecordsLibraryName` with `error` the refusal unchanged.
+Condition `records_library.file` returns none of `GeneratedFileName::try_new`, or `records_library.library` returns none of `SolidityLibraryName::try_new`, in that order; outcome `Err` of `RecordsLibraryFile` or `RecordsLibraryName` with `curve` the named member and `error` the refusal unchanged.
 
 ### Records library admitted
 
-Condition both return; outcome `SolidityLibraryNames { file_name, library_name }` of the admitted names.
+Condition both return; outcome the entry's `SolidityCurveLibraryNames { constants_library, records_library }` of its two `SolidityLibraryNames`.
+
+### Missing curve libraries
+
+After every entry, for each member of `PAIRING_CURVES` in declared order: condition no entry names it; outcome `Err(AdmitGenerateErrorReturn::MissingCurveLibraries { curve })`, `curve` the first such member. Otherwise `SolidityCurveLibraries` is built with its `bn254` field taken from the entry for `PairingCurve::Bn254` and its `bls12_381` field from the entry for `PairingCurve::Bls12381`.
 
 ### Generated directory segment refused
 
@@ -108,11 +116,11 @@ Condition it returns; outcome the `SpdxLicenseIdentifier`.
 
 ### Success
 
-The settings are `SolidityGenerateSettings { kinds, constants_library, records_library, foundry_root, generated_directory, curve_directories, compiler_version, license }` with `foundry_root` cloned from the document; the concrete is an exhaustive `match` on the admitted `GenerateConcreteKind`, its `Solidity` arm `GenerateConcrete::Solidity { settings: Box::new(settings) }`; outcome `Ok(AdmitGenerateSuccessReturn { admitted: AdmittedGenerate { concrete, kinds } })`, `kinds` the admitted `VectorKindConfiguration`s in key order.
+The settings are `SolidityGenerateSettings { kinds, curve_libraries, foundry_root, generated_directory, curve_directories, compiler_version, license }` with `foundry_root` cloned from the document; the concrete is an exhaustive `match` on the admitted `GenerateConcreteKind`, its `Solidity` arm `GenerateConcrete::Solidity { settings: Box::new(settings) }`; outcome `Ok(AdmitGenerateSuccessReturn { admitted: AdmittedGenerate { concrete, kinds } })`, `kinds` the admitted `VectorKindConfiguration`s in key order.
 
 ### Ordering
 
-Concrete, then each kind in key order with its key, count, terms, file, struct name, decode function, and path constant, then the constants library's file and name, the records library's file and name, the generated directory's segments and whole, the curve directories in key order and then the missing curves in declared order, the compiler version, and the license; the first refusal returns and every later value is unread; no side effect.
+Concrete, then each kind in key order with its key, count, terms, file, struct name, decode function, and path constant, then the curve libraries in key order, each with its constants library's file and name and its records library's file and name, and then the missing curve libraries in declared order, the generated directory's segments and whole, the curve directories in key order and then the missing curves in declared order, the compiler version, and the license; the first refusal returns and every later value is unread; no side effect.
 
 ### Unreached branches
 
@@ -122,7 +130,8 @@ Concrete, then each kind in key order with its key, count, terms, file, struct n
 
 - `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`: condition `admit_generate` over a document whose `kinds` names one kind of `SOLIDITY_GENERATE_DECLARATION.kinds` with the quantities its declared sizing takes and names distinct from every other kind's, every collaborator real, the declaration and the constructors the generate family declares; outcome `Ok` whose `admitted.kinds` holds the `VectorKindConfiguration` of that kind with the quantities the document holds and whose settings hold that kind's `SolidityVectorKindSettings` with the names the document holds; variation every `VectorKindDeclaration` of the declaration in turn and each sizing it declares, the document's quantities chosen by an exhaustive `match` on the sizing; edge a text matched to a neighbouring kind, a quantity placed in another field, or a name placed in another field differs from the value built in Arrange.
 - `every_declared_curve_directory_reaches_the_field_its_curve_names`: condition `admit_generate` over a document whose `curve_directories` names every member of `PAIRING_CURVES`, the member under test with one directory text and every other member with another, every collaborator real; outcome `Ok` whose `SolidityCurveDirectories` holds the member under test's text in the field that member names and the other text in the other field; variation every member of `PAIRING_CURVES` in turn as the member under test; edge the two fields exchanged, a key matched to a neighbouring member, or an entry read by its position instead of its key differs from the directories built in Arrange.
-- `an_undeclared_name_is_never_admitted`: condition `admit_generate` over a document whose `concrete` is the `Debug` text of the family's mock selection, and over a document whose curve key is the `Debug` text of the pairing family's mock variant, the other values admitted; outcome `Err` carrying `Concrete` or `CurveKey` and that text; variation the two texts in turn; edge a declared set that held its mock selection would admit it.
+- `every_declared_curve_libraries_reach_the_field_their_curve_names`: condition `admit_generate` over a document whose `curve_libraries` names every member of `PAIRING_CURVES`, the member under test with one pair of library names and every other member with another, every collaborator real; outcome `Ok` whose `SolidityCurveLibraries` holds the member under test's `SolidityCurveLibraryNames` in the field that member names and the other pair in the other field; variation every member of `PAIRING_CURVES` in turn as the member under test; edge the two fields exchanged, a key matched to a neighbouring member, an entry read by its position instead of its key, or a constants library name placed in the records library differs from the libraries built in Arrange.
+- `an_undeclared_name_is_never_admitted`: condition `admit_generate` over a document whose `concrete` is the `Debug` text of the family's mock selection, and over a document whose curve key in `curve_directories` and a document whose curve key in `curve_libraries` is the `Debug` text of the pairing family's mock variant, the other values admitted; outcome `Err` carrying `Concrete`, `CurveKey`, or `CurveLibrariesKey` and that text; variation the three texts in turn; edge a declared set that held its mock selection would admit it.
 
 ## Integration: callee dispositions
 
@@ -130,8 +139,8 @@ No entry of a direct dependency passes through `admit_generate` or ends at its t
 
 ## Integration: private surface
 
-The chain of real functions `admit_generate`, `member_named`, `parse_compiler_version`, and each constructor named above, all running for real over the real declared sets; no outer-edge collaborator; the observable result is the `AdmitGenerateReturn`; the entries proven are `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`, `every_declared_curve_directory_reaches_the_field_its_curve_names`, and `an_undeclared_name_is_never_admitted`.
+The chain of real functions `admit_generate`, `member_named`, `parse_compiler_version`, and each constructor named above, all running for real over the real declared sets; no outer-edge collaborator; the observable result is the `AdmitGenerateReturn`; the entries proven are `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`, `every_declared_curve_directory_reaches_the_field_its_curve_names`, `every_declared_curve_libraries_reach_the_field_their_curve_names`, and `an_undeclared_name_is_never_admitted`.
 
 ## Integration: public surface
 
-An outside caller invokes `admit_generate` through the crate root with an `AdmitGenerateDeps`, an `AdmitGenerateParams`, and an `AdmitGeneratePayload` holding a `GenerateTable`, and observes the `AdmitGenerateReturn` and the `AdmittedGenerate` in its success; the entries proven are `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`, `every_declared_curve_directory_reaches_the_field_its_curve_names`, and `an_undeclared_name_is_never_admitted`; there is no outer-edge collaborator.
+An outside caller invokes `admit_generate` through the crate root with an `AdmitGenerateDeps`, an `AdmitGenerateParams`, and an `AdmitGeneratePayload` holding a `GenerateTable`, and observes the `AdmitGenerateReturn` and the `AdmittedGenerate` in its success; the entries proven are the four above; there is no outer-edge collaborator.

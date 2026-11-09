@@ -247,3 +247,98 @@ fn identities_are_admitted_under_the_scope_the_payload_names() {
     );
     // identities_are_admitted_under_the_scope_the_payload_names
 }
+
+/// Contract: `every_curve_has_its_own_deployment_record_in_curve_order` →
+///   `admit_statements` over a payload whose `curve_labels` are two labels and
+///   whose `deployment_records` holds one distinct `FixedBytes20` record under
+///   each returns `Ok` whose `network_profile.deployment_records` equals the
+///   two values in curve order.
+/// Arrange: the default payload, its `curve_labels` given in the reverse of
+///   the records' key order, so a key-order reading differs from the curve
+///   order the entry states.
+/// Act:     `admit_statements`, once.
+/// Assert:  the result is `Ok` and `deployment_records` equals the two
+///   `FixedBytes20` values in curve order.
+/// Boundary: the real `admit_statements`, `kind_named`, `canonical_value`,
+///   and `fixed_from_hex` over the encoding family's real declared sets.
+/// Mocked:  none.
+#[test]
+fn every_curve_has_its_own_deployment_record_in_curve_order() {
+    // Arrange
+    let mut payload = build_admit_statements_payload(Default::default());
+    payload.curve_labels = vec!["curve-b".to_string(), "curve-a".to_string()];
+    // Act
+    let admitted = admit_statements(
+        &build_admit_statements_deps(Default::default()),
+        build_admit_statements_params(Default::default()),
+        payload,
+    )
+    .expect("the admission succeeds");
+    // Assert
+    assert_eq!(
+        admitted.network_profile.deployment_records,
+        vec![
+            CanonicalFieldValue::FixedBytes20([0x24; 20]),
+            CanonicalFieldValue::FixedBytes20([0x22; 20]),
+        ]
+    );
+    // every_curve_has_its_own_deployment_record_in_curve_order
+}
+
+/// Contract: `a_curve_without_a_record_and_a_record_without_a_curve_are_each_refused_with_the_label`
+///   → `admit_statements` over a payload with a curve label whose record is
+///   absent returns `Err(MissingDeploymentRecord { label })`, and over a
+///   payload whose `deployment_records` holds a key no curve label names
+///   returns `Err(UndeclaredDeploymentRecord { label })`, each carrying that
+///   label.
+/// Arrange: the default payload with `curve-c` appended to `curve_labels`,
+///   then the default payload with a `curve-c` record inserted and no such
+///   label.
+/// Act:     `admit_statements`, once per payload.
+/// Assert:  each result's error equals the refusal carrying `curve-c`.
+/// Boundary: the real `admit_statements`, `kind_named`, and `canonical_value`
+///   over the encoding family's real declared sets.
+/// Mocked:  none.
+#[test]
+fn a_curve_without_a_record_and_a_record_without_a_curve_are_each_refused_with_the_label() {
+    // Arrange — a curve label whose record is absent.
+    let mut missing = build_admit_statements_payload(Default::default());
+    missing.curve_labels = vec!["curve-a".to_string(), "curve-c".to_string()];
+    // Act
+    let result = admit_statements(
+        &build_admit_statements_deps(Default::default()),
+        build_admit_statements_params(Default::default()),
+        missing,
+    );
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(AdmitStatementsErrorReturn::MissingDeploymentRecord {
+            label: "curve-c".to_string()
+        })
+    );
+
+    // Arrange — a record key no curve label names.
+    let mut undeclared = build_admit_statements_payload(Default::default());
+    undeclared
+        .network_profile
+        .deployment_records
+        .insert(
+            "curve-c".to_string(),
+            undeclared.network_profile.entitlement_contract.clone(),
+        );
+    // Act
+    let result = admit_statements(
+        &build_admit_statements_deps(Default::default()),
+        build_admit_statements_params(Default::default()),
+        undeclared,
+    );
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(AdmitStatementsErrorReturn::UndeclaredDeploymentRecord {
+            label: "curve-c".to_string()
+        })
+    );
+    // a_curve_without_a_record_and_a_record_without_a_curve_are_each_refused_with_the_label
+}

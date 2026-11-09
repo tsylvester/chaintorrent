@@ -42,8 +42,11 @@ precompile_encodings = ["Eip196Eip197", "Eip2537"]
 verifier_endpoint = "https://sepolia.base.org"
 chain_identifier = { kind = "Unsigned256", value = "84532" }
 entitlement_contract = { kind = "FixedBytes20", value = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" }
-deployment_record = { kind = "FixedBytes20", value = "0x0000000000000000000000000000000000000000" }
 gas_price_oracle = { kind = "FixedBytes20", value = "0x420000000000000000000000000000000000000f" }
+
+[network_profile.deployment_records]
+bn254 = { kind = "FixedBytes20", value = "0x0000000000000000000000000000000000000000" }
+bls12_381 = { kind = "FixedBytes20", value = "0x0000000000000000000000000000000000000000" }
 
 [statements.mint]
 suite_identifier = "0x1111111111111111111111111111111111111111111111111111111111111111"
@@ -86,8 +89,7 @@ foundry_root = "contracts/evm"
 generated_directory = ["generated"]
 compiler_version = "0.8.38"
 license = "UNLICENSED"
-constants_library = { file = "Constants.sol", library = "Constants" }
-records_library = { file = "VectorRecords.sol", library = "VectorRecords" }
+curve_libraries = { Bn254 = { constants_library = { file = "Constants.sol", library = "Bn254Constants" }, records_library = { file = "VectorRecords.sol", library = "Bn254VectorRecords" } }, Bls12381 = { constants_library = { file = "Constants.sol", library = "Bls12381Constants" }, records_library = { file = "VectorRecords.sol", library = "Bls12381VectorRecords" } } }
 curve_directories = { Bn254 = "bn254", Bls12381 = "bls12_381" }
 
 [generate.kinds.G1Addition]

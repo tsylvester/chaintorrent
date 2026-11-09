@@ -46,17 +46,19 @@ use harness_crypto::{
 ///   the declared member the default text names with the identifier, scope,
 ///   and algebra that member carries, one curve and one curve label per
 ///   `[[selections.curves]]` entry in order, one benchmark concrete per
-///   `[[selections.benchmark_concretes]]` entry in order, the verifier
-///   `VerifierConcrete::Evm` over the default endpoint, deployment record,
-///   and gas price oracle, the two statements' purposes `1` and `2`, the
+///   `[[selections.benchmark_concretes]]` entry in order, one
+///   `VerifierConcrete::Evm` per curve in curve order, each over the
+///   default endpoint, that curve's default deployment record, and the gas
+///   price oracle, the two statements' purposes `1` and `2`, the
 ///   generate settings holding one kind per kind of
 ///   `SOLIDITY_GENERATE_DECLARATION`, the output destinations the default
 ///   holds, and the counts and report defaults the default holds, as an
 ///   outside caller observes it.
 /// Arrange: the program name alone over `SHIPPED_DEFAULTS`; the expected
 ///   selections built member by member from each family's declared set, the
-///   expected verifier settings over the default endpoint, deployment
-///   record, and oracle, and the expected counts, texts, and destinations.
+///   expected verifier settings per curve over the default endpoint, that
+///   curve's default deployment record, and the oracle, and the expected
+///   counts, texts, and destinations.
 /// Act:     `config` through the crate root, once.
 /// Assert:  the result is `Ok` and each field equals the expected value.
 /// Boundary: the public call `config` and the real functions it composes.
@@ -156,7 +158,10 @@ fn the_shipped_defaults_configure_the_harness() {
     let expected_network_profile = AdmittedNetworkProfile {
         chain_identifier: CanonicalFieldValue::Unsigned256(chain_identifier),
         entitlement_contract: CanonicalFieldValue::FixedBytes20([0xee; 20]),
-        deployment_record: CanonicalFieldValue::FixedBytes20([0; 20]),
+        deployment_records: vec![
+            CanonicalFieldValue::FixedBytes20([0; 20]),
+            CanonicalFieldValue::FixedBytes20([0; 20]),
+        ],
         gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
     };
     let expected_identities = AdmittedIdentities {
@@ -172,16 +177,28 @@ fn the_shipped_defaults_configure_the_harness() {
             },
         ],
     };
-    let expected_verifier = VerifierConcrete::Evm {
-        settings: Box::new(EvmVerifierSettings {
-            endpoint: EvmVerifierEndpoint::try_new(EvmVerifierEndpointConstructorParams {
-                text: "https://sepolia.base.org".to_string(),
-            })
-            .expect("the endpoint is admitted"),
-            verifier_address: CanonicalFieldValue::FixedBytes20([0; 20]),
-            gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
-        }),
-    };
+    let expected_verifiers = vec![
+        VerifierConcrete::Evm {
+            settings: Box::new(EvmVerifierSettings {
+                endpoint: EvmVerifierEndpoint::try_new(EvmVerifierEndpointConstructorParams {
+                    text: "https://sepolia.base.org".to_string(),
+                })
+                .expect("the endpoint is admitted"),
+                verifier_address: CanonicalFieldValue::FixedBytes20([0; 20]),
+                gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
+            }),
+        },
+        VerifierConcrete::Evm {
+            settings: Box::new(EvmVerifierSettings {
+                endpoint: EvmVerifierEndpoint::try_new(EvmVerifierEndpointConstructorParams {
+                    text: "https://sepolia.base.org".to_string(),
+                })
+                .expect("the endpoint is admitted"),
+                verifier_address: CanonicalFieldValue::FixedBytes20([0; 20]),
+                gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
+            }),
+        },
+    ];
     let expected_curve_labels = vec![
         build_report_text(ReportTextConstructorParamsOverrides {
             text: Some("bn254".to_string()),
@@ -215,7 +232,7 @@ fn the_shipped_defaults_configure_the_harness() {
     assert_eq!(configuration.selections, expected_selections);
     assert_eq!(configuration.network_profile, expected_network_profile);
     assert_eq!(configuration.identities, expected_identities);
-    assert_eq!(configuration.verifier, expected_verifier);
+    assert_eq!(configuration.verifiers, expected_verifiers);
     assert_eq!(configuration.curve_labels, expected_curve_labels);
     assert_eq!(configuration.statements.mint_purpose.code(), 1);
     assert_eq!(configuration.statements.transfer_purpose.code(), 2);
@@ -741,17 +758,20 @@ fn a_value_this_function_admits_is_refused_with_its_own_variant() {
 
 /// Contract: own entry `the_verifier_is_selected_with_the_settings_the_
 ///   document_holds` — `config` over `SHIPPED_DEFAULTS` with
-///   `network_profile.verifier_endpoint`, `deployment_record`, and
-///   `gas_price_oracle` overridden, every callee real, returns `Ok` whose
-///   `verifier` equals `VerifierConcrete::Evm` over an endpoint,
-///   `verifier_address`, and `gas_price_oracle` built in Arrange from the
-///   overridden values, as an outside caller observes it.
-/// Arrange: each of the three values overridden alone and all three
-///   together; the expected settings built in Arrange from the overridden
-///   values.
+///   `network_profile.verifier_endpoint`,
+///   `network_profile.deployment_records.bn254`,
+///   `network_profile.deployment_records.bls12_381`, and `gas_price_oracle`
+///   overridden, every callee real, returns `Ok` whose `verifiers` equals
+///   two `VerifierConcrete::Evm` in curve order, each over the endpoint,
+///   that curve's `verifier_address`, and the `gas_price_oracle` built in
+///   Arrange from the overridden values, as an outside caller observes it.
+/// Arrange: each value overridden alone, the two records overridden
+///   together, and the layer of a single curve's record, which leaves the
+///   other curve's shipped default; the expected settings built in Arrange
+///   from the overridden values.
 /// Act:     `config` through the crate root, once per variation.
-/// Assert:  each result is `Ok` and its `verifier` equals the expected
-///   `VerifierConcrete::Evm`.
+/// Assert:  each result is `Ok` and its `verifiers` equals the expected
+///   `VerifierConcrete::Evm` in curve order.
 /// Boundary: the public call `config` and the real functions it composes.
 /// Mocked:  none.
 #[test]
@@ -776,15 +796,36 @@ fn the_verifier_is_selected_with_the_settings_the_document_holds() {
         oracle
     };
     let expected =
-        |endpoint_text: &str, address: [u8; 20], oracle: [u8; 20]| VerifierConcrete::Evm {
-            settings: Box::new(EvmVerifierSettings {
-                endpoint: EvmVerifierEndpoint::try_new(EvmVerifierEndpointConstructorParams {
-                    text: endpoint_text.to_string(),
-                })
-                .expect("the endpoint is admitted"),
-                verifier_address: CanonicalFieldValue::FixedBytes20(address),
-                gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
-            }),
+        |endpoint_text: &str,
+         bn254: [u8; 20],
+         bls12_381: [u8; 20],
+         oracle: [u8; 20]| {
+            vec![
+                VerifierConcrete::Evm {
+                    settings: Box::new(EvmVerifierSettings {
+                        endpoint: EvmVerifierEndpoint::try_new(
+                            EvmVerifierEndpointConstructorParams {
+                                text: endpoint_text.to_string(),
+                            },
+                        )
+                        .expect("the endpoint is admitted"),
+                        verifier_address: CanonicalFieldValue::FixedBytes20(bn254),
+                        gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
+                    }),
+                },
+                VerifierConcrete::Evm {
+                    settings: Box::new(EvmVerifierSettings {
+                        endpoint: EvmVerifierEndpoint::try_new(
+                            EvmVerifierEndpointConstructorParams {
+                                text: endpoint_text.to_string(),
+                            },
+                        )
+                        .expect("the endpoint is admitted"),
+                        verifier_address: CanonicalFieldValue::FixedBytes20(bls12_381),
+                        gas_price_oracle: CanonicalFieldValue::FixedBytes20(oracle),
+                    }),
+                },
+            ]
         };
 
     // The endpoint overridden alone.
@@ -803,11 +844,12 @@ fn the_verifier_is_selected_with_the_settings_the_document_holds() {
         result
             .expect("the configuration succeeds")
             .configuration
-            .verifier,
-        expected("http://endpoint-b.test", [0; 20], default_oracle)
+            .verifiers,
+        expected("http://endpoint-b.test", [0; 20], [0; 20], default_oracle)
     );
 
-    // The deployment record overridden alone.
+    // The bn254 record overridden alone, leaving the bls12_381 shipped
+    // default.
     let result = config(
         &deps,
         ConfigParams {
@@ -815,7 +857,7 @@ fn the_verifier_is_selected_with_the_settings_the_document_holds() {
                 program.clone(),
                 set_flag.clone(),
                 OsString::from(
-                    r#"network_profile.deployment_record.value="0x1111111111111111111111111111111111111111""#,
+                    r#"network_profile.deployment_records.bn254.value="0x1111111111111111111111111111111111111111""#,
                 ),
             ],
         },
@@ -825,8 +867,31 @@ fn the_verifier_is_selected_with_the_settings_the_document_holds() {
         result
             .expect("the configuration succeeds")
             .configuration
-            .verifier,
-        expected("https://sepolia.base.org", [0x11; 20], default_oracle)
+            .verifiers,
+        expected("https://sepolia.base.org", [0x11; 20], [0; 20], default_oracle)
+    );
+
+    // The bls12_381 record overridden alone, leaving the bn254 shipped
+    // default.
+    let result = config(
+        &deps,
+        ConfigParams {
+            arguments: vec![
+                program.clone(),
+                set_flag.clone(),
+                OsString::from(
+                    r#"network_profile.deployment_records.bls12_381.value="0x2222222222222222222222222222222222222222""#,
+                ),
+            ],
+        },
+        payload.clone(),
+    );
+    assert_eq!(
+        result
+            .expect("the configuration succeeds")
+            .configuration
+            .verifiers,
+        expected("https://sepolia.base.org", [0; 20], [0x22; 20], default_oracle)
     );
 
     // The gas price oracle overridden alone.
@@ -847,25 +912,23 @@ fn the_verifier_is_selected_with_the_settings_the_document_holds() {
         result
             .expect("the configuration succeeds")
             .configuration
-            .verifier,
-        expected("https://sepolia.base.org", [0; 20], [0x77; 20])
+            .verifiers,
+        expected("https://sepolia.base.org", [0; 20], [0; 20], [0x77; 20])
     );
 
-    // All three overridden together.
+    // The two records overridden together.
     let result = config(
         &deps,
         ConfigParams {
             arguments: vec![
                 program.clone(),
                 set_flag.clone(),
-                OsString::from(r#"network_profile.verifier_endpoint="http://endpoint-b.test""#),
-                set_flag.clone(),
                 OsString::from(
-                    r#"network_profile.deployment_record.value="0x1111111111111111111111111111111111111111""#,
+                    r#"network_profile.deployment_records.bn254.value="0x1111111111111111111111111111111111111111""#,
                 ),
                 set_flag.clone(),
                 OsString::from(
-                    r#"network_profile.gas_price_oracle.value="0x7777777777777777777777777777777777777777""#,
+                    r#"network_profile.deployment_records.bls12_381.value="0x2222222222222222222222222222222222222222""#,
                 ),
             ],
         },
@@ -875,8 +938,8 @@ fn the_verifier_is_selected_with_the_settings_the_document_holds() {
         result
             .expect("the configuration succeeds")
             .configuration
-            .verifier,
-        expected("http://endpoint-b.test", [0x11; 20], [0x77; 20])
+            .verifiers,
+        expected("https://sepolia.base.org", [0x11; 20], [0x22; 20], default_oracle)
     );
     // the_verifier_is_selected_with_the_settings_the_document_holds
 }
@@ -1825,6 +1888,157 @@ fn identities_are_admitted_under_the_scope_the_payload_names() {
     // identities_are_admitted_under_the_scope_the_payload_names
 }
 
+/// Contract: carried entry `every_curve_has_its_own_deployment_record_in_
+///   curve_order` — each curve's record reaches `verifiers` at that curve's
+///   index, so `config` over `SHIPPED_DEFAULTS` with
+///   `network_profile.deployment_records.bn254` and
+///   `network_profile.deployment_records.bls12_381` overridden to distinct
+///   records returns `Ok` whose `verifiers` holds the first curve's
+///   concrete at the bn254 record and the second's at the bls12_381 record,
+///   as an outside caller observes it.
+/// Arrange: the two records overridden to distinct values through `--set`.
+/// Act:     `config` through the crate root, once.
+/// Assert:  the result is `Ok` and `verifiers` holds each curve's concrete
+///   at its own record in curve order.
+/// Boundary: the public call `config`; the route `layers`,
+///   `admit_selections`, `admit_statements`, its private functions, then
+///   `config`.
+/// Mocked:  none.
+#[test]
+fn every_curve_has_its_own_deployment_record_in_curve_order() {
+    // Arrange
+    let deps = ConfigDeps {
+        layers,
+        admit_selections,
+        admit_statements,
+        admit_generate,
+        admit_output,
+    };
+    let payload = ConfigPayload {
+        defaults: SHIPPED_DEFAULTS.to_string(),
+    };
+    // Act
+    let configuration = config(
+        &deps,
+        ConfigParams {
+            arguments: vec![
+                OsString::from("harness-crypto"),
+                OsString::from("--set"),
+                OsString::from(
+                    r#"network_profile.deployment_records.bn254.value="0x1111111111111111111111111111111111111111""#,
+                ),
+                OsString::from("--set"),
+                OsString::from(
+                    r#"network_profile.deployment_records.bls12_381.value="0x2222222222222222222222222222222222222222""#,
+                ),
+            ],
+        },
+        payload,
+    )
+    .expect("the records are admitted")
+    .configuration;
+    // Assert
+    let expected: Vec<CanonicalFieldValue> = vec![
+        CanonicalFieldValue::FixedBytes20([0x11; 20]),
+        CanonicalFieldValue::FixedBytes20([0x22; 20]),
+    ];
+    assert_eq!(configuration.verifiers.len(), expected.len());
+    for (concrete, expected_address) in configuration.verifiers.iter().zip(expected.iter()) {
+        assert!(
+            matches!(
+                concrete,
+                VerifierConcrete::Evm { settings }
+                    if settings.verifier_address == *expected_address
+            ),
+            "each curve's concrete is Evm at its own record"
+        );
+    }
+    // every_curve_has_its_own_deployment_record_in_curve_order
+}
+
+/// Contract: carried entry `a_curve_without_a_record_and_a_record_without_
+///   a_curve_are_each_refused_with_the_label` — a refusal reaches the
+///   caller inside `ConfigErrorReturn::Statements`, so `config` over
+///   `SHIPPED_DEFAULTS` with a curve whose record is absent returns `Err`
+///   of `MissingDeploymentRecord` carrying that curve's label, and with a
+///   record no curve names returns `Err` of `UndeclaredDeploymentRecord`
+///   carrying that key, as an outside caller observes it.
+/// Arrange: a `--set` adding a third curve no record names; a `--set`
+///   adding a record keyed by a label no curve names.
+/// Act:     `config` through the crate root, once per variation.
+/// Assert:  each result is `Err` of `Statements` carrying the refused
+///   variant and the label.
+/// Boundary: the public call `config`; the route `layers`,
+///   `admit_selections`, `admit_statements`, its private functions, then
+///   `config`.
+/// Mocked:  none.
+#[test]
+fn a_curve_without_a_record_and_a_record_without_a_curve_are_each_refused_with_the_label() {
+    // Arrange — the deps, the payload, and the flags are invariant.
+    let deps = ConfigDeps {
+        layers,
+        admit_selections,
+        admit_statements,
+        admit_generate,
+        admit_output,
+    };
+    let payload = ConfigPayload {
+        defaults: SHIPPED_DEFAULTS.to_string(),
+    };
+    let program = OsString::from("harness-crypto");
+    let set_flag = OsString::from("--set");
+
+    // A curve whose record is absent: three curves over the shipped text's
+    // two records.
+    let result = config(
+        &deps,
+        ConfigParams {
+            arguments: vec![
+                program.clone(),
+                set_flag.clone(),
+                OsString::from(
+                    r#"selections.curves=[{label="bn254",pairing_concrete="Bn254Arkworks",target_group_encoding="Bn254V1"},{label="bls12_381",pairing_concrete="Bls12381Arkworks",target_group_encoding="Bls12381V1"},{label="extra",pairing_concrete="Bn254Arkworks",target_group_encoding="Bn254V1"}]"#,
+                ),
+            ],
+        },
+        payload.clone(),
+    );
+    assert!(
+        matches!(
+            result,
+            Err(ConfigErrorReturn::Statements(
+                AdmitStatementsErrorReturn::MissingDeploymentRecord { ref label }
+            )) if label == "extra"
+        ),
+        "the refusal is MissingDeploymentRecord carrying the curve's label"
+    );
+
+    // A record keyed by a label no curve names.
+    let result = config(
+        &deps,
+        ConfigParams {
+            arguments: vec![
+                program.clone(),
+                set_flag.clone(),
+                OsString::from(
+                    r#"network_profile.deployment_records.extra={kind="FixedBytes20",value="0x1111111111111111111111111111111111111111"}"#,
+                ),
+            ],
+        },
+        payload.clone(),
+    );
+    assert!(
+        matches!(
+            result,
+            Err(ConfigErrorReturn::Statements(
+                AdmitStatementsErrorReturn::UndeclaredDeploymentRecord { ref label }
+            )) if label == "extra"
+        ),
+        "the refusal is UndeclaredDeploymentRecord carrying the key"
+    );
+    // a_curve_without_a_record_and_a_record_without_a_curve_are_each_refused_with_the_label
+}
+
 /// Contract: carried entry `every_declared_kind_is_admitted_to_its_own_
 ///   settings_and_configuration` — the admitted generate settings reach
 ///   the configuration unchanged, so `config` over `SHIPPED_DEFAULTS`
@@ -2407,8 +2621,11 @@ fn an_unadmissible_destination_list_is_never_admitted() {
 //   `every_declared_kind_admits_its_value_text_to_its_own_variant`,
 //   `a_kind_outside_the_declared_sets_is_never_admitted`,
 //   `every_context_carries_the_network_profiles_chain_identifier_and_
-//   entitlement_contract`, and `identities_are_admitted_under_the_scope_the_
-//   payload_names`; `admit_generate`
+//   entitlement_contract`, `identities_are_admitted_under_the_scope_the_
+//   payload_names`, `every_curve_has_its_own_deployment_record_in_curve_
+//   order`, and
+//   `a_curve_without_a_record_and_a_record_without_a_curve_are_each_
+//   refused_with_the_label`; `admit_generate`
 //   `every_declared_kind_is_admitted_to_its_own_settings_and_configuration`,
 //   `every_declared_curve_directory_reaches_the_field_its_curve_names`, and
 //   `an_undeclared_name_is_never_admitted`; `admit_output`

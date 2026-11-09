@@ -8,4 +8,4 @@ solc = "0.8.38"
 evm_version = "prague"
 via_ir = true
 ffi = false
-fs_permissions = [{ access = "read", path = "generated" }, { access = "read", path = "abi" }]
+fs_permissions = [{ access = "read", path = "generated" }, { access = "read", path = "abi" }, { access = "write", path = "deployments" }]

@@ -208,9 +208,15 @@ pub fn build_admitted_selections(overrides: AdmittedSelectionsOverrides) -> Admi
             .delivery_proof
             .unwrap_or_else(|| build_admitted_delivery_proof(Default::default())),
         verifier: overrides.verifier.unwrap_or(VERIFIER_CONCRETES[0]),
-        curves: overrides
-            .curves
-            .unwrap_or_else(|| vec![build_admitted_curve(Default::default())]),
+        curves: overrides.curves.unwrap_or_else(|| {
+            vec![
+                build_admitted_curve(Default::default()),
+                build_admitted_curve(AdmittedCurveOverrides {
+                    label: Some("curve-b".to_string()),
+                    ..Default::default()
+                }),
+            ]
+        }),
         benchmark_concretes: overrides
             .benchmark_concretes
             .unwrap_or_else(|| vec![build_admitted_pairing(Default::default())]),
@@ -267,13 +273,22 @@ pub fn build_admit_selections_payload(
                     &DECLARED_KEY_AGREEMENT_SELECTIONS[0].algebra,
                 )),
                 delivery_statement_version: Some(1),
-                curves: Some(vec![build_curve_table(CurveTableOverrides {
-                    label: Some("curve-a".to_string()),
-                    pairing_concrete: Some(declared_name(&PAIRING_CONCRETES[0])),
-                    target_group_encoding: Some(declared_name(
-                        &TARGET_GROUP_ENCODING_IDENTIFIERS[0],
-                    )),
-                })]),
+                curves: Some(vec![
+                    build_curve_table(CurveTableOverrides {
+                        label: Some("curve-a".to_string()),
+                        pairing_concrete: Some(declared_name(&PAIRING_CONCRETES[0])),
+                        target_group_encoding: Some(declared_name(
+                            &TARGET_GROUP_ENCODING_IDENTIFIERS[0],
+                        )),
+                    }),
+                    build_curve_table(CurveTableOverrides {
+                        label: Some("curve-b".to_string()),
+                        pairing_concrete: Some(declared_name(&PAIRING_CONCRETES[0])),
+                        target_group_encoding: Some(declared_name(
+                            &TARGET_GROUP_ENCODING_IDENTIFIERS[0],
+                        )),
+                    }),
+                ]),
                 benchmark_concretes: Some(vec![build_benchmark_concrete_table(
                     BenchmarkConcreteTableOverrides {
                         pairing_concrete: Some(declared_name(&PAIRING_CONCRETES[0])),

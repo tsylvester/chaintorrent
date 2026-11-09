@@ -306,30 +306,52 @@ pub fn admit_statements(
     _params: AdmitStatementsParams,
     payload: AdmitStatementsPayload,
 ) -> AdmitStatementsReturn {
+    let chain_identifier = canonical_value(&payload.network_profile.chain_identifier).map_err(
+        |refusal| AdmitStatementsErrorReturn::NetworkProfile {
+            field: NetworkProfileField::ChainIdentifier,
+            refusal,
+        },
+    )?;
+    let entitlement_contract = canonical_value(&payload.network_profile.entitlement_contract)
+        .map_err(|refusal| AdmitStatementsErrorReturn::NetworkProfile {
+            field: NetworkProfileField::EntitlementContract,
+            refusal,
+        })?;
+    let gas_price_oracle = canonical_value(&payload.network_profile.gas_price_oracle).map_err(
+        |refusal| AdmitStatementsErrorReturn::NetworkProfile {
+            field: NetworkProfileField::GasPriceOracle,
+            refusal,
+        },
+    )?;
+    let mut deployment_records = Vec::with_capacity(payload.curve_labels.len());
+    for label in &payload.curve_labels {
+        let record = match payload.network_profile.deployment_records.get(label) {
+            Some(record) => record,
+            None => {
+                return Err(AdmitStatementsErrorReturn::MissingDeploymentRecord {
+                    label: label.clone(),
+                });
+            }
+        };
+        deployment_records.push(canonical_value(record).map_err(|refusal| {
+            AdmitStatementsErrorReturn::DeploymentRecord {
+                label: label.clone(),
+                refusal,
+            }
+        })?);
+    }
+    for key in payload.network_profile.deployment_records.keys() {
+        if !payload.curve_labels.contains(key) {
+            return Err(AdmitStatementsErrorReturn::UndeclaredDeploymentRecord {
+                label: key.clone(),
+            });
+        }
+    }
     let network_profile = AdmittedNetworkProfile {
-        chain_identifier: canonical_value(&payload.network_profile.chain_identifier).map_err(
-            |refusal| AdmitStatementsErrorReturn::NetworkProfile {
-                field: NetworkProfileField::ChainIdentifier,
-                refusal,
-            },
-        )?,
-        entitlement_contract: canonical_value(&payload.network_profile.entitlement_contract)
-            .map_err(|refusal| AdmitStatementsErrorReturn::NetworkProfile {
-                field: NetworkProfileField::EntitlementContract,
-                refusal,
-            })?,
-        deployment_record: canonical_value(&payload.network_profile.deployment_record).map_err(
-            |refusal| AdmitStatementsErrorReturn::NetworkProfile {
-                field: NetworkProfileField::DeploymentRecord,
-                refusal,
-            },
-        )?,
-        gas_price_oracle: canonical_value(&payload.network_profile.gas_price_oracle).map_err(
-            |refusal| AdmitStatementsErrorReturn::NetworkProfile {
-                field: NetworkProfileField::GasPriceOracle,
-                refusal,
-            },
-        )?,
+        chain_identifier,
+        entitlement_contract,
+        deployment_records,
+        gas_price_oracle,
     };
     let mint = admit_context(
         ContextRelation::Mint,

@@ -69,17 +69,27 @@ pub enum AdmitGenerateErrorReturn {
         kind: String,
         error: SolidityConstantNameTryNewErrorReturn,
     },
+    CurveLibrariesKey {
+        text: String,
+    },
     ConstantsLibraryFile {
+        curve: PairingCurve,
         error: GeneratedFileNameTryNewErrorReturn,
     },
     ConstantsLibraryName {
+        curve: PairingCurve,
         error: SolidityLibraryNameTryNewErrorReturn,
     },
     RecordsLibraryFile {
+        curve: PairingCurve,
         error: GeneratedFileNameTryNewErrorReturn,
     },
     RecordsLibraryName {
+        curve: PairingCurve,
         error: SolidityLibraryNameTryNewErrorReturn,
+    },
+    MissingCurveLibraries {
+        curve: PairingCurve,
     },
     GeneratedDirectorySegment {
         index: usize,

@@ -5,8 +5,9 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use super::super::layers::provides::{
-    GenerateKindTableOverrides, GenerateTableOverrides, LibraryTableOverrides,
-    build_generate_kind_table, build_generate_table, build_library_table,
+    CurveLibrariesTableOverrides, GenerateKindTableOverrides, GenerateTableOverrides,
+    LibraryTableOverrides, build_curve_libraries_table, build_generate_kind_table,
+    build_generate_table, build_library_table,
 };
 use super::admit_generate;
 use super::mock::{
@@ -18,7 +19,8 @@ use crate::generate::provides::{
     GENERATE_CONCRETES, GenerateConcrete, GeneratedDirectoryConstructorParamsOverrides,
     GeneratedFileNameConstructorParamsOverrides, MsmTermCountConstructorParamsOverrides,
     SolidityCompilerVersionOverrides, SolidityConstantNameConstructorParamsOverrides,
-    SolidityCurveDirectoriesOverrides, SolidityGenerateSettingsOverrides,
+    SolidityCurveDirectoriesOverrides, SolidityCurveLibrariesOverrides,
+    SolidityCurveLibraryNamesOverrides, SolidityGenerateSettingsOverrides,
     SolidityLibraryNameConstructorParamsOverrides, SolidityLibraryNamesOverrides,
     SolidityMemberNameConstructorParamsOverrides, SolidityTypeNameConstructorParamsOverrides,
     SolidityVectorKindNamesOverrides, SolidityVectorKindSettingsOverrides,
@@ -26,6 +28,7 @@ use crate::generate::provides::{
     VectorKind, VectorKindConfiguration, VectorKindQuantities, build_generated_directory,
     build_generated_file_name, build_msm_term_count, build_solidity_compiler_version,
     build_solidity_constant_name, build_solidity_curve_directories,
+    build_solidity_curve_libraries, build_solidity_curve_library_names,
     build_solidity_generate_settings, build_solidity_library_name, build_solidity_library_names,
     build_solidity_member_name, build_solidity_type_name, build_solidity_vector_kind_names,
     build_solidity_vector_kind_settings, build_spdx_license_identifier, build_vector_count,
@@ -302,47 +305,71 @@ fn admit_generate_carries_the_quantities_each_entry_holds() {
     // admit_generate_carries_the_quantities_each_entry_holds
 }
 
-/// Contract: Constants library and Records library → each library table
+/// Contract: Curve libraries → the entry keyed for a curve reaches the field
+///   that curve names, its constants library and records library each
 ///   admitted to its `SolidityLibraryNames`.
-/// Arrange: `constants_library` of `"Constants.sol"` and `"ConstantsLib"`,
-///   and `records_library` of `"Records.sol"` and `"RecordsLib"`.
+/// Arrange: `curve_libraries` keyed `declared_name(&PairingCurve::Bn254)` to
+///   a `constants_library` of `"constants-a.sol"` and `"ConstantsA"` and a
+///   `records_library` of `"records-a.sol"` and `"RecordsA"`, and keyed
+///   `declared_name(&PairingCurve::Bls12381)` to a `constants_library` of
+///   `"constants-b.sol"` and `"ConstantsB"` and a `records_library` of
+///   `"records-b.sol"` and `"RecordsB"`.
 /// Act:     `admit_generate`, once.
-/// Assert:  the concrete's `settings.constants_library` and
-///   `settings.records_library` equal `build_solidity_library_names` over
-///   those names.
+/// Assert:  the concrete's `settings.curve_libraries` equals
+///   `build_solidity_curve_libraries` with `bn254` a
+///   `build_solidity_curve_library_names` over `build_solidity_library_names`
+///   of `"constants-a.sol"` and `"ConstantsA"` and of `"records-a.sol"` and
+///   `"RecordsA"`, and `bls12_381` likewise over the `-b` names.
 #[test]
-fn admit_generate_admits_the_library_names() {
+fn admit_generate_admits_each_curves_library_names_to_the_field_its_curve_names() {
     // Arrange
     let payload = build_admit_generate_payload(AdmitGeneratePayloadOverrides {
         generate: Some(build_generate_table(GenerateTableOverrides {
             concrete: Some(declared_name(&GENERATE_CONCRETES[0])),
-            constants_library: Some(build_library_table(LibraryTableOverrides {
-                file: Some("Constants.sol".to_string()),
-                library: Some("ConstantsLib".to_string()),
-            })),
-            records_library: Some(build_library_table(LibraryTableOverrides {
-                file: Some("Records.sol".to_string()),
-                library: Some("RecordsLib".to_string()),
-            })),
+            curve_libraries: Some(BTreeMap::from([
+                (
+                    declared_name(&PairingCurve::Bn254),
+                    build_curve_libraries_table(CurveLibrariesTableOverrides {
+                        constants_library: Some(build_library_table(LibraryTableOverrides {
+                            file: Some("constants-a.sol".to_string()),
+                            library: Some("ConstantsA".to_string()),
+                        })),
+                        records_library: Some(build_library_table(LibraryTableOverrides {
+                            file: Some("records-a.sol".to_string()),
+                            library: Some("RecordsA".to_string()),
+                        })),
+                    }),
+                ),
+                (
+                    declared_name(&PairingCurve::Bls12381),
+                    build_curve_libraries_table(CurveLibrariesTableOverrides {
+                        constants_library: Some(build_library_table(LibraryTableOverrides {
+                            file: Some("constants-b.sol".to_string()),
+                            library: Some("ConstantsB".to_string()),
+                        })),
+                        records_library: Some(build_library_table(LibraryTableOverrides {
+                            file: Some("records-b.sol".to_string()),
+                            library: Some("RecordsB".to_string()),
+                        })),
+                    }),
+                ),
+            ])),
             ..Default::default()
         })),
     });
-    let expected = GenerateConcrete::Solidity {
-        settings: Box::new(build_solidity_generate_settings(
-            SolidityGenerateSettingsOverrides {
-                kinds: Some(vec![build_solidity_vector_kind_settings(
-                    SolidityVectorKindSettingsOverrides::default(),
-                )]),
+    let expected = build_solidity_curve_libraries(SolidityCurveLibrariesOverrides {
+        bn254: Some(build_solidity_curve_library_names(
+            SolidityCurveLibraryNamesOverrides {
                 constants_library: Some(build_solidity_library_names(
                     SolidityLibraryNamesOverrides {
                         file_name: Some(build_generated_file_name(
                             GeneratedFileNameConstructorParamsOverrides {
-                                text: Some("Constants.sol".to_string()),
+                                text: Some("constants-a.sol".to_string()),
                             },
                         )),
                         library_name: Some(build_solidity_library_name(
                             SolidityLibraryNameConstructorParamsOverrides {
-                                text: Some("ConstantsLib".to_string()),
+                                text: Some("ConstantsA".to_string()),
                             },
                         )),
                     },
@@ -351,21 +378,52 @@ fn admit_generate_admits_the_library_names() {
                     SolidityLibraryNamesOverrides {
                         file_name: Some(build_generated_file_name(
                             GeneratedFileNameConstructorParamsOverrides {
-                                text: Some("Records.sol".to_string()),
+                                text: Some("records-a.sol".to_string()),
                             },
                         )),
                         library_name: Some(build_solidity_library_name(
                             SolidityLibraryNameConstructorParamsOverrides {
-                                text: Some("RecordsLib".to_string()),
+                                text: Some("RecordsA".to_string()),
                             },
                         )),
                     },
                 )),
-                foundry_root: Some(PathBuf::from("root")),
-                ..Default::default()
             },
         )),
-    };
+        bls12_381: Some(build_solidity_curve_library_names(
+            SolidityCurveLibraryNamesOverrides {
+                constants_library: Some(build_solidity_library_names(
+                    SolidityLibraryNamesOverrides {
+                        file_name: Some(build_generated_file_name(
+                            GeneratedFileNameConstructorParamsOverrides {
+                                text: Some("constants-b.sol".to_string()),
+                            },
+                        )),
+                        library_name: Some(build_solidity_library_name(
+                            SolidityLibraryNameConstructorParamsOverrides {
+                                text: Some("ConstantsB".to_string()),
+                            },
+                        )),
+                    },
+                )),
+                records_library: Some(build_solidity_library_names(
+                    SolidityLibraryNamesOverrides {
+                        file_name: Some(build_generated_file_name(
+                            GeneratedFileNameConstructorParamsOverrides {
+                                text: Some("records-b.sol".to_string()),
+                            },
+                        )),
+                        library_name: Some(build_solidity_library_name(
+                            SolidityLibraryNameConstructorParamsOverrides {
+                                text: Some("RecordsB".to_string()),
+                            },
+                        )),
+                    },
+                )),
+            },
+        )),
+        ..Default::default()
+    });
     // Act
     let admitted = admit_generate(
         &build_admit_generate_deps(Default::default()),
@@ -375,8 +433,13 @@ fn admit_generate_admits_the_library_names() {
     .expect("the admission succeeds")
     .admitted;
     // Assert
-    assert_eq!(admitted.concrete, expected);
-    // admit_generate_admits_the_library_names
+    match admitted.concrete {
+        GenerateConcrete::Solidity { settings } => {
+            assert_eq!(settings.curve_libraries, expected);
+        }
+        _ => panic!("the concrete is Solidity"),
+    }
+    // admit_generate_admits_each_curves_library_names_to_the_field_its_curve_names
 }
 
 /// Contract: Generated directory → the segments admitted in the document's
@@ -463,31 +526,21 @@ fn admit_generate_admits_each_curve_directory_to_the_field_its_curve_names() {
             ..Default::default()
         })),
     });
-    let expected = GenerateConcrete::Solidity {
-        settings: Box::new(build_solidity_generate_settings(
-            SolidityGenerateSettingsOverrides {
-                kinds: Some(vec![build_solidity_vector_kind_settings(
-                    SolidityVectorKindSettingsOverrides::default(),
-                )]),
-                curve_directories: Some(build_solidity_curve_directories(
-                    SolidityCurveDirectoriesOverrides {
-                        bn254: Some(build_generated_file_name(
-                            GeneratedFileNameConstructorParamsOverrides {
-                                text: Some("directory-a".to_string()),
-                            },
-                        )),
-                        bls12_381: Some(build_generated_file_name(
-                            GeneratedFileNameConstructorParamsOverrides {
-                                text: Some("directory-b".to_string()),
-                            },
-                        )),
-                    },
-                )),
-                foundry_root: Some(PathBuf::from("root")),
-                ..Default::default()
-            },
-        )),
-    };
+    let expected_directories = build_solidity_curve_directories(
+        SolidityCurveDirectoriesOverrides {
+            bn254: Some(build_generated_file_name(
+                GeneratedFileNameConstructorParamsOverrides {
+                    text: Some("directory-a".to_string()),
+                },
+            )),
+            bls12_381: Some(build_generated_file_name(
+                GeneratedFileNameConstructorParamsOverrides {
+                    text: Some("directory-b".to_string()),
+                },
+            )),
+            ..Default::default()
+        },
+    );
     // Act
     let admitted = admit_generate(
         &build_admit_generate_deps(Default::default()),
@@ -497,7 +550,12 @@ fn admit_generate_admits_each_curve_directory_to_the_field_its_curve_names() {
     .expect("the admission succeeds")
     .admitted;
     // Assert
-    assert_eq!(admitted.concrete, expected);
+    match admitted.concrete {
+        GenerateConcrete::Solidity { settings } => {
+            assert_eq!(settings.curve_directories, expected_directories);
+        }
+        _ => panic!("the concrete is Solidity"),
+    }
     // admit_generate_admits_each_curve_directory_to_the_field_its_curve_names
 }
 

@@ -1,17 +1,15 @@
 #![allow(dead_code, clippy::too_many_arguments)]
 
-use pairing::PairingCurve;
 use std::ffi::OsString;
 use std::path::PathBuf;
 
 use super::interface::{
     AdjustmentTable, BenchmarkConcreteTable, BenchmarkTable, CanonicalValueTable, ConfigArguments,
-    ConfigDocument, ContextTable, CurveTable, DestinationTable, GenerateKindTable, GenerateTable,
-    IdentitiesTable, LayersDeps, LayersFn, LayersParams, LayersPayload, LayersReturn,
-    LayersSuccessReturn, LibraryTable, MeasurementTable, NetworkProfileTable, OutputTable,
-    ReportTable, SelectionsTable, StatementsTable,
+    ConfigDocument, ContextTable, CurveLibrariesTable, CurveTable, DestinationTable,
+    GenerateKindTable, GenerateTable, IdentitiesTable, LayersDeps, LayersFn, LayersParams,
+    LayersPayload, LayersReturn, LayersSuccessReturn, LibraryTable, MeasurementTable,
+    NetworkProfileTable, OutputTable, ReportTable, SelectionsTable, StatementsTable,
 };
-use crate::generate::provides::{GENERATE_CONCRETES, VectorKind};
 
 const LAYERS_DEFAULTS_TEXT: &str = r#"
 [selections]
@@ -32,7 +30,7 @@ benchmark_concretes = [{ pairing_concrete = "concrete-a", target_group_encoding 
 [network_profile]
 chain_identifier = { kind = "uint256", value = "1" }
 entitlement_contract = { kind = "bytes20", value = "0x1111111111111111111111111111111111111111" }
-deployment_record = { kind = "bytes20", value = "0x2222222222222222222222222222222222222222" }
+deployment_records = { "curve-a" = { kind = "bytes20", value = "0x2222222222222222222222222222222222222222" } }
 gas_price_oracle = { kind = "bytes20", value = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
 verifier_endpoint = "http://endpoint-a.test"
 precompile_encodings = ["encoding-a"]
@@ -72,8 +70,7 @@ mapping = ["0x7777777777777777777777777777777777777777777777777777777777777777"]
 [generate]
 concrete = "Solidity"
 kinds = { "G1Addition" = { count = 2, file = "g1_add.vectors", struct_name = "G1AddVector", decode_function = "decodeG1Add", path_constant = "G1_ADD_PATH" } }
-constants_library = { file = "Constants.sol", library = "Constants" }
-records_library = { file = "VectorRecords.sol", library = "VectorRecords" }
+curve_libraries = { "Bn254" = { constants_library = { file = "Constants.sol", library = "Bn254Constants" }, records_library = { file = "VectorRecords.sol", library = "Bn254VectorRecords" } }, "Bls12381" = { constants_library = { file = "Constants.sol", library = "Bls12381Constants" }, records_library = { file = "VectorRecords.sol", library = "Bls12381VectorRecords" } } }
 foundry_root = "root"
 generated_directory = ["generated"]
 curve_directories = { "Bn254" = "bn254", "Bls12381" = "bls12_381" }
@@ -202,7 +199,7 @@ pub fn build_selections_table(overrides: SelectionsTableOverrides) -> Selections
 pub struct NetworkProfileTableOverrides {
     pub chain_identifier: Option<CanonicalValueTable>,
     pub entitlement_contract: Option<CanonicalValueTable>,
-    pub deployment_record: Option<CanonicalValueTable>,
+    pub deployment_records: Option<std::collections::BTreeMap<String, CanonicalValueTable>>,
     pub gas_price_oracle: Option<CanonicalValueTable>,
     pub verifier_endpoint: Option<String>,
     pub precompile_encodings: Option<Vec<String>>,
@@ -219,11 +216,14 @@ pub fn build_network_profile_table(overrides: NetworkProfileTableOverrides) -> N
                 value: Some("0x1111111111111111111111111111111111111111".to_string()),
             })
         }),
-        deployment_record: overrides.deployment_record.unwrap_or_else(|| {
-            build_canonical_value_table(CanonicalValueTableOverrides {
-                kind: Some("bytes20".to_string()),
-                value: Some("0x2222222222222222222222222222222222222222".to_string()),
-            })
+        deployment_records: overrides.deployment_records.unwrap_or_else(|| {
+            std::collections::BTreeMap::from([(
+                "curve-a".to_string(),
+                build_canonical_value_table(CanonicalValueTableOverrides {
+                    kind: Some("bytes20".to_string()),
+                    value: Some("0x2222222222222222222222222222222222222222".to_string()),
+                }),
+            )])
         }),
         gas_price_oracle: overrides.gas_price_oracle.unwrap_or_else(|| {
             build_canonical_value_table(CanonicalValueTableOverrides {
@@ -388,7 +388,31 @@ pub fn build_library_table(overrides: LibraryTableOverrides) -> LibraryTable {
         file: overrides
             .file
             .unwrap_or_else(|| "Constants.sol".to_string()),
-        library: overrides.library.unwrap_or_else(|| "Constants".to_string()),
+        library: overrides
+            .library
+            .unwrap_or_else(|| "Bn254Constants".to_string()),
+    }
+}
+
+#[derive(Default)]
+pub struct CurveLibrariesTableOverrides {
+    pub constants_library: Option<LibraryTable>,
+    pub records_library: Option<LibraryTable>,
+}
+
+pub fn build_curve_libraries_table(
+    overrides: CurveLibrariesTableOverrides,
+) -> CurveLibrariesTable {
+    CurveLibrariesTable {
+        constants_library: overrides
+            .constants_library
+            .unwrap_or_else(|| build_library_table(Default::default())),
+        records_library: overrides.records_library.unwrap_or_else(|| {
+            build_library_table(LibraryTableOverrides {
+                file: Some("VectorRecords.sol".to_string()),
+                library: Some("Bn254VectorRecords".to_string()),
+            })
+        }),
     }
 }
 
@@ -396,8 +420,7 @@ pub fn build_library_table(overrides: LibraryTableOverrides) -> LibraryTable {
 pub struct GenerateTableOverrides {
     pub concrete: Option<String>,
     pub kinds: Option<std::collections::BTreeMap<String, GenerateKindTable>>,
-    pub constants_library: Option<LibraryTable>,
-    pub records_library: Option<LibraryTable>,
+    pub curve_libraries: Option<std::collections::BTreeMap<String, CurveLibrariesTable>>,
     pub foundry_root: Option<PathBuf>,
     pub generated_directory: Option<Vec<String>>,
     pub curve_directories: Option<std::collections::BTreeMap<String, String>>,
@@ -409,21 +432,33 @@ pub fn build_generate_table(overrides: GenerateTableOverrides) -> GenerateTable 
     GenerateTable {
         concrete: overrides
             .concrete
-            .unwrap_or_else(|| format!("{:?}", GENERATE_CONCRETES[0])),
+            .unwrap_or_else(|| "Solidity".to_string()),
         kinds: overrides.kinds.unwrap_or_else(|| {
             std::collections::BTreeMap::from([(
-                format!("{:?}", VectorKind::G1Addition),
+                "G1Addition".to_string(),
                 build_generate_kind_table(Default::default()),
             )])
         }),
-        constants_library: overrides
-            .constants_library
-            .unwrap_or_else(|| build_library_table(Default::default())),
-        records_library: overrides.records_library.unwrap_or_else(|| {
-            build_library_table(LibraryTableOverrides {
-                file: Some("VectorRecords.sol".to_string()),
-                library: Some("VectorRecords".to_string()),
-            })
+        curve_libraries: overrides.curve_libraries.unwrap_or_else(|| {
+            std::collections::BTreeMap::from([
+                (
+                    "Bn254".to_string(),
+                    build_curve_libraries_table(Default::default()),
+                ),
+                (
+                    "Bls12381".to_string(),
+                    build_curve_libraries_table(CurveLibrariesTableOverrides {
+                        constants_library: Some(build_library_table(LibraryTableOverrides {
+                            file: Some("Constants.sol".to_string()),
+                            library: Some("Bls12381Constants".to_string()),
+                        })),
+                        records_library: Some(build_library_table(LibraryTableOverrides {
+                            file: Some("VectorRecords.sol".to_string()),
+                            library: Some("Bls12381VectorRecords".to_string()),
+                        })),
+                    }),
+                ),
+            ])
         }),
         foundry_root: overrides
             .foundry_root
@@ -433,11 +468,8 @@ pub fn build_generate_table(overrides: GenerateTableOverrides) -> GenerateTable 
             .unwrap_or_else(|| vec!["generated".to_string()]),
         curve_directories: overrides.curve_directories.unwrap_or_else(|| {
             std::collections::BTreeMap::from([
-                (format!("{:?}", PairingCurve::Bn254), "bn254".to_string()),
-                (
-                    format!("{:?}", PairingCurve::Bls12381),
-                    "bls12_381".to_string(),
-                ),
+                ("Bn254".to_string(), "bn254".to_string()),
+                ("Bls12381".to_string(), "bls12_381".to_string()),
             ])
         }),
         compiler_version: overrides

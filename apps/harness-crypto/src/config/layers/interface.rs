@@ -58,7 +58,7 @@ pub struct SelectionsTable {
 pub struct NetworkProfileTable {
     pub chain_identifier: CanonicalValueTable,
     pub entitlement_contract: CanonicalValueTable,
-    pub deployment_record: CanonicalValueTable,
+    pub deployment_records: BTreeMap<String, CanonicalValueTable>,
     pub gas_price_oracle: CanonicalValueTable,
     pub verifier_endpoint: String,
     pub precompile_encodings: Vec<String>,
@@ -116,11 +116,17 @@ pub struct LibraryTable {
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct CurveLibrariesTable {
+    pub constants_library: LibraryTable,
+    pub records_library: LibraryTable,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GenerateTable {
     pub concrete: String,
     pub kinds: BTreeMap<String, GenerateKindTable>,
-    pub constants_library: LibraryTable,
-    pub records_library: LibraryTable,
+    pub curve_libraries: BTreeMap<String, CurveLibrariesTable>,
     pub foundry_root: PathBuf,
     pub generated_directory: Vec<String>,
     pub curve_directories: BTreeMap<String, String>,

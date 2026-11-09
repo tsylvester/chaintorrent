@@ -11,7 +11,7 @@ use super::canonical_delivery_context::provides::CanonicalDeliveryContext;
 pub struct AdmittedNetworkProfile {
     pub chain_identifier: CanonicalFieldValue,
     pub entitlement_contract: CanonicalFieldValue,
-    pub deployment_record: CanonicalFieldValue,
+    pub deployment_records: Vec<CanonicalFieldValue>,
     pub gas_price_oracle: CanonicalFieldValue,
 }
 
@@ -39,7 +39,6 @@ pub struct AdmittedIdentities {
 pub enum NetworkProfileField {
     ChainIdentifier,
     EntitlementContract,
-    DeploymentRecord,
     GasPriceOracle,
 }
 
@@ -112,6 +111,7 @@ pub struct AdmitStatementsPayload {
     pub network_profile: NetworkProfileTable,
     pub statements: StatementsTable,
     pub identities: IdentitiesTable,
+    pub curve_labels: Vec<String>,
     pub scope: IdentityScope,
 }
 
@@ -128,6 +128,12 @@ pub enum AdmitStatementsErrorReturn {
         field: NetworkProfileField,
         refusal: CanonicalValueRefusal,
     },
+    DeploymentRecord {
+        label: String,
+        refusal: CanonicalValueRefusal,
+    },
+    MissingDeploymentRecord { label: String },
+    UndeclaredDeploymentRecord { label: String },
     Context {
         relation: ContextRelation,
         field: ContextField,

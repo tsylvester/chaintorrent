@@ -75,6 +75,11 @@ pub fn config(deps: &ConfigDeps, params: ConfigParams, payload: ConfigPayload) -
             network_profile: document.network_profile.clone(),
             statements: document.statements.clone(),
             identities: document.identities.clone(),
+            curve_labels: admitted
+                .curves
+                .iter()
+                .map(|curve| curve.label.clone())
+                .collect(),
             scope: admitted.kem.scope,
         },
     ) {
@@ -187,20 +192,25 @@ pub fn config(deps: &ConfigDeps, params: ConfigParams, payload: ConfigPayload) -
         Err(error) => return Err(ConfigErrorReturn::VerifierEndpoint(error)),
     };
 
-    let verifier = match admitted.verifier {
-        VerifierConcreteKind::Evm => VerifierConcrete::Evm {
-            settings: Box::new(EvmVerifierSettings {
-                endpoint,
-                verifier_address: network_profile.deployment_record.clone(),
-                gas_price_oracle: network_profile.gas_price_oracle.clone(),
-            }),
-        },
-    };
+    let verifiers: Vec<VerifierConcrete> = admitted
+        .curves
+        .iter()
+        .zip(network_profile.deployment_records.iter())
+        .map(|(_, deployment_record)| match admitted.verifier {
+            VerifierConcreteKind::Evm => VerifierConcrete::Evm {
+                settings: Box::new(EvmVerifierSettings {
+                    endpoint: endpoint.clone(),
+                    verifier_address: deployment_record.clone(),
+                    gas_price_oracle: network_profile.gas_price_oracle.clone(),
+                }),
+            },
+        })
+        .collect();
 
     Ok(ConfigSuccessReturn {
         configuration: HarnessConfiguration {
             selections: admitted,
-            verifier,
+            verifiers,
             curve_labels,
             network_profile,
             statements,

@@ -5,9 +5,7 @@ use core::num::NonZeroU32;
 use super::admit_generate::provides::build_admitted_generate;
 use super::admit_output::provides::build_admitted_output;
 use super::admit_selections::provides::build_admitted_selections;
-use super::admit_statements::provides::{
-    build_admitted_identities, build_admitted_network_profile, build_admitted_statements,
-};
+use super::admit_statements::provides::{build_admitted_identities, build_admitted_statements};
 use super::config;
 use super::mock::{
     build_config_deps, build_config_params, build_config_payload, build_harness_configuration,
@@ -22,7 +20,9 @@ use crate::report::provides::{ReportTextConstructorParamsOverrides, build_report
 /// Act:     `config`, once.
 /// Assert:  the result is `Ok`; its `selections` equals
 ///   `build_admitted_selections(Default::default())`, its `network_profile`
-///   equals `build_admitted_network_profile(Default::default())`, its
+///   equals `build_harness_configuration(Default::default()).network_profile`,
+///   the default network profile with one record per curve of the default
+///   selections, its
 ///   `identities` equals `build_admitted_identities(Default::default())`,
 ///   its `generate` equals `build_admitted_generate(Default::default())`,
 ///   its `output` equals `build_admitted_output(Default::default())`, and
@@ -33,7 +33,8 @@ use crate::report::provides::{ReportTextConstructorParamsOverrides, build_report
 fn config_returns_the_values_the_composed_functions_returned() {
     // Arrange
     let expected_selections = build_admitted_selections(Default::default());
-    let expected_network_profile = build_admitted_network_profile(Default::default());
+    let expected_network_profile =
+        build_harness_configuration(Default::default()).network_profile;
     let expected_identities = build_admitted_identities(Default::default());
     let expected_generate = build_admitted_generate(Default::default());
     let expected_output = build_admitted_output(Default::default());
@@ -115,13 +116,21 @@ fn config_admits_the_report_defaults_and_an_absent_adjustment() {
 ///   `ReportText` at its index.
 /// Arrange: the default deps, params, and payload.
 /// Act:     `config`, once.
-/// Assert:  `curve_labels` equals one `build_report_text` over `"curve-a"`.
+/// Assert:  `curve_labels` equals one `build_report_text` over the `label`
+///   of each curve of `build_admitted_selections(Default::default())`, in
+///   curve order.
 #[test]
 fn config_admits_one_label_per_curve_in_order() {
     // Arrange
-    let expected = vec![build_report_text(ReportTextConstructorParamsOverrides {
-        text: Some("curve-a".to_string()),
-    })];
+    let expected: Vec<_> = build_admitted_selections(Default::default())
+        .curves
+        .iter()
+        .map(|curve| {
+            build_report_text(ReportTextConstructorParamsOverrides {
+                text: Some(curve.label.clone()),
+            })
+        })
+        .collect();
     // Act
     let configuration = config(
         &build_config_deps(Default::default()),
@@ -135,15 +144,19 @@ fn config_admits_one_label_per_curve_in_order() {
     // config_admits_one_label_per_curve_in_order
 }
 
-/// Contract: Verifier endpoint and Verifier concrete → the Evm arm holds the
-///   endpoint, the deployment record, and the gas price oracle.
-/// Arrange: the default deps, params, and payload.
+/// Contract: Verifier endpoint and Verifier concrete → each curve's Evm
+///   concrete holds the endpoint, that curve's deployment record, and the
+///   gas price oracle, in curve order.
+/// Arrange: the default deps, params, and payload, the mocked
+///   `admit_statements` returning a network profile whose records differ
+///   per curve.
 /// Act:     `config`, once.
-/// Assert:  `verifier` equals `build_harness_configuration(Default::default()).verifier`.
+/// Assert:  `verifiers` equals
+///   `build_harness_configuration(Default::default()).verifiers`.
 #[test]
 fn config_selects_the_evm_verifier_with_the_documents_endpoint_and_addresses() {
     // Arrange
-    let expected = build_harness_configuration(Default::default()).verifier;
+    let expected = build_harness_configuration(Default::default()).verifiers;
     // Act
     let configuration = config(
         &build_config_deps(Default::default()),
@@ -153,6 +166,6 @@ fn config_selects_the_evm_verifier_with_the_documents_endpoint_and_addresses() {
     .expect("the configuration succeeds")
     .configuration;
     // Assert
-    assert_eq!(configuration.verifier, expected);
+    assert_eq!(configuration.verifiers, expected);
     // config_selects_the_evm_verifier_with_the_documents_endpoint_and_addresses
 }

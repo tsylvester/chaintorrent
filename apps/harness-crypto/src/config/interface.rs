@@ -35,7 +35,7 @@ pub struct ReportSettings {
 #[derive(Clone)]
 pub struct HarnessConfiguration {
     pub selections: AdmittedSelections,
-    pub verifier: VerifierConcrete,
+    pub verifiers: Vec<VerifierConcrete>,
     pub curve_labels: Vec<ReportText>,
     pub network_profile: AdmittedNetworkProfile,
     pub statements: AdmittedStatements,

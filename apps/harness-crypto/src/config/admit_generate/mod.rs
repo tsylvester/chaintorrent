@@ -18,7 +18,8 @@ use crate::generate::provides::{
     GeneratedDirectoryConstructorParams, GeneratedFileName, GeneratedFileNameConstructorParams,
     MsmTermCount, MsmTermCountConstructorParams, SOLIDITY_GENERATE_DECLARATION,
     SolidityCompilerVersion, SolidityConstantName, SolidityConstantNameConstructorParams,
-    SolidityCurveDirectories, SolidityGenerateSettings, SolidityLibraryName,
+    SolidityCurveDirectories, SolidityCurveLibraries, SolidityCurveLibraryNames,
+    SolidityGenerateSettings, SolidityLibraryName,
     SolidityLibraryNameConstructorParams, SolidityLibraryNames, SolidityMemberName,
     SolidityMemberNameConstructorParams, SolidityTypeName, SolidityTypeNameConstructorParams,
     SolidityVectorKindNames, SolidityVectorKindSettings, SpdxLicenseIdentifier,
@@ -152,50 +153,94 @@ pub fn admit_generate(
         });
     }
 
-    let constants_library_file =
-        match GeneratedFileName::try_new(GeneratedFileNameConstructorParams {
-            text: generate.constants_library.file.clone(),
-        }) {
-            Ok(file_name) => file_name,
-            Err(error) => {
-                return Err(AdmitGenerateErrorReturn::ConstantsLibraryFile { error });
+    let mut admitted_libraries = Vec::with_capacity(generate.curve_libraries.len());
+    for (key, entry) in &generate.curve_libraries {
+        let curve = match member_named(key, PAIRING_CURVES, |member| member) {
+            Some(member) => *member,
+            None => {
+                return Err(AdmitGenerateErrorReturn::CurveLibrariesKey { text: key.clone() });
             }
         };
-    let constants_library_name =
-        match SolidityLibraryName::try_new(SolidityLibraryNameConstructorParams {
-            text: generate.constants_library.library.clone(),
-        }) {
-            Ok(library_name) => library_name,
-            Err(error) => {
-                return Err(AdmitGenerateErrorReturn::ConstantsLibraryName { error });
-            }
+        let constants_library = SolidityLibraryNames {
+            file_name: match GeneratedFileName::try_new(GeneratedFileNameConstructorParams {
+                text: entry.constants_library.file.clone(),
+            }) {
+                Ok(file_name) => file_name,
+                Err(error) => {
+                    return Err(AdmitGenerateErrorReturn::ConstantsLibraryFile { curve, error });
+                }
+            },
+            library_name: match SolidityLibraryName::try_new(
+                SolidityLibraryNameConstructorParams {
+                    text: entry.constants_library.library.clone(),
+                },
+            ) {
+                Ok(library_name) => library_name,
+                Err(error) => {
+                    return Err(AdmitGenerateErrorReturn::ConstantsLibraryName { curve, error });
+                }
+            },
         };
-    let constants_library = SolidityLibraryNames {
-        file_name: constants_library_file,
-        library_name: constants_library_name,
+        let records_library = SolidityLibraryNames {
+            file_name: match GeneratedFileName::try_new(GeneratedFileNameConstructorParams {
+                text: entry.records_library.file.clone(),
+            }) {
+                Ok(file_name) => file_name,
+                Err(error) => {
+                    return Err(AdmitGenerateErrorReturn::RecordsLibraryFile { curve, error });
+                }
+            },
+            library_name: match SolidityLibraryName::try_new(
+                SolidityLibraryNameConstructorParams {
+                    text: entry.records_library.library.clone(),
+                },
+            ) {
+                Ok(library_name) => library_name,
+                Err(error) => {
+                    return Err(AdmitGenerateErrorReturn::RecordsLibraryName { curve, error });
+                }
+            },
+        };
+        admitted_libraries.push((
+            curve,
+            SolidityCurveLibraryNames {
+                constants_library,
+                records_library,
+            },
+        ));
+    }
+    for curve in PAIRING_CURVES {
+        if !admitted_libraries.iter().any(|(named, _)| named == curve) {
+            return Err(AdmitGenerateErrorReturn::MissingCurveLibraries { curve: *curve });
+        }
+    }
+    let bn254 = match admitted_libraries
+        .iter()
+        .find(|(named, _)| *named == PairingCurve::Bn254)
+    {
+        Some((_, names)) => names.clone(),
+        None => {
+            return Err(AdmitGenerateErrorReturn::MissingCurveLibraries {
+                curve: PairingCurve::Bn254,
+            });
+        }
     };
-
-    let records_library_file =
-        match GeneratedFileName::try_new(GeneratedFileNameConstructorParams {
-            text: generate.records_library.file.clone(),
-        }) {
-            Ok(file_name) => file_name,
-            Err(error) => {
-                return Err(AdmitGenerateErrorReturn::RecordsLibraryFile { error });
-            }
-        };
-    let records_library_name =
-        match SolidityLibraryName::try_new(SolidityLibraryNameConstructorParams {
-            text: generate.records_library.library.clone(),
-        }) {
-            Ok(library_name) => library_name,
-            Err(error) => {
-                return Err(AdmitGenerateErrorReturn::RecordsLibraryName { error });
-            }
-        };
-    let records_library = SolidityLibraryNames {
-        file_name: records_library_file,
-        library_name: records_library_name,
+    let bls12_381 = match admitted_libraries
+        .iter()
+        .find(|(named, _)| *named == PairingCurve::Bls12381)
+    {
+        Some((_, names)) => names.clone(),
+        None => {
+            return Err(AdmitGenerateErrorReturn::MissingCurveLibraries {
+                curve: PairingCurve::Bls12381,
+            });
+        }
+    };
+    let curve_libraries = SolidityCurveLibraries {
+        bn254,
+        bls12_381,
+        #[cfg(any(test, feature = "mocks"))]
+        mock: mock_curve_libraries()?,
     };
 
     let mut segments = Vec::with_capacity(generate.generated_directory.len());
@@ -261,7 +306,12 @@ pub fn admit_generate(
             });
         }
     };
-    let curve_directories = SolidityCurveDirectories { bn254, bls12_381 };
+    let curve_directories = SolidityCurveDirectories {
+        bn254,
+        bls12_381,
+        #[cfg(any(test, feature = "mocks"))]
+        mock: mock_curve_directory()?,
+    };
 
     let compiler_version = match parse_compiler_version(&generate.compiler_version) {
         Ok(version) => version,
@@ -284,8 +334,7 @@ pub fn admit_generate(
 
     let settings = SolidityGenerateSettings {
         kinds: kind_settings,
-        constants_library,
-        records_library,
+        curve_libraries,
         foundry_root: generate.foundry_root.clone(),
         generated_directory,
         curve_directories,
@@ -310,6 +359,57 @@ fn member_named<'a, M, D: core::fmt::Debug>(
     members
         .iter()
         .find(|member| format!("{:?}", name_of(member)) == text)
+}
+
+#[cfg(any(test, feature = "mocks"))]
+fn mock_curve_directory() -> Result<GeneratedFileName, AdmitGenerateErrorReturn> {
+    GeneratedFileName::try_new(GeneratedFileNameConstructorParams {
+        text: "mock".to_string(),
+    })
+    .map_err(|error| AdmitGenerateErrorReturn::CurveDirectory {
+        curve: PairingCurve::Mock,
+        error,
+    })
+}
+
+#[cfg(any(test, feature = "mocks"))]
+fn mock_curve_libraries() -> Result<SolidityCurveLibraryNames, AdmitGenerateErrorReturn> {
+    let constants_library = SolidityLibraryNames {
+        file_name: GeneratedFileName::try_new(GeneratedFileNameConstructorParams {
+            text: "Constants.sol".to_string(),
+        })
+        .map_err(|error| AdmitGenerateErrorReturn::ConstantsLibraryFile {
+            curve: PairingCurve::Mock,
+            error,
+        })?,
+        library_name: SolidityLibraryName::try_new(SolidityLibraryNameConstructorParams {
+            text: "MockConstants".to_string(),
+        })
+        .map_err(|error| AdmitGenerateErrorReturn::ConstantsLibraryName {
+            curve: PairingCurve::Mock,
+            error,
+        })?,
+    };
+    let records_library = SolidityLibraryNames {
+        file_name: GeneratedFileName::try_new(GeneratedFileNameConstructorParams {
+            text: "VectorRecords.sol".to_string(),
+        })
+        .map_err(|error| AdmitGenerateErrorReturn::RecordsLibraryFile {
+            curve: PairingCurve::Mock,
+            error,
+        })?,
+        library_name: SolidityLibraryName::try_new(SolidityLibraryNameConstructorParams {
+            text: "MockVectorRecords".to_string(),
+        })
+        .map_err(|error| AdmitGenerateErrorReturn::RecordsLibraryName {
+            curve: PairingCurve::Mock,
+            error,
+        })?,
+    };
+    Ok(SolidityCurveLibraryNames {
+        constants_library,
+        records_library,
+    })
 }
 
 fn parse_compiler_version(
