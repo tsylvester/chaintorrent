@@ -2627,7 +2627,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every family and concrete error enum the KEM declares derives `Debug`, `PartialEq`, and `Eq`, and every refusal the concrete's tests assert is asserted by `assert_eq!` against the whole expected error
     * `[✅]`   Code outside `adapters/kem` naming `Bb1DepthOneKem` or anything under `bb1_depth_one` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* ``   `kem/factory` **Credential KEM factory constructing the concrete the configuration names over a borrowed pairing and hash-to-scalar adapter, admitted against the KEM identifier and the identity scope the suite requires, and handing it to a consumer generic over the family's trait for that pairing; carries the family's integration test**
+* `[✅]`   `kem/factory` **Credential KEM factory constructing the concrete the configuration names over a borrowed pairing and hash-to-scalar adapter, admitted against the KEM identifier and the identity scope the suite requires, and handing it to a consumer generic over the family's trait for that pairing; carries the family's integration test**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a consumer obtains a credential KEM only through the family's generic surface, never by naming a concrete, over the pairing it already resolved, and the KEM it uses is the one the deployment's suite names under the identity scope the suite fixes, so a concrete that does not declare the required identifier or scope is refused before anything is constructed (CR-08; CD-08; Composition Boundary)
@@ -3524,7 +3524,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `wrapping_a_zero_piece_group_key_yields_the_wrapping_key_the_oracle_states`, `wrapping_an_all_ones_piece_group_key_yields_the_complement_of_the_wrapping_key_the_oracle_states`, and `a_key_derivation_refusal_reaches_the_caller_whole` pass over every case of `DECLARED_ENCODING_SELECTIONS` and of `DECLARED_KDF_SELECTIONS` (CR-11, the wrapping key derived from the encapsulated value and context and the XOR wrap, frozen against the key-derivation family's independent oracle)
     * `[✅]`   No vendor library is named in `crates/workflows`
 
-* ``   `workflows/sidecar/unwrap` **Unwrap of a wrapped piece-group key under the wrapping key a holder's encapsulated value derives; carries the credential KEM milestone's integration test, two independently generated parameter sets opening one piece-group key, and its commit**
+* `[✅]`   `workflows/sidecar/unwrap` **Unwrap of a wrapped piece-group key under the wrapping key a holder's encapsulated value derives; carries the credential KEM milestone's integration test, two independently generated parameter sets opening one piece-group key, and its commit**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: a holder recovers a group's piece-group key from its own set's sidecar entry by deriving that set's wrapping key from the encapsulated value its credential decapsulates and removing it from the wrapped key, and every live set, however independently generated, must recover the same piece-group key, so one ciphertext decrypts under every live set (CR-08 cross-set agreement; CR-11; `docs/research/cryptography.md`'s Credential KEM statement)
