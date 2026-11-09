@@ -181,11 +181,13 @@ The hashing family is a harness ticket pair, `hashing/blake3_bao` and `hashing/f
 | --- | --- | --- | --- |
 | `transport/rqbit` | The `librqbit` concrete over the overlay branch the workspace manifest names: the piece-completion hook, the peer-injection call, and the storage-backend trait on that branch with each hook's upstream issue; root-to-infohash translation; torrent creation per object with the ciphertext and each sidecar as its own object and locator; Bao verification of every completed piece after the library's check, through the hashing family; seeder-map peer injection; the engine capability; authors, as its producers, `ISwarmTransportAdapter`, the locator types with their fallible constructors, the declaration of the integrity structure on the wire and of the engine capability a transport may expose for library-backed discovery, and the family's mock; creates the `adapters/transport` crate; pins `librqbit` | `hashing/factory`, `encoding/factory` | SW-01 contract, SW-01, SW-06, EC-02 |
 | `transport/factory` | The transport family's factory function with a branch per concrete, and the crate's public surface, including the engine capability; carries the family's integration test across factory and concrete | `transport/rqbit` | The surface the seed host, resolution, and library-backed discovery consume |
-| `discovery/local` | Local-network discovery as a source; authors, as its producers, `IPeerDiscoveryAdapter`, the peer types with their fallible constructors, the declaration, and the family's mock; creates the `adapters/discovery` crate | `encoding/factory` | SW-02 contract; SW-02 |
-| `discovery/dht` | The library's DHT as a source, through the engine capability the transport factory's surface exposes | `discovery/local`, `transport/factory` | SW-02 |
-| `discovery/pex` | Peer exchange as a source, through the same engine capability | `discovery/local`, `transport/factory` | SW-02 |
-| `discovery/tracker` | Trackers as a source, through the same engine capability | `discovery/local`, `transport/factory` | SW-02 |
-| `discovery/aggregate` | The family-owned aggregation: concurrent sources unioned and deduplicated, none authoritative | `discovery/local` | SW-02 aggregation under overlapping, conflicting, unavailable, and malicious results |
+| `discovery/admit_peers` | The family-owned function admitting the addresses a source yielded into discovered peers: each address admitted through the peer type's fallible constructor, a refused address dropped, a repeat kept once, in first-arrival order, each peer carrying the source its params name; authors, as its producers, `IPeerDiscoveryAdapter`, the key and peer types with their fallible constructors, the declaration, and the family's mock; creates the `adapters/discovery` crate | `workspace/cargo` | SW-02 contract; SW-02, unavailable and malicious results handled safely |
+| `discovery/local` | Local-network discovery as a source, its heard addresses admitted through `discovery/admit_peers` | `discovery/admit_peers` | SW-02 |
+| `discovery/locator_of` | The family-owned function converting a discovery key into the object locator that carries the key's info-hash, the locator the transport's engine is asked for a peer feed of | `discovery/admit_peers`, `transport/factory` | SW-02 |
+| `discovery/dht` | The library's DHT as a source, through the engine capability the transport factory's surface exposes | `discovery/admit_peers`, `discovery/locator_of`, `transport/factory` | SW-02 |
+| `discovery/pex` | Peer exchange as a source, through the same engine capability | `discovery/admit_peers`, `discovery/locator_of`, `transport/factory` | SW-02 |
+| `discovery/tracker` | Trackers as a source, through the same engine capability | `discovery/admit_peers`, `discovery/locator_of`, `transport/factory` | SW-02 |
+| `discovery/aggregate` | The family-owned aggregation: concurrent sources unioned and deduplicated, none authoritative | `discovery/admit_peers` | SW-02 aggregation under overlapping, conflicting, unavailable, and malicious results |
 | `discovery/factory` | The discovery family's factory function, constructing the concrete the composition names, with a branch per concrete the family holds at this ticket, `local`, `dht`, `pex`, and `tracker`, and resolving the sources the composition admits behind the aggregation, and the crate's public surface; carries the family's integration test across factory, concretes, and aggregation; each concrete authored after it, `discovery/seeder_map` among them, adds its branch in its own node | `discovery/local`, `discovery/dht`, `discovery/pex`, `discovery/tracker`, `discovery/aggregate` | SW-02: the surface the seed host, resolution, and the chain and submission families' seeder-map concrete consume |
 | `storage/redb` | The `redb` concrete; authors, as its producers, the key-value store interface with tables, transactions, and checkpoints, its types with their fallible constructors, the declaration, and the family's mock; creates the `adapters/storage` crate; pins `redb` | `encoding/factory` | XA-03 and SW-05 store contract; transactions and checkpoints under interruption |
 | `storage/factory` | The storage-engine family's factory function with a branch per concrete, and the crate's public surface; carries the family's integration test across factory and concrete | `storage/redb` | The surface every index, the job engine, and the configuration registry consume |
@@ -656,7 +658,9 @@ flowchart TB
         sig["signature/factory"]
         tr_rq["transport/rqbit"]
         tr["transport/factory"]
+        disc_admit["discovery/admit_peers"]
         disc_local["discovery/local"]
+        disc_loc["discovery/locator_of"]
         disc_dht["discovery/dht"]
         disc_pex["discovery/pex"]
         disc_trk["discovery/tracker"]
@@ -680,10 +684,16 @@ flowchart TB
         sig_k1 --> sig
         hashing --> tr_rq
         tr_rq --> tr
-        disc_local --> disc_dht
-        disc_local --> disc_pex
-        disc_local --> disc_trk
-        disc_local --> disc_agg
+        disc_admit --> disc_local
+        disc_admit --> disc_loc
+        tr --> disc_loc
+        disc_admit --> disc_dht
+        disc_admit --> disc_pex
+        disc_admit --> disc_trk
+        disc_admit --> disc_agg
+        disc_loc --> disc_dht
+        disc_loc --> disc_pex
+        disc_loc --> disc_trk
         tr --> disc_dht
         tr --> disc_pex
         tr --> disc_trk
@@ -804,7 +814,7 @@ flowchart TB
     f_sec --> hashing_b3
     f_enc --> sig_ed
     dom_scheme --> sig_ed
-    f_enc --> disc_local
+    f_ws --> disc_admit
     f_enc --> st_redb
     f_enc --> chain_forms
     f_ws --> cfg_layers
@@ -909,7 +919,7 @@ the adapter `harness-crypto/generate/solidity` follows them all and `harness-cry
 `harness-crypto/verifier/factory`, `harness-crypto/measure`, and `harness-crypto/report` follow in turn; the admission functions that take their values and `harness-crypto/config` follow `harness-crypto/report`, and `harness-crypto/config` follows every admission function; `harness-crypto/run/admit_contexts` follows `harness-crypto/config`;
 the run's consumers follow `harness-crypto/run/admit_contexts` innermost first, from `harness-crypto/run/generate_consumer` through `harness-crypto/run/verifier_consumer` to `harness-crypto/run/pairing_consumer`; `harness-crypto/run`, `harness-crypto/output`, and `harness-crypto/main` follow in turn;
 `contracts/evm/PairingLib`, `contracts/evm/DeliveryVerifier`, and `contracts/evm/deploy` follow `harness-crypto/main`, and `contracts/evm/deploy` carries the grouping's commit.
-The signature tickets start from `signature/ed25519` on `encoding/factory` and `domain/signature_scheme_identifier`, and the swarm tickets from `transport/rqbit`, `discovery/local`, and `storage/redb` on `hashing/factory` and `encoding/factory`; each of those milestones closes at the factory its table names.
+The signature tickets start from `signature/ed25519` on `encoding/factory` and `domain/signature_scheme_identifier`, and the swarm tickets from `transport/rqbit` and `storage/redb` on `hashing/factory` and `encoding/factory` and from `discovery/admit_peers` on `workspace/cargo`; each of those milestones closes at the factory its table names.
 
 Across groupings the sequence is the [milestones](milestones.md)' order, with the parallelism the graph makes visible: the signature and swarm tickets run beside the harness and the contract sprints from `encoding/factory` and `hashing/factory` onward; the identity and custody epic begins as soon as the signature tickets, the chain and submission families, and the relayer or paymaster milestone exist, before the CAS epic, because the installation coordinator needs it; the relayer or paymaster milestone follows the chain and submission families sprint and precedes every daemon epic that submits a signed intent; the resolution orchestrator follows credential delivery and First Finder ingest; the daemon composition follows the resolution orchestrator, the installation coordinator, the explicit publisher path, and the claim verifier and escrow claim, and the desktop application and CLI follow it; the demonstrable milestone follows the daemon composition. Within the credential delivery epic `payment/native` precedes `payment/factory`, which precedes `workflows/acquire`; the registry contracts sprint authors the lock and `IPaymentAsset` with its native concrete, and the on-chain adapter registry sprint binds them. The package host maps a request's name to the asset's root through its alias lookup, the root type being the hashing family's, and `chain/evm_forms` authors address derivation and the signed-intent form with no signature dependency. The chain and submission sprint authors `chain/factory` once, after the Base concrete, since the harness authored the forms constructor as the family-owned module `chain/create_chain_forms` rather than in the factory.
 
