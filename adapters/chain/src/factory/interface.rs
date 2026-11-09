@@ -8,6 +8,8 @@ pub const CHAIN_FORMS_INTERFACE_VERSION: u32 = 2;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ChainFormsIdentifier {
     EvmV1,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
