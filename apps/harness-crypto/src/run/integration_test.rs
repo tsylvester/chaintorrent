@@ -456,6 +456,10 @@ fn the_first_refusal_is_returned_in_the_stated_order() {
             ..Default::default()
         },
     );
+    first
+        .selections
+        .precompile_encodings
+        .push(pairing::PrecompileEncoding::Mock);
 
     // Act, first case
     let result = run(

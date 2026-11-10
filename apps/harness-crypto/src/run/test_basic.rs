@@ -8,11 +8,6 @@ use std::path::PathBuf;
 
 use super::mock::{RunPayloadOverrides, build_run_deps, build_run_params, build_run_payload};
 use super::run;
-use crate::config::provides::{
-    AdmittedOutputOverrides, HarnessConfigurationOverrides, MeasurementSettingsOverrides,
-    ReportSettingsOverrides, build_admitted_output, build_harness_configuration,
-    build_measurement_settings, build_report_settings,
-};
 use crate::generate::provides::{EmittedFileOverrides, VectorKind, build_emitted_file};
 use crate::report::provides::{
     ReportDefaultsOverrides, ReportDestination, ReportTextConstructorParamsOverrides,
@@ -30,12 +25,8 @@ use crate::report::provides::{
 #[test]
 fn run_returns_the_measurement_of_the_configured_benchmark_concrete() {
     // Arrange
-    let payload = build_run_payload(RunPayloadOverrides {
-        configuration: Some(build_harness_configuration(HarnessConfigurationOverrides {
-            benchmark_iterations: NonZeroU32::new(3),
-            ..Default::default()
-        })),
-    });
+    let mut payload = build_run_payload(Default::default());
+    payload.configuration.benchmark_iterations = NonZeroU32::new(3).unwrap();
 
     // Act
     let result = run(
@@ -66,15 +57,8 @@ fn run_returns_the_measurement_of_the_configured_benchmark_concrete() {
 #[test]
 fn run_returns_each_curves_label_and_measurement_in_curve_order() {
     // Arrange
-    let payload = build_run_payload(RunPayloadOverrides {
-        configuration: Some(build_harness_configuration(HarnessConfigurationOverrides {
-            measurement: Some(build_measurement_settings(MeasurementSettingsOverrides {
-                iterations: NonZeroU32::new(5),
-                ..Default::default()
-            })),
-            ..Default::default()
-        })),
-    });
+    let mut payload = build_run_payload(Default::default());
+    payload.configuration.measurement.iterations = NonZeroU32::new(5).unwrap();
 
     // Act
     let result = run(
@@ -116,30 +100,18 @@ fn run_reports_each_curve_to_the_configured_destination_with_its_label() {
     let _ = std::fs::remove_dir_all(&directory);
     std::fs::create_dir_all(&directory).expect("the report directory is created");
     let report_path = directory.join("report.txt");
-    let payload = build_run_payload(RunPayloadOverrides {
-        configuration: Some(build_harness_configuration(HarnessConfigurationOverrides {
-            measurement: Some(build_measurement_settings(MeasurementSettingsOverrides {
-                conditions: Some(build_report_text(ReportTextConstructorParamsOverrides {
-                    text: Some("conditions-a".to_string()),
-                })),
-                ..Default::default()
-            })),
-            output: Some(build_admitted_output(AdmittedOutputOverrides {
-                report_destinations: Some(vec![ReportDestination::File {
-                    path: report_path.clone(),
-                }]),
-                ..Default::default()
-            })),
-            report: Some(build_report_settings(ReportSettingsOverrides {
-                defaults: Some(build_report_defaults(ReportDefaultsOverrides {
-                    piece_group_size: NonZeroU32::new(16_384),
-                    primary_curve: Some(build_report_text(ReportTextConstructorParamsOverrides {
-                        text: Some("curve-b".to_string()),
-                    })),
-                })),
-                ..Default::default()
-            })),
-            ..Default::default()
+    let mut payload = build_run_payload(Default::default());
+    payload.configuration.measurement.conditions =
+        build_report_text(ReportTextConstructorParamsOverrides {
+            text: Some("conditions-a".to_string()),
+        });
+    payload.configuration.output.report_destinations = vec![ReportDestination::File {
+        path: report_path.clone(),
+    }];
+    payload.configuration.report.defaults = build_report_defaults(ReportDefaultsOverrides {
+        piece_group_size: NonZeroU32::new(16_384),
+        primary_curve: Some(build_report_text(ReportTextConstructorParamsOverrides {
+            text: Some("curve-b".to_string()),
         })),
     });
 
