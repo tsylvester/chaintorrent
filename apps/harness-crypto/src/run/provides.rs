@@ -5,4 +5,5 @@ pub use super::encoding_consumer::provides::*;
 pub use super::generate_consumer::provides::*;
 pub use super::kem_consumer::provides::*;
 pub use super::key_agreement_consumer::provides::*;
+pub use super::pairing_consumer::provides::*;
 pub use super::verifier_consumer::provides::*;

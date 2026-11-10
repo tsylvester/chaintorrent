@@ -5,5 +5,6 @@ mod encoding_consumer;
 mod generate_consumer;
 mod kem_consumer;
 mod key_agreement_consumer;
+mod pairing_consumer;
 pub mod provides;
 mod verifier_consumer;
