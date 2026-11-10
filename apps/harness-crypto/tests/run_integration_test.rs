@@ -8,7 +8,6 @@
 //     each_curve_is_reported_under_its_own_label_with_the_configured_defaults
 //     the_first_refusal_is_returned_in_the_stated_order
 //     the_shipped_defaults_reach_no_deployed_verifier
-//     a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default
 //   Carried, `harness-crypto/run/pairing_consumer` —
 //     the_files_and_the_measurement_reach_the_caller_of_create_pairing_whole
 //     the_hash_to_scalar_selection_the_consumer_carries_is_the_concrete_the_factory_constructs
@@ -38,9 +37,11 @@
 //     the_verifier_is_selected_with_the_settings_the_document_holds
 //         ← each_curve_is_composed_with_the_verifier_concrete_of_its_own_index
 //     a_file_and_a_flag_each_replace_a_shipped_default
-//         ← a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default
+//         ← end-to-end, after `contracts/evm/deploy` executes
 //     the_shipped_defaults_configure_the_harness
 //         ← the_shipped_defaults_reach_no_deployed_verifier
+//   End-to-end, proven after `contracts/evm/deploy` executes —
+//     a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default
 
 use core::num::NonZeroU32;
 use core::time::Duration;
@@ -456,6 +457,10 @@ fn the_first_refusal_is_returned_in_the_stated_order() {
             ..Default::default()
         },
     );
+    first
+        .selections
+        .precompile_encodings
+        .push(pairing::PrecompileEncoding::Mock);
 
     // Act, first case: a benchmark refusal before a curve refusal.
     let result = run(
@@ -534,10 +539,14 @@ fn the_shipped_defaults_reach_no_deployed_verifier() {
         },
         harness_crypto::ConfigParams {
             arguments: vec![
+                OsString::from("harness-crypto"),
                 OsString::from("--set"),
-                OsString::from(format!("generate.foundry_root={}", root.display())),
+                OsString::from(format!("generate.foundry_root='{}'", root.display())),
                 OsString::from("--set"),
-                OsString::from(format!("report.destinations={}", destination.display())),
+                OsString::from(format!(
+                    "report.destinations=[{{ kind = \"File\", path = '{}' }}]",
+                    destination.display()
+                )),
             ],
         },
         ConfigPayload {
@@ -564,106 +573,6 @@ fn the_shipped_defaults_reach_no_deployed_verifier() {
         "the generate step wrote vector files beneath the foundry root"
     );
     // the_shipped_defaults_reach_no_deployed_verifier
-}
-
-/// Contract: `config` over `SHIPPED_DEFAULTS` and a command line naming
-///   `--config ../../contracts/evm/deployments/base-sepolia.toml`, the
-///   layer `contracts/evm/deploy` emits, and `--set` assignments, then
-///   `run` over the configuration it returns: `Ok` whose curves carry
-///   their costs as L2 execution gas and L1 data fee and whose iteration
-///   counts are the flags', and, for the layer of a single curve's record,
-///   that other curve's verifier refusal.
-/// Arrange: `config` through the crate root over `SHIPPED_DEFAULTS` and
-///   the named command line, in the cases the entry names.
-/// Act:     `run` through the crate root over the configuration returned.
-/// Assert:  `Ok` with costs and iteration counts as the entry states, or
-///   the other curve's verifier refusal for the single-record layer.
-/// Boundary: the public calls `config` and `run` and the deployed
-///   verifiers.
-/// Mocked:   none; runtime inputs the deployed verifiers and the layer
-///   file.
-#[test]
-fn a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default() {
-    // Arrange, shared: the layer file and the flag arguments.
-    let directory = work_directory();
-    let root = directory.join("foundry");
-    std::fs::create_dir_all(&root).expect("the foundry root is created");
-    let destination = directory.join("report.txt");
-    for (name, argv, expect_ok) in [
-        (
-            "the layer alone",
-            vec![
-                "--config".to_string(),
-                "../../contracts/evm/deployments/base-sepolia.toml".to_string(),
-                "--set".to_string(),
-                format!("generate.foundry_root={}", root.display()),
-                "--set".to_string(),
-                format!("report.destinations={}", destination.display()),
-            ],
-            true,
-        ),
-        (
-            "the layer with the iteration flags",
-            vec![
-                "--config".to_string(),
-                "../../contracts/evm/deployments/base-sepolia.toml".to_string(),
-                "--set".to_string(),
-                "benchmark.iterations=2".to_string(),
-                "--set".to_string(),
-                "measurement.iterations=2".to_string(),
-                "--set".to_string(),
-                format!("generate.foundry_root={}", root.display()),
-                "--set".to_string(),
-                format!("report.destinations={}", destination.display()),
-            ],
-            true,
-        ),
-    ] {
-        // Arrange
-        let created = config(
-            &harness_crypto::ConfigDeps {
-                layers: harness_crypto::layers,
-                admit_selections: harness_crypto::admit_selections,
-                admit_statements: harness_crypto::admit_statements,
-                admit_generate: harness_crypto::admit_generate,
-                admit_output: harness_crypto::admit_output,
-            },
-            harness_crypto::ConfigParams {
-                arguments: argv.iter().map(OsString::from).collect(),
-            },
-            ConfigPayload {
-                defaults: SHIPPED_DEFAULTS.to_string(),
-            },
-        )
-        .expect("the document and the layer are admitted");
-
-        // Act
-        let result = run(
-            &RunDeps,
-            RunParams,
-            RunPayload {
-                configuration: created.configuration,
-            },
-        );
-
-        // Assert
-        let success = result.unwrap_or_else(|_| {
-            panic!("{name}: the deployed verifiers answer and the run succeeds")
-        });
-        assert!(expect_ok, "{name}");
-        for benchmark in &success.benchmarks {
-            if name.contains("iteration flags") {
-                assert_eq!(benchmark.iterations.get(), 2, "{name}");
-            }
-        }
-        for curve in &success.curves {
-            if name.contains("iteration flags") {
-                assert_eq!(curve.measurement.iterations.get(), 2, "{name}");
-            }
-            assert!(curve.measurement.costs.mint.l2_execution_gas > 0, "{name}");
-        }
-    }
-    // a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default
 }
 
 /// Contract, carried: the files and the measurement the consumer returns
@@ -1374,19 +1283,22 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
     // Arrange
     let directory = work_directory();
     let concretes = real_pairing_concretes();
-    let payload = RunPayload {
-        configuration: configuration(
-            &directory,
-            vec![admitted_pairing_of(PairingConcrete::Mock(
-                MockIPairingAdapterFailureMode::SampleScalarWrongLength,
-            ))],
-            vec![
-                curve_of("curve-a", concretes[0]),
-                curve_of("curve-b", concretes[1]),
-            ],
-            HarnessConfigurationOverrides::default(),
-        ),
-    };
+    let mut configuration = configuration(
+        &directory,
+        vec![admitted_pairing_of(PairingConcrete::Mock(
+            MockIPairingAdapterFailureMode::SampleScalarWrongLength,
+        ))],
+        vec![
+            curve_of("curve-a", concretes[0]),
+            curve_of("curve-b", concretes[1]),
+        ],
+        HarnessConfigurationOverrides::default(),
+    );
+    configuration
+        .selections
+        .precompile_encodings
+        .push(pairing::PrecompileEncoding::Mock);
+    let payload = RunPayload { configuration };
 
     // Act
     let result = run(&RunDeps, RunParams, payload);

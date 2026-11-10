@@ -287,7 +287,9 @@ fn the_shipped_defaults_configure_the_harness() {
 /// Arrange: a directory beneath the operating system's temporary directory
 ///   removed before the act; a file and a flag for `benchmark.iterations`,
 ///   `selections.identity_scope`, and `selections.curves` each in the three
-///   interleavings file then flag, flag then file, and file alone.
+///   interleavings file then flag, flag then file, and file alone — the
+///   `selections.curves` layers keeping the shipped labels, which the
+///   shipped deployment records name, and differing in the pairings.
 /// Act:     `config` through the crate root, once per interleaving per key.
 /// Assert:  each result is `Ok` and the admitted value equals the value of
 ///   the last layer that named its key.
@@ -416,33 +418,30 @@ fn a_file_and_a_flag_each_replace_a_shipped_default() {
         }
     }
 
-    // The array `selections.curves`: the file holds one curve the flag's
-    // array does not carry, and the flag's array replaces it whole.
+    // The array `selections.curves`: the file and the flag each hold both
+    // shipped labels with their own pairing, and the flag's array replaces
+    // the file's whole. The labels keep the shipped names because every
+    // curve label must name a deployment record and a layer cannot remove
+    // the shipped records.
     let curves_file = directory.join("curves.toml");
     fs::write(
         &curves_file,
-        "[[selections.curves]]\nlabel = \"file-curve\"\npairing_concrete = \"Bn254Halo2curves\"\ntarget_group_encoding = \"Bn254V1\"\n",
+        "[[selections.curves]]\nlabel = \"bn254\"\npairing_concrete = \"Bn254Halo2curves\"\ntarget_group_encoding = \"Bn254V1\"\n\n[[selections.curves]]\nlabel = \"bls12_381\"\npairing_concrete = \"Bn254Halo2curves\"\ntarget_group_encoding = \"Bn254V1\"\n",
     )
     .expect("the curves file is written");
     let curves_path = curves_file.into_os_string();
     let curves_set = OsString::from(
-        r#"selections.curves=[{label="flag-curve",pairing_concrete="Bls12381Halo2curves",target_group_encoding="Bls12381V1"}]"#,
+        r#"selections.curves=[{label="bn254",pairing_concrete="Bls12381Halo2curves",target_group_encoding="Bls12381V1"},{label="bls12_381",pairing_concrete="Bls12381Halo2curves",target_group_encoding="Bls12381V1"}]"#,
     );
-    let file_curve = AdmittedCurve {
-        label: "file-curve".to_string(),
-        pairing: AdmittedPairing {
-            concrete: PAIRING_CONCRETES[1],
-            target_group_encoding: TARGET_GROUP_ENCODING_IDENTIFIERS[0],
-        },
+    let file_pairing = AdmittedPairing {
+        concrete: PAIRING_CONCRETES[1],
+        target_group_encoding: TARGET_GROUP_ENCODING_IDENTIFIERS[0],
     };
-    let flag_curve = AdmittedCurve {
-        label: "flag-curve".to_string(),
-        pairing: AdmittedPairing {
-            concrete: PAIRING_CONCRETES[3],
-            target_group_encoding: TARGET_GROUP_ENCODING_IDENTIFIERS[1],
-        },
+    let flag_pairing = AdmittedPairing {
+        concrete: PAIRING_CONCRETES[3],
+        target_group_encoding: TARGET_GROUP_ENCODING_IDENTIFIERS[1],
     };
-    let curve_cases: Vec<(Vec<OsString>, AdmittedCurve)> = vec![
+    let curve_cases: Vec<(Vec<OsString>, AdmittedPairing)> = vec![
         (
             vec![
                 program.clone(),
@@ -451,7 +450,7 @@ fn a_file_and_a_flag_each_replace_a_shipped_default() {
                 set_flag.clone(),
                 curves_set.clone(),
             ],
-            flag_curve.clone(),
+            flag_pairing,
         ),
         (
             vec![
@@ -461,25 +460,42 @@ fn a_file_and_a_flag_each_replace_a_shipped_default() {
                 config_flag.clone(),
                 curves_path.clone(),
             ],
-            file_curve.clone(),
+            file_pairing,
         ),
         (
             vec![program.clone(), config_flag.clone(), curves_path.clone()],
-            file_curve.clone(),
+            file_pairing,
         ),
     ];
-    for (arguments, expected) in curve_cases {
+    for (arguments, pairing) in curve_cases {
         // Act
         let configuration = config(&deps, ConfigParams { arguments }, payload.clone())
             .expect("the layers configure")
             .configuration;
         // Assert
-        assert_eq!(configuration.selections.curves, vec![expected.clone()]);
+        assert_eq!(
+            configuration.selections.curves,
+            vec![
+                AdmittedCurve {
+                    label: "bn254".to_string(),
+                    pairing,
+                },
+                AdmittedCurve {
+                    label: "bls12_381".to_string(),
+                    pairing,
+                },
+            ]
+        );
         assert_eq!(
             configuration.curve_labels,
-            vec![build_report_text(ReportTextConstructorParamsOverrides {
-                text: Some(expected.label),
-            })]
+            vec![
+                build_report_text(ReportTextConstructorParamsOverrides {
+                    text: Some("bn254".to_string()),
+                }),
+                build_report_text(ReportTextConstructorParamsOverrides {
+                    text: Some("bls12_381".to_string()),
+                }),
+            ]
         );
     }
     // a_file_and_a_flag_each_replace_a_shipped_default
@@ -627,8 +643,9 @@ fn an_unadmissible_value_is_refused_by_the_function_that_admits_it() {
 ///   observes it.
 /// Arrange: for each variation an argument list overriding one value — a
 ///   zero for each count, a text of whitespace alone for each text, a curve
-///   label of whitespace alone at index one, and an endpoint text no URL
-///   parser admits.
+///   label of whitespace alone at index one beside the shipped labels and a
+///   record keyed by that blank label so the statements step admits the
+///   set, and an endpoint text no URL parser admits.
 /// Act:     `config` through the crate root, once per variation.
 /// Assert:  each result is `Err` of the variant that names the document
 ///   path, any carried error the callee's own.
@@ -719,12 +736,25 @@ fn a_value_this_function_admits_is_refused_with_its_own_variant() {
         "the refusal is AdjustmentPrimaryCurve(Empty)"
     );
 
-    // A curve label of whitespace alone is refused at index one.
+    // A curve label of whitespace alone is refused at index one. The other
+    // labels keep the shipped names and the blank label carries a record so
+    // the statements step admits the label set and the refusal reaches the
+    // curve-label step.
     let result = config(
         &deps,
-        set(
-            r#"selections.curves=[{label="ok-curve",pairing_concrete="Bn254Arkworks",target_group_encoding="Bn254V1"},{label=" ",pairing_concrete="Bls12381Arkworks",target_group_encoding="Bls12381V1"}]"#,
-        ),
+        ConfigParams {
+            arguments: vec![
+                program.clone(),
+                set_flag.clone(),
+                OsString::from(
+                    r#"selections.curves=[{label="bn254",pairing_concrete="Bn254Arkworks",target_group_encoding="Bn254V1"},{label=" ",pairing_concrete="Bls12381Arkworks",target_group_encoding="Bls12381V1"},{label="bls12_381",pairing_concrete="Bls12381Arkworks",target_group_encoding="Bls12381V1"}]"#,
+                ),
+                set_flag.clone(),
+                OsString::from(
+                    r#"network_profile.deployment_records." "={kind="FixedBytes20",value="0x0000000000000000000000000000000000000000"}"#,
+                ),
+            ],
+        },
         payload.clone(),
     );
     assert!(
@@ -1248,7 +1278,8 @@ fn layered_sources_merge_in_command_line_order() {
 ///   naming the member through `--set` — the KEM and key agreement members
 ///   carrying their scope and algebra, every member of `PAIRING_CONCRETES`
 ///   crossed with every member of `TARGET_GROUP_ENCODING_IDENTIFIERS` as a
-///   curve and as a benchmark concrete, and every member of
+///   curve under the shipped labels, which the shipped deployment records
+///   name, and as a benchmark concrete, and every member of
 ///   `PRECOMPILE_ENCODINGS`.
 /// Act:     `config` through the crate root, once per member.
 /// Assert:  the result is `Ok` and the `selections` field for that family
@@ -1453,7 +1484,8 @@ fn every_member_of_every_declared_set_is_admitted_by_its_own_name() {
     }
 
     // Act / Assert — every `PAIRING_CONCRETES` member crossed with every
-    // `TARGET_GROUP_ENCODING_IDENTIFIERS` member, as a curve and as a
+    // `TARGET_GROUP_ENCODING_IDENTIFIERS` member, as a curve under both
+    // shipped labels, which the shipped deployment records name, and as a
     // benchmark concrete.
     for concrete in PAIRING_CONCRETES {
         for target_group_encoding in TARGET_GROUP_ENCODING_IDENTIFIERS {
@@ -1461,7 +1493,9 @@ fn every_member_of_every_declared_set_is_admitted_by_its_own_name() {
                 &deps,
                 set(vec![
                     format!(
-                        "selections.curves=[{{label=\"curve-x\",pairing_concrete=\"{}\",target_group_encoding=\"{}\"}}]",
+                        "selections.curves=[{{label=\"bn254\",pairing_concrete=\"{}\",target_group_encoding=\"{}\"}},{{label=\"bls12_381\",pairing_concrete=\"{}\",target_group_encoding=\"{}\"}}]",
+                        declared_name(concrete),
+                        declared_name(target_group_encoding),
                         declared_name(concrete),
                         declared_name(target_group_encoding)
                     ),
@@ -1481,10 +1515,16 @@ fn every_member_of_every_declared_set_is_admitted_by_its_own_name() {
             };
             assert_eq!(
                 configuration.selections.curves,
-                vec![AdmittedCurve {
-                    label: "curve-x".to_string(),
-                    pairing: expected_pairing,
-                }]
+                vec![
+                    AdmittedCurve {
+                        label: "bn254".to_string(),
+                        pairing: expected_pairing,
+                    },
+                    AdmittedCurve {
+                        label: "bls12_381".to_string(),
+                        pairing: expected_pairing,
+                    },
+                ]
             );
             assert_eq!(
                 configuration.selections.benchmark_concretes,

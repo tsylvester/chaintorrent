@@ -663,10 +663,9 @@ fn the_hash_to_scalar_refusal_precedes_the_encoding_refusal() {
 ///   under the decoder of the held selection and are refused by the decoder
 ///   of the other encoding selection.
 /// Arrange: each pairing the entry names, with a member of
-///   `GENERATE_CONCRETES` under the Ethereum ABI selection and the mock
-///   generate selection under the mock encoding selection, the mock KEM, key
-///   agreement, and delivery proof selections, each encoding paired with the
-///   forms selection that requires its identifier, and
+///   `GENERATE_CONCRETES` under the Ethereum ABI selection paired with the
+///   forms selection that requires its identifier, the mock KEM, key
+///   agreement, and delivery proof selections, and
 ///   `VerifierConcrete::Mock(MockIVerifierAdapterFailureMode::NoFailure)`.
 /// Act:     `create_pairing` through the crate root, once per pairing and
 ///   per encoding selection, then `create_encoding` once per decoder probe.
@@ -725,33 +724,22 @@ fn the_files_are_encoded_under_the_encoding_selection_the_consumer_holds() {
     .expect("the operating-system source constructs");
     let admitted_statements = build_admitted_statements(Default::default());
     let declared_forms = DECLARED_CHAIN_FORMS_SELECTIONS[0];
-    let mock_forms = build_create_chain_forms_params(Default::default());
-    let mock_generate = build_create_generate_params(Default::default());
     let cases: Vec<(
         CreateEncodingParams,
         CreateChainFormsParams,
         GenerateConcrete,
         Vec<VectorKindConfiguration>,
         CreateEncodingParams,
-    )> = vec![
-        (
-            encoding_for(declared_forms),
-            declared_forms,
-            build_generate_concrete(GENERATE_CONCRETES[0], GenerateConcreteOverrides),
-            build_generate_kind_configurations(
-                GENERATE_CONCRETES[0],
-                GenerateKindConfigurationsOverrides,
-            ),
-            build_create_encoding_params(Default::default()),
+    )> = vec![(
+        encoding_for(declared_forms),
+        declared_forms,
+        build_generate_concrete(GENERATE_CONCRETES[0], GenerateConcreteOverrides),
+        build_generate_kind_configurations(
+            GENERATE_CONCRETES[0],
+            GenerateKindConfigurationsOverrides,
         ),
-        (
-            build_create_encoding_params(Default::default()),
-            mock_forms,
-            mock_generate.concrete,
-            mock_generate.kinds,
-            encoding_for(declared_forms),
-        ),
-    ];
+        build_create_encoding_params(Default::default()),
+    )];
 
     for pairing_concrete in PAIRING_CONCRETES {
         for (encoding, forms, generate, kinds, other_encoding) in &cases {

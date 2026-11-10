@@ -229,7 +229,7 @@ each declared kind's vector file holding its configured count, its enumerated se
 
 **Purpose.** Measure what nothing has measured, fix the parameters that gate every node that encrypts, and calibrate throughput.
 
-**Scope.** No new ticket. The harness binary's next run after `contracts/evm/deploy`, with the deployment record layered over its shipped defaults, verifies against the deployed verifier, measures, and writes the report to its configured destinations, and the tests that read the deployment record go GREEN against it; the release evidence, the throughput record, and the re-map of the remaining protocol core milestones follow from what it writes.
+**Scope.** No new ticket. The harness binary's next run after `contracts/evm/deploy`, with the deployment record layered over its shipped defaults, verifies against the deployed verifier, measures, and writes the report to its configured destinations, and the end-to-end tests that read the deployment record run against it here, outside the ordinary `cargo test` cycle; the release evidence, the throughput record, and the re-map of the remaining protocol core milestones follow from what it writes.
 
 **Entry.** Delivery proof and on-chain verifier.
 

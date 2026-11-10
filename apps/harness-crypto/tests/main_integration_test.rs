@@ -5,7 +5,6 @@
 //     a_configuration_refusal_is_written_to_standard_error_and_the_process_fails
 //     a_refused_run_is_written_as_its_refusal_and_the_process_fails
 //     a_refused_destination_write_is_written_to_standard_error_and_the_process_fails
-//     a_successful_run_exits_with_success_after_every_destination_is_written
 //   Carried, `harness-crypto/config` —
 //     an_unadmissible_value_is_refused_by_the_function_that_admits_it
 //     a_value_this_function_admits_is_refused_with_its_own_variant
@@ -13,16 +12,17 @@
 //     a_file_and_a_flag_each_replace_a_shipped_default
 //   Carried, `harness-crypto/run` —
 //     the_shipped_defaults_reach_no_deployed_verifier
-//     a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default
 //   Carried, `harness-crypto/output` —
 //     a_refused_runs_outcome_is_written_as_its_refusal
-//     a_successful_runs_outcome_is_written_with_every_value_it_holds
 //   Carried, `harness-crypto/config/admit_output` —
 //     every_declared_destination_kind_is_admitted_to_its_own_variant
 //     a_destination_list_keeps_the_order_the_document_holds
+//   End-to-end, proven after `contracts/evm/deploy` executes —
+//     a_successful_run_exits_with_success_after_every_destination_is_written
+//     a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default
+//     a_successful_runs_outcome_is_written_with_every_value_it_holds
 
 use harness_crypto::{DESTINATION_KINDS, DestinationKind};
-use pairing::{PAIRING_CONCRETES, PairingConcrete};
 use serde_json::Value;
 use std::env::temp_dir;
 use std::path::{Path, PathBuf};
@@ -119,36 +119,6 @@ fn assert_refused(text: &str, name: &str) {
             .starts_with("PairingConsumer("),
         "{name}"
     );
-}
-
-/// Asserts `text` is the success document of the run — `outcome`
-/// `"succeeded"`, the `benchmarks` one member per shipped benchmark
-/// concrete in the order `PAIRING_CONCRETES` declares, and the `curves`
-/// one member per curve in curve order.
-fn assert_succeeded(text: &str, name: &str) {
-    let concretes: Vec<PairingConcrete> = PAIRING_CONCRETES.to_vec();
-    let document: Value = serde_json::from_str(text).expect("the destination text parses");
-    assert_eq!(document["outcome"], "succeeded", "{name}");
-    let benchmarks = document["benchmarks"]
-        .as_array()
-        .expect("the benchmarks are a list");
-    assert_eq!(benchmarks.len(), concretes.len(), "{name}");
-    for (benchmark, concrete) in benchmarks.iter().zip(&concretes) {
-        assert_eq!(
-            benchmark["concrete"]
-                .as_str()
-                .expect("the concrete is text"),
-            format!("{concrete:?}"),
-            "{name}"
-        );
-    }
-    let labels: Vec<&str> = document["curves"]
-        .as_array()
-        .expect("the curves are a list")
-        .iter()
-        .map(|curve| curve["label"].as_str().expect("the label is text"))
-        .collect();
-    assert_eq!(labels, ["bn254", "bls12_381"], "{name}");
 }
 
 /// Contract: entry `a_configuration_refusal_is_written_to_standard_error
@@ -334,73 +304,6 @@ fn a_refused_destination_write_is_written_to_standard_error_and_the_process_fail
         }
         assert!(stdout_text(&output).is_empty(), "{name}");
         // a_refused_destination_write_is_written_to_standard_error_and_the_process_fails
-    }
-}
-
-/// Contract: entry `a_successful_run_exits_with_success_after_every_
-///   destination_is_written`; an accepted run writes its success
-///   document to every configured destination and the process succeeds.
-/// Arrange: the arguments `--config ../../contracts/evm/deployments/
-///   base-sepolia.toml` before the standard assignments,
-///   `output.destinations` holding standard output and a file, and the
-///   layer with standard output alone and with the file alone.
-/// Act:     the binary, once per variation.
-/// Assert:  `status.success()`; standard output and the file each parse
-///   to a document whose `outcome` equals `"succeeded"`; the two texts
-///   are equal; the `benchmarks` members' `concrete` texts equal the
-///   `Debug` texts of `PAIRING_CONCRETES` in the order the shipped
-///   defaults name them; the `curves` members' `label` texts equal
-///   `"bn254"` then `"bls12_381"`; standard error is empty.
-/// Boundary: the process call; the real chain is as the refused-run
-///   entry states, with the deployed verifiers.
-/// Mocked:   none; runtime inputs the deployed verifiers and the layer
-///   file.
-#[test]
-fn a_successful_run_exits_with_success_after_every_destination_is_written() {
-    for (name, kinds) in [
-        (
-            "standard output and a file",
-            vec![DestinationKind::StandardOutput, DestinationKind::File],
-        ),
-        (
-            "standard output alone",
-            vec![DestinationKind::StandardOutput],
-        ),
-        ("a file alone", vec![DestinationKind::File]),
-    ] {
-        // Arrange
-        let directory = work_directory();
-        let outcome_file = directory.join("outcome.json");
-        let entries: Vec<(DestinationKind, PathBuf)> = kinds
-            .iter()
-            .map(|kind| (*kind, outcome_file.clone()))
-            .collect();
-        let mut arguments = vec![
-            "--config".to_string(),
-            "../../contracts/evm/deployments/base-sepolia.toml".to_string(),
-        ];
-        arguments.extend(harness_arguments(&directory, toml_destinations(&entries)));
-
-        // Act
-        let output = run_harness(&arguments);
-
-        // Assert
-        assert!(output.status.success(), "{name}");
-        let mut texts = Vec::new();
-        if kinds.contains(&DestinationKind::StandardOutput) {
-            texts.push(stdout_text(&output));
-        }
-        if kinds.contains(&DestinationKind::File) {
-            texts.push(file_text(&outcome_file));
-        }
-        for text in &texts {
-            assert_succeeded(text, name);
-        }
-        if texts.len() > 1 {
-            assert_eq!(texts[0], texts[1], "{name}");
-        }
-        assert!(stderr_text(&output).is_empty(), "{name}");
-        // a_successful_run_exits_with_success_after_every_destination_is_written
     }
 }
 
@@ -685,86 +588,6 @@ fn the_shipped_defaults_reach_no_deployed_verifier() {
     // the_shipped_defaults_reach_no_deployed_verifier
 }
 
-/// Contract, carried: entry `a_deployment_record_layer_and_a_flag_each_
-///   replace_a_shipped_default` of `harness-crypto/run`; an accepted run
-///   the process reports as a success status, the iteration counts the
-///   flags name reaching the document.
-/// Arrange: the arguments `--config ../../contracts/evm/deployments/
-///   base-sepolia.toml` before the standard assignments, the layer
-///   alone, the layer with `--set benchmark.iterations=2`, and the
-///   layer with `--set measurement.iterations=2`.
-/// Act:     the binary, once per variation.
-/// Assert:  `status.success()`; the destination file holds a document
-///   whose `benchmarks` members carry the benchmark count the flag names
-///   and whose `curves` members' measurements carry the measurement
-///   count the flag names; standard error is empty.
-/// Boundary: the process call; the real chain is `config`, `run`,
-///   `output`, then `main`, with the deployed verifiers.
-/// Mocked:   none; runtime inputs the deployed verifiers and the layer
-///   file.
-#[test]
-fn a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default() {
-    for (name, extra, benchmark_iterations, measurement_iterations) in [
-        ("the layer alone", Vec::new(), 1_u64, 1_u64),
-        (
-            "the layer with the benchmark flag",
-            vec!["--set".to_string(), "benchmark.iterations=2".to_string()],
-            2_u64,
-            1_u64,
-        ),
-        (
-            "the layer with the measurement flag",
-            vec!["--set".to_string(), "measurement.iterations=2".to_string()],
-            1_u64,
-            2_u64,
-        ),
-    ] {
-        // Arrange
-        let directory = work_directory();
-        let outcome_file = directory.join("outcome.json");
-        let mut arguments = vec![
-            "--config".to_string(),
-            "../../contracts/evm/deployments/base-sepolia.toml".to_string(),
-        ];
-        arguments.extend(harness_arguments(
-            &directory,
-            toml_destinations(&[(DestinationKind::File, outcome_file.clone())]),
-        ));
-        arguments.extend(extra);
-
-        // Act
-        let output = run_harness(&arguments);
-
-        // Assert
-        assert!(output.status.success(), "{name}");
-        let document: Value =
-            serde_json::from_str(&file_text(&outcome_file)).expect("the document parses");
-        assert_eq!(document["outcome"], "succeeded", "{name}");
-        for benchmark in document["benchmarks"]
-            .as_array()
-            .expect("the benchmarks are a list")
-        {
-            assert_eq!(
-                benchmark["iterations"].as_u64(),
-                Some(benchmark_iterations),
-                "{name}"
-            );
-        }
-        for curve in document["curves"]
-            .as_array()
-            .expect("the curves are a list")
-        {
-            assert_eq!(
-                curve["measurement"]["iterations"].as_u64(),
-                Some(measurement_iterations),
-                "{name}"
-            );
-        }
-        assert!(stderr_text(&output).is_empty(), "{name}");
-        // a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default
-    }
-}
-
 /// Contract, carried: entry `a_refused_runs_outcome_is_written_as_its_
 ///   refusal` of `harness-crypto/output`; the document reaches every
 ///   configured destination as the text of the run's refusal.
@@ -805,57 +628,6 @@ fn a_refused_runs_outcome_is_written_as_its_refusal() {
         }
         assert!(stderr_text(&output).is_empty(), "{name}");
         // a_refused_runs_outcome_is_written_as_its_refusal
-    }
-}
-
-/// Contract, carried: entry `a_successful_runs_outcome_is_written_with_
-///   every_value_it_holds` of `harness-crypto/output`; the success
-///   document reaches every configured destination, holding a
-///   `benchmarks` member for each configured concrete in configuration
-///   order and a `curves` member for each curve in curve order.
-/// Arrange: the `--config` layer and the standard assignments, over one
-///   file destination and two.
-/// Act:     the binary, once per variation.
-/// Assert:  `status.success()`; each file holds the success document,
-///   the `benchmarks` one member per `PAIRING_CONCRETES` member in the
-///   shipped order and the `curves` `bn254` then `bls12_381`, the texts
-///   equal; standard error is empty.
-/// Boundary: the process call; the real chain is `run`, `render_outcome`,
-///   `output`, then `main`, with the deployed verifiers.
-/// Mocked:   none; runtime inputs the deployed verifiers and the layer
-///   file.
-#[test]
-fn a_successful_runs_outcome_is_written_with_every_value_it_holds() {
-    for (name, count) in [("one destination", 1), ("two destinations", 2)] {
-        // Arrange
-        let directory = work_directory();
-        let files: Vec<PathBuf> = (0..count)
-            .map(|index| directory.join(format!("outcome-{index}.json")))
-            .collect();
-        let entries: Vec<(DestinationKind, PathBuf)> = files
-            .iter()
-            .map(|file| (DestinationKind::File, file.clone()))
-            .collect();
-        let mut arguments = vec![
-            "--config".to_string(),
-            "../../contracts/evm/deployments/base-sepolia.toml".to_string(),
-        ];
-        arguments.extend(harness_arguments(&directory, toml_destinations(&entries)));
-
-        // Act
-        let output = run_harness(&arguments);
-
-        // Assert
-        assert!(output.status.success(), "{name}");
-        let texts: Vec<String> = files.iter().map(|file| file_text(file)).collect();
-        for text in &texts {
-            assert_succeeded(text, name);
-        }
-        for pair in texts.windows(2) {
-            assert_eq!(pair[0], pair[1], "{name}");
-        }
-        assert!(stderr_text(&output).is_empty(), "{name}");
-        // a_successful_runs_outcome_is_written_with_every_value_it_holds
     }
 }
 

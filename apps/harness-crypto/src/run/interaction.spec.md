@@ -89,7 +89,7 @@ Every constructor error of the random family's concretes is uninhabited, so `Err
   outcome `Ok` whose every curve's measurement carries its costs as L2 execution gas and L1 data fee, no cost value asserted since a cost is a measured value with no target, whose benchmark measurements carry the `benchmark.iterations` the flag names, and whose curve measurements carry the `measurement.iterations` the flag names;
   variation the layer alone and the layer with each flag, and the layer of a single curve's record, which leaves the other curve at its shipped default and returns that curve's verifier refusal;
   edge a curve reached at the other curve's record, or a flag that reaches the document and not the run, differs;
-  runtime inputs, per the dependency map's Runtime sequence: the deployed verifiers and the layer file, neither ordering this node.
+  end-to-end: proven by an end-to-end test run after `contracts/evm/deploy` executes, outside this node's integration elements and the ordinary test cycle, its runtime inputs the deployed verifiers and the layer file.
 
 ## Integration: callee dispositions
 
@@ -123,8 +123,8 @@ Every constructor error of the random family's concretes is uninhabited, so `Err
   proven by `each_curve_is_reported_under_its_own_label_with_the_configured_defaults` and the blocks of the same names of the public integration test element.
 - `the_verifier_is_selected_with_the_settings_the_document_holds`, `a_file_and_a_flag_each_replace_a_shipped_default`, and `the_shipped_defaults_configure_the_harness` of `harness-crypto/config`: carried; restated where this node transforms them: the verifier concrete at curve `i` reaches the consumer of curve `i`, a layer's record replaces one curve's default alone, and a flag replaces the default the run then runs with;
   route `config` over the shipped defaults, then `run`;
-  outer-edge collaborators the filesystem, a real directory, and the deployed verifiers;
-  proven by `each_curve_is_composed_with_the_verifier_concrete_of_its_own_index`, `a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default`, and `the_shipped_defaults_reach_no_deployed_verifier` in the public integration test element.
+  outer-edge collaborators the filesystem, a real directory, and, for the end-to-end proof, the deployed verifiers;
+  proven by `each_curve_is_composed_with_the_verifier_concrete_of_its_own_index` and `the_shipped_defaults_reach_no_deployed_verifier` in the public integration test element, `a_file_and_a_flag_each_replace_a_shipped_default` proven end-to-end by the test of `a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default`.
 - `the_consumer_receives_the_concrete_the_params_name` of `pairing/factory`: carried through the entry of `harness-crypto/benchmark` and the entry of `harness-crypto/run/pairing_consumer` dispositioned above, whose routes and blocks state it.
 - The other entries of `pairing/factory`, the entries of `harness-crypto/config` that its own dispositions placed in `harness-crypto/config/layers`, `harness-crypto/config/admit_selections`, `harness-crypto/config/admit_statements`, `harness-crypto/config/admit_generate`, and `harness-crypto/config/admit_output`, and the entries of `harness-crypto/run/pairing_consumer` that its own dispositions placed in the consumers and factories beneath it end at those nodes' tests and are not observed through `run`'s outcome, which holds measurements, labels, files, and reports and no pairing, scalar, encoded value, or admitted selection of its own; none of them is dispositioned here.
 
@@ -138,5 +138,5 @@ the observable result is the `RunReturn`, the report files read back, and the ve
 ## Integration: public surface
 
 An outside caller invokes `run` through the crate root with a `RunDeps`, a `RunParams`, and a `RunPayload` holding the configuration `config` returned through the crate root, and observes the `RunReturn`, the report files, and the vector files;
-the entries proven are every own entry above and every carried entry the dispositions list;
-the outer-edge collaborators are the filesystem, the operating system's generator and monotonic clock, the families' mock concretes selected by configuration where an entry names a failure mode, and, for the two deployed-verifier entries, the deployed verifiers the layer names.
+the entries proven are every own entry above but `a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default`, and every carried entry the dispositions list;
+the outer-edge collaborators are the filesystem, the operating system's generator and monotonic clock, the families' mock concretes selected by configuration where an entry names a failure mode, and the network the verifier family's endpoint names; `a_deployment_record_layer_and_a_flag_each_replace_a_shipped_default` is end-to-end, proven after `contracts/evm/deploy` executes, not by this element.
