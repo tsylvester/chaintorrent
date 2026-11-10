@@ -1576,7 +1576,7 @@ impl IPairingAdapter for MockIPairingAdapter {
 }
 
 impl ISampleUniformScalar for MockScalar {
-    const UNIFORM_BYTES_LENGTH: usize = 16;
+    const UNIFORM_BYTES_LENGTH: usize = 64;
 
     fn sample_from_uniform_bytes(
         _params: SampleUniformScalarParams,
@@ -1592,9 +1592,11 @@ impl ISampleUniformScalar for MockScalar {
                 actual,
             });
         }
-        let mut bytes = [0u8; 16];
-        bytes.copy_from_slice(payload.uniform.expose());
-        let residue = u64::try_from(u128::from_be_bytes(bytes) % u128::from(MOCK_GROUP_ORDER))
+        let mut folded = 0u128;
+        for limb in payload.uniform.expose().as_chunks::<16>().0 {
+            folded = folded.wrapping_add(u128::from_be_bytes(*limb));
+        }
+        let residue = u64::try_from(folded % u128::from(MOCK_GROUP_ORDER))
             .expect("a residue below the u64 group order fits a u64");
         let Ok(scalar) = Secret::try_new(SecretConstructorParams {
             value: MockScalar { residue },

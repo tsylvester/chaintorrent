@@ -538,7 +538,7 @@ fn group_vectors_return_the_fill_refusal_unchanged() {
 ///   `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`.
 /// Act:    `group_vectors` in the consumer's method.
 /// Assert: `result` equals `Err(GroupVectorsErrorReturn::SampleScalar(
-///   SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 }))`, the
+///   SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 64 }))`, the
 ///   error the pairing mock concrete's contract states for that mode.
 #[test]
 fn group_vectors_return_the_sampling_refusal_unchanged() {
@@ -589,8 +589,8 @@ fn group_vectors_return_the_sampling_refusal_unchanged() {
         result,
         Err(GroupVectorsErrorReturn::SampleScalar(
             SampleUniformScalarErrorReturn::WrongLength {
-                expected: 16,
-                actual: 16,
+                expected: 64,
+                actual: 64,
             }
         ))
     );

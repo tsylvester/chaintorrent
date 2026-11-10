@@ -157,7 +157,7 @@ fn consume_pairing_draws_the_length_the_sampling_bound_requires() {
 /// Assert: `result.is_ok()`, the runner's level having run;
 ///   `result.ok().and_then(|success| success.output.err())` equals
 ///   `Some(PairingBenchmarkErrorReturn::SampleScalar(
-///   SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16
+///   SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 64
 ///   }))`, the whole error — the `SampleScalar` variant is the subject's
 ///   wrapping and the carried error is the mock concrete's own value for that
 ///   mode written as a literal.
@@ -204,8 +204,8 @@ fn consume_pairing_returns_the_sampling_error_unchanged() {
         result.ok().and_then(|success| success.output.err()),
         Some(PairingBenchmarkErrorReturn::SampleScalar(
             SampleUniformScalarErrorReturn::WrongLength {
-                expected: 16,
-                actual: 16,
+                expected: 64,
+                actual: 64,
             }
         ))
     );

@@ -173,7 +173,7 @@ fn a_sampled_scalar_encodes_through_secret() {
 ///   build_pairing_benchmark_case_payload(Default::default()))`.
 /// Assert:   `result.is_ok()`, the runner's level having run, and the observed
 ///   output error equals `PairingBenchmarkErrorReturn::SampleScalar(
-///   SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 16 })`,
+///   SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 64 })`,
 ///   the whole error, the carried error the mock concrete's own value for that
 ///   mode written as a literal.
 #[test]
@@ -223,8 +223,8 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
         result.ok().and_then(|success| success.output.err()),
         Some(PairingBenchmarkErrorReturn::SampleScalar(
             SampleUniformScalarErrorReturn::WrongLength {
-                expected: 16,
-                actual: 16,
+                expected: 64,
+                actual: 64,
             }
         ))
     );

@@ -421,8 +421,8 @@ fn challenge_vectors_return_the_draw_refusal_whole() {
 /// Act:    the case consumer's single call to `challenge_vectors`.
 /// Assert: the runner's success's `output` equals
 ///   `Err(ChallengeVectorsErrorReturn::SampleScalar(
-///   SampleUniformScalarErrorReturn::WrongLength { expected: 16,
-///   actual: 16 }))`, the values the pairing family's mock concrete states.
+///   SampleUniformScalarErrorReturn::WrongLength { expected: 64,
+///   actual: 64 }))`, the values the pairing family's mock concrete states.
 #[test]
 fn challenge_vectors_return_the_sampling_refusal_whole() {
     struct Consumer;
@@ -502,8 +502,8 @@ fn challenge_vectors_return_the_sampling_refusal_whole() {
         .map(|success| success.output),
         Ok(Err(ChallengeVectorsErrorReturn::SampleScalar(
             SampleUniformScalarErrorReturn::WrongLength {
-                expected: 16,
-                actual: 16
+                expected: 64,
+                actual: 64
             }
         )))
     );

@@ -1347,7 +1347,7 @@ fn mapping_vectors_return_the_fill_refusal_unchanged() {
 /// Act:    `mapping_vectors` in the case consumer's method.
 /// Assert: `result` equals `Err(MappingVectorsErrorReturn::HashToScalar(
 ///   HashToScalarErrorReturn::Sampling(SampleUniformScalarErrorReturn::WrongLength {
-///   expected: 16, actual: 0 })))`.
+///   expected: 64, actual: 0 })))`.
 #[test]
 fn mapping_vectors_return_the_hash_refusal_unchanged() {
     // Arrange
@@ -1436,7 +1436,7 @@ fn mapping_vectors_return_the_hash_refusal_unchanged() {
         output,
         Err(MappingVectorsErrorReturn::HashToScalar(
             HashToScalarErrorReturn::Sampling(SampleUniformScalarErrorReturn::WrongLength {
-                expected: 16,
+                expected: 64,
                 actual: 0,
             })
         ))
@@ -1454,7 +1454,7 @@ fn mapping_vectors_return_the_hash_refusal_unchanged() {
 /// Act:    `mapping_vectors` in the case consumer's method.
 /// Assert: `result` equals `Err(MappingVectorsErrorReturn::Setup(
 ///   SetupErrorReturn::HashToScalar(HashToScalarErrorReturn::Sampling(
-///   SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 0 }))))`.
+///   SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 0 }))))`.
 #[test]
 fn mapping_vectors_return_the_setup_refusal_unchanged_under_the_asset_scope() {
     // Arrange
@@ -1552,7 +1552,7 @@ fn mapping_vectors_return_the_setup_refusal_unchanged_under_the_asset_scope() {
         Err(MappingVectorsErrorReturn::Setup(
             SetupErrorReturn::HashToScalar(HashToScalarErrorReturn::Sampling(
                 SampleUniformScalarErrorReturn::WrongLength {
-                    expected: 16,
+                    expected: 64,
                     actual: 0,
                 }
             ))
@@ -1571,7 +1571,7 @@ fn mapping_vectors_return_the_setup_refusal_unchanged_under_the_asset_scope() {
 /// Act:    `mapping_vectors` in the case consumer's method.
 /// Assert: `result` equals `Err(MappingVectorsErrorReturn::DeriveIdentity(
 ///   DeriveIdentityErrorReturn::HashToScalar(HashToScalarErrorReturn::Sampling(
-///   SampleUniformScalarErrorReturn::WrongLength { expected: 16, actual: 0 }))))`.
+///   SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 0 }))))`.
 #[test]
 fn mapping_vectors_return_the_derivation_refusal_unchanged_under_the_entitlement_scope() {
     // Arrange
@@ -1666,7 +1666,7 @@ fn mapping_vectors_return_the_derivation_refusal_unchanged_under_the_entitlement
         Err(MappingVectorsErrorReturn::DeriveIdentity(
             DeriveIdentityErrorReturn::HashToScalar(HashToScalarErrorReturn::Sampling(
                 SampleUniformScalarErrorReturn::WrongLength {
-                    expected: 16,
+                    expected: 64,
                     actual: 0,
                 }
             ))
@@ -1685,7 +1685,7 @@ fn mapping_vectors_return_the_derivation_refusal_unchanged_under_the_entitlement
 /// Act:    `mapping_vectors` in the case consumer's method.
 /// Assert: `result` equals `Err(MappingVectorsErrorReturn::HashToScalar(
 ///   HashToScalarErrorReturn::Sampling(SampleUniformScalarErrorReturn::WrongLength {
-///   expected: 16, actual: 0 })))`.
+///   expected: 64, actual: 0 })))`.
 #[test]
 fn mapping_vectors_return_the_hash_refusal_before_mapping_any_identity() {
     // Arrange
@@ -1789,7 +1789,7 @@ fn mapping_vectors_return_the_hash_refusal_before_mapping_any_identity() {
         output,
         Err(MappingVectorsErrorReturn::HashToScalar(
             HashToScalarErrorReturn::Sampling(SampleUniformScalarErrorReturn::WrongLength {
-                expected: 16,
+                expected: 64,
                 actual: 0,
             })
         ))
