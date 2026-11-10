@@ -316,6 +316,7 @@ The public key and the signature are the adapter's own types. The adapter declar
 | --- | --- | --- |
 | `Secp256k1Adapter` | secp256k1 / ECDSA | EVM chains — chain layer only (MVP) |
 | `Ed25519Adapter` | Ed25519 / EdDSA | protocol-preferred scheme; handshake and content-signing layers (MVP); chain layer on Solana, Near, Cosmos-family |
+| `MlDsa65Adapter` | ML-DSA-65 / FIPS 204 lattice | handshake and content-signing layers (MVP); no recovery |
 | `Secp256r1Adapter` | secp256r1 / P-256 | passkeys, WebAuthn, platform authenticators [^enclave] |
 | `BlsAdapter` | BLS12-381 | aggregate/threshold signatures |
 

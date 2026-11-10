@@ -351,7 +351,7 @@ Create or import a protocol identity on first run as a contract account, bind it
 - Custody blobs carry the adapter version, wrapping-key identifier, and derivation parameters; an upgrade rewraps beside the old blob, verifies the re-derived public keys against the on-chain binding and envelope-key registration, and only then retires the old blob, rolling back on mismatch (IW-02, IW-04).
 - Publisher and administrative authority rotation leaves parameter sets, plaintext identity, and asset binding unchanged; existing credentials still decrypt (IW-06).
 - External wallets connect through EIP-1193 or WalletConnect and only sign; registrations and bindings are signed intents over the call's fields, chain, contract, nonce, and expiry, which the EVM suite encodes as EIP-712 typed data, and the signature adapter signs the bytes the chain family's signed-intent form hands it and owns no message format; the default identity is a local custody-held key; envelope keys are never wallet keys (IW-07).
-- Signature services verify over each adapter's own key and signature types, each adapter declaring its scheme identifier, key and signature lengths, and whether it can recover a signer's key, and derive no addresses, which is an operation of the chain family's identity form, realized for the EVM suite by `chain/evm_forms` over a key's canonical bytes and scheme identifier; the MVP adapters support Ed25519 for protocol layers and secp256k1 for the EVM chain adapter with domain separation and complete-message binding (CR-03).
+- Signature services verify over each adapter's own key and signature types, each adapter declaring its scheme identifier, key and signature lengths, and whether it can recover a signer's key, and derive no addresses, which is an operation of the chain family's identity form, realized for the EVM suite by `chain/evm_forms` over a key's canonical bytes and scheme identifier; the MVP adapters support Ed25519 and ML-DSA-65 for protocol layers and secp256k1 for the EVM chain adapter with domain separation and complete-message binding (CR-03).
 
 ## Dependencies
 - The custody family, whose factory owns `IKeyCustodyAdapter` with its capability set, holder-seed derivation, device-key generation, and the in-place upgrade, and whose MVP concrete is the local keystore under the OS credential store; the wallet family for signing-only external wallets.
@@ -391,7 +391,7 @@ Implement the suite-constrained Rust cryptography, the AES-256-CTR payload ciphe
 - The harness produces capsule, envelope, and proof sizes, decapsulation time per piece group, proof generation and verification time, and delivery-verification gas for a mint and a transfer on each candidate curve, and the piece-group size default in force, with any adjustment the measurements support, is recorded in release evidence (CD-07; AS-21).
 
 ## Dependencies
-- Existing BLAKE3, Bao, AES, Ed25519, secp256k1, and pairing-curve libraries.
+- Existing BLAKE3, Bao, AES, Ed25519, secp256k1, ML-DSA, and pairing-curve libraries.
 - A test-chain deployment of the contract verifier, for the gas and bit-for-bit measurements.
 - None on other MVP features.
 

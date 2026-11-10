@@ -47,6 +47,7 @@ The findings that shape the rest: the harness is the cheapest, most self-contain
 | OS service managers, credential stores, firewall controls | Signed installation and daemon lifecycle | Medium | Conventional per platform; the breadth across platforms is the cost |
 | BitTorrent clients | The embedded `librqbit` transport concrete; `seed-host/rqbit` driving the rqbit application through its HTTP API, one seed-host concrete per external client | Medium | The transport concrete carries the library's SHA-1 piece hashes beside the Bao tree, and a client API varies by client, so each client is its own concrete |
 | BLAKE3, Bao, AES, Ed25519, secp256k1, pairing libraries | Suite-constrained Rust wrappers | High | Mature libraries exist for all; precompile-matching encodings are the work |
+| ML-DSA-65 library | `signature/ml_dsa_65` over `fips204` | High | A pure-Rust implementation of the final FIPS 204, tested against NIST's vectors; it is unaudited and not a validated module, and it is confined to one concrete |
 | Test chain | Deployment of the verifier for the harness | High | Standard tooling |
 
 **Assessment.** No integration requires an external party's cooperation or an undocumented interface.

@@ -173,7 +173,7 @@ The hashing family is a harness ticket pair, `hashing/blake3_bao` and `hashing/f
 | --- | --- | --- | --- |
 | `signature/ed25519` | The Ed25519 concrete with domain separation and complete-message binding; authors, as its producers, `ISignatureAdapter` with sign and isValidSignature over the public-key and signature types the concrete supplies as associated types, with their fallible constructors, no key recovery and no address derivation in the trait, the per-layer declaration of scheme identifier, the type `domain/signature_scheme_identifier` holds, key and signature lengths, recovery support, and layers served, and the family's mock; creates the `adapters/signature` crate; pins `ed25519-dalek` | `encoding/factory`, `random/factory`, `domain/signature_scheme_identifier` | CR-03 contract and CR-03 |
 | `signature/secp256k1` | The secp256k1 concrete through `alloy`, declaring recovery support, signing the bytes the chain adapter's intent form hands it and owning no message format; pins `alloy` for the signature crate | `signature/ed25519` | CR-03, IW-07, LC-13 signature verification |
-| `signature/factory` | The signature family's factory function, resolving a scheme per layer, with a branch per concrete, and the crate's public surface; carries the milestone's integration test and commit | `signature/ed25519`, `signature/secp256k1` | The surface every layer signs through |
+| `signature/factory` | The signature family's factory function, resolving a scheme per layer, with a branch per concrete the family holds at this ticket, `ed25519` and `secp256k1`, and the crate's public surface; carries the milestone's integration test and commit; the branch for `signature/ml_dsa_65`, authored after it, is added by the factory's further node | `signature/ed25519`, `signature/secp256k1` | The surface every layer signs through |
 
 #### Swarm transport, discovery, storage, and seed host, at ticket resolution
 
@@ -194,6 +194,15 @@ The hashing family is a harness ticket pair, `hashing/blake3_bao` and `hashing/f
 | `seed-host/owned` | The owned concrete: persistent seeding independent of sessions, the root-keyed ciphertext store with holding reason, quota, and eviction, its index through the storage family, settings passthrough and enforcement, archive enumeration; authors, as its producers, `ISeedHostAdapter` with held-and-served, take custody, release, capacity and usage, and enumerate, the holding types with the obligated-versus-voluntary distinction and their fallible constructors, the capacity and holding-reason declaration, and the family's mock; creates the `adapters/seed-host` crate | `hashing/factory`, `encoding/factory`, `transport/factory`, `storage/factory` | SW-05 contract; SW-03, SW-05, SW-07, ST-06; PR-05 separation |
 | `seed-host/rqbit` | The delegated concrete: the rqbit application driven through its HTTP API, root-to-identifier translation, and Bao custody challenges through the hashing family | `seed-host/owned`, `hashing/factory` | SW-04 |
 | `seed-host/factory` | The seed host family's factory function with a branch per concrete, and the crate's public surface; carries the milestone's integration test across owned and delegated retrieval and its commit | `seed-host/owned`, `seed-host/rqbit` | The surface resolution and the First Finder consume |
+
+#### Post-quantum signature concrete, at ticket resolution
+
+The signature family's lattice concrete and the factory branch that constructs it, the protocol core's tickets following the swarm milestone's close at `seed-host/factory`. They depend on nothing the harness measures and on no contract sprint.
+
+| Ticket | Owns | Depends on | Proves |
+| --- | --- | --- | --- |
+| `signature/ml_dsa_65` | The ML-DSA-65 concrete, the lattice scheme FIPS 204 standardizes at NIST security category 3, as one adapter implementing `ISignatureAdapter`: key generation from a seed, signing with the randomness it draws through the randomness family, verification, domain separation carried in the scheme's context string, and complete-message binding; owns its public-key and signature types with their fallible constructors, each refusing a wrong length; declares its scheme identifier, its key and signature lengths, no recovery support, and the handshake and content-signing layers; a further concrete beneath the signature factory; pins `fips204`, through its seed-based key generation and signing | `signature/ed25519`, `random/factory`, `domain/signature_scheme_identifier` | CR-03 for a scheme without recovery, against the FIPS 204 known-answer vectors |
+| `signature/factory`, the ML-DSA-65 branch | The signature factory's further node: adds the branch constructing `signature/ml_dsa_65` when a layer's configuration names it, and extends the family's integration test across that concrete | `signature/ml_dsa_65`, `signature/factory` | CR-03: the lattice scheme resolved through the factory for its layer, and a wrong-scheme substitution refused across every concrete the family holds |
 
 #### Remaining milestones, as sprints
 
@@ -656,6 +665,8 @@ flowchart TB
         sig_ed["signature/ed25519"]
         sig_k1["signature/secp256k1"]
         sig["signature/factory"]
+        sig_mldsa["signature/ml_dsa_65"]
+        sig_pq["signature/factory, the ML-DSA-65 branch"]
         tr_rq["transport/rqbit"]
         tr["transport/factory"]
         disc_admit["discovery/admit_peers"]
@@ -682,6 +693,9 @@ flowchart TB
         sig_ed --> sig_k1
         sig_ed --> sig
         sig_k1 --> sig
+        sig_ed --> sig_mldsa
+        sig_mldsa --> sig_pq
+        sig --> sig_pq
         hashing --> tr_rq
         tr_rq --> tr
         disc_admit --> disc_local
@@ -831,6 +845,8 @@ flowchart TB
     f_rand --> env_eg
     f_rand --> proof_sfs
     f_rand --> sig_ed
+    f_rand --> sig_mldsa
+    dom_scheme --> sig_mldsa
     f_sec --> s_domain
     f_sec --> kem_bb1
     f_sec --> env_eg
@@ -919,7 +935,7 @@ the adapter `harness-crypto/generate/solidity` follows them all and `harness-cry
 `harness-crypto/verifier/factory`, `harness-crypto/measure`, and `harness-crypto/report` follow in turn; the admission functions that take their values and `harness-crypto/config` follow `harness-crypto/report`, and `harness-crypto/config` follows every admission function; `harness-crypto/run/admit_contexts` follows `harness-crypto/config`;
 the run's consumers follow `harness-crypto/run/admit_contexts` innermost first, from `harness-crypto/run/generate_consumer` through `harness-crypto/run/verifier_consumer` to `harness-crypto/run/pairing_consumer`; `harness-crypto/run`, `harness-crypto/output`, and `harness-crypto/main` follow in turn;
 `contracts/evm/PairingLib`, `contracts/evm/DeliveryVerifier`, and `contracts/evm/deploy` follow `harness-crypto/main`, and `contracts/evm/deploy` carries the grouping's commit.
-The signature tickets start from `signature/ed25519` on `encoding/factory` and `domain/signature_scheme_identifier`, and the swarm tickets from `transport/rqbit` and `storage/redb` on `hashing/factory` and `encoding/factory` and from `discovery/admit_peers` on `workspace/cargo`; each of those milestones closes at the factory its table names.
+The signature tickets start from `signature/ed25519` on `encoding/factory` and `domain/signature_scheme_identifier`, and the swarm tickets from `transport/rqbit` and `storage/redb` on `hashing/factory` and `encoding/factory` and from `discovery/admit_peers` on `workspace/cargo`; each of those milestones closes at the factory its table names. `signature/ml_dsa_65` follows the swarm milestone's close at `seed-host/factory`, and the signature factory's ML-DSA-65 branch follows it.
 
 Across groupings the sequence is the [milestones](milestones.md)' order, with the parallelism the graph makes visible: the signature and swarm tickets run beside the harness and the contract sprints from `encoding/factory` and `hashing/factory` onward; the identity and custody epic begins as soon as the signature tickets, the chain and submission families, and the relayer or paymaster milestone exist, before the CAS epic, because the installation coordinator needs it; the relayer or paymaster milestone follows the chain and submission families sprint and precedes every daemon epic that submits a signed intent; the resolution orchestrator follows credential delivery and First Finder ingest; the daemon composition follows the resolution orchestrator, the installation coordinator, the explicit publisher path, and the claim verifier and escrow claim, and the desktop application and CLI follow it; the demonstrable milestone follows the daemon composition. Within the credential delivery epic `payment/native` precedes `payment/factory`, which precedes `workflows/acquire`; the registry contracts sprint authors the lock and `IPaymentAsset` with its native concrete, and the on-chain adapter registry sprint binds them. The package host maps a request's name to the asset's root through its alias lookup, the root type being the hashing family's, and `chain/evm_forms` authors address derivation and the signed-intent form with no signature dependency. The chain and submission sprint authors `chain/factory` once, after the Base concrete, since the harness authored the forms constructor as the family-owned module `chain/create_chain_forms` rather than in the factory.
 
@@ -981,6 +997,8 @@ What running the built harness and suite produces, each step after the inputs it
 **The asset's identity.** The asset's identity is the object's BLAKE3/Bao root, the plaintext root for a public asset and the ciphertext root for a private one, owned by the hashing family, whose operations are all over bytes and which carries no digest operation and no identity-hash identifier. A name is a lookup: the package host and the ingest adapter declare the namespace their names live in, the Registry holds append-only alias records under a declared namespace and an opaque key, each entry a root with the source's signed statement or its recorded absence, and the client selects an entry only on evidence it holds independently of every registrant.
 
 **Address derivation and the signed-intent form.** Both belong to the chain family's form interface and are realized for the EVM suite by `chain/evm_forms`, over a public key's canonical bytes and scheme identifier and as EIP-712 typed data over the call's fields, chain, contract, nonce, and expiry; `chain/base` binds the resolved forms and authors none, and the signature family signs the bytes the intent form hands it. The scheme identifier is the type `domain/signature_scheme_identifier` holds, in the domain ring both families reach, so the signature family's declaration carries it and the identity form takes it without either family depending on the other.
+
+**The post-quantum signature concrete.** `signature/ml_dsa_65`, FIPS 204 ML-DSA-65, is a further concrete beneath the signature factory, declaring no recovery support; the factory's branch for it is the factory's further node, following the concrete; which scheme a layer signs under is configuration, and the binding record's scheme identifier and key commitment carry a key of any width, so the concrete changes no record, form, or consumer.
 
 **The claim verifier's key.** The on-chain record is a scheme identifier and a commitment to the key, the key travelling in the calldata of the registering or rotating transaction; the contract verifies vouchers through the signature adapter the registry binds for the scheme; the claim verifier signs under a custody-held key of a declared scheme, and a further verifier form is a further `claim-verifier` concrete that changes no contract storage.
 

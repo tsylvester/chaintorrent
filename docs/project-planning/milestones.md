@@ -281,7 +281,7 @@ The signature and swarm milestones are at ticket resolution and run beside the h
 
 **Purpose.** Per-layer signatures behind one factory that resolves a scheme per layer.
 
-**Scope.** `signature/ed25519` with domain separation and complete-message binding, authoring `ISignatureAdapter`, signing and verification over the public-key and signature types the concrete supplies as associated types, no key recovery and no address derivation in the trait, the per-layer declaration of scheme identifier, the type `domain/signature_scheme_identifier` holds, key and signature lengths, recovery support, and layers served, and the family's mock as its producers; `signature/secp256k1` through `alloy`, declaring recovery support and signing the bytes the chain family's signed-intent form hands it, owning no message format and no address derivation; `signature/factory`, resolving a scheme per layer, which carries the milestone's integration test and commit. The binding schema with the DID Document types belongs to the identity family and is authored in the identity and custody milestone.
+**Scope.** `signature/ed25519` with domain separation and complete-message binding, authoring `ISignatureAdapter`, signing and verification over the public-key and signature types the concrete supplies as associated types, no key recovery and no address derivation in the trait, the per-layer declaration of scheme identifier, the type `domain/signature_scheme_identifier` holds, key and signature lengths, recovery support, and layers served, and the family's mock as its producers; `signature/secp256k1` through `alloy`, declaring recovery support and signing the bytes the chain family's signed-intent form hands it, owning no message format and no address derivation; `signature/factory`, resolving a scheme per layer with a branch per concrete the family holds at that ticket, which carries the milestone's integration test and commit; the family's lattice concrete, `signature/ml_dsa_65`, and the factory's branch for it are the post-quantum signature concrete milestone's. The binding schema with the DID Document types belongs to the identity family and is authored in the identity and custody milestone.
 
 **Entry.** The encoding family's closure at `encoding/factory`, inside pairing adapters and key derivation. Independent of the rest of the harness and of the cipher milestone.
 
@@ -308,6 +308,22 @@ The signature and swarm milestones are at ticket resolution and run beside the h
 **Owner.** Daemon implementer.
 
 **Unblocks.** Chain and submission families, for the discovery factory its seeder-map concrete is added to; First Finder engine; the resolution orchestrator; the project seed host.
+
+### Post-quantum signature concrete
+
+**Purpose.** A lattice signature scheme at the handshake and content-signing layers, so an identity can bind a key under a scheme NIST's post-quantum transition retains.
+
+**Scope.** `signature/ml_dsa_65`, the FIPS 204 ML-DSA-65 concrete as one adapter implementing `ISignatureAdapter` through `fips204`, with key generation from a seed, signing with the randomness it draws through the randomness family, verification, domain separation carried in the scheme's context string, and complete-message binding, owning its public-key and signature types with their fallible constructors and declaring its scheme identifier, its key and signature lengths, no recovery support, and the layers it serves; the signature factory's further node, adding the branch that constructs the concrete when a layer's configuration names it and extending the family's integration test across it, which carries the milestone's commit. The concrete covers signatures alone, the chain layer signs with secp256k1, and no contract verifies the scheme.
+
+**Entry.** Signature services. Independent of swarm transport and seed host, whose close at `seed-host/factory` its tickets follow, and of every contract milestone.
+
+**Exit.** CR-03 for a scheme without recovery: valid signatures verified against the FIPS 204 known-answer vectors; cross-domain, cross-layer, truncated-context, wrong-scheme, and replay substitutions rejected; the scheme resolved through the factory for its layer beside the family's other concretes.
+
+**Deliverables.** The signature crate's lattice concrete and the factory's branch for it.
+
+**Owner.** Cryptography implementer.
+
+**Unblocks.** Identity and custody, for a handshake key bound under the lattice scheme.
 
 ### Registry and entitlement contracts
 
