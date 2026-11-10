@@ -87,6 +87,19 @@ match raw {
 
 If you need a union that does not yet exist as a named type, that is a **type change**: stop, propose the node to declare it in its owning interface, and halt (see [discovery-halt](discovery-halt.md)). You do not mint it inline.
 
+### Signatures name every type (Rust)
+
+Every signature — an exported function, a trait method, a private function in `mod.rs` — names each of its parameter and return types. A tuple, a `Result` written over composed generics, and a nested generic written in the signature are inline types. A grouped value is a named struct with named fields; a fallible return is the named `<Fn>Return` alias over the named `<Fn>SuccessReturn` and `<Fn>ErrorReturn`; all of them are declared in the owning `interface.rs`.
+
+Mechanical resolution, applied when `clippy::type_complexity` fires, and applied when authoring a signature so it never fires:
+
+- Identify the composed type in the signature: the tuple, the `Result<…>`, or the nested generic.
+- For a tuple, declare a named struct in the owning `interface.rs` whose fields are the tuple's members, each named by its role, carrying the type parameters and bounds the members depend on.
+- For a `Result<…>`, declare `<Fn>SuccessReturn` holding the success value, using the struct above where the success value was a tuple, and `<Fn>ErrorReturn`, unless the error arm is already a named type, and the alias `<Fn>Return<…> = Result<<Fn>SuccessReturn<…>, <Fn>ErrorReturn>`, in the owning `interface.rs`.
+- For any other nested generic, declare a named struct or alias for it in the owning `interface.rs`, generic in exactly the parameters it depends on.
+- Change the signature to the named type, and change every construction site to build the named struct and every use site to read its named fields in place of tuple positions.
+- Never add `#[allow(clippy::type_complexity)]`, and never declare a local `type` alias in `mod.rs` or a test module; the named type lives only in the owning `interface.rs`.
+
 ### Nullable and absent states belong in the definition
 
 A value with a predictable empty state — a front end awaiting user input, an optional selection, a resource not yet loaded — **is** nullable, and that nullability is part of its contract. A front end awaits input, so `itemA | null` is an expected, ordinary state, not an edge case. Declare it where the type is defined: `selection: itemA | null` in the interface, or a named nullable type the interface owns. Null is not an afterthought; it is a state you already know the value will occupy.

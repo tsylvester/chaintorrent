@@ -102,6 +102,23 @@ pub type MyFunctionFn<C> = fn(&MyFunctionDeps<C>, MyFunctionParams, MyFunctionPa
 
 How the builders take the output and the consumer is owned by [mocks](mocks.md#fields-with-no-default-rust); how the function is mocked is owned by [mocks](mocks.md#a-return-that-carries-the-consumers-type-rust).
 
+## Methods take params and payload, never positional arguments (Rust)
+
+Every method of a trait — a consumer trait, a case consumer trait, an adapter trait — takes exactly `&self`, one params object, and one payload object, and returns its named return. No method takes an adapter, a borrow, or a value as a positional argument of its own. A selection is a field of the params; every adapter, borrow, and data value the method receives is a field of the payload. The params and payload are named structs declared in the same `interface.rs` as the trait, under the same `cfg` as the trait, and carry the method's type parameters and bounds where a field depends on them. A method that takes no selection still takes its params, as a fieldless struct, and a method that receives nothing still takes its payload, as a fieldless struct. Their builders live in the mock file. The arity of a method is therefore fixed at three, and `clippy::too_many_arguments` cannot fire on it.
+
+Mechanical resolution, applied when `clippy::too_many_arguments` fires on a method or function outside `mock.rs`, and applied when authoring a trait method so it never fires:
+
+- List every argument other than `&self`. Classify each as a selection (params) or as an adapter, borrow, or data value (payload), by the rule in [Nested calls build their inputs from what they receive](#nested-calls-build-their-inputs-from-what-they-receive-rust).
+- Declare `<Method>Params` with the selections as fields, fieldless if there are none, in the owning `interface.rs`.
+- Declare `<Method>Payload<'a, …>` with the remaining arguments as fields of the same names and types, carrying the method's lifetime and type parameters with the bounds the method carries, in the owning `interface.rs`.
+- Re-declare the method as `(&self, params: <Method>Params, payload: <Method>Payload<'a, …>) -> <its return>`, keeping its type parameters and bounds.
+- In the owning `mock.rs`, add `build_<method>_params` and `build_<method>_payload`, the payload builder taking its handed fields as leading parameters (see [mocks](mocks.md#fields-with-no-default-rust)).
+- Rewrite every implementer of the method to read each value from `payload.<field>` and each selection from `params.<field>`.
+- Rewrite every caller of the method to build both objects through their builders in a mock or test, and through their struct literals in production code, and pass them.
+- Never add `#[allow(clippy::too_many_arguments)]` outside `mock.rs`, never split the arguments into an unnamed tuple, and never drop an argument the callers need.
+
+A standalone function already takes the four-slot signature above, so this lint firing on a standalone function outside `mock.rs` means its signature departed from that form; restore the four slots by the same classification.
+
 ## Type parameters follow dependency (Rust)
 
 An item carries exactly the type parameters its value depends on. A value depends on a type parameter when the parameter's choice can change it. A generic item's associated items are reached only by filling in every parameter of the item, so the item a value is declared on decides who can reach it.

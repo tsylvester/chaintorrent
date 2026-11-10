@@ -27,6 +27,18 @@ The workspace lint table denies constructs in production code that test code leg
 
 Lint-clean is judged on the workspace checks over all targets and all features.
 
+## Recurring lints resolve by their owning rule
+
+A lint below fires on a shape a topic already forbids. On the lint, find its row, apply the mechanical resolution the owning section states, step by step, and lint again. The same section governs authoring, so a file written to it never raises the lint.
+
+| Lint | Shape that raises it | Mechanical resolution |
+|---|---|---|
+| `clippy::too_many_arguments` outside `mock.rs` | A trait method taking adapters, borrows, or values as positional arguments, or a function departing from the four-slot signature | [composition](composition.md#methods-take-params-and-payload-never-positional-arguments-rust) |
+| `clippy::enum_variant_names` | An error enum whose variants are named by the callee's verb or by a word every variant shares | [errors-and-returns](errors-and-returns.md#naming-a-variant-that-carries-a-callees-error) |
+| `clippy::type_complexity` | A tuple, a `Result` over composed generics, or a nested generic written in a signature | [types](types.md#signatures-name-every-type-rust) |
+
+On any of these lints, apply the owning section's resolution; never add an `allow` and never declare a local `type` alias.
+
 ## Completion proof
 
 Completion requires a lint-clean file **plus** GREEN test evidence — or a documented exemption for pure docs, types, or interfaces. Record the evidence in your response (e.g. "Lint: clean via internal tool; Tests: not run per policy"). The agent does not run tests; test evidence comes from provided output (see [environment](environment.md)). Never assume success without proof.

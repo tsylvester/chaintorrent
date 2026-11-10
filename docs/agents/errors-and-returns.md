@@ -33,6 +33,19 @@ When a function hits a failure, classify it:
 
 There is no third option. You never convert one error type into another, and you never invent an untyped or generic error to stand in for a specific one.
 
+### Naming a variant that carries a callee's error
+
+A variant that carries a callee's error intact is named by the noun that distinguishes the callee — its family, its concrete, or its module — never by the callee's verb: `Pairing(CreatePairingErrorReturn)`, not `CreatePairing(CreatePairingErrorReturn)`. No prefix and no suffix is common to every variant of one enum; a word every variant would share names nothing and is left out.
+
+Mechanical resolution, applied when `clippy::enum_variant_names` fires, and applied when authoring an error enum so it never fires:
+
+- List the enum's variant names and find the word they all begin with or all end with.
+- Rename each variant to its name with that word removed, so each is the distinguishing noun alone: `CreatePairing` becomes `Pairing`, `CreateRandomSource` becomes `RandomSource`.
+- Leave every carried type unchanged; only the variant identifier changes.
+- Rename every reference to each variant — `match` arms, constructors, `From` impls, assertions in tests, builders in mocks — across every file that names it.
+- If removing the shared word leaves two variants with one name, the two carry errors from two callees the noun does not tell apart; name each by the noun that does, its concrete or module.
+- Never add `#[allow(clippy::enum_variant_names)]` and never rename a carried type to dodge the lint.
+
 ## A family's errors
 
 A family's trait states its failures in the contract entries of its factory module's interaction spec (see [workplan-structure](workplan-structure.md#the-interaction-spec-carries-the-integration-elements)). Each failure a contract entry states is a flavor of that method's error union, declared in the factory module's interface. Every concrete that meets the failure, the mock concrete included, decides it from its inputs and returns that flavor, and the flavor names no concrete. A callee error the entry states surfacing is carried intact in the flavor.

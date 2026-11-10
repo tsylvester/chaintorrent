@@ -514,17 +514,19 @@ The trigger is read from the node's `deps` element when the node is authored: a 
 
 **Its types are the subject's interface's.** Every type of the case runner is declared in the subject's `interface.rs`, under `#[cfg(any(test, feature = "mocks"))]`, and the mock file declares none of them:
 
-- the case consumer trait, with one associated `Output` and one method generic in every type the chain receives, borrowing every adapter and every produced value the runner hands it;
+- the case consumer trait, with one associated `Output` and one method `(&self, params: <Method>Params, payload: <Method>Payload<'a, …>) -> Self::Output`, generic in every type the chain receives, in the method form [composition](composition.md#methods-take-params-and-payload-never-positional-arguments-rust) states;
+- the method's payload, holding as fields a borrow of every adapter and every produced value the runner hands the case consumer, generic in the method's type parameters with their bounds; and the method's params, holding the selections the method takes, fieldless when it takes none;
 - the case deps, holding the case consumer as a handle typed by the case consumer trait through a generic bound;
 - the case params, one field per family the chain composes, typed by that family's own factory params, and the params of each source the chain constructs;
 - the case payload, holding what a block hands the chain that no level determines, such as a borrow whose referent the block owns;
 - the success return, generic over the output and holding it; the error return; the return alias; and the runner's function type, in the four-slot form ([composition](composition.md#the-signature), [composition](composition.md#a-return-that-carries-the-callers-type-rust)).
 
-**Its errors surface unchanged.** The error return carries each factory's error intact, one variant per factory the chain calls, as [errors-and-returns](errors-and-returns.md#which-error-does-a-function-return) states. Each level's output is the runner's return, so an inner factory's error reaches the runner's return through the outer levels unchanged. The runner unpacks no factory result by `expect`, and a block asserts a factory's refusal through the runner like any other outcome.
+**Its errors surface unchanged.** The error return carries each factory's error intact, one variant per factory the chain calls, named by that factory's family noun, as [errors-and-returns](errors-and-returns.md#naming-a-variant-that-carries-a-callees-error) states. Each level's output is the runner's return, so an inner factory's error reaches the runner's return through the outer levels unchanged. The runner unpacks no factory result by `expect`, and a block asserts a factory's refusal through the runner like any other outcome.
 
 **Every level is composed from builders.** The mock file holds:
 
 - the builder of each object type above — the case deps' builder taking the case consumer as its leading parameter, the case params' builder defaulting each field to its family's params builder at its defaults, the case payload's builder taking its handed fields as leading parameters (see [Fields with no default](#fields-with-no-default-rust)) — and no invalidator, since none of them has an untrusted form;
+- the innermost level builds the case consumer method's params and payload through their builders, the payload from every adapter and produced value the levels received, and calls the case consumer with them;
 - one private level per family the chain composes, `CaseAtMyFamily`, a struct implementing that family's consumer trait, holding borrows of what the outer levels received and the selections of the inner levels; its method builds its family's factory deps, params, and payload through that family's builders, the params from the case params' selection and the deps from what the outer levels received, makes only that factory call, and returns its result as its output;
 - the runner, typed by the runner's function type, which makes the outermost factory call.
 
