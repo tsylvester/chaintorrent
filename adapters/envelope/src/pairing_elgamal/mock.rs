@@ -672,9 +672,7 @@ impl<'a, C: IPairingElGamalKeyAgreementCaseConsumer> IPairingConsumer for CaseAt
             build_create_encoding_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(PairingElGamalKeyAgreementCaseErrorReturn::CreateEncoding(
-                error,
-            )),
+            Err(error) => Err(PairingElGamalKeyAgreementCaseErrorReturn::Encoding(error)),
         }
     }
 }
@@ -708,7 +706,9 @@ impl<C: IPairingElGamalKeyAgreementCaseConsumer, P: IPairingArithmetic + IPairin
         ) {
             Ok(created) => created,
             Err(error) => {
-                return Err(PairingElGamalKeyAgreementCaseErrorReturn::CreateHashToScalar(error));
+                return Err(PairingElGamalKeyAgreementCaseErrorReturn::HashToScalar(
+                    error,
+                ));
             }
         };
         let created_random = match create_random_source(
@@ -720,7 +720,9 @@ impl<C: IPairingElGamalKeyAgreementCaseConsumer, P: IPairingArithmetic + IPairin
         ) {
             Ok(created) => created,
             Err(error) => {
-                return Err(PairingElGamalKeyAgreementCaseErrorReturn::CreateRandomSource(error));
+                return Err(PairingElGamalKeyAgreementCaseErrorReturn::RandomSource(
+                    error,
+                ));
             }
         };
         let output = self.consumer.consume_pairing_elgamal_key_agreement_case(
@@ -755,8 +757,6 @@ pub fn run_pairing_elgamal_key_agreement_case<C: IPairingElGamalKeyAgreementCase
         build_create_pairing_payload(Default::default()),
     ) {
         Ok(success) => success.output,
-        Err(error) => Err(PairingElGamalKeyAgreementCaseErrorReturn::CreatePairing(
-            error,
-        )),
+        Err(error) => Err(PairingElGamalKeyAgreementCaseErrorReturn::Pairing(error)),
     }
 }

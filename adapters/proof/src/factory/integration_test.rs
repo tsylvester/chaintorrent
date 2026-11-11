@@ -20,7 +20,6 @@ use envelope::{
 };
 use hash_to_scalar::{
     CreateHashToScalarParams, DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarIdentifier,
-    IHashToScalarAdapter,
 };
 use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::{ICredentialKemAdapter, MasterScalarComponentsOverrides, build_master_scalar_components};
@@ -29,14 +28,14 @@ use pairing::{
     build_create_pairing_params,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
-    build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 
 use super::provides::{
     AlgebraicMintStatement, AlgebraicMintStatementOverrides, AlgebraicStatement,
     AlgebraicTransferStatement, AlgebraicTransferStatementOverrides, ConsumeDeliveryProofParams,
-    ConsumeDeliveryProofPayload, CreateDeliveryProofCaseParamsOverrides,
+    ConsumeDeliveryProofPayload, CreateDeliveryProofCaseConsumeParams,
+    CreateDeliveryProofCaseConsumePayload, CreateDeliveryProofCaseParamsOverrides,
     CreateDeliveryProofParamsOverrides, DELIVERY_PROOF_CONCRETES, DELIVERY_PROOF_INTERFACE_VERSION,
     DeliveryContextOverrides, DeliveryProofComponents, DeliveryProofConcrete,
     DeliveryProofDeclaration, DeliveryProofWireComponentsOverrides,
@@ -94,14 +93,16 @@ fn an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_vers
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                ..
+            } = payload;
             struct Delivery;
 
             impl<P: IPairingArithmetic, F: IChainForms> IDeliveryProofConsumer<P, F> for Delivery {
@@ -235,14 +236,17 @@ fn a_mint_proof_the_adapter_returns_verifies() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                forms,
+                ..
+            } = payload;
             struct Delivery<'p, 'f, P: IPairingArithmetic, F: IChainForms> {
                 pairing: &'p P,
                 forms: &'f F,
@@ -398,14 +402,17 @@ fn a_transfer_proof_the_adapter_returns_verifies() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                forms,
+                ..
+            } = payload;
             struct Delivery<'p, 'f, P: IPairingArithmetic, F: IChainForms> {
                 pairing: &'p P,
                 forms: &'f F,
@@ -565,14 +572,17 @@ fn a_proof_the_adapter_rebuilds_from_its_components_verifies() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                forms,
+                ..
+            } = payload;
             struct Delivery<'p, 'f, P: IPairingArithmetic, F: IChainForms> {
                 pairing: &'p P,
                 forms: &'f F,
@@ -753,14 +763,17 @@ fn components_of_the_other_verifier_form_are_refused_by_the_adapter() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                forms,
+                ..
+            } = payload;
             struct Delivery<'p, 'f, P: IPairingArithmetic, F: IChainForms> {
                 pairing: &'p P,
                 forms: &'f F,
@@ -937,14 +950,17 @@ fn a_proof_of_another_relation_is_refused_by_verify() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                forms,
+                ..
+            } = payload;
             struct Delivery<'p, 'f, P: IPairingArithmetic, F: IChainForms> {
                 pairing: &'p P,
                 forms: &'f F,
@@ -1145,14 +1161,17 @@ fn a_proof_against_a_statement_differing_in_one_field_is_refused() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                forms,
+                ..
+            } = payload;
             struct Delivery<'p, 'f, P: IPairingArithmetic, F: IChainForms> {
                 pairing: &'p P,
                 forms: &'f F,
@@ -1701,14 +1720,17 @@ fn a_proof_with_a_changed_response_or_challenge_is_refused() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                forms,
+                ..
+            } = payload;
             struct Delivery<'p, 'f, P: IPairingArithmetic, F: IChainForms> {
                 pairing: &'p P,
                 forms: &'f F,
@@ -2008,14 +2030,17 @@ fn a_proof_from_a_witness_the_statement_does_not_hold_is_refused() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                forms,
+                ..
+            } = payload;
             struct Delivery<'p, 'f, P: IPairingArithmetic, F: IChainForms> {
                 pairing: &'p P,
                 forms: &'f F,
@@ -2272,14 +2297,17 @@ fn a_refused_nonce_draw_is_returned_by_each_prover() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                forms,
+                ..
+            } = payload;
             struct Delivery<'p, 'f, P: IPairingArithmetic, F: IChainForms> {
                 pairing: &'p P,
                 forms: &'f F,

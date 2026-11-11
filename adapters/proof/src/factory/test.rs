@@ -1,6 +1,7 @@
 #![allow(clippy::expect_used)]
 
 use super::provides::{
+    CreateDeliveryProofCaseConsumeParams, CreateDeliveryProofCaseConsumePayload,
     CreateDeliveryProofErrorReturn, CreateDeliveryProofParamsOverrides, CreateDeliveryProofReturn,
     DeliveryProofComponents, DeliveryProofConcrete, DeliveryProofShapeErrorReturn,
     DeliveryProofWireComponents, DeliveryProofWireComponentsOverrides,
@@ -17,7 +18,6 @@ use crate::mint_statement::provides::{DELIVERY_STATEMENT_VERSION_ONE, DeliveryRe
 use chain::IChainForms;
 use encoding::IEncoderAdapter;
 use envelope::IKeyAgreementAdapter;
-use hash_to_scalar::IHashToScalarAdapter;
 use kem::ICredentialKemAdapter;
 use pairing::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingPayload, EncodeG2Params,
@@ -25,7 +25,6 @@ use pairing::{
     IPairingReference, VerifierGroupArithmetic, build_create_pairing_deps,
     build_create_pairing_params, create_pairing,
 };
-use random::IRandomSourceAdapter;
 
 /// Contract: wire conversion, admitted: both counts match → `Ok(components)`
 ///   in the variant of the wire's relation and form, the vectors named in the
@@ -856,21 +855,16 @@ fn create_delivery_proof_returns_the_consumers_output_for_the_schnorr_fs_selecti
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
             // Act
             create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     MockIDeliveryProofConsumer,
                     Default::default(),
                 ),
@@ -927,21 +921,16 @@ fn create_delivery_proof_refuses_a_statement_version_the_schnorr_fs_concrete_doe
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
             // Act
             create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     MockIDeliveryProofConsumer,
                     Default::default(),
                 ),
@@ -999,21 +988,16 @@ fn create_delivery_proof_returns_the_consumers_output_for_the_mock_selection() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
             // Act
             create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     MockIDeliveryProofConsumer,
                     Default::default(),
                 ),
@@ -1064,21 +1048,16 @@ fn create_delivery_proof_refuses_a_statement_version_the_mock_concrete_does_not_
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
             // Act
             create_delivery_proof::<P, E, F, MockIDeliveryProofConsumer>(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     MockIDeliveryProofConsumer,
                     Default::default(),
                 ),

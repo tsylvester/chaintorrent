@@ -272,15 +272,8 @@ pub trait ICreateGenerateCaseConsumer {
 
     fn consume_create_generate_case<P, E, F, K, A, D>(
         &self,
-        pairing: &P,
-        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &E,
-        decoder: &E,
-        kem: &K,
-        key_agreement: &A,
-        delivery_proof: &D,
-        random: &dyn IRandomSourceAdapter,
-        identities: Vec<AdmittedKemIdentity<'_>>,
+        params: ConsumeCreateGenerateCaseParams,
+        payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
     ) -> Self::Output
     where
         P: IPairingArithmetic + IPairingReference,
@@ -289,6 +282,29 @@ pub trait ICreateGenerateCaseConsumer {
         K: ICredentialKemAdapter<Pairing = P>,
         A: IKeyAgreementAdapter<Pairing = P>,
         D: IDeliveryProofAdapter<Pairing = P, Forms = F>;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeCreateGenerateCaseParams;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeCreateGenerateCasePayload<
+    'a,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A: IKeyAgreementAdapter<Pairing = P>,
+    D: IDeliveryProofAdapter<Pairing = P>,
+> {
+    pub pairing: &'a P,
+    pub hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    pub encoder: &'a E,
+    pub decoder: &'a E,
+    pub kem: &'a K,
+    pub key_agreement: &'a A,
+    pub delivery_proof: &'a D,
+    pub random: &'a dyn IRandomSourceAdapter,
+    pub identities: Vec<AdmittedKemIdentity<'a>>,
 }
 
 #[cfg(any(test, feature = "mocks"))]

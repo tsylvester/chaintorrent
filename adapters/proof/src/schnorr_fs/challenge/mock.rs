@@ -183,7 +183,7 @@ impl<C: IChallengeCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
             build_create_encoding_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(ChallengeCaseErrorReturn::CreateEncoding(error)),
+            Err(error) => Err(ChallengeCaseErrorReturn::Encoding(error)),
         }
     }
 }
@@ -222,7 +222,7 @@ impl<C: IChallengeCaseConsumer, P: IPairingArithmetic + IPairingReference> IEnco
             build_create_chain_forms_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(ChallengeCaseErrorReturn::CreateChainForms(error)),
+            Err(error) => Err(ChallengeCaseErrorReturn::ChainForms(error)),
         }
     }
 }
@@ -267,7 +267,7 @@ impl<
                     &ChallengeCasePayload,
                 ),
             }),
-            Err(error) => Err(ChallengeCaseErrorReturn::CreateHashToScalar(error)),
+            Err(error) => Err(ChallengeCaseErrorReturn::HashToScalar(error)),
         }
     }
 }
@@ -296,6 +296,6 @@ pub fn run_challenge_case<C: IChallengeCaseConsumer>(
             Ok(ChallengeCaseSuccessReturn { output }) => Ok(ChallengeCaseSuccessReturn { output }),
             Err(error) => Err(error),
         },
-        Err(error) => Err(ChallengeCaseErrorReturn::CreatePairing(error)),
+        Err(error) => Err(ChallengeCaseErrorReturn::Pairing(error)),
     }
 }

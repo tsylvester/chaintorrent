@@ -57,7 +57,8 @@ use crate::delivery::mint::provides::{
 };
 
 use super::interface::{
-    ITransferCaseConsumer, RunTransferCaseFn, TransferCaseDeps, TransferCaseErrorReturn,
+    ConsumeTransferCaseParams, ConsumeTransferCasePayload, ITransferCaseConsumer, RunTransferCaseFn,
+    TransferCaseDeps, TransferCaseErrorReturn,
     TransferCaseParams, TransferCasePayload, TransferCaseReturn, TransferCaseSuccessReturn,
     TransferDelivery, TransferDeps, TransferErrorReturn, TransferFn, TransferParams,
     TransferPayload, TransferReturn, TransferSuccessReturn, TransferWitnesses,
@@ -448,6 +449,52 @@ pub fn build_transfer_case_success_return<O>(
     TransferCaseSuccessReturn { output }
 }
 
+#[derive(Default)]
+pub struct ConsumeTransferCaseParamsOverrides;
+
+pub fn build_consume_transfer_case_params(
+    _overrides: ConsumeTransferCaseParamsOverrides,
+) -> ConsumeTransferCaseParams {
+    ConsumeTransferCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeTransferCasePayloadOverrides;
+
+pub fn build_consume_transfer_case_payload<
+    'a,
+    P: IPairingArithmetic + IPairingReference,
+    F: IChainForms,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A1: IKeyAgreementAdapter<Pairing = P>,
+    A2: IKeyAgreementAdapter<Pairing = P>,
+    D1: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+    D2: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+>(
+    pairing: &'a P,
+    kem: &'a K,
+    key_agreement: &'a A1,
+    transfer_key_agreement: &'a A2,
+    delivery_proof: &'a D1,
+    transfer_delivery_proof: &'a D2,
+    mint_source: &'a dyn IRandomSourceAdapter,
+    transfer_source: &'a dyn IRandomSourceAdapter,
+    identity: AdmittedKemIdentity<'a>,
+    _overrides: ConsumeTransferCasePayloadOverrides,
+) -> ConsumeTransferCasePayload<'a, P, F, K, A1, A2, D1, D2> {
+    ConsumeTransferCasePayload {
+        pairing,
+        kem,
+        key_agreement,
+        transfer_key_agreement,
+        delivery_proof,
+        transfer_delivery_proof,
+        mint_source,
+        transfer_source,
+        identity,
+    }
+}
+
 struct CaseAtTransferDeliveryProof<
     'a,
     P: IPairingArithmetic,
@@ -490,15 +537,19 @@ where
     ) -> Self::Output {
         Ok(TransferCaseSuccessReturn {
             output: self.consumer.consume_transfer_case(
-                self.pairing,
-                self.kem,
-                self.key_agreement,
-                self.transfer_key_agreement,
-                self.delivery_proof,
-                &payload.adapter,
-                self.mint_source,
-                self.transfer_source,
-                self.identity,
+                build_consume_transfer_case_params(Default::default()),
+                build_consume_transfer_case_payload(
+                    self.pairing,
+                    self.kem,
+                    self.key_agreement,
+                    self.transfer_key_agreement,
+                    self.delivery_proof,
+                    &payload.adapter,
+                    self.mint_source,
+                    self.transfer_source,
+                    self.identity,
+                    Default::default(),
+                ),
             ),
         })
     }

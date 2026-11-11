@@ -9,7 +9,6 @@ use encoding::{
     CanonicalFieldKind, CanonicalFieldValue, FromFieldErrorReturn, IDecoderAdapter, IEncoderAdapter,
 };
 use envelope::IKeyAgreementAdapter;
-use hash_to_scalar::IHashToScalarAdapter;
 use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::{
     CreateKemErrorReturn, DECLARED_KEM_SELECTIONS, ICredentialKemAdapter, KemConcrete,
@@ -17,7 +16,6 @@ use kem::{
 };
 use pairing::{IPairingArithmetic, IPairingReference};
 use proof::{DeliveryRelation, IDeliveryProofAdapter};
-use random::IRandomSourceAdapter;
 
 use super::interface::{ChainFormsConsumerErrorReturn, ChainFormsConsumerReturn};
 use super::mock::{ChainFormsConsumerConstructorParamsOverrides, build_chain_forms_consumer};
@@ -25,12 +23,12 @@ use crate::config::provides::{
     AdmittedKem, AdmittedStatementsOverrides, CanonicalDeliveryContextOverrides,
     build_admitted_identities, build_admitted_statements, build_canonical_delivery_context,
 };
-use crate::delivery::provides::AdmittedKemIdentity;
 use crate::generate::provides::{
-    EmitErrorReturn, GenerateConcrete, ICreateGenerateCaseConsumer,
-    MockIGenerateAdapterEmitErrorReturn, MockIGenerateAdapterFailureMode,
-    build_create_generate_case_deps, build_create_generate_case_params,
-    build_create_generate_case_payload, run_create_generate_case,
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, EmitErrorReturn,
+    GenerateConcrete, ICreateGenerateCaseConsumer, MockIGenerateAdapterEmitErrorReturn,
+    MockIGenerateAdapterFailureMode, build_create_generate_case_deps,
+    build_create_generate_case_params, build_create_generate_case_payload,
+    run_create_generate_case,
 };
 use crate::measure::provides::MeasureErrorReturn;
 use crate::run::provides::{
@@ -69,15 +67,8 @@ fn consume_chain_forms_returns_the_mint_contexts_refusal_with_the_field_that_hel
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -102,10 +93,10 @@ fn consume_chain_forms_returns_the_mint_contexts_refusal_with_the_field_that_hel
             });
             let admitted_identities = build_admitted_identities(Default::default());
             let consumer = build_chain_forms_consumer(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
                 &admitted_statements,
                 &admitted_identities,
                 ChainFormsConsumerConstructorParamsOverrides {
@@ -118,7 +109,7 @@ fn consume_chain_forms_returns_the_mint_contexts_refusal_with_the_field_that_hel
                 },
             );
             create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 build_create_chain_forms_params(Default::default()),
                 build_create_chain_forms_payload(Default::default()),
             )
@@ -181,15 +172,8 @@ fn consume_chain_forms_returns_the_transfer_contexts_refusal_after_the_mint_cont
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -210,16 +194,16 @@ fn consume_chain_forms_returns_the_transfer_contexts_refusal_after_the_mint_cont
             });
             let admitted_identities = build_admitted_identities(Default::default());
             let consumer = build_chain_forms_consumer(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
                 &admitted_statements,
                 &admitted_identities,
                 Default::default(),
             );
             create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 build_create_chain_forms_params(Default::default()),
                 build_create_chain_forms_payload(Default::default()),
             )
@@ -283,15 +267,8 @@ fn consume_chain_forms_returns_the_kem_factorys_refusal_for_an_undeclared_identi
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -308,10 +285,10 @@ fn consume_chain_forms_returns_the_kem_factorys_refusal_for_an_undeclared_identi
             let admitted_statements = build_admitted_statements(Default::default());
             let admitted_identities = build_admitted_identities(Default::default());
             let consumer = build_chain_forms_consumer(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
                 &admitted_statements,
                 &admitted_identities,
                 ChainFormsConsumerConstructorParamsOverrides {
@@ -324,7 +301,7 @@ fn consume_chain_forms_returns_the_kem_factorys_refusal_for_an_undeclared_identi
                 },
             );
             create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 build_create_chain_forms_params(Default::default()),
                 build_create_chain_forms_payload(Default::default()),
             )
@@ -384,15 +361,8 @@ fn consume_chain_forms_returns_the_kem_consumers_refusal_whole() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -405,10 +375,10 @@ fn consume_chain_forms_returns_the_kem_consumers_refusal_whole() {
             let admitted_statements = build_admitted_statements(Default::default());
             let admitted_identities = build_admitted_identities(Default::default());
             let consumer = build_chain_forms_consumer(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
                 &admitted_statements,
                 &admitted_identities,
                 ChainFormsConsumerConstructorParamsOverrides {
@@ -422,7 +392,7 @@ fn consume_chain_forms_returns_the_kem_consumers_refusal_whole() {
                 },
             );
             create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 build_create_chain_forms_params(Default::default()),
                 build_create_chain_forms_payload(Default::default()),
             )
@@ -489,15 +459,8 @@ fn consume_chain_forms_returns_the_verifiers_refusal_after_the_generate_step_suc
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -510,10 +473,10 @@ fn consume_chain_forms_returns_the_verifiers_refusal_after_the_generate_step_suc
             let admitted_statements = build_admitted_statements(Default::default());
             let admitted_identities = build_admitted_identities(Default::default());
             let consumer = build_chain_forms_consumer(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
                 &admitted_statements,
                 &admitted_identities,
                 ChainFormsConsumerConstructorParamsOverrides {
@@ -524,7 +487,7 @@ fn consume_chain_forms_returns_the_verifiers_refusal_after_the_generate_step_suc
                 },
             );
             create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 build_create_chain_forms_params(Default::default()),
                 build_create_chain_forms_payload(Default::default()),
             )

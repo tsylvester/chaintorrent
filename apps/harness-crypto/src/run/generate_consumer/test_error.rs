@@ -3,17 +3,15 @@
 use chain::IChainForms;
 use encoding::{IDecoderAdapter, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
-use hash_to_scalar::IHashToScalarAdapter;
 use hashing::{Root, RootConstructorParamsOverrides, build_root};
 use kem::ICredentialKemAdapter;
 use pairing::{IPairingArithmetic, IPairingReference};
 use proof::{IDeliveryProofAdapter, MintPurpose, TransferPurpose, build_delivery_context};
-use random::IRandomSourceAdapter;
 
 use super::interface::{GenerateConsumer, GenerateConsumerReturn};
 use super::mock::build_generate_consumer;
-use crate::delivery::provides::AdmittedKemIdentity;
 use crate::generate::provides::{
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload,
     CreateGenerateParamsOverrides, CreateGenerateReturn, EmitErrorReturn, GenerateConcrete,
     ICreateGenerateCaseConsumer, MockIGenerateAdapterEmitErrorReturn,
     MockIGenerateAdapterFailureMode, build_create_generate_case_deps,
@@ -40,15 +38,8 @@ fn consume_generate_returns_the_concretes_refusal_whole() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -58,26 +49,26 @@ fn consume_generate_returns_the_concretes_refusal_whole() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            let proof_identity = identities[0];
+            let proof_identity = payload.identities[0];
             let consumer: GenerateConsumer<'_, F> = build_generate_consumer(
                 build_delivery_context::<F, MintPurpose>(MintPurpose::Mint, Default::default()),
                 build_delivery_context::<F, TransferPurpose>(
                     TransferPurpose::Transfer,
                     Default::default(),
                 ),
-                identities,
+                payload.identities,
                 proof_identity,
                 Default::default(),
             );
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     consumer,
                     Default::default(),
                 ),

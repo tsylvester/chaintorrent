@@ -18,8 +18,8 @@ use envelope::{
 };
 use hash_to_scalar::{
     CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarConcrete,
-    HashToScalarErrorReturn, HashToScalarIdentifier, IHashToScalarAdapter,
-    MockIHashToScalarAdapterFailureMode, build_create_hash_to_scalar_params,
+    HashToScalarErrorReturn, HashToScalarIdentifier, MockIHashToScalarAdapterFailureMode,
+    build_create_hash_to_scalar_params,
 };
 use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::{
@@ -40,13 +40,13 @@ use proof::{
     build_create_delivery_proof_params, build_delivery_context,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
-    build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 
 use harness_crypto::{
     AdmittedIdentities, AdmittedIdentitiesOverrides, AdmittedIdentity, AdmittedKemIdentity,
     AdmittedKeyAgreement, ChallengeVectorDescription, ChallengeVectorDescriptionConstructorParams,
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload,
     CreateGenerateCaseParamsOverrides, CreateGenerateErrorReturn, DeliveryProofConsumerErrorReturn,
     GENERATE_CONCRETES, GenerateConcrete, GenerateConcreteKind, GenerateConcreteOverrides,
     GenerateKindConfigurationsOverrides, ICreateGenerateCaseConsumer, KemConsumer,
@@ -135,15 +135,8 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_kem_whole() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -163,12 +156,12 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_kem_whole() {
                 }
                 None => build_create_key_agreement_params(Default::default()),
             };
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let Ok(consumer) = KemConsumer::try_new(KemConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 mint: build_delivery_context::<F, MintPurpose>(
                     DELIVERY_PURPOSE_MINT,
                     Default::default(),
@@ -191,7 +184,12 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_kem_whole() {
                 iterations: NonZeroU32::new(3).expect("three is nonzero"),
             });
             create_kem(
-                &build_create_kem_deps(pairing, hash_to_scalar, consumer, Default::default()),
+                &build_create_kem_deps(
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    consumer,
+                    Default::default(),
+                ),
                 build_create_kem_params(CreateKemParamsOverrides {
                     concrete: Some(self.kem.concrete),
                     identifier: Some(self.kem.identifier),
@@ -420,15 +418,8 @@ fn the_identities_the_consumer_pairs_reach_the_delivery_proof_consumer_as_the_re
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -438,13 +429,13 @@ fn the_identities_the_consumer_pairs_reach_the_delivery_proof_consumer_as_the_re
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let mapping_count = admitted_identities.mapping.len();
             let Ok(consumer) = KemConsumer::try_new(KemConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 mint: build_delivery_context::<F, MintPurpose>(
                     MintPurpose::Replacement,
                     Default::default(),
@@ -470,7 +461,12 @@ fn the_identities_the_consumer_pairs_reach_the_delivery_proof_consumer_as_the_re
                 iterations: NonZeroU32::MIN,
             });
             let result = create_kem(
-                &build_create_kem_deps(pairing, hash_to_scalar, consumer, Default::default()),
+                &build_create_kem_deps(
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    consumer,
+                    Default::default(),
+                ),
                 build_create_kem_params(CreateKemParamsOverrides {
                     concrete: Some(self.kem.concrete),
                     identifier: Some(self.kem.identifier),
@@ -512,7 +508,8 @@ fn the_identities_the_consumer_pairs_reach_the_delivery_proof_consumer_as_the_re
                                 .expect("every written line is hex")
                         })
                         .collect();
-                    decoder
+                    payload
+                        .decoder
                         .decode(
                             DecodeParams {
                                 description: &description,
@@ -673,15 +670,8 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -691,12 +681,12 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let Ok(consumer) = KemConsumer::try_new(KemConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 mint: build_delivery_context::<F, MintPurpose>(
                     DELIVERY_PURPOSE_MINT,
                     Default::default(),
@@ -722,7 +712,12 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
                 iterations: NonZeroU32::MIN,
             });
             create_kem(
-                &build_create_kem_deps(pairing, hash_to_scalar, consumer, Default::default()),
+                &build_create_kem_deps(
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    consumer,
+                    Default::default(),
+                ),
                 build_create_kem_params(CreateKemParamsOverrides {
                     concrete: Some(DECLARED_KEM_SELECTIONS[0].concrete),
                     identifier: Some(DECLARED_KEM_SELECTIONS[0].identifier),
@@ -891,15 +886,8 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -909,12 +897,12 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let Ok(consumer) = KemConsumer::try_new(KemConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 mint: build_delivery_context::<F, MintPurpose>(
                     DELIVERY_PURPOSE_MINT,
                     Default::default(),
@@ -940,7 +928,12 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
                 iterations: NonZeroU32::MIN,
             });
             create_kem(
-                &build_create_kem_deps(pairing, hash_to_scalar, consumer, Default::default()),
+                &build_create_kem_deps(
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    consumer,
+                    Default::default(),
+                ),
                 build_create_kem_params(Default::default()),
                 build_create_kem_payload(Default::default()),
             )
@@ -1104,15 +1097,8 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1122,14 +1108,14 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            let scope = identities[0].setup_scope;
+            let scope = payload.identities[0].setup_scope;
             let generate_params = build_create_generate_params(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let Ok(consumer) = KemConsumer::try_new(KemConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 mint: build_delivery_context::<F, MintPurpose>(
                     DELIVERY_PURPOSE_MINT,
                     Default::default(),
@@ -1155,7 +1141,12 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
                 iterations: NonZeroU32::MIN,
             });
             let returned = create_kem(
-                &build_create_kem_deps(pairing, hash_to_scalar, consumer, Default::default()),
+                &build_create_kem_deps(
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    consumer,
+                    Default::default(),
+                ),
                 build_create_kem_params(CreateKemParamsOverrides {
                     concrete: Some(self.kem.concrete),
                     identifier: Some(self.kem.identifier),
@@ -1332,15 +1323,8 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1351,12 +1335,12 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let generate_params = build_create_generate_params(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let Ok(consumer) = KemConsumer::try_new(KemConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 mint: build_delivery_context::<F, MintPurpose>(
                     DELIVERY_PURPOSE_MINT,
                     Default::default(),
@@ -1384,7 +1368,12 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
                 iterations: NonZeroU32::MIN,
             });
             create_kem(
-                &build_create_kem_deps(pairing, hash_to_scalar, consumer, Default::default()),
+                &build_create_kem_deps(
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    consumer,
+                    Default::default(),
+                ),
                 build_create_kem_params(CreateKemParamsOverrides {
                     concrete: Some(self.kem.concrete),
                     identifier: Some(self.kem.identifier),

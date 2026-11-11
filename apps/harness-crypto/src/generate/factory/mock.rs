@@ -56,16 +56,17 @@ use super::super::solidity::provides::{
     build_solidity_generate_settings, build_vector_count, invalidate_solidity_generate_settings,
 };
 use super::interface::{
-    ConsumeGenerateParams, ConsumeGeneratePayload, CreateGenerateCaseDeps,
-    CreateGenerateCaseErrorReturn, CreateGenerateCaseParams, CreateGenerateCasePayload,
-    CreateGenerateCaseReturn, CreateGenerateCaseSuccessReturn, CreateGenerateDeps,
-    CreateGenerateFn, CreateGenerateParams, CreateGeneratePayload, CreateGenerateReturn,
-    CreateGenerateSuccessReturn, EmitErrorReturn, EmitParams, EmitPayload, EmitReturn,
-    EmitSuccessReturn, EmittedFile, GENERATE_INTERFACE_VERSION, GenerateConcrete,
-    GenerateConcreteKind, GenerateDeclaration, ICreateGenerateCaseConsumer, IGenerateAdapter,
-    IGenerateConsumer, MockIGenerateAdapterEmitErrorReturn, MockIGenerateAdapterFailureMode,
-    RunCreateGenerateCaseFn, VectorKind, VectorKindConfiguration, VectorKindDeclaration,
-    VectorKindQuantities, VectorKindSettings, VectorKindSize, VectorKindSizing,
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, ConsumeGenerateParams,
+    ConsumeGeneratePayload, CreateGenerateCaseDeps, CreateGenerateCaseErrorReturn,
+    CreateGenerateCaseParams, CreateGenerateCasePayload, CreateGenerateCaseReturn,
+    CreateGenerateCaseSuccessReturn, CreateGenerateDeps, CreateGenerateFn, CreateGenerateParams,
+    CreateGeneratePayload, CreateGenerateReturn, CreateGenerateSuccessReturn, EmitErrorReturn,
+    EmitParams, EmitPayload, EmitReturn, EmitSuccessReturn, EmittedFile,
+    GENERATE_INTERFACE_VERSION, GenerateConcrete, GenerateConcreteKind, GenerateDeclaration,
+    ICreateGenerateCaseConsumer, IGenerateAdapter, IGenerateConsumer,
+    MockIGenerateAdapterEmitErrorReturn, MockIGenerateAdapterFailureMode, RunCreateGenerateCaseFn,
+    VectorKind, VectorKindConfiguration, VectorKindDeclaration, VectorKindQuantities,
+    VectorKindSettings, VectorKindSize, VectorKindSizing,
 };
 use crate::delivery::provides::{AdmittedKemIdentity, build_admitted_kem_identity};
 
@@ -942,6 +943,52 @@ pub fn build_create_generate_case_success_return<O>(
     CreateGenerateCaseSuccessReturn { output }
 }
 
+#[derive(Default)]
+pub struct ConsumeCreateGenerateCaseParamsOverrides;
+
+pub fn build_consume_create_generate_case_params(
+    _overrides: ConsumeCreateGenerateCaseParamsOverrides,
+) -> ConsumeCreateGenerateCaseParams {
+    ConsumeCreateGenerateCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeCreateGenerateCasePayloadOverrides<'a> {
+    pub marker: PhantomData<&'a ()>,
+}
+
+pub fn build_consume_create_generate_case_payload<
+    'a,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A: IKeyAgreementAdapter<Pairing = P>,
+    D: IDeliveryProofAdapter<Pairing = P>,
+>(
+    pairing: &'a P,
+    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    encoder: &'a E,
+    decoder: &'a E,
+    kem: &'a K,
+    key_agreement: &'a A,
+    delivery_proof: &'a D,
+    random: &'a dyn IRandomSourceAdapter,
+    identities: Vec<AdmittedKemIdentity<'a>>,
+    _overrides: ConsumeCreateGenerateCasePayloadOverrides<'a>,
+) -> ConsumeCreateGenerateCasePayload<'a, P, E, K, A, D> {
+    ConsumeCreateGenerateCasePayload {
+        pairing,
+        hash_to_scalar,
+        encoder,
+        decoder,
+        kem,
+        key_agreement,
+        delivery_proof,
+        random,
+        identities,
+    }
+}
+
 struct CaseAtDeliveryProof<'a, P: IPairingArithmetic, E, F, K, A, C: ICreateGenerateCaseConsumer> {
     pairing: &'a P,
     hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
@@ -973,15 +1020,19 @@ where
     ) -> Self::Output {
         Ok(CreateGenerateCaseSuccessReturn {
             output: self.consumer.consume_create_generate_case(
-                self.pairing,
-                self.hash_to_scalar,
-                self.encoder,
-                self.encoder,
-                self.kem,
-                self.key_agreement,
-                &payload.adapter,
-                self.random,
-                self.identities.clone(),
+                build_consume_create_generate_case_params(Default::default()),
+                build_consume_create_generate_case_payload(
+                    self.pairing,
+                    self.hash_to_scalar,
+                    self.encoder,
+                    self.encoder,
+                    self.kem,
+                    self.key_agreement,
+                    &payload.adapter,
+                    self.random,
+                    self.identities.clone(),
+                    Default::default(),
+                ),
             ),
         })
     }

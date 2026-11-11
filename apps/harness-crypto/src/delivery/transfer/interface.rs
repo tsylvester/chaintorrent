@@ -109,15 +109,8 @@ pub trait ITransferCaseConsumer {
 
     fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
         &self,
-        pairing: &P,
-        kem: &K,
-        key_agreement: &A1,
-        transfer_key_agreement: &A2,
-        delivery_proof: &D1,
-        transfer_delivery_proof: &D2,
-        mint_source: &dyn IRandomSourceAdapter,
-        transfer_source: &dyn IRandomSourceAdapter,
-        identity: AdmittedKemIdentity<'_>,
+        params: ConsumeTransferCaseParams,
+        payload: ConsumeTransferCasePayload<'_, P, F, K, A1, A2, D1, D2>,
     ) -> Self::Output
     where
         P: IPairingArithmetic + IPairingReference,
@@ -127,6 +120,31 @@ pub trait ITransferCaseConsumer {
         A2: IKeyAgreementAdapter<Pairing = P>,
         D1: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         D2: IDeliveryProofAdapter<Pairing = P, Forms = F>;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeTransferCaseParams;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeTransferCasePayload<
+    'a,
+    P: IPairingArithmetic + IPairingReference,
+    F: IChainForms,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A1: IKeyAgreementAdapter<Pairing = P>,
+    A2: IKeyAgreementAdapter<Pairing = P>,
+    D1: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+    D2: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+> {
+    pub pairing: &'a P,
+    pub kem: &'a K,
+    pub key_agreement: &'a A1,
+    pub transfer_key_agreement: &'a A2,
+    pub delivery_proof: &'a D1,
+    pub transfer_delivery_proof: &'a D2,
+    pub mint_source: &'a dyn IRandomSourceAdapter,
+    pub transfer_source: &'a dyn IRandomSourceAdapter,
+    pub identity: AdmittedKemIdentity<'a>,
 }
 
 #[cfg(any(test, feature = "mocks"))]

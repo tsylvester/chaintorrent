@@ -3,7 +3,6 @@
 use chain::IChainForms;
 use encoding::{IDecoderAdapter, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
-use hash_to_scalar::IHashToScalarAdapter;
 use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::ICredentialKemAdapter;
 use pairing::{IPairingArithmetic, IPairingReference};
@@ -13,16 +12,15 @@ use proof::{
     TransferPurpose, build_create_delivery_proof_deps, build_create_delivery_proof_params,
     build_create_delivery_proof_payload, build_delivery_context, create_delivery_proof,
 };
-use random::IRandomSourceAdapter;
 
 use super::interface::{DeliveryProofConsumerErrorReturn, DeliveryProofConsumerReturn};
 use super::mock::{DeliveryProofConsumerConstructorParamsOverrides, build_delivery_proof_consumer};
-use crate::delivery::provides::AdmittedKemIdentity;
 use crate::generate::provides::{
-    EmitErrorReturn, GenerateConcrete, ICreateGenerateCaseConsumer,
-    MockIGenerateAdapterEmitErrorReturn, MockIGenerateAdapterFailureMode,
-    build_create_generate_case_deps, build_create_generate_case_params,
-    build_create_generate_case_payload, run_create_generate_case,
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, EmitErrorReturn,
+    GenerateConcrete, ICreateGenerateCaseConsumer, MockIGenerateAdapterEmitErrorReturn,
+    MockIGenerateAdapterFailureMode, build_create_generate_case_deps,
+    build_create_generate_case_params, build_create_generate_case_payload,
+    run_create_generate_case,
 };
 use crate::measure::provides::MeasureErrorReturn;
 use crate::verifier::provides::{
@@ -50,15 +48,8 @@ fn consume_delivery_proof_returns_the_generate_steps_refusal_before_the_verifier
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -69,19 +60,19 @@ fn consume_delivery_proof_returns_the_generate_steps_refusal_before_the_verifier
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let consumer = build_delivery_proof_consumer(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default()),
                 build_delivery_context::<F, TransferPurpose>(
                     DELIVERY_PURPOSE_TRANSFER,
                     Default::default(),
                 ),
-                identities.clone(),
-                identities[0],
+                payload.identities.clone(),
+                payload.identities[0],
                 DeliveryProofConsumerConstructorParamsOverrides {
                     generate: Some(GenerateConcrete::Mock(
                         MockIGenerateAdapterFailureMode::WriteRefused,
@@ -94,10 +85,10 @@ fn consume_delivery_proof_returns_the_generate_steps_refusal_before_the_verifier
             );
             create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),
@@ -159,15 +150,8 @@ fn consume_delivery_proof_returns_the_verifiers_refusal_after_the_generate_step_
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -178,19 +162,19 @@ fn consume_delivery_proof_returns_the_verifiers_refusal_after_the_generate_step_
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let consumer = build_delivery_proof_consumer(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default()),
                 build_delivery_context::<F, TransferPurpose>(
                     DELIVERY_PURPOSE_TRANSFER,
                     Default::default(),
                 ),
-                identities.clone(),
-                identities[0],
+                payload.identities.clone(),
+                payload.identities[0],
                 DeliveryProofConsumerConstructorParamsOverrides {
                     verifier: Some(VerifierConcrete::Mock(
                         MockIVerifierAdapterFailureMode::RpcRefused,
@@ -200,10 +184,10 @@ fn consume_delivery_proof_returns_the_verifiers_refusal_after_the_generate_step_
             );
             create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),
@@ -269,15 +253,8 @@ fn consume_delivery_proof_returns_the_verifier_factorys_refusal_for_an_unsupport
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -288,19 +265,19 @@ fn consume_delivery_proof_returns_the_verifier_factorys_refusal_for_an_unsupport
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let consumer = build_delivery_proof_consumer(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default()),
                 build_delivery_context::<F, TransferPurpose>(
                     DELIVERY_PURPOSE_TRANSFER,
                     Default::default(),
                 ),
-                identities.clone(),
-                identities[0],
+                payload.identities.clone(),
+                payload.identities[0],
                 DeliveryProofConsumerConstructorParamsOverrides {
                     statement_version: Some(2),
                     ..Default::default()
@@ -308,10 +285,10 @@ fn consume_delivery_proof_returns_the_verifier_factorys_refusal_for_an_unsupport
             );
             create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),

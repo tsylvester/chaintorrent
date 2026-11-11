@@ -12,9 +12,7 @@ use encoding::{
     IDecoderAdapter, IEncoderAdapter,
 };
 use envelope::{DECLARED_KEY_AGREEMENT_SELECTIONS, IKeyAgreementAdapter};
-use hash_to_scalar::{
-    DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarIdentifier, IHashToScalarAdapter,
-};
+use hash_to_scalar::{DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarIdentifier};
 use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::{DECLARED_KEM_SELECTIONS, ICredentialKemAdapter};
 use pairing::{
@@ -26,14 +24,14 @@ use proof::{
     DELIVERY_PURPOSE_TRANSFER, DeliveryContext, IDeliveryProofAdapter, MintPurpose,
     TransferPurpose, build_create_delivery_proof_params, build_delivery_context,
 };
-use random::IRandomSourceAdapter;
 
 use super::create_generate;
 use super::interface::{
-    ConsumeGenerateParams, ConsumeGeneratePayload, CreateGenerateErrorReturn, CreateGenerateParams,
-    CreateGenerateReturn, EmitErrorReturn, EmitReturn, GENERATE_CONCRETES, GenerateConcrete,
-    ICreateGenerateCaseConsumer, IGenerateAdapter, IGenerateConsumer,
-    MockIGenerateAdapterEmitErrorReturn, MockIGenerateAdapterFailureMode,
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, ConsumeGenerateParams,
+    ConsumeGeneratePayload, CreateGenerateErrorReturn, CreateGenerateParams, CreateGenerateReturn,
+    EmitErrorReturn, EmitReturn, GENERATE_CONCRETES, GenerateConcrete, ICreateGenerateCaseConsumer,
+    IGenerateAdapter, IGenerateConsumer, MockIGenerateAdapterEmitErrorReturn,
+    MockIGenerateAdapterFailureMode,
 };
 use super::mock::{
     CreateGenerateCaseParamsOverrides, CreateGenerateParamsOverrides, EmitPayloadOverrides,
@@ -118,15 +116,8 @@ fn emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -144,17 +135,17 @@ fn emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate() {
             );
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     EmitConsumer {
                         mint: &mint,
                         transfer: &transfer,
-                        identities: &identities,
+                        identities: &payload.identities,
                     },
                     Default::default(),
                 ),
@@ -306,15 +297,8 @@ fn a_refused_write_returns_the_mock_concretes_own_error() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -332,17 +316,17 @@ fn a_refused_write_returns_the_mock_concretes_own_error() {
             );
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     EmitConsumer {
                         mint: &mint,
                         transfer: &transfer,
-                        identities: &identities,
+                        identities: &payload.identities,
                     },
                     Default::default(),
                 ),
@@ -470,15 +454,8 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -490,13 +467,13 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     RecordingConsumer {
                         called: self.called,
                     },

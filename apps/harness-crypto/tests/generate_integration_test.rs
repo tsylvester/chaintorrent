@@ -9,7 +9,6 @@ use encoding::{
     CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, IDecoderAdapter, IEncoderAdapter,
 };
 use envelope::IKeyAgreementAdapter;
-use hash_to_scalar::IHashToScalarAdapter;
 use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::ICredentialKemAdapter;
 use pairing::{
@@ -21,17 +20,17 @@ use proof::{
     MintPurpose, TransferPurpose, build_delivery_context,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
-    build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 
 use harness_crypto::{
-    AdmittedKemIdentity, ConsumeGenerateParams, ConsumeGeneratePayload,
-    CreateGenerateCaseParamsOverrides, CreateGenerateParams, CreateGenerateParamsOverrides,
-    CreateGenerateReturn, EmitPayloadOverrides, EmitReturn, GENERATE_CONCRETES,
-    GenerateConcreteOverrides, GenerateKindConfigurationsOverrides, ICreateGenerateCaseConsumer,
-    IGenerateAdapter, IGenerateConsumer, VectorCount, VectorCountConstructorParamsOverrides,
-    VectorKind, VectorKindConfigurationOverrides, VectorKindQuantitiesOverrides,
+    AdmittedKemIdentity, ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload,
+    ConsumeGenerateParams, ConsumeGeneratePayload, CreateGenerateCaseParamsOverrides,
+    CreateGenerateParams, CreateGenerateParamsOverrides, CreateGenerateReturn,
+    EmitPayloadOverrides, EmitReturn, GENERATE_CONCRETES, GenerateConcreteOverrides,
+    GenerateKindConfigurationsOverrides, ICreateGenerateCaseConsumer, IGenerateAdapter,
+    IGenerateConsumer, VectorCount, VectorCountConstructorParamsOverrides, VectorKind,
+    VectorKindConfigurationOverrides, VectorKindQuantitiesOverrides,
     build_create_generate_case_deps, build_create_generate_case_params,
     build_create_generate_case_payload, build_create_generate_deps, build_create_generate_params,
     build_create_generate_payload, build_emit_params, build_emit_payload, build_generate_concrete,
@@ -133,15 +132,8 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -159,17 +151,17 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
             );
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     EmitConsumer {
                         mint: &mint,
                         transfer: &transfer,
-                        identities: &identities,
+                        identities: &payload.identities,
                         count: self.count,
                     },
                     Default::default(),

@@ -139,10 +139,10 @@ pub struct PairingElGamalKeyAgreementCaseSuccessReturn<O> {
 #[cfg(test)]
 #[derive(Debug, PartialEq, Eq)]
 pub enum PairingElGamalKeyAgreementCaseErrorReturn {
-    CreatePairing(CreatePairingErrorReturn),
-    CreateEncoding(CreateEncodingErrorReturn),
-    CreateHashToScalar(CreateHashToScalarErrorReturn),
-    CreateRandomSource(CreateRandomSourceErrorReturn),
+    Pairing(CreatePairingErrorReturn),
+    Encoding(CreateEncodingErrorReturn),
+    HashToScalar(CreateHashToScalarErrorReturn),
+    RandomSource(CreateRandomSourceErrorReturn),
 }
 
 #[cfg(test)]

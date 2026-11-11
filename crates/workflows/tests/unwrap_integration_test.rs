@@ -12,7 +12,7 @@ use encoding::{
     IEncoderAdapter, build_create_encoding_params,
 };
 use hash_to_scalar::{
-    CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, IHashToScalarAdapter,
+    CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS,
     build_create_hash_to_scalar_params,
 };
 use hashing::{RootConstructorParamsOverrides, build_root};
@@ -41,9 +41,9 @@ use random::{
     build_fill_bytes_payload,
 };
 use workflows::{
-    DerivationContext, DerivationContextConstructorParamsOverrides,
-    IUnwrapPieceGroupKeyCaseConsumer, PieceGroupKey, PieceGroupKeyConstructorParamsOverrides,
-    UnwrapPieceGroupKeyCaseParamsOverrides, UnwrapPieceGroupKeyCasePayload,
+    ConsumeUnwrapPieceGroupKeyCaseParams, ConsumeUnwrapPieceGroupKeyCasePayload, DerivationContext,
+    DerivationContextConstructorParamsOverrides, IUnwrapPieceGroupKeyCaseConsumer, PieceGroupKey,
+    PieceGroupKeyConstructorParamsOverrides, UnwrapPieceGroupKeyCaseParamsOverrides,
     UnwrapPieceGroupKeyErrorReturn, WrappedPieceGroupKey,
     WrappedPieceGroupKeyConstructorParamsOverrides, build_derivation_context,
     build_derivation_context_description, build_piece_group_key,
@@ -107,18 +107,11 @@ fn unwrapping_a_wrapped_key_equal_to_the_wrapping_key_the_oracle_states_yields_a
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            _pairing: &P,
-            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _kem_first: &K1,
-            _kem_second: &K2,
-            _random: &dyn IRandomSourceAdapter,
-            _scope_first: IdentityScope,
-            _scope_second: IdentityScope,
-            _payload: &UnwrapPieceGroupKeyCasePayload,
+            _params: ConsumeUnwrapPieceGroupKeyCaseParams,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
         ) -> Self::Output {
-            let context_bytes = encoder
+            let context_bytes = payload
+                .encoder
                 .encode(
                     EncodeParams {
                         description: &build_derivation_context_description(Default::default()),
@@ -134,7 +127,11 @@ fn unwrapping_a_wrapped_key_equal_to_the_wrapping_key_the_oracle_states_yields_a
                     bytes: Some(expected),
                 });
             let result = unwrap_piece_group_key(
-                &build_unwrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_unwrap_piece_group_key_deps(
+                    payload.kdf,
+                    payload.encoder,
+                    Default::default(),
+                ),
                 build_unwrap_piece_group_key_params(Default::default()),
                 build_unwrap_piece_group_key_payload(
                     self.encapsulated,
@@ -268,18 +265,11 @@ fn unwrapping_an_all_ones_wrapped_key_yields_the_complement_of_the_wrapping_key_
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            _pairing: &P,
-            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _kem_first: &K1,
-            _kem_second: &K2,
-            _random: &dyn IRandomSourceAdapter,
-            _scope_first: IdentityScope,
-            _scope_second: IdentityScope,
-            _payload: &UnwrapPieceGroupKeyCasePayload,
+            _params: ConsumeUnwrapPieceGroupKeyCaseParams,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
         ) -> Self::Output {
-            let context_bytes = encoder
+            let context_bytes = payload
+                .encoder
                 .encode(
                     EncodeParams {
                         description: &build_derivation_context_description(Default::default()),
@@ -294,7 +284,11 @@ fn unwrapping_an_all_ones_wrapped_key_yields_the_complement_of_the_wrapping_key_
                 *byte = !*byte;
             }
             let result = unwrap_piece_group_key(
-                &build_unwrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_unwrap_piece_group_key_deps(
+                    payload.kdf,
+                    payload.encoder,
+                    Default::default(),
+                ),
                 build_unwrap_piece_group_key_params(Default::default()),
                 build_unwrap_piece_group_key_payload(
                     self.encapsulated,
@@ -446,19 +440,15 @@ fn unwrapping_returns_a_key_derivation_refusal_whole() {
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            _pairing: &P,
-            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _kem_first: &K1,
-            _kem_second: &K2,
-            _random: &dyn IRandomSourceAdapter,
-            _scope_first: IdentityScope,
-            _scope_second: IdentityScope,
-            _payload: &UnwrapPieceGroupKeyCasePayload,
+            _params: ConsumeUnwrapPieceGroupKeyCaseParams,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
         ) -> Self::Output {
             let result = unwrap_piece_group_key(
-                &build_unwrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_unwrap_piece_group_key_deps(
+                    payload.kdf,
+                    payload.encoder,
+                    Default::default(),
+                ),
                 build_unwrap_piece_group_key_params(Default::default()),
                 build_unwrap_piece_group_key_payload(
                     self.encapsulated,
@@ -567,19 +557,11 @@ fn unwrapping_what_the_wrap_produced_returns_the_piece_group_key() {
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            _pairing: &P,
-            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _kem_first: &K1,
-            _kem_second: &K2,
-            _random: &dyn IRandomSourceAdapter,
-            _scope_first: IdentityScope,
-            _scope_second: IdentityScope,
-            _payload: &UnwrapPieceGroupKeyCasePayload,
+            _params: ConsumeUnwrapPieceGroupKeyCaseParams,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
         ) -> Self::Output {
             let wrapped = wrap_piece_group_key(
-                &build_wrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_wrap_piece_group_key_deps(payload.kdf, payload.encoder, Default::default()),
                 build_wrap_piece_group_key_params(Default::default()),
                 build_wrap_piece_group_key_payload(
                     self.encapsulated,
@@ -591,7 +573,11 @@ fn unwrapping_what_the_wrap_produced_returns_the_piece_group_key() {
             .expect("the wrap admits the piece-group key")
             .wrapped;
             let result = unwrap_piece_group_key(
-                &build_unwrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_unwrap_piece_group_key_deps(
+                    payload.kdf,
+                    payload.encoder,
+                    Default::default(),
+                ),
                 build_unwrap_piece_group_key_params(Default::default()),
                 build_unwrap_piece_group_key_payload(
                     self.encapsulated,
@@ -741,32 +727,24 @@ fn two_independently_generated_entitlement_scope_sets_unwrap_one_piece_group_key
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            _pairing: &P,
-            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            kem_first: &K1,
-            kem_second: &K2,
-            random: &dyn IRandomSourceAdapter,
-            scope_first: IdentityScope,
-            scope_second: IdentityScope,
-            _payload: &UnwrapPieceGroupKeyCasePayload,
+            _params: ConsumeUnwrapPieceGroupKeyCaseParams,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
         ) -> Self::Output {
             let wrapped_first = run_set(
-                kem_first,
-                scope_first,
-                encoder,
-                kdf,
-                random,
+                payload.kem_first,
+                payload.scope_first,
+                payload.encoder,
+                payload.kdf,
+                payload.random,
                 self.context_a,
                 self.piece_group_key,
             );
             let wrapped_second = run_set(
-                kem_second,
-                scope_second,
-                encoder,
-                kdf,
-                random,
+                payload.kem_second,
+                payload.scope_second,
+                payload.encoder,
+                payload.kdf,
+                payload.random,
                 self.context_b,
                 self.piece_group_key,
             );
@@ -938,32 +916,24 @@ fn an_escrow_set_and_a_claimants_set_unwrap_one_piece_group_key() {
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            _pairing: &P,
-            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            kem_first: &K1,
-            kem_second: &K2,
-            random: &dyn IRandomSourceAdapter,
-            scope_first: IdentityScope,
-            scope_second: IdentityScope,
-            _payload: &UnwrapPieceGroupKeyCasePayload,
+            _params: ConsumeUnwrapPieceGroupKeyCaseParams,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
         ) -> Self::Output {
             let wrapped_escrow = run_set(
-                kem_first,
-                scope_first,
-                encoder,
-                kdf,
-                random,
+                payload.kem_first,
+                payload.scope_first,
+                payload.encoder,
+                payload.kdf,
+                payload.random,
                 self.context_a,
                 self.piece_group_key,
             );
             let wrapped_claimant = run_set(
-                kem_second,
-                scope_second,
-                encoder,
-                kdf,
-                random,
+                payload.kem_second,
+                payload.scope_second,
+                payload.encoder,
+                payload.kdf,
+                payload.random,
                 self.context_b,
                 self.piece_group_key,
             );

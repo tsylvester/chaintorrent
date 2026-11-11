@@ -22,17 +22,16 @@ use pairing::{
     ISampleUniformScalar, MulG1Params, MulG1Payload, MulG2Params, MulG2Payload,
 };
 use proof::{IDeliveryProofAdapter, MintPurpose, TransferPurpose, build_delivery_context};
-use random::IRandomSourceAdapter;
-
-use super::interface::ITransferCaseConsumer;
+use super::interface::{
+    ConsumeTransferCaseParams, ConsumeTransferCasePayload, ITransferCaseConsumer,
+};
 use super::mock::{
     build_transfer_case_deps, build_transfer_case_params, build_transfer_case_payload,
     build_transfer_deps, build_transfer_params, build_transfer_payload, run_transfer_case,
 };
 use super::transfer;
 use crate::delivery::mint::provides::{
-    AdmittedKemIdentity, MintPayloadOverrides, build_mint_deps, build_mint_params,
-    build_mint_payload, mock_mint,
+    MintPayloadOverrides, build_mint_deps, build_mint_params, build_mint_payload, mock_mint,
 };
 
 /// Contract: Computed → `Ok(TransferSuccessReturn { delivery })`, the
@@ -70,15 +69,8 @@ fn transfer_returns_a_statement_over_the_payloads_context_the_holders_objects_an
 
         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
             &self,
-            pairing: &P,
-            kem: &K,
-            _key_agreement: &A1,
-            transfer_key_agreement: &A2,
-            delivery_proof: &D1,
-            transfer_delivery_proof: &D2,
-            mint_source: &dyn IRandomSourceAdapter,
-            transfer_source: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeTransferCaseParams,
+            payload: ConsumeTransferCasePayload<'_, P, F, K, A1, A2, D1, D2>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -89,6 +81,14 @@ fn transfer_returns_a_statement_over_the_payloads_context_the_holders_objects_an
             D1: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             D2: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let transfer_key_agreement = payload.transfer_key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let transfer_delivery_proof = payload.transfer_delivery_proof;
+            let mint_source = payload.mint_source;
+            let transfer_source = payload.transfer_source;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(MintPurpose::Mint, Default::default());
@@ -339,15 +339,8 @@ fn transfer_draws_three_uniforms_in_order() {
 
         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
             &self,
-            pairing: &P,
-            kem: &K,
-            _key_agreement: &A1,
-            transfer_key_agreement: &A2,
-            delivery_proof: &D1,
-            transfer_delivery_proof: &D2,
-            mint_source: &dyn IRandomSourceAdapter,
-            transfer_source: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeTransferCaseParams,
+            payload: ConsumeTransferCasePayload<'_, P, F, K, A1, A2, D1, D2>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -358,6 +351,14 @@ fn transfer_draws_three_uniforms_in_order() {
             D1: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             D2: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let transfer_key_agreement = payload.transfer_key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let transfer_delivery_proof = payload.transfer_delivery_proof;
+            let mint_source = payload.mint_source;
+            let transfer_source = payload.transfer_source;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(MintPurpose::Mint, Default::default());
@@ -556,15 +557,8 @@ fn transfer_returns_the_witnesses_the_objects_were_formed_with() {
 
         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
             &self,
-            pairing: &P,
-            kem: &K,
-            _key_agreement: &A1,
-            transfer_key_agreement: &A2,
-            delivery_proof: &D1,
-            transfer_delivery_proof: &D2,
-            mint_source: &dyn IRandomSourceAdapter,
-            transfer_source: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeTransferCaseParams,
+            payload: ConsumeTransferCasePayload<'_, P, F, K, A1, A2, D1, D2>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -575,6 +569,14 @@ fn transfer_returns_the_witnesses_the_objects_were_formed_with() {
             D1: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             D2: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let transfer_key_agreement = payload.transfer_key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let transfer_delivery_proof = payload.transfer_delivery_proof;
+            let mint_source = payload.mint_source;
+            let transfer_source = payload.transfer_source;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(MintPurpose::Mint, Default::default());
@@ -772,15 +774,8 @@ fn transfer_from_the_returned_buyer_transfers_again() {
 
         fn consume_transfer_case<P, F, K, A1, A2, D1, D2>(
             &self,
-            pairing: &P,
-            kem: &K,
-            _key_agreement: &A1,
-            transfer_key_agreement: &A2,
-            delivery_proof: &D1,
-            transfer_delivery_proof: &D2,
-            mint_source: &dyn IRandomSourceAdapter,
-            transfer_source: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeTransferCaseParams,
+            payload: ConsumeTransferCasePayload<'_, P, F, K, A1, A2, D1, D2>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -791,6 +786,14 @@ fn transfer_from_the_returned_buyer_transfers_again() {
             D1: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             D2: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let transfer_key_agreement = payload.transfer_key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let transfer_delivery_proof = payload.transfer_delivery_proof;
+            let mint_source = payload.mint_source;
+            let transfer_source = payload.transfer_source;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(MintPurpose::Mint, Default::default());

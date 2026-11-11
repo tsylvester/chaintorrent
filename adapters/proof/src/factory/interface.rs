@@ -538,14 +538,30 @@ pub trait ICreateDeliveryProofCaseConsumer {
         A: IKeyAgreementAdapter<Pairing = P>,
     >(
         &self,
-        pairing: &P,
-        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &E,
-        random: &dyn IRandomSourceAdapter,
-        forms: &F,
-        kem: &K,
-        key_agreement: &A,
+        params: CreateDeliveryProofCaseConsumeParams,
+        payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
     ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateDeliveryProofCaseConsumeParams;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct CreateDeliveryProofCaseConsumePayload<
+    'a,
+    P: IPairingArithmetic,
+    E: IEncoderAdapter,
+    F: IChainForms,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A: IKeyAgreementAdapter<Pairing = P>,
+> {
+    pub pairing: &'a P,
+    pub hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    pub encoder: &'a E,
+    pub random: &'a dyn IRandomSourceAdapter,
+    pub forms: &'a F,
+    pub kem: &'a K,
+    pub key_agreement: &'a A,
 }
 
 #[cfg(any(test, feature = "mocks"))]

@@ -6,7 +6,6 @@ use chain::IChainForms;
 use core::num::NonZeroU32;
 use encoding::{IDecoderAdapter, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
-use hash_to_scalar::IHashToScalarAdapter;
 use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::{ICredentialKemAdapter, KemIdentity, SetupScope};
 use pairing::{IPairingArithmetic, IPairingReference};
@@ -16,13 +15,12 @@ use proof::{
     build_create_delivery_proof_deps, build_create_delivery_proof_params,
     build_create_delivery_proof_payload, build_delivery_context, create_delivery_proof,
 };
-use random::IRandomSourceAdapter;
 
 use super::interface::{DeliveryProofConsumer, DeliveryProofConsumerReturn};
 use super::mock::{DeliveryProofConsumerConstructorParamsOverrides, build_delivery_proof_consumer};
-use crate::delivery::provides::AdmittedKemIdentity;
 use crate::generate::provides::{
-    EmittedFileOverrides, ICreateGenerateCaseConsumer, VectorKind, build_create_generate_case_deps,
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, EmittedFileOverrides,
+    ICreateGenerateCaseConsumer, VectorKind, build_create_generate_case_deps,
     build_create_generate_case_params, build_create_generate_case_payload, build_emitted_file,
     run_create_generate_case,
 };
@@ -84,15 +82,8 @@ fn consume_delivery_proof_returns_the_files_and_the_measurement_both_steps_compu
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -103,19 +94,19 @@ fn consume_delivery_proof_returns_the_files_and_the_measurement_both_steps_compu
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let consumer: DeliveryProofConsumer<'_, P, E, K, A, F> = build_delivery_proof_consumer(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default()),
                 build_delivery_context::<F, TransferPurpose>(
                     DELIVERY_PURPOSE_TRANSFER,
                     Default::default(),
                 ),
-                identities.clone(),
-                identities[0],
+                payload.identities.clone(),
+                payload.identities[0],
                 DeliveryProofConsumerConstructorParamsOverrides {
                     iterations: NonZeroU32::new(3),
                     ..Default::default()
@@ -123,10 +114,10 @@ fn consume_delivery_proof_returns_the_files_and_the_measurement_both_steps_compu
             );
             create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),
@@ -200,15 +191,8 @@ fn try_new_holds_every_value_it_is_handed() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -219,12 +203,12 @@ fn try_new_holds_every_value_it_is_handed() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let consumer: DeliveryProofConsumer<'_, P, E, K, A, F> = build_delivery_proof_consumer(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
                 build_delivery_context::<F, MintPurpose>(
                     MintPurpose::Replacement,
                     DeliveryContextOverrides {
@@ -239,8 +223,8 @@ fn try_new_holds_every_value_it_is_handed() {
                         ..Default::default()
                     },
                 ),
-                identities.clone(),
-                identities[0],
+                payload.identities.clone(),
+                payload.identities[0],
                 DeliveryProofConsumerConstructorParamsOverrides {
                     verifier: Some(VerifierConcrete::Mock(
                         MockIVerifierAdapterFailureMode::RpcRefused,
@@ -260,18 +244,26 @@ fn try_new_holds_every_value_it_is_handed() {
             assert_eq!(consumer.transfer.purpose.code(), 3);
             assert_eq!(consumer.statement_version, 2);
             assert_eq!(consumer.iterations.get(), 7);
-            assert!(core::ptr::eq(consumer.pairing, pairing));
-            assert!(core::ptr::eq(consumer.encoder, encoder));
-            assert!(core::ptr::eq(consumer.kem, kem));
-            assert!(core::ptr::eq(consumer.key_agreement, key_agreement));
-            assert!(core::ptr::addr_eq(consumer.hash_to_scalar, hash_to_scalar));
-            assert!(core::ptr::addr_eq(consumer.random, random));
-            assert_eq!(consumer.identities.len(), identities.len());
+            assert!(core::ptr::eq(consumer.pairing, payload.pairing));
+            assert!(core::ptr::eq(consumer.encoder, payload.encoder));
+            assert!(core::ptr::eq(consumer.kem, payload.kem));
+            assert!(core::ptr::eq(consumer.key_agreement, payload.key_agreement));
+            assert!(core::ptr::addr_eq(
+                consumer.hash_to_scalar,
+                payload.hash_to_scalar
+            ));
+            assert!(core::ptr::addr_eq(consumer.random, payload.random));
+            assert_eq!(consumer.identities.len(), payload.identities.len());
             for (held, expected) in consumer
                 .identities
                 .iter()
                 .chain(core::iter::once(&consumer.proof_identity))
-                .zip(identities.iter().chain(core::iter::once(&identities[0])))
+                .zip(
+                    payload
+                        .identities
+                        .iter()
+                        .chain(core::iter::once(&payload.identities[0])),
+                )
             {
                 match (held.setup_scope, expected.setup_scope) {
                     (SetupScope::Entitlement, SetupScope::Entitlement) => {}
@@ -303,10 +295,10 @@ fn try_new_holds_every_value_it_is_handed() {
             }
             create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),

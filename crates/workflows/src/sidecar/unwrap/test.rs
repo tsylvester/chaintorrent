@@ -1,12 +1,12 @@
 #![allow(clippy::expect_used)]
 
 use super::provides::{
+    ConsumeUnwrapPieceGroupKeyCaseParams, ConsumeUnwrapPieceGroupKeyCasePayload,
     IUnwrapPieceGroupKeyCaseConsumer, UnwrapPieceGroupKeyCaseParamsOverrides,
-    UnwrapPieceGroupKeyCasePayload, UnwrapPieceGroupKeyErrorReturn,
-    build_unwrap_piece_group_key_case_deps, build_unwrap_piece_group_key_case_params,
-    build_unwrap_piece_group_key_case_payload, build_unwrap_piece_group_key_deps,
-    build_unwrap_piece_group_key_params, build_unwrap_piece_group_key_payload,
-    run_unwrap_piece_group_key_case, unwrap_piece_group_key,
+    UnwrapPieceGroupKeyErrorReturn, build_unwrap_piece_group_key_case_deps,
+    build_unwrap_piece_group_key_case_params, build_unwrap_piece_group_key_case_payload,
+    build_unwrap_piece_group_key_deps, build_unwrap_piece_group_key_params,
+    build_unwrap_piece_group_key_payload, run_unwrap_piece_group_key_case, unwrap_piece_group_key,
 };
 use crate::sidecar::derivation_context::provides::{
     DerivationContext, build_derivation_context, build_derivation_context_description,
@@ -17,19 +17,16 @@ use crate::sidecar::wrap::provides::{
 };
 use domain::build_secret;
 use encoding::{EncodeParams, IDecoderAdapter, IEncoderAdapter};
-use hash_to_scalar::IHashToScalarAdapter;
 use kdf::{
     CreateKeyDerivationParamsOverrides, DerivationPurpose, DeriveKeyErrorReturn,
-    DeriveKeyParamsOverrides, DeriveKeyPayloadOverrides, IKeyDerivationAdapter, KdfConcrete,
+    DeriveKeyParamsOverrides, DeriveKeyPayloadOverrides, KdfConcrete,
     MockIKeyDerivationAdapterDeriveKeyErrorReturn, MockIKeyDerivationAdapterFailureMode,
     build_create_key_derivation_params, build_derive_key_params, build_derive_key_payload,
 };
 use kem::{
-    EncapsulatedValue, EncapsulatedValueOverrides, ICredentialKemAdapter, IdentityScope,
-    build_encapsulated_value,
+    EncapsulatedValue, EncapsulatedValueOverrides, ICredentialKemAdapter, build_encapsulated_value,
 };
 use pairing::{IPairingArithmetic, IPairingReference};
-use random::IRandomSourceAdapter;
 
 /// Contract: `unwrap_piece_group_key`, key derivation refused:
 ///   `deps.kdf.derive_key(...)`, called once, returns `Err(error)` →
@@ -74,19 +71,15 @@ fn unwrap_returns_the_key_derivation_refusal_unchanged() {
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            _pairing: &P,
-            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _kem_first: &K1,
-            _kem_second: &K2,
-            _random: &dyn IRandomSourceAdapter,
-            _scope_first: IdentityScope,
-            _scope_second: IdentityScope,
-            _payload: &UnwrapPieceGroupKeyCasePayload,
+            _params: ConsumeUnwrapPieceGroupKeyCaseParams,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
         ) -> Self::Output {
             let result = unwrap_piece_group_key(
-                &build_unwrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_unwrap_piece_group_key_deps(
+                    payload.kdf,
+                    payload.encoder,
+                    Default::default(),
+                ),
                 build_unwrap_piece_group_key_params(Default::default()),
                 build_unwrap_piece_group_key_payload(
                     &self.encapsulated,
@@ -182,18 +175,11 @@ fn unwrap_returns_a_zero_key_when_the_wrapped_key_equals_the_wrapping_key() {
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            _pairing: &P,
-            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _kem_first: &K1,
-            _kem_second: &K2,
-            _random: &dyn IRandomSourceAdapter,
-            _scope_first: IdentityScope,
-            _scope_second: IdentityScope,
-            _payload: &UnwrapPieceGroupKeyCasePayload,
+            _params: ConsumeUnwrapPieceGroupKeyCaseParams,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
         ) -> Self::Output {
-            let context_bytes = encoder
+            let context_bytes = payload
+                .encoder
                 .encode(
                     EncodeParams {
                         description: &build_derivation_context_description(Default::default()),
@@ -202,7 +188,8 @@ fn unwrap_returns_a_zero_key_when_the_wrapped_key_equals_the_wrapping_key() {
                 )
                 .expect("the mock encoder encodes the context")
                 .bytes;
-            let wrapping_key = kdf
+            let wrapping_key = payload
+                .kdf
                 .derive_key(
                     build_derive_key_params(DeriveKeyParamsOverrides {
                         purpose: Some(DerivationPurpose::WrappingKey),
@@ -220,7 +207,11 @@ fn unwrap_returns_a_zero_key_when_the_wrapped_key_equals_the_wrapping_key() {
                     bytes: Some(wrapping_key.expose().clone()),
                 });
             let result = unwrap_piece_group_key(
-                &build_unwrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_unwrap_piece_group_key_deps(
+                    payload.kdf,
+                    payload.encoder,
+                    Default::default(),
+                ),
                 build_unwrap_piece_group_key_params(Default::default()),
                 build_unwrap_piece_group_key_payload(
                     &self.encapsulated,
@@ -292,18 +283,11 @@ fn unwrap_returns_the_complement_of_the_wrapping_key_when_the_wrapped_key_is_all
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            _pairing: &P,
-            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _kem_first: &K1,
-            _kem_second: &K2,
-            _random: &dyn IRandomSourceAdapter,
-            _scope_first: IdentityScope,
-            _scope_second: IdentityScope,
-            _payload: &UnwrapPieceGroupKeyCasePayload,
+            _params: ConsumeUnwrapPieceGroupKeyCaseParams,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
         ) -> Self::Output {
-            let context_bytes = encoder
+            let context_bytes = payload
+                .encoder
                 .encode(
                     EncodeParams {
                         description: &build_derivation_context_description(Default::default()),
@@ -312,7 +296,8 @@ fn unwrap_returns_the_complement_of_the_wrapping_key_when_the_wrapped_key_is_all
                 )
                 .expect("the mock encoder encodes the context")
                 .bytes;
-            let wrapping_key = kdf
+            let wrapping_key = payload
+                .kdf
                 .derive_key(
                     build_derive_key_params(DeriveKeyParamsOverrides {
                         purpose: Some(DerivationPurpose::WrappingKey),
@@ -330,7 +315,11 @@ fn unwrap_returns_the_complement_of_the_wrapping_key_when_the_wrapped_key_is_all
                 *slot = !byte;
             }
             let result = unwrap_piece_group_key(
-                &build_unwrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_unwrap_piece_group_key_deps(
+                    payload.kdf,
+                    payload.encoder,
+                    Default::default(),
+                ),
                 build_unwrap_piece_group_key_params(Default::default()),
                 build_unwrap_piece_group_key_payload(
                     &self.encapsulated,

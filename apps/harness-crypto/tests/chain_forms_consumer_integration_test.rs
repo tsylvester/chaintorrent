@@ -21,8 +21,8 @@ use envelope::{
 };
 use hash_to_scalar::{
     CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarConcrete,
-    HashToScalarErrorReturn, HashToScalarIdentifier, IHashToScalarAdapter,
-    MockIHashToScalarAdapterFailureMode, build_create_hash_to_scalar_params,
+    HashToScalarErrorReturn, HashToScalarIdentifier, MockIHashToScalarAdapterFailureMode,
+    build_create_hash_to_scalar_params,
 };
 use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::{
@@ -40,8 +40,7 @@ use proof::{
     ProveMintErrorReturn, TransferPurpose, build_create_delivery_proof_params,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
-    build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 
 use harness_crypto::{
@@ -50,6 +49,7 @@ use harness_crypto::{
     AdmittedStatementsOverrides, CanonicalDeliveryContextOverrides, ChainFormsConsumer,
     ChainFormsConsumerConstructorParams, ChainFormsConsumerErrorReturn, ChainFormsConsumerReturn,
     ChallengeVectorDescription, ChallengeVectorDescriptionConstructorParams,
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload,
     CreateGenerateCaseParamsOverrides, CreateGenerateErrorReturn, DeliveryContextField,
     DeliveryProofConsumerErrorReturn, GENERATE_CONCRETES, GenerateConcrete, GenerateConcreteKind,
     GenerateConcreteOverrides, GenerateKindConfigurationsOverrides, ICreateGenerateCaseConsumer,
@@ -170,15 +170,8 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_chain_forms_whole() 
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -199,12 +192,12 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_chain_forms_whole() 
                 None => build_create_key_agreement_params(Default::default()),
             };
             let admitted_statements = build_admitted_statements(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let Ok(consumer) = ChainFormsConsumer::try_new(ChainFormsConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 statements: &admitted_statements,
                 identities: &admitted_identities,
                 kem: AdmittedKem {
@@ -225,7 +218,7 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_chain_forms_whole() 
                 iterations: NonZeroU32::new(3).expect("three is nonzero"),
             });
             create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 self.forms,
                 build_create_chain_forms_payload(Default::default()),
             )
@@ -443,15 +436,8 @@ fn the_contexts_and_the_identities_the_consumer_carries_reach_the_delivery_proof
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -466,14 +452,14 @@ fn the_contexts_and_the_identities_the_consumer_carries_reach_the_delivery_proof
                 transfer_purpose: Some(TransferPurpose::Grant),
                 ..Default::default()
             });
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let mapping_count = admitted_identities.mapping.len();
             let key_agreement_params = build_create_key_agreement_params(Default::default());
             let Ok(consumer) = ChainFormsConsumer::try_new(ChainFormsConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 statements: &admitted_statements,
                 identities: &admitted_identities,
                 kem: AdmittedKem {
@@ -494,7 +480,7 @@ fn the_contexts_and_the_identities_the_consumer_carries_reach_the_delivery_proof
                 iterations: NonZeroU32::MIN,
             });
             let result = create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 self.forms,
                 build_create_chain_forms_payload(Default::default()),
             );
@@ -532,7 +518,8 @@ fn the_contexts_and_the_identities_the_consumer_carries_reach_the_delivery_proof
                                 .expect("every written line is hex")
                         })
                         .collect();
-                    decoder
+                    payload
+                        .decoder
                         .decode(
                             DecodeParams {
                                 description: &description,
@@ -692,15 +679,8 @@ fn a_refused_context_names_the_field_that_held_its_value_and_returns_before_the_
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -710,13 +690,13 @@ fn a_refused_context_names_the_field_that_held_its_value_and_returns_before_the_
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let key_agreement_params = build_create_key_agreement_params(Default::default());
             let Ok(consumer) = ChainFormsConsumer::try_new(ChainFormsConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 statements: &self.statements,
                 identities: &admitted_identities,
                 kem: self.kem,
@@ -733,7 +713,7 @@ fn a_refused_context_names_the_field_that_held_its_value_and_returns_before_the_
                 iterations: NonZeroU32::MIN,
             });
             create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 self.forms,
                 build_create_chain_forms_payload(Default::default()),
             )
@@ -932,15 +912,8 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -951,13 +924,13 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let admitted_statements = build_admitted_statements(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let key_agreement_params = build_create_key_agreement_params(Default::default());
             let Ok(consumer) = ChainFormsConsumer::try_new(ChainFormsConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 statements: &admitted_statements,
                 identities: &admitted_identities,
                 kem: AdmittedKem {
@@ -978,7 +951,7 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
                 iterations: NonZeroU32::MIN,
             });
             create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 self.forms,
                 build_create_chain_forms_payload(Default::default()),
             )
@@ -1133,15 +1106,8 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1152,14 +1118,14 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let admitted_statements = build_admitted_statements(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let key_agreement_params = build_create_key_agreement_params(Default::default());
             let kem_params = build_create_kem_params(Default::default());
             let Ok(consumer) = ChainFormsConsumer::try_new(ChainFormsConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 statements: &admitted_statements,
                 identities: &admitted_identities,
                 kem: AdmittedKem {
@@ -1180,7 +1146,7 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
                 iterations: NonZeroU32::MIN,
             });
             create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 self.forms,
                 build_create_chain_forms_payload(Default::default()),
             )
@@ -1348,15 +1314,8 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1366,16 +1325,16 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            let scope = identities[0].setup_scope;
+            let scope = payload.identities[0].setup_scope;
             let generate_params = build_create_generate_params(Default::default());
             let admitted_statements = build_admitted_statements(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let key_agreement_params = build_create_key_agreement_params(Default::default());
             let Ok(consumer) = ChainFormsConsumer::try_new(ChainFormsConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 statements: &admitted_statements,
                 identities: &admitted_identities,
                 kem: AdmittedKem {
@@ -1396,7 +1355,7 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
                 iterations: NonZeroU32::MIN,
             });
             let returned = create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 build_create_chain_forms_params(Default::default()),
                 build_create_chain_forms_payload(Default::default()),
             );
@@ -1576,15 +1535,8 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1596,13 +1548,13 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
         {
             let generate_params = build_create_generate_params(Default::default());
             let admitted_statements = build_admitted_statements(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let key_agreement_params = build_create_key_agreement_params(Default::default());
             let Ok(consumer) = ChainFormsConsumer::try_new(ChainFormsConsumerConstructorParams {
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
+                pairing: payload.pairing,
+                hash_to_scalar: payload.hash_to_scalar,
+                encoder: payload.encoder,
+                random: payload.random,
                 statements: &admitted_statements,
                 identities: &admitted_identities,
                 kem: AdmittedKem {
@@ -1625,7 +1577,7 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
                 iterations: NonZeroU32::MIN,
             });
             create_chain_forms(
-                &build_create_chain_forms_deps(consumer, encoder, Default::default()),
+                &build_create_chain_forms_deps(consumer, payload.encoder, Default::default()),
                 build_create_chain_forms_params(Default::default()),
                 build_create_chain_forms_payload(Default::default()),
             )

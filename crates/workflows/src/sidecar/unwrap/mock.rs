@@ -1,6 +1,7 @@
 #![allow(dead_code, clippy::too_many_arguments)]
 
 use super::interface::{
+    ConsumeUnwrapPieceGroupKeyCaseParams, ConsumeUnwrapPieceGroupKeyCasePayload,
     IUnwrapPieceGroupKeyCaseConsumer, RunUnwrapPieceGroupKeyCaseFn, UnwrapPieceGroupKeyCaseDeps,
     UnwrapPieceGroupKeyCaseErrorReturn, UnwrapPieceGroupKeyCaseParams,
     UnwrapPieceGroupKeyCasePayload, UnwrapPieceGroupKeyCaseReturn,
@@ -194,6 +195,51 @@ pub fn build_unwrap_piece_group_key_case_success_return<O>(
     UnwrapPieceGroupKeyCaseSuccessReturn { output }
 }
 
+#[derive(Default)]
+pub struct ConsumeUnwrapPieceGroupKeyCaseParamsOverrides;
+
+pub fn build_consume_unwrap_piece_group_key_case_params(
+    _overrides: ConsumeUnwrapPieceGroupKeyCaseParamsOverrides,
+) -> ConsumeUnwrapPieceGroupKeyCaseParams {
+    ConsumeUnwrapPieceGroupKeyCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeUnwrapPieceGroupKeyCasePayloadOverrides;
+
+pub fn build_consume_unwrap_piece_group_key_case_payload<
+    'a,
+    E: IEncoderAdapter + IDecoderAdapter,
+    P: IPairingArithmetic + IPairingReference,
+    K1: ICredentialKemAdapter<Pairing = P>,
+    K2: ICredentialKemAdapter<Pairing = P>,
+>(
+    encoder: &'a E,
+    kdf: &'a dyn IKeyDerivationAdapter,
+    pairing: &'a P,
+    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    kem_first: &'a K1,
+    kem_second: &'a K2,
+    random: &'a dyn IRandomSourceAdapter,
+    scope_first: IdentityScope,
+    scope_second: IdentityScope,
+    case: &'a UnwrapPieceGroupKeyCasePayload,
+    _overrides: ConsumeUnwrapPieceGroupKeyCasePayloadOverrides,
+) -> ConsumeUnwrapPieceGroupKeyCasePayload<'a, E, P, K1, K2> {
+    ConsumeUnwrapPieceGroupKeyCasePayload {
+        encoder,
+        kdf,
+        pairing,
+        hash_to_scalar,
+        kem_first,
+        kem_second,
+        random,
+        scope_first,
+        scope_second,
+        case,
+    }
+}
+
 struct CaseAtEncoding<'a, C: IUnwrapPieceGroupKeyCaseConsumer> {
     consumer: &'a C,
     key_derivation: CreateKeyDerivationParams,
@@ -219,9 +265,7 @@ impl<C: IUnwrapPieceGroupKeyCaseConsumer> IEncodingConsumer for CaseAtEncoding<'
         ) {
             Ok(created) => created,
             Err(error) => {
-                return Err(UnwrapPieceGroupKeyCaseErrorReturn::CreateKeyDerivation(
-                    error,
-                ));
+                return Err(UnwrapPieceGroupKeyCaseErrorReturn::KeyDerivation(error));
             }
         };
         match create_pairing(
@@ -245,7 +289,7 @@ impl<C: IUnwrapPieceGroupKeyCaseConsumer> IEncodingConsumer for CaseAtEncoding<'
             build_create_pairing_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::CreatePairing(error)),
+            Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::Pairing(error)),
         }
     }
 }
@@ -277,9 +321,7 @@ impl<C: IUnwrapPieceGroupKeyCaseConsumer, E: IEncoderAdapter + IDecoderAdapter> 
         ) {
             Ok(hashed) => hashed,
             Err(error) => {
-                return Err(UnwrapPieceGroupKeyCaseErrorReturn::CreateHashToScalar(
-                    error,
-                ));
+                return Err(UnwrapPieceGroupKeyCaseErrorReturn::HashToScalar(error));
             }
         };
         let randomized = match create_random_source(
@@ -291,9 +333,7 @@ impl<C: IUnwrapPieceGroupKeyCaseConsumer, E: IEncoderAdapter + IDecoderAdapter> 
         ) {
             Ok(randomized) => randomized,
             Err(error) => {
-                return Err(UnwrapPieceGroupKeyCaseErrorReturn::CreateRandomSource(
-                    error,
-                ));
+                return Err(UnwrapPieceGroupKeyCaseErrorReturn::RandomSource(error));
             }
         };
         match create_kem(
@@ -315,7 +355,7 @@ impl<C: IUnwrapPieceGroupKeyCaseConsumer, E: IEncoderAdapter + IDecoderAdapter> 
             build_create_kem_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::CreateKem(error)),
+            Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::Kem(error)),
         }
     }
 }
@@ -363,7 +403,7 @@ impl<
             build_create_kem_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::CreateKem(error)),
+            Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::Kem(error)),
         }
     }
 }
@@ -394,16 +434,20 @@ impl<
         payload: ConsumeKemPayload<K>,
     ) -> Self::Output {
         let output = self.consumer.consume_unwrap_piece_group_key_case(
-            self.encoder,
-            self.kdf,
-            self.pairing,
-            self.hash_to_scalar,
-            self.kem_first,
-            &payload.adapter,
-            self.random,
-            self.scope_first,
-            payload.scope(),
-            &UnwrapPieceGroupKeyCasePayload,
+            build_consume_unwrap_piece_group_key_case_params(Default::default()),
+            build_consume_unwrap_piece_group_key_case_payload(
+                self.encoder,
+                self.kdf,
+                self.pairing,
+                self.hash_to_scalar,
+                self.kem_first,
+                &payload.adapter,
+                self.random,
+                self.scope_first,
+                payload.scope(),
+                &UnwrapPieceGroupKeyCasePayload,
+                Default::default(),
+            ),
         );
         Ok(UnwrapPieceGroupKeyCaseSuccessReturn { output })
     }
@@ -429,6 +473,6 @@ pub fn run_unwrap_piece_group_key_case<C: IUnwrapPieceGroupKeyCaseConsumer>(
         build_create_encoding_payload(Default::default()),
     ) {
         Ok(success) => success.output,
-        Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::CreateEncoding(error)),
+        Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::Encoding(error)),
     }
 }

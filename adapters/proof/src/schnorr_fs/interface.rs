@@ -140,11 +140,11 @@ pub struct SchnorrFsCaseSuccessReturn<O> {
 #[cfg(test)]
 #[derive(Debug, PartialEq, Eq)]
 pub enum SchnorrFsCaseErrorReturn {
-    CreatePairing(CreatePairingErrorReturn),
-    CreateChainForms(CreateChainFormsErrorReturn),
-    CreateEncoding(CreateEncodingErrorReturn),
-    CreateHashToScalar(CreateHashToScalarErrorReturn),
-    CreateRandomSource(CreateRandomSourceErrorReturn),
+    Pairing(CreatePairingErrorReturn),
+    ChainForms(CreateChainFormsErrorReturn),
+    Encoding(CreateEncodingErrorReturn),
+    HashToScalar(CreateHashToScalarErrorReturn),
+    RandomSource(CreateRandomSourceErrorReturn),
 }
 
 #[cfg(test)]

@@ -47,6 +47,7 @@ pub enum ChallengeErrorReturn {
 
 pub type ChallengeReturn<S> = Result<ChallengeSuccessReturn<S>, ChallengeErrorReturn>;
 
+#[cfg(any(test, feature = "mocks"))]
 pub type ChallengeFn<S, E, P, F> =
     fn(&ChallengeDeps<'_, P, E>, ChallengeParams, ChallengePayload<'_, P, F>) -> ChallengeReturn<S>;
 
@@ -92,10 +93,10 @@ pub struct ChallengeCaseSuccessReturn<O> {
 #[cfg(any(test, feature = "mocks"))]
 #[derive(Debug, PartialEq, Eq)]
 pub enum ChallengeCaseErrorReturn {
-    CreatePairing(CreatePairingErrorReturn),
-    CreateChainForms(CreateChainFormsErrorReturn),
-    CreateEncoding(CreateEncodingErrorReturn),
-    CreateHashToScalar(CreateHashToScalarErrorReturn),
+    Pairing(CreatePairingErrorReturn),
+    ChainForms(CreateChainFormsErrorReturn),
+    Encoding(CreateEncodingErrorReturn),
+    HashToScalar(CreateHashToScalarErrorReturn),
 }
 
 #[cfg(any(test, feature = "mocks"))]

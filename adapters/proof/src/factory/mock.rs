@@ -61,7 +61,8 @@ use zeroize::Zeroize;
 
 use super::interface::{
     AlgebraicMintStatement, AlgebraicStatement, AlgebraicTransferStatement,
-    ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload, CreateDeliveryProofCaseDeps,
+    ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload, CreateDeliveryProofCaseConsumeParams,
+    CreateDeliveryProofCaseConsumePayload, CreateDeliveryProofCaseDeps,
     CreateDeliveryProofCaseErrorReturn, CreateDeliveryProofCaseParams,
     CreateDeliveryProofCasePayload, CreateDeliveryProofCaseReturn,
     CreateDeliveryProofCaseSuccessReturn, CreateDeliveryProofDeps, CreateDeliveryProofFn,
@@ -2839,6 +2840,46 @@ pub fn build_create_delivery_proof_case_params(
     }
 }
 
+#[derive(Default)]
+pub struct CreateDeliveryProofCaseConsumeParamsOverrides;
+
+pub fn build_create_delivery_proof_case_consume_params(
+    _overrides: CreateDeliveryProofCaseConsumeParamsOverrides,
+) -> CreateDeliveryProofCaseConsumeParams {
+    CreateDeliveryProofCaseConsumeParams
+}
+
+#[derive(Default)]
+pub struct CreateDeliveryProofCaseConsumePayloadOverrides;
+
+pub fn build_create_delivery_proof_case_consume_payload<
+    'a,
+    P: IPairingArithmetic,
+    E: IEncoderAdapter,
+    F: IChainForms,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A: IKeyAgreementAdapter<Pairing = P>,
+>(
+    pairing: &'a P,
+    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    encoder: &'a E,
+    random: &'a dyn IRandomSourceAdapter,
+    forms: &'a F,
+    kem: &'a K,
+    key_agreement: &'a A,
+    _overrides: CreateDeliveryProofCaseConsumePayloadOverrides,
+) -> CreateDeliveryProofCaseConsumePayload<'a, P, E, F, K, A> {
+    CreateDeliveryProofCaseConsumePayload {
+        pairing,
+        hash_to_scalar,
+        encoder,
+        random,
+        forms,
+        kem,
+        key_agreement,
+    }
+}
+
 struct CaseAtPairing<'a, C: ICreateDeliveryProofCaseConsumer> {
     pub consumer: &'a C,
     pub encoding: CreateEncodingParams,
@@ -3111,13 +3152,17 @@ impl<
         payload: ConsumeKeyAgreementPayload<A>,
     ) -> Self::Output {
         let output = self.consumer.consume_create_delivery_proof_case(
-            self.pairing,
-            self.hash_to_scalar,
-            self.encoder,
-            self.random,
-            self.forms,
-            self.kem,
-            &payload.adapter,
+            build_create_delivery_proof_case_consume_params(Default::default()),
+            build_create_delivery_proof_case_consume_payload(
+                self.pairing,
+                self.hash_to_scalar,
+                self.encoder,
+                self.random,
+                self.forms,
+                self.kem,
+                &payload.adapter,
+                Default::default(),
+            ),
         );
         Ok(CreateDeliveryProofCaseSuccessReturn { output })
     }

@@ -23,7 +23,7 @@ use envelope::{
     build_wrap_to_params, build_wrap_to_payload,
 };
 use hash_to_scalar::{
-    CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, IHashToScalarAdapter,
+    CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS,
     build_create_hash_to_scalar_params,
 };
 use hashing::build_root;
@@ -47,22 +47,23 @@ use pairing::{
 };
 use proof::{
     AlgebraicMintStatementOverrides, AlgebraicStatement, AlgebraicTransferStatementOverrides,
-    ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload,
-    CreateDeliveryProofCaseParamsOverrides, CreateDeliveryProofParamsOverrides,
-    DELIVERY_PROOF_CONCRETES, DELIVERY_PROOF_INTERFACE_VERSION, DELIVERY_STATEMENT_VERSION_ONE,
-    DeliveryContextOverrides, DeliveryProofDeclaration, ICreateDeliveryProofCaseConsumer,
-    IDeliveryProofAdapter, IDeliveryProofConsumer, ProveMintParams, ProveMintPayloadOverrides,
-    ProveTransferParams, ProveTransferPayloadOverrides, TransferPurpose, VerifyParams,
-    build_algebraic_mint_statement, build_algebraic_transfer_statement,
-    build_create_delivery_proof_case_deps, build_create_delivery_proof_case_params,
-    build_create_delivery_proof_case_payload, build_create_delivery_proof_deps,
-    build_create_delivery_proof_params, build_create_delivery_proof_payload,
-    build_delivery_context, build_prove_mint_payload, build_prove_transfer_payload,
-    build_verify_payload, create_delivery_proof, run_create_delivery_proof_case,
+    ConsumeDeliveryProofParams, ConsumeDeliveryProofPayload, CreateDeliveryProofCaseConsumeParams,
+    CreateDeliveryProofCaseConsumePayload, CreateDeliveryProofCaseParamsOverrides,
+    CreateDeliveryProofParamsOverrides, DELIVERY_PROOF_CONCRETES, DELIVERY_PROOF_INTERFACE_VERSION,
+    DELIVERY_STATEMENT_VERSION_ONE, DeliveryContextOverrides, DeliveryProofDeclaration,
+    ICreateDeliveryProofCaseConsumer, IDeliveryProofAdapter, IDeliveryProofConsumer,
+    ProveMintParams, ProveMintPayloadOverrides, ProveTransferParams, ProveTransferPayloadOverrides,
+    TransferPurpose, VerifyParams, build_algebraic_mint_statement,
+    build_algebraic_transfer_statement, build_create_delivery_proof_case_deps,
+    build_create_delivery_proof_case_params, build_create_delivery_proof_case_payload,
+    build_create_delivery_proof_deps, build_create_delivery_proof_params,
+    build_create_delivery_proof_payload, build_delivery_context, build_prove_mint_payload,
+    build_prove_transfer_payload, build_verify_payload, create_delivery_proof,
+    run_create_delivery_proof_case,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, FillBytesParams, FillBytesPayload, IRandomSourceAdapter,
-    RandomSourceKind, build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, FillBytesParams, FillBytesPayload, RandomSourceKind,
+    build_create_random_source_params,
 };
 
 /// Contract: entry
@@ -124,14 +125,16 @@ fn an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_vers
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _forms: &F,
-            _kem: &K,
-            _key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                ..
+            } = payload;
             let verifier_form = P::DECLARATION.verifier_group_arithmetic;
             for concrete in DELIVERY_PROOF_CONCRETES {
                 // Act
@@ -371,14 +374,18 @@ fn a_credential_issued_and_wrapped_through_the_families_is_proved_by_a_mint_proo
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                kem,
+                key_agreement,
+                ..
+            } = payload;
             let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
             let draw = |length: usize| {
                 random
@@ -866,14 +873,18 @@ fn a_credential_rerandomized_and_wrapped_to_the_buyer_is_proved_by_a_transfer_pr
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                kem,
+                key_agreement,
+                ..
+            } = payload;
             let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
             let draw = |length: usize| {
                 random
@@ -1429,14 +1440,18 @@ fn a_transfer_proof_fails_against_a_statement_with_another_expiry() {
             A: IKeyAgreementAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
+            _params: CreateDeliveryProofCaseConsumeParams,
+            payload: CreateDeliveryProofCaseConsumePayload<'_, P, E, F, K, A>,
         ) -> Self::Output {
+            let CreateDeliveryProofCaseConsumePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                kem,
+                key_agreement,
+                ..
+            } = payload;
             let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
             let draw = |length: usize| {
                 random

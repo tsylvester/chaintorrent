@@ -15,8 +15,8 @@ use encoding::{
 use envelope::{DECLARED_KEY_AGREEMENT_SELECTIONS, IKeyAgreementAdapter};
 use hash_to_scalar::{
     CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarConcrete,
-    HashToScalarErrorReturn, HashToScalarIdentifier, IHashToScalarAdapter,
-    MockIHashToScalarAdapterFailureMode, build_create_hash_to_scalar_params,
+    HashToScalarErrorReturn, HashToScalarIdentifier, MockIHashToScalarAdapterFailureMode,
+    build_create_hash_to_scalar_params,
 };
 use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::{
@@ -37,12 +37,12 @@ use proof::{
     build_create_delivery_proof_payload, build_delivery_context, create_delivery_proof,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
-    build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 
 use harness_crypto::{
-    AdmittedKemIdentity, ChallengeVectorDescription, ChallengeVectorDescriptionConstructorParams,
+    ChallengeVectorDescription, ChallengeVectorDescriptionConstructorParams,
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload,
     CreateGenerateCaseParamsOverrides, CreateGenerateErrorReturn, DeliveryProofConsumer,
     DeliveryProofConsumerConstructorParams, DeliveryProofConsumerErrorReturn,
     DeliveryProofConsumerReturn, GENERATE_CONCRETES, GenerateConcrete, GenerateConcreteKind,
@@ -108,15 +108,8 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_delivery_proof_whole
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -128,12 +121,12 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_delivery_proof_whole
         {
             let Ok(consumer) =
                 DeliveryProofConsumer::try_new(DeliveryProofConsumerConstructorParams {
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
+                    pairing: payload.pairing,
+                    hash_to_scalar: payload.hash_to_scalar,
+                    encoder: payload.encoder,
+                    random: payload.random,
+                    kem: payload.kem,
+                    key_agreement: payload.key_agreement,
                     mint: build_delivery_context::<F, MintPurpose>(
                         DELIVERY_PURPOSE_MINT,
                         Default::default(),
@@ -142,8 +135,8 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_delivery_proof_whole
                         DELIVERY_PURPOSE_TRANSFER,
                         Default::default(),
                     ),
-                    identities: identities.clone(),
-                    proof_identity: identities[0],
+                    identities: payload.identities.clone(),
+                    proof_identity: payload.identities[0],
                     generate: self.generate.clone(),
                     kinds: self.kinds.clone(),
                     verifier: VerifierConcrete::Mock(MockIVerifierAdapterFailureMode::NoFailure),
@@ -152,10 +145,10 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_delivery_proof_whole
                 });
             create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),
@@ -349,15 +342,8 @@ fn the_values_the_consumer_carries_reach_the_generate_step_as_the_records_its_fi
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -369,12 +355,12 @@ fn the_values_the_consumer_carries_reach_the_generate_step_as_the_records_its_fi
         {
             let Ok(consumer) =
                 DeliveryProofConsumer::try_new(DeliveryProofConsumerConstructorParams {
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
+                    pairing: payload.pairing,
+                    hash_to_scalar: payload.hash_to_scalar,
+                    encoder: payload.encoder,
+                    random: payload.random,
+                    kem: payload.kem,
+                    key_agreement: payload.key_agreement,
                     mint: build_delivery_context::<F, MintPurpose>(
                         MintPurpose::Replacement,
                         Default::default(),
@@ -383,8 +369,8 @@ fn the_values_the_consumer_carries_reach_the_generate_step_as_the_records_its_fi
                         TransferPurpose::Grant,
                         Default::default(),
                     ),
-                    identities: identities.clone(),
-                    proof_identity: identities[0],
+                    identities: payload.identities.clone(),
+                    proof_identity: payload.identities[0],
                     generate: self.generate.clone(),
                     kinds: self.kinds.clone(),
                     verifier: VerifierConcrete::Mock(MockIVerifierAdapterFailureMode::NoFailure),
@@ -393,10 +379,10 @@ fn the_values_the_consumer_carries_reach_the_generate_step_as_the_records_its_fi
                 });
             let result = create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),
@@ -415,7 +401,7 @@ fn the_values_the_consumer_carries_reach_the_generate_step_as_the_records_its_fi
                 .find(|file| file.kind == Some(VectorKind::IdentityMapping))
                 .expect("the emit returns the identity-mapping file");
             let text = std::fs::read_to_string(&mapping.path).expect("the emitted file reads");
-            assert_eq!(text.lines().count(), identities.len());
+            assert_eq!(text.lines().count(), payload.identities.len());
             let challenge = success
                 .files
                 .iter()
@@ -437,7 +423,8 @@ fn the_values_the_consumer_carries_reach_the_generate_step_as_the_records_its_fi
                                 .expect("every written line is hex")
                         })
                         .collect();
-                    decoder
+                    payload
+                        .decoder
                         .decode(
                             DecodeParams {
                                 description: &description,
@@ -590,15 +577,8 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -610,12 +590,12 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
         {
             let Ok(consumer) =
                 DeliveryProofConsumer::try_new(DeliveryProofConsumerConstructorParams {
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
+                    pairing: payload.pairing,
+                    hash_to_scalar: payload.hash_to_scalar,
+                    encoder: payload.encoder,
+                    random: payload.random,
+                    kem: payload.kem,
+                    key_agreement: payload.key_agreement,
                     mint: build_delivery_context::<F, MintPurpose>(
                         DELIVERY_PURPOSE_MINT,
                         Default::default(),
@@ -624,8 +604,8 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
                         DELIVERY_PURPOSE_TRANSFER,
                         Default::default(),
                     ),
-                    identities: identities.clone(),
-                    proof_identity: identities[0],
+                    identities: payload.identities.clone(),
+                    proof_identity: payload.identities[0],
                     generate: self.generate.clone(),
                     kinds: self.kinds.clone(),
                     verifier: VerifierConcrete::Mock(MockIVerifierAdapterFailureMode::NoFailure),
@@ -634,10 +614,10 @@ fn a_kinds_configured_count_reaches_the_concrete_as_the_records_its_file_holds()
                 });
             create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),
@@ -799,15 +779,8 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -819,12 +792,12 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
         {
             let Ok(consumer) =
                 DeliveryProofConsumer::try_new(DeliveryProofConsumerConstructorParams {
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
+                    pairing: payload.pairing,
+                    hash_to_scalar: payload.hash_to_scalar,
+                    encoder: payload.encoder,
+                    random: payload.random,
+                    kem: payload.kem,
+                    key_agreement: payload.key_agreement,
                     mint: build_delivery_context::<F, MintPurpose>(
                         DELIVERY_PURPOSE_MINT,
                         Default::default(),
@@ -833,8 +806,8 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
                         DELIVERY_PURPOSE_TRANSFER,
                         Default::default(),
                     ),
-                    identities: identities.clone(),
-                    proof_identity: identities[0],
+                    identities: payload.identities.clone(),
+                    proof_identity: payload.identities[0],
                     generate: self.generate.clone(),
                     kinds: self.kinds.clone(),
                     verifier: VerifierConcrete::Mock(MockIVerifierAdapterFailureMode::NoFailure),
@@ -843,10 +816,10 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
                 });
             create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),
@@ -997,15 +970,8 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1015,16 +981,16 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            let scope = identities[0].setup_scope;
+            let scope = payload.identities[0].setup_scope;
             let generate_params = build_create_generate_params(Default::default());
             let Ok(consumer) =
                 DeliveryProofConsumer::try_new(DeliveryProofConsumerConstructorParams {
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
+                    pairing: payload.pairing,
+                    hash_to_scalar: payload.hash_to_scalar,
+                    encoder: payload.encoder,
+                    random: payload.random,
+                    kem: payload.kem,
+                    key_agreement: payload.key_agreement,
                     mint: build_delivery_context::<F, MintPurpose>(
                         DELIVERY_PURPOSE_MINT,
                         Default::default(),
@@ -1033,8 +999,8 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
                         DELIVERY_PURPOSE_TRANSFER,
                         Default::default(),
                     ),
-                    identities: identities.clone(),
-                    proof_identity: identities[0],
+                    identities: payload.identities.clone(),
+                    proof_identity: payload.identities[0],
                     generate: generate_params.concrete,
                     kinds: generate_params.kinds,
                     verifier: VerifierConcrete::Mock(MockIVerifierAdapterFailureMode::NoFailure),
@@ -1043,10 +1009,10 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
                 });
             let returned = create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),
@@ -1195,15 +1161,8 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1216,12 +1175,12 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
             let generate_params = build_create_generate_params(Default::default());
             let Ok(consumer) =
                 DeliveryProofConsumer::try_new(DeliveryProofConsumerConstructorParams {
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
+                    pairing: payload.pairing,
+                    hash_to_scalar: payload.hash_to_scalar,
+                    encoder: payload.encoder,
+                    random: payload.random,
+                    kem: payload.kem,
+                    key_agreement: payload.key_agreement,
                     mint: build_delivery_context::<F, MintPurpose>(
                         DELIVERY_PURPOSE_MINT,
                         Default::default(),
@@ -1230,8 +1189,8 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
                         DELIVERY_PURPOSE_TRANSFER,
                         Default::default(),
                     ),
-                    identities: identities.clone(),
-                    proof_identity: identities[0],
+                    identities: payload.identities.clone(),
+                    proof_identity: payload.identities[0],
                     generate: generate_params.concrete,
                     kinds: generate_params.kinds,
                     verifier: VerifierConcrete::Mock(MockIVerifierAdapterFailureMode::NoFailure),
@@ -1240,10 +1199,10 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
                 });
             create_delivery_proof(
                 &build_create_delivery_proof_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
                     consumer,
                     Default::default(),
                 ),

@@ -19,9 +19,7 @@ use envelope::{
     CreateKeyAgreementParams, CreateKeyAgreementParamsOverrides, DECLARED_KEY_AGREEMENT_SELECTIONS,
     IKeyAgreementAdapter, build_create_key_agreement_params,
 };
-use hash_to_scalar::{
-    DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarIdentifier, IHashToScalarAdapter,
-};
+use hash_to_scalar::{DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarIdentifier};
 use hashing::{RootConstructorParamsOverrides, build_root};
 use kem::{
     CreateKemErrorReturn, CreateKemParams, DECLARED_KEM_SELECTIONS, ICredentialKemAdapter,
@@ -36,8 +34,7 @@ use proof::{
     IDeliveryProofAdapter, build_create_delivery_proof_params,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
-    build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 
 use super::interface::{EncodingConsumerErrorReturn, EncodingConsumerReturn};
@@ -51,6 +48,7 @@ use crate::config::provides::{
 use crate::delivery::provides::AdmittedKemIdentity;
 use crate::generate::provides::{
     ChallengeVectorDescription, ChallengeVectorDescriptionConstructorParams,
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload,
     CreateGenerateCaseParamsOverrides, GENERATE_CONCRETES, GenerateConcrete, GenerateConcreteKind,
     GenerateConcreteOverrides, GenerateKindConfigurationsOverrides, ICreateGenerateCaseConsumer,
     VectorKind, VectorKindConfiguration, build_create_generate_case_deps,
@@ -177,15 +175,8 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_encoding_whole() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -206,11 +197,11 @@ fn the_files_and_the_measurement_reach_the_caller_of_create_encoding_whole() {
                 None => build_create_key_agreement_params(Default::default()),
             };
             let admitted_statements = build_admitted_statements(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let consumer = build_encoding_consumer(
-                pairing,
-                hash_to_scalar,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.random,
                 &admitted_statements,
                 &admitted_identities,
                 EncodingConsumerConstructorParamsOverrides {
@@ -485,15 +476,8 @@ fn the_encoder_the_factory_hands_the_consumer_is_the_encoder_the_files_are_encod
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _encoder: &E,
-            decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -504,11 +488,11 @@ fn the_encoder_the_factory_hands_the_consumer_is_the_encoder_the_files_are_encod
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let admitted_statements = build_admitted_statements(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let consumer = build_encoding_consumer(
-                pairing,
-                hash_to_scalar,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.random,
                 &admitted_statements,
                 &admitted_identities,
                 EncodingConsumerConstructorParamsOverrides {
@@ -556,7 +540,8 @@ fn the_encoder_the_factory_hands_the_consumer_is_the_encoder_the_files_are_encod
                                 .expect("every written line is hex")
                         })
                         .collect();
-                    decoder
+                    payload
+                        .decoder
                         .decode(
                             DecodeParams {
                                 description: &description,
@@ -698,15 +683,8 @@ fn the_chain_forms_selection_the_consumer_carries_is_the_concrete_create_chain_f
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -717,11 +695,11 @@ fn the_chain_forms_selection_the_consumer_carries_is_the_concrete_create_chain_f
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let admitted_statements = build_admitted_statements(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let consumer = build_encoding_consumer(
-                pairing,
-                hash_to_scalar,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.random,
                 &admitted_statements,
                 &admitted_identities,
                 EncodingConsumerConstructorParamsOverrides {
@@ -862,15 +840,8 @@ fn an_encoder_declaring_another_encoding_identifier_is_refused_before_the_chain_
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -881,11 +852,11 @@ fn an_encoder_declaring_another_encoding_identifier_is_refused_before_the_chain_
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let admitted_statements = build_admitted_statements(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let consumer = build_encoding_consumer(
-                pairing,
-                hash_to_scalar,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.random,
                 &admitted_statements,
                 &admitted_identities,
                 EncodingConsumerConstructorParamsOverrides {
@@ -1049,15 +1020,8 @@ fn the_kem_selection_the_consumer_carries_is_the_concrete_the_factory_constructs
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1068,11 +1032,11 @@ fn the_kem_selection_the_consumer_carries_is_the_concrete_the_factory_constructs
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             let admitted_statements = build_admitted_statements(Default::default());
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let consumer = build_encoding_consumer(
-                pairing,
-                hash_to_scalar,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.random,
                 &admitted_statements,
                 &admitted_identities,
                 EncodingConsumerConstructorParamsOverrides {
@@ -1255,15 +1219,8 @@ fn a_refused_context_names_the_field_that_held_its_value_and_returns_before_the_
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            _delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1273,11 +1230,11 @@ fn a_refused_context_names_the_field_that_held_its_value_and_returns_before_the_
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            let admitted_identities = admitted_identities_of(&identities);
+            let admitted_identities = admitted_identities_of(&payload.identities);
             let consumer = build_encoding_consumer(
-                pairing,
-                hash_to_scalar,
-                random,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.random,
                 &self.statements,
                 &admitted_identities,
                 EncodingConsumerConstructorParamsOverrides {

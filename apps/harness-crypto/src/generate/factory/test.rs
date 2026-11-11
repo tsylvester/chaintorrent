@@ -3,17 +3,16 @@
 use chain::IChainForms;
 use encoding::{IDecoderAdapter, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
-use hash_to_scalar::IHashToScalarAdapter;
 use kem::ICredentialKemAdapter;
 use pairing::{IPairingArithmetic, IPairingReference};
 use proof::IDeliveryProofAdapter;
-use random::IRandomSourceAdapter;
 
 use super::super::solidity::provides::build_msm_term_count;
 use super::create_generate;
 use super::interface::{
-    CreateGenerateErrorReturn, CreateGenerateParams, CreateGenerateReturn,
-    ICreateGenerateCaseConsumer, VectorKind, VectorKindQuantity,
+    ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, CreateGenerateErrorReturn,
+    CreateGenerateParams, CreateGenerateReturn, ICreateGenerateCaseConsumer, VectorKind,
+    VectorKindQuantity,
 };
 use super::mock::{
     CreateGenerateParamsOverrides, MockIGenerateConsumer, VectorKindConfigurationOverrides,
@@ -22,7 +21,6 @@ use super::mock::{
     build_create_generate_deps, build_create_generate_params, build_create_generate_payload,
     build_vector_kind_configuration, build_vector_kind_quantities, run_create_generate_case,
 };
-use crate::delivery::provides::AdmittedKemIdentity;
 
 /// Contract: every declared kind named exactly once by the entries, in any
 ///   order, is admitted, the concrete constructed, and the consumer's output
@@ -46,15 +44,8 @@ fn create_generate_returns_the_consumers_output_for_settings_naming_every_declar
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -66,13 +57,13 @@ fn create_generate_returns_the_consumers_output_for_settings_naming_every_declar
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -123,15 +114,8 @@ fn create_generate_refuses_a_kind_the_declaration_does_not_name() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -143,13 +127,13 @@ fn create_generate_refuses_a_kind_the_declaration_does_not_name() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -210,15 +194,8 @@ fn create_generate_refuses_an_undeclared_kind_before_its_repeat() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -230,13 +207,13 @@ fn create_generate_refuses_an_undeclared_kind_before_its_repeat() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -303,15 +280,8 @@ fn create_generate_refuses_a_kind_named_twice() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -323,13 +293,13 @@ fn create_generate_refuses_a_kind_named_twice() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -391,15 +361,8 @@ fn create_generate_refuses_a_drawn_kind_missing_its_count() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -411,13 +374,13 @@ fn create_generate_refuses_a_drawn_kind_missing_its_count() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -478,15 +441,8 @@ fn create_generate_refuses_a_kind_drawn_with_terms_missing_its_terms() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -498,13 +454,13 @@ fn create_generate_refuses_a_kind_drawn_with_terms_missing_its_terms() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -562,15 +518,8 @@ fn create_generate_refuses_a_kind_drawn_with_messages_missing_its_message_length
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -582,13 +531,13 @@ fn create_generate_refuses_a_kind_drawn_with_messages_missing_its_message_length
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -646,15 +595,8 @@ fn create_generate_refuses_a_count_on_an_enumerated_kind() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -666,13 +608,13 @@ fn create_generate_refuses_a_count_on_an_enumerated_kind() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -730,15 +672,8 @@ fn create_generate_refuses_terms_on_a_kind_over_configured_inputs() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -750,13 +685,13 @@ fn create_generate_refuses_terms_on_a_kind_over_configured_inputs() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -818,15 +753,8 @@ fn create_generate_refuses_a_message_length_on_a_drawn_kind() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -838,13 +766,13 @@ fn create_generate_refuses_a_message_length_on_a_drawn_kind() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -906,15 +834,8 @@ fn create_generate_checks_a_kinds_count_before_its_terms() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -926,13 +847,13 @@ fn create_generate_checks_a_kinds_count_before_its_terms() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -993,15 +914,8 @@ fn create_generate_checks_a_kinds_terms_before_its_message_length() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1013,13 +927,13 @@ fn create_generate_checks_a_kinds_terms_before_its_message_length() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -1081,15 +995,8 @@ fn create_generate_refuses_the_first_failing_entry_before_a_later_one() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1101,13 +1008,13 @@ fn create_generate_refuses_the_first_failing_entry_before_a_later_one() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -1179,15 +1086,8 @@ fn create_generate_refuses_the_first_declared_kind_no_entry_names() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1199,13 +1099,13 @@ fn create_generate_refuses_the_first_declared_kind_no_entry_names() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),
@@ -1283,15 +1183,8 @@ fn create_generate_refuses_an_entrys_quantity_before_a_missing_kind() {
 
         fn consume_create_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            _identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1303,13 +1196,13 @@ fn create_generate_refuses_an_entrys_quantity_before_a_missing_kind() {
         {
             create_generate(
                 &build_create_generate_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    kem,
-                    key_agreement,
-                    delivery_proof,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
                     MockIGenerateConsumer,
                     Default::default(),
                 ),

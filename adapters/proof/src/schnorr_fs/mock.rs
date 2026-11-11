@@ -679,7 +679,7 @@ impl<C: ISchnorrFsCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
             build_create_encoding_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(SchnorrFsCaseErrorReturn::CreateEncoding(error)),
+            Err(error) => Err(SchnorrFsCaseErrorReturn::Encoding(error)),
         }
     }
 }
@@ -726,7 +726,7 @@ impl<C: ISchnorrFsCaseConsumer, P: IPairingArithmetic + IPairingReference> IEnco
             build_create_chain_forms_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(SchnorrFsCaseErrorReturn::CreateChainForms(error)),
+            Err(error) => Err(SchnorrFsCaseErrorReturn::ChainForms(error)),
         }
     }
 }
@@ -767,7 +767,7 @@ impl<
             build_create_hash_to_scalar_payload(Default::default()),
         ) {
             Ok(success) => success,
-            Err(error) => return Err(SchnorrFsCaseErrorReturn::CreateHashToScalar(error)),
+            Err(error) => return Err(SchnorrFsCaseErrorReturn::HashToScalar(error)),
         };
         let random = match create_random_source(
             &build_create_random_source_deps(Default::default()),
@@ -777,7 +777,7 @@ impl<
             CreateRandomSourcePayload,
         ) {
             Ok(success) => success,
-            Err(error) => return Err(SchnorrFsCaseErrorReturn::CreateRandomSource(error)),
+            Err(error) => return Err(SchnorrFsCaseErrorReturn::RandomSource(error)),
         };
         let output = self.consumer.consume_schnorr_fs_case(
             self.pairing,
@@ -817,6 +817,6 @@ pub fn run_schnorr_fs_case<C: ISchnorrFsCaseConsumer>(
             Ok(SchnorrFsCaseSuccessReturn { output }) => Ok(SchnorrFsCaseSuccessReturn { output }),
             Err(error) => Err(error),
         },
-        Err(error) => Err(SchnorrFsCaseErrorReturn::CreatePairing(error)),
+        Err(error) => Err(SchnorrFsCaseErrorReturn::Pairing(error)),
     }
 }

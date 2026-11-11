@@ -67,17 +67,32 @@ pub trait IUnwrapPieceGroupKeyCaseConsumer {
         K2: ICredentialKemAdapter<Pairing = P>,
     >(
         &self,
-        encoder: &E,
-        kdf: &dyn IKeyDerivationAdapter,
-        pairing: &P,
-        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-        kem_first: &K1,
-        kem_second: &K2,
-        random: &dyn IRandomSourceAdapter,
-        scope_first: IdentityScope,
-        scope_second: IdentityScope,
-        payload: &UnwrapPieceGroupKeyCasePayload,
+        params: ConsumeUnwrapPieceGroupKeyCaseParams,
+        payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
     ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeUnwrapPieceGroupKeyCaseParams;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeUnwrapPieceGroupKeyCasePayload<
+    'a,
+    E: IEncoderAdapter + IDecoderAdapter,
+    P: IPairingArithmetic + IPairingReference,
+    K1: ICredentialKemAdapter<Pairing = P>,
+    K2: ICredentialKemAdapter<Pairing = P>,
+> {
+    pub encoder: &'a E,
+    pub kdf: &'a dyn IKeyDerivationAdapter,
+    pub pairing: &'a P,
+    pub hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    pub kem_first: &'a K1,
+    pub kem_second: &'a K2,
+    pub random: &'a dyn IRandomSourceAdapter,
+    pub scope_first: IdentityScope,
+    pub scope_second: IdentityScope,
+    pub case: &'a UnwrapPieceGroupKeyCasePayload,
 }
 
 #[cfg(any(test, feature = "mocks"))]
@@ -107,12 +122,12 @@ pub struct UnwrapPieceGroupKeyCaseSuccessReturn<O> {
 #[cfg(any(test, feature = "mocks"))]
 #[derive(Debug, PartialEq, Eq)]
 pub enum UnwrapPieceGroupKeyCaseErrorReturn {
-    CreateEncoding(CreateEncodingErrorReturn),
-    CreateKeyDerivation(CreateKeyDerivationErrorReturn),
-    CreatePairing(CreatePairingErrorReturn),
-    CreateHashToScalar(CreateHashToScalarErrorReturn),
-    CreateRandomSource(CreateRandomSourceErrorReturn),
-    CreateKem(CreateKemErrorReturn),
+    Encoding(CreateEncodingErrorReturn),
+    KeyDerivation(CreateKeyDerivationErrorReturn),
+    Pairing(CreatePairingErrorReturn),
+    HashToScalar(CreateHashToScalarErrorReturn),
+    RandomSource(CreateRandomSourceErrorReturn),
+    Kem(CreateKemErrorReturn),
 }
 
 #[cfg(any(test, feature = "mocks"))]
