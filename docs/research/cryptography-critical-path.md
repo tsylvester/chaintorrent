@@ -1,6 +1,6 @@
 # Entitlement cryptography critical path
 
-Current as of ledger log 37 (2026-11-10). If the ledger's latest log row is higher than this number, this file is stale and must be re-synced before work resumes.
+Current as of ledger log 39 (2026-11-11). If the ledger's latest log row is higher than this number, this file is stale and must be re-synced before work resumes.
 
 ## Role and rules
 
@@ -56,19 +56,21 @@ Components, all reviewed: the depth-one BB1 scheme (E46, symmetric; its selectiv
 
 No step needs a primitive of unknown existence or efficiency. The Q06 first pass finds every requirement met at the protocol-composition level under the recorded residuals (Q06 section). What separates this from a buildable, adoptable design is proofs, source inspection, re-derivation, implementation and measurement.
 
-## Chain walk against a quantum adversary — open
+## Chain walk against a quantum adversary — target open, minimum reduced to signatures
 
-Every status above is against a classical adversary. P16 prefers, and does not require, that the chain hold against a quantum one: soundness at issuance and use is the minimum, later confidentiality of published material is the target, and NIST category 3 is the strength sought. The construction's assumptions are all discrete-logarithm assumptions and none holds against a quantum adversary (S23). This walk is S23's first deduction, not Q11's finished table.
+Every status above is against a classical adversary. P16 prefers, and does not require, that the chain hold against a quantum one: soundness at issuance and use is the minimum, later confidentiality of published material is the target, and NIST category 3 is the strength sought. The construction's assumptions are all discrete-logarithm assumptions and none holds against a quantum adversary (S23). The walk is the ledger's Q11 section.
 
 - **Step 1, observable result.** Holds; the residual is unchanged.
 - **Step 2, decryption interface.** Holds.
-- **Step 3, payload compatibility.** Open, retroactive: the encapsulated value is recoverable from a public capsule with no credential (S23). Owner Q12.
-- **Step 4, authorization binding.** The context binding holds in kind; it is worth what the proof's soundness is worth. Owner Q15.
+- **Step 3, payload compatibility.** Open, retroactive: one discrete logarithm, of the master public element, opens every capsule of every deployment under the set, from the sidecar and parameter set alone (S23). Owner Q12.
+- **Step 4, authorization binding.** Holds in kind, at the hash margins of S25.
 - **Step 5, private input.** Open, retroactive: registered envelope keys yield their secrets, so every envelope in chain history opens (S23). Owner Q14.
-- **Step 6, resolution without threshold release.** Open: the master public element yields the master scalar, so anyone authors credentials, and delivery proofs are forgeable at the time of use (S23). Owners Q12 and Q15.
+- **Step 6, resolution without threshold release.** Delivery validity holds: the relations are false for an invalid envelope and their proofs are statistically sound (S24). Authority is open at use wherever a signer's scheme is a discrete-logarithm scheme, and is restored by a post-quantum signer on the account's scheme-tagged signer set; the cost of verifying one on chain is Q15.
 - **Step 7, future-state coverage.** The structure holds; whether a replacement construction still covers later issuance, sale and holder authorship is Q12 and Q13.
-- **Step 8, operational lifecycle.** The attempt rule is unchanged; the signed intent verified at settlement is forgeable at the time of use. Owner Q15.
-- **Step 9, components and composition.** Open: every named assumption falls; the cipher, the KDF and wrap, the Bao roots and hash-to-scalar hold in kind with their margins against category 3 unchecked. Owner Q11.
+- **Step 8, operational lifecycle.** Unchanged: the attempt rule binds a conforming client only, and the adversary's gain is entitlement theft through step 6, not a bypass of the rule.
+- **Step 9, components and composition.** The confidentiality assumptions all fall. AES-256 is category 5 and is the only symmetric component that meets the target as built; every BLAKE3-based component, content roots, key derivation and keyed modes, is at the designers' claimed 128-bit level (S26); every binding that rests on collision resistance is category 2 at most, and the twenty-byte identity form is lower (S25).
+
+The minimum therefore reduces to the signature layer and to the chain's own integrity, which is outside the construction. The target rests wholly on Q12 and Q14, and a different proof system alone would not reach it (S24).
 
 ## The construction, stated once
 
@@ -93,11 +95,11 @@ All algebra is the ledger's C11 section and Q09 third and fourth increments; not
 - **Q08 remainder, measurement.** Encoding sizes, capsule and proof bytes, decryption latency, proof generation and verification cost on the chosen curve, and settlement cost against E47's interface.
 - **Q06, second pass.** Re-run the whole-target table once the proofs and measurements exist.
 - **Handoff, done (log 35).** The Q05 attempt rules, the Q10 state machine and sidecar-coverage rule, and the Q09 settlement protocol are adopted into cryptography.md, MVP Scope.md, MVP Application Requirements.md and the Execution Trace, with the adapters `IPairingAdapter`, `ICredentialKemAdapter`, `PairingElGamalAdapter` and `IDeliveryProofAdapter` named there. Still open in the workplan's To-Do: the attempt-rule parameters and piece-group size, which the validation harness measures.
-- **Q11.** The chain walk against a quantum adversary completed: per step, holds, fails retroactively or fails live; every published object and the secret it determines; each symmetric and hash component's margin against category 3.
+- **Q11.** Answered (Q11 section; S24, S25, S26). Remaining: the full conditions of the quantum random-oracle result the delivery-validity statement leans on, and an independent re-derivation.
 - **Q12.** A post-quantum credential KEM under the unchanged interface constraints, or the exact missing property.
 - **Q13.** The C09, C10 and C11 comparison rerun with post-quantum instantiations.
 - **Q14.** A post-quantum envelope a delivery proof can speak about.
-- **Q15.** A delivery proof sound against a quantum adversary, its verifier environment, and the signed intent verified on chain under a post-quantum scheme.
+- **Q15.** The signed intent verified on chain under a post-quantum scheme, which is all the minimum needs; and a delivery proof with its verifier environment for whatever statement Q12 and Q14 produce.
 - **Q16.** How far P16's minimum and target reach under the unchanged constraints, and what would have to bend.
 
 Exposure to a quantum adversary is open under P16. It is not an accepted residual.
@@ -152,4 +154,4 @@ Also do not restart with: the impossibility of revoking retained secrets (S01); 
 
 Measurement on the chosen curve (Q08 remainder), which needs an implementation and therefore an engineering decision; then the Q06 second pass. Adoption of the Q05, Q09 and Q10 conclusions into cryptography.md and MVP Scope.md is separate work and awaits the user's decision. No research question remains open on the critical path against a classical adversary.
 
-Research under P16 runs beside it and blocks none of it: Q11 first, the chain walk against a quantum adversary, then Q12, whose answer Q13, Q14 and Q15 depend on, and Q16 last.
+Research under P16 runs beside it and blocks none of it: Q12 next, a post-quantum credential KEM under the unchanged interface constraints, whose answer Q13 and Q14 depend on; Q15's signer-verification half is independent of it and may run beside it; Q16 last.
