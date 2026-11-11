@@ -1,3 +1,7 @@
 /target
 contracts/evm/cache/
 contracts/evm/out/
+/harness-report.json
+contracts/evm/deployments/
+contracts/evm/broadcast/
+*.local.toml
