@@ -22,6 +22,7 @@ Single source of truth for how agents work in this repo. Every rule lives in exa
 - [linting-proof](linting-proof.md) — lint after edit, no silencing, linter error = RED proof
 - [logging](logging.md) — debug by logging, believe failures literally
 - [insanity-loop](insanity-loop.md) — break repetitive failure and recover by starting over
+- [line-length](line-length.md) — do not wrap lines, do not write long lines 
 
 ## Standards topics — govern file content
 
@@ -30,9 +31,9 @@ Single source of truth for how agents work in this repo. Every rule lives in exa
 - [types](types.md) — strict typing, narrowest type, `unknown` only at a boundary
 - [composition](composition.md) — function signature shape (deps / params / payload / return union)
 - [dependency-injection](dependency-injection.md) — DI at the boundary, context factory
-- [mocks](mocks.md) — builders, invalidators, function mocks
+- [mocks](mocks.md) — builders, invalidators, function mocks, values the mock cannot construct, family mock concretes and their failures
 - [guards](guards.md) — guard everything, authorship, boundary litmus
-- [tests](tests.md) — test authoring, contract headers, derangement audit; anchors `#interface` `#guard` `#unit` `#integration` `#e2e` `#audit`
+- [tests](tests.md) — test authoring, contract headers, derangement audit; anchors `#interface` `#guard` `#unit` `#integration` `#integration-private` `#integration-public` `#e2e` `#audit`
 - [errors-and-returns](errors-and-returns.md) — `Success | Error` handling
 - [boundaries](boundaries.md) — provides / barrels, directionality
 
@@ -43,17 +44,20 @@ Single source of truth for how agents work in this repo. Every rule lives in exa
 
 ## Implementation routing
 
-A map from the file you are building to the topic that governs it, the template or example to copy, and its most common halt trigger. Every element is also governed by all Process topics.
+A map from the file you are building to the topic that governs it, the template or example to copy, and its most common halt trigger. Every element is also governed by all Process topics. [workplan-structure](workplan-structure.md#element-files-by-language) maps the elements to their files per language; copy the form of the language you are building in.
 
 | Building | Conforms to | Copy from | Halt if |
 |---|---|---|---|
-| interface test | [tests](tests.md#interface), [composition](composition.md), [types](types.md), [errors-and-returns](errors-and-returns.md) | typed-assignment example ([tests#interface](tests.md#interface)) | a type it needs lives in another interface that does not exist yet |
-| interface | [composition](composition.md), [types](types.md), [errors-and-returns](errors-and-returns.md), [dependency-injection](dependency-injection.md) | signature template ([composition](composition.md)) | a required type has no locatable definition |
-| mock | [mocks](mocks.md) | builder / invalidator / function-mock templates ([mocks](mocks.md)) | an imported type's mock is missing from its home package |
-| guard test | [tests](tests.md#guard), [guards](guards.md), [mocks](mocks.md) | case-checklist example ([tests#guard](tests.md#guard)) | a needed builder or invalidator belongs to an imported type and is absent |
-| guard | [guards](guards.md) | guard skeleton + forbidden substitutes ([guards](guards.md)) | an imported type's guard is absent after the predicate search |
-| unit test | [tests](tests.md#unit), [errors-and-returns](errors-and-returns.md), [composition](composition.md) | no positive template — the branch contract (§5) and the forbidden catalog | the implementation's producer does not exist yet |
+| interface test (TypeScript, Solidity) | [tests](tests.md#interface), [composition](composition.md), [types](types.md), [errors-and-returns](errors-and-returns.md) | typed-assignment example ([tests#interface](tests.md#interface)) | a type it needs lives in another interface that does not exist yet |
+| interface | [composition](composition.md), [types](types.md), [errors-and-returns](errors-and-returns.md), [dependency-injection](dependency-injection.md) | signature template ([composition](composition.md)); the consumer-generic return template ([composition](composition.md#a-return-that-carries-the-callers-type-rust)); the case runner's types ([mocks](mocks.md#the-case-runner--composing-families-for-a-subject-rust)) | a required type has no locatable definition |
+| mock | [mocks](mocks.md) | builder / invalidator / function-mock templates ([mocks](mocks.md)); the family mock concrete and the declared-selection builder ([mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)); the handed, produced, and consumer-invoking templates and the independent form ([mocks](mocks.md#fields-with-no-default-rust), [mocks](mocks.md#a-return-that-carries-the-consumers-type-rust)); type parameters and configuration by dependency ([composition](composition.md#type-parameters-follow-dependency-rust), [composition](composition.md#configuration-follows-ownership-rust)); the case runner ([mocks](mocks.md#the-case-runner--composing-families-for-a-subject-rust)) and inputs by what a level receives ([composition](composition.md#nested-calls-build-their-inputs-from-what-they-receive-rust)) | an imported type's mock is missing from its home package, the family's selection does not carry its mock concrete, or a composed family's consumer trait or params builder is missing from its home package |
+| guard test (TypeScript, Solidity) | [tests](tests.md#guard), [guards](guards.md), [mocks](mocks.md) | case-checklist example ([tests#guard](tests.md#guard)) | a needed builder or invalidator is absent from its mock file |
+| guard (TypeScript, Solidity) | [guards](guards.md) | guard skeleton + forbidden substitutes ([guards](guards.md)) | an imported type's guard is absent after the predicate search |
+| unit test | [tests](tests.md#unit), [errors-and-returns](errors-and-returns.md), [composition](composition.md) | no positive template — the branch contract ([interaction spec](workplan-structure.md#the-interaction-spec-is-a-branch-contract)) and the forbidden catalog | the implementation's producer does not exist yet, or a family collaborator's mock concrete is not selectable through its factory |
 | implementation | [composition](composition.md), [dependency-injection](dependency-injection.md), [types](types.md), [errors-and-returns](errors-and-returns.md), [guards](guards.md), [logging](logging.md) | guard-on-entry skeleton ([guards](guards.md)); body from the branch contract | an undeclared dependency or a missing guard is required |
 | provides | [boundaries](boundaries.md) | export-surface example ([boundaries](boundaries.md)) | a symbol a consumer needs is not available to export |
-| integration test | [tests](tests.md#integration) | boundary-mocking example ([tests#integration](tests.md#integration)) | a function in the integrated chain is not built yet |
+| integration test (TypeScript, Solidity) | [tests](tests.md#integration) | boundary-mocking example ([tests#integration](tests.md#integration)) | a function in the integrated chain is not built yet |
+| private integration test (Rust) | [tests](tests.md#integration-private), [workplan-structure](workplan-structure.md#the-interaction-spec-carries-the-integration-elements) | the spec's private surface and the entries it lists | a function in the integrated chain is not built yet |
+| public integration test (Rust) | [tests](tests.md#integration-public), [boundaries](boundaries.md#public-entries), [workplan-structure](workplan-structure.md#the-interaction-spec-carries-the-integration-elements) | the spec's public surface and the entries it lists | a carried entry cannot be observed through the public API, or a function in its route is not built yet |
+
 

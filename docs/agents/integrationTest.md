@@ -4,7 +4,7 @@ Part of the [Tests](tests.md) topic; the [shared standards](tests.md#shared-stan
 
 Cited by: construction view (workplan node `integration.test` element) and implementation view (integrate prompt). Governed by all Process topics.
 
-Exercises real code across an approved boundary (API, service, repository, external adapter).
+Exercises real code across an approved boundary (API, service, repository, external adapter). In TypeScript and Solidity this is a single test. In Rust it has a private tier and a public tier, described below; the standards in this section apply to both.
 
 - Mock **only** at the outer boundary of the integrated scope. Use the **real** implementation for every function being integrated — never mocks, mock factories, or utilities for those.
 - For an integration covering `f(x) → … → f(z)` where `f(x)` consumes `f(a)` and `f(z)` calls `f(b)`: mock `f(a)` and `f(b)`, run the real `f(x) … f(z)`.
@@ -18,4 +18,67 @@ This scope takes the **full four-field header and the inline markers** (see [tes
 - **Mocked** — what is mocked at the outer edge, and therefore what this test does **not** prove.
 
 Naming what is mocked is what lets an audit catch a test that proves a mock instead of the integrated chain — an asserted value that originated in a mock and was only relayed is a tautological pass (see [tests](tests.md#audit)).
+
+### A block transcribes an entry (Rust)
+
+In Rust the `Contract` of every block transcribes one entry of the node's `interaction.spec.md` (see [workplan-structure](workplan-structure.md#the-interaction-spec-carries-the-integration-elements)), and `Arrange` names the input variation the entry declares. A block whose arrangement lacks that variation is incidental (see [tests](tests.md#audit)). An arm no input reaches (a constant-fixed refusal, an uninhabited error, a single-variant enum) is never an integration entry. It is not carried, absorbed, or reported.
+
+### Configuration over the declared set (Rust)
+
+A block run over a family's declared set varies configuration only through the overrides of the factory params' builder, which carry the family's configuration (see [composition](composition.md#configuration-follows-ownership-rust)). Each member's selection, and any family-level value the member's declaration determines, come from the family's declared-selection builders at their defaults (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)). A concrete's own configuration is never varied in such a block; it is varied in that concrete's node, where the concrete is the subject. Where the subject composes more than one family, the block runs the subject's case runner once per member, its case params built from those selections, and a value a level determines is produced by the runner, never chosen per member by the block (see [mocks](mocks.md#the-case-runner--composing-families-for-a-subject-rust)).
+
+<a id="integration-private"></a>
+## Private integration test (Rust)
+
+The private integration test lives in the function's module directory as `integration_test.rs`, a `#[cfg(test)]` module of its own. It is never part of the unit test files: a block that runs more than its subject is an integration block and belongs here, and a unit test file holds no such block.
+
+- It proves every own entry and every absorbed callee entry the spec places on its private surface, one block per entry.
+- It runs the real chain through crate-internal paths and mocks only the outer-edge collaborators the private surface names. Fixtures come from the mock file's builders.
+- In a family's factory module it proves every contract entry of the family's trait, each block's body written once and run over the declared set and the mock concrete (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)), so a further concrete answers every entry without an edit to the test.
+- A failure mode a family declares gets one block, run over the mock concrete alone, since the declared set cannot reach it. The block selects the mode through configuration and asserts the whole error the mode returns (see [mocks](mocks.md#the-mock-concretes-types-and-failures-rust)).
+
+```rust
+/// Contract: the adapter the factory returns for the mock selection under the failure mode
+///   LengthUnrepresentable returns the mock concrete's own error with the payload's length.
+/// Arrange: the mock selection under that failure mode; the default payload, 32 bytes long.
+/// Act:     my_method on the adapter.
+/// Assert:  the error equals the mock variant carrying 32.
+#[test]
+fn my_method_returns_the_mock_error_when_the_length_is_unrepresentable() {
+    // Arrange
+    let created = create_my_adapter(
+        &build_create_my_adapter_deps(Default::default()),
+        build_create_my_adapter_params(CreateMyAdapterParamsOverrides {
+            concrete: Some(MyConcrete::Mock(MockIMyAdapterFailureMode::LengthUnrepresentable)),
+            ..Default::default()
+        }),
+        build_create_my_adapter_payload(Default::default()),
+    )
+    .expect("the mock selection constructs");
+
+    // Act
+    let result = created.adapter.my_method(build_my_method_params(Default::default()), build_my_method_payload(Default::default()));
+
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(MyMethodErrorReturn::Mock(MockIMyAdapterMyMethodErrorReturn::LengthUnrepresentable { length: 32 })),
+    );
+}
+```
+- A function in the chain that is not built yet is a halt (see [discovery-halt](discovery-halt.md)).
+- It reports its enumeration: every entry the private surface lists and the block that proves it. A file proving fewer entries than the spec lists is incomplete (see [scope](scope.md#coverage-canary)).
+
+<a id="integration-public"></a>
+## Public integration test (Rust)
+
+The public integration test lives under the crate's `tests/` as `[module]_integration_test.rs`, hosted by a node whose boundary is a public entry (see [boundaries](boundaries.md#public-entries)). It proves the entries, own and carried, that the spec's public surface lists.
+
+- It consumes only the crate's public surface and the official mocks under the `mocks` feature. The scenario is set up the way an outside caller reaches the behavior; when the behavior seems to need a private member, the scenario changes and the access never does.
+- Its concretes come from the factory's declared set and configuration. Each block's body is written once and run over the declared set, so the test names no concrete and a new adapter adds a case without editing the test. Where the route receives a family's types, that body is the test's consumer (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)); where it receives the types of more than one family, that body is the case consumer of the public entry's case runner, reached through the public surface under the `mocks` feature (see [mocks](mocks.md#the-case-runner--composing-families-for-a-subject-rust)).
+- Its `Boundary` is the public call and the route the entry carries, and its `Mocked` is the outer-edge collaborators on that route.
+- A carried entry that no public call can observe is a discovery, not a gap to fill: the report names the entry, its route, and the consumer node whose disposition carried it, and proposes the correction to that disposition (see [discovery-halt](discovery-halt.md)). The test never drops the entry and never widens its access to reach it.
+- A function in an entry's route that is not built yet is a halt.
+- It reports its enumeration: every entry the public surface lists and the block that proves it (see [scope](scope.md#coverage-canary)).
+
 

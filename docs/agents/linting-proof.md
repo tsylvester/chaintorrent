@@ -4,12 +4,12 @@ After every edit, the touched file is linted clean, and completion is proven —
 
 Applies whenever a file is edited. This is a Process topic — it governs all other work.
 
-Linting does not apply to documents, such as markdown or text. 
+Linting does not apply to documents, such as markdown or text.
 
 ## Lint every edit
 
 - After each edit, lint the touched file and resolve every warning and error.
-- Use your own linter tool, do not attempt to run a terminal command.
+- Use your own linter tool. Where your tools provide no linter for the language, run its read-only lint command from the [terminal-policy](terminal-policy.md) allowlist.
 - Do not claim a lint error is pre-existing and ignore it. If it is fixable within that one file, fix it.
 - Evaluate whether each linter error is in-file or out-of-file. Resolve the in-file ones; report the out-of-file ones and await instruction (fixing them is a multi-file discovery — see [discovery-halt](discovery-halt.md)).
 
@@ -19,7 +19,28 @@ When a test is written before its interface, guard, or implementation, the compi
 
 Never silence a valid RED error. Do not add `@ts-*` or `@es*` suppressions, create an empty stub function, or otherwise make the error disappear. The error is the deliverable at that step.
 
+## Lint scope is declared, not suppressed
+
+The workspace lint table denies constructs in production code that test code legitimately uses, such as `expect` in a builder. Test modules and mock files are outside that scope, and the Rust form declares it: each test module and `mock.rs` carries one module-level `allow` naming only the lint-table entries it is exempt from. That attribute is part of the file's scope, written when the file is created. An `allow` anywhere else, or one naming a lint outside the lint table, is a suppression and is forbidden like any other.
+
+`dead_code` is a workspace lint-table entry. A mock file that complies with [mocks](mocks.md) names it in its module-level `allow`, because its surface is complete whether or not a consumer uses it today. No other file names it: dead code in production code, `interface.rs`, `provides.rs`, or a test module is a defect, and it is removed or given a consumer. `clippy::too_many_arguments` is a workspace lint-table entry, and a mock file names it, because [mocks](mocks.md) sets a builder's arity by its handed fields; no other file names it. No file names `clippy::as_conversions`.
+
+Lint-clean is judged on the workspace checks over all targets and all features.
+
+## Recurring lints resolve by their owning rule
+
+A lint below fires on a shape a topic already forbids. On the lint, find its row, apply the mechanical resolution the owning section states, step by step, and lint again. The same section governs authoring, so a file written to it never raises the lint.
+
+| Lint | Shape that raises it | Mechanical resolution |
+|---|---|---|
+| `clippy::too_many_arguments` outside `mock.rs` | A trait method taking adapters, borrows, or values as positional arguments, or a function departing from the four-slot signature | [composition](composition.md#methods-take-params-and-payload-never-positional-arguments-rust) |
+| `clippy::enum_variant_names` | An error enum whose variants are named by the callee's verb or by a word every variant shares | [errors-and-returns](errors-and-returns.md#naming-a-variant-that-carries-a-callees-error) |
+| `clippy::type_complexity` | A tuple, a `Result` over composed generics, or a nested generic written in a signature | [types](types.md#signatures-name-every-type-rust) |
+
+On any of these lints, apply the owning section's resolution; never add an `allow` and never declare a local `type` alias.
+
 ## Completion proof
 
 Completion requires a lint-clean file **plus** GREEN test evidence — or a documented exemption for pure docs, types, or interfaces. Record the evidence in your response (e.g. "Lint: clean via internal tool; Tests: not run per policy"). The agent does not run tests; test evidence comes from provided output (see [environment](environment.md)). Never assume success without proof.
+
 

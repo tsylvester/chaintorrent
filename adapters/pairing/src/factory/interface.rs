@@ -1,0 +1,713 @@
+use core::convert::Infallible;
+use domain::Secret;
+use serde::Serialize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
+
+pub const PAIRING_INTERFACE_VERSION: u32 = 1;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PairingCurve {
+    Bn254,
+    Bls12381,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VerifierGroupArithmetic {
+    FirstGroupOnly,
+    BothGroups,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub enum PrecompileEncoding {
+    Eip196Eip197,
+    Eip2537,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub enum TargetGroupEncodingIdentifier {
+    /// The optimal ate pairing as EIP-197 fixes it, over the EIP-197
+    /// generators, on the tower `Fp2 = Fp[u] / (u^2 + 1)`,
+    /// `Fp6 = Fp2[v] / (v^3 - (u + 9))`, `Fp12 = Fp6[w] / (w^2 - v)`; the
+    /// pairing value is the Miller loop's value raised to the exact exponent
+    /// `(p^12 - 1) / r`, not a fixed multiple of it; a target-group element is
+    /// serialized as its twelve base-field coefficients in tower order, each
+    /// the coefficient's 32-byte big-endian canonical integer.
+    Bn254V1,
+    /// The optimal ate pairing as the CFRG pairing-friendly-curves draft fixes
+    /// it, over the EIP-2537 generators, on the tower `Fp2 = Fp[u] / (u^2 + 1)`,
+    /// `Fp6 = Fp2[v] / (v^3 - (u + 1))`, `Fp12 = Fp6[w] / (w^2 - v)`; the
+    /// pairing value is the Miller loop's value raised to the exact exponent
+    /// `(p^12 - 1) / r`, not a fixed multiple of it; a target-group element is
+    /// serialized as its twelve base-field coefficients in tower order, each
+    /// the coefficient's 48-byte big-endian canonical integer.
+    Bls12381V1,
+    /// The mock concrete's toy pairing: the target group is the residues
+    /// modulo `MOCK_GROUP_ORDER`, a term contributing its first-group residue
+    /// times half its second-group residue modulo that order; a target-group
+    /// element is serialized as its residue's eight big-endian bytes.
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
+}
+
+pub struct PairingDeclaration {
+    pub curve: PairingCurve,
+    pub verifier_group_arithmetic: VerifierGroupArithmetic,
+    pub precompile_encoding: PrecompileEncoding,
+    pub target_group_encoding: TargetGroupEncodingIdentifier,
+    pub adapter_version: u32,
+    pub interface_version: u32,
+}
+
+pub struct SampleUniformScalarParams;
+
+pub struct SampleUniformScalarPayload {
+    pub uniform: Secret<Vec<u8>>,
+}
+
+pub struct SampleUniformScalarSuccessReturn<S: Zeroize> {
+    pub scalar: Secret<S>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum SampleUniformScalarErrorReturn {
+    WrongLength { expected: usize, actual: usize },
+}
+
+pub type SampleUniformScalarReturn<S> =
+    Result<SampleUniformScalarSuccessReturn<S>, SampleUniformScalarErrorReturn>;
+
+pub trait ISampleUniformScalar: Zeroize + ZeroizeOnDrop + Sized + 'static {
+    const UNIFORM_BYTES_LENGTH: usize;
+
+    fn sample_from_uniform_bytes(
+        params: SampleUniformScalarParams,
+        payload: SampleUniformScalarPayload,
+    ) -> SampleUniformScalarReturn<Self>;
+}
+
+pub struct G1GeneratorParams;
+
+pub struct G1GeneratorPayload;
+
+pub struct G1GeneratorSuccessReturn<G> {
+    pub point: G,
+}
+
+pub type G1GeneratorReturn<G> = Result<G1GeneratorSuccessReturn<G>, Infallible>;
+
+pub struct G2GeneratorParams;
+
+pub struct G2GeneratorPayload;
+
+pub struct G2GeneratorSuccessReturn<G> {
+    pub point: G,
+}
+
+pub type G2GeneratorReturn<G> = Result<G2GeneratorSuccessReturn<G>, Infallible>;
+
+pub struct AddG1Params;
+
+pub struct AddG1Payload<G> {
+    pub left: G,
+    pub right: G,
+}
+
+pub struct AddG1SuccessReturn<G> {
+    pub sum: G,
+}
+
+pub type AddG1Return<G> = Result<AddG1SuccessReturn<G>, Infallible>;
+
+pub struct AddG2Params;
+
+pub struct AddG2Payload<G> {
+    pub left: G,
+    pub right: G,
+}
+
+pub struct AddG2SuccessReturn<G> {
+    pub sum: G,
+}
+
+pub type AddG2Return<G> = Result<AddG2SuccessReturn<G>, Infallible>;
+
+pub struct MulG1Params;
+
+pub struct MulG1Payload<G, S> {
+    pub point: G,
+    pub scalar: S,
+}
+
+pub struct MulG1SuccessReturn<G> {
+    pub product: G,
+}
+
+pub type MulG1Return<G> = Result<MulG1SuccessReturn<G>, Infallible>;
+
+pub struct MulG2Params;
+
+pub struct MulG2Payload<G, S> {
+    pub point: G,
+    pub scalar: S,
+}
+
+pub struct MulG2SuccessReturn<G> {
+    pub product: G,
+}
+
+pub type MulG2Return<G> = Result<MulG2SuccessReturn<G>, Infallible>;
+
+pub struct MsmG1Params;
+
+pub struct MsmG1Term<G, S> {
+    pub base: G,
+    pub scalar: S,
+}
+
+pub struct MsmG1Payload<G, S> {
+    pub terms: Vec<MsmG1Term<G, S>>,
+}
+
+pub struct MsmG1SuccessReturn<G> {
+    pub sum: G,
+}
+
+pub type MsmG1Return<G> = Result<MsmG1SuccessReturn<G>, Infallible>;
+
+pub struct MsmG2Params;
+
+pub struct MsmG2Term<G, S> {
+    pub base: G,
+    pub scalar: S,
+}
+
+pub struct MsmG2Payload<G, S> {
+    pub terms: Vec<MsmG2Term<G, S>>,
+}
+
+pub struct MsmG2SuccessReturn<G> {
+    pub sum: G,
+}
+
+pub type MsmG2Return<G> = Result<MsmG2SuccessReturn<G>, Infallible>;
+
+pub struct PairingProductIsOneParams;
+
+pub struct PairingProductTerm<G1, G2> {
+    pub g1: G1,
+    pub g2: G2,
+}
+
+pub struct PairingProductIsOnePayload<G1, G2> {
+    pub terms: Vec<PairingProductTerm<G1, G2>>,
+}
+
+pub struct PairingProductIsOneSuccessReturn {
+    pub is_one: bool,
+}
+
+pub type PairingProductIsOneReturn = Result<PairingProductIsOneSuccessReturn, Infallible>;
+
+pub struct DecodeG1Params;
+
+pub struct DecodeG1SuccessReturn<G> {
+    pub point: G,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum DecodeG1ErrorReturn {
+    WrongLength { expected: usize, actual: usize },
+    NonCanonicalCoordinate,
+    NotOnCurve,
+    NotInSubgroup,
+}
+
+pub type DecodeG1Return<G> = Result<DecodeG1SuccessReturn<G>, DecodeG1ErrorReturn>;
+
+pub struct DecodeG2Params;
+
+pub struct DecodeG2SuccessReturn<G> {
+    pub point: G,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum DecodeG2ErrorReturn {
+    WrongLength { expected: usize, actual: usize },
+    NonCanonicalCoordinate,
+    NotOnCurve,
+    NotInSubgroup,
+}
+
+pub type DecodeG2Return<G> = Result<DecodeG2SuccessReturn<G>, DecodeG2ErrorReturn>;
+
+pub struct DecodeScalarParams;
+
+pub struct DecodeScalarSuccessReturn<S> {
+    pub scalar: S,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum DecodeScalarErrorReturn {
+    WrongLength { expected: usize, actual: usize },
+    NonCanonical,
+}
+
+pub type DecodeScalarReturn<S> = Result<DecodeScalarSuccessReturn<S>, DecodeScalarErrorReturn>;
+
+pub struct EncodeG1Params;
+
+pub struct EncodeG1Payload<G> {
+    pub point: G,
+}
+
+pub struct EncodeG1SuccessReturn<E> {
+    pub bytes: E,
+}
+
+pub type EncodeG1Return<E> = Result<EncodeG1SuccessReturn<E>, Infallible>;
+
+pub struct EncodeG2Params;
+
+pub struct EncodeG2Payload<G> {
+    pub point: G,
+}
+
+pub struct EncodeG2SuccessReturn<E> {
+    pub bytes: E,
+}
+
+pub type EncodeG2Return<E> = Result<EncodeG2SuccessReturn<E>, Infallible>;
+
+pub struct EncodeScalarParams;
+
+pub struct EncodeScalarPayload<S> {
+    pub scalar: S,
+}
+
+pub struct EncodeScalarSuccessReturn<E: Zeroize> {
+    pub bytes: Secret<E>,
+}
+
+pub type EncodeScalarReturn<E> = Result<EncodeScalarSuccessReturn<E>, Infallible>;
+
+pub struct AddScalarParams;
+
+pub struct AddScalarPayload<S> {
+    pub left: S,
+    pub right: S,
+}
+
+pub struct AddScalarSuccessReturn<S> {
+    pub sum: S,
+}
+
+pub type AddScalarReturn<S> = Result<AddScalarSuccessReturn<S>, Infallible>;
+
+pub struct MulScalarParams;
+
+pub struct MulScalarPayload<S> {
+    pub left: S,
+    pub right: S,
+}
+
+pub struct MulScalarSuccessReturn<S> {
+    pub product: S,
+}
+
+pub type MulScalarReturn<S> = Result<MulScalarSuccessReturn<S>, Infallible>;
+
+pub struct NegScalarParams;
+
+pub struct NegScalarPayload<S> {
+    pub scalar: S,
+}
+
+pub struct NegScalarSuccessReturn<S> {
+    pub negation: S,
+}
+
+pub type NegScalarReturn<S> = Result<NegScalarSuccessReturn<S>, Infallible>;
+
+pub struct NegG1Params;
+
+pub struct NegG1Payload<G> {
+    pub point: G,
+}
+
+pub struct NegG1SuccessReturn<G> {
+    pub negation: G,
+}
+
+pub type NegG1Return<G> = Result<NegG1SuccessReturn<G>, Infallible>;
+
+pub struct NegG2Params;
+
+pub struct NegG2Payload<G> {
+    pub point: G,
+}
+
+pub struct NegG2SuccessReturn<G> {
+    pub negation: G,
+}
+
+pub type NegG2Return<G> = Result<NegG2SuccessReturn<G>, Infallible>;
+
+pub struct IsIdentityG1Params;
+
+pub struct IsIdentityG1Payload<G> {
+    pub point: G,
+}
+
+pub struct IsIdentityG1SuccessReturn {
+    pub is_identity: bool,
+}
+
+pub type IsIdentityG1Return = Result<IsIdentityG1SuccessReturn, Infallible>;
+
+pub struct IsIdentityG2Params;
+
+pub struct IsIdentityG2Payload<G> {
+    pub point: G,
+}
+
+pub struct IsIdentityG2SuccessReturn {
+    pub is_identity: bool,
+}
+
+pub type IsIdentityG2Return = Result<IsIdentityG2SuccessReturn, Infallible>;
+
+pub struct PairingProductParams;
+
+pub struct PairingProductPayload<G1, G2> {
+    pub terms: Vec<PairingProductTerm<G1, G2>>,
+}
+
+pub struct PairingProductSuccessReturn<T> {
+    pub product: T,
+}
+
+pub type PairingProductReturn<T> = Result<PairingProductSuccessReturn<T>, Infallible>;
+
+pub struct EncodeGtParams;
+
+pub struct EncodeGtPayload<T> {
+    pub value: T,
+}
+
+pub struct EncodeGtSuccessReturn<E: Zeroize> {
+    pub bytes: Secret<E>,
+}
+
+pub type EncodeGtReturn<E> = Result<EncodeGtSuccessReturn<E>, Infallible>;
+
+pub trait IPairingAdapter {
+    const DECLARATION: PairingDeclaration;
+    const CONCRETE: PairingConcrete;
+
+    type Scalar: ISampleUniformScalar + Clone;
+    type G1: Clone;
+    type G2: Clone;
+    type EncodedG1: AsRef<[u8]> + Clone + PartialEq + Eq;
+    type EncodedG2: AsRef<[u8]> + Clone + PartialEq + Eq;
+    type EncodedScalar: AsRef<[u8]> + Zeroize;
+
+    fn g1_generator(
+        &self,
+        params: G1GeneratorParams,
+        payload: G1GeneratorPayload,
+    ) -> G1GeneratorReturn<Self::G1>;
+
+    fn g2_generator(
+        &self,
+        params: G2GeneratorParams,
+        payload: G2GeneratorPayload,
+    ) -> G2GeneratorReturn<Self::G2>;
+
+    fn add_g1(&self, params: AddG1Params, payload: AddG1Payload<Self::G1>)
+    -> AddG1Return<Self::G1>;
+
+    fn add_g2(&self, params: AddG2Params, payload: AddG2Payload<Self::G2>)
+    -> AddG2Return<Self::G2>;
+
+    fn mul_g1(
+        &self,
+        params: MulG1Params,
+        payload: MulG1Payload<Self::G1, Self::Scalar>,
+    ) -> MulG1Return<Self::G1>;
+
+    fn mul_g2(
+        &self,
+        params: MulG2Params,
+        payload: MulG2Payload<Self::G2, Self::Scalar>,
+    ) -> MulG2Return<Self::G2>;
+
+    fn msm_g1(
+        &self,
+        params: MsmG1Params,
+        payload: MsmG1Payload<Self::G1, Self::Scalar>,
+    ) -> MsmG1Return<Self::G1>;
+
+    fn msm_g2(
+        &self,
+        params: MsmG2Params,
+        payload: MsmG2Payload<Self::G2, Self::Scalar>,
+    ) -> MsmG2Return<Self::G2>;
+
+    fn pairing_product_is_one(
+        &self,
+        params: PairingProductIsOneParams,
+        payload: PairingProductIsOnePayload<Self::G1, Self::G2>,
+    ) -> PairingProductIsOneReturn;
+
+    fn decode_g1(&self, params: DecodeG1Params, payload: &[u8]) -> DecodeG1Return<Self::G1>;
+
+    fn decode_g2(&self, params: DecodeG2Params, payload: &[u8]) -> DecodeG2Return<Self::G2>;
+
+    fn decode_scalar(
+        &self,
+        params: DecodeScalarParams,
+        payload: &[u8],
+    ) -> DecodeScalarReturn<Self::Scalar>;
+
+    fn encode_g1(
+        &self,
+        params: EncodeG1Params,
+        payload: EncodeG1Payload<Self::G1>,
+    ) -> EncodeG1Return<Self::EncodedG1>;
+
+    fn encode_g2(
+        &self,
+        params: EncodeG2Params,
+        payload: EncodeG2Payload<Self::G2>,
+    ) -> EncodeG2Return<Self::EncodedG2>;
+
+    fn encode_scalar(
+        &self,
+        params: EncodeScalarParams,
+        payload: EncodeScalarPayload<Self::Scalar>,
+    ) -> EncodeScalarReturn<Self::EncodedScalar>;
+}
+
+pub trait IPairingArithmetic: IPairingAdapter<G1: Zeroize, G2: Zeroize> {
+    type Gt: Zeroize;
+    type EncodedGt: AsRef<[u8]> + Zeroize;
+
+    fn add_scalar(
+        &self,
+        params: AddScalarParams,
+        payload: AddScalarPayload<Self::Scalar>,
+    ) -> AddScalarReturn<Self::Scalar>;
+
+    fn mul_scalar(
+        &self,
+        params: MulScalarParams,
+        payload: MulScalarPayload<Self::Scalar>,
+    ) -> MulScalarReturn<Self::Scalar>;
+
+    fn neg_scalar(
+        &self,
+        params: NegScalarParams,
+        payload: NegScalarPayload<Self::Scalar>,
+    ) -> NegScalarReturn<Self::Scalar>;
+
+    fn neg_g1(&self, params: NegG1Params, payload: NegG1Payload<Self::G1>)
+    -> NegG1Return<Self::G1>;
+
+    fn neg_g2(&self, params: NegG2Params, payload: NegG2Payload<Self::G2>)
+    -> NegG2Return<Self::G2>;
+
+    fn is_identity_g1(
+        &self,
+        params: IsIdentityG1Params,
+        payload: IsIdentityG1Payload<Self::G1>,
+    ) -> IsIdentityG1Return;
+
+    fn is_identity_g2(
+        &self,
+        params: IsIdentityG2Params,
+        payload: IsIdentityG2Payload<Self::G2>,
+    ) -> IsIdentityG2Return;
+
+    fn pairing_product(
+        &self,
+        params: PairingProductParams,
+        payload: PairingProductPayload<Self::G1, Self::G2>,
+    ) -> PairingProductReturn<Self::Gt>;
+
+    fn encode_gt(
+        &self,
+        params: EncodeGtParams,
+        payload: EncodeGtPayload<Self::Gt>,
+    ) -> EncodeGtReturn<Self::EncodedGt>;
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub enum PairingConcrete {
+    Bn254Arkworks,
+    Bn254Halo2curves,
+    Bls12381Arkworks,
+    Bls12381Halo2curves,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock(MockIPairingAdapterFailureMode),
+    #[cfg(any(test, feature = "mocks"))]
+    MockShortUniform(MockIPairingAdapterFailureMode),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub enum MockIPairingAdapterFailureMode {
+    Succeeds,
+    DecodeG1NotOnCurve,
+    DecodeG1NotInSubgroup,
+    DecodeG2NotOnCurve,
+    G1OutsideSubgroupSearchExhausted,
+    G2OutsideSubgroupSearchExhausted,
+    SampleScalarWrongLength,
+}
+
+pub struct ScalarFieldOrderParams;
+
+pub struct ScalarFieldOrderPayload;
+
+pub struct ScalarFieldOrderSuccessReturn {
+    pub bytes: Vec<u8>,
+}
+
+pub type ScalarFieldOrderReturn = Result<ScalarFieldOrderSuccessReturn, Infallible>;
+
+pub struct G1OutsideSubgroupEncodingParams;
+
+pub struct G1OutsideSubgroupEncodingPayload;
+
+pub struct G1OutsideSubgroupEncodingSuccessReturn<E> {
+    pub bytes: Option<E>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum G1OutsideSubgroupEncodingErrorReturn {
+    SearchExhausted,
+}
+
+pub type G1OutsideSubgroupEncodingReturn<E> =
+    Result<G1OutsideSubgroupEncodingSuccessReturn<E>, G1OutsideSubgroupEncodingErrorReturn>;
+
+pub struct G2OutsideSubgroupEncodingParams;
+
+pub struct G2OutsideSubgroupEncodingPayload;
+
+pub struct G2OutsideSubgroupEncodingSuccessReturn<E> {
+    pub bytes: E,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum G2OutsideSubgroupEncodingErrorReturn {
+    SearchExhausted,
+}
+
+pub type G2OutsideSubgroupEncodingReturn<E> =
+    Result<G2OutsideSubgroupEncodingSuccessReturn<E>, G2OutsideSubgroupEncodingErrorReturn>;
+
+/// The family's outside-the-subgroup point of a source group is the on-curve
+/// point outside the prime-order subgroup with the least first coordinate in
+/// an ascending search — `x = 1, 2, 3, …` in the first group and `x = (c0, 0)`
+/// with `c0 = 1, 2, 3, …` in the second — and, of the two points sharing that
+/// `x`, the one whose `y` is the lesser: in the first group the lesser
+/// integer, and in the second the `y` whose `c1` is the lesser integer, or
+/// whose `c0` is the lesser where both `c1` are zero. The rule is the
+/// family's, so every library of one curve yields the same bytes.
+pub trait IPairingReference: IPairingAdapter {
+    fn scalar_field_order(
+        &self,
+        params: ScalarFieldOrderParams,
+        payload: ScalarFieldOrderPayload,
+    ) -> ScalarFieldOrderReturn;
+
+    fn g1_outside_subgroup_encoding(
+        &self,
+        params: G1OutsideSubgroupEncodingParams,
+        payload: G1OutsideSubgroupEncodingPayload,
+    ) -> G1OutsideSubgroupEncodingReturn<Self::EncodedG1>;
+
+    fn g2_outside_subgroup_encoding(
+        &self,
+        params: G2OutsideSubgroupEncodingParams,
+        payload: G2OutsideSubgroupEncodingPayload,
+    ) -> G2OutsideSubgroupEncodingReturn<Self::EncodedG2>;
+}
+
+pub trait IPairingConsumer {
+    type Output;
+
+    fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
+        &self,
+        params: ConsumePairingParams,
+        payload: ConsumePairingPayload<P>,
+    ) -> Self::Output;
+}
+
+pub struct ConsumePairingParams;
+
+pub struct ConsumePairingPayload<P: IPairingAdapter> {
+    pub adapter: P,
+}
+
+pub struct CreatePairingDeps<C> {
+    pub consumer: C,
+}
+
+pub struct CreatePairingParams {
+    pub concrete: PairingConcrete,
+    pub supported_encodings: Vec<PrecompileEncoding>,
+    pub target_group_encoding: TargetGroupEncodingIdentifier,
+}
+
+pub struct CreatePairingPayload;
+
+pub struct CreatePairingSuccessReturn<O> {
+    pub output: O,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum CreatePairingErrorReturn {
+    UnsupportedPrecompileEncoding,
+    UnsupportedTargetGroupEncoding,
+    Bn254Arkworks(Infallible),
+    Bn254Halo2curves(Infallible),
+    Bls12381Arkworks(Infallible),
+    Bls12381Halo2curves(Infallible),
+    #[cfg(any(test, feature = "mocks"))]
+    MockIPairingAdapter(Infallible),
+    #[cfg(any(test, feature = "mocks"))]
+    MockShortUniformIPairingAdapter(Infallible),
+}
+
+pub type CreatePairingReturn<O> = Result<CreatePairingSuccessReturn<O>, CreatePairingErrorReturn>;
+
+pub type CreatePairingFn<C> = fn(
+    &CreatePairingDeps<C>,
+    CreatePairingParams,
+    CreatePairingPayload,
+) -> CreatePairingReturn<<C as IPairingConsumer>::Output>;
+
+pub const PAIRING_CONCRETES: &[PairingConcrete] = &[
+    PairingConcrete::Bn254Arkworks,
+    PairingConcrete::Bn254Halo2curves,
+    PairingConcrete::Bls12381Arkworks,
+    PairingConcrete::Bls12381Halo2curves,
+];
+
+pub const PRECOMPILE_ENCODINGS: &[PrecompileEncoding] = &[
+    PrecompileEncoding::Eip196Eip197,
+    PrecompileEncoding::Eip2537,
+];
+
+pub const TARGET_GROUP_ENCODING_IDENTIFIERS: &[TargetGroupEncodingIdentifier] = &[
+    TargetGroupEncodingIdentifier::Bn254V1,
+    TargetGroupEncodingIdentifier::Bls12381V1,
+];
+
+pub const PAIRING_CURVES: &[PairingCurve] = &[PairingCurve::Bn254, PairingCurve::Bls12381];

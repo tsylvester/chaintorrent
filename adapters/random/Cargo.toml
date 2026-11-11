@@ -1,0 +1,19 @@
+[package]
+name = "random"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+domain = { path = "../../crates/domain" }
+getrandom = "0.4.3"
+serde = { version = "1.0.229", features = ["derive"] }
+
+[dev-dependencies]
+domain = { path = "../../crates/domain", features = ["mocks"] }
+
+[features]
+mocks = ["domain/mocks"]
+
+[lints]
+workspace = true

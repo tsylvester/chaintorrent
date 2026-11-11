@@ -11,5 +11,8 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "deny": ["mcp__ccd_turn__wrap_up"]
   }
 }

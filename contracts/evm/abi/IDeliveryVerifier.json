@@ -1,0 +1,126 @@
+[
+    {
+        "type": "function",
+        "name": "verifyMint",
+        "stateMutability": "view",
+        "inputs": [
+            {
+                "name": "statement",
+                "type": "tuple",
+                "internalType": "struct IDeliveryVerifier.MintStatement",
+                "components": [
+                    {
+                        "name": "context",
+                        "type": "tuple",
+                        "internalType": "struct IDeliveryVerifier.DeliveryContext",
+                        "components": [
+                            { "name": "suiteIdentifier", "type": "bytes32", "internalType": "bytes32" },
+                            { "name": "suiteVersion", "type": "uint16", "internalType": "uint16" },
+                            { "name": "chain", "type": "uint256", "internalType": "uint256" },
+                            { "name": "entitlementContract", "type": "bytes20", "internalType": "bytes20" },
+                            { "name": "assetRoot", "type": "bytes32", "internalType": "bytes32" },
+                            { "name": "parameterSet", "type": "bytes32", "internalType": "bytes32" },
+                            { "name": "sourceEntitlement", "type": "uint256", "internalType": "uint256" },
+                            { "name": "targetEntitlement", "type": "uint256", "internalType": "uint256" },
+                            { "name": "oldInterval", "type": "uint64", "internalType": "uint64" },
+                            { "name": "newInterval", "type": "uint64", "internalType": "uint64" },
+                            { "name": "purpose", "type": "uint16", "internalType": "uint16" },
+                            { "name": "seller", "type": "bytes20", "internalType": "bytes20" },
+                            { "name": "buyer", "type": "bytes20", "internalType": "bytes20" },
+                            { "name": "expiry", "type": "uint64", "internalType": "uint64" }
+                        ]
+                    },
+                    { "name": "hpub", "type": "bytes", "internalType": "bytes" },
+                    { "name": "identityElement", "type": "bytes", "internalType": "bytes" },
+                    { "name": "buyerPk1", "type": "bytes", "internalType": "bytes" },
+                    { "name": "buyerPk2", "type": "bytes", "internalType": "bytes" },
+                    { "name": "envelopeC1", "type": "bytes", "internalType": "bytes" },
+                    { "name": "envelopeC2", "type": "bytes", "internalType": "bytes" },
+                    { "name": "envelopeD1", "type": "bytes", "internalType": "bytes" },
+                    { "name": "envelopeD2", "type": "bytes", "internalType": "bytes" }
+                ]
+            },
+            {
+                "name": "proof",
+                "type": "tuple",
+                "internalType": "struct IDeliveryVerifier.MintProof",
+                "components": [
+                    { "name": "challenge", "type": "uint256", "internalType": "uint256" },
+                    { "name": "alpha", "type": "uint256", "internalType": "uint256" },
+                    { "name": "r", "type": "uint256", "internalType": "uint256" },
+                    { "name": "rho", "type": "uint256", "internalType": "uint256" },
+                    { "name": "sigma", "type": "uint256", "internalType": "uint256" },
+                    { "name": "secondGroupFirstMessages", "type": "bytes", "internalType": "bytes" }
+                ]
+            }
+        ],
+        "outputs": [
+            { "name": "accepted", "type": "bool", "internalType": "bool" }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "verifyTransfer",
+        "stateMutability": "view",
+        "inputs": [
+            {
+                "name": "statement",
+                "type": "tuple",
+                "internalType": "struct IDeliveryVerifier.TransferStatement",
+                "components": [
+                    {
+                        "name": "context",
+                        "type": "tuple",
+                        "internalType": "struct IDeliveryVerifier.DeliveryContext",
+                        "components": [
+                            { "name": "suiteIdentifier", "type": "bytes32", "internalType": "bytes32" },
+                            { "name": "suiteVersion", "type": "uint16", "internalType": "uint16" },
+                            { "name": "chain", "type": "uint256", "internalType": "uint256" },
+                            { "name": "entitlementContract", "type": "bytes20", "internalType": "bytes20" },
+                            { "name": "assetRoot", "type": "bytes32", "internalType": "bytes32" },
+                            { "name": "parameterSet", "type": "bytes32", "internalType": "bytes32" },
+                            { "name": "sourceEntitlement", "type": "uint256", "internalType": "uint256" },
+                            { "name": "targetEntitlement", "type": "uint256", "internalType": "uint256" },
+                            { "name": "oldInterval", "type": "uint64", "internalType": "uint64" },
+                            { "name": "newInterval", "type": "uint64", "internalType": "uint64" },
+                            { "name": "purpose", "type": "uint16", "internalType": "uint16" },
+                            { "name": "seller", "type": "bytes20", "internalType": "bytes20" },
+                            { "name": "buyer", "type": "bytes20", "internalType": "bytes20" },
+                            { "name": "expiry", "type": "uint64", "internalType": "uint64" }
+                        ]
+                    },
+                    { "name": "identityElement", "type": "bytes", "internalType": "bytes" },
+                    { "name": "sellerPk1", "type": "bytes", "internalType": "bytes" },
+                    { "name": "sellerPk2", "type": "bytes", "internalType": "bytes" },
+                    { "name": "buyerPk1", "type": "bytes", "internalType": "bytes" },
+                    { "name": "buyerPk2", "type": "bytes", "internalType": "bytes" },
+                    { "name": "oldEnvelopeC1", "type": "bytes", "internalType": "bytes" },
+                    { "name": "oldEnvelopeC2", "type": "bytes", "internalType": "bytes" },
+                    { "name": "oldEnvelopeD1", "type": "bytes", "internalType": "bytes" },
+                    { "name": "oldEnvelopeD2", "type": "bytes", "internalType": "bytes" },
+                    { "name": "newEnvelopeC1", "type": "bytes", "internalType": "bytes" },
+                    { "name": "newEnvelopeC2", "type": "bytes", "internalType": "bytes" },
+                    { "name": "newEnvelopeD1", "type": "bytes", "internalType": "bytes" },
+                    { "name": "newEnvelopeD2", "type": "bytes", "internalType": "bytes" }
+                ]
+            },
+            {
+                "name": "proof",
+                "type": "tuple",
+                "internalType": "struct IDeliveryVerifier.TransferProof",
+                "components": [
+                    { "name": "challenge", "type": "uint256", "internalType": "uint256" },
+                    { "name": "x", "type": "uint256", "internalType": "uint256" },
+                    { "name": "y", "type": "uint256", "internalType": "uint256" },
+                    { "name": "s", "type": "uint256", "internalType": "uint256" },
+                    { "name": "rho", "type": "uint256", "internalType": "uint256" },
+                    { "name": "sigma", "type": "uint256", "internalType": "uint256" },
+                    { "name": "secondGroupFirstMessages", "type": "bytes", "internalType": "bytes" }
+                ]
+            }
+        ],
+        "outputs": [
+            { "name": "accepted", "type": "bool", "internalType": "bool" }
+        ]
+    }
+]

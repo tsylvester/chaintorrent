@@ -15,7 +15,7 @@ Produce the read manifest before any analysis.
 Judge the block on five questions, in order:
 
 - Does the title state a behavior, or does it merely name the function?
-- Does the contract name one branch — and is that branch this function's to own?
+- Does the contract name one branch — for an integration block, one spec entry — and is that branch or entry this function's to own?
 - Does the arrangement contain the variation that branch discriminates over?
 - Does the action call the subject, and is the subject the function this file tests?
 - Do the assertions prove that contract, and could they have failed?
@@ -35,7 +35,7 @@ This is not `check`. That reviews a completed node against the workplan; this ju
 **Name the successor.** A remedy is applied in a later, separately instructed step (`docs/agents/tests.md#applying-a-remedy`), so a finding that does not say where it goes dead-ends. Close every finding with the command that executes it:
 
 - **Incidental, tautological, contract–assertion mismatch** — corrected in place, in this block, by the command owning this block's scope: `unitTest`, `guardTest`, `interfaceTest`, or `integrate`. Name which.
-- **Layer misplacement** — the property moves to the scope that owns it. Name that scope's command, and say where the property is already covered if it is.
+- **Layer misplacement** — the property moves to the scope that owns it. Name that scope's command, and say where the property is already covered if it is. In Rust an integration block is judged against its tier too: a private block asserting what only an outside caller can observe, a public block asserting an in-crate seam, and an integration block inside a unit test file are all layer misplacement.
 - **Subject misplacement** — the block belongs to another function, so it is placed against that function's node by `plan`, not rewritten here.
 
 Carry the remedy forward with the finding: the reconstructed contract, the probe result, and the block's location. The successor command has no node and no `interaction.spec` to work from — what you hand it is the whole of its input.

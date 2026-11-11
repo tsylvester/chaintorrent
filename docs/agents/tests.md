@@ -13,10 +13,14 @@ Cited by: construction view (workplan node `interface.test`, `guard.test`, `unit
 - Each test covers **one** behavior, so a failure names the exact defect.
 - Use production types, objects, helpers, and mocks. Never invent parallel types or shadow implementations. Each mock must name the production type it mirrors.
 - Never change an assertion to match broken code — fix the code.
+- An error outcome is asserted by equality with the whole expected error, every field and every carried callee error stated — `assert_eq!` in Rust. A pattern that elides fields with `..`, or an assertion of the arm alone, asserts less than the branch returns.
 - Fixtures come from the mock file's builders and invalidators (see [mocks](mocks.md)), never hand-rolled.
 - Test files mirror the source tree and may split by behavior (`bar.basic.test.ts`, `bar.error.test.ts`, `bar.edge.test.ts`); group related tests in nested `Deno.test` / `t.step` blocks.
+- In Rust each test element is a `#[cfg(test)]` module file in the function's module directory, `test.rs`, splitting by behavior as `test_basic.rs`, `test_error.rs`; the runner is `cargo test` with `assert!` and `assert_eq!`, and the agent still never runs it. A private integration test is `integration_test.rs`, a `#[cfg(test)]` module of its own beside `test.rs`, and a public integration test is a file under the crate's `tests/`; neither is ever a `test_*.rs` split of the unit test.
 - The agent never runs tests (see [environment](environment.md)). A test's RED or GREEN state is proven by compiler/linter output, not by execution.
 - Examples in this topic use `test(...)` for a test block and `assert(...)` for a truthy assertion as neutral placeholders. Substitute your project's own runner and assertion library — `Deno.test` + `@std/assert`, `test` / `it` + `expect`, and so on — and its module-resolution convention for import paths.
+- End each test block with a comment stating the test's unique name so that every test has a unique start and stop anchor. 
+- Reason and write every test one test block at a time, block by block, in a single turn. Do not halt between writing test blocks, only halt once every test block is written. 
 
 ## Every test states its contract
 
@@ -65,6 +69,28 @@ test("selectSessionDocuments returns only the current session's documents", () =
   assert(result.length === 2);
   assert(!result.includes(foreign));
 });
+```
+
+```rust
+/// Contract: given documents from more than one session, only the current session's
+///   documents are returned.
+/// Arrange: two documents in the current session, one in a foreign session.
+/// Act:     select_session_documents over all three.
+/// Assert:  both current-session ids are returned; the foreign id is absent.
+#[test]
+fn select_session_documents_returns_only_the_current_sessions_documents() {
+    // Arrange
+    let mine = build_document(DocumentOverrides { session_id: Some("session-1".into()), ..Default::default() });
+    let also_mine = build_document(DocumentOverrides { session_id: Some("session-1".into()), ..Default::default() });
+    let foreign = build_document(DocumentOverrides { session_id: Some("session-2".into()), ..Default::default() });
+
+    // Act
+    let result = select_session_documents(&[mine, also_mine, foreign.clone()], "session-1");
+
+    // Assert
+    assert_eq!(result.len(), 2);
+    assert!(!result.contains(&foreign));
+}
 ```
 
 The header states what the test **is**, never what it was — the no-stateful-tests standard above governs the header exactly as it governs the block name.
@@ -122,7 +148,9 @@ Each scope is its own topic file. Load only the one you are working; the shared 
 <a id="unit"></a>
 - **[Unit test](unitTest.md)** — validates behavior, before the implementation exists (TDD RED).
 <a id="integration"></a>
-- **[Integration test](integrationTest.md)** — exercises real code across an approved boundary, mocking only at that boundary.
+<a id="integration-private"></a>
+<a id="integration-public"></a>
+- **[Integration test](integrationTest.md)** — exercises real code across an approved boundary, mocking only at that boundary. In Rust it has a private tier inside the crate and a public tier outside it, each with its own section.
 <a id="e2e"></a>
 - **[End-to-end test](e2eTest.md)** — reserved; full-stack against real infrastructure, in an isolated pipeline, outside the ordinary node cycle.
 
@@ -149,7 +177,7 @@ The test cannot fail because the answer was supplied to it. The input was constr
 
 **Probe.** Is any expected value produced by, derived from, or identical to the arrangement, rather than stated independently? If yes, it is tautological.
 
-**Pass-through form.** The asserted value came from a builder default or a mock's return and the subject merely relayed it. The test proves the fixture, not the transform.
+**Pass-through form.** The asserted value came from a builder default or a mock's return and the subject merely relayed it. The test proves the fixture, not the transform. A value a function mock relayed from a consumer is a pass-through, whichever consumer the test supplied.
 
 **Remedy.** State expectations as independent literals, and arrange inputs that are not already the answer. Where the value must originate in a builder, assert what the subject *did to it*, never the value itself.
 
@@ -165,9 +193,9 @@ The header claims a property the body does not check, or the body checks a prope
 
 ### Layer misplacement — the property belongs to another scope
 
-Each scope owns a kind of property: shape and membership to the interface test, validity to the guard test, behavior and branching to the unit test, boundary crossing to the integration test.
+Each scope owns a kind of property: shape and membership to the interface test, validity to the guard test, behavior and branching to the unit test, boundary crossing to the integration test. In Rust the private integration test owns the cross-module properties provable inside the crate, and the public integration test owns the properties an outside caller can observe.
 
-**Probe.** Name the property the test asserts, then name the scope that owns it. If that is not this file's scope, the test is misplaced.
+**Probe.** Name the property the test asserts, then name the scope that owns it. If that is not this file's scope, the test is misplaced. A block that runs more than its subject inside a unit test file is an integration block and is misplaced there.
 
 **Remedy.** Report the owning scope and where the property is already covered. Deleting a misplaced test that duplicates real coverage is correct; deleting one whose property is covered nowhere is a coverage loss — propose the move, not the deletion.
 
@@ -181,7 +209,7 @@ The behavior asserted belongs to a different function. The subject appears in th
 
 ### Audit evidence — the carve-out from Reviewer mode
 
-[modes](modes.md) requires each EO&D finding to be proven by a test that fails now and passes once the defect is fixed. A deranged test is the one exception: the defect **is** the test, so there is no failing test to write. The evidence is the probe result stated concretely — "no-op the filter and this test still passes," "the expected id is the id the fixture was built with." A fabricated failing test is not evidence, and a finding with no probe result is not a finding.
+[modes](modes.md) requires each EO&D finding to be proven by a test that fails now and passes once the defect is fixed. A deranged test is an exception: the defect **is** the test, so there is no failing test to write. The evidence is the probe result stated concretely — "no-op the filter and this test still passes," "the expected id is the id the fixture was built with." A fabricated failing test is not evidence, and a finding with no probe result is not a finding.
 
 The audit reports and halts; it does not edit ([discovery-halt](discovery-halt.md)).
 
@@ -205,4 +233,5 @@ Neither producer edits. A remedy is applied in a later, separately instructed st
 ## Precedence
 
 This topic outranks the workplan. A node step that silences a RED compiler error, defines the thing under test inside its test, hand-rolls fixtures, specifies an arrangement that admits no counterfactual, derives a test's expectation from its own arrangement, re-tests shape or guard correctness in a unit test, mocks a function that is supposed to be integrated, or leaves existing tests stale during a requirements change is defective — comply with this topic and report the discrepancy.
+
 
