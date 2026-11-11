@@ -57,8 +57,8 @@ use super::mock::{
 };
 use super::transfer;
 use crate::delivery::mint::provides::{
-    MintCaseParamsOverrides, MintPayloadOverrides, build_delivery_holder,
-    build_mint_case_params, build_mint_deps, build_mint_params, build_mint_payload, mint,
+    MintCaseParamsOverrides, MintPayloadOverrides, build_delivery_holder, build_mint_case_params,
+    build_mint_deps, build_mint_params, build_mint_payload, mint,
 };
 
 /// Contract: `delivery/mint` entry

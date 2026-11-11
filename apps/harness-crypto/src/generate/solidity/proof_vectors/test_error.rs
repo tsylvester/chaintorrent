@@ -33,15 +33,18 @@ use proof::{
 };
 use random::{
     CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
-    FillBytesParams, FillBytesPayloadOverrides, IRandomSourceAdapter,
-    MockIRandomSourceAdapterFailureMode, RandomSourceKind, build_create_random_source_params,
-    build_fill_bytes_payload, create_random_source,
+    FillBytesParams, FillBytesPayloadOverrides, MockIRandomSourceAdapterFailureMode,
+    RandomSourceKind, build_create_random_source_params, build_fill_bytes_payload,
+    create_random_source,
 };
 
 use super::super::group_vectors::provides::{
     VectorCountConstructorParamsOverrides, build_vector_count,
 };
-use super::interface::{IProofVectorsCaseConsumer, ProofVectorsErrorReturn};
+use super::interface::{
+    ConsumeProofVectorsCaseParams, ConsumeProofVectorsCasePayload, IProofVectorsCaseConsumer,
+    ProofVectorsErrorReturn,
+};
 use super::mock::{
     ProofVectorsCaseParamsOverrides, ProofVectorsParamsOverrides, ProofVectorsPayloadOverrides,
     build_proof_vectors_case_deps, build_proof_vectors_case_params,
@@ -49,7 +52,7 @@ use super::mock::{
     build_proof_vectors_payload, run_proof_vectors_case,
 };
 use super::proof_vectors;
-use crate::delivery::provides::{AdmittedKemIdentity, MintErrorReturn};
+use crate::delivery::provides::MintErrorReturn;
 
 /// Contract: Mint delivery, the mint delivery's draw fails →
 ///   `Err(ProofVectorsErrorReturn::Mint(MintErrorReturn::FillBytes(error)))`,
@@ -72,15 +75,8 @@ fn proof_vectors_return_the_draw_refusal_whole() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -91,6 +87,12 @@ fn proof_vectors_return_the_draw_refusal_whole() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let independent = create_random_source(
                 &CreateRandomSourceDeps,
@@ -206,15 +208,8 @@ fn proof_vectors_return_the_hash_to_scalar_refusal_of_identity_derivation_whole(
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -225,6 +220,12 @@ fn proof_vectors_return_the_hash_to_scalar_refusal_of_identity_derivation_whole(
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let tag = build_domain_tag(Default::default());
             let independent = create_hash_to_scalar::<P::Scalar>(
@@ -344,15 +345,8 @@ fn proof_vectors_return_the_sampling_refusal_of_setup_whole() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -363,6 +357,12 @@ fn proof_vectors_return_the_sampling_refusal_of_setup_whole() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let independent = create_random_source(
                 &CreateRandomSourceDeps,
@@ -476,15 +476,8 @@ fn proof_vectors_return_the_nonce_draw_refusal_of_key_generation_whole() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -495,6 +488,12 @@ fn proof_vectors_return_the_nonce_draw_refusal_of_key_generation_whole() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -589,15 +588,8 @@ fn proof_vectors_return_the_coin_draw_refusal_of_wrapping_whole() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -608,6 +600,12 @@ fn proof_vectors_return_the_coin_draw_refusal_of_wrapping_whole() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -703,15 +701,8 @@ fn proof_vectors_return_the_nonce_draw_refusal_of_the_mint_prover_whole() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -722,6 +713,12 @@ fn proof_vectors_return_the_nonce_draw_refusal_of_the_mint_prover_whole() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());

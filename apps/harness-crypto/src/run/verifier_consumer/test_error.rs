@@ -1,5 +1,19 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
+use super::interface::{VerifierConsumer, VerifierConsumerReturn};
+use super::mock::build_verifier_consumer;
+use crate::measure::provides::{
+    ConsumeMeasureCaseParams, ConsumeMeasureCasePayload, IMeasureCaseConsumer, MeasureErrorReturn,
+    build_measure_case_deps, build_measure_case_params, build_measure_case_payload,
+    run_measure_case,
+};
+use crate::verifier::provides::{
+    CreateVerifierParamsOverrides, CreateVerifierReturn, CreateVerifierSuccessReturn,
+    IVerifierAdapter, MockIVerifierAdapterFailureMode,
+    MockIVerifierAdapterVerifyOnChainErrorReturn, VerifierConcrete, VerifyOnChainErrorReturn,
+    build_create_verifier_deps, build_create_verifier_params, build_create_verifier_payload,
+    create_verifier,
+};
 use chain::IChainForms;
 use encoding::{IDecoderAdapter, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
@@ -10,22 +24,6 @@ use pairing::{IPairingArithmetic, IPairingReference};
 use proof::{
     DELIVERY_PURPOSE_MINT, DELIVERY_PURPOSE_TRANSFER, DeliveryRelation, IDeliveryProofAdapter,
     MintPurpose, TransferPurpose, build_delivery_context,
-};
-use random::IRandomSourceAdapter;
-
-use super::interface::{VerifierConsumer, VerifierConsumerReturn};
-use super::mock::build_verifier_consumer;
-use crate::delivery::provides::AdmittedKemIdentity;
-use crate::measure::provides::{
-    IMeasureCaseConsumer, MeasureErrorReturn, build_measure_case_deps, build_measure_case_params,
-    build_measure_case_payload, run_measure_case,
-};
-use crate::verifier::provides::{
-    CreateVerifierParamsOverrides, CreateVerifierReturn, CreateVerifierSuccessReturn,
-    IVerifierAdapter, MockIVerifierAdapterFailureMode,
-    MockIVerifierAdapterVerifyOnChainErrorReturn, VerifierConcrete, VerifyOnChainErrorReturn,
-    build_create_verifier_deps, build_create_verifier_params, build_create_verifier_payload,
-    create_verifier,
 };
 
 /// Contract: Refused → the refusal `measure` returns is the output whole,
@@ -49,17 +47,8 @@ fn consume_verifier_returns_measures_refusal_whole() {
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            _verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -71,6 +60,12 @@ fn consume_verifier_returns_measures_refusal_whole() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             let consumer: VerifierConsumer<'_, P, K, A, D> = build_verifier_consumer(
                 pairing,
                 kem,

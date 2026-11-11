@@ -1,5 +1,16 @@
 #![allow(clippy::expect_used)]
 
+use super::interface::{
+    ConsumeTransferCaseParams, ConsumeTransferCasePayload, ITransferCaseConsumer,
+};
+use super::mock::{
+    build_transfer_case_deps, build_transfer_case_params, build_transfer_case_payload,
+    build_transfer_deps, build_transfer_params, build_transfer_payload, run_transfer_case,
+};
+use super::transfer;
+use crate::delivery::mint::provides::{
+    MintPayloadOverrides, build_mint_deps, build_mint_params, build_mint_payload, mock_mint,
+};
 use chain::IChainForms;
 use domain::build_secret;
 use envelope::{
@@ -22,17 +33,6 @@ use pairing::{
     ISampleUniformScalar, MulG1Params, MulG1Payload, MulG2Params, MulG2Payload,
 };
 use proof::{IDeliveryProofAdapter, MintPurpose, TransferPurpose, build_delivery_context};
-use super::interface::{
-    ConsumeTransferCaseParams, ConsumeTransferCasePayload, ITransferCaseConsumer,
-};
-use super::mock::{
-    build_transfer_case_deps, build_transfer_case_params, build_transfer_case_payload,
-    build_transfer_deps, build_transfer_params, build_transfer_payload, run_transfer_case,
-};
-use super::transfer;
-use crate::delivery::mint::provides::{
-    MintPayloadOverrides, build_mint_deps, build_mint_params, build_mint_payload, mock_mint,
-};
 
 /// Contract: Computed → `Ok(TransferSuccessReturn { delivery })`, the
 ///   statement's context the payload's context, its `seller_keys` the

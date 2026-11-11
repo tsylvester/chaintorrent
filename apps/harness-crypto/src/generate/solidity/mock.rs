@@ -59,12 +59,12 @@ use super::group_vectors::provides::{
     GroupVectorsFn, build_msm_term_count, build_vector_count, mock_group_vectors,
 };
 use super::interface::{
-    GeneratedDirectory, GeneratedDirectoryConstructorParams, GeneratedFileName,
-    GeneratedFileNameConstructorParams, ISolidityGenerateCaseConsumer, RunSolidityGenerateCaseFn,
-    SOLIDITY_GENERATE_DECLARATION, SolidityCurveDirectories, SolidityCurveLibraries,
-    SolidityCurveLibraryNames, SolidityGenerate, SolidityGenerateCaseDeps,
-    SolidityGenerateCaseErrorReturn, SolidityGenerateCaseParams, SolidityGenerateCasePayload,
-    SolidityGenerateCaseReturn, SolidityGenerateCaseSuccessReturn,
+    ConsumeSolidityGenerateCaseParams, ConsumeSolidityGenerateCasePayload, GeneratedDirectory,
+    GeneratedDirectoryConstructorParams, GeneratedFileName, GeneratedFileNameConstructorParams,
+    ISolidityGenerateCaseConsumer, RunSolidityGenerateCaseFn, SOLIDITY_GENERATE_DECLARATION,
+    SolidityCurveDirectories, SolidityCurveLibraries, SolidityCurveLibraryNames, SolidityGenerate,
+    SolidityGenerateCaseDeps, SolidityGenerateCaseErrorReturn, SolidityGenerateCaseParams,
+    SolidityGenerateCasePayload, SolidityGenerateCaseReturn, SolidityGenerateCaseSuccessReturn,
     SolidityGenerateConstructorParams, SolidityGenerateSettings, SolidityLibraryNames,
     SolidityVectorKindNames, SolidityVectorKindSettings,
 };
@@ -976,6 +976,52 @@ pub fn build_solidity_generate_case_success_return<O>(
     SolidityGenerateCaseSuccessReturn { output }
 }
 
+#[derive(Default)]
+pub struct ConsumeSolidityGenerateCaseParamsOverrides;
+
+pub fn build_consume_solidity_generate_case_params(
+    _overrides: ConsumeSolidityGenerateCaseParamsOverrides,
+) -> ConsumeSolidityGenerateCaseParams {
+    ConsumeSolidityGenerateCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeSolidityGenerateCasePayloadOverrides<'a> {
+    pub marker: PhantomData<&'a ()>,
+}
+
+pub fn build_consume_solidity_generate_case_payload<
+    'a,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A: IKeyAgreementAdapter<Pairing = P>,
+    D: IDeliveryProofAdapter<Pairing = P>,
+>(
+    pairing: &'a P,
+    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    encoder: &'a E,
+    decoder: &'a E,
+    kem: &'a K,
+    key_agreement: &'a A,
+    delivery_proof: &'a D,
+    random: &'a dyn IRandomSourceAdapter,
+    identities: Vec<AdmittedKemIdentity<'a>>,
+    _overrides: ConsumeSolidityGenerateCasePayloadOverrides<'a>,
+) -> ConsumeSolidityGenerateCasePayload<'a, P, E, K, A, D> {
+    ConsumeSolidityGenerateCasePayload {
+        pairing,
+        hash_to_scalar,
+        encoder,
+        decoder,
+        kem,
+        key_agreement,
+        delivery_proof,
+        random,
+        identities,
+    }
+}
+
 struct CaseAtDeliveryProof<'a, P: IPairingArithmetic, E, F, K, A, C: ISolidityGenerateCaseConsumer>
 {
     pairing: &'a P,
@@ -1009,15 +1055,19 @@ where
     ) -> Self::Output {
         Ok(SolidityGenerateCaseSuccessReturn {
             output: self.consumer.consume_solidity_generate_case(
-                self.pairing,
-                self.hash_to_scalar,
-                self.encoder,
-                self.decoder,
-                self.kem,
-                self.key_agreement,
-                &payload.adapter,
-                self.random,
-                self.identities.clone(),
+                build_consume_solidity_generate_case_params(Default::default()),
+                build_consume_solidity_generate_case_payload(
+                    self.pairing,
+                    self.hash_to_scalar,
+                    self.encoder,
+                    self.decoder,
+                    self.kem,
+                    self.key_agreement,
+                    &payload.adapter,
+                    self.random,
+                    self.identities.clone(),
+                    Default::default(),
+                ),
             ),
         })
     }
@@ -1079,7 +1129,7 @@ where
             build_create_delivery_proof_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(SolidityGenerateCaseErrorReturn::CreateDeliveryProof(error)),
+            Err(error) => Err(SolidityGenerateCaseErrorReturn::DeliveryProof(error)),
         }
     }
 }
@@ -1155,7 +1205,7 @@ where
             build_create_key_agreement_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(SolidityGenerateCaseErrorReturn::CreateKeyAgreement(error)),
+            Err(error) => Err(SolidityGenerateCaseErrorReturn::KeyAgreement(error)),
         }
     }
 }
@@ -1208,7 +1258,7 @@ where
             build_create_kem_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(SolidityGenerateCaseErrorReturn::CreateKem(error)),
+            Err(error) => Err(SolidityGenerateCaseErrorReturn::Kem(error)),
         }
     }
 }
@@ -1258,7 +1308,7 @@ where
             build_create_chain_forms_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(SolidityGenerateCaseErrorReturn::CreateChainForms(error)),
+            Err(error) => Err(SolidityGenerateCaseErrorReturn::ChainForms(error)),
         }
     }
 }
@@ -1290,7 +1340,7 @@ impl<C: ISolidityGenerateCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C>
         ) {
             Ok(hashing) => hashing,
             Err(error) => {
-                return Err(SolidityGenerateCaseErrorReturn::CreateHashToScalar(error));
+                return Err(SolidityGenerateCaseErrorReturn::HashToScalar(error));
             }
         };
         let source = match create_random_source(
@@ -1302,7 +1352,7 @@ impl<C: ISolidityGenerateCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C>
         ) {
             Ok(source) => source,
             Err(error) => {
-                return Err(SolidityGenerateCaseErrorReturn::CreateRandomSource(error));
+                return Err(SolidityGenerateCaseErrorReturn::RandomSource(error));
             }
         };
         match create_encoding(
@@ -1324,7 +1374,7 @@ impl<C: ISolidityGenerateCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C>
             build_create_encoding_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(SolidityGenerateCaseErrorReturn::CreateEncoding(error)),
+            Err(error) => Err(SolidityGenerateCaseErrorReturn::Encoding(error)),
         }
     }
 }
@@ -1354,6 +1404,6 @@ pub fn run_solidity_generate_case<C: ISolidityGenerateCaseConsumer>(
         build_create_pairing_payload(Default::default()),
     ) {
         Ok(success) => success.output,
-        Err(error) => Err(SolidityGenerateCaseErrorReturn::CreatePairing(error)),
+        Err(error) => Err(SolidityGenerateCaseErrorReturn::Pairing(error)),
     }
 }

@@ -142,17 +142,8 @@ pub trait IMeasureCaseConsumer {
 
     fn consume_measure_case<P, H, E, F, K, A, D, V>(
         &self,
-        pairing: &P,
-        hash_to_scalar: &H,
-        encoder: &E,
-        forms: &F,
-        kem: &K,
-        key_agreement: &A,
-        delivery_proof: &D,
-        verifier: &V,
-        random: &dyn IRandomSourceAdapter,
-        independent: &dyn IRandomSourceAdapter,
-        identity: AdmittedKemIdentity<'_>,
+        params: ConsumeMeasureCaseParams,
+        payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
     ) -> Self::Output
     where
         P: IPairingArithmetic + IPairingReference,
@@ -163,6 +154,34 @@ pub trait IMeasureCaseConsumer {
         A: IKeyAgreementAdapter<Pairing = P>,
         D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         V: IVerifierAdapter<DeliveryProof = D>;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeMeasureCaseParams;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeMeasureCasePayload<
+    'a,
+    P: IPairingArithmetic + IPairingReference,
+    H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+    E: IEncoderAdapter + IDecoderAdapter,
+    F: IChainForms,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A: IKeyAgreementAdapter<Pairing = P>,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+    V: IVerifierAdapter<DeliveryProof = D>,
+> {
+    pub pairing: &'a P,
+    pub hash_to_scalar: &'a H,
+    pub encoder: &'a E,
+    pub forms: &'a F,
+    pub kem: &'a K,
+    pub key_agreement: &'a A,
+    pub delivery_proof: &'a D,
+    pub verifier: &'a V,
+    pub random: &'a dyn IRandomSourceAdapter,
+    pub independent: &'a dyn IRandomSourceAdapter,
+    pub identity: AdmittedKemIdentity<'a>,
 }
 
 #[cfg(any(test, feature = "mocks"))]

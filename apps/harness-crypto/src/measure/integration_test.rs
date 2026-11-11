@@ -37,18 +37,20 @@ use proof::{
     build_create_delivery_proof_params, build_delivery_context,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
-    build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 
-use super::interface::{IMeasureCaseConsumer, MeasureErrorReturn, MeasureReturn};
+use super::interface::{
+    ConsumeMeasureCaseParams, ConsumeMeasureCasePayload, IMeasureCaseConsumer, MeasureErrorReturn,
+    MeasureReturn,
+};
 use super::measure;
 use super::mock::{
     MeasureCaseParamsOverrides, MeasureParamsOverrides, MeasurePayloadOverrides,
     build_measure_case_deps, build_measure_case_params, build_measure_case_payload,
     build_measure_deps, build_measure_params, build_measure_payload, run_measure_case,
 };
-use crate::delivery::provides::{AdmittedKemIdentity, MintErrorReturn};
+use crate::delivery::provides::MintErrorReturn;
 use crate::verifier::provides::{
     CreateVerifierParamsOverrides, IVerifierAdapter, MockIVerifierAdapterFailureMode,
     MockIVerifierAdapterVerifyOnChainErrorReturn, VerifierConcrete, VerifyOnChainErrorReturn,
@@ -86,17 +88,8 @@ fn every_operation_is_timed_on_every_concrete() {
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -108,6 +101,13 @@ fn every_operation_is_timed_on_every_concrete() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let verifier = payload.verifier;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -233,17 +233,8 @@ fn the_measurement_carries_the_iteration_count_its_means_were_computed_from() {
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -255,6 +246,13 @@ fn the_measurement_carries_the_iteration_count_its_means_were_computed_from() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let verifier = payload.verifier;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -390,17 +388,8 @@ fn every_object_is_sized_by_the_encodings_of_its_elements() {
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -412,6 +401,13 @@ fn every_object_is_sized_by_the_encodings_of_its_elements() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let verifier = payload.verifier;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -578,17 +574,8 @@ fn every_accepted_delivery_reports_the_cost_the_verifier_returned() {
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -600,6 +587,13 @@ fn every_accepted_delivery_reports_the_cost_the_verifier_returned() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let verifier = payload.verifier;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -694,17 +688,8 @@ fn a_refused_chain_read_reaches_the_caller_whole_with_the_relation_it_submitted(
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -716,6 +701,13 @@ fn a_refused_chain_read_reaches_the_caller_whole_with_the_relation_it_submitted(
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let verifier = payload.verifier;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -822,17 +814,8 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -844,6 +827,13 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let verifier = payload.verifier;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -978,17 +968,8 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1000,6 +981,13 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let verifier = payload.verifier;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());

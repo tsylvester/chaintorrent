@@ -1152,25 +1152,27 @@ pub fn build_g2_outside_subgroup_encoding_success_return<P: IPairingAdapter>(
 }
 
 pub(crate) const MOCK_GROUP_ORDER: u64 = 65521;
+pub(crate) const MOCK_UNIFORM_BYTES_LENGTH: usize = 64;
+pub(crate) const MOCK_SHORT_UNIFORM_BYTES_LENGTH: usize = 16;
 
 #[derive(Clone)]
-pub(crate) struct MockScalar {
+pub(crate) struct MockScalar<const UNIFORM: usize> {
     residue: u64,
 }
 
-impl Zeroize for MockScalar {
+impl<const UNIFORM: usize> Zeroize for MockScalar<UNIFORM> {
     fn zeroize(&mut self) {
         self.residue.zeroize();
     }
 }
 
-impl Drop for MockScalar {
+impl<const UNIFORM: usize> Drop for MockScalar<UNIFORM> {
     fn drop(&mut self) {
         self.residue.zeroize();
     }
 }
 
-impl ZeroizeOnDrop for MockScalar {}
+impl<const UNIFORM: usize> ZeroizeOnDrop for MockScalar<UNIFORM> {}
 
 #[derive(Clone)]
 pub(crate) struct MockG1 {
@@ -1307,16 +1309,17 @@ std::thread_local! {
         const { Cell::new(MockIPairingAdapterFailureMode::Succeeds) };
 }
 
-pub(crate) struct MockIPairingAdapter {
+pub(crate) struct MockIPairingAdapter<const UNIFORM: usize> {
     pub(super) failure_mode: MockIPairingAdapterFailureMode,
 }
 
-pub(crate) type MockIPairingAdapterTryNewReturn = Result<MockIPairingAdapter, Infallible>;
+pub(crate) type MockIPairingAdapterTryNewReturn<const UNIFORM: usize> =
+    Result<MockIPairingAdapter<UNIFORM>, Infallible>;
 
-impl MockIPairingAdapter {
+impl<const UNIFORM: usize> MockIPairingAdapter<UNIFORM> {
     pub(crate) fn try_new(
         params: MockIPairingAdapterConstructorParams,
-    ) -> MockIPairingAdapterTryNewReturn {
+    ) -> MockIPairingAdapterTryNewReturn<UNIFORM> {
         MOCK_SAMPLING_MODE.with(|mode| mode.set(params.failure_mode));
         Ok(MockIPairingAdapter {
             failure_mode: params.failure_mode,
@@ -1324,15 +1327,16 @@ impl MockIPairingAdapter {
     }
 }
 
-pub(crate) fn build_mock_i_pairing_adapter(
+pub(crate) fn build_mock_i_pairing_adapter<const UNIFORM: usize>(
     overrides: MockIPairingAdapterConstructorParamsOverrides,
-) -> MockIPairingAdapter {
-    let Ok(adapter) =
-        MockIPairingAdapter::try_new(build_mock_i_pairing_adapter_constructor_params(overrides));
+) -> MockIPairingAdapter<UNIFORM> {
+    let Ok(adapter) = MockIPairingAdapter::<UNIFORM>::try_new(
+        build_mock_i_pairing_adapter_constructor_params(overrides),
+    );
     adapter
 }
 
-impl IPairingAdapter for MockIPairingAdapter {
+impl<const UNIFORM: usize> IPairingAdapter for MockIPairingAdapter<UNIFORM> {
     const DECLARATION: PairingDeclaration = PairingDeclaration {
         curve: PairingCurve::Mock,
         verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly,
@@ -1341,9 +1345,12 @@ impl IPairingAdapter for MockIPairingAdapter {
         adapter_version: 1,
         interface_version: PAIRING_INTERFACE_VERSION,
     };
-    const CONCRETE: PairingConcrete =
-        PairingConcrete::Mock(MockIPairingAdapterFailureMode::Succeeds);
-    type Scalar = MockScalar;
+    const CONCRETE: PairingConcrete = if UNIFORM == MOCK_SHORT_UNIFORM_BYTES_LENGTH {
+        PairingConcrete::MockShortUniform(MockIPairingAdapterFailureMode::Succeeds)
+    } else {
+        PairingConcrete::Mock(MockIPairingAdapterFailureMode::Succeeds)
+    };
+    type Scalar = MockScalar<UNIFORM>;
     type G1 = MockG1;
     type G2 = MockG2;
     type EncodedG1 = MockEncodedG1;
@@ -1575,8 +1582,8 @@ impl IPairingAdapter for MockIPairingAdapter {
     }
 }
 
-impl ISampleUniformScalar for MockScalar {
-    const UNIFORM_BYTES_LENGTH: usize = 64;
+impl<const UNIFORM: usize> ISampleUniformScalar for MockScalar<UNIFORM> {
+    const UNIFORM_BYTES_LENGTH: usize = UNIFORM;
 
     fn sample_from_uniform_bytes(
         _params: SampleUniformScalarParams,
@@ -1605,7 +1612,7 @@ impl ISampleUniformScalar for MockScalar {
     }
 }
 
-impl IPairingArithmetic for MockIPairingAdapter {
+impl<const UNIFORM: usize> IPairingArithmetic for MockIPairingAdapter<UNIFORM> {
     type Gt = MockGt;
     type EncodedGt = MockEncodedGt;
 
@@ -1725,7 +1732,7 @@ impl IPairingArithmetic for MockIPairingAdapter {
     }
 }
 
-impl IPairingReference for MockIPairingAdapter {
+impl<const UNIFORM: usize> IPairingReference for MockIPairingAdapter<UNIFORM> {
     fn scalar_field_order(
         &self,
         _params: ScalarFieldOrderParams,
@@ -1781,7 +1788,9 @@ pub fn build_create_pairing_params(overrides: CreatePairingParamsOverrides) -> C
         PairingConcrete::Bls12381Arkworks | PairingConcrete::Bls12381Halo2curves => {
             TargetGroupEncodingIdentifier::Bls12381V1
         }
-        PairingConcrete::Mock(_) => TargetGroupEncodingIdentifier::Mock,
+        PairingConcrete::Mock(_) | PairingConcrete::MockShortUniform(_) => {
+            TargetGroupEncodingIdentifier::Mock
+        }
     });
     CreatePairingParams {
         concrete,
@@ -1854,7 +1863,7 @@ pub fn mock_create_pairing<C: IPairingConsumer>(
     _params: CreatePairingParams,
     _payload: CreatePairingPayload,
 ) -> CreatePairingReturn<C::Output> {
-    let adapter = build_mock_i_pairing_adapter(Default::default());
+    let adapter = build_mock_i_pairing_adapter::<MOCK_UNIFORM_BYTES_LENGTH>(Default::default());
     let output = deps.consumer.consume_pairing(
         ConsumePairingParams,
         build_consume_pairing_payload(adapter, Default::default()),

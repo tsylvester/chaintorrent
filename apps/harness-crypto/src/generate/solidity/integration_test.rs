@@ -11,8 +11,8 @@ use encoding::{
 use envelope::{DECLARED_KEY_AGREEMENT_SELECTIONS, IKeyAgreementAdapter};
 use hash_to_scalar::{
     CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarConcrete,
-    HashToScalarErrorReturn, HashToScalarIdentifier, IHashToScalarAdapter,
-    MockIHashToScalarAdapterFailureMode, build_create_hash_to_scalar_params,
+    HashToScalarErrorReturn, HashToScalarIdentifier, MockIHashToScalarAdapterFailureMode,
+    build_create_hash_to_scalar_params,
 };
 use hashing::{Root, RootConstructorParamsOverrides, build_root};
 use kem::{DECLARED_KEM_SELECTIONS, ICredentialKemAdapter};
@@ -27,8 +27,7 @@ use proof::{
     build_create_delivery_proof_params, build_delivery_context,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
-    build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 use std::cell::RefCell;
 
@@ -45,6 +44,7 @@ use super::group_vectors::provides::{
     build_pairing_check_vector_description, build_vector_count, group_vectors,
 };
 use super::interface::{
+    ConsumeSolidityGenerateCaseParams, ConsumeSolidityGenerateCasePayload,
     ISolidityGenerateCaseConsumer, SOLIDITY_GENERATE_DECLARATION, SolidityGenerateErrorReturn,
     SolidityGenerateSettings,
 };
@@ -69,7 +69,6 @@ use super::render::provides::{
     build_solidity_constant_name, build_solidity_library_name, build_solidity_member_name,
     build_solidity_type_name, build_spdx_license_identifier, render,
 };
-use crate::delivery::provides::AdmittedKemIdentity;
 
 /// Contract: `emit` writes each emitted kind's file in declared order, then the
 ///   constants library's file, then the records library's, under the root, the
@@ -250,15 +249,8 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -277,13 +269,13 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                     render: Some(render),
@@ -302,9 +294,9 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -576,15 +568,8 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -601,13 +586,13 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     sizes: Some(self.sizes.clone()),
                     render: Some(render),
@@ -626,9 +611,9 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -776,15 +761,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -801,13 +779,13 @@ fn every_written_line_decodes_under_its_kinds_description() {
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     render: Some(render),
                     constants: Some(constants::<P, E, F>),
@@ -825,9 +803,9 @@ fn every_written_line_decodes_under_its_kinds_description() {
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             );
@@ -867,7 +845,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
                             let mut decoded = 0usize;
                             for line in text.lines() {
                                 assert!(
-                                    decoder
+                                    payload
+                                        .decoder
                                         .decode(
                                             DecodeParams {
                                                 description: &group_operation,
@@ -884,7 +863,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
                             let mut decoded = 0usize;
                             for line in text.lines() {
                                 assert!(
-                                    decoder
+                                    payload
+                                        .decoder
                                         .decode(
                                             DecodeParams {
                                                 description: &pairing_check_description,
@@ -901,7 +881,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
                             let mut decoded = 0usize;
                             for line in text.lines() {
                                 assert!(
-                                    decoder
+                                    payload
+                                        .decoder
                                         .decode(
                                             DecodeParams {
                                                 description: &rejection,
@@ -918,7 +899,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
                             let mut decoded = 0usize;
                             for line in text.lines() {
                                 assert!(
-                                    decoder
+                                    payload
+                                        .decoder
                                         .decode(
                                             DecodeParams {
                                                 description: &hash_to_scalar_description,
@@ -935,7 +917,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
                             let mut decoded = 0usize;
                             for line in text.lines() {
                                 assert!(
-                                    decoder
+                                    payload
+                                        .decoder
                                         .decode(
                                             DecodeParams {
                                                 description: &identity_mapping,
@@ -952,7 +935,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
                             let mut decoded = 0usize;
                             for line in text.lines() {
                                 assert!(
-                                    decoder
+                                    payload
+                                        .decoder
                                         .decode(
                                             DecodeParams {
                                                 description: &possession,
@@ -969,7 +953,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
                             let mut decoded = 0usize;
                             for line in text.lines() {
                                 assert!(
-                                    decoder
+                                    payload
+                                        .decoder
                                         .decode(
                                             DecodeParams {
                                                 description: &challenge,
@@ -986,7 +971,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
                             let mut decoded = 0usize;
                             for line in text.lines() {
                                 assert!(
-                                    decoder
+                                    payload
+                                        .decoder
                                         .decode(
                                             DecodeParams {
                                                 description: &mint_proof,
@@ -1003,7 +989,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
                             let mut decoded = 0usize;
                             for line in text.lines() {
                                 assert!(
-                                    decoder
+                                    payload
+                                        .decoder
                                         .decode(
                                             DecodeParams {
                                                 description: &transfer_proof,
@@ -1216,15 +1203,8 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1243,13 +1223,13 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                     render: Some(render),
@@ -1268,9 +1248,9 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -1533,15 +1513,8 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1560,13 +1533,13 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                     render: Some(render),
@@ -1585,9 +1558,9 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -1774,15 +1747,8 @@ fn a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1799,13 +1765,13 @@ fn a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     statement_version: Some(2),
                     render: Some(render),
@@ -1824,9 +1790,9 @@ fn a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -1959,15 +1925,8 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1984,13 +1943,13 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     render: Some(render),
                     constants: Some(constants::<P, E, F>),
@@ -2008,9 +1967,9 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             );
@@ -2167,15 +2126,8 @@ fn a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing() {
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -2192,13 +2144,13 @@ fn a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing() {
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                     render: Some(render),
@@ -2217,9 +2169,9 @@ fn a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing() {
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -2362,15 +2314,8 @@ fn a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothin
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -2387,13 +2332,13 @@ fn a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothin
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                     render: Some(render),
@@ -2412,9 +2357,9 @@ fn a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothin
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -2557,15 +2502,8 @@ fn a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing(
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -2582,13 +2520,13 @@ fn a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing(
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                     render: Some(render),
@@ -2607,9 +2545,9 @@ fn a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing(
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -2758,15 +2696,8 @@ fn a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name() {
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -2783,13 +2714,13 @@ fn a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name() {
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                     render: Some(render),
@@ -2808,9 +2739,9 @@ fn a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name() {
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -2949,15 +2880,8 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -2975,13 +2899,13 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                     render: Some(render),
@@ -3000,9 +2924,9 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -3159,15 +3083,8 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
 
         fn consume_solidity_generate_case<P, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identities: Vec<AdmittedKemIdentity<'_>>,
+            _params: ConsumeSolidityGenerateCaseParams,
+            payload: ConsumeSolidityGenerateCasePayload<'_, P, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -3184,13 +3101,13 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
                 Default::default(),
             );
             let generate = build_solidity_generate(
-                pairing,
-                hash_to_scalar,
-                encoder,
-                random,
-                kem,
-                key_agreement,
-                delivery_proof,
+                payload.pairing,
+                payload.hash_to_scalar,
+                payload.encoder,
+                payload.random,
+                payload.kem,
+                payload.key_agreement,
+                payload.delivery_proof,
                 SolidityGenerateConstructorParamsOverrides {
                     settings: Some(self.settings.clone()),
                     render: Some(render),
@@ -3209,9 +3126,9 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
                 build_emit_payload(
                     &mint,
                     &transfer,
-                    &identities,
+                    &payload.identities,
                     EmitPayloadOverrides {
-                        proof_identity: Some(identities[0]),
+                        proof_identity: Some(payload.identities[0]),
                     },
                 ),
             )
@@ -3238,7 +3155,8 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
                                     | PairingConcrete::Bls12381Halo2curves => {
                                         settings.curve_directories.bls12_381.as_str()
                                     }
-                                    PairingConcrete::Mock(_) => {
+                                    PairingConcrete::Mock(_)
+                                    | PairingConcrete::MockShortUniform(_) => {
                                         settings.curve_directories.mock.as_str()
                                     }
                                 };
@@ -3251,7 +3169,10 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
                                     | PairingConcrete::Bls12381Halo2curves => {
                                         &settings.curve_libraries.bls12_381
                                     }
-                                    PairingConcrete::Mock(_) => &settings.curve_libraries.mock,
+                                    PairingConcrete::Mock(_)
+                                    | PairingConcrete::MockShortUniform(_) => {
+                                        &settings.curve_libraries.mock
+                                    }
                                 };
                                 let file_path = root
                                     .join("generated")

@@ -326,7 +326,7 @@ where
             build_create_delivery_proof_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(EvmVerifierCaseErrorReturn::CreateDeliveryProof(error)),
+            Err(error) => Err(EvmVerifierCaseErrorReturn::DeliveryProof(error)),
         }
     }
 }
@@ -369,7 +369,7 @@ where
             build_create_chain_forms_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(EvmVerifierCaseErrorReturn::CreateChainForms(error)),
+            Err(error) => Err(EvmVerifierCaseErrorReturn::ChainForms(error)),
         }
     }
 }
@@ -398,7 +398,7 @@ impl<C: IEvmVerifierCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
         ) {
             Ok(hashing) => hashing,
             Err(error) => {
-                return Err(EvmVerifierCaseErrorReturn::CreateHashToScalar(error));
+                return Err(EvmVerifierCaseErrorReturn::HashToScalar(error));
             }
         };
         let source = match create_random_source(
@@ -410,7 +410,7 @@ impl<C: IEvmVerifierCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
         ) {
             Ok(source) => source,
             Err(error) => {
-                return Err(EvmVerifierCaseErrorReturn::CreateRandomSource(error));
+                return Err(EvmVerifierCaseErrorReturn::RandomSource(error));
             }
         };
         match create_encoding(
@@ -429,7 +429,7 @@ impl<C: IEvmVerifierCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
             build_create_encoding_payload(Default::default()),
         ) {
             Ok(success) => success.output,
-            Err(error) => Err(EvmVerifierCaseErrorReturn::CreateEncoding(error)),
+            Err(error) => Err(EvmVerifierCaseErrorReturn::Encoding(error)),
         }
     }
 }
@@ -456,6 +456,6 @@ pub fn run_evm_verifier_case<C: IEvmVerifierCaseConsumer>(
         build_create_pairing_payload(Default::default()),
     ) {
         Ok(success) => success.output,
-        Err(error) => Err(EvmVerifierCaseErrorReturn::CreatePairing(error)),
+        Err(error) => Err(EvmVerifierCaseErrorReturn::Pairing(error)),
     }
 }

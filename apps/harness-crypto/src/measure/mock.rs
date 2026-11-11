@@ -45,10 +45,11 @@ use random::{
 use serde_json::{Map, Value};
 
 use super::interface::{
-    DeliveryCosts, DeliveryMeasurement, DeliveryOperationTimings, DeliverySizes,
-    IMeasureCaseConsumer, MeasureCaseDeps, MeasureCaseErrorReturn, MeasureCaseParams,
-    MeasureCasePayload, MeasureCaseReturn, MeasureCaseSuccessReturn, MeasureDeps, MeasureFn,
-    MeasureParams, MeasurePayload, MeasureReturn, MeasureSuccessReturn, RunMeasureCaseFn,
+    ConsumeMeasureCaseParams, ConsumeMeasureCasePayload, DeliveryCosts, DeliveryMeasurement,
+    DeliveryOperationTimings, DeliverySizes, IMeasureCaseConsumer, MeasureCaseDeps,
+    MeasureCaseErrorReturn, MeasureCaseParams, MeasureCasePayload, MeasureCaseReturn,
+    MeasureCaseSuccessReturn, MeasureDeps, MeasureFn, MeasureParams, MeasurePayload, MeasureReturn,
+    MeasureSuccessReturn, RunMeasureCaseFn,
 };
 use crate::delivery::provides::{AdmittedKemIdentity, build_admitted_kem_identity};
 use crate::verifier::provides::{
@@ -319,6 +320,57 @@ pub fn build_measure_case_success_return<O>(
     MeasureCaseSuccessReturn { output }
 }
 
+#[derive(Default)]
+pub struct ConsumeMeasureCaseParamsOverrides;
+
+pub fn build_consume_measure_case_params(
+    _overrides: ConsumeMeasureCaseParamsOverrides,
+) -> ConsumeMeasureCaseParams {
+    ConsumeMeasureCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeMeasureCasePayloadOverrides;
+
+pub fn build_consume_measure_case_payload<'a, P, H, E, F, K, A, D, V>(
+    pairing: &'a P,
+    hash_to_scalar: &'a H,
+    encoder: &'a E,
+    forms: &'a F,
+    kem: &'a K,
+    key_agreement: &'a A,
+    delivery_proof: &'a D,
+    verifier: &'a V,
+    random: &'a dyn IRandomSourceAdapter,
+    independent: &'a dyn IRandomSourceAdapter,
+    identity: AdmittedKemIdentity<'a>,
+    _overrides: ConsumeMeasureCasePayloadOverrides,
+) -> ConsumeMeasureCasePayload<'a, P, H, E, F, K, A, D, V>
+where
+    P: IPairingArithmetic + IPairingReference,
+    H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+    E: IEncoderAdapter + IDecoderAdapter,
+    F: IChainForms,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A: IKeyAgreementAdapter<Pairing = P>,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+    V: IVerifierAdapter<DeliveryProof = D>,
+{
+    ConsumeMeasureCasePayload {
+        pairing,
+        hash_to_scalar,
+        encoder,
+        forms,
+        kem,
+        key_agreement,
+        delivery_proof,
+        verifier,
+        random,
+        independent,
+        identity,
+    }
+}
+
 struct CaseAtVerifier<
     'a,
     P: IPairingArithmetic,
@@ -361,17 +413,21 @@ where
     ) -> Self::Output {
         Ok(MeasureCaseSuccessReturn {
             output: self.consumer.consume_measure_case(
-                self.pairing,
-                self.hash_to_scalar,
-                self.encoder,
-                self.forms,
-                self.kem,
-                self.key_agreement,
-                self.delivery_proof,
-                &payload.adapter,
-                self.random,
-                self.independent,
-                self.identity,
+                build_consume_measure_case_params(Default::default()),
+                build_consume_measure_case_payload(
+                    self.pairing,
+                    self.hash_to_scalar,
+                    self.encoder,
+                    self.forms,
+                    self.kem,
+                    self.key_agreement,
+                    self.delivery_proof,
+                    &payload.adapter,
+                    self.random,
+                    self.independent,
+                    self.identity,
+                    Default::default(),
+                ),
             ),
         })
     }

@@ -1211,6 +1211,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[ ]`   Contract: `ISignatureAdapter` with its associated types, `SignatureLayer`, `SignatureDeclaration`, `SignErrorReturn`, `SignatureConcrete`, `ISignatureConsumer`, `create_signature`, and `DECLARED_SIGNATURE_SELECTIONS`
 
 **Swarm transport, discovery, storage and seed host**
+
 * `[ ]`   `transport/rqbit` **BitTorrent transport concrete over embedded `librqbit` on the overlay branch the workspace manifest names: translates an object's Bao root to the BitTorrent info-hash locator by creating one torrent per object, serves published objects, retrieves an object by locator while Bao-verifying every completed piece after the library's SHA-1 check and before the piece counts as held, injects peers into a managed torrent, releases a served object, and exposes the library's DHT, tracker, and peer-exchange peer feeds as the engine capability; creates the `adapters/transport` crate and authors the transport family's generic interface, locator types, declaration, configuration, engine capability, and mock**
 
   * `[ ]`   `objective`

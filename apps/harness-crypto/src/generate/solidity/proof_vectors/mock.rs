@@ -45,13 +45,13 @@ use serde_json::{Map, Value};
 
 use super::super::group_vectors::provides::{VectorCount, build_vector_count};
 use super::interface::{
-    IProofVectorsCaseConsumer, MintProofVector, MintProofVectorDescription,
-    MintProofVectorDescriptionConstructorParams, ProofVectorContext, ProofVectorsCaseDeps,
-    ProofVectorsCaseErrorReturn, ProofVectorsCaseParams, ProofVectorsCasePayload,
-    ProofVectorsCaseReturn, ProofVectorsCaseSuccessReturn, ProofVectorsDeps, ProofVectorsFn,
-    ProofVectorsParams, ProofVectorsPayload, ProofVectorsReturn, ProofVectorsSuccessReturn,
-    RunProofVectorsCaseFn, TransferProofVector, TransferProofVectorDescription,
-    TransferProofVectorDescriptionConstructorParams,
+    ConsumeProofVectorsCaseParams, ConsumeProofVectorsCasePayload, IProofVectorsCaseConsumer,
+    MintProofVector, MintProofVectorDescription, MintProofVectorDescriptionConstructorParams,
+    ProofVectorContext, ProofVectorsCaseDeps, ProofVectorsCaseErrorReturn, ProofVectorsCaseParams,
+    ProofVectorsCasePayload, ProofVectorsCaseReturn, ProofVectorsCaseSuccessReturn,
+    ProofVectorsDeps, ProofVectorsFn, ProofVectorsParams, ProofVectorsPayload, ProofVectorsReturn,
+    ProofVectorsSuccessReturn, RunProofVectorsCaseFn, TransferProofVector,
+    TransferProofVectorDescription, TransferProofVectorDescriptionConstructorParams,
 };
 use crate::delivery::provides::{AdmittedKemIdentity, build_admitted_kem_identity};
 
@@ -887,6 +887,51 @@ pub fn build_proof_vectors_case_success_return<O>(
     ProofVectorsCaseSuccessReturn { output }
 }
 
+#[derive(Default)]
+pub struct ConsumeProofVectorsCaseParamsOverrides;
+
+pub fn build_consume_proof_vectors_case_params(
+    _overrides: ConsumeProofVectorsCaseParamsOverrides,
+) -> ConsumeProofVectorsCaseParams {
+    ConsumeProofVectorsCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeProofVectorsCasePayloadOverrides;
+
+pub fn build_consume_proof_vectors_case_payload<'a, P, H, E, K, A, D>(
+    pairing: &'a P,
+    hash_to_scalar: &'a H,
+    encoder: &'a E,
+    decoder: &'a E,
+    kem: &'a K,
+    key_agreement: &'a A,
+    delivery_proof: &'a D,
+    random: &'a dyn IRandomSourceAdapter,
+    identity: AdmittedKemIdentity<'a>,
+    _overrides: ConsumeProofVectorsCasePayloadOverrides,
+) -> ConsumeProofVectorsCasePayload<'a, P, H, E, K, A, D>
+where
+    P: IPairingArithmetic + IPairingReference,
+    H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+    E: IEncoderAdapter + IDecoderAdapter,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A: IKeyAgreementAdapter<Pairing = P>,
+    D: IDeliveryProofAdapter<Pairing = P>,
+{
+    ConsumeProofVectorsCasePayload {
+        pairing,
+        hash_to_scalar,
+        encoder,
+        decoder,
+        kem,
+        key_agreement,
+        delivery_proof,
+        random,
+        identity,
+    }
+}
+
 struct CaseAtDeliveryProof<
     'a,
     P: IPairingArithmetic,
@@ -926,15 +971,19 @@ where
     ) -> Self::Output {
         Ok(ProofVectorsCaseSuccessReturn {
             output: self.consumer.consume_proof_vectors_case(
-                self.pairing,
-                self.hashing,
-                self.encoder,
-                self.encoder,
-                self.kem,
-                self.key_agreement,
-                &payload.adapter,
-                self.source,
-                self.identity,
+                build_consume_proof_vectors_case_params(Default::default()),
+                build_consume_proof_vectors_case_payload(
+                    self.pairing,
+                    self.hashing,
+                    self.encoder,
+                    self.encoder,
+                    self.kem,
+                    self.key_agreement,
+                    &payload.adapter,
+                    self.source,
+                    self.identity,
+                    Default::default(),
+                ),
             ),
         })
     }

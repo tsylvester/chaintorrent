@@ -69,7 +69,12 @@ fn real_pairing_concretes() -> Vec<PairingConcrete> {
     PAIRING_CONCRETES
         .iter()
         .copied()
-        .filter(|concrete| !matches!(concrete, PairingConcrete::Mock(_)))
+        .filter(|concrete| {
+            !matches!(
+                concrete,
+                PairingConcrete::Mock(_) | PairingConcrete::MockShortUniform(_)
+            )
+        })
         .collect()
 }
 
@@ -84,7 +89,9 @@ fn admitted_pairing_of(concrete: PairingConcrete) -> AdmittedPairing {
             PairingConcrete::Bls12381Arkworks | PairingConcrete::Bls12381Halo2curves => {
                 TargetGroupEncodingIdentifier::Bls12381V1
             }
-            PairingConcrete::Mock(_) => TargetGroupEncodingIdentifier::Mock,
+            PairingConcrete::Mock(_) | PairingConcrete::MockShortUniform(_) => {
+                TargetGroupEncodingIdentifier::Mock
+            }
         }),
     })
 }

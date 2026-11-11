@@ -27,7 +27,10 @@ use interface::{
 #[cfg(any(test, feature = "mocks"))]
 use {
     interface::IPairingAdapter,
-    mock::{MockIPairingAdapter, MockIPairingAdapterConstructorParams},
+    mock::{
+        MOCK_SHORT_UNIFORM_BYTES_LENGTH, MOCK_UNIFORM_BYTES_LENGTH, MockIPairingAdapter,
+        MockIPairingAdapterConstructorParams,
+    },
 };
 
 pub fn create_pairing<C: IPairingConsumer>(
@@ -117,19 +120,42 @@ pub fn create_pairing<C: IPairingConsumer>(
         }
         #[cfg(any(test, feature = "mocks"))]
         PairingConcrete::Mock(failure_mode) => {
-            if !params
-                .supported_encodings
-                .contains(&MockIPairingAdapter::DECLARATION.precompile_encoding)
-            {
+            if !params.supported_encodings.contains(
+                &MockIPairingAdapter::<MOCK_UNIFORM_BYTES_LENGTH>::DECLARATION.precompile_encoding,
+            ) {
                 return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
             }
-            if MockIPairingAdapter::DECLARATION.target_group_encoding
+            if MockIPairingAdapter::<MOCK_UNIFORM_BYTES_LENGTH>::DECLARATION.target_group_encoding
                 != params.target_group_encoding
             {
                 return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
             }
-            let Ok(adapter) =
-                MockIPairingAdapter::try_new(MockIPairingAdapterConstructorParams { failure_mode });
+            let Ok(adapter) = MockIPairingAdapter::<MOCK_UNIFORM_BYTES_LENGTH>::try_new(
+                MockIPairingAdapterConstructorParams { failure_mode },
+            );
+            Ok(CreatePairingSuccessReturn {
+                output: deps
+                    .consumer
+                    .consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter }),
+            })
+        }
+        #[cfg(any(test, feature = "mocks"))]
+        PairingConcrete::MockShortUniform(failure_mode) => {
+            if !params.supported_encodings.contains(
+                &MockIPairingAdapter::<MOCK_SHORT_UNIFORM_BYTES_LENGTH>::DECLARATION
+                    .precompile_encoding,
+            ) {
+                return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
+            }
+            if MockIPairingAdapter::<MOCK_SHORT_UNIFORM_BYTES_LENGTH>::DECLARATION
+                .target_group_encoding
+                != params.target_group_encoding
+            {
+                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
+            }
+            let Ok(adapter) = MockIPairingAdapter::<MOCK_SHORT_UNIFORM_BYTES_LENGTH>::try_new(
+                MockIPairingAdapterConstructorParams { failure_mode },
+            );
             Ok(CreatePairingSuccessReturn {
                 output: deps
                     .consumer

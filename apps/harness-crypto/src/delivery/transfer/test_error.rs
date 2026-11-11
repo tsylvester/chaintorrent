@@ -24,8 +24,8 @@ use proof::{
     build_delivery_context,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, FillBytesErrorReturn,
-    MockIRandomSourceAdapterFailureMode, RandomSourceKind, build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, FillBytesErrorReturn, MockIRandomSourceAdapterFailureMode,
+    RandomSourceKind, build_create_random_source_params,
 };
 
 use super::interface::{
@@ -39,8 +39,8 @@ use super::mock::{
 };
 use super::transfer;
 use crate::delivery::mint::provides::{
-    MintPayloadOverrides, build_delivery_holder, build_mint_deps,
-    build_mint_params, build_mint_payload, mock_mint,
+    MintPayloadOverrides, build_delivery_holder, build_mint_deps, build_mint_params,
+    build_mint_payload, mock_mint,
 };
 
 /// Contract: Draw, `fill_bytes` refuses → `Err(TransferErrorReturn::

@@ -162,12 +162,12 @@ pub struct EvmVerifierCaseSuccessReturn<O> {
 #[cfg(any(test, feature = "mocks"))]
 #[derive(Debug, PartialEq, Eq)]
 pub enum EvmVerifierCaseErrorReturn {
-    CreatePairing(CreatePairingErrorReturn),
-    CreateHashToScalar(CreateHashToScalarErrorReturn),
-    CreateEncoding(CreateEncodingErrorReturn),
-    CreateChainForms(CreateChainFormsErrorReturn),
-    CreateDeliveryProof(CreateDeliveryProofErrorReturn),
-    CreateRandomSource(CreateRandomSourceErrorReturn),
+    Pairing(CreatePairingErrorReturn),
+    HashToScalar(CreateHashToScalarErrorReturn),
+    Encoding(CreateEncodingErrorReturn),
+    ChainForms(CreateChainFormsErrorReturn),
+    DeliveryProof(CreateDeliveryProofErrorReturn),
+    RandomSource(CreateRandomSourceErrorReturn),
 }
 
 #[cfg(any(test, feature = "mocks"))]

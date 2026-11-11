@@ -264,15 +264,8 @@ pub trait IProofVectorsCaseConsumer {
 
     fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
         &self,
-        pairing: &P,
-        hash_to_scalar: &H,
-        encoder: &E,
-        decoder: &E,
-        kem: &K,
-        key_agreement: &A,
-        delivery_proof: &D,
-        random: &dyn IRandomSourceAdapter,
-        identity: AdmittedKemIdentity<'_>,
+        params: ConsumeProofVectorsCaseParams,
+        payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
     ) -> Self::Output
     where
         P: IPairingArithmetic + IPairingReference,
@@ -282,6 +275,30 @@ pub trait IProofVectorsCaseConsumer {
         K: ICredentialKemAdapter<Pairing = P>,
         A: IKeyAgreementAdapter<Pairing = P>,
         D: IDeliveryProofAdapter<Pairing = P, Forms = F>;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeProofVectorsCaseParams;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeProofVectorsCasePayload<'a, P, H, E, K, A, D>
+where
+    P: IPairingArithmetic + IPairingReference,
+    H: ?Sized + IHashToScalarAdapter<P::Scalar>,
+    E: IEncoderAdapter + IDecoderAdapter,
+    K: ICredentialKemAdapter<Pairing = P>,
+    A: IKeyAgreementAdapter<Pairing = P>,
+    D: IDeliveryProofAdapter<Pairing = P>,
+{
+    pub pairing: &'a P,
+    pub hash_to_scalar: &'a H,
+    pub encoder: &'a E,
+    pub decoder: &'a E,
+    pub kem: &'a K,
+    pub key_agreement: &'a A,
+    pub delivery_proof: &'a D,
+    pub random: &'a dyn IRandomSourceAdapter,
+    pub identity: AdmittedKemIdentity<'a>,
 }
 
 #[cfg(any(test, feature = "mocks"))]

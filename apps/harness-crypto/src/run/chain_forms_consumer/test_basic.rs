@@ -21,7 +21,9 @@ use proof::{
 };
 
 use super::admit_statement_contexts;
-use super::interface::{ChainFormsConsumer, ChainFormsConsumerReturn};
+use super::interface::{
+    AdmitStatementContextsSuccessReturn, ChainFormsConsumer, ChainFormsConsumerReturn,
+};
 use super::mock::{ChainFormsConsumerConstructorParamsOverrides, build_chain_forms_consumer};
 use crate::config::provides::{
     AdmittedKem, AdmittedKeyAgreement, AdmittedStatements, AdmittedStatementsOverrides,
@@ -337,7 +339,7 @@ fn admit_statement_contexts_admits_the_mint_and_the_transfer_context_each_with_i
             _params: ConsumeChainFormsParams,
             _payload: ConsumeChainFormsPayload<F>,
         ) -> Self::Output {
-            let (mint, transfer) =
+            let AdmitStatementContextsSuccessReturn { mint, transfer } =
                 admit_statement_contexts::<F>(self.statements).expect("the contexts admit");
             assert_eq!(mint.expiry, 11);
             assert_eq!(mint.purpose.code(), 4);

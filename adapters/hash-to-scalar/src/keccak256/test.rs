@@ -10,9 +10,10 @@ use crate::factory::provides::{
     build_hash_to_scalar_params, build_hash_to_scalar_payload,
 };
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingPayload, IPairingArithmetic,
-    IPairingConsumer, IPairingReference, build_create_pairing_deps, build_create_pairing_params,
-    create_pairing,
+    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
+    CreatePairingPayload, IPairingArithmetic, IPairingConsumer, IPairingReference,
+    MockIPairingAdapterFailureMode, PairingConcrete, build_create_pairing_deps,
+    build_create_pairing_params, create_pairing,
 };
 
 /// Contract: `try_new` over fieldless params yields `Ok(Keccak256HashToScalar)`.
@@ -114,18 +115,20 @@ fn declaration_reports_the_constant() {
 ///   params from `build_hash_to_scalar_params(Default::default())` and payload
 ///   from `build_hash_to_scalar_payload(Default::default())`, calls
 ///   `IHashToScalarAdapter::<P::Scalar>::hash_to_scalar(&adapter, params, payload)`,
-///   and asserts on the result in place; the received scalar is the pairing mock
-///   concrete's, whose sampling input is 16 bytes, fewer than the 32 digest bytes.
-/// Act:     `create_pairing` runs the consumer, whose single call is `hash_to_scalar`.
+///   and asserts on the result in place; the received scalar is the pairing family's
+///   short-uniform mock concrete's, whose sampling input is 16 bytes, fewer than
+///   the 32 digest bytes.
+/// Act:     `create_pairing` runs the consumer, whose single call is `hash_to_scalar`,
+///   over params whose `concrete` names `PairingConcrete::MockShortUniform`.
 /// Assert:  in the consumer, `assert_eq!(result.err(),
 ///   Some(HashToScalarErrorReturn::Keccak256(
 ///   Keccak256HashToScalarErrorReturn::UniformLengthBelowDigest
-///   { uniform_length: 16, digest_length: 32 })))`, the 16 being the pairing mock
-///   concrete's sampling length and the 32 the Keccak-256 digest width; and outside
-///   it, `assert!(created.is_ok())`, proving the consumer ran.
-/// Collaborators: the pairing family's mock concrete through `create_pairing`,
-///   supplying the received scalar; `sha3` is not reached, the length check
-///   preceding the hasher.
+///   { uniform_length: 16, digest_length: 32 })))`, the 16 being the short-uniform
+///   mock concrete's sampling length and the 32 the Keccak-256 digest width; and
+///   outside it, `assert!(created.is_ok())`, proving the consumer ran.
+/// Collaborators: the pairing family's short-uniform mock concrete through
+///   `create_pairing`, supplying the received scalar; `sha3` is not reached, the
+///   length check preceding the hasher.
 #[test]
 fn hash_to_scalar_refuses_a_sampling_input_shorter_than_the_digest() {
     // Arrange
@@ -159,7 +162,12 @@ fn hash_to_scalar_refuses_a_sampling_input_shorter_than_the_digest() {
     // Act
     let created = create_pairing(
         &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
+        build_create_pairing_params(CreatePairingParamsOverrides {
+            concrete: Some(PairingConcrete::MockShortUniform(
+                MockIPairingAdapterFailureMode::Succeeds,
+            )),
+            ..Default::default()
+        }),
         CreatePairingPayload,
     );
 

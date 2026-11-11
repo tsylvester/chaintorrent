@@ -52,16 +52,17 @@ use proof::{
     build_create_delivery_proof_params, build_delivery_context,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, FillBytesErrorReturn, IRandomSourceAdapter,
-    MockIRandomSourceAdapterFailureMode, RandomSourceKind, build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, FillBytesErrorReturn, MockIRandomSourceAdapterFailureMode,
+    RandomSourceKind, build_create_random_source_params,
 };
 
 use super::super::group_vectors::provides::{
     VectorCountConstructorParamsOverrides, build_vector_count,
 };
 use super::interface::{
-    IProofVectorsCaseConsumer, MintProofVector, ProofVectorsCaseParams, ProofVectorsCasePayload,
-    ProofVectorsErrorReturn, TransferProofVector,
+    ConsumeProofVectorsCaseParams, ConsumeProofVectorsCasePayload, IProofVectorsCaseConsumer,
+    MintProofVector, ProofVectorsCaseParams, ProofVectorsCasePayload, ProofVectorsErrorReturn,
+    TransferProofVector,
 };
 use super::mock::{
     ProofVectorContextOverrides, ProofVectorsCaseParamsOverrides, ProofVectorsParamsOverrides,
@@ -71,7 +72,7 @@ use super::mock::{
     build_proof_vectors_payload, build_transfer_proof_vector_description, run_proof_vectors_case,
 };
 use super::proof_vectors;
-use crate::delivery::provides::{AdmittedKemIdentity, MintErrorReturn};
+use crate::delivery::provides::MintErrorReturn;
 
 struct DeliverySelections<'a> {
     kem: &'a CreateKemParams,
@@ -194,15 +195,8 @@ fn every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -213,6 +207,12 @@ fn every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let g1 = |bytes: &[u8]| {
                 pairing
@@ -383,8 +383,8 @@ fn every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies() {
             let success = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),
@@ -448,15 +448,8 @@ fn every_transfer_record_is_a_statement_and_proof_the_delivery_proof_verifies() 
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -467,6 +460,12 @@ fn every_transfer_record_is_a_statement_and_proof_the_delivery_proof_verifies() 
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let g1 = |bytes: &[u8]| {
                 pairing
@@ -647,8 +646,8 @@ fn every_transfer_record_is_a_statement_and_proof_the_delivery_proof_verifies() 
             let success = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),
@@ -710,15 +709,8 @@ fn an_asset_identity_is_proved_under_the_asset_scope() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -729,6 +721,12 @@ fn an_asset_identity_is_proved_under_the_asset_scope() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let g1 = |bytes: &[u8]| {
                 pairing
@@ -1035,8 +1033,8 @@ fn an_asset_identity_is_proved_under_the_asset_scope() {
             let result = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),
@@ -1118,15 +1116,8 @@ fn every_record_draw_replays_to_the_statement_elements_it_produced() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1137,6 +1128,12 @@ fn every_record_draw_replays_to_the_statement_elements_it_produced() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let uniform = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
             let draw =
@@ -1357,15 +1354,8 @@ fn every_record_carries_second_group_first_messages_exactly_in_the_first_group_o
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1376,6 +1366,12 @@ fn every_record_carries_second_group_first_messages_exactly_in_the_first_group_o
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let g1 = |bytes: &[u8]| {
                 pairing
@@ -1700,8 +1696,8 @@ fn every_record_carries_second_group_first_messages_exactly_in_the_first_group_o
             let success = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),
@@ -1793,15 +1789,8 @@ fn every_record_encodes_its_elements_in_the_selected_pairings_encodings() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1812,6 +1801,12 @@ fn every_record_encodes_its_elements_in_the_selected_pairings_encodings() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let g1_length = pairing
                 .encode_g1(
@@ -1852,8 +1847,8 @@ fn every_record_encodes_its_elements_in_the_selected_pairings_encodings() {
             let success = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),
@@ -1979,15 +1974,8 @@ fn every_record_context_holds_the_fields_of_its_typed_context() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -1998,6 +1986,12 @@ fn every_record_context_holds_the_fields_of_its_typed_context() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let form = |kind, seed| form_value(kind, seed);
             let mint_context = build_delivery_context::<F, MintPurpose>(
@@ -2173,8 +2167,8 @@ fn every_record_context_holds_the_fields_of_its_typed_context() {
             let success = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),
@@ -2273,15 +2267,8 @@ fn every_run_emits_the_configured_count_of_records_with_distinct_draws() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -2292,6 +2279,12 @@ fn every_run_emits_the_configured_count_of_records_with_distinct_draws() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let uniform = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
             let mint_context =
@@ -2305,8 +2298,8 @@ fn every_run_emits_the_configured_count_of_records_with_distinct_draws() {
             let success = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),
@@ -2386,15 +2379,8 @@ fn a_mint_record_survives_its_description_round_trip() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            encoder: &E,
-            decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -2405,6 +2391,14 @@ fn a_mint_record_survives_its_description_round_trip() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let encoder = payload.encoder;
+            let decoder = payload.decoder;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let description = build_mint_proof_vector_description::<F>(Default::default());
             let mint_context =
@@ -2418,8 +2412,8 @@ fn a_mint_record_survives_its_description_round_trip() {
             let success = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),
@@ -2487,15 +2481,8 @@ fn a_transfer_record_survives_its_description_round_trip() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            encoder: &E,
-            decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -2506,6 +2493,14 @@ fn a_transfer_record_survives_its_description_round_trip() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let encoder = payload.encoder;
+            let decoder = payload.decoder;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let description = build_transfer_proof_vector_description::<F>(Default::default());
             let mint_context =
@@ -2519,8 +2514,8 @@ fn a_transfer_record_survives_its_description_round_trip() {
             let success = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),
@@ -2594,15 +2589,8 @@ fn a_refused_mint_draw_reaches_the_caller_through_the_mint_variant() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -2613,6 +2601,12 @@ fn a_refused_mint_draw_reaches_the_caller_through_the_mint_variant() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -2625,8 +2619,8 @@ fn a_refused_mint_draw_reaches_the_caller_through_the_mint_variant() {
             let result = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),
@@ -2694,15 +2688,8 @@ fn each_record_kind_declares_one_name_per_field_it_emits() {
 
         fn consume_proof_vectors_case<P, H, E, F, K, A, D>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _decoder: &E,
-            _kem: &K,
-            _key_agreement: &A,
-            delivery_proof: &D,
-            random: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeProofVectorsCaseParams,
+            payload: ConsumeProofVectorsCasePayload<'_, P, H, E, K, A, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -2713,6 +2700,12 @@ fn each_record_kind_declares_one_name_per_field_it_emits() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_description = build_mint_proof_vector_description::<F>(Default::default());
             let transfer_description =
@@ -2728,8 +2721,8 @@ fn each_record_kind_declares_one_name_per_field_it_emits() {
             let success = proof_vectors::<P, K, A, D>(
                 &build_proof_vectors_deps(
                     pairing,
-                    _kem,
-                    _key_agreement,
+                    kem,
+                    key_agreement,
                     delivery_proof,
                     random,
                     Default::default(),

@@ -553,6 +553,8 @@ pub enum PairingConcrete {
     Bls12381Halo2curves,
     #[cfg(any(test, feature = "mocks"))]
     Mock(MockIPairingAdapterFailureMode),
+    #[cfg(any(test, feature = "mocks"))]
+    MockShortUniform(MockIPairingAdapterFailureMode),
 }
 
 #[cfg(any(test, feature = "mocks"))]
@@ -679,6 +681,8 @@ pub enum CreatePairingErrorReturn {
     Bls12381Halo2curves(Infallible),
     #[cfg(any(test, feature = "mocks"))]
     MockIPairingAdapter(Infallible),
+    #[cfg(any(test, feature = "mocks"))]
+    MockShortUniformIPairingAdapter(Infallible),
 }
 
 pub type CreatePairingReturn<O> = Result<CreatePairingSuccessReturn<O>, CreatePairingErrorReturn>;

@@ -22,8 +22,7 @@ use proof::{
     build_create_delivery_proof_params, build_delivery_context,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
-    build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 use serde_json::{Value, json};
 use std::env::temp_dir;
@@ -35,12 +34,12 @@ use super::mock::{
     build_report_payload,
 };
 use super::report;
-use crate::delivery::provides::AdmittedKemIdentity;
 use crate::measure::provides::{
-    DeliveryMeasurement, IMeasureCaseConsumer, MeasureCaseParamsOverrides, MeasureErrorReturn,
-    MeasureParamsOverrides, MeasurePayloadOverrides, build_measure_case_deps,
-    build_measure_case_params, build_measure_case_payload, build_measure_deps,
-    build_measure_params, build_measure_payload, measure, run_measure_case,
+    ConsumeMeasureCaseParams, ConsumeMeasureCasePayload, DeliveryMeasurement, IMeasureCaseConsumer,
+    MeasureCaseParamsOverrides, MeasureErrorReturn, MeasureParamsOverrides,
+    MeasurePayloadOverrides, build_measure_case_deps, build_measure_case_params,
+    build_measure_case_payload, build_measure_deps, build_measure_params, build_measure_payload,
+    measure, run_measure_case,
 };
 use crate::verifier::provides::{IVerifierAdapter, L1DataFee};
 
@@ -89,17 +88,8 @@ fn the_document_records_every_value_a_measurement_holds() {
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -111,6 +101,13 @@ fn the_document_records_every_value_a_measurement_holds() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let verifier = payload.verifier;
+            let random = payload.random;
+            let identity = payload.identity;
             // Arrange
             let mint_context =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());

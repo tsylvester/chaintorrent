@@ -13,7 +13,7 @@ use chain::{ConsumeChainFormsParams, ConsumeChainFormsPayload, IChainForms, ICha
 use encoding::IEncoderAdapter;
 use kem::{CreateKemDeps, CreateKemParams, CreateKemPayload, create_kem};
 use pairing::{IPairingArithmetic, IPairingReference};
-use proof::{DeliveryContext, MintPurpose, TransferPurpose};
+use proof::{MintPurpose, TransferPurpose};
 
 use crate::config::provides::AdmittedStatements;
 use crate::run::provides::{
@@ -21,19 +21,14 @@ use crate::run::provides::{
     KemConsumerConstructorParams, admit_contexts,
 };
 use interface::{
-    ChainFormsConsumer, ChainFormsConsumerConstructorParams, ChainFormsConsumerErrorReturn,
-    ChainFormsConsumerReturn, ChainFormsConsumerTryNewReturn,
+    AdmitStatementContextsReturn, AdmitStatementContextsSuccessReturn, ChainFormsConsumer,
+    ChainFormsConsumerConstructorParams, ChainFormsConsumerErrorReturn, ChainFormsConsumerReturn,
+    ChainFormsConsumerTryNewReturn,
 };
 
 pub(super) fn admit_statement_contexts<F: IChainForms>(
     statements: &AdmittedStatements,
-) -> Result<
-    (
-        DeliveryContext<F, MintPurpose>,
-        DeliveryContext<F, TransferPurpose>,
-    ),
-    ChainFormsConsumerErrorReturn,
-> {
+) -> AdmitStatementContextsReturn<F> {
     let mint = match admit_contexts::<F, MintPurpose>(
         &AdmitContextsDeps,
         AdmitContextsParams,
@@ -56,7 +51,7 @@ pub(super) fn admit_statement_contexts<F: IChainForms>(
         Err(error) => return Err(ChainFormsConsumerErrorReturn::AdmitTransfer(error)),
         Ok(success) => success.context,
     };
-    Ok((mint, transfer))
+    Ok(AdmitStatementContextsSuccessReturn { mint, transfer })
 }
 
 impl<'a, P, E> ChainFormsConsumer<'a, P, E>
@@ -98,7 +93,8 @@ where
         _params: ConsumeChainFormsParams,
         _payload: ConsumeChainFormsPayload<F>,
     ) -> Self::Output {
-        let (mint, transfer) = admit_statement_contexts::<F>(self.statements)?;
+        let AdmitStatementContextsSuccessReturn { mint, transfer } =
+            admit_statement_contexts::<F>(self.statements)?;
         let Ok(consumer) = KemConsumer::try_new(KemConsumerConstructorParams {
             pairing: self.pairing,
             hash_to_scalar: self.hash_to_scalar,

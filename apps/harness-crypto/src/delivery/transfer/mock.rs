@@ -57,11 +57,11 @@ use crate::delivery::mint::provides::{
 };
 
 use super::interface::{
-    ConsumeTransferCaseParams, ConsumeTransferCasePayload, ITransferCaseConsumer, RunTransferCaseFn,
-    TransferCaseDeps, TransferCaseErrorReturn,
-    TransferCaseParams, TransferCasePayload, TransferCaseReturn, TransferCaseSuccessReturn,
-    TransferDelivery, TransferDeps, TransferErrorReturn, TransferFn, TransferParams,
-    TransferPayload, TransferReturn, TransferSuccessReturn, TransferWitnesses,
+    ConsumeTransferCaseParams, ConsumeTransferCasePayload, ITransferCaseConsumer,
+    RunTransferCaseFn, TransferCaseDeps, TransferCaseErrorReturn, TransferCaseParams,
+    TransferCasePayload, TransferCaseReturn, TransferCaseSuccessReturn, TransferDelivery,
+    TransferDeps, TransferErrorReturn, TransferFn, TransferParams, TransferPayload, TransferReturn,
+    TransferSuccessReturn, TransferWitnesses,
 };
 
 #[derive(Default)]

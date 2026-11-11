@@ -32,20 +32,20 @@ use proof::{
     build_delivery_context,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, FillBytesErrorReturn, IRandomSourceAdapter,
-    MockIRandomSourceAdapterFailureMode, RandomSourceKind, build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, FillBytesErrorReturn, MockIRandomSourceAdapterFailureMode,
+    RandomSourceKind, build_create_random_source_params,
 };
 
 use harness_crypto::{
-    AdmittedKemIdentity, CreateVerifierParams, CreateVerifierParamsOverrides, CreateVerifierReturn,
-    CreateVerifierSuccessReturn, IMeasureCaseConsumer, IVerifierAdapter, L1DataFee,
-    MeasureCaseParamsOverrides, MeasureErrorReturn, MintErrorReturn,
-    MockIVerifierAdapterFailureMode, MockIVerifierAdapterVerifyOnChainErrorReturn,
-    VerifierConcrete, VerifierConsumer, VerifierConsumerConstructorParamsOverrides,
-    VerifierConsumerReturn, VerifyCost, VerifyOnChainErrorReturn, build_create_verifier_deps,
-    build_create_verifier_params, build_create_verifier_payload, build_measure_case_deps,
-    build_measure_case_params, build_measure_case_payload, build_verifier_consumer,
-    create_verifier, run_measure_case,
+    ConsumeMeasureCaseParams, ConsumeMeasureCasePayload, CreateVerifierParams,
+    CreateVerifierParamsOverrides, CreateVerifierReturn, CreateVerifierSuccessReturn,
+    IMeasureCaseConsumer, IVerifierAdapter, L1DataFee, MeasureCaseParamsOverrides,
+    MeasureErrorReturn, MintErrorReturn, MockIVerifierAdapterFailureMode,
+    MockIVerifierAdapterVerifyOnChainErrorReturn, VerifierConcrete, VerifierConsumer,
+    VerifierConsumerConstructorParamsOverrides, VerifierConsumerReturn, VerifyCost,
+    VerifyOnChainErrorReturn, build_create_verifier_deps, build_create_verifier_params,
+    build_create_verifier_payload, build_measure_case_deps, build_measure_case_params,
+    build_measure_case_payload, build_verifier_consumer, create_verifier, run_measure_case,
 };
 
 /// Contract: own entry
@@ -85,17 +85,8 @@ fn the_iteration_count_the_consumer_carries_is_the_count_the_measurement_reports
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            _verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -107,6 +98,12 @@ fn the_iteration_count_the_consumer_carries_is_the_count_the_measurement_reports
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             let consumer: VerifierConsumer<'_, P, K, A, D> = build_verifier_consumer(
                 pairing,
                 kem,
@@ -208,17 +205,8 @@ fn the_measurement_measure_returns_reaches_the_caller_of_create_verifier_whole()
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            _verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -230,6 +218,12 @@ fn the_measurement_measure_returns_reaches_the_caller_of_create_verifier_whole()
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             let consumer: VerifierConsumer<'_, P, K, A, D> = build_verifier_consumer(
                 pairing,
                 kem,
@@ -389,17 +383,8 @@ fn a_refused_draw_reaches_the_caller_of_create_verifier_whole_through_the_consum
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            _verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -411,6 +396,12 @@ fn a_refused_draw_reaches_the_caller_of_create_verifier_whole_through_the_consum
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             let consumer: VerifierConsumer<'_, P, K, A, D> = build_verifier_consumer(
                 pairing,
                 kem,
@@ -536,17 +527,8 @@ fn a_refused_chain_read_reaches_the_caller_of_create_verifier_whole_with_the_rel
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            _verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -558,6 +540,12 @@ fn a_refused_chain_read_reaches_the_caller_of_create_verifier_whole_with_the_rel
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             let consumer: VerifierConsumer<'_, P, K, A, D> = build_verifier_consumer(
                 pairing,
                 kem,
@@ -695,17 +683,8 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            _verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -717,6 +696,12 @@ fn a_hash_to_scalar_refusal_reaches_the_caller_whole() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             let consumer: VerifierConsumer<'_, P, K, A, D> = build_verifier_consumer(
                 pairing,
                 kem,
@@ -857,17 +842,8 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
 
         fn consume_measure_case<P, H, E, F, K, A, D, V>(
             &self,
-            pairing: &P,
-            _hash_to_scalar: &H,
-            _encoder: &E,
-            _forms: &F,
-            kem: &K,
-            key_agreement: &A,
-            delivery_proof: &D,
-            _verifier: &V,
-            random: &dyn IRandomSourceAdapter,
-            _independent: &dyn IRandomSourceAdapter,
-            identity: AdmittedKemIdentity<'_>,
+            _params: ConsumeMeasureCaseParams,
+            payload: ConsumeMeasureCasePayload<'_, P, H, E, F, K, A, D, V>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
@@ -879,6 +855,12 @@ fn a_nonce_draw_refusal_reaches_the_caller_whole() {
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
             V: IVerifierAdapter<DeliveryProof = D>,
         {
+            let pairing = payload.pairing;
+            let kem = payload.kem;
+            let key_agreement = payload.key_agreement;
+            let delivery_proof = payload.delivery_proof;
+            let random = payload.random;
+            let identity = payload.identity;
             let consumer: VerifierConsumer<'_, P, K, A, D> = build_verifier_consumer(
                 pairing,
                 kem,

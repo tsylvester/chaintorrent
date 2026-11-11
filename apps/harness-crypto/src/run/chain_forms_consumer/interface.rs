@@ -1,10 +1,11 @@
+use chain::IChainForms;
 use core::convert::Infallible;
 use core::num::NonZeroU32;
 use encoding::IEncoderAdapter;
 use hash_to_scalar::IHashToScalarAdapter;
 use kem::CreateKemErrorReturn;
 use pairing::{IPairingArithmetic, IPairingReference};
-use proof::DeliveryProofConcrete;
+use proof::{DeliveryContext, DeliveryProofConcrete, MintPurpose, TransferPurpose};
 use random::IRandomSourceAdapter;
 
 use crate::config::provides::{
@@ -67,3 +68,11 @@ pub enum ChainFormsConsumerErrorReturn {
 
 pub type ChainFormsConsumerReturn =
     Result<DeliveryProofConsumerSuccessReturn, ChainFormsConsumerErrorReturn>;
+
+pub struct AdmitStatementContextsSuccessReturn<F: IChainForms> {
+    pub mint: DeliveryContext<F, MintPurpose>,
+    pub transfer: DeliveryContext<F, TransferPurpose>,
+}
+
+pub type AdmitStatementContextsReturn<F> =
+    Result<AdmitStatementContextsSuccessReturn<F>, ChainFormsConsumerErrorReturn>;
