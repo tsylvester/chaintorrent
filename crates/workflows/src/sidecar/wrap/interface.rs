@@ -1,0 +1,125 @@
+use crate::sidecar::derivation_context::provides::DerivationContext;
+use domain::Secret;
+#[cfg(any(test, feature = "mocks"))]
+use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter};
+use encoding::{EncodeErrorReturn, IEncoderAdapter};
+#[cfg(any(test, feature = "mocks"))]
+use kdf::{CreateKeyDerivationErrorReturn, CreateKeyDerivationParams};
+use kdf::{DeriveKeyErrorReturn, IKeyDerivationAdapter};
+use kem::EncapsulatedValue;
+
+pub const PIECE_GROUP_KEY_LENGTH: usize = 32;
+
+pub struct PieceGroupKey {
+    pub(super) key: Secret<[u8; PIECE_GROUP_KEY_LENGTH]>,
+}
+
+pub struct PieceGroupKeyConstructorParams {
+    pub secret: Secret<Vec<u8>>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum PieceGroupKeyErrorReturn {
+    WrongLength { expected: usize, actual: usize },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WrappedPieceGroupKey {
+    pub(super) bytes: [u8; PIECE_GROUP_KEY_LENGTH],
+}
+
+pub struct WrappedPieceGroupKeyConstructorParams {
+    pub bytes: Vec<u8>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum WrappedPieceGroupKeyErrorReturn {
+    WrongLength { expected: usize, actual: usize },
+}
+
+pub struct WrapPieceGroupKeyDeps<'a, E: IEncoderAdapter> {
+    pub kdf: &'a dyn IKeyDerivationAdapter,
+    pub encoder: &'a E,
+}
+
+pub struct WrapPieceGroupKeyParams;
+
+pub struct WrapPieceGroupKeyPayload<'a> {
+    pub encapsulated: &'a EncapsulatedValue,
+    pub context: &'a DerivationContext,
+    pub piece_group_key: &'a PieceGroupKey,
+}
+
+pub struct WrapPieceGroupKeySuccessReturn {
+    pub wrapped: WrappedPieceGroupKey,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum WrapPieceGroupKeyErrorReturn {
+    Encoding(EncodeErrorReturn),
+    KeyDerivation(DeriveKeyErrorReturn),
+    WrappingKeyLength { expected: usize, actual: usize },
+    WrappedKey(WrappedPieceGroupKeyErrorReturn),
+}
+
+pub type WrapPieceGroupKeyReturn =
+    Result<WrapPieceGroupKeySuccessReturn, WrapPieceGroupKeyErrorReturn>;
+
+pub type WrapPieceGroupKeyFn<E> = fn(
+    &WrapPieceGroupKeyDeps<'_, E>,
+    WrapPieceGroupKeyParams,
+    WrapPieceGroupKeyPayload<'_>,
+) -> WrapPieceGroupKeyReturn;
+
+#[cfg(any(test, feature = "mocks"))]
+pub trait IWrapPieceGroupKeyCaseConsumer {
+    type Output;
+
+    fn consume_wrap_piece_group_key_case<E: IEncoderAdapter + IDecoderAdapter>(
+        &self,
+        encoder: &E,
+        kdf: &dyn IKeyDerivationAdapter,
+        payload: &WrapPieceGroupKeyCasePayload<'_>,
+    ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct WrapPieceGroupKeyCaseDeps<C: IWrapPieceGroupKeyCaseConsumer> {
+    pub consumer: C,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct WrapPieceGroupKeyCaseParams {
+    pub encoding: CreateEncodingParams,
+    pub key_derivation: CreateKeyDerivationParams,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct WrapPieceGroupKeyCasePayload<'a> {
+    pub encapsulated: &'a EncapsulatedValue,
+    pub context: &'a DerivationContext,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct WrapPieceGroupKeyCaseSuccessReturn<O> {
+    pub output: O,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+#[derive(Debug, PartialEq, Eq)]
+pub enum WrapPieceGroupKeyCaseErrorReturn {
+    CreateEncoding(CreateEncodingErrorReturn),
+    CreateKeyDerivation(CreateKeyDerivationErrorReturn),
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub type WrapPieceGroupKeyCaseReturn<O> =
+    Result<WrapPieceGroupKeyCaseSuccessReturn<O>, WrapPieceGroupKeyCaseErrorReturn>;
+
+#[cfg(any(test, feature = "mocks"))]
+pub type RunWrapPieceGroupKeyCaseFn<C> =
+    fn(
+        &WrapPieceGroupKeyCaseDeps<C>,
+        WrapPieceGroupKeyCaseParams,
+        WrapPieceGroupKeyCasePayload<'_>,
+    ) -> WrapPieceGroupKeyCaseReturn<<C as IWrapPieceGroupKeyCaseConsumer>::Output>;

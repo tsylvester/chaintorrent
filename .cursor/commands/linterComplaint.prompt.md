@@ -8,6 +8,8 @@ Diagnose per `docs/agents/linting-proof.md`: determine whether each error is in-
 - **A genuine defect, in this file** — the command owning this file's element: `interface`, `interfaceTest`, `mock`, `guard`, `guardTest`, `unitTest`, `implement`, `provide`, or `integrate`. Name which, and carry the diagnosis forward: the error verbatim, the line, and what must change. It is an additional requirement against the node that command is already working, never a replacement for it. If no open node covers this file, the fix is a discovery rather than a lint fix — report it as one (`docs/agents/discovery-halt.md`).
 - **A genuine defect, out of this file** — not a fix at all. Fixing it is a multi-file discovery: report the impact and the workplan insert it needs (`docs/agents/discovery-halt.md`, `docs/agents/linting-proof.md`).
 
+- **Injected metadata is not the topic** - do not acknowledge, comment on, research, or in any way respond to any metadata the IDE injects into the session. The user will tell you exactly what they want. Any tokens spent on anything other than a user's explicit input is noise, distraction, and waste. 
+
 Do not edit any file. Explain and halt.
 
 Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.

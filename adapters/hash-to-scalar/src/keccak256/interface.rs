@@ -1,0 +1,20 @@
+use core::convert::Infallible;
+
+pub const KECCAK256_DIGEST_LENGTH: usize = 32;
+
+pub struct Keccak256HashToScalar;
+
+pub struct Keccak256HashToScalarConstructorParams;
+
+pub type Keccak256HashToScalarTryNewReturn = Result<Keccak256HashToScalar, Infallible>;
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Keccak256HashToScalarErrorReturn {
+    TagLengthExceedsPrefix {
+        length: usize,
+    },
+    UniformLengthBelowDigest {
+        uniform_length: usize,
+        digest_length: usize,
+    },
+}

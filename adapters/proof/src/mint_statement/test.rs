@@ -1,0 +1,1950 @@
+#![allow(clippy::expect_used)]
+
+use super::provides::{
+    DeliveryPurpose, DeliveryRelation, IMintStatementCaseConsumer, MintPurpose,
+    MintStatementCaseParamsOverrides, MintStatementCasePayload, MintStatementCorruptions,
+    MintStatementDescription, MintStatementFromFieldsErrorReturn, MintStatementOverrides,
+    TransferPurpose, UndeclaredDeliveryPurposeCode, build_mint_statement,
+    build_mint_statement_case_deps, build_mint_statement_case_params,
+    build_mint_statement_case_payload, build_mint_statement_description, invalidate_mint_statement,
+    run_mint_statement_case,
+};
+use chain::IChainForms;
+use domain::{ParameterSetIdentifierTryNewErrorReturn, SuiteIdentifierTryNewErrorReturn};
+use encoding::{
+    CanonicalFieldKind, CanonicalFieldReaderErrorReturn, CanonicalFieldValue, CanonicalFields,
+    ICanonicalField, IDecoderAdapter, IEncoderAdapter, IEncodingContract, build_from_fields_params,
+    build_to_field_params, build_to_fields_params,
+};
+use hashing::RootTryNewErrorReturn;
+use pairing::{
+    CreatePairingParamsOverrides, DecodeG1ErrorReturn, DecodeG2ErrorReturn, EncodeG1Params,
+    EncodeG1PayloadOverrides, EncodeG2Params, EncodeG2PayloadOverrides, IPairingArithmetic,
+    IPairingReference, MockIPairingAdapterFailureMode, PairingConcrete,
+    build_create_pairing_params, build_encode_g1_payload, build_encode_g2_payload,
+};
+
+/// Contract: `FIELDS` is the kinds, in index order, `FixedBytes32`,
+///   `Unsigned16`, the chain-identifier form's kind, the identity form's
+///   kind, `FixedBytes32`, `FixedBytes32`, the entitlement form's kind
+///   twice, the interval form's kind twice, `Unsigned16`, the identity
+///   form's kind twice, `Bytes` six times, `Unsigned64`, and `Bytes` five
+///   times.
+/// Arrange: the `P` and `F` the consumers received; the constant is read
+///   through the contract trait and no value is built.
+/// Act:     `<MintStatementDescription<'_, P, F> as IEncodingContract>::FIELDS`
+///   inside the case consumer's method.
+/// Assert:  in place, `assert_eq!` against the kinds stated in the contract
+///   as a literal list, the form positions read as
+///   `<F::… as ICanonicalField>::KIND`; outside, the case runner's `Ok` arm.
+#[test]
+fn mint_statement_description_declares_its_field_kinds_in_transcript_order() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            _pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            assert_eq!(
+                <MintStatementDescription<'_, P, F> as IEncodingContract>::FIELDS,
+                [
+                    CanonicalFieldKind::FixedBytes32,
+                    CanonicalFieldKind::Unsigned16,
+                    <F::ChainIdentifier as ICanonicalField>::KIND,
+                    <F::Identity as ICanonicalField>::KIND,
+                    CanonicalFieldKind::FixedBytes32,
+                    CanonicalFieldKind::FixedBytes32,
+                    <F::Entitlement as ICanonicalField>::KIND,
+                    <F::Entitlement as ICanonicalField>::KIND,
+                    <F::Interval as ICanonicalField>::KIND,
+                    <F::Interval as ICanonicalField>::KIND,
+                    CanonicalFieldKind::Unsigned16,
+                    <F::Identity as ICanonicalField>::KIND,
+                    <F::Identity as ICanonicalField>::KIND,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Unsigned64,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                    CanonicalFieldKind::Bytes,
+                ]
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// mint_statement_description_declares_its_field_kinds_in_transcript_order
+
+/// Contract: `to_fields` preserves the declared field order and kinds;
+///   every field other than a group field and the purpose follows its form
+///   and domain conversion.
+/// Arrange: `statement` from `build_mint_statement` with `expiry` overridden
+///   to `0x0102_0304_0506_0708`, whose form values, hashes, and identifiers
+///   are distinct at every position, so a swap of same-kind fields, a
+///   dropped field, or a shifted position fails; the description from
+///   `build_mint_statement_description` over the received pairing.
+/// Act:     `description.to_fields(ToFieldsParams, &statement)` inside the
+///   inner consumer's method.
+/// Assert:  in place, the field list holds as many values as
+///   `<MintStatementDescription<'_, P, F> as IEncodingContract>::FIELDS`
+///   declares; `0` is `FixedBytes32([0x22; 32])`, `1` is `Unsigned16(1)`, `4`
+///   is `FixedBytes32([0x01; 32])`, `5` is `FixedBytes32([0x33; 32])`, `19`
+///   is `Unsigned64(0x0102_0304_0506_0708)`, and `2`, `3`, `6`, `7`, `8`,
+///   `9`, `11`, `12` each equal the `to_field` result of the statement's
+///   `chain`, `entitlement_contract`, `source_entitlement`,
+///   `target_entitlement`, `old_interval`, `new_interval`, `seller`, and
+///   `buyer`; outside, the case runner's `Ok` arm.
+#[test]
+fn to_fields_lists_the_non_group_fields_in_transcript_order() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let statement = build_mint_statement::<P, F>(
+                pairing,
+                MintStatementOverrides {
+                    expiry: Some(0x0102_0304_0506_0708),
+                    ..Default::default()
+                },
+            );
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+
+            let fields = description
+                .to_fields(build_to_fields_params(Default::default()), &statement)
+                .expect("to_fields admits a statement")
+                .fields;
+
+            assert_eq!(
+                fields.values.len(),
+                <MintStatementDescription<'_, P, F> as IEncodingContract>::FIELDS.len()
+            );
+            assert_eq!(
+                fields.values[0],
+                CanonicalFieldValue::FixedBytes32([0x22; 32])
+            );
+            assert_eq!(fields.values[1], CanonicalFieldValue::Unsigned16(1));
+            assert_eq!(
+                fields.values[4],
+                CanonicalFieldValue::FixedBytes32([0x01; 32])
+            );
+            assert_eq!(
+                fields.values[5],
+                CanonicalFieldValue::FixedBytes32([0x33; 32])
+            );
+            assert_eq!(
+                fields.values[19],
+                CanonicalFieldValue::Unsigned64(0x0102_0304_0506_0708)
+            );
+            assert_eq!(
+                fields.values[2],
+                <F::ChainIdentifier as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.chain,
+                )
+                .expect("the chain form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[3],
+                <F::Identity as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.entitlement_contract,
+                )
+                .expect("the identity form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[6],
+                <F::Entitlement as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.source_entitlement,
+                )
+                .expect("the entitlement form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[7],
+                <F::Entitlement as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.target_entitlement,
+                )
+                .expect("the entitlement form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[8],
+                <F::Interval as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.old_interval,
+                )
+                .expect("the interval form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[9],
+                <F::Interval as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.new_interval,
+                )
+                .expect("the interval form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[11],
+                <F::Identity as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.seller,
+                )
+                .expect("the identity form renders")
+                .field
+            );
+            assert_eq!(
+                fields.values[12],
+                <F::Identity as ICanonicalField>::to_field(
+                    build_to_field_params(Default::default()),
+                    &statement.buyer,
+                )
+                .expect("the identity form renders")
+                .field
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// to_fields_lists_the_non_group_fields_in_transcript_order
+
+/// Contract: for each typed key, envelope, and first-message group field
+///   `to_fields` calls the selected pairing's matching `encode_g1` or
+///   `encode_g2` and copies the encoded wrapper's `as_ref()` bytes into
+///   `CanonicalFieldValue::Bytes`.
+/// Arrange: `statement` from `build_mint_statement` under defaults, whose
+///   group points are distinct at every position, so a swap between
+///   positions or between the two groups fails; the description.
+/// Act:     `description.to_fields(ToFieldsParams, &statement)` inside the
+///   inner consumer's method.
+/// Assert:  in place, the values at `13`, `15`, `16`, `21`, `22` are `Bytes`
+///   of `encode_g1` of `buyer_keys.pk1`, `envelope.c1`, `envelope.c2`,
+///   `first_messages.c1`, `first_messages.c2`, and the values at `14`, `17`,
+///   `18`, `20`, `23`, `24` are `Bytes` of `encode_g2` of `buyer_keys.pk2`,
+///   `envelope.d1`, `envelope.d2`, `first_messages.hpub`,
+///   `first_messages.d1`, `first_messages.d2`, each encoding read through
+///   the received pairing with params and payload from its official
+///   builders; outside, the case runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn to_fields_flattens_each_group_field_through_the_pairing() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let statement = build_mint_statement::<P, F>(pairing, Default::default());
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+
+            let fields = description
+                .to_fields(build_to_fields_params(Default::default()), &statement)
+                .expect("to_fields admits a statement")
+                .fields;
+
+            let encode_g1 = |point: P::G1| -> Vec<u8> {
+                let Ok(encoded) = pairing.encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides { point: Some(point) },
+                    ),
+                );
+                encoded.bytes.as_ref().to_vec()
+            };
+            let encode_g2 = |point: P::G2| -> Vec<u8> {
+                let Ok(encoded) = pairing.encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides { point: Some(point) },
+                    ),
+                );
+                encoded.bytes.as_ref().to_vec()
+            };
+
+            assert_eq!(
+                fields.values[13],
+                CanonicalFieldValue::Bytes(encode_g1(statement.buyer_keys.pk1))
+            );
+            assert_eq!(
+                fields.values[14],
+                CanonicalFieldValue::Bytes(encode_g2(statement.buyer_keys.pk2))
+            );
+            assert_eq!(
+                fields.values[15],
+                CanonicalFieldValue::Bytes(encode_g1(statement.envelope.c1))
+            );
+            assert_eq!(
+                fields.values[16],
+                CanonicalFieldValue::Bytes(encode_g1(statement.envelope.c2))
+            );
+            assert_eq!(
+                fields.values[17],
+                CanonicalFieldValue::Bytes(encode_g2(statement.envelope.d1))
+            );
+            assert_eq!(
+                fields.values[18],
+                CanonicalFieldValue::Bytes(encode_g2(statement.envelope.d2))
+            );
+            assert_eq!(
+                fields.values[20],
+                CanonicalFieldValue::Bytes(encode_g2(statement.first_messages.hpub))
+            );
+            assert_eq!(
+                fields.values[21],
+                CanonicalFieldValue::Bytes(encode_g1(statement.first_messages.c1))
+            );
+            assert_eq!(
+                fields.values[22],
+                CanonicalFieldValue::Bytes(encode_g1(statement.first_messages.c2))
+            );
+            assert_eq!(
+                fields.values[23],
+                CanonicalFieldValue::Bytes(encode_g2(statement.first_messages.d1))
+            );
+            assert_eq!(
+                fields.values[24],
+                CanonicalFieldValue::Bytes(encode_g2(statement.first_messages.d2))
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// to_fields_flattens_each_group_field_through_the_pairing
+
+/// Contract: `to_fields` uses `purpose.code()` for the `Unsigned16` field.
+/// Arrange: `statement` from `build_mint_statement` under defaults, whose
+///   `purpose` is `MintPurpose::Mint`, against the replacement block's
+///   `MintPurpose::Replacement`; the description.
+/// Act:     `description.to_fields(ToFieldsParams, &statement)` inside the
+///   inner consumer's method; the field list is returned whole, the
+///   subject's return naming no received type.
+/// Assert:  the value at `10` is `Unsigned16(1)`, the mint code the
+///   delivery purposes declare.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn to_fields_encodes_a_mint_purpose_by_its_code() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = CanonicalFields;
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let statement = build_mint_statement::<P, F>(pairing, Default::default());
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+
+            description
+                .to_fields(build_to_fields_params(Default::default()), &statement)
+                .expect("to_fields admits a statement")
+                .fields
+        }
+    }
+
+    let fields = run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer")
+    .output;
+    assert_eq!(fields.values[10], CanonicalFieldValue::Unsigned16(1));
+}
+// to_fields_encodes_a_mint_purpose_by_its_code
+
+/// Contract: `to_fields` uses `purpose.code()` for the `Unsigned16` field.
+/// Arrange: `statement` from `build_mint_statement` with `purpose`
+///   overridden to `MintPurpose::Replacement`, against the mint block's
+///   `MintPurpose::Mint`; the description.
+/// Act:     `description.to_fields(ToFieldsParams, &statement)` inside the
+///   inner consumer's method; the field list is returned whole.
+/// Assert:  the value at `10` is `Unsigned16(4)`, the replacement code the
+///   delivery purposes declare.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn to_fields_encodes_a_replacement_purpose_by_its_code() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = CanonicalFields;
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let statement = build_mint_statement::<P, F>(
+                pairing,
+                MintStatementOverrides {
+                    purpose: Some(MintPurpose::Replacement),
+                    ..Default::default()
+                },
+            );
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+
+            description
+                .to_fields(build_to_fields_params(Default::default()), &statement)
+                .expect("to_fields admits a statement")
+                .fields
+        }
+    }
+
+    let fields = run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer")
+    .output;
+    assert_eq!(fields.values[10], CanonicalFieldValue::Unsigned16(4));
+}
+// to_fields_encodes_a_replacement_purpose_by_its_code
+
+/// Contract: fields refused: a refusal of `CanonicalFieldReader::try_new`
+///   or of any read → `Err(MintStatementFromFieldsErrorReturn::Fields
+///   (error))`, `error` unchanged.
+/// Arrange: corruption `expiry: Some(vec![])`, so the list is one value
+///   short of `FIELDS`.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)` inside
+///   the case consumer's method; the result's error names no received
+///   type, so the assertion is in place.
+/// Assert:  `assert_eq!(result.err(), Some(MintStatementFromFieldsErrorReturn
+///   ::Fields(CanonicalFieldReaderErrorReturn::Count { expected: n, actual:
+///   n - 1 })))`, `n` the length of `FIELDS`, the whole error; outside, the
+///   case runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_carries_the_readers_refusal() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    expiry: Some(vec![]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::Fields(
+                    CanonicalFieldReaderErrorReturn::Count {
+                        expected: <MintStatementDescription<'_, P, F> as IEncodingContract>::FIELDS
+                            .len(),
+                        actual: <MintStatementDescription<'_, P, F> as IEncodingContract>::FIELDS
+                            .len()
+                            - 1,
+                    }
+                ))
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_carries_the_readers_refusal
+
+/// Contract: suite identifier refused: fields `0` and `1` are read and
+///   `SuiteIdentifier::try_new(SuiteIdentifierConstructorParams {
+///   identifier, version })` over them returns `Err(error)`; outcome
+///   `Err(MintStatementFromFieldsErrorReturn::SuiteIdentifier(error))`,
+///   the refusal unchanged.
+/// Arrange: corruption `suite_identifier: Some(vec![FixedBytes32([0x00; 32]),
+///   Unsigned16(1)])`, the identifier zero and the version valid, against
+///   the zero-version block.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `SuiteIdentifier(SuiteIdentifierTryNewErrorReturn
+///   ::AllZeroIdentifier)`; outside, the case runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_carries_the_suite_identifiers_all_zero_identifier_refusal() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    suite_identifier: Some(vec![
+                        CanonicalFieldValue::FixedBytes32([0x00; 32]),
+                        CanonicalFieldValue::Unsigned16(1),
+                    ]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::SuiteIdentifier(
+                    SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier
+                ))
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_carries_the_suite_identifiers_all_zero_identifier_refusal
+
+/// Contract: suite identifier refused: fields `0` and `1` are read and
+///   `SuiteIdentifier::try_new(SuiteIdentifierConstructorParams {
+///   identifier, version })` over them returns `Err(error)`; outcome
+///   `Err(MintStatementFromFieldsErrorReturn::SuiteIdentifier(error))`,
+///   the refusal unchanged.
+/// Arrange: corruption `suite_identifier: Some(vec![FixedBytes32([0x22; 32]),
+///   Unsigned16(0)])`, the version zero and the identifier valid, against
+///   the all-zero-identifier block.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `SuiteIdentifier(SuiteIdentifierTryNewErrorReturn::ZeroVersion)`;
+///   outside, the case runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_carries_the_suite_identifiers_zero_version_refusal() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    suite_identifier: Some(vec![
+                        CanonicalFieldValue::FixedBytes32([0x22; 32]),
+                        CanonicalFieldValue::Unsigned16(0),
+                    ]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::SuiteIdentifier(
+                    SuiteIdentifierTryNewErrorReturn::ZeroVersion
+                ))
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_carries_the_suite_identifiers_zero_version_refusal
+
+/// Contract: asset root refused: field `4` is read and
+///   `Root::try_new(RootConstructorParams { bytes })` returns `Err(error)`;
+///   outcome `Err(MintStatementFromFieldsErrorReturn::AssetRoot(error))`,
+///   the refusal unchanged.
+/// Arrange: corruption `asset_root: Some(vec![FixedBytes32(
+///   [0x00; 32])])`.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `AssetRoot(RootTryNewErrorReturn
+///   ::AllZero)`; outside, the case runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_carries_the_asset_roots_refusal() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    asset_root: Some(vec![CanonicalFieldValue::FixedBytes32([0x00; 32])]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::AssetRoot(
+                    RootTryNewErrorReturn::AllZero
+                ))
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_carries_the_asset_roots_refusal
+
+/// Contract: parameter-set digest refused: field `5` is read and
+///   `ParameterSetIdentifier::try_new(ParameterSetIdentifierConstructorParams
+///   { bytes })` returns `Err(error)`; outcome
+///   `Err(MintStatementFromFieldsErrorReturn::ParameterSetIdentifier
+///   (error))`, the refusal unchanged.
+/// Arrange: corruption `parameter_set_identifier: Some(vec![FixedBytes32(
+///   [0x00; 32])])`.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `ParameterSetIdentifier(ParameterSetIdentifierTryNewErrorReturn
+///   ::AllZero)`; outside, the case runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_carries_the_parameter_set_digests_refusal() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    parameter_set_identifier: Some(vec![CanonicalFieldValue::FixedBytes32(
+                        [0x00; 32],
+                    )]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::ParameterSetIdentifier(
+                    ParameterSetIdentifierTryNewErrorReturn::AllZero
+                ))
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_carries_the_parameter_set_digests_refusal
+
+/// Contract: purpose refused: `MintPurpose::try_from(code)` rejects any
+///   code except mint or replacement with `PurposeCode { index: 10, code }`.
+/// Arrange: corruption `purpose: Some(vec![Unsigned16(2)])`, the transfer
+///   code, against the grant and undeclared blocks.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `PurposeCode { index: 10, code: 2 }`; outside, both factories'
+///   `Ok` arms.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_rejects_a_transfer_purpose_code() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(2)]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::PurposeCode { index: 10, code: 2 })
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_rejects_a_transfer_purpose_code
+
+/// Contract: purpose refused: `MintPurpose::try_from(code)` rejects any
+///   code except mint or replacement with `PurposeCode { index: 10, code }`.
+/// Arrange: corruption `purpose: Some(vec![Unsigned16(3)])`, the grant
+///   code, against the transfer and undeclared blocks.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `PurposeCode { index: 10, code: 3 }`; outside, both factories'
+///   `Ok` arms.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_rejects_a_grant_purpose_code() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(3)]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::PurposeCode { index: 10, code: 3 })
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_rejects_a_grant_purpose_code
+
+/// Contract: purpose refused: `MintPurpose::try_from(code)` rejects any
+///   code except mint or replacement with `PurposeCode { index: 10, code }`.
+/// Arrange: corruption `purpose: Some(vec![Unsigned16(5)])`, a code no
+///   declared purpose carries.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `PurposeCode { index: 10, code: 5 }`; outside, both factories'
+///   `Ok` arms.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(5)]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::PurposeCode { index: 10, code: 5 })
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_rejects_a_purpose_code_no_declared_purpose_carries
+
+/// Contract: admitted: each group `Bytes` field is decoded in ascending
+///   index through the selected pairing's `decode_g1` or `decode_g2`,
+///   returning `InvalidG1` or `InvalidG2` with its index and decoder error
+///   at the first refusal.
+/// Arrange: `valid1` and `valid2` the bytes of the received pairing's
+///   `encode_g1` and `encode_g2` of the points of the default statement's
+///   `buyer_keys`, params and payload from the pairing's official builders;
+///   corruption `buyer_keys: Some(vec![Bytes(valid1 without its last
+///   byte), Bytes(valid2)])`, the second group's field valid, against the
+///   second-group block.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `InvalidG1 { index: 13, error: DecodeG1ErrorReturn::WrongLength
+///   { expected: valid1.len(), actual: valid1.len() - 1 } }`; outside, both
+///   factories' `Ok` arms.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_carries_a_first_group_decoders_refusal_with_its_index() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let statement = build_mint_statement::<P, F>(pairing, Default::default());
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let Ok(encoded1) = pairing.encode_g1(
+                EncodeG1Params,
+                build_encode_g1_payload(
+                    pairing,
+                    EncodeG1PayloadOverrides {
+                        point: Some(statement.buyer_keys.pk1),
+                    },
+                ),
+            );
+            let Ok(encoded2) = pairing.encode_g2(
+                EncodeG2Params,
+                build_encode_g2_payload(
+                    pairing,
+                    EncodeG2PayloadOverrides {
+                        point: Some(statement.buyer_keys.pk2),
+                    },
+                ),
+            );
+            let valid1 = encoded1.bytes.as_ref().to_vec();
+            let valid2 = encoded2.bytes.as_ref().to_vec();
+            let short1 = valid1[..valid1.len() - 1].to_vec();
+            let actual1 = short1.len();
+            let expected1 = valid1.len();
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    buyer_keys: Some(vec![
+                        CanonicalFieldValue::Bytes(short1),
+                        CanonicalFieldValue::Bytes(valid2),
+                    ]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::InvalidG1 {
+                    index: 13,
+                    error: DecodeG1ErrorReturn::WrongLength {
+                        expected: expected1,
+                        actual: actual1
+                    }
+                })
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_carries_a_first_group_decoders_refusal_with_its_index
+
+/// Contract: admitted: each group `Bytes` field is decoded in ascending
+///   index through the selected pairing's `decode_g1` or `decode_g2`,
+///   returning `InvalidG1` or `InvalidG2` with its index and decoder error
+///   at the first refusal.
+/// Arrange: `valid1` and `valid2` as the first-group block; corruption
+///   `buyer_keys: Some(vec![Bytes(valid1), Bytes(valid2 without its last
+///   byte)])`, the first group's field valid, against the first-group
+///   block.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `InvalidG2 { index: 14, error: DecodeG2ErrorReturn::WrongLength
+///   { expected: valid2.len(), actual: valid2.len() - 1 } }`; outside, both
+///   factories' `Ok` arms.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_carries_a_second_group_decoders_refusal_with_its_index() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let statement = build_mint_statement::<P, F>(pairing, Default::default());
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let Ok(encoded1) = pairing.encode_g1(
+                EncodeG1Params,
+                build_encode_g1_payload(
+                    pairing,
+                    EncodeG1PayloadOverrides {
+                        point: Some(statement.buyer_keys.pk1),
+                    },
+                ),
+            );
+            let Ok(encoded2) = pairing.encode_g2(
+                EncodeG2Params,
+                build_encode_g2_payload(
+                    pairing,
+                    EncodeG2PayloadOverrides {
+                        point: Some(statement.buyer_keys.pk2),
+                    },
+                ),
+            );
+            let valid1 = encoded1.bytes.as_ref().to_vec();
+            let valid2 = encoded2.bytes.as_ref().to_vec();
+            let short2 = valid2[..valid2.len() - 1].to_vec();
+            let actual2 = short2.len();
+            let expected2 = valid2.len();
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    buyer_keys: Some(vec![
+                        CanonicalFieldValue::Bytes(valid1),
+                        CanonicalFieldValue::Bytes(short2),
+                    ]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::InvalidG2 {
+                    index: 14,
+                    error: DecodeG2ErrorReturn::WrongLength {
+                        expected: expected2,
+                        actual: actual2
+                    }
+                })
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_carries_a_second_group_decoders_refusal_with_its_index
+
+/// Contract: admitted: each group `Bytes` field is decoded in ascending
+///   index through the selected pairing's `decode_g1` or `decode_g2`,
+///   returning `InvalidG1` or `InvalidG2` with its index and decoder error
+///   at the first refusal.
+/// Arrange: `valid1` and `valid2` as the first-group block; corruption
+///   `buyer_keys: Some(vec![Bytes(valid1 without its last byte),
+///   Bytes(valid2 without its last byte)])`, both group fields refused.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `InvalidG1 { index: 13, error: DecodeG1ErrorReturn::WrongLength
+///   { expected: valid1.len(), actual: valid1.len() - 1 } }`, the field at
+///   the lower index deciding; outside, the case runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_reports_the_lowest_refused_group_field() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let statement = build_mint_statement::<P, F>(pairing, Default::default());
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let Ok(encoded1) = pairing.encode_g1(
+                EncodeG1Params,
+                build_encode_g1_payload(
+                    pairing,
+                    EncodeG1PayloadOverrides {
+                        point: Some(statement.buyer_keys.pk1),
+                    },
+                ),
+            );
+            let Ok(encoded2) = pairing.encode_g2(
+                EncodeG2Params,
+                build_encode_g2_payload(
+                    pairing,
+                    EncodeG2PayloadOverrides {
+                        point: Some(statement.buyer_keys.pk2),
+                    },
+                ),
+            );
+            let valid1 = encoded1.bytes.as_ref().to_vec();
+            let valid2 = encoded2.bytes.as_ref().to_vec();
+            let short1 = valid1[..valid1.len() - 1].to_vec();
+            let short2 = valid2[..valid2.len() - 1].to_vec();
+            let actual1 = short1.len();
+            let expected1 = valid1.len();
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    buyer_keys: Some(vec![
+                        CanonicalFieldValue::Bytes(short1),
+                        CanonicalFieldValue::Bytes(short2),
+                    ]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::InvalidG1 {
+                    index: 13,
+                    error: DecodeG1ErrorReturn::WrongLength {
+                        expected: expected1,
+                        actual: actual1
+                    }
+                })
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_reports_the_lowest_refused_group_field
+
+/// Contract: `MintStatementDescription::try_new(params)` stores
+///   `params.pairing`; `fields_to_value` decodes every group `Bytes` field
+///   through that pairing's `decode_g1` or `decode_g2`.
+/// Arrange: the case params' `pairing` overridden to
+///   `build_create_pairing_params(CreatePairingParamsOverrides { concrete:
+///   Some(PairingConcrete::Mock(MockIPairingAdapterFailureMode
+///   ::DecodeG1NotOnCurve)), ..Default::default() })`, so the received
+///   pairing refuses a first-group encoding as off the curve; `payload` is
+///   `invalidate_mint_statement` under no corruptions, whose first-group
+///   encodings are the pairing's own and valid; against the blocks over the
+///   default selection, where the same payload is admitted, so a
+///   description that decodes through any pairing but the one it was built
+///   over fails.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `InvalidG1 { index: 13, error: DecodeG1ErrorReturn::NotOnCurve
+///   }`, the whole error; outside, the case runner's `Ok` arm.
+/// Collaborators: the pairing family's mock concrete selected by
+///   `DecodeG1NotOnCurve` and the chain family's mock concrete, reached
+///   through the case runner.
+#[test]
+fn fields_to_value_decodes_through_the_pairing_the_description_was_built_over() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload =
+                invalidate_mint_statement::<P, F>(pairing, MintStatementCorruptions::default());
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::InvalidG1 {
+                    index: 13,
+                    error: DecodeG1ErrorReturn::NotOnCurve
+                })
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(MintStatementCaseParamsOverrides {
+            pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                concrete: Some(PairingConcrete::Mock(
+                    MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
+                )),
+                ..Default::default()
+            })),
+            ..Default::default()
+        }),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_decodes_through_the_pairing_the_description_was_built_over
+
+/// Contract: admitted: after every field is read and the domain and
+///   purpose constructions succeed, decode each group `Bytes` field and
+///   move decoded points into typed `PublicKeysComponents`,
+///   `EnvelopeComponents`, and `MintFirstMessages`, and the
+///   relation-specific purpose into `MintStatement<P, F>`; round trip
+///   preserves the exact canonical field order and values.
+/// Arrange: `payload` is `invalidate_mint_statement` under no corruptions;
+///   `expected` is `build_mint_statement` under defaults, whose values are
+///   distinct at every position, so a swap of same-kind fields, a dropped
+///   field, or a shifted position fails.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  in place, the success arm's `described` equals `expected` field
+///   by field: `suite_identifier`, `asset_root`,
+///   `parameter_set_identifier`, `purpose`, and `expiry` by equality; each
+///   form field by equality; each group element by equality of the
+///   received pairing's `encode_g1` or `encode_g2` of it with that of the
+///   corresponding point of `expected`; outside, both factories' `Ok`
+///   arms.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_returns_the_transcript_the_reference_fields_describe() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload =
+                invalidate_mint_statement::<P, F>(pairing, MintStatementCorruptions::default());
+            let expected = build_mint_statement::<P, F>(pairing, Default::default());
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            let described = result
+                .expect("the reference fields describe a statement")
+                .described;
+            assert_eq!(described.suite_identifier, expected.suite_identifier);
+            assert_eq!(described.chain, expected.chain);
+            assert_eq!(
+                described.entitlement_contract,
+                expected.entitlement_contract
+            );
+            assert_eq!(described.asset_root, expected.asset_root);
+            assert_eq!(
+                described.parameter_set_identifier,
+                expected.parameter_set_identifier
+            );
+            assert_eq!(described.source_entitlement, expected.source_entitlement);
+            assert_eq!(described.target_entitlement, expected.target_entitlement);
+            assert_eq!(described.old_interval, expected.old_interval);
+            assert_eq!(described.new_interval, expected.new_interval);
+            assert_eq!(described.purpose, expected.purpose);
+            assert_eq!(described.seller, expected.seller);
+            assert_eq!(described.buyer, expected.buyer);
+            assert_eq!(described.expiry, expected.expiry);
+            let encode_g1 = |point: P::G1| -> Vec<u8> {
+                let Ok(encoded) = pairing.encode_g1(
+                    EncodeG1Params,
+                    build_encode_g1_payload(
+                        pairing,
+                        EncodeG1PayloadOverrides { point: Some(point) },
+                    ),
+                );
+                encoded.bytes.as_ref().to_vec()
+            };
+            let encode_g2 = |point: P::G2| -> Vec<u8> {
+                let Ok(encoded) = pairing.encode_g2(
+                    EncodeG2Params,
+                    build_encode_g2_payload(
+                        pairing,
+                        EncodeG2PayloadOverrides { point: Some(point) },
+                    ),
+                );
+                encoded.bytes.as_ref().to_vec()
+            };
+            assert_eq!(
+                encode_g1(described.buyer_keys.pk1),
+                encode_g1(expected.buyer_keys.pk1)
+            );
+            assert_eq!(
+                encode_g2(described.buyer_keys.pk2),
+                encode_g2(expected.buyer_keys.pk2)
+            );
+            assert_eq!(
+                encode_g1(described.envelope.c1),
+                encode_g1(expected.envelope.c1)
+            );
+            assert_eq!(
+                encode_g1(described.envelope.c2),
+                encode_g1(expected.envelope.c2)
+            );
+            assert_eq!(
+                encode_g2(described.envelope.d1),
+                encode_g2(expected.envelope.d1)
+            );
+            assert_eq!(
+                encode_g2(described.envelope.d2),
+                encode_g2(expected.envelope.d2)
+            );
+            assert_eq!(
+                encode_g2(described.first_messages.hpub),
+                encode_g2(expected.first_messages.hpub)
+            );
+            assert_eq!(
+                encode_g1(described.first_messages.c1),
+                encode_g1(expected.first_messages.c1)
+            );
+            assert_eq!(
+                encode_g1(described.first_messages.c2),
+                encode_g1(expected.first_messages.c2)
+            );
+            assert_eq!(
+                encode_g2(described.first_messages.d1),
+                encode_g2(expected.first_messages.d1)
+            );
+            assert_eq!(
+                encode_g2(described.first_messages.d2),
+                encode_g2(expected.first_messages.d2)
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_returns_the_transcript_the_reference_fields_describe
+
+/// Contract: admitted: after every field is read and the domain and
+///   purpose constructions succeed, the relation-specific purpose moves
+///   into `MintStatement<P, F>`; the mint code reconstructs
+///   `MintPurpose::Mint`.
+/// Arrange: corruption `purpose: Some(vec![Unsigned16(1)])`, against the
+///   replacement block.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  in place, the success arm's statement has `purpose` equal to
+///   `MintPurpose::Mint`; outside, the case runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_admits_a_mint_purpose() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            let described = result
+                .expect("a mint code is an admitted purpose")
+                .described;
+            assert_eq!(described.purpose, MintPurpose::Mint);
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_admits_a_mint_purpose
+
+/// Contract: admitted: after every field is read and the domain and
+///   purpose constructions succeed, the relation-specific purpose moves
+///   into `MintStatement<P, F>`; the replacement code reconstructs
+///   `MintPurpose::Replacement`.
+/// Arrange: corruption `purpose: Some(vec![Unsigned16(4)])`, against the
+///   mint block.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  in place, the success arm's statement has `purpose` equal to
+///   `MintPurpose::Replacement`; outside, the case runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_admits_a_replacement_purpose() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    purpose: Some(vec![CanonicalFieldValue::Unsigned16(4)]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            let described = result
+                .expect("a replacement code is an admitted purpose")
+                .described;
+            assert_eq!(described.purpose, MintPurpose::Replacement);
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_admits_a_replacement_purpose
+
+/// Contract: ordering: the suite identifier is constructed once field `1`
+///   is read, before field `2`.
+/// Arrange: corruptions `suite_identifier: Some(vec![FixedBytes32(
+///   [0x00; 32]), Unsigned16(1)])` and `chain: Some(vec![Unsigned16(1)])`,
+///   a refused suite identifier and a refused chain-identifier form at
+///   index `2`.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `SuiteIdentifier(SuiteIdentifierTryNewErrorReturn
+///   ::AllZeroIdentifier)`; outside, the case runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_constructs_the_suite_identifier_before_reading_a_later_form() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    suite_identifier: Some(vec![
+                        CanonicalFieldValue::FixedBytes32([0x00; 32]),
+                        CanonicalFieldValue::Unsigned16(1),
+                    ]),
+                    chain: Some(vec![CanonicalFieldValue::Unsigned16(1)]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::SuiteIdentifier(
+                    SuiteIdentifierTryNewErrorReturn::AllZeroIdentifier
+                ))
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_constructs_the_suite_identifier_before_reading_a_later_form
+
+/// Contract: `DeliveryPurpose::code`: `1` for `Mint`.
+/// Arrange: `DeliveryPurpose::Mint`, against the blocks of the other
+///   purposes.
+/// Act:     `DeliveryPurpose::Mint.code()`.
+/// Assert:  the code equals `1u16`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn delivery_purpose_derives_the_mint_code() {
+    let code = DeliveryPurpose::Mint.code();
+
+    assert_eq!(code, 1u16);
+}
+// delivery_purpose_derives_the_mint_code
+
+/// Contract: `DeliveryPurpose::code`: `2` for `Transfer`.
+/// Arrange: `DeliveryPurpose::Transfer`, against the blocks of the other
+///   purposes.
+/// Act:     `DeliveryPurpose::Transfer.code()`.
+/// Assert:  the code equals `2u16`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn delivery_purpose_derives_the_transfer_code() {
+    let code = DeliveryPurpose::Transfer.code();
+
+    assert_eq!(code, 2u16);
+}
+// delivery_purpose_derives_the_transfer_code
+
+/// Contract: `DeliveryPurpose::code`: `3` for `Grant`.
+/// Arrange: `DeliveryPurpose::Grant`, against the blocks of the other
+///   purposes.
+/// Act:     `DeliveryPurpose::Grant.code()`.
+/// Assert:  the code equals `3u16`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn delivery_purpose_derives_the_grant_code() {
+    let code = DeliveryPurpose::Grant.code();
+
+    assert_eq!(code, 3u16);
+}
+// delivery_purpose_derives_the_grant_code
+
+/// Contract: `DeliveryPurpose::code`: `4` for `Replacement`.
+/// Arrange: `DeliveryPurpose::Replacement`, against the blocks of the other
+///   purposes.
+/// Act:     `DeliveryPurpose::Replacement.code()`.
+/// Assert:  the code equals `4u16`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn delivery_purpose_derives_the_replacement_code() {
+    let code = DeliveryPurpose::Replacement.code();
+
+    assert_eq!(code, 4u16);
+}
+// delivery_purpose_derives_the_replacement_code
+
+/// Contract: `DeliveryPurpose::relation`: `DeliveryRelation::Mint` for
+///   `Mint`.
+/// Arrange: `DeliveryPurpose::Mint`, against the blocks of the other
+///   purposes.
+/// Act:     `DeliveryPurpose::Mint.relation()`.
+/// Assert:  the relation equals `DeliveryRelation::Mint`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn delivery_purpose_mint_proves_the_mint_relation() {
+    let relation = DeliveryPurpose::Mint.relation();
+
+    assert_eq!(relation, DeliveryRelation::Mint);
+}
+// delivery_purpose_mint_proves_the_mint_relation
+
+/// Contract: `DeliveryPurpose::relation`: `DeliveryRelation::Transfer` for
+///   `Transfer`.
+/// Arrange: `DeliveryPurpose::Transfer`, against the blocks of the other
+///   purposes.
+/// Act:     `DeliveryPurpose::Transfer.relation()`.
+/// Assert:  the relation equals `DeliveryRelation::Transfer`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn delivery_purpose_transfer_proves_the_transfer_relation() {
+    let relation = DeliveryPurpose::Transfer.relation();
+
+    assert_eq!(relation, DeliveryRelation::Transfer);
+}
+// delivery_purpose_transfer_proves_the_transfer_relation
+
+/// Contract: `DeliveryPurpose::relation`: `DeliveryRelation::Transfer` for
+///   `Grant`.
+/// Arrange: `DeliveryPurpose::Grant`, against the blocks of the other
+///   purposes.
+/// Act:     `DeliveryPurpose::Grant.relation()`.
+/// Assert:  the relation equals `DeliveryRelation::Transfer`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn delivery_purpose_grant_proves_the_transfer_relation() {
+    let relation = DeliveryPurpose::Grant.relation();
+
+    assert_eq!(relation, DeliveryRelation::Transfer);
+}
+// delivery_purpose_grant_proves_the_transfer_relation
+
+/// Contract: `DeliveryPurpose::relation`: `DeliveryRelation::Mint` for
+///   `Replacement`.
+/// Arrange: `DeliveryPurpose::Replacement`, against the blocks of the other
+///   purposes.
+/// Act:     `DeliveryPurpose::Replacement.relation()`.
+/// Assert:  the relation equals `DeliveryRelation::Mint`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn delivery_purpose_replacement_proves_the_mint_relation() {
+    let relation = DeliveryPurpose::Replacement.relation();
+
+    assert_eq!(relation, DeliveryRelation::Mint);
+}
+// delivery_purpose_replacement_proves_the_mint_relation
+
+/// Contract: `TransferPurpose::code`: `2` for `Transfer`.
+/// Arrange: `TransferPurpose::Transfer`, against the grant block.
+/// Act:     `TransferPurpose::Transfer.code()`.
+/// Assert:  the code equals `2u16`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn transfer_purpose_derives_the_transfer_code() {
+    let code = TransferPurpose::Transfer.code();
+
+    assert_eq!(code, 2u16);
+}
+// transfer_purpose_derives_the_transfer_code
+
+/// Contract: `TransferPurpose::code`: `3` for `Grant`.
+/// Arrange: `TransferPurpose::Grant`, against the transfer block.
+/// Act:     `TransferPurpose::Grant.code()`.
+/// Assert:  the code equals `3u16`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn transfer_purpose_derives_the_grant_code() {
+    let code = TransferPurpose::Grant.code();
+
+    assert_eq!(code, 3u16);
+}
+// transfer_purpose_derives_the_grant_code
+
+/// Contract: `TransferPurpose::try_from(code)`: `Ok(TransferPurpose
+///   ::Transfer)` for `2`.
+/// Arrange: the code `2u16`, against the grant and refused-code blocks.
+/// Act:     `TransferPurpose::try_from(2u16)`.
+/// Assert:  `assert_eq!(result, Ok(TransferPurpose::Transfer))`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn transfer_purpose_admits_the_transfer_code() {
+    let result = TransferPurpose::try_from(2u16);
+
+    assert_eq!(result, Ok(TransferPurpose::Transfer));
+}
+// transfer_purpose_admits_the_transfer_code
+
+/// Contract: `TransferPurpose::try_from(code)`: `Ok(TransferPurpose
+///   ::Grant)` for `3`.
+/// Arrange: the code `3u16`, against the transfer and refused-code blocks.
+/// Act:     `TransferPurpose::try_from(3u16)`.
+/// Assert:  `assert_eq!(result, Ok(TransferPurpose::Grant))`.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn transfer_purpose_admits_the_grant_code() {
+    let result = TransferPurpose::try_from(3u16);
+
+    assert_eq!(result, Ok(TransferPurpose::Grant));
+}
+// transfer_purpose_admits_the_grant_code
+
+/// Contract: `TransferPurpose::try_from(code)`: `Err(Undeclared
+///   DeliveryPurposeCode { code })` for every code other than `2` and `3`,
+///   the mint relation's codes included.
+/// Arrange: the code `1u16`, a code the mint relation carries, against the
+///   admitted blocks.
+/// Act:     `TransferPurpose::try_from(1u16)`.
+/// Assert:  `assert_eq!(result, Err(UndeclaredDeliveryPurposeCode
+///   { code: 1 }))`, the whole error.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn transfer_purpose_refuses_a_mint_relation_code() {
+    let result = TransferPurpose::try_from(1u16);
+
+    assert_eq!(result, Err(UndeclaredDeliveryPurposeCode { code: 1 }));
+}
+// transfer_purpose_refuses_a_mint_relation_code
+
+/// Contract: `TransferPurpose::try_from(code)`: `Err(Undeclared
+///   DeliveryPurposeCode { code })` for every code other than `2` and `3`.
+/// Arrange: the code `5u16`, against the admitted blocks.
+/// Act:     `TransferPurpose::try_from(5u16)`.
+/// Assert:  `assert_eq!(result, Err(UndeclaredDeliveryPurposeCode
+///   { code: 5 }))`, the whole error.
+/// Collaborators: none; the block calls the purpose's own method and
+///   receives no family type.
+#[test]
+fn transfer_purpose_refuses_a_code_no_declared_purpose_carries() {
+    let result = TransferPurpose::try_from(5u16);
+
+    assert_eq!(result, Err(UndeclaredDeliveryPurposeCode { code: 5 }));
+}
+// transfer_purpose_refuses_a_code_no_declared_purpose_carries
+
+/// Contract: ordering: group decoding begins only after every field is
+///   read.
+/// Arrange: corruptions `buyer_keys: Some(vec![Bytes(vec![0; 1]),
+///   baseline.values[14].clone()])`, a decoding refusal at `13`, and
+///   `first_messages` holding `Unsigned16(1)` followed by the clones of
+///   `baseline.values[21]` through `baseline.values[24]`, a kind failure at
+///   `20`.
+/// Act:     `description.fields_to_value(FromFieldsParams, payload)`.
+/// Assert:  `Fields(CanonicalFieldReaderErrorReturn::Kind { index: 20,
+///   expected: CanonicalFieldKind::Bytes, actual:
+///   CanonicalFieldKind::Unsigned16 })`, not `InvalidG1`; outside, the case
+///   runner's `Ok` arm.
+/// Collaborators: the pairing family's and the chain family's mock concretes
+///   reached through the case runner under the default selections.
+#[test]
+fn fields_to_value_decodes_the_group_fields_only_after_every_other_check() {
+    struct Consumer;
+
+    impl IMintStatementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_mint_statement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            _encoder: &E,
+            _forms: &F,
+            _payload: &MintStatementCasePayload,
+        ) -> Self::Output {
+            let description: MintStatementDescription<'_, P, F> =
+                build_mint_statement_description(pairing, Default::default());
+            let baseline = invalidate_mint_statement::<P, F>(pairing, Default::default());
+            let payload = invalidate_mint_statement::<P, F>(
+                pairing,
+                MintStatementCorruptions {
+                    buyer_keys: Some(vec![
+                        CanonicalFieldValue::Bytes(vec![0; 1]),
+                        baseline.values[14].clone(),
+                    ]),
+                    first_messages: Some(vec![
+                        CanonicalFieldValue::Unsigned16(1),
+                        baseline.values[21].clone(),
+                        baseline.values[22].clone(),
+                        baseline.values[23].clone(),
+                        baseline.values[24].clone(),
+                    ]),
+                    ..Default::default()
+                },
+            );
+
+            let result =
+                description.fields_to_value(build_from_fields_params(Default::default()), payload);
+
+            assert_eq!(
+                result.err(),
+                Some(MintStatementFromFieldsErrorReturn::Fields(
+                    CanonicalFieldReaderErrorReturn::Kind {
+                        index: 20,
+                        expected: CanonicalFieldKind::Bytes,
+                        actual: CanonicalFieldKind::Unsigned16
+                    }
+                ))
+            );
+        }
+    }
+
+    run_mint_statement_case(
+        &build_mint_statement_case_deps(Consumer, Default::default()),
+        build_mint_statement_case_params(Default::default()),
+        build_mint_statement_case_payload(Default::default()),
+    )
+    .expect("the case runner ran the consumer");
+}
+// fields_to_value_decodes_the_group_fields_only_after_every_other_check

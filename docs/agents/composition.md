@@ -18,13 +18,43 @@ myFunction: MyFunctionFn {
 
 // VALIDATING form — payload arrives as untrusted data from a runtime boundary
 // (queue, JSON, API, DB row). Typed `unknown`, guarded on the first line, narrowed
-// to MyFunctionPayload for the whole body. Mechanics: guards.md#guard-on-entry.
+// to MyFunctionPayload for the whole body. Mechanics: guards.md#guard-on-entry--validating-functions-take-unknown.
 myFunction: MyFunctionFn {
   deps:    MyFunctionDeps
   params:  MyFunctionParams
   payload: unknown
 }: MyFunctionReturn = MyFunctionSuccessReturn | MyFunctionErrorReturn
 ```
+
+The Rust form, with the same slots and the same two-arm return:
+
+```rust
+// interface.rs
+pub type MyFunctionReturn = Result<MyFunctionSuccessReturn, MyFunctionErrorReturn>;
+
+// interface.rs — TRUSTED form
+pub type MyFunctionFn = fn(&MyFunctionDeps, MyFunctionParams, MyFunctionPayload) -> MyFunctionReturn;
+
+// interface.rs — VALIDATING form: the payload slot is the untrusted type the guard consumes
+pub type MyFunctionFn = fn(&MyFunctionDeps, MyFunctionParams, serde_json::Value) -> MyFunctionReturn;
+
+// mod.rs — TRUSTED form: payload arrives already narrowed, from an in-crate caller
+pub fn my_function(
+    deps: &MyFunctionDeps,
+    params: MyFunctionParams,
+    payload: MyFunctionPayload,
+) -> MyFunctionReturn { … }
+
+// mod.rs — VALIDATING form: payload arrives as untrusted data from a runtime boundary,
+// guarded on the first line and narrowed to MyFunctionPayload for the whole body
+pub fn my_function(
+    deps: &MyFunctionDeps,
+    params: MyFunctionParams,
+    payload: serde_json::Value,
+) -> MyFunctionReturn { … }
+```
+
+`Result` is the two-arm union: `Ok` is the success arm, `Err` the error arm, and each may be an enum of flavors. An `async fn` keeps the same slots and the same `Result`. `deps` is a struct of collaborator handles, each typed by the repo-owned trait its adapter implements, `Box<dyn LoggerAdapter>` or a generic bound, never by the implementing type.
 
 - a defined function name
 - a signature type ending in `Fn`
@@ -39,6 +69,99 @@ Rules:
 - **Supply every element**, even one the function does not use *right now*. The slot is part of the contract, not an optimization.
 - **The return is always the union.** "This function only ever succeeds, so it returns only the success type" is not the author's call. The union is deliberate. See [errors-and-returns](errors-and-returns.md) for how the union is handled; this topic owns only its shape.
 - **One function per file, one file per function.** Tempted to add a second function to a file → stop, report, propose the node, halt (see [discovery-halt](discovery-halt.md)).
+
+## A return that carries the caller's type (Rust)
+
+A function that hands its caller a value only it can produce, such as the concrete a factory selects, delivers it by calling a consumer the caller supplies. The caller cannot name the concrete's type, so the signature stays generic over the consumer and the output the consumer returns is the caller's type.
+
+- The consumer is a repo-owned trait declared in the function's `interface.rs` with one associated `Output`, held in `deps` like any other collaborator.
+- The success return is generic over the output and holds it in a field.
+- The function type names the output through the trait, so the return is the two-arm union at every consumer.
+
+```rust
+// interface.rs
+pub trait IMyConsumer {
+    type Output;
+
+    fn consume<K: IMyAdapter>(&self, params: ConsumeParams, payload: ConsumePayload<K>) -> Self::Output;
+}
+
+pub struct MyFunctionDeps<C: IMyConsumer> {
+    pub consumer: C,
+}
+
+pub struct MyFunctionSuccessReturn<O> {
+    pub output: O,
+}
+
+pub type MyFunctionReturn<O> = Result<MyFunctionSuccessReturn<O>, MyFunctionErrorReturn>;
+
+pub type MyFunctionFn<C> = fn(&MyFunctionDeps<C>, MyFunctionParams, MyFunctionPayload)
+    -> MyFunctionReturn<<C as IMyConsumer>::Output>;
+```
+
+How the builders take the output and the consumer is owned by [mocks](mocks.md#fields-with-no-default-rust); how the function is mocked is owned by [mocks](mocks.md#a-return-that-carries-the-consumers-type-rust).
+
+## Methods take params and payload, never positional arguments (Rust)
+
+Every method of a trait — a consumer trait, a case consumer trait, an adapter trait — takes exactly `&self`, one params object, and one payload object, and returns its named return. No method takes an adapter, a borrow, or a value as a positional argument of its own. A selection is a field of the params; every adapter, borrow, and data value the method receives is a field of the payload. The params and payload are named structs declared in the same `interface.rs` as the trait, under the same `cfg` as the trait, and carry the method's type parameters and bounds where a field depends on them. A method that takes no selection still takes its params, as a fieldless struct, and a method that receives nothing still takes its payload, as a fieldless struct. Their builders live in the mock file. The arity of a method is therefore fixed at three, and `clippy::too_many_arguments` cannot fire on it.
+
+Mechanical resolution, applied when `clippy::too_many_arguments` fires on a method or function outside `mock.rs`, and applied when authoring a trait method so it never fires:
+
+- List every argument other than `&self`. Classify each as a selection (params) or as an adapter, borrow, or data value (payload), by the rule in [Nested calls build their inputs from what they receive](#nested-calls-build-their-inputs-from-what-they-receive-rust).
+- Declare `<Method>Params` with the selections as fields, fieldless if there are none, in the owning `interface.rs`.
+- Declare `<Method>Payload<'a, …>` with the remaining arguments as fields of the same names and types, carrying the method's lifetime and type parameters with the bounds the method carries, in the owning `interface.rs`.
+- Re-declare the method as `(&self, params: <Method>Params, payload: <Method>Payload<'a, …>) -> <its return>`, keeping its type parameters and bounds.
+- In the owning `mock.rs`, add `build_<method>_params` and `build_<method>_payload`, the payload builder taking its handed fields as leading parameters (see [mocks](mocks.md#fields-with-no-default-rust)).
+- Rewrite every implementer of the method to read each value from `payload.<field>` and each selection from `params.<field>`.
+- Rewrite every caller of the method to build both objects through their builders in a mock or test, and through their struct literals in production code, and pass them.
+- Never add `#[allow(clippy::too_many_arguments)]` outside `mock.rs`, never split the arguments into an unnamed tuple, and never drop an argument the callers need.
+
+A standalone function already takes the four-slot signature above, so this lint firing on a standalone function outside `mock.rs` means its signature departed from that form; restore the four slots by the same classification.
+
+## Type parameters follow dependency (Rust)
+
+An item carries exactly the type parameters its value depends on. A value depends on a type parameter when the parameter's choice can change it. A generic item's associated items are reached only by filling in every parameter of the item, so the item a value is declared on decides who can reach it.
+
+For each value an item declares or computes — an associated constant, a default, a field — list the type parameters it depends on:
+
+- **One or more.** The value is declared on an item generic in those parameters, and a reader reaches it by filling them in. A mock's forms for such a value are handed and produced (see [mocks](mocks.md#fields-with-no-default-rust)).
+- **None.** The value is declared once, on an item that has no type parameter. The generic item's associated item names it rather than repeating it, and a reader not generic in the parameter reads the parameter-free item.
+
+Forbidden as substitutes:
+
+- choosing a type for a parameter only to reach a value that depends on none of it — another family's concrete or mock concrete, or a placeholder such as `()`;
+- adding a type parameter to an item whose output does not carry it;
+- repeating the value as literals in a second item.
+
+This holds for production items and mocks alike. How a mock file declares the parameter-free item is owned by [mocks](mocks.md#fields-with-no-default-rust).
+
+## Configuration follows ownership (Rust)
+
+A family's factory takes its configuration in two kinds, and each is declared by the owner it belongs to:
+
+- **The family's.** A value the factory takes whichever concrete the selection names, the mock concrete's included, is the family's. Its type is declared in the factory module's interface, it is carried in the factory's params beside the selection, and its builder lives in the factory module's mock file.
+- **A concrete's own.** A value the factory takes for one concrete alone is that concrete's. Its type is declared in the concrete's interface, it is carried in that concrete's variant of the selection, and its builder lives in the concrete's mock file.
+
+The test is the one the type-parameter rule above applies: declare a value on the least specific owner that serves every reader. A family value carried inside one concrete's configuration is repeated in every other concrete's configuration or missing from it; a concrete's own value carried in the family's params is configuration every other concrete must ignore.
+
+How a test varies each kind is owned by [integrationTest](integrationTest.md#configuration-over-the-declared-set-rust); how a test obtains a concrete's default configuration is owned by [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust).
+
+## Nested calls build their inputs from what they receive (Rust)
+
+The type-parameter rule above, applied along a call chain. A function that composes nested calls — a factory's consumer calling the next factory, a case runner's levels — builds each call's deps, params, and payload from what the calling level received, through the owners' builders in a mock and the owners' constructors and operations in production code. Each input is one of three things, and its kind decides where it comes from:
+
+- **A selection** — a choice no received type or adapter fixes, such as which concrete or which scope. It is configuration, carried from the caller in params.
+- **A determined value** — a value whose correct value a received type or adapter fixes, such as the form a received type declares. It is read at the level that receives the type or adapter and handed inward. It is never carried in as configuration, and never supplied by a caller that already knows, or guesses, the answer.
+- **Handed data** — a value the caller owns that no level determines. It is carried in the payload.
+
+A function generic in a type parameter that takes, as a param, a value that type parameter declares has taken a determined value as a selection: the wrong value constructs, and the error surfaces nowhere. The function reads the value from the type parameter, and an admission it performs compares what the type declares with what the selected concrete declares, returning its own error where they disagree.
+
+Forbidden as substitutes:
+
+- a determined value carried in params, defaulted by a builder, or left for the caller to supply;
+- a caller that reproduces a determined value from its own knowledge of the concretes — a `match` on a selection that restates each concrete's declaration;
+- a level whose inputs are assembled by hand where its owner's builder or constructor exists.
 
 ## Classes — two admitted roles, and how the signature maps
 
@@ -57,6 +180,8 @@ The four-slot signature maps onto an adapter without changing:
 - each **method** takes its own named `params` and `payload` types and returns its own `Success | Error` union, exactly as a standalone function does.
 
 A method is the adapter's surface, not an independent exported function, so it does not claim a file of its own — but every method's function type is **named in the interface** (an inline function type at a property is an inline type definition; see [types](types.md)). A value or error class declares only the constructor-params object; its members follow [types](types.md) and, for errors, [errors-and-returns](errors-and-returns.md).
+
+The Rust form of the two roles: an adapter is a struct implementing the repo-owned trait declared in `interface.rs`, constructed once at the composition root from one typed constructor-params struct, and the trait's method signatures are the named function types; an owned value or error type is a struct or enum with a fallible constructor, `try_new(params) -> Result<Self, …>`, and no other producer.
 
 How each role is mocked is owned by [mocks](mocks.md#classes--decompose-never-mock-the-class); how each is guarded is owned by [guards](guards.md#classes--instanceof-for-owned-classes-shape-for-their-params).
 
@@ -107,7 +232,7 @@ The three parameters differ by where their values come from, which decides how t
 
 - **`deps`** — constructed in trusted TypeScript by the composition root, never serialized. Typed strong, never `unknown`, never guarded at entry. Typing deps `unknown` would blind the compiler where it is competent and break DI. See [dependency-injection](dependency-injection.md).
 - **`params`** — assembled by the caller in-TS from already-narrowed values. Typed strong. A field that provably originates from outside the type system is payload-natured and belongs in `payload`.
-- **`payload`** — the data the function operates on. When it arrives from a runtime boundary (queue, JSON, external) and the function validates it, the parameter is typed `unknown` and guarded on the first line. See [guards](guards.md#guard-on-entry-validating-functions-take-unknown).
+- **`payload`** — the data the function operates on. When it arrives from a runtime boundary (queue, JSON, external) and the function validates it, the parameter is typed `unknown` and guarded on the first line. See [guards](guards.md#guard-on-entry--validating-functions-take-unknown).
 
 The rule the agent cannot fumble: **does this value arrive as data from outside the type system?** Yes → `unknown` + guard. No → strong type, trust it.
 
@@ -124,5 +249,6 @@ Deps and params never take this form. A params field that originates outside the
 
 ## Precedence
 
-This topic outranks the workplan. A node step that puts deps inside params, blobs params and payload, returns only the success type, hosts two functions in one file, types an untrusted payload strong instead of `unknown` + guard, or throws on an invalid payload instead of returning the error arm is defective — comply with this topic and report the discrepancy.
+This topic outranks the workplan. A node step that puts deps inside params, blobs params and payload, returns only the success type, hosts two functions in one file, types an untrusted payload strong instead of `unknown` + guard, throws on an invalid payload instead of returning the error arm, or takes as a param a value a received type or adapter determines is defective — comply with this topic and report the discrepancy.
+
 

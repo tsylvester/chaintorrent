@@ -13,6 +13,7 @@ Every trigger below is the same event: the work has reached the edge of its scop
 - A function must be refactored to proceed — it is too long, too complex, deeply nested, or does not use DI (see [dependency-injection](dependency-injection.md)).
 - The contract is underspecified, or a requirement is misstated by the workplan.
 - Completing the task appears to require touching a file you were not told to touch.
+- A carried integration entry cannot be observed through the public API, or an entry a disposition cites does not exist (see [integrationTest](integrationTest.md#integration-public)).
 
 ### What is not a halt trigger
 
@@ -36,7 +37,7 @@ The permission you are waiting for is **for the boundary crossing** — the seco
 
 A halt report names **the compliant action** and the boundary that blocks it. It does not present the user with options, and it never presents an option that violates a topic — not as a question, not as an alternative, not as "or I could."
 
-**Every prohibition in this instruction set is paired with a prescription.** [guards](guards.md) forbids re-authoring a foreign guard **and** gives the four-step predicate search and the halt that follows it. [mocks](mocks.md) forbids mocking an imported symbol **and** says to locate the builder in its home package. [types](types.md) forbids minting a union inline **and** says to propose the node that declares it in its owning interface. There is no rule here that only forbids.
+**Every prohibition in this instruction set is paired with a prescription.** [guards](guards.md) forbids re-authoring a foreign guard **and** gives the predicate search and the halt that follows it. [mocks](mocks.md) forbids mocking an imported symbol **and** says to locate the builder in its home package. [types](types.md) forbids minting a union inline **and** says to propose the node that declares it in its owning interface. [mocks](mocks.md) forbids a `Default` bound to manufacture a value **and** names the forms that replace it: handed, produced through the production bound, named by the mock concrete, and invoked through the consumer. There is no rule here that only forbids.
 
 So a prohibition is never the end of your analysis. If you have found the rule that blocks your plan and not the rule that replaces it, you have stopped reading one paragraph early — go back to the same topic and finish it.
 
@@ -66,4 +67,5 @@ A correct halt with a complete report **is** the completed task. Producing a com
 Even *thinking about* how to get around the one-file boundary is itself the discovery. The instant you find yourself reasoning toward a workaround, stop and report — do not develop the workaround first.
 
 If you are corrected or realize you deviated, stop, report it, and wait for direction. Do not self-remediate in a way that risks a further violation; repeated correction means halt immediately (see [precedence](precedence.md)).
+
 

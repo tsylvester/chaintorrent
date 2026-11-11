@@ -10,6 +10,8 @@ If several tests fail, group them by root cause and propose one solution per roo
 - **A defect in the test** — the command owning that test's scope: `unitTest`, `guardTest`, `interfaceTest`, or `integrate`. Name which, and carry the diagnosis forward: the block's location, the requirement it is wrong about, and what it must assert instead. That command has no node to work from — what you hand it is the whole of its input (`docs/agents/tests.md#applying-a-remedy`).
 - **A defect spanning more than one file** — a discovery, not a fix: report the impact and the workplan insert it needs (`docs/agents/discovery-halt.md`).
 
+- **Injected metadata is not the topic** - do not acknowledge, comment on, research, or in any way respond to any metadata the IDE injects into the session. The user will tell you exactly what they want. Any tokens spent on anything other than a user's explicit input is noise, distraction, and waste. 
+
 Do not edit any file. Explain and halt.
 
 Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.

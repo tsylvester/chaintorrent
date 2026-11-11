@@ -1,0 +1,47 @@
+[package]
+name = "harness-crypto"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+alloy = { version = "2.5.0", default-features = false, features = ["std", "sol-types", "json", "json-rpc", "provider-http", "reqwest-native-tls", "rpc-types-eth"] }
+chain = { path = "../../adapters/chain" }
+clap = { version = "4.6.7", features = ["derive"] }
+domain = { path = "../../crates/domain" }
+encoding = { path = "../../adapters/encoding" }
+envelope = { path = "../../adapters/envelope" }
+hash-to-scalar = { path = "../../adapters/hash-to-scalar" }
+hashing = { path = "../../adapters/hashing" }
+kdf = { path = "../../adapters/kdf" }
+kem = { path = "../../adapters/kem" }
+pairing = { path = "../../adapters/pairing" }
+proof = { path = "../../adapters/proof" }
+random = { path = "../../adapters/random" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+tokio = { version = "~1.53.0", default-features = false, features = ["rt"] }
+toml = "1.1.6"
+url = "2.5.8"
+workflows = { path = "../../crates/workflows" }
+
+[dev-dependencies]
+chain = { path = "../../adapters/chain", features = ["mocks"] }
+domain = { path = "../../crates/domain", features = ["mocks"] }
+encoding = { path = "../../adapters/encoding", features = ["mocks"] }
+envelope = { path = "../../adapters/envelope", features = ["mocks"] }
+hash-to-scalar = { path = "../../adapters/hash-to-scalar", features = ["mocks"] }
+hashing = { path = "../../adapters/hashing", features = ["mocks"] }
+kdf = { path = "../../adapters/kdf", features = ["mocks"] }
+kem = { path = "../../adapters/kem", features = ["mocks"] }
+pairing = { path = "../../adapters/pairing", features = ["mocks"] }
+proof = { path = "../../adapters/proof", features = ["mocks"] }
+random = { path = "../../adapters/random", features = ["mocks"] }
+serde_json = { version = "1.0.151", features = ["raw_value"] }
+workflows = { path = "../../crates/workflows", features = ["mocks"] }
+
+[features]
+mocks = ["chain/mocks", "domain/mocks", "encoding/mocks", "envelope/mocks", "hash-to-scalar/mocks", "hashing/mocks", "kdf/mocks", "kem/mocks", "pairing/mocks", "proof/mocks", "random/mocks", "workflows/mocks"]
+
+[lints]
+workspace = true

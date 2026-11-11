@@ -21,7 +21,7 @@ A deliverable is invalid if either the way it was produced or its resulting cont
 - Implement exactly the described solution and the user's instruction. Expedient shortcuts are forbidden without explicit approval.
 - When you are told to explain something, explain and halt — do not continue into action.
 - When you are told to do something, do it and halt — do not explain and ask for permission to do the thing you were already told to do.
-- Stay in the exact scope you were given. Do not expand it, and do not discuss work outside it. Work outside scope is a discovery, not a liberty (see [discovery-halt](discovery-halt.md)). What scope *is* — and what it does not bound — is owned by [scope](scope.md).
+- Respect the scope you were given (see [scope](scope.md#respecting-a-scope)).
 
 ## Answering questions
 
@@ -48,4 +48,5 @@ Ignoring these rules to "be helpful" is not helpful. When the rules and a felt i
 ## A rejected edit means one thing
 
 Edits that violate the checklist, scope, or rules are discarded. A discard means **exactly one thing: a compliance mismatch.** It is never a signal about your reasoning, the task's feasibility, or a hidden cause — do not infer one, and do not confabulate an explanation and then steer later output against it. Re-read the checklist, the scope, and the relevant topics, and comply exactly. That is the whole remedy.
+
 

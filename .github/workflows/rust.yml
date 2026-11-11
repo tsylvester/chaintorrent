@@ -2,21 +2,38 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["**"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+    - uses: actions/checkout@v7
+    - uses: actions-rust-lang/setup-rust-toolchain@v2
+    - uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-deny,cargo-audit
+    - run: cargo fmt --all --check
+    - run: cargo check --workspace --all-targets --all-features
+    - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+    - run: cargo test --workspace --all-features
+    - run: cargo deny check
+    - run: cargo audit

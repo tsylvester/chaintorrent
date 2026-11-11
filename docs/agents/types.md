@@ -6,7 +6,7 @@ Cited by: construction view (workplan node `interface` element) and implementati
 
 ## Strict typing
 
-- Explicit types everywhere for any object the repo owns. No `any`, `as`, `as const`, inline ad-hoc types, or casts.
+- Explicit types everywhere for any object the repo owns. No `any`, `as`, `as const`, inline ad-hoc types, or casts. In Rust: no numeric `as` in any file, mock and test files included; the conversion is explicit through `TryFrom`. No `unwrap`, `expect`, or `panic!` in production code, no `Box<dyn Any>`, no `unsafe`. A mock or test file carries `expect` on a conversion or construction whose success the built values guarantee, the message naming the invariant (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
 - Every object and variable is typed. If you find an untyped var or object while working, stop, report the discovery, propose the node to type it, and halt (see [discovery-halt](discovery-halt.md)).
 - Construct full objects that satisfy their interface. Compose complex objects from smaller typed components. Never rely on defaults, fallbacks, or backfilling to "heal" missing data.
 
@@ -25,7 +25,7 @@ Intentionally malformed test data is **not** an exception. Corruption is produce
 
 `unknown` may **not** substitute for locating and applying a specific application or database type. Typing something `unknown` to avoid finding its real type is a laziness dodge and is prohibited.
 
-`unknown` **is** required at a genuine runtime boundary — where untrusted data enters (queue, JSON, external API, DB row, user input) and is immediately narrowed by a guard. This is the strictest possible handling, not the weakest: `unknown` forbids all access until proven. See [guards](guards.md#guard-on-entry-validating-functions-take-unknown).
+`unknown` **is** required at a genuine runtime boundary — where untrusted data enters (queue, JSON, external API, DB row, user input) and is immediately narrowed by a guard. This is the strictest possible handling, not the weakest: `unknown` forbids all access until proven. See [guards](guards.md#guard-on-entry--validating-functions-take-unknown). In Rust the boundary type is the untrusted input the guard consumes, `serde_json::Value` for structured data and `&[u8]` for wire bytes, and it forbids the same access until the guard has produced the owned type.
 
 ## No inline or renegotiated types
 
@@ -69,7 +69,36 @@ export type itemAOrB = itemA | itemB;
 import type { itemAOrB } from "./x.interface.ts";
 ```
 
+The Rust form. A union is a named `enum` declared in the owning `interface.rs`. Rust has no inline union syntax, and the substitutes are the same violation: `Result<A, B>` used as a sum type, `Either<A, B>`, a tuple, or `Box<dyn Any>` at a use site. Branch by `match` on the named enum and hold one concrete type per arm:
+
+```rust
+// declared once, in the owning interface.rs — never at the use site
+pub enum ItemAOrB {
+    A(ItemA),
+    B(ItemB),
+}
+
+// at the use site — one concrete type per arm; no arm falls through untyped
+match raw {
+    ItemAOrB::A(item) => handle_item_a(item),
+    ItemAOrB::B(item) => handle_item_b(item),
+}
+```
+
 If you need a union that does not yet exist as a named type, that is a **type change**: stop, propose the node to declare it in its owning interface, and halt (see [discovery-halt](discovery-halt.md)). You do not mint it inline.
+
+### Signatures name every type (Rust)
+
+Every signature — an exported function, a trait method, a private function in `mod.rs` — names each of its parameter and return types. A tuple, a `Result` written over composed generics, and a nested generic written in the signature are inline types. A grouped value is a named struct with named fields; a fallible return is the named `<Fn>Return` alias over the named `<Fn>SuccessReturn` and `<Fn>ErrorReturn`; all of them are declared in the owning `interface.rs`.
+
+Mechanical resolution, applied when `clippy::type_complexity` fires, and applied when authoring a signature so it never fires:
+
+- Identify the composed type in the signature: the tuple, the `Result<…>`, or the nested generic.
+- For a tuple, declare a named struct in the owning `interface.rs` whose fields are the tuple's members, each named by its role, carrying the type parameters and bounds the members depend on.
+- For a `Result<…>`, declare `<Fn>SuccessReturn` holding the success value, using the struct above where the success value was a tuple, and `<Fn>ErrorReturn`, unless the error arm is already a named type, and the alias `<Fn>Return<…> = Result<<Fn>SuccessReturn<…>, <Fn>ErrorReturn>`, in the owning `interface.rs`.
+- For any other nested generic, declare a named struct or alias for it in the owning `interface.rs`, generic in exactly the parameters it depends on.
+- Change the signature to the named type, and change every construction site to build the named struct and every use site to read its named fields in place of tuple positions.
+- Never add `#[allow(clippy::type_complexity)]`, and never declare a local `type` alias in `mod.rs` or a test module; the named type lives only in the owning `interface.rs`.
 
 ### Nullable and absent states belong in the definition
 
@@ -94,11 +123,28 @@ if (state.selection === null) {
 return handleItemA(state.selection); // selection is itemA here — one type
 ```
 
+The Rust form: the definition carries `Option<ItemA>`, and the use site matches it.
+
+```rust
+// interface.rs
+pub struct FormState {
+    pub selection: Option<ItemA>,   // awaiting input is a real, declared state
+}
+
+// mod.rs — branch the None case explicitly, then hold the one concrete type
+match state.selection {
+    None => prompt_for_selection(),
+    Some(item) => handle_item_a(item),   // item is ItemA here — one type
+}
+```
+
 If you discover a value must be nullable but its definition does not say so, that is a **type change**: propose the node to correct the definition in its owning interface, and halt (see [discovery-halt](discovery-halt.md)). You never add `| null` at the use site to cover for a definition that should have carried it.
 
 ## No production defaults
 
 A ternary is not a type guard — a ternary supplies a default value. Default values are prohibited in production code. The only defaults permitted anywhere are the documented, domain-approved defaults inside builders and factories (see [mocks](mocks.md)), which are test fixtures, not production code.
+
+In Rust the documented defaults a builder or factory holds are values it computes from its owner's builders, from constants, or from operations a production bound declares. A `Default` bound on a type parameter is not a documented default, and neither is `#[derive(Default)]` over a struct generic in a type parameter, which adds that bound (see [mocks](mocks.md#fields-with-no-default-rust)).
 
 ## Imports
 
@@ -106,8 +152,10 @@ A ternary is not a type guard — a ternary supplies a default value. Default va
 - Never import an entire library with `*`.
 - Never alias imports.
 - Reexporting is permitted only in barrel files (see [boundaries](boundaries.md)).
+- In Rust: `use` names from the module's `provides`; no `use path::*` outside a `provides` barrel; no `as` renames.
 
 ## Precedence
 
 This topic outranks the workplan. A node step that casts a repo-owned object, types a value `unknown` to skip finding its real type, redefines a type inline, or edits a type without authorization is defective — comply with this topic and report the discrepancy.
+
 

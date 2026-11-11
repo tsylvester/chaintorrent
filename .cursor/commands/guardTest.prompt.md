@@ -20,3 +20,4 @@ Conforms to: `docs/agents/tests.md#guard`, `docs/agents/tests.md#applying-a-reme
 
 Do only the guard test. Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.
 
+

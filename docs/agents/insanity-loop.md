@@ -1,14 +1,20 @@
+# Insanity Loop
+
+Breaks a repeating failure: the agent discards its prior reasoning and restarts the task from evidence.
+
+Applies whenever work repeats a failed or rejected attempt, both views. This is a Process topic — it governs all other work.
+
 Hard reset and re-evaluate this task from evidence.
 
 Discard all previous reasoning, explanations, assumptions, inferred motives, and proposed solutions. They are untrusted. Do not invent why the user requested the work or why an edit was rejected.
 
 Follow the repository rules exactly:
 
-1. Read `docs/agents/index.md` completely.
-2. Read these Process topics completely.
-3. Use the routing matrix in `docs/agents/index.md` to identify and completely read every applicable Standards topic.
-4. Read the complete workplan node and every file it references.
-5. Before analysis, output a read manifest listing exactly what was read.
+- Read `docs/agents/index.md` completely.
+- Read every Process topic the index lists, completely.
+- Use the routing matrix in `docs/agents/index.md` to identify and completely read every applicable Standards topic.
+- Read the complete workplan node and every file it references.
+- Before analysis, output a read manifest listing exactly what was read.
 
 Authority is defined by `docs/agents/precedence.md`: the latest explicit user instruction outranks the repository Instructions, and the Instructions outrank the workplan.
 

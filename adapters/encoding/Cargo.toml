@@ -1,0 +1,17 @@
+[package]
+name = "encoding"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+alloy = { version = "2.5.0", default-features = false, features = ["std", "dyn-abi"] }
+
+[dev-dependencies]
+hex = "0.4.3"
+
+[features]
+mocks = []
+
+[lints]
+workspace = true

@@ -1,0 +1,599 @@
+<!-- Template: synthesis_system_architecture.md -->
+# Architecture Summary
+How the ChainTorrent MVP is designed, synthesized from [cryptography.md](../research/cryptography.md), [MVP Scope](../research/MVP%20Scope.md), [MVP Application Requirements](../research/MVP%20Application%20Requirements.md), the [MVP Execution Trace](../research/MVP%20Execution%20Trace.md), and the planning documents that derive from them, in particular the [technical approach](technical-approach.md), [tech stack](tech-stack.md), [dependency map](dependency-map.md), [product requirements](product-requirements.md), and [risk register](risk-register.md). Those documents are authoritative; this one arranges them as a system design and adds no rule. Where a decision is the user's, it is cited from the product requirements' Resolved Positions; where a choice is a recommendation, it says so.
+
+The system is a protocol client and its supporting services. One canonical ciphertext per deployment plus one public header sidecar per live parameter set, each sidecar its own object with its own locator, are seeded to a peer swarm and committed on chain by three BLAKE3/Bao roots. An entitlement is a single-owner bearer asset on Base, bound to the asset rather than to any deployment. Each ownership interval receives a native credential delivered inside the settlement that creates it, verified by a proof the contract checks through the chain's pairing precompiles. A conforming client authorizes every decryption attempt from a fresh view of consensus state, decrypts locally, and destroys decrypt-capable material when the entitlement leaves it. No service sits on the read path. The MVP applies this to JavaScript dependencies through a local daemon that serves npm's own registry protocol from whichever of a machine-wide plaintext cache, the swarm, and the upstream registry delivers within the configured source deadline, never slower than the registry alone by more than the hedge delay, and that requests entitlements and prefetches ciphertext in the background so a first run leaves the machine independent of the registry for everything it installed.
+
+# Architecture
+
+## Layers and the decentralization boundary
+
+The specification defines decentralization per layer and draws one boundary from it: a centralized service may exist as a convenience, business, gateway, indexer, or application, but no service may become an unavoidable authority over a property the protocol defines as decentralized. Content distribution, entitlement ownership and transfer, transaction ordering, decryption authorization, content governance, and discovery are decentralized in stated senses; content identity is rights-holder asserted. The relayer, claim verifier, and project seed host are permitted by that rule and named as scaffolding.
+
+## Implementation rings
+
+Three dependency rings with dependencies pointing inward, fixed by the Application Requirements. The protocol and domain ring holds pure Rust types and rules and depends on no host, chain SDK, wallet, transport, or storage engine. The application workflow ring holds Rust use cases as durable restartable jobs and depends on capability contracts, never on an adapter's identity. The adapters and host shells ring holds one crate per adapter family for every external system and the thin TypeScript shells for Visual Studio Code and npm. Crate boundaries are ring boundaries, so a violation fails to compile.
+
+## Adapter families as factories
+
+Every external touchpoint is an adapter family laid out as general responsibility, then functional need, then concrete implementation. The family's crate holds its factory module and its private concretes: the factory owns the generic interface, the capability declaration every concrete fills in, the types the generic surface needs, and the factory function that constructs the concrete a configuration or a deployment's hash-card names; the interface and declaration are authored with the family's first ticket, its first concrete or a family-owned function preceding it, and the factory function is authored once, after the family's last concrete, and before every consumer. Each concrete is a private module beneath the factory with its own interface implementing the generic one, owning only the types it alone produces and reaching the generic surface through the trait's associated types; a vendor library is named only by the concrete that wraps it. A consumer depends on the family crate and sees the factory's surface and nothing beneath it, so adding an implementation is one new concrete and its branch in the factory and touches no consumer. The factory is the first place composition is checked: it takes the declarations of the upstream adapters the requested concrete must be compatible with and refuses a concrete whose declaration does not satisfy them, with no side effect. A family exists even where the MVP ships one concrete, because the seam is the deliverable.
+
+## Context view
+
+```mermaid
+flowchart TB
+    subgraph machine["Developer machine"]
+        direction TB
+        pm["npm / pnpm / yarn / bun"]
+        ext["VS Code extension (TS shell)"]
+        desk["Desktop app (Tauri)"]
+        cli["CLI"]
+        daemon["Local daemon: package host, CAS, jobs, authorization, decryption, seed host control"]
+        custody["Custody store (OS credential store)"]
+        cas["Plaintext CAS"]
+        cstore["Ciphertext store"]
+        pm -->|registry protocol| daemon
+        ext -->|authenticated IPC| daemon
+        desk -->|authenticated IPC| daemon
+        cli -->|authenticated IPC| daemon
+        daemon --> custody
+        daemon --> cas
+        daemon --> cstore
+    end
+
+    subgraph swarm["Peer swarm"]
+        peers["Other daemons and BitTorrent-compatible clients"]
+        seedhost["Project seed host"]
+    end
+
+    subgraph chain["Base"]
+        contracts["Contract suite: registry, deployments, parameter sets, envelope keys, entitlements, escrow, claims, delivery verifier"]
+        rpc["RPC nodes (more than one)"]
+    end
+
+    subgraph services["Project services (scaffolding)"]
+        relayer["Relayer / paymaster"]
+        verifier["Claim verifier"]
+        site["Site: education tier, WASM demo, download"]
+    end
+
+    upstream["npm registry (ingest source)"]
+
+    daemon <-->|ciphertext and sidecars by root| peers
+    daemon <-->|ciphertext and sidecars by root| seedhost
+    daemon -->|view calls, settlements| rpc
+    rpc --> contracts
+    daemon -->|as-is tarball, release attestation, metadata| upstream
+    daemon -->|sponsored binding, batched grant requests, free mints| relayer
+    relayer --> contracts
+    daemon -->|claim vouchers| verifier
+    verifier --> contracts
+```
+
+## The cryptographic construction, stated once
+
+Type-3 pairing groups on BLS12-381 primary and BN254 retained, on Base. A parameter set is `g1, u0, u1` in the first group and `g2, hpub = g2^α` in the second; the master scalar `α` is the issuer's. The entitlement's identity element is `F_I = u0 · u1^I`. A credential is `(g1^α · F_I^r, g2^r)`, rerandomized by the seller as `(A · F_I^s, B · g2^s)` without the master scalar, valid under a public pairing check. A capsule is `(g2^t, u0^t, u1^t)`, well-formed under two pairing checks, encapsulating `e(g1, hpub)^t`; decapsulation is two pairings and one scalar multiplication; a domain-separated KDF of that value and the context yields the set's wrapping key, and the piece-group key, chosen by the encryptor, travels in the sidecar wrapped under it. Envelopes are ElGamal in each source group to the recipient's two independently keyed envelope keys. Delivery proofs are generalized Schnorr under Fiat–Shamir over the full statement. Under the escrow suite the identity element is fixed per asset and any holder authors grants. Security rests on SXDH, decisional BDH-3b, and the random-oracle model; the composition carries proof sketches with concrete loss terms and an independent re-derivation.
+
+# Services
+
+Every service the project runs is scaffolding no client depends on.
+
+| Service | Runtime | Responsibility | What it must never become |
+| --- | --- | --- | --- |
+| Local daemon and package host | Rust, single instance per machine | Registry endpoint, CAS orchestration, encrypted acquisition, credential custody, per-attempt authorization, decryption, durable jobs, seed host control, authenticated IPC | A component another machine depends on |
+| Relayer or paymaster | Rust service, ERC-4337 EntryPoint v0.7 on Base | Sponsors the free path, the one-time identity binding, and device admission and revocation under per-identity rate limits; reports cost | Anything on the paid path or the read path |
+| Claim verifier | Rust service | Authenticates claimants against npm metadata, provenance attestations, and GitHub OAuth; signs vouchers over committed claim sets under a custody-held key of a declared scheme, registered on chain as a scheme identifier and a key commitment with rotation and revocation, and verified by the contract through the signature adapter the registry binds for the scheme | A party a claim depends on being available; it is one implementation behind `IClaimVerifierAdapter` |
+| Project seed host and site | Rust daemon instance plus static site with a WebAssembly demonstration | First seeder of the core closure; optional relayer and discovery host; education tier and download | A privileged seeder or a host any client must reach |
+| Cryptographic validation harness | Rust binary against Base Sepolia | Measures sizes, timings, and gas against the configured piece-group size and curve defaults; records them and any adjustment the data supports | A throwaway; its delivery verifier is the shipped contract |
+| Demonstration harness | Rust | Controlled participants, wallets, chain state, and induced failures | Test tooling that can be skipped; the completion boundary makes it load-bearing |
+
+Deferred services, recorded so their boundaries are designed now: an account service owning onboarding state, preferences, a device roster, and optionally an end-to-end encrypted recovery backup of the holder seed, never an entitlement; a rendezvous relaying end-to-end encrypted sessions between a browser and a daemon that dialed out; a remote head over the daemon's IPC; and a hosted instance as a separate product mode with a service on its read path.
+
+# Components
+
+Grouped by ring. Each row names the module family in the Application Requirements and the interface it implements or consumes.
+
+**Protocol and domain ring.** Pure Rust types and rules with no host, chain SDK, wallet, transport, or storage dependency, holding only the types its own modules implement, beginning with the secret type, which implements no formatting or serialization trait, exposes the wrapped value only through an explicit accessor, and zeroizes on drop. Every type lives in the module that implements it, and its home is fixed when that module's ticket is written. Guards on every type at every boundary.
+
+**Application workflow ring.** Installation coordinator with a durable checkpointed plan; package serving and resolution orchestrator; First Finder bootstrap as a durable idempotent job; encrypted acquisition; credential delivery at mint, grant, and sale; per-attempt authorization; decryption and CAS commit; seeding; explicit publishing with dependency-closure ingestion; escrow claim; transfer; repair; recovery.
+
+**Adapter ring.** One family per external concern; the family's factory owns the generic interface and the declaration, and its MVP concretes are private beneath it:
+
+| Family | The factory owns | MVP concretes | The declaration |
+| --- | --- | --- | --- |
+| `encoding` | `IEncoderAdapter`, `IDecoderAdapter`, the versioned encoding identifier, the vendor-free encoding contract, the canonical-field contract a single form implements, and one family-owned description per encoded type housed in a crate the encoding family depends on, the hashing family's root type first, implementing the encoding contract, a type housed in a crate that depends on the encoding family carrying its description in that crate; the canonical encoding of everything hashed, signed, stored, or framed over IPC | `encoding/abi`, Ethereum ABI through `alloy`'s sol types | One shared versioned encoding identifier, named by the hash-card |
+| `random` | The interface that fills bytes | `random/os` | Source |
+| `cipher` | `IPayloadCipherAdapter` | `cipher/aes_ctr`, 64-bit IV, 64-bit counter | Counter layouts, `maxAddressableBytes` |
+| `hashing` | The commitment interface: root and outboard, streaming and random-access verification, random challenge and response; and the root, outboard, path, and chunk types, the root type being the asset's identity; every operation is over bytes, with no digest operation and no identity-hash identifier | `hashing/blake3_bao` | Commitment scheme, chunk granularity |
+| `pairing` | `IPairingAdapter`, the group-element and scalar associated types with the sampling bound on the scalar type | `pairing/bls12_381_arkworks`, `pairing/bls12_381_halo2curves`, `pairing/bn254_arkworks`, `pairing/bn254_halo2curves`; BLS12-381 primary, BN254 retained; one concrete per curve per library, each owning its scalar and group-element types over its library's elements; the factory constructs the concrete the composition names, and the benchmark's measurements set the configuration's shipped concrete per curve | Curve, second-group arithmetic at the verifier, encodings, target-group encoding identifier |
+| `kdf` | The derivation interface, the context types | `kdf/blake3_keyed` | KDF identifier |
+| `hash-to-scalar` | The interface mapping domain-tagged bytes to a scalar, for every value the contract recomputes: the identity mapping, the challenge, the parameter-set digest, and the envelope digest | `hash-to-scalar/keccak256` | Hash-to-scalar identifier |
+| `kem` | `ICredentialKemAdapter`, with the parameter-set, credential, capsule, and identity-element types as associated types | `kem/bb1_depth_one` | Identity scope: entitlement for explicit publishers, asset for escrow |
+| `envelope` | `IKeyAgreementAdapter`, with the key-pair and envelope types as associated types | `envelope/pairing_elgamal` | Envelope algebra |
+| `proof` | `IDeliveryProofAdapter`, the algebraic statement types, and one family-owned transcript description per relation and per delivery-statement version, generic over the chain family's forms and admitted by the version the hash-card names | `proof/schnorr_fs`, owning its challenge | Supported envelope algebras, both verifier forms, delivery-statement versions |
+| `signature` | `ISignatureAdapter`, signing and verification over the public-key and signature types a concrete supplies as associated types | `signature/ed25519` and `signature/ml_dsa_65` at handshake and content layers, `signature/secp256k1` at the chain layer | Scheme identifier, key and signature lengths, recovery support, scheme per layer |
+| `chain` | The chain interface, `ISettlementAdapter`, `IEntitlementStateAdapter`, the identity, entitlement, interval, and chain-identifier forms and the signed-intent form as associated types, each bounded by the encoding family's canonical-field contract, the entitlement contract taking the identity form, the family-owned quorum view of two of three configured nodes at a common reference, and, as a family-owned function beside the quorum view, the forms constructor that constructs the forms concrete over the borrowed encoder the configuration supplies and admits that encoder by the encoding identifier the forms declaration requires as well as admitting the forms identifier the suite requires, the form interface and the forms portion of the declaration authored by the forms concrete, and the rest by `chain/base` | `chain/evm_forms`: the EVM suite's identity, entitlement, interval, and chain-identifier forms over the kinds the suite's schemas fix, address derivation over a public key's canonical bytes and scheme identifier, the type `domain/signature_scheme_identifier` holds, and the EIP-712 intent form among them, constructed over the borrowed encoder and reading its typed-data member types from it, depending on no signature crate; `chain/base`: the client, Base's tier mapping with INCLUDED sequencer inclusion, SOFT safe head, HARD L1-finalized, and SETTLED fault-proof resolution, the entitlement-state views single and paginated, the events reader, binding the forms `chain/create_chain_forms` resolves and authoring none | Forms identifier; tier vocabulary, reference age, precompile sets, batch ceiling, entitlement semantics |
+| `submission` | The interface for submitting a signed intent, the factory authored once, after every submission concrete, at the relayer milestone | `submission/self_funded`, authored in the chain and submission families; `submission/relayer` and `submission/paymaster`, authored at the relayer milestone and depending on no module of `apps/relayer` | Sponsorship path |
+| `identity` | `IIdentityAdapter` and the binding schema with the DID Document types and anchor hash | `identity/publisher_authority`, `identity/escrow` | Proof classes |
+| `publisher-proof` | `IPublisherProofAdapter` | `publisher-proof/provenance`, `publisher-proof/maintainer_oauth`, resolved in strength order | Proof class, strength |
+| `claim-verifier` | `IClaimVerifierAdapter` and the voucher types | `claim-verifier/attestor` | Verifier form, the signature scheme its vouchers carry |
+| `payment` | `IPaymentAssetAdapter`, the payment-asset identifier, the types the generic surface needs | `payment/native`, settling in the chain's native asset | The payment assets a concrete settles |
+| `ingest` | `IIngestSourceAdapter`, declaring the namespace its names live in | `ingest/npm`, as-is tarball with its release attestation or recorded absence written as the alias entry beside the root, public availability as eligibility | Attestation presence, namespace |
+| `package-host` | `IPackageHostAdapter`, declaring the namespace its names live in and the name-to-root alias lookup | `package-host/npm`, the registry protocol served locally, packuments assembled from alias records and decrypted tarballs, no metadata store | Namespace |
+| `redirect` | The detect, redirect, back-up, and restore interface for a package manager's configuration | `redirect/npm` | Package manager |
+| `transport` | `ISwarmTransportAdapter`, the locator types, the engine capability a transport may expose | `transport/rqbit`, BitTorrent through embedded `librqbit`, pinned, the MVP's sole transport; a BLAKE3-native transport reserved for V2 | Integrity structure on the wire, engine capability |
+| `discovery` | `IPeerDiscoveryAdapter`, the peer types, the family-owned aggregation | `discovery/dht`, `discovery/pex`, `discovery/tracker` through the transport's engine capability, `discovery/local`, `discovery/seeder_map` | Source, non-authoritative |
+| `storage` | The key-value store interface with tables, transactions, and checkpoints | `storage/redb` | Durability |
+| `seed-host` | `ISeedHostAdapter`, the holding types | `seed-host/owned` with the root-keyed ciphertext store; `seed-host/rqbit` driving the rqbit application through its HTTP API with Bao custody challenges, one concrete per external client | Capacity, obligated versus voluntary |
+| `cas` | The plaintext CAS interface: commit, serve, pin, quota, eviction, reuse metrics | `cas/filesystem` | Layout |
+| `custody` | `IKeyCustodyAdapter`, the versioned capability set with device roles, and the family-owned holder-seed derivation, device-key generation, and in-place upgrade | `custody/local_keystore`, under the OS credential store; on a root, the holder seed with its control and envelope branches; on any device, its own device key; blobs tagged by concrete and version | Signing, envelope keys, issuance material, device roles, device admission, multi-device, recovery, in-place upgrade, user presence, publisher seed |
+| `wallet` | The signing-only wallet interface | `wallet/eip1193`, `wallet/walletconnect` | Signing scheme, typed-data support |
+| `lifecycle` | The service-lifecycle interface, the factory following its concretes in the installation coordinator; the single-instance lock is the family-owned function `lifecycle/lock`, authored in durable jobs and configuration and creating the crate | `lifecycle/systemd`, `lifecycle/launchd`, `lifecycle/windows_service`, `lifecycle/scheduled_task` | Platform, elevation |
+| `platform-paths` | The application-directory interface | `platform-paths/linux`, `platform-paths/macos`, `platform-paths/windows` | Platform |
+| `artifact-verifier` | The signed-artifact verification interface | `artifact-verifier/sigstore`, `artifact-verifier/authenticode`, `artifact-verifier/apple_notarization` | Scheme |
+| `ipc` | The IPC transport interface, with the family-owned framing, principals, and server, the server dispatching through a handler interface it owns and naming no workflow's request class | `ipc/unix_socket`, `ipc/named_pipe` | Peer credentials or token |
+| `telemetry` | The exporter interface, with the family-owned correlation and tracing setup | `telemetry/local_metrics`, `telemetry/opentelemetry` | Export target |
+
+The relayer carries its own `bundler` family with one concrete per provider, and the validation harness its own `generate` and `verifier` families, the generate concrete named for the language it emits, `solidity`, with ABI-encoded language-neutral vector files, and the verifier concrete `evm`, named for the ABI it speaks. On chain, the EVM suite's adapter registry binds `IEntitlement` with its ERC-721 concrete, `IAttestationVerifier` with the npm P-256 verifier, `IIdentityAdapter` with the publisher-authority and escrow-identity adapters, the signature adapter per scheme, the delivery verifier per delivery-statement version and verifier form, and `IPaymentAsset` with its native-asset concrete per payment asset, each constructor-injected and immutable once bound.
+
+**Host shells.** Visual Studio Code extension and npm bootstrap package as thin TypeScript over the installer and IPC; Tauri desktop and Rust CLI as control surfaces.
+
+## The local daemon, broken out
+
+The daemon is the one process every requirement family meets. It is a single machine-level instance, Rust on `tokio`, that owns the two content stores, the job store, the configuration registry, and the only path to custody, and that exposes exactly two ingress surfaces: npm's registry protocol to package managers and an authenticated IPC to the project's own control surfaces. Everything below is derived from the Application Requirements' module catalogue; each subsystem names the rows that define it. What the sources do not fix, the IPC framing, worker pool sizing, and process supervision details, is marked as decided at the node.
+
+### Internal structure
+
+The diagram shows the running process's call graph, not code dependencies: the daemon's composition root, `apps/daemon`, routes package-host and IPC requests to the workflows, and the package host and the IPC server name no workflow.
+
+```mermaid
+flowchart TB
+    subgraph ingress["Ingress: untrusted callers"]
+        direction LR
+        host["Package host endpoint: npm registry protocol"]
+        ipc["IPC server: authenticated, least-privilege, per-principal capabilities"]
+    end
+
+    subgraph workflows["Application workflows: durable, restartable"]
+        direction TB
+        resolve["Resolution orchestrator: sources in order and hedged, CAS, ciphertext under a held credential, upstream, bounded grant wait when upstream is down"]
+        gate["Deployment gate: descriptor, suite, bounds, sidecar, capsule well-formedness"]
+        request["Grant request job: one batched sponsored request per install for every unheld asset, queued until submittable, pickup from chain events"]
+        prefetch["Prefetch job: ciphertext and sidecar while a request is pending, under seeding settings and quota, pinned, seeded, set-matched after the grant"]
+        acquire["Entitlement acquisition: mint, grant, purchase; delivery verified"]
+        attempt["Attempt engine: AttemptContext, state view freshness, wallet assertion, three-state result"]
+        decrypt["Decryption pipeline: decapsulate, unwrap, AES-CTR addressing, Bao verify, CAS commit"]
+        ff["First Finder engine: foreground serve, background bootstrap job, registration race, escrow custody"]
+        publish["Publisher engine: explicit path, closure ingestion, issuance policy service"]
+        grant["Grant service: fulfils pending requests for held escrow assets as it seeds, requesters present or absent, under the relayer's policy"]
+        interval["Interval-end watcher: stop at the declared tier, destroy at HARD"]
+    end
+
+    subgraph engines["Engines"]
+        direction TB
+        jobs["Job engine: checkpoints, idempotency, restart, cancel"]
+        swarmeng["Swarm engine: transport adapters, discovery aggregator, seed host controller, Bao ingress verification, custody challenges"]
+        ledger["Ledger client: chain adapter, settlement tiers, entitlement-state views over N nodes, event and calldata reader"]
+        cred["Credential engine: envelope decrypt to memory, validity, in-memory rerandomize, zeroize"]
+        identity["Identity manager: create or import, binding via relayer, envelope-key registration, wallet connections"]
+        resolver["Composition resolver: capability validation, fail closed"]
+    end
+
+    subgraph stores["Stores: owned by the daemon"]
+        direction LR
+        cas["Plaintext CAS"]
+        cstore["Ciphertext store"]
+        jobstore["Job store"]
+        config["Configuration registry"]
+        metrics["Metrics and traces"]
+    end
+
+    custody["Custody adapter: OS credential store; holder seed on a root only, device key, envelope secrets on a reading device, persistent credentials; never the decrypted credential"]
+    secret["Secret region: decrypted credentials, piece-group keys, cipher state; memory-only, zeroized"]
+
+    host --> resolve
+    ipc --> resolve
+    ipc --> acquire
+    ipc --> identity
+    ipc --> jobs
+    resolve --> cas
+    resolve --> cstore
+    resolve --> gate
+    resolve --> ff
+    resolve --> request
+    request --> jobs
+    request --> ledger
+    request --> prefetch
+    prefetch --> swarmeng
+    prefetch --> cstore
+    prefetch --> cred
+    gate --> swarmeng
+    gate --> acquire
+    acquire --> ledger
+    acquire --> identity
+    acquire --> cred
+    cred --> custody
+    cred --> secret
+    attempt --> ledger
+    attempt --> secret
+    attempt --> decrypt
+    decrypt --> secret
+    decrypt --> cas
+    ff --> jobs
+    ff --> swarmeng
+    ff --> ledger
+    ff --> custody
+    publish --> ff
+    publish --> ledger
+    grant --> cred
+    grant --> ledger
+    interval --> ledger
+    interval --> secret
+    jobs --> jobstore
+    swarmeng --> cstore
+    resolver --> config
+    ingress -.-> metrics
+    workflows -.-> metrics
+    engines -.-> metrics
+```
+
+### Subsystems, what each owns, and what defines it
+
+| Subsystem | Responsibility | Owns | Defined by |
+| --- | --- | --- | --- |
+| Package host endpoint | Serves npm-compatible metadata and tarball responses; resolves a request's name to the asset's root through the alias lookup, selecting an alias entry only on the client's own evidence, and to authenticated deployment records, assembling packuments from alias records and the decrypted tarballs' own `package.json` with no metadata store; leaves dependency resolution, peers, workspaces, overrides, and lockfiles to npm | The registry-protocol listener; nothing else | PR-01, PR-02 |
+| IPC server | Authenticated, least-privilege local API for the extension, desktop, CLI, and later a remote head, over the `ipc` family's transport concretes; a control principal is the installing user by peer credential or token file, and a package caller is anyone on the loopback port; local-presence operations and the catalogue's presence-required settings complete only after the daemon-owned interactive confirmation; request classes for package, status, control, and administration | The local socket or named pipe, through the resolved transport concrete, and the dispatch interface; the request-class table and its routing belong to the daemon's composition root, `apps/daemon`, authored after every module they reach | XA-02, RO-05, IC-08 |
+| Resolution orchestrator | Tries sources in order, local plaintext CAS, local or swarm ciphertext under a held credential, the upstream ingest source, which serves any identity without a credential, and, only with upstream unavailable, swarm ciphertext under a grant obtained within a bounded wait, starting the next source in parallel after the current one's configured hedge delay and serving the first plaintext to verify, otherwise an actionable failure with the request pending; the hedge delay, source deadline, and grant wait are catalogue settings with shipped defaults, handed to it as params by the composition root; checks upstream bytes for a ledger-known asset against the record's plaintext root and marks a mismatching deployment dead; records the path and its reason; hands every unheld ledger-known asset to the request job | The resolution plan per request | PR-03, PR-06, PR-07, PR-08 |
+| Grant request job | For every ledger-known asset the identity does not hold, opens a durable request, batched per install into one sponsored operation, queued behind binding and key registration and while chain, relayer, or budget is unavailable; skips held, absent, dead-deployment, and priced assets, routes explicit-publisher requests to the issuance policy; watches chain events for mints to the identity and loads a grant fulfilled in its absence on the next run; after the grant lands confirms a held deployment carries the granted set | The request queue and its batch references | PR-10, LC-12, CD-04 |
+| Prefetch job | While a request is pending, fetches and Bao-verifies the deployment's ciphertext and sidecar in the background at low priority under the bandwidth, metered, and battery settings and the ciphertext quota, pins them until the grant lands, seeds them meanwhile, and fetches a deployment under the granted set if the held one differs; never delays the foreground install | Pinned prefetch entries in the ciphertext store | PR-11, PR-08 |
+| Plaintext CAS | Verified content addressing of tarballs, atomic temp-then-rename commit, extraction left to the package manager with nothing linking into the store, quota, pinning of artifacts a live project resolved, eviction with a warning before removing anything not re-authorizable; never evicts ciphertext; the `cas` family's filesystem concrete behind its factory, with its index through the storage family | The plaintext directory and its index | PR-04, PR-05, PR-06; MVP Scope, Local CAS |
+| Deployment gate | Authenticates the canonical record and hash-card, resolves the complete immutable suite, validates piece geometry, piece-group size, addressable extent, and index range, authenticates the sidecar root and each capsule's well-formedness; halts before any credential is exercised | Nothing persistent; a validated descriptor handed to acquisition | EC-01, CR-06; cryptography.md, Manifest Bounds Validation |
+| Swarm engine | Runs the transport concrete the transport factory resolves and the discovery concretes the discovery factory resolves, unions and deduplicates peers through the family-owned aggregation, verifies every ingress chunk against the ciphertext or sidecar root through the hashing factory before storage, drives the seed-host concrete in owned or delegated mode, issues Bao custody challenges to a delegated client, resumes transfers after failure; the library-backed discovery sources reach the engine through the capability the transport factory's surface exposes | The ciphertext store through `ISeedHostAdapter`, keyed by root with holding reason, its index through the storage family | SW-01 through SW-07, EC-02 |
+| Ledger client | The chain concrete the chain factory resolves over the forms the family's forms function resolved, `chain/base` over the EVM forms in the MVP: contract bindings, the settlement view exposing Base's tiers, the references at which the attempt rule reads and destroys, and reference age, the entitlement-state views single and paginated, and the event and calldata reader for envelope recovery and grant pickup; the family-owned quorum view over two of three configured nodes at a common reference, stale ignored, divergence and over-age views failing closed; every mutation submitted through the submission factory's resolved concrete | RPC endpoint set and the per-node view cache | LC-04, LC-06, XA-06, CD-04, PR-10, LC-13 |
+| Identity manager | Creates or imports the identity; completes the relayer-paid handshake-key binding once; registers envelope keys with proofs of possession once; on a root, derives the control and envelope branches from the holder seed through the custody family's derivation, pairs new devices, admits and revokes their signers on the contract account, and signs their delegations; on any device, generates its device key through the custody family and asserts wallet control with it; connects external wallets through the wallet factory for signing only; runs the custody family's in-place upgrade | Nothing secret; it calls custody | IW-01, IW-03, IW-05, IW-07 |
+| Entitlement acquisition | Inspects the wallet, skips held targets, and acquires the rest in the background: relayer-paid free mint, escrow grant fulfilled by any holder against the open request whether or not this identity is online, or user-initiated funded purchase with a payment lock naming the payment asset, reaching payment only through the `payment` factory; verifies the delivery proof result and records the persistent credential under custody; never on the foreground install's path | The acquisition queue | EC-03, CD-01, CD-02, CD-05, PR-10, RO-01, RO-02 |
+| Credential engine | Decrypts the envelope under the identity's own envelope secrets into the secret region at start-up or on delivery; checks the parameter set's validity equation; may rerandomize in memory; hands the decrypted credential to the attempt engine and to a sale; zeroizes on every terminal transition | The secret region's credential entries | EC-06, CR-04, CR-07, CR-08 |
+| Attempt engine | Before every piece-group key derivation, constructs the `AttemptContext`, obtains a state view at the declared tier no older than `τ_soft` and a wallet-control assertion no older than `τ_wallet` by a device key the identity's contract account admits in that view, evaluates `AUTHORIZED`, `PENDING_SETTLEMENT` with bounded retry, or `DENIED` with terminal refusal, in single or paginated batch form without losing per-context bindings | The attempt queue and freshness clocks | EC-04, EC-05, LC-06 |
+| Decryption pipeline | Decapsulates the group's capsule, derives the set's wrapping key, unwraps the piece-group key, decrypts at continuous-stream offsets under the suite's counter layout, verifies plaintext against the authenticated root per Bao chunk, commits atomically to the CAS, and serves the exact upstream tarball; streams while further pieces arrive | Transient decryption contexts in the secret region | EC-07, CR-01, CR-02 |
+| Interval-end watcher | Observes a transfer out at the deployment's declared tier and stops new attempts; at HARD destroys the decrypted credential, piece-group keys, cipher state, keystream, and every live context; leaves the persistent envelope and keys in custody; never strands a still-owner on a reorganization | Subscription to entitlement events | EC-08, LC-05; cryptography.md, Phase 2 step 6 |
+| First Finder engine | Foreground: fetch the exact upstream tarball, validate the release attestation or record its absence, commit, serve. Background durable job: allocate the deployment identity under state lock, generate master scalar and parameter set if none is live, a piece-group key and capsule randomness per group and the IV, encrypt per group, build one sidecar per live set and the hash-card, race the escrow registration, on loss destroy everything and follow the winner, on win register, hand off to the seed host, retain the master scalar under custody as escrow custodian, and grant itself the asset's first entitlement | The bootstrap job's checkpoints | FF-01 through FF-08, CR-05, PC-02 |
+| Publisher engine | Explicit publisher path with keys derived from the publisher hierarchy; ingests the dependency closure, bootstrapping absent dependencies as First Finder; runs the issuance policy service that serves priced mints automatically under the publisher's configuration, with per-request approval where configured | Publisher configuration and issuance policy | PC-01, FF-09; MVP Scope, Paid Monetization |
+| Grant service | Under the escrow suite, reads open requests for assets this identity holds and authors their credentials from its own credential, with the transfer proof against its own envelope, encrypted to each requester's registered keys so the requester need not be online, automatically as it seeds and under the relayer's policy | The grant queue | CD-05, CD-08, LC-12 |
+| Job engine | Durable, checkpointed, idempotent, cancellable-where-safe jobs that survive process and machine failure with exactly-once effects or safe compensation; hosts bootstrap, acquisition, seeding, publication, claim, repair, and migration jobs; a workflows module over the storage family | The job store | XA-03, FF-03, IC-07 |
+| Composition resolver | Validates the full adapter composition against declared capabilities and the deployment suite before any operation by working back through every family's factory; refuses incompatible pairs with no side effect | The resolved capability graph | IC-05, SI-10; MVP Scope, Adapter Composition |
+| Configuration registry | Versioned defaults, user overrides, secret references, adapter capabilities, endpoints; schema-aware reversible migrations; no raw secrets; a workflows module over the storage and encoding families, exporting and importing a versioned TOML document | The configuration store | IC-04, SI-17 |
+| Health and diagnostics | Installed, configured, degraded, incompatible, ready, from active probes; recovery actions; per-asset independence, plaintext, ciphertext, and credential held, or pending with its reason, and per-project independence; identical facts to every control surface | The health state machine and the independence index | SI-13, IC-08, RO-05, PR-12, XA-04 |
+| Telemetry | RO-03 metrics without secrets; per-request correlation across every subsystem; no redaction of its own, since secret-typed values cannot be formatted; attempt latency and install wall-clock measured against the configured values in force; export through the telemetry factory's resolved concrete | The metrics store and trace exporter | RO-03, RO-04, RO-06, CR-07 |
+| Lifecycle and single instance | The lifecycle family's single-instance lock per machine; start, stop, restart, and repair hooks the installation coordinator drives through the lifecycle factory's resolved concrete; survival across reboot under the platform service manager or a persistent user service | The instance lock and service registration | IC-03, SI-06, SI-16 |
+
+### Trust boundaries inside the process
+
+Five boundaries, each with one rule.
+
+- **Ingress is untrusted.** Every package-host request and every IPC request is validated at the boundary and carries a principal whose capabilities bound what it may cause. A package request can cause resolution and serving and nothing else.
+- **The network is untrusted.** No chunk enters the ciphertext store without a Bao authentication path against the authenticated root; no peer or discovery result is authoritative; a delegated seed host's reports are verified by challenge, not believed.
+- **The chain is authenticated by agreement.** Three nodes are configured by default and a state view is accepted only when at least two reachable nodes agree at a common reference block within `τ_soft`; a node behind the reference is stale and is ignored, not counted as disagreeing; two nodes returning different state at the same reference is divergence and fails closed; a view older than `τ_soft`, as during a prolonged stall, fails closed. The trust assumption is that fewer than two configured providers lie in concert. The upstream registry is authenticated by its release attestation, for npm the registry signature over name, version, and integrity, as provenance, never as safety, with a declared absence recorded rather than implied.
+- **Custody is the only durable home for secrets.** The holder seed and handshake key on a root, the device key on every device, envelope secrets on a reading device, master scalars, publisher seeds, and per-entitlement persistent credentials live there and nowhere else. The daemon holds a handle, not a copy. A device's authority is whatever the identity's contract account admits at the current state view, and a conforming client purges envelopes and envelope secrets when that view shows its signer revoked.
+- **The secret region is memory-only.** Decrypted credentials, piece-group keys, expanded cipher state, buffered keystream, and live decryption contexts exist only inside `zeroize`-guarded types that cannot be serialized, logged, or formatted, and are destroyed on success, interval end, cancellation, loss, and error. Nothing from this region crosses IPC, reaches the job store, or reaches telemetry.
+
+### Process and concurrency model
+
+One process, one `tokio` runtime, task groups per ingress and engine: the package-host listener, the IPC server, the swarm engine's transport and discovery tasks, the job engine's workers, the ledger client's view and event tasks, and a bounded worker pool for attempts and decryption so that a large closure does not starve the IPC or the seed host. Pool sizes, backpressure limits, and the IPC framing are decided at their nodes. The secret region is process-local; there is no multi-process split in the MVP, which is why a single-instance lock is load-bearing. A crash anywhere loses only memory-only material, which is by design, and every durable effect resumes from its checkpoint.
+
+### Storage ownership
+
+| Store | Owner subsystem | Keyed by | What never goes in it |
+| --- | --- | --- | --- |
+| Plaintext CAS | Plaintext CAS | Content hash | Ciphertext, secrets |
+| Ciphertext store | Swarm engine via `ISeedHostAdapter`, inside `seed-host/owned` | Ciphertext root, with holding reason | Plaintext, secrets |
+| Job store | Job engine, through the storage family | Job identity and checkpoint | Decrypted credentials, keys |
+| Configuration registry | Configuration registry | Version | Raw secrets; only references into custody |
+| Metrics and traces | Telemetry | Request correlation | Any secret-typed value; any identifying data beyond what the ledger publishes |
+| Custody store | Custody adapter, outside the daemon's process memory model | Identity | The decrypted credential, piece-group keys |
+
+### What the daemon exposes to later tiers without change
+
+A remote head drives the same authenticated IPC with a principal whose capabilities exclude value-moving operations. A read-delegate device receives decrypted credentials from a root's credential engine over a secure channel under a delegation the root's identity manager signs. A signer device holds only its device key, admitted on the identity's contract account, and approves operations within its permissions without envelope material. The account-link step is a consent-flow entry the installation coordinator reserves. None of these adds a third ingress surface; each is a capability on one of the two that exist.
+
+### What is decided at the node
+
+Worker pool sizing and backpressure policy; the exact checkpoint schema of each job; the per-principal capability table's contents beyond the rule that a package request confers nothing; and the supervision behavior when a subsystem task panics. Each is decided at the first node that needs it, under the repository's standards, and none changes the boundaries above.
+
+# Data Flows
+
+**Package request.** The [MVP Execution Trace](../research/MVP%20Execution%20Trace.md) holds the complete state machine and is not redrawn here. In summary: a plaintext CAS hit serves immediately; in cache-only mode a miss goes straight to upstream; otherwise the ledger is consulted; an absent asset takes the First Finder path, serving verified upstream bytes at once, bootstrapping in the background, and authoring the first grant to itself; a present asset passes the manifest gate and, if the identity holds a credential, acquires and Bao-verifies ciphertext and sidecar, seeds them, loads the credential into memory, and then per piece group reads a quorum state view, decapsulates, and unwraps the group key, finally verifying the plaintext root and committing to the CAS. An identity without a credential registers a batched grant request and is served by upstream while it is available, with the bytes checked against the record's plaintext root and a mismatch marking the deployment dead; with upstream unavailable it waits a bounded time for a grant and otherwise fails with the request pending. In the background the deployment's ciphertext is prefetched, pinned, and seeded, a holder fulfils the request whether or not the requester is online, the daemon picks the grant up from chain events, confirms it holds a deployment carrying the granted set, and marks the asset independent.
+
+**Credential delivery at a sale.** The flow that carries the protocol's hardest invariant.
+
+```mermaid
+sequenceDiagram
+    participant B as Buyer daemon
+    participant C as Contract suite (Base)
+    participant S as Seller daemon
+    B->>C: register envelope keys with proofs of possession (once)
+    B->>C: lock payment against exact entitlement, seller, price, payment asset, expiry
+    S->>S: decrypt own envelope afresh, rerandomize with private offset
+    S->>S: encrypt to buyer's registered keys, build transfer proof over full statement
+    S->>C: post envelope and proof, supplying previous envelope
+    C->>C: check previous envelope digest, load seller keys and identity element, verify proof via precompiles
+    C->>C: advance interval, record buyer keys and digest, emit envelope, transfer entitlement, release payment in the lock's payment asset through its bound adapter
+    B->>C: read state view at declared tier
+    B->>B: decrypt envelope, validity check, decapsulate per group, decrypt
+    S->>C: observe transfer out at the declared tier
+    S->>S: stop attempts, destroy decrypt-capable material at HARD
+```
+
+**First Finder bootstrap.** Foreground: fetch, verify the attestation or record its absence, commit to CAS, serve. Background durable job: allocate deployment identity under state lock, generate master scalar and parameter set if none is live, a piece-group key and capsule randomness per group and the IV, encrypt per group, build one sidecar per live set and the hash-card, race the escrow registration, on loss destroy everything and follow the winner, on win register the parameter set and sidecar roots, retain the master scalar as escrow custodian, hand ciphertext and sidecars to the seed host, and grant itself the asset's first entitlement.
+
+**Device roles under one identity.** The holder seed stays on root devices; every other device holds its own device key, admitted as a signer on the identity's contract account, with a delegation from the handshake key naming its role. The MVP declares root and reader. Revoking a signer on the account ends the device's authority at its next state view, when the conforming client purges its envelopes and envelope secrets.
+
+```mermaid
+flowchart LR
+    seed["Holder seed, on a root only"]
+    control["Control branch: handshake key; binding, rotation, device set"]
+    envelope["Envelope branch: envelope secrets"]
+    account["Identity contract account: signer set is the device registry"]
+    root["Root device: seed, both branches, its device key"]
+    reader["Reader device: its device key, envelope secrets; reads alone, envelopes from chain history"]
+    delegate["Read-delegate device: its device key; decrypted credentials in memory only"]
+    signer["Signer device: its device key only; approves within its permissions, never decrypts"]
+    seed -->|"derives"| control
+    seed -->|"derives"| envelope
+    root --- seed
+    control -->|"admits and revokes signers"| account
+    control -->|"signs role delegation"| reader
+    control -->|"signs role delegation"| delegate
+    control -->|"signs role delegation"| signer
+    envelope -->|"envelope secrets over the paired channel"| reader
+    root -->|"decrypted credentials over a secure channel"| delegate
+    account -.->|"wallet-control assertion read in every attempt"| reader
+    account -.->|"wallet-control assertion read in every attempt"| delegate
+```
+
+# Interfaces
+
+The specification fixes signatures for the interfaces it defines; the rest are contracts the nodes author. Each interface is declared in its family's factory and implemented by that family's concretes, with the types only a concrete produces named as associated types of the generic trait. Fixed signatures:
+
+```
+ISettlementAdapter
+    currentReferenceAt(tier) -> ref
+    tierOf(ref) -> tier
+
+ISignatureAdapter
+    sign(secret, message) -> signature
+    isValidSignature(pubkey, message, signature) -> bool
+    // pubkey and signature are the concrete's own associated types; recovery is a
+    // capability the declaration states, never a method of this trait, and deriving
+    // an address from a key's canonical bytes and scheme identifier is an operation
+    // of the chain family's identity form; the scheme identifier is the domain's
+    // signature scheme identifier type, which the declaration carries
+
+IPairingAdapter
+    g1, g2
+    mul(P, k), add(P, Q)
+    pairingProductIsOne([(P_i, Q_i)]) -> bool
+    subgroupCheck(P) -> bool
+
+IKeyAgreementAdapter
+    wrapTo(recipientPubkey, plaintext) -> cyphertext
+    unwrap(recipientPrivkey, cyphertext) -> plaintext
+
+ICredentialKemAdapter
+    setup(scope) -> (parameterSet, masterScalar)
+    deriveIdentity(parameterSet, identityBytes) -> identityElement
+    issue(masterScalar, parameterSet, identityElement) -> credential
+    rerandomize(parameterSet, identityElement, credential) -> credential
+    isValid(parameterSet, identityElement, credential) -> bool
+    encapsulate(parameterSet) -> (capsule, K)
+    isWellFormed(parameterSet, capsule) -> bool
+    decapsulate(identityElement, credential, capsule) -> K
+
+IDeliveryProofAdapter
+    proveMint(masterScalar, coins, statement) -> proof
+    proveTransfer(sellerSecrets, offset, coins, statement) -> proof
+    verify(statement, proof) -> bool
+
+IEntitlementStateAdapter
+    evaluateAuthorization(context) -> AUTHORIZED | PENDING_SETTLEMENT | DENIED
+    evaluateAuthorizationBatch(contexts) -> paginated results
+```
+
+Contracts every node implements regardless of family, from the repository's standards: dependencies injected at the boundary through a context slice; functions shaped as deps, params, payload, and a `Success | Error` return union; untrusted input validated on entry; `unknown` only at a boundary.
+
+Local IPC is an authenticated, least-privilege request interface; a project process that can request a package gains no custody, credential, key, or authority. The package host exposes npm's registry protocol and nothing else to the package manager.
+
+# Integration Points
+
+| Boundary | Producer | Consumer | Integration test crosses |
+| --- | --- | --- | --- |
+| Factory admission | A family's concretes, through their declarations | Every downstream family's factory, and the composition resolver | A concrete admitted only when its declaration satisfies every downstream requirement, refused otherwise with no side effect |
+| Verifier parity | `proof/schnorr_fs` | The EVM suite's delivery verifier, through the harness's verifier family bound to the suite's ABI description | Rust to chain, bit for bit on every vector |
+| Signed intent | The chain family's signed-intent form, signed through the signature factory | The registry and entitlement contracts, through the submission factory | A signed intent to the identity account's verification of the signer's scheme, EIP-712 typed data and ERC-1271 on the EVM suite |
+| Precompile encoding | The pairing concretes | The EVM suite's pairing library | Rust encoding to EIP-196, EIP-197, EIP-2537 input formats |
+| Decapsulation to cipher | The KEM factory's decapsulate and the sidecar layer's unwrap | The cipher factory | The seam preserved for a future multi-key suite |
+| Sidecar commitment | The KEM factory's encapsulate and the sidecar layer's build | Commitments and hash-card, through the hashing factory | One sidecar per live set, capsule and wrapped key per group, each set under its own Bao root |
+| Discovery engine | The transport factory's engine capability | The library-backed discovery concretes | Sources reach the engine through the generic surface, never through the transport concrete |
+| Store | The storage factory | The job engine, configuration registry, CAS index, ciphertext index, local metrics | Tables, transactions, and checkpoints with no store library named by a consumer |
+| Envelope in settlement | The envelope and proof factories | Contract suite, through the submission factory | Calldata and event; digest stored |
+| Attestation verification on chain | The source's attestation, carried by the ingest concrete | The suite's attestation verifier bound per source | Registration refused unless the source's verifier accepts; absence admitted and recorded |
+| Attempt context | Domain | The chain factory's quorum view over the chain concrete | View call at the declared tier from a quorum of configured nodes at a common reference |
+| Resolution order | Orchestrator | The CAS, seed-host, transport, and ingest factories | Local, encrypted, swarm, upstream |
+| Package-manager protocol | `package-host/npm` | npm | HTTP registry protocol; resolution stays in npm |
+| Persistent credential | The envelope and custody factories | Credential delivery | Stored only under custody |
+| Installer to daemon | Coordinator, through the lifecycle and IPC factories | Daemon, package host, seed host | Service lifecycle and IPC |
+| Artifact authentication | The release's signatures | The artifact-verifier factory | Every artifact and update verified before execution under each scheme's concrete |
+| Shells to coordinator | Extension, npm bootstrap, desktop, CLI | Coordinator | One coordinator, identical postcondition |
+| Relayer to contracts | Relayer, through its bundler factory | Binding and mint | Sponsored transactions under policy |
+| Voucher to contract | `claim-verifier/attestor` | Escrow claim surface, through the signature adapter the registry binds for the key's scheme | Voucher bound to claimant, set, contract, chain, nonce, expiry, verified against the registered scheme identifier and key commitment |
+| Payment settlement | `payment` factory, reached by entitlement acquisition | The lock and settlement contracts, through the payment-asset adapter the registry binds for the lock's payment asset | Lock, release, and refund in the named payment asset; a lock naming an unbound asset refused |
+| Site demonstration | WebAssembly build of the client crates | Browser | Same crates as the client; no service on the read path |
+
+# Dependency Resolution
+
+Resolution is the security property, not a convenience. It runs once at installation and again whenever configuration changes, before any credential is exercised, chain mutation sent, or swarm transfer started.
+
+- **Declaration.** Every concrete fills in the capability declaration its family's factory owns, with its version and compatibility, as data the factory and the resolver read; a consumer never branches on an implementation's name.
+- **Admission at the factory.** Each consumer declares what it requires of its inputs, and each factory admits a concrete only when its declaration satisfies every downstream requirement: the proof factory admits a concrete only if it declares the resolved envelope's algebra and the verifier form the resolved pairing declares; the KEM factory only a concrete whose identity scope matches the suite; a bad pairing is refused at construction instead of failing partway through a decryption.
+- **Composition.** The resolver works back through the chain of factories, package-host, ingest, chain, submission, pairing, KDF, hash-to-scalar, credential-KEM, key-agreement, delivery-proof, cipher, hashing, wallet, identity, custody, transport, discovery, storage, seed-host, and CAS, and validates the complete composition: a custody concrete is admissible only if it declares the capabilities the identity needs; a transport only if it can carry what discovery advertises.
+- **Suite binding.** For any deployment the client resolves only implementations declared compatible with every field of the authenticated hash-card: pairing adapter, KEM and live parameter sets, cipher and piece-group size, key-agreement, delivery-proof, KDF, hash-to-scalar, and encoding, target-group encoding identifier, forms identifier, delivery-statement version, attempt-rule parameters, settlement tier.
+- **Fail closed.** An incompatible composition is refused with no network, chain, authorization, or secret side effect, and readiness is an active health probe, never file or process presence.
+- **On chain.** Contracts resolve adapters from a governance-controlled registry through a factory, constructor-injected and immutable once bound: the identity adapters, the signature adapter per scheme, the attestation verifier per ingest source, the entitlement token form, the delivery verifier per delivery-statement version and verifier form, and the payment-asset adapter per payment asset, the registry contracts reaching the verifier and the payment-asset adapter only through those bindings; governance of that registry is a single project-held key for the MVP, recorded as scaffolding. The EVM suite is itself the on-chain concrete of the chain family's Base concrete, and a further chain form is a further suite.
+
+# Conflict Flags
+
+- **Delivery verifier is built in the harness and consumed by the contract suite.** It is production code from the first ticket, and the contract suite's own ticket owns its interface, as an ABI description and a Solidity realization, and the toolchain; the Rust verifier client binds the ABI description and authors no contract source.
+- **Two verifier forms, one shipped.** Both are built and measured; BLS12-381 ships on Base; BN254 is retained.
+- **Every factory follows its concretes.** A family's interface and declaration are authored in its first ticket, so the declarations exist from the family's first ticket; the factory, which constructs the concretes, is authored once, after the family's last concrete, and precedes every consumer; the harness and the resolver construct through the factories.
+- **The harness reaches the verifier through a family of its own.** The daemon never submits a proof to the verifier, since the contracts call it inside mint, grant, and delivery, so the harness's `verifier` family with its `evm` concrete is the only verifier client and no chain concrete carries one.
+- **The chain family's form interface, its forms concrete, and its family-owned forms function are authored in the harness; its factory and chain concrete follow in the chain sprint.** The proof family's transcript descriptions, challenge, concrete, and factory are generic over the chain family's identity, entitlement, interval, and chain-identifier forms, and the harness's generator, verifier client, vectors, and measurement need forms the deployed verifier reproduces; none may name a concrete, so the EVM suite's forms are the family's first concrete, private beneath the factory, a family-owned function follows it, `chain/create_chain_forms`, that admits a forms concrete by the identifier the suite requires and hands it to a consumer generic over the form interface, since the factory module holds one function and that function constructs the chain concrete, and every one of those consumers follows the function. The forms are the suite's, shared by every EVM chain concrete, not the network's, and they include address derivation over a public key's canonical bytes and scheme identifier and the signed-intent form, so the forms concrete depends on the domain's signature scheme identifier, the type the signature family's declaration also carries, and on no signature crate. `chain/base` authors the settlement and entitlement-state interfaces and the remainder of the declaration, binds the resolved forms, and authors no form, and the factory is authored once in the chain sprint after it, admitting a chain concrete only when its declaration lists the forms identifier the resolved forms carry.
+- **The harness is configured, never coded.** A typed configuration the harness owns carries a shipped default for every value it passes as params or payload, the concrete and identifier per family, the curves to run, the pairing concretes the benchmark measures, the target-group encoding identifier per curve, the forms identifier, the identity scope, the delivery-statement version, the network profile, the statements' context values and identity bytes,
+the iteration counts, the per-kind settings of each vector kind the generate concrete declares, its file, struct, decode function, and path constant names and, for a drawn kind, its count, the generated libraries' file and library names, the output paths, the Foundry project root and the generated directory relative to it, the directory `contracts/evm/foundry.toml` grants, the Solidity compiler version and license identifier every generated library opens with,
+the verifier's selection, the deployment record the verifier reaches, which `contracts/evm/deploy` emits as a runtime output a later run layers over the shipped defaults, the measurement's settings, the report's destinations, and the destinations the run's outcome is written to,
+overridable from a configuration file and from command-line flags, and authored after every ticket whose values it carries;
+the run, a composing function over one consumer per factory it calls, composes every family through its factory as the harness's only caller of one, benchmarks every configured pairing concrete, and hands the adapters and their declarations to the generate and verifier factories and to the vectors and measurement modules;
+the output writes the run's outcome, success or refusal, to standard output, a configured file, or both, as the configuration names;
+the binary calls the configuration, the run, and the output in turn and sets the exit status;
+the generate factory admits per-kind settings only when they name exactly the kinds the concrete declares, with a count for each drawn kind and none for any other; the generator writes under the destination its params carry as an app module in the adapter role; the generated directory is committed, since the Solidity continuous-integration definition runs only Foundry, whose configuration grants read access to that directory alone, leaves `ffi` disabled, and compiles through the IR pipeline with `via_ir = true`. The generated directory, the deployed verifier, and the measured defaults are runtime inputs: the first run writes the generated directory and returns the verifier's refusal, the suite builds against it, `contracts/evm/deploy` deploys the verifier and emits the deployment record, and the next run verifies and measures; none orders a ticket.
+- **The Solidity generate concrete is an adapter over functions it owns.** It is named for the language it emits, its vector files stay ABI-encoded and language-neutral, and a further language is a further generator concrete. Rendering, the constants, and each kind of vector are functions beneath the concrete, each its own ticket ahead of the adapter; the rendering function owns the entry type the constants function returns, the record-declaration type, and the validated name types, while the encoding family's ABI concrete declares the type name for every canonical field kind and rendering receives each member's resolved type name as data; each vector function returns typed records with their canonical descriptions and member names; the adapter alone encodes each record into one line, renders the constants and vector-record libraries, and writes files.
+- **Vectors are committed files, one encoded record per line.** Solidity holds no constant array and a counted kind must be iterable whatever count is configured, so each declared vector kind is a file of `0x`-prefixed hex lines, each the encoding family's encoding of one record; a Foundry test reads the file at the path the generated vector-record library carries with `vm.readLine`, converts each line with `vm.parseBytes`, and decodes it with that library's function for the kind, which decodes over the members' types, since a struct with a dynamic member encodes behind an offset. A drawn kind holds its configured count, an enumerated kind holds exactly its set, and a kind over configured inputs holds one record per input; no consumer holds a count, a kind list, or a name.
+- **A transcript's identity fields encode as `bytes20`.** The encoding concrete encodes the fixed twenty-byte kind right-padded, so the generated constants name it `bytes20` and the on-chain verifier, Solidity in the MVP suite, encodes every identity field as `bytes20`; an `address` is left-padded and yields another challenge.
+- **The library-backed discovery sources share the transport's engine** through a capability the transport factory's surface exposes, so no discovery concrete depends on the transport concrete.
+- **The hashing, signature, and swarm tickets precede the contract sprints by dependency and run beside the harness from the encoding family's closure onward.** Their first tickets encode, so they start once `encoding/factory` closes; the dependency map records the parallelism; the groupings are by role.
+- **Only code orders the build.** A ticket depends on another only when its file needs the other's file in order to be written; generated output, a deployed contract, and a measured value are runtime inputs, held in the dependency map's Runtime sequence, and none orders a ticket.
+- **The resolution orchestrator follows its sources.** It reaches the CAS, the seed host, and the swarm through their factories, upstream through the ingest factory, ciphertext under a held credential through the attempt engine and the decryption pipeline, and a requested grant through the request job, so it follows First Finder ingest and credential delivery; the CAS and the package host are adapters that name no workflow and precede it.
+- **The grant service follows its producers.** It fulfils open requests from a held credential, so it follows the credential engine and the request job in credential delivery.
+- **The daemon's composition root follows everything it composes.** The composition resolver resolves every factory the daemon and the installer compose, the settings catalogue carries every module's settings, and the daemon and installer binaries compose every module and hold the IPC request classes and their routing, so each follows the last of them, the installation coordinator's, the explicit publisher path's, and the claim verifier's among them; every module takes its settings as params from the composition root.
+- **The demonstrable milestone follows the daemon composition**, which follows credential delivery, the resolution orchestrator, the installation coordinator, the explicit publisher path, and the claim verifier; resolving against the swarm with the registry down needs a second identity to hold a credential and the packaged daemon to run.
+- **Custody is in the daemon grouping but the installer needs it.** The dependency runs the right way; identity and custody are built early in that grouping, after the relayer or paymaster milestone, whose submission factory they consume.
+- **The identity is an account, a contract account on the EVM suite; its sponsorship mechanism is chosen at the relayer milestone.** The account's signer set is the device registry, keyed by scheme-tagged key identifiers, and every identity-bound contract mutation takes a signed intent verified through the account (ERC-1271 and EIP-712 on the EVM suite), so a paymaster, a relayer, and a self-funded caller share one entry point.
+- **The escrow record carries no maintainer commitment**, so the escrow claim milestone has no policy gate and the verifier establishes the claim set at verification time.
+- **The account-link step exists in the installer's consent flow and does nothing in the MVP.** It is shown as unavailable and the consent trace records it; a reviewer should not read it as dead code.
+- **The desktop targets Tauri 2,** the stable line.
+- **The chain adapter carries no migration.** Entitlements do not move to a second chain; a migration mechanism is a workplan To-Do item and must exist before any second adapter carries live entitlements.
+
+# Sequencing
+
+The [dependency map](dependency-map.md) holds the sequence at decaying resolution and its Mermaid graph. By role:
+the foundation, with the randomness family;
+the cryptographic validation harness at ticket resolution, beginning with the domain's identifier modules and the hashing family with its root type, then the encoding family whose first description is the root type's, and the derivation context in the sidecar layer, each family from its first ticket to its factory, its commit on `contracts/evm/deploy` with the run's public integration test covering the whole chain, and the measurement and report run after it recording the measurements against the configured piece-group size and curve defaults;
+the signature, transport, discovery, storage, and seed-host families beside the harness from the encoding and hashing families' closure;
+the protocol core and contract suite with the domain model, the payload cipher and sidecar layer, the registry and entitlement contracts, the on-chain adapter registry, and the chain and submission families;
+the relayer or paymaster;
+the local daemon and package serving, from durable jobs and configuration through identity and custody, the plaintext CAS and package host, the First Finder engine, and credential delivery and per-attempt authorization to the resolution orchestrator, completing a first run's independence;
+the installation coordinator, the explicit publisher path, and the claim verifier;
+the daemon composition;
+the demonstrable milestone, where an ordinary `npm install` is served at the registry's speed, registers and prefetches, and, with the registry down, a second identity resolves against the swarm;
+the remaining shells and services;
+acceptance and release.
+External review and legal work start with the harness. The remaining protocol core milestones are re-mapped when `contracts/evm/deploy` commits, the daemon grouping with the relayer or paymaster milestone when the protocol core closes, and each onboarding milestone ahead of the milestone that consumes it.
+
+# Risk Mitigations
+
+Architecture-level mitigations, with the register identifier.
+
+| Risk | Architectural mitigation |
+| --- | --- |
+| R-02 cost making installs noticeably slower | Defaults configured from the cost formula; the harness and the dogfood run measure against them and the data adjusts them; install-once content crosses the attempt boundary rarely |
+| R-03 verifier or composition flaw | One Rust reference verifier in `proof/schnorr_fs`; Solidity constants and vectors generated from it by the harness's generate family; both forms cross-verified through the harness's verifier family; external review gates the priced deployment |
+| R-06 consumption privacy | Reads from the client's own node where available; disclosure at first run; account-to-identity mapping never on chain; identity functional without an account |
+| R-07 daemon as supply-chain surface | Authenticated artifacts before execution; verified content addressing before serving; authenticated least-privilege IPC; fuzzing at every boundary; signing-key custody |
+| R-11 First Finder race | State-locked registration; loser destroys ciphertext, sidecar, master scalar, and derivatives; the plaintext root proves equivalence |
+| R-12 chain properties | The chain family's factory with Base as its concrete and settlement as tiers; multi-node reads through the family-owned quorum view failing closed; both precompile sets confirmed on Base; sequencer stalls writes only; a further chain is a further concrete with its own suite |
+| R-14 scaffolding | Every project service behind an interface with a replacement path; the on-chain registry binding the identity adapters, the signature adapter per scheme, attestation verifiers, the token form, the delivery verifier, and the payment-asset adapter per payment asset under a replaceable governance key; default configuration with more than one discovery and RPC source |
+| A consumer bound to a concrete | Every family crate exposes its factory alone and its concretes are private, so no consumer can name an implementation; every consumer's ticket follows the factory it names |
+| R-15 settlement reversal | Reads at the declared tier, destruction at HARD; exposure is one entitlement's credential |
+| R-17 secret leakage | Decrypt-capable material memory-only with zeroization; a secret type that cannot be formatted or serialized; custody inspected after decryption and transfer |
+| R-19 accepted residuals | Piece-group size bounds exposure; decapsulation-to-cipher seam preserved for a multi-key suite |
+| R-21 rendezvous | Outbound-only, end-to-end under a daemon-pinned key, keys never leave, local presence for value-moving operations; deferred |
+| R-22 account mapping | Held only by the account service, never on chain, optional, deletable; deferred |
+
+# Risk Signals
+
+Authorization fraction of install wall-clock rising. Decapsulation time per group times groups per package becoming a noticeable fraction of install wall-clock. L1 data-fee component of delivery cost rising against the dogfood baseline. Bootstrap completion below the ingest rate. Seeding discontinuity across restart. Grant fulfilment slowing with the First Finder offline. `PENDING_SETTLEMENT` dwell rising. Any sensitive field in a telemetry scan. Any divergence between Rust and on-chain verification. Any IPC call from an unprivileged principal succeeding beyond a package request. Host configuration differing from the pre-install snapshot after a failed install. Attempts halting on node disagreement beyond what one failed node explains. Subsidy consumption outpacing identity creation. A node's dependency declaration naming an adapter with no capability declaration.
+
+# Security Measures
+
+- **Confidentiality** under SXDH, decisional BDH-3b, and the random-oracle model; no party without a credential derives capability from ciphertext, sidecar, envelopes, or proofs.
+- **Delivery soundness and replay resistance**: every proof hashes its complete statement; a proof is valid for exactly one settlement; the contract rejects an advanced counter.
+- **Per-attempt authorization** from a fresh state view at the declared tier; never a cached view, a prior session, or another interval's credential.
+- **No selective withholding**: reading needs no party but the holder; transfer needs seller and buyer only; no step requires a single third party's live action.
+- **Secret lifecycle**: decrypted credential, piece-group keys, cipher state, and keystream memory-only and zeroized at every transition; persistent credential only under custody; secret-typed values that implement no formatting or serialization trait, proven at compile time.
+- **Boundary validation**: every input untrusted until validated; manifest, hash-card, and sidecar authenticated before any credential is exercised; fuzzing at every adapter contract and IPC request.
+- **Local API**: authenticated and least-privileged; a package request confers nothing.
+- **Artifacts**: authenticated before execution; platform signing plus Sigstore; signing keys under custody discipline with rotation.
+- **Keys**: envelope keys never wallet keys; independent envelope secrets; identity-element keys and trivial identity elements rejected at registration and mint.
+- **Claims**: proofs bound to the claimant's chain identity; verifier key revocable on chain.
+- **Blast radius**: a leaked credential exposes one asset; a leaked piece-group key one group of one deployment; no number of credentials recovers a master scalar.
+- **Stated residuals**: modified-client retention and common piece-group keys, bounded and not overclaimed.
+
+# Observability Strategy
+
+Metrics without secrets: CAS hit and cross-project reuse, install wall-clock and authorization fraction, resolution path, state-read volume and latency, decapsulation time per group, proof generation and verification time, delivery cost as L2 execution and L1 data fee, swarm and ingest bytes, relayer gas, job outcome, adapter health. Structured logs and traces correlate one package request across package host, CAS, swarm, chain, custody, decryption, and background First Finder work. Health states, installed, configured, degraded, incompatible, ready, exposed identically through CLI, desktop, extension, and the daemon API, with recovery actions. Attempt latency and install wall-clock reported against the configured values in force, the data driving their adjustment. Telemetry scanned for sensitive fields as a release gate. `tracing` in the telemetry factory, with the local append-only metrics store under the daemon and OpenTelemetry as the exporter family's concretes; no external metrics service required.
+
+# Scalability Plan
+
+Credential size is constant across any number of sales; capsule cost is independent of the number of entitlements; issuance is unbounded with no setup-time count. Sidecar overhead is proportional to payload at one capsule and one wrapped group key per piece group per live parameter set, estimated at roughly one percent at 16 KiB groups with one live set depending on curve and scope, and unmeasured until the harness. On-chain state per entitlement is constant per interval; envelopes and proofs are calldata and events. Batch reads paginate with an adapter-advertised ceiling, so a thousand-package closure is one traversal. Deployments are multi-homed across transports as one object; discovery aggregates across concurrent sources. The plaintext CAS and ciphertext store are sized and retained independently. Relayer cost scales with identities, one batched request per first run, and the fulfilling grants for each closure, under a global budget with per-identity limits sized to a realistic closure, with the grant pool sized from measured Base gas. Streaming content, which would exercise per-attempt authorization continuously, is out of scope; decapsulation time per group is recorded as its baseline. Replication of the swarm object is a constructed factor under the retention obligation, whose enforcement is deferred.
+
+# Resilience Strategy
+
+Long-running operations are durable, restartable, idempotent jobs with exactly-once effects or safe compensation. The daemon and seed host survive reboot and editor closure. Installation, update, repair, and uninstall are checkpointed with rollback to the prior coherent state. Transport and storage failures leave resumable jobs exposing no unauthenticated partial data. The per-attempt state view comes from a quorum of configured nodes at a common reference; one unreachable or stale node does not deny and divergent views fail closed. No single operator's unavailability denies reading, transfer, grant, or claim: reads are local, escrow grants come from any holder, including the project seed host, which holds a credential for every asset it seeds, and a claim never needs the First Finder. A reorganized transfer never strands a still-owner because destruction waits for HARD. A lost envelope is recoverable from any honest full-history node. A Base sequencer outage stalls writes and leaves reads untouched until the freshest agreeing view is older than `τ_soft`, after which attempts fail closed until the chain advances. Availability of the swarm object itself rests in the MVP on the project seed host for the core closure and on voluntary seeding for the rest, which is a stated boundary.
+
+## What each operation needs
+
+The independence claims, made precise per operation. A cell that says nobody or none is the claim; a cell that names a party is the condition under which the operation is available, and the failure column is what the client reports when it is not.
+
+| Operation | Parties that must be present | State that must be reachable | Services | When unavailable |
+| --- | --- | --- | --- | --- |
+| Cached plaintext read | Nobody | The local CAS entry | None | Cannot be denied by anything remote |
+| Encrypted read by an existing holder | Nobody | Ciphertext and a sidecar for the credential's set, local or from the swarm; the persistent credential under custody; a quorum state view within `τ_soft` | None; no publisher, key service, or relayer | Fails closed on a stale or divergent view, a missing sidecar for its set, or a Bao failure, and says which |
+| New escrow grant | One online holder under an escrow set of the asset, at any time after the request, not necessarily while the requester is online; the project seed host counts for the core closure | The escrow record still open; the batched request on chain; the holder's credential | The relayer for sponsorship, or the requester's own gas | While upstream is available the requester is served by upstream and the request pends; with upstream unavailable a healthy swarm with no holder online reports no grant author reachable, truthfully, the request stays pending, and a retry succeeds once a holder appears |
+| First-run independence | Nobody beyond the holders that fulfil the closure's requests, in the requester's absence | The plaintext, the deployment's ciphertext and sidecar, and a credential under a set the held deployment carries, for every asset in the lockfile | The relayer for the batched request; none thereafter | Each asset shows pending with its reason: no holder yet, quota, metered, budget exhausted, or publisher refusal; the foreground install is never affected |
+| Post-claim issuance | The publisher's issuance policy, served automatically | The claimant's set live | The relayer for a free mint | Refusal is the publisher's discretion, not an outage |
+| Transfer | Seller and buyer, both present | The lock; the seller's fresh decryption and proof | None; the relayer never sponsors a paid acquisition | A lapsed lock refunds; a reorganized transfer leaves the seller able to read until HARD |
+| Claim | The claimant; upstream metadata at verification | The escrow records; the verifier key live on chain | The claim verifier | An unavailable verifier defers the claim and changes nothing for holders; the First Finder is never needed |
+| Sidecar addition after a claim | The asset's authority holding an escrow-era credential | The deployment's escrow sidecar | None | With no reachable holder the authority issues a successor from plaintext instead |
+| Envelope recovery | Nobody | Chain history at any honest full-history node | None | An unreachable archive defers recovery; the custody copy still serves |
+| Metadata resolution during an upstream outage | Nobody | The ledger's alias records; the decrypted tarballs' own `package.json` | None | Every ingested version the client can decrypt is served, ranges included; dist-tags, the source's mutable state, are best effort |
+| Sponsored onboarding | Nobody | The relayer's remaining budget | The relayer | Exhaustion is an explicit failure with recovery, never a false authorization |
+| Device admission | A root device and the new device, paired | The identity's contract account | The relayer for sponsorship, or the identity's own gas | The new device holds no authority until its signer is admitted; the root keeps working |
+| Device revocation | A root device | The identity's contract account | The relayer for sponsorship, or the identity's own gas | Takes effect at the revoked device's next state view, when a conforming client purges its envelopes and envelope secrets; an offline device holds only committed plaintext beyond `τ_soft` |
+
+# Compliance Controls
+
+Ingest eligibility is free public distribution by the rights holder's choice, implemented as public npm availability, with the residual, unauthorized public redistribution and irrevocability, stated rather than denied revenue; a license check at ingest is a later policy decision. Entitlement records are public by design for public content, and the individual case is disclosed at first run and mitigated by own-node reads. The escrow record carries no maintainer commitment and no salt custodian exists, so no maintainer-derived field reaches the chain. Telemetry records no secrets and no identifying data beyond what the ledger publishes. User interaction is limited to the permitted consent set and a consent trace fails on anything else. Governance is advisory metadata against a local trust set; no takedown. The software license is source-available with a conformance clause; legal review of the license, the eligibility principle, priced entitlements, the paymaster, and export constraints runs in parallel with the harness. Accessibility baselines for the desktop and extension are IC-10.
+
+# Open Questions
+
+Those with architectural consequence outside the MVP, each carrying a Feedback block.
+
+**Rendezvous operator, when the deferred tier is scoped.** The project seed host and site, or a separate operator. Assumption if blank: decided when the tier is scoped; no MVP impact.
+
+Feedback:
+
+# Rationale
+
+**Why nothing sits on the read path.** Every system that enforces rights by putting a service or device on the read path inherits its liveness, centralization, and trust costs at every read, and every system that avoids the read path enforces no rights. The credential construction removes the trade-off: a sale delivers the buyer's credential from the seller's own, the contract verifies rather than decides, and reading is local against a state view. The research that reaches this excludes threshold provisioning, wrapped shared keys, hardware enclaves, and public-witness constructions, each for a recorded reason.
+
+**Why rings and adapters.** The project intends to own its chain, tokens, keystore, and swarm client, so every touchpoint is an interface with declared capabilities from the first implementation; retrofitting an adapter once deployments exist on chain is the expensive path. Rings make a dependency violation a compile error rather than a review finding.
+
+**Why factories rather than adapters a consumer picks.** A consumer that constructs the implementation it knows binds itself to that implementation, and the interface behind it becomes decoration: adding a second implementation then means editing every consumer, which is the surgery the interface existed to prevent. With the family's crate as its factory and its concretes private, a consumer can only ask the factory for what it needs, the factory can only hand back something whose declaration satisfies what the consumer requires, and a new implementation is one concrete and one branch in the factory. The same shape holds on chain, where the adapter registry is the factory and the contracts are its consumers.
+
+**Why the immutable suite.** Reinterpreting existing ciphertext under a different construction is how a protocol acquires an undocumented compatibility matrix; a successor deployment with a sidecar per live parameter set is the one path, and entitlements survive it because they bind to the asset.
+
+**Why resolution fails closed before anything happens.** The ordering is the security property: validating before decryption means a malformed manifest never causes a credential to be exercised, and validating a composition before an operation means no key material, state traffic, or swarm activity is spent on a composition that was never going to complete.
+
+**Why the seed stays on a root.** A device added for convenience, a phone or a cloud instance, should not become the identity's custodian. Devices carry their own keys under a contract account whose signer set is read in every attempt, so a device's authority ends at its next state view when its signer is revoked, by the same conforming-client purge that ends a transferred entitlement. The seed's control branch governs the identity, its envelope branch governs reading, and signer permissions govern transfer.
+
+**Why the daemon and not a library.** Seeding must survive the editor; the read path must not depend on a browser; a single machine-level instance owns the CAS, the ciphertext store, the jobs, and the IPC, and every control surface attaches to it rather than containing it.
+
+**Why the harness early and why it ships.** Every parameter that gates encryption depends on measurements nobody has; its delivery verifier is the contract the registry calls; and its throughput is the only calibration the project can obtain for everything after it.
+
+**Why Base.** Both precompile sets are live since Isthmus, L2 execution is cheap and the L1 data fee is measurable, bundlers and paymasters exist, and the sequencer is a write-path dependency only. Ethereum mainnet remains a later adapter, and no chain migration exists yet, which is recorded as debt.
+
+**Why the deferred tier is designed now.** An account, a remote head, and a hosted instance would each be easy to build in a way that makes the account the principal, puts a service on the read path, or publishes the deanonymizing mapping. Stating that the account owns onboarding state and never an entitlement, that devices have declared roles under one seed, and that the remote head is a view over local IPC costs nothing in the MVP and prevents the wrong shape later.
+
+# Additional Content
+
+**Relationship to the other documents.** The technical approach describes the components, data, deployment, and sequencing in more detail; the tech stack names the libraries and their versions; the dependency map holds the tickets and the graph; the feature spec holds the acceptance criteria and the anticipated capabilities that constrain design choices; the risk register, non-functional review, and success metrics hold what this document cites under risks, security, observability, and compliance. This document is the design view over all of them and states nothing they do not.
+
+**What is not designed here.** The webview UI framework, the bundler provider behind the relayer's bundler factory, the concrete IPC framing, the exact holder-seed derivation domain strings, and the challenge-hash encodings are decided at the nodes that first need them, under the repository's standards, not in this document; the crate and path layout is fixed in the technical requirements.

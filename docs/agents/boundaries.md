@@ -18,11 +18,41 @@ export * from "./enqueueCompressJobs.guard.ts";
 export * from "./enqueueCompressJobs.mock.ts";
 ```
 
-The mock is part of the public surface on purpose: a consumer's tests import the module's official mock rather than hand-rolling a test double (see [mocks](mocks.md)).
+The Rust form: the module's `mod.rs` keeps every element private and exposes `provides` as its only `pub mod`; `provides.rs` re-exports the surface, and `lib.rs` re-exports each module's `provides` and nothing else.
+
+```rust
+// mod.rs
+mod interface;
+#[cfg(feature = "mocks")]
+mod mock;
+pub mod provides;
+#[cfg(test)]
+mod test;
+#[cfg(test)]
+mod integration_test;
+
+pub fn enqueue_compress_jobs(…) -> EnqueueCompressJobsReturn { … }
+
+// provides.rs
+pub use super::enqueue_compress_jobs;
+pub use super::interface::*;
+#[cfg(feature = "mocks")]
+pub use super::mock::*;
+```
+
+A module's `provides` re-exports each internal file and each child module's `provides` whole. A named, crate-visible line carries only a family concrete's items that a consumer in the crate imports.
+
+The mock is part of the public surface on purpose: a consumer's tests import the module's official mock rather than hand-rolling a test double (see [mocks](mocks.md)); a family's mock concrete is reached through the family's factory (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
 
 ## Barrels are the only place to re-export
 
-Re-exporting is permitted **only** in barrel files — the ones named `index` or `provides`. No other file re-exports. This is the home of the barrel rule that [types](types.md) points to.
+Re-exporting is permitted **only** in barrel files — the ones named `index` or `provides`, and in Rust `provides.rs` and the crate's `lib.rs`. No other file re-exports. This is the home of the barrel rule that [types](types.md) points to.
+
+## Public entries
+
+A module is a **public entry** when the crate's `lib.rs` re-exports its `provides`. The public entries are the crate's public surface, and the public surface is everything a consumer outside the crate can call. A module that is not re-exported is internal: nothing outside the crate reaches it, and its behavior is observable from outside only through the public entries that carry it.
+
+Tests outside the crate consume the public surface and the official mocks under the `mocks` feature, and nothing else (see [integrationTest](integrationTest.md#integration-public)).
 
 ## Directionality
 
@@ -34,4 +64,5 @@ Re-exporting is permitted **only** in barrel files — the ones named `index` or
 ## Precedence
 
 This topic outranks the workplan. A node step that imports from a module's internal file instead of its `provides`, re-exports outside a barrel, omits a symbol a consumer needs from `provides`, or introduces a reverse/lateral/cyclic dependency is defective — comply with this topic and report the discrepancy.
+
 
