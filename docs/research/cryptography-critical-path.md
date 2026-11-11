@@ -1,6 +1,6 @@
 # Entitlement cryptography critical path
 
-Current as of ledger log 36 (2026-09-22). If the ledger's latest log row is higher than this number, this file is stale and must be re-synced before work resumes.
+Current as of ledger log 37 (2026-11-10). If the ledger's latest log row is higher than this number, this file is stale and must be re-synced before work resumes.
 
 ## Role and rules
 
@@ -56,11 +56,25 @@ Components, all reviewed: the depth-one BB1 scheme (E46, symmetric; its selectiv
 
 No step needs a primitive of unknown existence or efficiency. The Q06 first pass finds every requirement met at the protocol-composition level under the recorded residuals (Q06 section). What separates this from a buildable, adoptable design is proofs, source inspection, re-derivation, implementation and measurement.
 
+## Chain walk against a quantum adversary — open
+
+Every status above is against a classical adversary. P16 prefers, and does not require, that the chain hold against a quantum one: soundness at issuance and use is the minimum, later confidentiality of published material is the target, and NIST category 3 is the strength sought. The construction's assumptions are all discrete-logarithm assumptions and none holds against a quantum adversary (S23). This walk is S23's first deduction, not Q11's finished table.
+
+- **Step 1, observable result.** Holds; the residual is unchanged.
+- **Step 2, decryption interface.** Holds.
+- **Step 3, payload compatibility.** Open, retroactive: the encapsulated value is recoverable from a public capsule with no credential (S23). Owner Q12.
+- **Step 4, authorization binding.** The context binding holds in kind; it is worth what the proof's soundness is worth. Owner Q15.
+- **Step 5, private input.** Open, retroactive: registered envelope keys yield their secrets, so every envelope in chain history opens (S23). Owner Q14.
+- **Step 6, resolution without threshold release.** Open: the master public element yields the master scalar, so anyone authors credentials, and delivery proofs are forgeable at the time of use (S23). Owners Q12 and Q15.
+- **Step 7, future-state coverage.** The structure holds; whether a replacement construction still covers later issuance, sale and holder authorship is Q12 and Q13.
+- **Step 8, operational lifecycle.** The attempt rule is unchanged; the signed intent verified at settlement is forgeable at the time of use. Owner Q15.
+- **Step 9, components and composition.** Open: every named assumption falls; the cipher, the KDF and wrap, the Bao roots and hash-to-scalar hold in kind with their margins against category 3 unchecked. Owner Q11.
+
 ## The construction, stated once
 
 All algebra is the ledger's C11 section and Q09 third and fourth increments; nothing here is new.
 
-- **Groups, parameters and assumptions.** Type-3 pairing groups `G1, G2, GT` of prime order with `e: G1 × G2 → GT`; the curve is BLS12-381 through EIP-2537 as the primary verifier form with BN254 retained (E47); the network is Base. Assumptions: SXDH for the envelopes, decisional BDH-3b (E49) for the capsule KEM, the random-oracle model for the proofs. The KEM's identity scope is fixed per suite: entitlement scope (`F_I = u0 · u1^I`, three-element capsule) for explicit-publisher suites, asset scope (fixed `F`, two-element capsule) for escrow suites. Public parameters `g1, u0, u1 ∈ G1` and `g2, hpub = g2^alpha ∈ G2`; the master scalar `alpha` is the issuer's. `F_I = u0 · u1^I ∈ G1` for the authenticated, domain-separated scalar mapping `I` of the exact entitlement identifier. The discrete logs among `g1, u0, u1` and between `g1` and any published element are never known.
+- **Groups, parameters and assumptions.** Type-3 pairing groups `G1, G2, GT` of prime order with `e: G1 × G2 → GT`; the curve is BLS12-381 through EIP-2537 as the primary verifier form with BN254 retained (E47); the network is Base. Assumptions: SXDH for the envelopes, decisional BDH-3b (E49) for the capsule KEM, the random-oracle model for the proofs. Each is a statement about a classical adversary (S23). The KEM's identity scope is fixed per suite: entitlement scope (`F_I = u0 · u1^I`, three-element capsule) for explicit-publisher suites, asset scope (fixed `F`, two-element capsule) for escrow suites. Public parameters `g1, u0, u1 ∈ G1` and `g2, hpub = g2^alpha ∈ G2`; the master scalar `alpha` is the issuer's. `F_I = u0 · u1^I ∈ G1` for the authenticated, domain-separated scalar mapping `I` of the exact entitlement identifier. The discrete logs among `g1, u0, u1` and between `g1` and any published element are never known.
 - **Native key.** `(A, B) = (g1^alpha · F_I^r, g2^r)`, `r` disclosed to nobody. Validity `e(A, g2) = e(g1, hpub) · e(F_I, B)` with encoding and subgroup checks. Sale: `(A · F_I^s, B · g2^s)` with private `s`; the buyer may rerandomize again. Master-secret hiding and non-convertibility across identities are co-CDH.
 - **Capsule, KEM form.** `(U, V, W) = (g2^t, u0^t, u1^t)`; encapsulated value `K = e(g1, hpub)^t`; decryption `K = e(A, U) / e(V · W^I, B)`, two pairings and one `G1` scalar multiplication. Well-formedness `e(V, g2) = e(u0, U)`, `e(W, g2) = e(u1, U)`, cacheable. Three source-group elements per capsule, about 128 bytes on BN254 and 192 on BLS12-381.
 - **Payload.** The encryptor chooses a piece-group key per group; under each live set the sidecar entry carries that set's capsule and the key wrapped by XOR under a domain-separated KDF of `K` and the context (asset, deployment, suite, parameter set, group index, geometry); each group encrypted once. Everyone receives the same encrypted pieces and the same sidecars, each set's sidecar its own object; a body carries one per live parameter set.
@@ -79,6 +93,14 @@ All algebra is the ledger's C11 section and Q09 third and fourth increments; not
 - **Q08 remainder, measurement.** Encoding sizes, capsule and proof bytes, decryption latency, proof generation and verification cost on the chosen curve, and settlement cost against E47's interface.
 - **Q06, second pass.** Re-run the whole-target table once the proofs and measurements exist.
 - **Handoff, done (log 35).** The Q05 attempt rules, the Q10 state machine and sidecar-coverage rule, and the Q09 settlement protocol are adopted into cryptography.md, MVP Scope.md, MVP Application Requirements.md and the Execution Trace, with the adapters `IPairingAdapter`, `ICredentialKemAdapter`, `PairingElGamalAdapter` and `IDeliveryProofAdapter` named there. Still open in the workplan's To-Do: the attempt-rule parameters and piece-group size, which the validation harness measures.
+- **Q11.** The chain walk against a quantum adversary completed: per step, holds, fails retroactively or fails live; every published object and the secret it determines; each symmetric and hash component's margin against category 3.
+- **Q12.** A post-quantum credential KEM under the unchanged interface constraints, or the exact missing property.
+- **Q13.** The C09, C10 and C11 comparison rerun with post-quantum instantiations.
+- **Q14.** A post-quantum envelope a delivery proof can speak about.
+- **Q15.** A delivery proof sound against a quantum adversary, its verifier environment, and the signed intent verified on chain under a post-quantum scheme.
+- **Q16.** How far P16's minimum and target reach under the unchanged constraints, and what would have to bend.
+
+Exposure to a quantum adversary is open under P16. It is not an accepted residual.
 
 ## Accepted residuals
 
@@ -124,8 +146,10 @@ Check S01–S22 and X01–X23 in the ledger before proposing anything. Titles on
 | X22 | Offset-linkage proof as a correctness requirement (adopted only for precompile verifiability) |
 | X23 | Source-group substitutes for the target-group first message of the direct validity proof |
 
-Also do not restart with: the impossibility of revoking retained secrets (S01); traitor-tracing difficulty (P06, S06); a survey of the same broad encryption families (C01–C08); registration-based encryption as an access path (S11, X18); the pre-2026-09-16 premise that no issuer may hold a master secret (S17); a contract method as a secret holder (S03, S08); holder-assisted issuance under C11a (S22); or a shared secret across the two envelope keys (Q09 third increment, hazard).
+Also do not restart with: the impossibility of revoking retained secrets (S01); traitor-tracing difficulty (P06, S06); a survey of the same broad encryption families (C01–C08); registration-based encryption as an access path (S11, X18); the pre-2026-09-16 premise that no issuer may hold a master secret (S17); a contract method as a secret holder (S03, S08); holder-assisted issuance under C11a (S22); or a shared secret across the two envelope keys (Q09 third increment, hazard). Under P16 the changed premise is the adversary model alone: do not re-survey C01–C08 for the classical adversary, and do not relax R01–R15 to reach P16 (log 37).
 
 ## Next unit of work
 
-Measurement on the chosen curve (Q08 remainder), which needs an implementation and therefore an engineering decision; then the Q06 second pass. Adoption of the Q05, Q09 and Q10 conclusions into cryptography.md and MVP Scope.md is separate work and awaits the user's decision. No research question remains open on the critical path.
+Measurement on the chosen curve (Q08 remainder), which needs an implementation and therefore an engineering decision; then the Q06 second pass. Adoption of the Q05, Q09 and Q10 conclusions into cryptography.md and MVP Scope.md is separate work and awaits the user's decision. No research question remains open on the critical path against a classical adversary.
+
+Research under P16 runs beside it and blocks none of it: Q11 first, the chain walk against a quantum adversary, then Q12, whose answer Q13, Q14 and Q15 depend on, and Q16 last.

@@ -1,6 +1,6 @@
 # Entitlement cryptography requirements
 
-Current as of ledger log 36 (2026-09-22). Rewritten in place only when the user decides; each row cites the log entry or source that set its current reading. The ledger, [cryptography-research-notebook.md](cryptography-research-notebook.md), holds the dated history of every amendment. The construction and open work are in [cryptography-critical-path.md](cryptography-critical-path.md).
+Current as of ledger log 37 (2026-11-10). Rewritten in place only when the user decides; each row cites the log entry or source that set its current reading. The ledger, [cryptography-research-notebook.md](cryptography-research-notebook.md), holds the dated history of every amendment. The construction and open work are in [cryptography-critical-path.md](cryptography-critical-path.md).
 
 ## Objective
 
@@ -47,6 +47,7 @@ R09–R13 are preserved from the source documents and earlier research scope. Do
 | P13 | Forced transfer, lost keys, recovery | Not protocol obligations. Key custody is the possessor's liability, as with a physical object. Enabling forced transfer is neutral to negative; re-issuance or recovery is neutral to positive. | Log 14 |
 | P14 | Single-participant First Finder bootstrap | The initial deployment must work with the First Finder as the sole available credential source. Requiring an independent custodian before publication is excluded. Additional sources may improve availability later; this does not make a sole custodian fault tolerant or give it publisher rights. | Log 21 |
 | P15 | Cryptographic loss of decryption ability at transfer | The preferred property, that a prior bearer's retained material stops working even in a modified client, is not available under R01, P09 and R07. Distinguishable stale material is the working target; conforming-protocol loss is the minimum. Record any construction that approaches it under the unchanged constraints; do not relax the constraints to reach it. | Log 24 |
+| P16 | Security of the cryptographic chain against a quantum adversary | Preferred, not an acceptance condition; it becomes a requirement if a means for the whole chain is proved. An escalation chain: the minimum is soundness at issuance and use, so that no delivery proof, proof of possession, issuance or signed intent can be forged by a quantum adversary acting at that time; the target is later confidentiality, so that material published now stays confidential against a quantum adversary arriving afterward. It applies to every content class. It is pursued under R01–R15 and the preferences above unchanged: record how far each level is reached and exactly what would have to bend to go further, and do not relax a constraint to reach it. The strength target is NIST security category 3, that of ML-DSA-65; record how close each component comes. | Log 37 |
 
 ## Interpretations still open
 
@@ -55,3 +56,4 @@ Numbering follows the ledger. Interpretations 1, 3 and 5 were settled at the res
 | No. | Interpretation | What is undecided | Owner |
 | --- | --- | --- | --- |
 | 4 | Helper budget | "Small fraction" is now settled by formula (Q05 section): three source-group elements per capsule, a constant per interval on chain, a constant per holder. What remains is byte measurement on the chosen curve, which no decision can replace. | Q08 remainder |
+| 8 | Post-quantum reach | P16's levels, scope, constraints and strength target are decided (log 37). What is undecided is what only the research can show: how far the minimum and the target are reachable under the unchanged constraints, and which constraint, if any, would have to bend. | Q11–Q16 |
